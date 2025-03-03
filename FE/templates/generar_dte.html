@@ -47,6 +47,19 @@
               </select>
             </div>
           </div>
+          <!-- Tipo de Documento -->
+          <div class="col-md-4">
+            <div class="form-group">
+              <label>Tipo de Documento:</label>
+              <select name="
+              " class="form-control">
+                <option value="">Seleccione Tipo de Documento</option>
+                {% for dte in tipoDocumentos %}
+                  <option value="{{ dte.codigo }}">{{ dte.descripcion }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
           <!-- Retención de IVA -->
           <div class="col-md-4">
             <div class="form-group">

@@ -246,6 +246,8 @@ def generar_factura_view(request):
         receptores = list(Receptor_fe.objects.values("id", "num_documento", "nombre"))
         productos = Producto.objects.all()
         tipooperaciones = CondicionOperacion.objects.all()
+        tipoDocumentos = Tipo_dte.objects.all()
+        
 
         context = {
             "numero_control": nuevo_numero,
@@ -255,7 +257,8 @@ def generar_factura_view(request):
             "emisor": emisor_data,
             "receptores": receptores,
             "productos": productos,
-            "tipooperaciones": tipooperaciones
+            "tipooperaciones": tipooperaciones,
+            "tipoDocumentos": tipoDocumentos
         }
         return render(request, "generar_dte.html", context)
 
@@ -272,6 +275,7 @@ def generar_factura_view(request):
             telefono_receptor = data.get('telefono_receptor', '')
             correo_receptor = data.get('correo_receptor', '')
             observaciones = data.get('observaciones', '')
+            tipo_dte = data.get("tipo_documento", None)
 
             # Configuración adicional
             tipooperacion_id = data.get("condicion_operacion", None)
@@ -360,12 +364,18 @@ def generar_factura_view(request):
                 precio_incl = producto.preunitario
 
                 # Calcular precio neto y IVA unitario
-                precio_neto = (precio_incl / Decimal("1.13")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                #precio_neto = (precio_incl / Decimal("1.13")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                precio_neto = (precio_incl ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                print(f"Precio Incl = {precio_incl}, Precio neto = {precio_neto} ")
                 iva_unitario = (precio_incl - precio_neto).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
                 # Totales por ítem
                 total_neto = (precio_neto * cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-                total_iva_item = (iva_unitario * cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                #total_iva_item = (iva_unitario * cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                total_iva_item = ( ( precio_incl * cantidad) / Decimal("1.13") * Decimal("0.13") ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                
+                print(f"IVA Item = {total_iva_item}, iva unitario = {iva_unitario}, cantidad = {cantidad} ")
+                
                 total_con_iva = (precio_incl * cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
                 descuento_monto = Decimal("0.00")  # Se asume 0 descuento por ítem
@@ -433,13 +443,23 @@ def generar_factura_view(request):
             cuerpo_documento = []
             for idx, det in enumerate(factura.detalles.all(), start=1):
                 # Recalcular (para el JSON) usando los valores ya calculados:
-                precio_neto = (Decimal(det.precio_unitario) / Decimal("1.13")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-                iva_unitario = (Decimal(det.precio_unitario) - precio_neto).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                #precio_neto = (Decimal(det.precio_unitario) / Decimal("1.13")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) #BC: TEMPORALMENTE COMETAREADO YA QUE PARA FE DEBE INCLUIRSE EL IVA EN EL PRECIO
+                precio_neto = (Decimal(det.precio_unitario) ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                #iva_unitario = (Decimal(det.precio_unitario) - precio_neto).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) #BC: TEMPORALMENTE COMETAREADO YA QUE PARA FE DEBE INCLUIRSE EL IVA EN EL PRECIO
+                iva_unitario = (Decimal(det.precio_unitario)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 total_neto = (precio_neto * det.cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-                total_iva_item = (iva_unitario * det.cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                #total_iva_item = (iva_unitario * det.cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) #BC: TEMPORALMENTE COMETAREADO YA QUE PARA FE EL CALCULO ES DIFERENTE
+                total_iva_item = ( ( iva_unitario * det.cantidad) / Decimal("1.13") * Decimal("0.13") ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 total_con_iva = (Decimal(det.precio_unitario) * det.cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
                 print(f"Item {idx}: IVA unitario = {iva_unitario}, Total IVA = {total_iva_item}, IVA almacenado = {det.iva_item}")
+                
+                #BC 03/03/25:para el caso de FE el campo tributos enviarlo null
+                tipo_dte_item = str(det.factura.tipo_dte.codigo)
+                if tipo_dte_item == "01":
+                    tributos = None  
+                else :
+                    tributos = ["20"],
 
                 cuerpo_documento.append({
                     "numItem": idx,
@@ -459,7 +479,7 @@ def generar_factura_view(request):
                     "ventaNoSuj": float(det.ventas_no_sujetas),
                     "ventaExenta": float(det.ventas_exentas),
                     "ventaGravada": float(det.ventas_gravadas),
-                    "tributos":["20"], #iva para todos los items
+                    "tributos": tributos, #iva para todos los items 
                     "psv": 0.0,
                     "noGravado": float(det.no_gravado),
                     "ivaItem": float(total_iva_item)        # IVA total por línea
