@@ -1,0 +1,237 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Factura Electrónica</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        /* Estilos generales */
+        body {
+            font-size: 11px;
+        }
+        .table th, .table td {
+            font-size: 11px;
+            padding: 6px;
+        }
+        .factura-container {
+            max-width: 210mm;
+            height: 297mm;
+            margin: auto;
+            padding: 15px;
+            background: #fff;
+        }
+        .qr-container img {
+            max-width: 65px;
+            margin-bottom: 3px;
+        }
+
+        /* Ajuste para impresión en tamaño carta */
+        @media print {
+            @page {
+                size: A4; /* Tamaño Carta */
+                margin: 0; /* Márgenes reducidos */
+            }
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                margin: 0; /* Sin márgenes en el cuerpo */
+                padding: 0;
+                font-size: 12px; /* Tamaño de fuente adecuado para impresión */
+            }
+            .factura-container {
+                width: 210mm;
+                height: 297mm;
+                margin: auto;
+                padding: 8mm;
+            }
+            .btn-print {
+                display: none; /* Oculta el botón de impresión */
+            }
+            .table {
+                border-collapse: collapse !important;
+            }
+            .table th, .table td {
+                border: 1px solid black !important;
+            }
+            .page-break {
+                page-break-before: always;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="text-center mt-3">
+        <button class="btn btn-primary btn-print" onclick="window.print()">Imprimir</button>
+        <form action="{% url 'firmar_factura' factura.id %}" method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-info btn-sm me-1 btn-print">
+                <i class="bi bi-pencil-square btn-print"></i> Firmar Factura
+            </button>
+        </form>
+        <form action="{% url 'enviar_factura_hacienda' factura.id %}" method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success btn-sm me-1 btn-print">
+                <i class="bi bi-pencil-square btn-print"></i> Enviar MH
+            </button>
+        </form>
+    </div>
+    
+<div class="container factura-container">
+    
+    <!-- Datos del Emisor y Datos de la Factura -->
+    <div class="row mb-2">
+        <div class="col-md-6 border p-2">
+            <div class="d-flex align-items-center">
+                <img src="{% static 'img/logo_empresa.png' %}" alt="Logo Empresa" class="img-fluid me-2" style="max-width: 70px;">
+                <div>
+                    <h6 class="mb-1">Datos del Emisor</h6>
+                    <p class="mb-1"><strong>NIT:</strong> {{ factura.dteemisor.nit }}</p>
+                    <p class="mb-1"><strong>Nombre:</strong> {{ factura.dteemisor.nombre_razon_social }}</p>
+                    <p class="mb-1"><strong>Dirección:</strong> {{ factura.dteemisor.direccion_comercial }}</p>
+                    <p class="mb-1"><strong>Teléfono:</strong> {{ factura.dteemisor.telefono }}</p>
+                    <p class="mb-1"><strong>Correo:</strong> {{ factura.dteemisor.email }}</p>
+                </div>
+            </div>
+        </div>
+        <!-- Datos de la Factura -->
+        <div class="col-md-6 border p-2">
+            <h6 class="mb-1">Datos de la Factura</h6>
+            <p class="mb-1"><strong>N° Control:</strong> {{ factura.numero_control }}</p>
+            <p class="mb-1"><strong>Código de Generación:</strong> {{ factura.codigo_generacion }}</p>
+            <p class="mb-1"><strong>Sello de Recepción:</strong> {{ factura.sello_recepcion }}</p>
+            <p class="mb-1"><strong>Modelo de Facturación:</strong> {{ factura.tipomodelo.nombre|default:"Previo" }}</p>
+            <p class="mb-1"><strong>Tipo de Transmisión:</strong> {{ factura.json_original.identificacion.tipoTransmision }}</p>
+        </div>
+    </div>
+
+    <!-- Datos del Receptor con los QR -->
+    <div class="border p-2 mb-2">
+        <div class="row">
+            <div class="col-md-8">
+                <h6 class="mb-1">Datos del Receptor</h6>
+                <p class="mb-1"><strong>NIT:</strong> {{ factura.dtereceptor.num_documento }}</p>
+                <p class="mb-1"><strong>Nombre:</strong> {{ factura.dtereceptor.nombre }}</p>
+                <p class="mb-1"><strong>Dirección:</strong> {{ factura.dtereceptor.direccion }}</p>
+                <p class="mb-1"><strong>Teléfono:</strong> {{ factura.dtereceptor.telefono }}</p>
+                <p class="mb-1"><strong>Correo:</strong> {{ factura.dtereceptor.correo }}</p>
+            </div>
+            <div class="col-md-4 text-end qr-container">
+                <img src="{% static 'img/qr1.png' %}" alt="QR 1" class="img-fluid">
+                <img src="{% static 'img/qr2.png' %}" alt="QR 2" class="img-fluid">
+                <img src="{% static 'img/qr3.png' %}" alt="QR 3" class="img-fluid">
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Productos -->
+<div class="mb-2">
+    <h6>Detalle de Productos</h6>
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark text-center">
+            <tr>
+                <th>N°</th>
+                <th>Cantidad</th>
+                <th>Código</th>
+                <th>Descripción</th>
+                <th>Precio</th>
+                <th>Descuento</th>
+                <th>Exentas</th>
+                <th>No Sujetas</th>
+                <th>Gravadas</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in factura.json_original.cuerpoDocumento %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ item.cantidad }}</td>
+                <td>{{ item.codigo }}</td>
+                <td>{{ item.descripcion }}</td>
+                <td>${{ item.precioUni|floatformat:2 }}</td>
+                <td>${{ item.descuento|default:0|floatformat:2 }}</td>
+                <td>${{ item.ventaExenta|default:0|floatformat:2 }}</td>
+                <td>${{ item.ventaNoSujeta|default:0|floatformat:2 }}</td>
+                <td>${{ item.ventaGravada|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+
+            <!-- Agregar 5 filas vacías si hay menos de 5 productos -->
+            {% for i in "12345"|make_list %}
+            {% if forloop.counter > factura.json_original.cuerpoDocumento|length %}
+            <tr>
+                <td>{{ factura.json_original.cuerpoDocumento|length|add:forloop.counter }}</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+
+<div class="row">
+    <!-- Sumas -->
+    <div class="col-md-6">
+        <table class="table table-bordered">
+            <tr>
+                <td><strong>Son:</strong> {{ factura.json_original.resumen.totalLetras }}</td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+    <!-- Resumen de Factura -->
+    <div class="row">
+        <!-- Sumas -->
+        <div class="col-md-6">
+            <table class="table table-bordered">
+                <tr>
+                    {% comment %} <td><strong>Son:</strong> {{ factura.json_original.resumen.totalLetras }}</td> {% endcomment %}
+                    {% comment %} <td><strong>Sumas:</strong></td> {% endcomment %}
+                    <td><strong>Gravadas: </strong>${{ factura.json_original.resumen.totalGravada|floatformat:2 }}</td>
+                    <td><strong>Exentas: </strong>${{ factura.json_original.resumen.ventaExenta|default:0|floatformat:2 }}</td>
+                    <td><strong>No Sujetas: </strong>${{ factura.json_original.resumen.ventaNoSujeta|default:0|floatformat:2 }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Tabla de Resumen -->
+        <div class="col-md-6">
+            <table class="table table-bordered">
+                <tr><td><strong>Suma Total de Operaciones:</strong></td><td>${{ factura.sum_total_operaciones|floatformat:2 }}</td></tr>
+                <tr><td><strong>Gravadas:</strong></td><td>${{ factura.suma_gravadas|floatformat:2 }}</td></tr>
+                <tr><td><strong>Sub Total:</strong></td><td>${{ factura.sub_total|floatformat:2 }}</td></tr>
+                <tr><td><strong>IVA Percibido:</strong></td><td>${{ factura.iva_percibido|floatformat:2 }}</td></tr>
+                <tr><td><strong>IVA Retenido:</strong></td><td>${{ factura.iva_retenido|default:0|floatformat:2 }}</td></tr>
+                <tr><td><strong>Retención Renta:</strong></td><td>${{ factura.retencion_renta|default:0|floatformat:2 }}</td></tr>
+                <tr><td><strong>Total Operación:</strong></td><td>${{ factura.total_operaciones|floatformat:2 }}</td></tr>
+                <tr><td><strong>Total Pagar:</strong></td><td><strong>${{ factura.total_pagar|floatformat:2 }}</strong></td></tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pie de Página -->
+    <div class="text-center mt-3">
+        <p>Documento Tributario Electrónico generado desde el sistema INTRACOE de INCOE, S.A. de C.V.</p>
+    </div>
+    
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

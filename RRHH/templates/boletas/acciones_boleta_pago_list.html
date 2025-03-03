@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+{% if messages %}
+    <div class="container my-4">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<div class="container my-4">
+    <!-- Formulario de Búsqueda -->
+    <form method="GET" action="{% url 'acciones_boleta_pago_list' %}" class="row g-3 align-items-center mb-4">
+        <div class="col-md-4">
+            <label for="codigo_empleado" class="form-label">Código de Empleado:</label>
+            <input type="text" name="codigo_empleado" id="codigo_empleado" value="{{ codigo_empleado }}" class="form-control" placeholder="Buscar por código...">
+        </div>
+        <div class="col-md-4">
+            <label for="fecha_pago" class="form-label">Fecha de Pago:</label>
+            <input type="date" name="fecha_pago" id="fecha_pago" value="{{ fecha_pago }}" class="form-control">
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary me-2">Buscar</button>
+            <button type="button" onclick="toggleSelectAll()" class="btn btn-secondary">Seleccionar Todas</button>
+        </div>
+    </form>
+
+    <!-- Tabla de Boletas -->
+    <form method="POST" action="{% url 'acciones_enviar_boletas_masivo' %}">
+        {% csrf_token %}
+        
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th scope="col">Seleccionar</th>
+                        <th scope="col">Código de Empleado</th>
+                        <th scope="col">Nombre</th>
+                        <th scope="col">Fecha de Pago</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for boleta in page_obj %}
+                    <tr>
+                        <td class="text-center">
+                            <input type="checkbox" name="boleta_ids" value="{{ boleta.id }}" class="form-check-input mx-auto">
+                        </td>
+                        <td>{{ boleta.empleado.codigo_empleado }}</td>
+                        <td>{{ boleta.empleado.nombre }} {{ boleta.empleado.apellido }}</td>
+                        <td>{{ boleta.fecha_pago }}</td>
+                    </tr>                    
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Botón de Envío -->
+        <div class="d-flex justify-content-end mt-3">
+            <button type="submit" class="btn btn-success">Enviar Boletas Seleccionadas</button>
+        </div>
+    </form>
+</div>
+
+
+<!-- Script para Seleccionar/Deseleccionar Todas -->
+<script>
+function toggleSelectAll() {
+    const checkboxes = document.querySelectorAll('input[name="boleta_ids"]');
+    const allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
+    checkboxes.forEach(checkbox => checkbox.checked = !allChecked);
+}
+</script>
+
+{% endblock content %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow p-4">
+        <h2 class="text-center mb-4">Detalle de Factura</h2>
+        
+        <table class="table">
+            <tr><th>Número de Control</th><td>{{ factura.numero_control }}</td></tr>
+            <tr><th>Código de Generación</th><td>{{ factura.codigo_generacion }}</td></tr>
+            <tr><th>Fecha</th><td>{{ factura.fecha_creacion }}</td></tr>
+            <tr><th>Emisor</th><td>{{ factura.dteemisor.nombre_razon_social }}</td></tr>
+            <tr><th>Receptor</th><td>{{ factura.dtereceptor.nombre }}</td></tr>
+            <tr><th>Estado</th><td>{% if factura.firmado %}✅ Firmada{% else %}❌ No Firmada{% endif %}</td></tr>
+        </table>
+
+        {% if not factura.firmado %}
+        <div class="text-center mt-4">
+            <button id="btnFirmar" class="btn btn-primary">Firmar Factura</button>
+        </div>
+        {% else %}
+        <form id="enviarFacturaForm">
+            <button type="button" class="btn btn-success" onclick="enviarFactura({{ factura.id }})">Enviar a Hacienda</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    function enviarFactura(facturaId) {
+        fetch(`/dte/enviar/${facturaId}/`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.sello_recepcion) {
+                alert("Factura enviada con éxito. Sello de recepción: " + data.sello_recepcion);
+            } else {
+                alert("Error: " + data.error);
+            }
+        })
+        .catch(error => console.error("Error:", error));
+    }
+    
+    document.getElementById("btnFirmar").addEventListener("click", function() {
+        const facturaId = "{{ factura.id }}";
+        fetch(`/dte/firmar/${facturaId}/`, { method: "POST" })
+            .then(response => response.json())
+            .then(data => {
+                if (data.mensaje) {
+                    alert("Factura firmada con éxito.");
+                    location.reload();
+                } else {
+                    alert("Error al firmar la factura: " + JSON.stringify(data));
+                }
+            })
+            .catch(error => alert("Error al conectar con el servidor."));
+    });
+</script>
+{% endblock %}

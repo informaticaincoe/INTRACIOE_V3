@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<h2>Listado de Quedans</h2>
+
+<form method="get" action="{% url 'listar_quedans' %}" class="mb-3">
+    <div class="row">
+        <div class="col-md-4">
+            <input type="text" name="proveedor_nombre" value="{{ proveedor_nombre }}" class="form-control" placeholder="Nombre del Proveedor">
+        </div>
+        <div class="col-md-4">
+            <input type="date" name="fecha_quedan" value="{{ fecha_quedan }}" class="form-control" placeholder="Fecha de Quedan">
+        </div>
+        <div class="col-md-4">
+            <button type="submit" class="btn btn-primary">Buscar</button>
+            <a href="{% url 'listar_quedans' %}" class="btn btn-secondary">Limpiar</a>
+        </div>
+    </div>
+</form>
+
+<div class="mb-3">
+    <a href="{% url 'enviar_quedan_hoy' %}" class="btn btn-success btn-sm">Envio del dia</a>
+</div>
+
+<table class="table table-bordered table-striped">
+    <tr>
+        <th>Número</th>
+        <th>Fecha</th>
+        <th>Proveedor</th>
+        <th>Acción</th>
+    </tr>
+    {% for row in page_obj %}
+        <tr>
+            <td>{{ row.1 }}</td>  <!-- mqdnNumero -->
+            <td>{{ row.3 }}</td>  <!-- mqdnFecha -->
+            <td>{{ row.6 }}</td>  <!-- prvNombre (nombre del proveedor) -->
+            <td>
+                <a href="{% url 'generar_pdf_quedan' row.0 %}" class="btn btn-info btn-sm">Imprimir</a>
+                <a href="{% url 'enviar_quedan' row.0 %}" class="btn btn-success btn-sm">Enviar</a>
+            </td>
+        </tr>
+    {% endfor %}
+</table>
+
+<!-- Paginación con estilo de Bootstrap -->
+<nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1" aria-label="Primera">
+                    <span aria-hidden="true">&laquo;</span> Primera
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Anterior">
+                    Anterior
+                </a>
+            </li>
+        {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">&laquo; Primera</span>
+            </li>
+            <li class="page-item disabled">
+                <span class="page-link">Anterior</span>
+            </li>
+        {% endif %}
+
+        <!-- Número de página actual -->
+        <li class="page-item active">
+            <span class="page-link">
+                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+            </span>
+        </li>
+
+        {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Siguiente">
+                    Siguiente
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Última">
+                    Última <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+        {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">Siguiente</span>
+            </li>
+            <li class="page-item disabled">
+                <span class="page-link">Última &raquo;</span>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+
+{% endblock content %}

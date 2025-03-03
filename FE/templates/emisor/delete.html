@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Eliminar Emisor</h2>
+<form method="post">
+    {% csrf_token %}
+    <p>¿Estás seguro de que quieres eliminar "{{ emisor.nombre_razon_social }}"?</p>
+    <button type="submit" class="btn btn-danger">Eliminar</button>
+    <a href="{% url 'emisor_list' %}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

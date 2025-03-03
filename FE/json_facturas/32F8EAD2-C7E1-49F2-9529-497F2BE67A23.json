@@ -1,0 +1,96 @@
+{
+    "identificacion": {
+        "version": 2,
+        "ambiente": "01",
+        "versionApp": 2,
+        "tipoDte": "01",
+        "numeroControl": "DTE-01-68FDA065-000000000000004",
+        "codigoGeneracion": "32F8EAD2-C7E1-49F2-9529-497F2BE67A23",
+        "tipoModelo": 1,
+        "tipoOperacion": "1",
+        "tipoContingencia": "",
+        "motivoContin": "",
+        "fecEmi": "2025-02-14",
+        "horEmi": "08:28:40",
+        "tipoMoneda": "USD"
+    },
+    "emisor": {
+        "nit": "06142811001040",
+        "nrc": "05182",
+        "nombre": "Inversiones Comerciales Escobar SA de CV",
+        "codActividad": "10501",
+        "descActividad": "Fabricación de productos lácteos excepto sorbetes, quesos y sucedáneos no lácteos o sustitutos",
+        "nombreComercial": "Inversiones Comerciales Escobar SA de CV",
+        "tipoEstablecimiento": "01",
+        "codEstable": "2345",
+        "codPuntoVenta": "503",
+        "direccion": {
+            "departamento": "Otro Pais",
+            "municipio": "Otro Pais",
+            "complemento": "Carretera a Sonsonate, km 27 ½ Zona Industrial Lourdes, Calle Antigua Hda, La Libertad, El Salvador C.A"
+        },
+        "telefono": "77462310",
+        "correo": "informatica@grupoincoe.com",
+        "codEstableMH": "2345",
+        "codPuntoVentaMH": "503"
+    },
+    "receptor": {
+        "tipoDocumento": "13",
+        "numDocumento": "053208681",
+        "nombre": "Francisco Antonio Flores",
+        "nrc": "05182",
+        "direccion": {
+            "departamento": "Otro Pais",
+            "municipio": "Otro Pais",
+            "complemento": "Carretera a Sonsonate, km 27 ½ Zona Industrial Lourdes, Calle Antigua Hda, La Libertad, El Salvador C.A"
+        },
+        "telefono": "77462310",
+        "correo": "juniorfran@hotmail.es"
+    },
+    "cuerpoDocumento": [
+        {
+            "numeroDocumento": "1",
+            "tipoItem": 1,
+            "codigo": "PCH405",
+            "descripcion": "leche entera ira 26 250gb",
+            "cantidad": 1,
+            "uniMedida": "Unidades",
+            "precioUni": 10.0,
+            "montoDescu": 0.0,
+            "ventaGravada": 10.0,
+            "codTributo": "",
+            "psv": "",
+            "noGravado": "",
+            "tributos": []
+        }
+    ],
+    "resumen": {
+        "totalNoSuj": 0.0,
+        "totalExenta": 0.0,
+        "subTotalVentas": 10.0,
+        "descuNoSuj": 0.0,
+        "descuExenta": 0.0,
+        "descuGravada": 0.0,
+        "porcentajeDescuento": 10.0,
+        "totalDescu": 0.0,
+        "tributos": [],
+        "subTotal": 10.0,
+        "ivaRete1": 0.0,
+        "reteRenta": 0.0,
+        "montoTotalOperacion": 10.0,
+        "totalNoGravado": 0.0,
+        "totalIva": 1.3,
+        "saldoFavor": 0.0,
+        "condicionOperacion": "",
+        "pagos": [],
+        "numPagoElectronico": ""
+    },
+    "extension": {
+        "nombEntrega": "",
+        "docuEntrega": "",
+        "nombRecibe": "",
+        "docuRecibe": "",
+        "placaVehiculo": "",
+        "observaciones": ""
+    }
+}

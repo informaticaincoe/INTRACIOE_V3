@@ -1,0 +1,12 @@
+<!-- templates/actividad_economica/delete.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Eliminar Actividad Económica</h2>
+  <p>¿Estás seguro de que deseas eliminar la actividad económica "{{ actividad.codigo }} - {{ actividad.descripcion }}"?</p>
+  <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Eliminar</button>
+      <a href="{% url 'actividad_economica_list' %}" class="btn btn-secondary">Cancelar</a>
+  </form>
+{% endblock %}

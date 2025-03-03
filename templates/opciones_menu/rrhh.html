@@ -1,0 +1,45 @@
+<ul class="list-unstyled components mb-5">
+    <!-- Apertura de caja -->
+    <li class="nav-item">
+        <a class="nav-link active" data-bs-toggle="collapse" href="#collapseadminrh" role="button" aria-expanded="false" aria-controls="collapseadminrh">
+            Admin RRHH
+        </a>
+        <div class="collapse" id="collapseadminrh">
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><a href="{% url "boleta_pago_list" %}" class="text-dark">Boletas de Pago</a></li>
+                <li class="list-group-item"><a href="{% url "empleado_list" %}" class="text-dark">Admin Empleados</a></li>
+                <li class="list-group-item"><a href="{% url "departamento_list" %}" class="text-dark">Departamentos</a></li>
+                <li class="list-group-item"><a href="{% url "cargo_list" %}" class="text-dark">Admin Cargos</a></li>
+            </ul>
+        </div>
+    </li>
+
+    <!-- Cierre de caja -->
+    <li class="nav-item">
+        <a class="nav-link active" data-bs-toggle="collapse" href="#collapseCierreCaja" role="button" aria-expanded="false" aria-controls="collapseCierreCaja">
+            Reportes
+        </a>
+        <div class="collapse" id="collapseCierreCaja">
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><a href="#" class="text-dark">Boletas de pago</a></li>
+                <li class="list-group-item"><a href="#" class="text-dark">Planillas Pagadas</a></li>
+                <li class="list-group-item"><a href="#" class="text-dark">Empleados Activos</a></li>
+                <li class="list-group-item"><a href="#" class="text-dark">Carrera de Empleados</a></li>
+
+            </ul>
+        </div>
+        <a class="nav-link active" data-bs-toggle="collapse" href="#collapseMovimientosCaja" role="button" aria-expanded="false" aria-controls="collapseMovimientosCaja">
+            Acciones RRHH
+        </a>
+        <div class="collapse" id="collapseMovimientosCaja">
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><a href="{% url "acciones_boleta_pago_list" %}" class="text-dark">Enviar Boletas</a></li>
+                <li class="list-group-item"><a href="#" class="text-dark">Constancia Salarial</a></li>
+                <li class="list-group-item"><a href="#" class="text-dark">Constancia Laboral</a></li>
+                <li class="list-group-item"><a href="#" class="text-dark">Constancia Permanencia</a></li>
+                <li class="list-group-item"><a href="#" class="text-dark">Constancia Antiguedad</a></li>
+                <li class="list-group-item"><a href="#" class="text-dark">Constancia Salarial</a></li>
+            </ul>
+        </div>
+    </li>
+</ul>

@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Lista de Emisores</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>NIT</th>
+            <th>Nombre</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for emisor in emisores %}
+        <tr>
+            <td>{{ emisor.nit }}</td>
+            <td>{{ emisor.nombre_razon_social }}</td>
+            <td>
+                <a href="{% url 'emisor_detail' emisor.pk %}">Ver</a>
+                <a href="{% url 'emisor_update' emisor.pk %}">Editar</a>
+                <a href="{% url 'emisor_delete' emisor.pk %}">Eliminar</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="3">No hay emisores registrados.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a href="{% url 'emisor_create' %}" class="btn btn-primary">Añadir Nuevo Emisor</a>
+
+<!-- Bloque de paginación -->
+{% if is_paginated %}
+<nav aria-label="Paginación">
+    <ul class="pagination">
+        <!-- Botón Primera y Anterior -->
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page=1" aria-label="Primera">
+                <span aria-hidden="true">&laquo;&laquo;</span>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Anterior">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link">&laquo;&laquo;</span>
+        </li>
+        <li class="page-item disabled">
+            <span class="page-link">&laquo;</span>
+        </li>
+        {% endif %}
+
+        <!-- Números de página -->
+        {% for num in paginator.page_range %}
+            {% if page_obj.number == num %}
+            <li class="page-item active" aria-current="page">
+                <span class="page-link">{{ num }}</span>
+            </li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+            </li>
+            {% endif %}
+        {% endfor %}
+
+        <!-- Botón Siguiente y Última -->
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Siguiente">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ paginator.num_pages }}" aria-label="Última">
+                <span aria-hidden="true">&raquo;&raquo;</span>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link">&raquo;</span>
+        </li>
+        <li class="page-item disabled">
+            <span class="page-link">&raquo;&raquo;</span>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+<!-- Fin bloque de paginación -->
+ 
+{% endblock %}

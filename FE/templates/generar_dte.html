@@ -1,0 +1,490 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+  .form-section { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+  .form-group { margin-bottom: 15px; }
+  .btn-primary, .btn-secondary, .btn-danger { font-size: 1.1em; }
+  select, input, textarea { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+  table, th, td { border: 1px solid #ccc; }
+  th, td { padding: 8px; text-align: center; }
+  .resumen { background: #e9ecef; padding: 10px; border-radius: 8px; margin-top: 20px; }
+</style>
+
+<div class="container mt-5">
+  <div class="card shadow p-4">
+    <h2 class="text-center mb-4">Generar Factura Electrónica</h2>
+    
+    <!-- Sección Datos del Emisor -->
+    {% if emisor %}
+    <div class="mb-4">
+      <h4>Datos del Emisor</h4>
+      <p><strong>NIT:</strong> {{ emisor.nit }}</p>
+      {% comment %} Se muestra ambiente que ahora forma parte del emisor {% endcomment %}
+      <p><strong>Ambiente:</strong> {{ emisor.ambiente.descripcion }}</p>
+      <p><strong>Dirección Comercial:</strong> {{ emisor.direccion_comercial }}</p>
+      <p><strong>Teléfono:</strong> {{ emisor.telefono }}</p>
+      <p><strong>Email:</strong> {{ emisor.email }}</p>
+    </div>
+    {% endif %}
+    
+    <form onsubmit="enviarFormulario(event)">
+      <!-- Sección de Configuración Adicional -->
+      <div class="form-section">
+        <h4>Configuración de Factura</h4>
+        <div class="row">
+          <!-- Condición de Operación -->
+          <div class="col-md-4">
+            <div class="form-group">
+              <label>Condición de Operación:</label>
+              <select name="condicion_operacion" class="form-control">
+                <option value="">Seleccione Condición de Operación</option>
+                {% for tipo in tipooperaciones %}
+                  <option value="{{ tipo.id }}">{{ tipo.descripcion }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <!-- Retención de IVA -->
+          <div class="col-md-4">
+            <div class="form-group">
+              <label>
+                <input type="checkbox" name="retencion_iva" id="retencion_iva_checkbox"> Retención de IVA
+              </label>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-retencion-iva" style="display:none;" data-toggle="modal" data-target="#retencionIvaModal">
+                Configurar Retención de IVA
+              </button>
+            </div>
+          </div>
+          <!-- Retención de Renta -->
+          <div class="col-md-4">
+            <div class="form-group">
+              <label>
+                <input type="checkbox" name="retencion_renta" id="retencion_renta_checkbox"> Retención de Renta
+              </label>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-retencion-renta" style="display:none;" data-toggle="modal" data-target="#retencionRentaModal">
+                Configurar Retención de Renta
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección Identificación -->
+      <div class="form-section">
+        <h4>Identificación</h4>
+        <div class="form-group">
+          <label>Número de Control:</label>
+          <input type="text" name="numero_control" class="form-control" readonly value="{{ numero_control }}">
+        </div>
+        <div class="form-group">
+          <label>Código de Generación:</label>
+          <input type="text" name="codigo_generacion" class="form-control" readonly value="{{ codigo_generacion }}">
+        </div>
+        <div class="form-group">
+          <label>Fecha de Generación:</label>
+          <input type="date" name="fecha_generacion" class="form-control" readonly value="{{ fecha_generacion|date:'Y-m-d' }}">
+        </div>
+        <div class="form-group">
+          <label>Hora de Generación:</label>
+          <input type="time" name="hora_generacion" class="form-control" readonly value="{{ hora_generacion }}">
+        </div>
+      </div>
+      
+      <!-- Sección Receptor -->
+      <div class="form-section">
+        <h4>Seleccione el Receptor</h4>
+        <div class="form-group">
+          <label>Receptor:</label>
+          <select class="form-control" id="receptor-select" name="receptor_id">
+            <option value="">Seleccione un receptor</option>
+            {% for receptor in receptores %}
+              <option value="{{ receptor.id }}">{{ receptor.num_documento }} - {{ receptor.nombre }}</option>
+            {% endfor %}
+            <option value="nuevo">Añadir nuevo receptor</option>
+          </select>
+        </div>
+        <div id="nuevo-receptor" style="display: none;">
+          <h5>Nuevo Receptor</h5>
+          <div class="form-group">
+            <label>NIT:</label>
+            <input type="text" name="nit_receptor" class="form-control" placeholder="NIT">
+          </div>
+          <div class="form-group">
+            <label>Nombre o Razón Social:</label>
+            <input type="text" name="nombre_receptor" class="form-control" placeholder="Nombre o Razón Social">
+          </div>
+          <div class="form-group">
+            <label>NRC:</label>
+            <input type="text" name="nrc_receptor" class="form-control" placeholder="NRC">
+          </div>
+          <div class="form-group">
+            <label>Dirección:</label>
+            <textarea name="direccion_receptor" class="form-control" placeholder="Dirección"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Teléfono:</label>
+            <input type="text" name="telefono_receptor" class="form-control" placeholder="Teléfono">
+          </div>
+          <div class="form-group">
+            <label>Correo Electrónico:</label>
+            <input type="email" name="correo_receptor" class="form-control" placeholder="Correo Electrónico">
+          </div>
+        </div>
+      </div>
+      
+      <!-- Botón para abrir el modal de productos -->
+      <div class="form-section">
+        <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#productosModal">
+          + Productos
+        </button>
+      </div>
+      
+      <!-- Sección Tabla de Productos Agregados -->
+      <div class="form-section">
+        <h4>Productos Agregados</h4>
+        <table id="tabla-productos">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Precio Unitario (Neto)</th>
+              <th>IVA Unitario</th>
+              <th>Cantidad</th>
+              <th>Total Neto</th>
+              <th>Total IVA</th>
+              <th>Total con IVA</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Se llenará dinámicamente -->
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Sección Resumen y Descuento Global -->
+      <div class="resumen">
+        <h4>Resumen de Totales</h4>
+        <div class="row">
+          <div class="col-md-3">
+            <p><strong>SubTotal Neto:</strong> $<span id="subtotal-neto">0.00</span></p>
+          </div>
+          <div class="col-md-3">
+            <p><strong>Total IVA:</strong> $<span id="total-iva">0.00</span></p>
+          </div>
+          <div class="col-md-3">
+            <p><strong>Total con IVA:</strong> $<span id="total-incl">0.00</span></p>
+          </div>
+          <div class="col-md-3">
+            <div class="form-group">
+              <label>Descuento (%)</label>
+              <input type="number" id="descuento-global" class="form-control" value="0" min="0" max="100" oninput="actualizarResumen()">
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            <p><strong>Monto Descuento:</strong> $<span id="monto-descuento">0.00</span></p>
+          </div>
+          <div class="col-md-6">
+            <p><strong>Total a Pagar:</strong> $<span id="total-pagar">0.00</span></p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Botón de Envío -->
+      <button type="submit" class="btn btn-primary mt-3">Generar Factura</button>
+    </form>
+  </div>
+</div>
+
+<!-- Modal para seleccionar productos (sin descuento en el modal) -->
+<div class="modal fade" id="productosModal" tabindex="-1" role="dialog" aria-labelledby="productosModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="productosModalLabel">Seleccionar Productos</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <table id="tabla-productos-modal" class="table">
+          <thead>
+            <tr>
+              <th>Seleccionar</th>
+              <th>Producto</th>
+              <th>Precio Unitario (IVA incluido)</th>
+              <th>Cantidad</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for producto in productos %}
+            <tr data-id="{{ producto.id }}">
+              <td><input type="checkbox" class="producto-checkbox"></td>
+              <td>{{ producto.codigo }} - {{ producto.descripcion }}</td>
+              <!-- Se guarda el precio con IVA en data-precio -->
+              <td class="precio-unitario" data-precio="{{ producto.preunitario|floatformat:'2' }}">{{ producto.preunitario|floatformat:'2' }}</td>
+              <td><input type="number" class="cantidad-input" value="1" min="1" style="width: 80px;"></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="cargarProductosModal()">Cargar Productos</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para retención de IVA -->
+<div class="modal fade" id="retencionIvaModal" tabindex="-1" role="dialog" aria-labelledby="retencionIvaModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="retencionIvaModalLabel">Configurar Retención de IVA</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Porcentaje de Retención de IVA:</label>
+          <input type="number" id="porcentaje_retencion_iva" class="form-control" min="0" max="100" value="0">
+        </div>
+        <div class="form-group">
+          <label>Seleccione los productos a los que se aplicará la retención:</label>
+          <div id="productos-retencion-iva">
+            <!-- Se cargarán dinámicamente -->
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="guardarRetencionIVA()">Guardar</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para retención de Renta -->
+<div class="modal fade" id="retencionRentaModal" tabindex="-1" role="dialog" aria-labelledby="retencionRentaModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="retencionRentaModalLabel">Configurar Retención de Renta</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Porcentaje de Retención de Renta:</label>
+          <input type="number" id="porcentaje_retencion_renta" class="form-control" min="0" max="100" value="0">
+        </div>
+        <div class="form-group">
+          <label>Seleccione los productos a los que se aplicará la retención:</label>
+          <div id="productos-retencion-renta">
+            <!-- Se cargarán dinámicamente -->
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="guardarRetencionRenta()">Guardar</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Mostrar u ocultar botones de retención según checkbox
+  document.getElementById("retencion_iva_checkbox").addEventListener("change", function () {
+      document.getElementById("btn-retencion-iva").style.display = this.checked ? "inline-block" : "none";
+  });
+  document.getElementById("retencion_renta_checkbox").addEventListener("change", function () {
+      document.getElementById("btn-retencion-renta").style.display = this.checked ? "inline-block" : "none";
+  });
+
+  // Mostrar u ocultar formulario para receptor nuevo
+  document.addEventListener("DOMContentLoaded", function () {
+      document.getElementById("receptor-select").addEventListener("change", function () {
+          let nuevoReceptorDiv = document.getElementById("nuevo-receptor");
+          nuevoReceptorDiv.style.display = this.value === "nuevo" ? "block" : "none";
+      });
+  });
+
+  // Función para cargar productos desde el modal
+  function cargarProductosModal() {
+      var modalRows = document.querySelectorAll('#tabla-productos-modal tbody tr');
+      modalRows.forEach(function(row) {
+          var checkbox = row.querySelector('.producto-checkbox');
+          if (checkbox.checked) {
+              var productoId = row.getAttribute('data-id');
+              var productoText = row.cells[1].textContent.trim();
+              var precio_incl = parseFloat(row.querySelector('.precio-unitario').getAttribute('data-precio'));
+              var precioStr = row.querySelector('.precio-unitario').getAttribute('data-precio');
+              var precio = parseFloat(precioStr.replace(',', '.'));
+              var cantidad = row.querySelector('.cantidad-input').value;
+              agregarProductoFilaTabla(productoId, productoText, precio_incl, cantidad);
+          }
+      });
+      actualizarResumen();
+      $('#productosModal').modal('hide');
+  }
+
+  // Función para agregar una fila a la tabla de productos
+  function agregarProductoFilaTabla(productoId, productoText, precio_incl, cantidad) {
+      // Calcular precio neto y IVA unitario
+      let neto_unitario = parseFloat((precio_incl / 1.13).toFixed(2));
+      let iva_unitario = parseFloat((precio_incl - neto_unitario).toFixed(2));
+      let qty = parseFloat(cantidad);
+      let total_neto = parseFloat((neto_unitario * qty).toFixed(2));
+      let total_iva = parseFloat((iva_unitario * qty).toFixed(2));
+      let total_incl = parseFloat((precio_incl * qty).toFixed(2));
+
+      // Verificar si el producto ya está agregado (sumar cantidad si es el caso)
+      var tableBody = document.querySelector('#tabla-productos tbody');
+      var existe = false;
+      tableBody.querySelectorAll('tr').forEach(function(row) {
+          if (row.getAttribute('data-id') === productoId) {
+              var inputCantidad = row.querySelector('.cantidad-input');
+              let nuevaCantidad = parseFloat(inputCantidad.value) + qty;
+              inputCantidad.value = nuevaCantidad;
+              actualizarFila(inputCantidad);
+              existe = true;
+          }
+      });
+      if (existe) return;
+      var row = document.createElement('tr');
+      row.setAttribute('data-id', productoId);
+      row.innerHTML = `
+          <td>${productoText}</td>
+          <td class="precio-neto">${neto_unitario.toFixed(2)}</td>
+          <td class="iva-unitario">${iva_unitario.toFixed(2)}</td>
+          <td><input type="number" class="cantidad-input" value="${qty}" min="1" oninput="actualizarFila(this)"></td>
+          <td class="total-neto">${total_neto.toFixed(2)}</td>
+          <td class="total-iva">${total_iva.toFixed(2)}</td>
+          <td class="total-incl">${total_incl.toFixed(2)}</td>
+          <td><button type="button" class="btn btn-danger btn-sm" onclick="eliminarProductoFila(this)">Eliminar</button></td>
+      `;
+      tableBody.appendChild(row);
+  }
+
+  // Actualizar los valores de una fila cuando cambia la cantidad
+  function actualizarFila(input) {
+      let row = input.closest('tr');
+      let precio_neto = parseFloat(row.querySelector('.precio-neto').textContent);
+      let iva_unitario = parseFloat(row.querySelector('.iva-unitario').textContent);
+      let cantidad = parseFloat(input.value) || 0;
+      let total_neto = (precio_neto * cantidad).toFixed(2);
+      let total_iva = (iva_unitario * cantidad).toFixed(2);
+      let total_incl = ( (precio_neto + iva_unitario) * cantidad ).toFixed(2);
+      row.querySelector('.total-neto').textContent = total_neto;
+      row.querySelector('.total-iva').textContent = total_iva;
+      row.querySelector('.total-incl').textContent = total_incl;
+      actualizarResumen();
+  }
+
+  // Eliminar una fila de producto
+  function eliminarProductoFila(btn) {
+      var row = btn.closest('tr');
+      row.parentNode.removeChild(row);
+      actualizarResumen();
+  }
+
+  // Función para actualizar el resumen global
+  function actualizarResumen() {
+      let sumNeto = 0, sumIVA = 0, sumIncl = 0;
+      document.querySelectorAll('#tabla-productos tbody tr').forEach(function(row) {
+          sumNeto += parseFloat(row.querySelector('.total-neto').textContent);
+          sumIVA += parseFloat(row.querySelector('.total-iva').textContent);
+          sumIncl += parseFloat(row.querySelector('.total-incl').textContent);
+      });
+      document.getElementById("subtotal-neto").textContent = sumNeto.toFixed(2);
+      document.getElementById("total-iva").textContent = sumIVA.toFixed(2);
+      document.getElementById("total-incl").textContent = sumIncl.toFixed(2);
+      
+      // Calcular descuento global y total a pagar
+      let descuentoPorc = parseFloat(document.getElementById("descuento-global").value) || 0;
+      let montoDescuento = (sumIncl * descuentoPorc / 100).toFixed(2);
+      let totalPagar = (sumIncl - montoDescuento).toFixed(2);
+      document.getElementById("monto-descuento").textContent = montoDescuento;
+      document.getElementById("total-pagar").textContent = totalPagar;
+  }
+
+  function guardarRetencionIVA() {
+      $('#retencionIvaModal').modal('hide');
+  }
+  function guardarRetencionRenta() {
+      $('#retencionRentaModal').modal('hide');
+  }
+
+  async function enviarFormulario(event) {
+      event.preventDefault();
+      
+      // Recopilar datos del formulario
+      let formData = new FormData(event.target);
+      let jsonData = {};
+      formData.forEach((value, key) => {
+          jsonData[key] = value;
+      });
+      
+      // Recopilar datos de productos
+      let productos_ids = [];
+      let cantidades = [];
+      let totales_incl = [];
+      document.querySelectorAll('#tabla-productos tbody tr').forEach(function(row) {
+          productos_ids.push(row.getAttribute('data-id'));
+          cantidades.push(row.querySelector('.cantidad-input').value);
+          totales_incl.push(row.querySelector('.total-incl').textContent);
+      });
+      jsonData["productos_ids"] = productos_ids;
+      jsonData["cantidades"] = cantidades;
+      jsonData["montos_totales"] = totales_incl;
+      
+      // Envío de retenciones
+      jsonData["retencion_iva"] = document.getElementById("retencion_iva_checkbox").checked;
+      jsonData["porcentaje_retencion_iva"] = document.getElementById("porcentaje_retencion_iva").value;
+      let retencionIvaProducts = [];
+      document.querySelectorAll('.retencion-iva-checkbox:checked').forEach(function(checkbox) {
+          retencionIvaProducts.push(checkbox.value);
+      });
+      jsonData["productos_retencion_iva"] = retencionIvaProducts;
+      
+      jsonData["retencion_renta"] = document.getElementById("retencion_renta_checkbox").checked;
+      jsonData["porcentaje_retencion_renta"] = document.getElementById("porcentaje_retencion_renta").value;
+      let retencionRentaProducts = [];
+      document.querySelectorAll('.retencion-renta-checkbox:checked').forEach(function(checkbox) {
+          retencionRentaProducts.push(checkbox.value);
+      });
+      jsonData["productos_retencion_renta"] = retencionRentaProducts;
+      
+      try {
+          let response = await fetch('/dte/generar/', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(jsonData)
+          });
+          if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(`Error ${response.status}: ${errorText}`);
+          }
+          let data = await response.json();
+          if (data.redirect) {
+              window.location.href = data.redirect;
+          } else {
+              alert("Factura generada con éxito. ID: " + data.factura_id);
+              document.querySelector("input[name='numero_control']").value = data.numero_control;
+          }
+      } catch (error) {
+          console.error("Error de conexión:", error);
+          alert("Error de conexión: " + error.message);
+      }
+  }
+</script>
+{% endblock %}

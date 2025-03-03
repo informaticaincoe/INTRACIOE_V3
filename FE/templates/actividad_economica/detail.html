@@ -1,0 +1,15 @@
+<!-- templates/actividad_economica/detail.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Detalle de Actividad Económica</h2>
+  <dl class="row">
+    <dt class="col-sm-3">Código</dt>
+    <dd class="col-sm-9">{{ actividad.codigo }}</dd>
+    
+    <dt class="col-sm-3">Descripción</dt>
+    <dd class="col-sm-9">{{ actividad.descripcion }}</dd>
+  </dl>
+  <a href="{% url 'actividad_economica_update' actividad.pk %}" class="btn btn-primary">Editar</a>
+  <a href="{% url 'actividad_economica_delete' actividad.pk %}" class="btn btn-danger">Eliminar</a>
+{% endblock %}

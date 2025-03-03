@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Lista de Actividades Económicas</h2>
+        <div>
+            <a href="{% url 'actividad_economica_create' %}" class="btn btn-success me-2">Crear Nueva Actividad</a>
+            <a href="{% url 'cargar_actividades' %}" class="btn btn-primary">Cargar desde Excel</a>
+        </div>
+    </div>
+    
+    <table class="table table-striped table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>Código</th>
+                <th>Descripción</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for actividad in actividades %}
+            <tr>
+                <td>{{ actividad.codigo }}</td>
+                <td>{{ actividad.descripcion }}</td>
+                <td>
+                    <a href="{% url 'actividad_economica_detail' actividad.pk %}" class="btn btn-info btn-sm">Ver</a>
+                    <a href="{% url 'actividad_economica_update' actividad.pk %}" class="btn btn-primary btn-sm">Editar</a>
+                    <a href="{% url 'actividad_economica_delete' actividad.pk %}" class="btn btn-danger btn-sm">Eliminar</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" class="text-center">No hay actividades económicas registradas.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Botones de paginación -->
+<div>
+    {% if actividades.has_previous %}
+        <a href="?page=1">Primera</a>
+        <a href="?page={{ actividades.previous_page_number }}">Anterior</a>
+    {% endif %}
+
+    <span>Página {{ actividades.number }} de {{ actividades.paginator.num_pages }}</span>
+
+    {% if actividades.has_next %}
+        <a href="?page={{ actividades.next_page_number }}">Siguiente</a>
+        <a href="?page={{ actividades.paginator.num_pages }}">Última</a>
+    {% endif %}
+</div>
+{% endblock %}
