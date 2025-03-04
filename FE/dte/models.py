@@ -234,20 +234,21 @@ class Emisor_fe(models.Model):
 
 # Modelo para manejar la numeración de control por año
 class NumeroControl(models.Model):
-    anio = models.IntegerField(unique=True)
+    anio = models.IntegerField()
     secuencia = models.IntegerField(default=1)
-
+    tipo_dte = models.CharField(max_length=2, default=uuid.uuid4, editable=True)
+    
+    class Meta:
+        unique_together = (('anio', 'tipo_dte'),)
+    
     def __str__(self):
-        return f"{self.anio} - {self.secuencia}"
+        return f"{self.anio} - {self.secuencia} - {self.tipo_dte}"
 
     @staticmethod
-    def obtener_numero_control():
-        """
-        Obtiene el número de control basado en el año y secuencia.
-        """
+    def obtener_numero_control(tipo_dte):
         anio_actual = datetime.now().year
-        control, creado = NumeroControl.objects.get_or_create(anio=anio_actual)
-        numero_control = f"DTE-01-0000MOO1-{str(control.secuencia).zfill(15)}"
+        control, creado = NumeroControl.objects.get_or_create(anio=anio_actual, tipo_dte=tipo_dte)
+        numero_control = f"DTE-{tipo_dte}-0000MOO1-{str(control.secuencia).zfill(15)}"
         control.secuencia += 1
         control.save()
         return numero_control

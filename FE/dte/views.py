@@ -184,6 +184,12 @@ def incrementar_numero_control():
         return f"DTE-01-M001P001-{nuevo_numero:015d}"
     return None
 
+
+def obtener_numero_control_ajax(request):
+    tipo_dte = request.GET.get('tipo_dte', '01')  # Valor por defecto '03' si no se envía ninguno
+    nuevo_numero = NumeroControl.obtener_numero_control(tipo_dte)
+    return JsonResponse({'numero_control': nuevo_numero})
+
 def obtener_receptor(request, receptor_id):
     try:
         receptor = Receptor_fe.objects.get(id=receptor_id)
@@ -228,15 +234,18 @@ from decimal import Decimal, ROUND_HALF_UP
 @transaction.atomic
 def generar_factura_view(request):
     if request.method == 'GET':
+        tipo_dte = request.GET.get('tipo_dte', '01')
         # ... (la parte GET permanece igual)
         emisor_obj = Emisor_fe.objects.first()
         if emisor_obj:
-            nuevo_numero = NumeroControl.obtener_numero_control()
+            nuevo_numero = NumeroControl.obtener_numero_control(tipo_dte)
         else:
             nuevo_numero = ""
         codigo_generacion = str(uuid.uuid4()).upper()
         fecha_generacion = timezone.now().date()
         hora_generacion = timezone.now().strftime('%H:%M:%S')
+
+        print(tipo_dte)
 
         emisor_data = {
             "nit": emisor_obj.nit if emisor_obj else "",
