@@ -51,8 +51,7 @@
           <div class="col-md-4">
             <div class="form-group">
               <label>Tipo de Documento:</label>
-              <select name="
-              " class="form-control">
+              <select name="tipo_documento" class="form-control">
                 <option value="">Seleccione Tipo de Documento</option>
                 {% for dte in tipoDocumentos %}
                   <option value="{{ dte.codigo }}">{{ dte.descripcion }}</option>
