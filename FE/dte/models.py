@@ -235,16 +235,14 @@ class Emisor_fe(models.Model):
 # Modelo para manejar la numeración de control por año
 class NumeroControl(models.Model):
     #anio = models.IntegerField(unique=True)
-    anio = models.IntegerField(related_name='aniounique')
+    anio = models.IntegerField()
     secuencia = models.IntegerField(default=1)
     tipo_dte = models.CharField(max_length=2, default=uuid.uuid4, editable=True)
     
     class Meta:
     # BC: Crear restricción única en la combinación de 'anio' y 'tipo_dte'
-        constraints = [
-            models.UniqueConstraint(fields=['anio', 'tipo_dte'], name='unique_secuencia')
-        ]
-
+        unique_together = (('anio', 'tipo_dte'),)
+        
     def __str__(self):
         return f"{self.anio} - {self.secuencia} - {self.tipo_dte}"
 
