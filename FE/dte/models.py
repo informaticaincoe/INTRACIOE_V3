@@ -245,14 +245,10 @@ class NumeroControl(models.Model):
         return f"{self.anio} - {self.secuencia} - {self.tipo_dte}"
 
     @staticmethod
-    def obtener_numero_control():
-        """
-        Obtiene el número de control basado en el año y secuencia.
-        """
+    def obtener_numero_control(tipo_dte):
         anio_actual = datetime.now().year
-        #cod_dte = "03"
-        control, creado = NumeroControl.objects.get_or_create(anio=anio_actual)
-        numero_control = f"DTE-03-0000MOO1-{str(control.secuencia).zfill(15)}"
+        control, creado = NumeroControl.objects.get_or_create(anio=anio_actual, tipo_dte=tipo_dte)
+        numero_control = f"DTE-{tipo_dte}-0000MOO1-{str(control.secuencia).zfill(15)}"
         control.secuencia += 1
         control.save()
         return numero_control
