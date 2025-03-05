@@ -208,6 +208,7 @@ class Receptor_fe(models.Model):
     direccion = models.TextField(blank=True, null=True)
     telefono = models.CharField(max_length=30, blank=True, null=True)
     correo = models.EmailField(blank=True, null=True)
+    nombreComercial = models.CharField(max_length=150, null=True, verbose_name=None)
 
     def __str__(self):
         return self.nombre
@@ -252,6 +253,20 @@ class NumeroControl(models.Model):
         control.secuencia += 1
         control.save()
         return numero_control
+    
+    @staticmethod
+    def preview_numero_control(cod_dte):
+        """
+        Genera un número de control de vista previa sin incrementar la secuencia.
+        Se usa en la carga del formulario o en AJAX.
+        """
+        anio_actual = datetime.now().year
+        try:
+            control = NumeroControl.objects.get(anio=anio_actual, tipo_dte=cod_dte)
+            current_sequence = control.secuencia
+        except NumeroControl.DoesNotExist:
+            current_sequence += 1
+        return f"DTE-{cod_dte}-0000MOO1-{str(current_sequence).zfill(15)}"
 
 # Modelo de Factura Electrónica
 class FacturaElectronica(models.Model):
@@ -295,6 +310,7 @@ class FacturaElectronica(models.Model):
     total_letras = models.CharField(max_length=250,null=True)
     total_iva = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     condicion_operacion = models.ForeignKey(CondicionOperacion, on_delete=models.CASCADE, null=True)
+    iva_percibido = models.DecimalField(max_digits=10, decimal_places=2, null=True)
 
     #ESTADO DEL DOCUMENTO
     firmado = models.BooleanField(default=False)
