@@ -235,13 +235,16 @@ def generar_factura_view(request):
     if request.method == 'GET':
         tipo_dte = request.GET.get('tipo_dte', '01')
         emisor_obj = Emisor_fe.objects.first()
+        
         if emisor_obj:
-            nuevo_numero = NumeroControl.obtener_numero_control(tipo_dte)
+            nuevo_numero = NumeroControl.obtener_numero_control(COD_CONSUMIDOR_FINAL)#dte selc. por defecto FE
         else:
             nuevo_numero = ""
         codigo_generacion = str(uuid.uuid4()).upper()
         fecha_generacion = timezone.now().date()
         hora_generacion = timezone.now().strftime('%H:%M:%S')
+        tipo_documento_receptor = str()
+        num_documento_receptor = str()
 
         print(tipo_dte)
 
@@ -285,7 +288,8 @@ def generar_factura_view(request):
             telefono_receptor = data.get('telefono_receptor', '')
             correo_receptor = data.get('correo_receptor', '')
             observaciones = data.get('observaciones', '')
-            tipo_dte = data.get("tipo_documento", None) #BC: obtiene la seleccion del tipo de documento desde la pantalla del sistema
+            tipo_dte = data.get("tipo_documento_seleccionado", None) #BC: obtiene la seleccion del tipo de documento desde la pantalla del sistema
+            print(f"DTE seleccionado desde el form: {tipo_dte}")
 
             # Configuración adicional
             tipooperacion_id = data.get("condicion_operacion", None)
@@ -302,7 +306,7 @@ def generar_factura_view(request):
             # En este caso, se asume que el descuento por producto es 0 (se aplica globalmente)
             
             if not numero_control:
-                numero_control = NumeroControl.obtener_numero_control()
+                numero_control = NumeroControl.obtener_numero_control(tipo_dte)
             if not codigo_generacion:
                 codigo_generacion = str(uuid.uuid4()).upper()
 
@@ -335,6 +339,7 @@ def generar_factura_view(request):
             #tipo_dte_obj = Tipo_dte.objects.get("tipo_documento")
             tipo_dte_obj = Tipo_dte.objects.get(codigo=tipo_dte)
             print(f"Tipo de documento a generar = {tipo_dte_obj}")
+
             tipomodelo_obj = Modelofacturacion.objects.get(codigo="1")
             tipooperacion_obj = CondicionOperacion.objects.get(id=tipooperacion_id) if tipooperacion_id else None
             tipo_moneda_obj = TipoMoneda.objects.get(codigo="USD")
@@ -377,7 +382,7 @@ def generar_factura_view(request):
 
                 # Calcular precio neto y IVA unitario
                 #precio_neto = (precio_incl / Decimal("1.13")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-                if tipo_dte == COD_CONSUMIDOR_FINAL :
+                if tipo_dte_obj.codigo == COD_CONSUMIDOR_FINAL :
                     precio_neto = (precio_incl ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                     total_iva_item = ( ( precio_incl * cantidad) / Decimal("1.13") * Decimal("0.13") ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 else:  #Cuando no es FE quitarle iva al precio
@@ -503,6 +508,13 @@ def generar_factura_view(request):
                     "noGravado": float(det.no_gravado),
                     "ivaItem": float(total_iva_item)        # IVA total por línea
                 })
+                
+                if tipo_dte == COD_CONSUMIDOR_FINAL :
+                    tipo_documento_receptor =  str(receptor.tipo_documento.codigo) if receptor.tipo_documento else ""
+                    num_documento_receptor = str(receptor.num_documento)
+                else: 
+                    tipo_documento_receptor = None
+                    num_documento_receptor = None
 
             factura_json = {
                 "identificacion": {
@@ -541,8 +553,9 @@ def generar_factura_view(request):
                     "codPuntoVenta": "0001",
                 },
                 "receptor": {
-                    "tipoDocumento": str(receptor.tipo_documento.codigo) if receptor.tipo_documento else "",
-                    "numDocumento": str(receptor.num_documento),
+                    "tipoDocumento": tipo_documento_receptor,#str(receptor.tipo_documento.codigo) if receptor.tipo_documento else "",
+                    "numDocumento": num_documento_receptor,
+                    "nit": str(receptor.num_documento),
                     "nrc": receptor.nrc,
                     "nombre": str(receptor.nombre),
                     "codActividad": "24310",
@@ -553,7 +566,9 @@ def generar_factura_view(request):
                         "complemento": receptor.direccion or ""
                     },
                     "telefono": receptor.telefono or "",
-                    "correo": receptor.correo or ""
+                    "correo": receptor.correo or "",
+                    #BC 04/03/2025
+                    "nombreComercial": str(receptor.nombre)
                 },
                 "otrosDocumentos": None,
                 "ventaTercero": None,
