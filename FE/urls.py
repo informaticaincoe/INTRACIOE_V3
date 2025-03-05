@@ -6,5 +6,6 @@ urlpatterns = [
     path("autenticacion/", views.autenticacion, name="autenticacion"),
     path('autenticacion_api/', views.AutenticacionAPIView.as_view(), name='autenticacion-api'),
     
+    
 
 ]
