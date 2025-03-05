@@ -185,11 +185,6 @@ def incrementar_numero_control():
     return None
 
 
-def obtener_numero_control_ajax(request):
-    tipo_dte = request.GET.get('tipo_dte', '01')  # Valor por defecto '03' si no se envía ninguno
-    nuevo_numero = NumeroControl.obtener_numero_control(tipo_dte)
-    return JsonResponse({'numero_control': nuevo_numero})
-
 def obtener_receptor(request, receptor_id):
     try:
         receptor = Receptor_fe.objects.get(id=receptor_id)
@@ -227,7 +222,11 @@ def num_to_letras(numero):
         return f"{palabras} con {decimales:02d}/100 USD"
     except Exception as e:
         return "Conversión no disponible"
-    
+
+def obtener_numero_control_ajax(request):
+    tipo_dte = request.GET.get('tipo_dte', '01')  # Valor por defecto '03' si no se envía ninguno
+    nuevo_numero = NumeroControl.obtener_numero_control(tipo_dte)
+    return JsonResponse({'numero_control': nuevo_numero})
 
 from decimal import Decimal, ROUND_HALF_UP
 @csrf_exempt
@@ -235,7 +234,6 @@ from decimal import Decimal, ROUND_HALF_UP
 def generar_factura_view(request):
     if request.method == 'GET':
         tipo_dte = request.GET.get('tipo_dte', '01')
-        # ... (la parte GET permanece igual)
         emisor_obj = Emisor_fe.objects.first()
         if emisor_obj:
             nuevo_numero = NumeroControl.obtener_numero_control(tipo_dte)
@@ -334,7 +332,8 @@ def generar_factura_view(request):
 
             # Configuración por defecto de la factura
             ambiente_obj = Ambiente.objects.get(codigo="01")
-            tipo_dte_obj = Tipo_dte.objects.get("tipo_documento")
+            #tipo_dte_obj = Tipo_dte.objects.get("tipo_documento")
+            tipo_dte_obj = Tipo_dte.objects.get(codigo=tipo_dte)
             print(f"Tipo de documento a generar = {tipo_dte_obj}")
             tipomodelo_obj = Modelofacturacion.objects.get(codigo="1")
             tipooperacion_obj = CondicionOperacion.objects.get(id=tipooperacion_id) if tipooperacion_id else None
