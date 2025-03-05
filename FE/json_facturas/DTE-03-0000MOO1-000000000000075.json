@@ -1,16 +1,16 @@
 {
     "identificacion": {
-        "version": 1,
+        "version": 3,
         "ambiente": "01",
-        "tipoDte": "01",
-        "numeroControl": "DTE-01-0000MOO1-000000000000091",
-        "codigoGeneracion": "9E325EBB-968D-4D43-8FB6-5503AAD7AF1A",
+        "tipoDte": "03",
+        "numeroControl": "DTE-03-0000MOO1-000000000000075",
+        "codigoGeneracion": "4BD368B2-7527-41DD-918A-57A356C5FC66",
         "tipoModelo": 1,
         "tipoOperacion": 1,
         "tipoContingencia": null,
         "motivoContin": null,
         "fecEmi": "2025-03-05",
-        "horEmi": "10:37:18",
+        "horEmi": "14:45:53",
         "tipoMoneda": "USD"
     },
     "documentoRelacionado": null,
@@ -35,21 +35,19 @@
         "codPuntoVenta": "0001"
     },
     "receptor": {
-        "tipoDocumento": "36",
-        "numDocumento": "06142802961066",
-        "nit": "06142802961066",
-        "nrc": null,
-        "nombre": "Francisco Antonio Flores",
+        "nit": "062280967",
+        "nrc": "3228055",
+        "nombre": "Dominick Alfaro",
         "codActividad": "24310",
         "descActividad": "undición de hierro y acero",
         "direccion": {
             "departamento": "05",
             "municipio": "19",
-            "complemento": "Carretera a Sonsonate, km 27 ½ Zona Industrial Lourdes, Calle Antigua Hda, La Libertad, El Salvador C.A"
+            "complemento": "Sonsonate"
         },
-        "telefono": "604477435",
+        "telefono": "00000000",
         "correo": "juniorfran@hotmail.es",
-        "nombreComercial": "Francisco Antonio Flores"
+        "nombreComercial": "null"
     },
     "otrosDocumentos": null,
     "ventaTercero": null,
@@ -68,10 +66,11 @@
             "ventaNoSuj": 0.0,
             "ventaExenta": 0.0,
             "ventaGravada": 8.5,
-            "tributos": null,
+            "tributos": [
+                "20"
+            ],
             "psv": 0.0,
-            "noGravado": 0.0,
-            "ivaItem": 0.98
+            "noGravado": 0.0
         }
     ],
     "resumen": {
@@ -91,12 +90,18 @@
         "totalNoGravado": 0.0,
         "totalPagar": 8.5,
         "totalLetras": "Ocho con 50/100 USD",
-        "totalIva": 0.98,
         "saldoFavor": 0.0,
         "condicionOperacion": 1,
         "pagos": null,
-        "tributos": null,
-        "numPagoElectronico": null
+        "numPagoElectronico": null,
+        "ivaPerci1": 0.0,
+        "tributos": [
+            {
+                "codigo": "20",
+                "descripcion": "Impuesto al valor agregado 13%",
+                "valor": 0.98
+            }
+        ]
     },
     "extension": {
         "nombEntrega": null,
