@@ -170,6 +170,7 @@ for field in required_fields:
 ##################################################################################################
 
 #VISTA PARA NUMERO DE CONTROL
+"""
 def incrementar_numero_control():
     # Obtiene el último número de control usado y añade uno
     ultimo_numero = (
@@ -183,7 +184,11 @@ def incrementar_numero_control():
         nuevo_numero = numero_actual + 1
         return f"DTE-01-M001P001-{nuevo_numero:015d}"
     return None
+<<<<<<< Updated upstream
 
+=======
+"""
+>>>>>>> Stashed changes
 
 def obtener_receptor(request, receptor_id):
     try:
@@ -222,7 +227,11 @@ def num_to_letras(numero):
         return f"{palabras} con {decimales:02d}/100 USD"
     except Exception as e:
         return "Conversión no disponible"
+<<<<<<< Updated upstream
 
+=======
+    
+>>>>>>> Stashed changes
 def obtener_numero_control_ajax(request):
     tipo_dte = request.GET.get('tipo_dte', '01')  # Valor por defecto '03' si no se envía ninguno
     nuevo_numero = NumeroControl.obtener_numero_control(tipo_dte)
@@ -237,7 +246,8 @@ def generar_factura_view(request):
         emisor_obj = Emisor_fe.objects.first()
         
         if emisor_obj:
-            nuevo_numero = NumeroControl.obtener_numero_control(COD_CONSUMIDOR_FINAL)#dte selc. por defecto FE
+            nuevo_numero = NumeroControl.obtener_numero_control(tipo_dte)#dte selc. por defecto FE
+            
         else:
             nuevo_numero = ""
         codigo_generacion = str(uuid.uuid4()).upper()
@@ -245,8 +255,6 @@ def generar_factura_view(request):
         hora_generacion = timezone.now().strftime('%H:%M:%S')
         tipo_documento_receptor = str()
         num_documento_receptor = str()
-
-        print(tipo_dte)
 
         emisor_data = {
             "nit": emisor_obj.nit if emisor_obj else "",
@@ -280,6 +288,7 @@ def generar_factura_view(request):
             data = json.loads(request.body)
             # Datos básicos
             numero_control = data.get('numero_control', '')
+            print(f"Numero de control: {numero_control}")
             codigo_generacion = data.get('codigo_generacion', '')
             receptor_id = data.get('receptor_id', None)
             nit_receptor = data.get('nit_receptor', '')
