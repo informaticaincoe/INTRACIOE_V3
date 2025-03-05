@@ -236,7 +236,7 @@ class Emisor_fe(models.Model):
 class NumeroControl(models.Model):
     anio = models.IntegerField()
     secuencia = models.IntegerField(default=1)
-    tipo_dte = models.CharField(max_length=2, default=uuid.uuid4, editable=True)
+    tipo_dte = models.CharField(max_length=2, default="00", editable=True)
     
     class Meta:
         unique_together = (('anio', 'tipo_dte'),)
@@ -245,10 +245,10 @@ class NumeroControl(models.Model):
 
     @staticmethod
 
-    def obtener_numero_control(tipo_dte):
+    def obtener_numero_control(cod_dte):
         anio_actual = datetime.now().year
-        control, creado = NumeroControl.objects.get_or_create(anio=anio_actual, tipo_dte=tipo_dte)
-        numero_control = f"DTE-{tipo_dte}-0000MOO1-{str(control.secuencia).zfill(15)}"
+        control, creado = NumeroControl.objects.get_or_create(anio=anio_actual, tipo_dte=cod_dte)
+        numero_control = f"DTE-{cod_dte}-0000MOO1-{str(control.secuencia).zfill(15)}"
         control.secuencia += 1
         control.save()
         return numero_control
