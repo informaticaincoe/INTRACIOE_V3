@@ -1,16 +1,16 @@
 {
     "identificacion": {
-        "version": 1,
+        "version": 3,
         "ambiente": "01",
-        "tipoDte": "01",
-        "numeroControl": "DTE-01-0000MOO1-000000000000091",
-        "codigoGeneracion": "9E325EBB-968D-4D43-8FB6-5503AAD7AF1A",
+        "tipoDte": "03",
+        "numeroControl": "DTE-03-0000MOO1-000000000000066",
+        "codigoGeneracion": "12F86E4B-41A1-446F-862E-D7310E210135",
         "tipoModelo": 1,
         "tipoOperacion": 1,
         "tipoContingencia": null,
         "motivoContin": null,
         "fecEmi": "2025-03-05",
-        "horEmi": "10:37:18",
+        "horEmi": "14:16:42",
         "tipoMoneda": "USD"
     },
     "documentoRelacionado": null,
@@ -35,8 +35,6 @@
         "codPuntoVenta": "0001"
     },
     "receptor": {
-        "tipoDocumento": "36",
-        "numDocumento": "06142802961066",
         "nit": "06142802961066",
         "nrc": null,
         "nombre": "Francisco Antonio Flores",
@@ -49,54 +47,44 @@
         },
         "telefono": "604477435",
         "correo": "juniorfran@hotmail.es",
-        "nombreComercial": "Francisco Antonio Flores"
+        "nombreComercial": [
+            "None"
+        ]
     },
     "otrosDocumentos": null,
     "ventaTercero": null,
-    "cuerpoDocumento": [
-        {
-            "numItem": 1,
-            "tipoItem": 1,
-            "numeroDocumento": null,
-            "codigo": "PCH405",
-            "codTributo": null,
-            "descripcion": "leche entera ira 26 250gb",
-            "cantidad": 1.0,
-            "uniMedida": 59,
-            "precioUni": 8.5,
-            "montoDescu": 0.0,
-            "ventaNoSuj": 0.0,
-            "ventaExenta": 0.0,
-            "ventaGravada": 8.5,
-            "tributos": null,
-            "psv": 0.0,
-            "noGravado": 0.0,
-            "ivaItem": 0.98
-        }
-    ],
+    "cuerpoDocumento": [],
     "resumen": {
         "totalNoSuj": 0.0,
         "totalExenta": 0.0,
-        "totalGravada": 8.5,
-        "subTotalVentas": 8.5,
+        "totalGravada": 7.52,
+        "subTotalVentas": 7.52,
         "descuNoSuj": 0.0,
         "descuExenta": 0.0,
         "descuGravada": 0.0,
         "porcentajeDescuento": 0.0,
         "totalDescu": 0.0,
-        "subTotal": 8.5,
+        "subTotal": 7.52,
         "ivaRete1": 0.0,
         "reteRenta": 0.0,
-        "montoTotalOperacion": 8.5,
+        "montoTotalOperacion": 7.52,
         "totalNoGravado": 0.0,
         "totalPagar": 8.5,
         "totalLetras": "Ocho con 50/100 USD",
-        "totalIva": 0.98,
         "saldoFavor": 0.0,
         "condicionOperacion": 1,
         "pagos": null,
-        "tributos": null,
-        "numPagoElectronico": null
+        "numPagoElectronico": null,
+        "ivaPerci1": [
+            0.0
+        ],
+        "tributos": [
+            {
+                "codigo": "20",
+                "descripcion": "Impuesto al valor agregado 13%",
+                "valor": 0.98
+            }
+        ]
     },
     "extension": {
         "nombEntrega": null,
