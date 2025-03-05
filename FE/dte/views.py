@@ -169,26 +169,6 @@ for field in required_fields:
 
 ##################################################################################################
 
-#VISTA PARA NUMERO DE CONTROL
-"""
-def incrementar_numero_control():
-    # Obtiene el último número de control usado y añade uno
-    ultimo_numero = (
-        FacturaElectronica.objects.latest('id').numero_control
-        if FacturaElectronica.objects.exists()
-        else "DTE-01-M001P001-000000000000000"
-    )
-    match = re.search(r"(\d+)$", ultimo_numero)
-    if match:
-        numero_actual = int(match.group(1))
-        nuevo_numero = numero_actual + 1
-        return f"DTE-01-M001P001-{nuevo_numero:015d}"
-    return None
-<<<<<<< Updated upstream
-
-=======
-"""
->>>>>>> Stashed changes
 
 def obtener_receptor(request, receptor_id):
     try:
@@ -227,11 +207,7 @@ def num_to_letras(numero):
         return f"{palabras} con {decimales:02d}/100 USD"
     except Exception as e:
         return "Conversión no disponible"
-<<<<<<< Updated upstream
 
-=======
-    
->>>>>>> Stashed changes
 def obtener_numero_control_ajax(request):
     tipo_dte = request.GET.get('tipo_dte', '01')  # Valor por defecto '03' si no se envía ninguno
     nuevo_numero = NumeroControl.obtener_numero_control(tipo_dte)
