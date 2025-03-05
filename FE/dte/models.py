@@ -240,11 +240,11 @@ class NumeroControl(models.Model):
     
     class Meta:
         unique_together = (('anio', 'tipo_dte'),)
-    
     def __str__(self):
         return f"{self.anio} - {self.secuencia} - {self.tipo_dte}"
 
     @staticmethod
+
     def obtener_numero_control(tipo_dte):
         anio_actual = datetime.now().year
         control, creado = NumeroControl.objects.get_or_create(anio=anio_actual, tipo_dte=tipo_dte)

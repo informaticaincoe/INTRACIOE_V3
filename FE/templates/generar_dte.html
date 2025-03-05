@@ -51,7 +51,7 @@
           <div class="col-md-4">
             <div class="form-group">
               <label>Tipo de Documento:</label>
-              <select name="tipo_documento" class="form-control" id="tipo_documento_select">
+              <select name="tipo_documento_seleccionado" class="form-control" id="tipo_dte_vista">
                 <option value="">Seleccione Tipo de Documento</option>
                 {% for dte in tipoDocumentos %}
                   <option value="{{ dte.codigo }}">{{ dte.descripcion }}</option>
@@ -498,7 +498,7 @@
               window.location.href = data.redirect;
           } else {
               alert("Factura generada con éxito. ID: " + data.factura_id);
-              document.querySelector("input[name='numero_control']").value = data.numero_control;
+              document.querySelector("input[name='numero_control_input']").value = data.numero_control;
           }
       } catch (error) {
           console.error("Error de conexión:", error);
@@ -506,7 +506,7 @@
       }
   }
 
-  document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function () {
     const tipoDocumentoSelect = document.getElementById('tipo_documento_select');
     const numeroControlInput = document.getElementById('numero_control_input');
 
@@ -522,4 +522,21 @@
     });
 });
 </script>
+
+<script>
+  // Obtener el dte seleccionado
+  const selectElement = document.getElementById("tipo_dte_vista");
+
+  // Añadir un eventListener obtener el cambio de seleccion
+  selectElement.addEventListener("change", function() {
+      // Obtener el codigo del dte
+      const selectedValue = selectElement.value;
+      const selectedText = selectElement.options[selectElement.selectedIndex].text;
+
+      // Actualizar el contenido del resultado en la interfaz de usuario
+      document.getElementById("resultado").textContent = "Valor seleccionado: " + selectedValue + " - " + selectedText;
+  });
+</script>
 {% endblock %}
+
+
