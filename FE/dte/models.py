@@ -69,8 +69,9 @@ class TipoItem(models.Model):
 class Tipo_dte(models.Model):
     codigo = models.CharField(max_length=50)
     descripcion = models.CharField(max_length=50)
+    version = models.IntegerField(null=True, verbose_name=None)
     def __str__(self):
-        return f"{self.codigo} - {self.descripcion}"
+        return f"{self.codigo} - {self.descripcion} - {self.version}"
     
 class OtrosDicumentosAsociado(models.Model):
     codigo = models.CharField(max_length=50)
@@ -317,6 +318,7 @@ class FacturaElectronica(models.Model):
     json_original = models.JSONField()
     json_firmado = models.JSONField(blank=True, null=True)
     sello_recepcion = models.CharField(max_length=255, blank=True, null=True)
+    recibido_mh = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
         if not self.numero_control:
@@ -355,3 +357,10 @@ class DetalleFactura(models.Model):
 
     def __str__(self):
         return f"Factura {self.factura.numero_control} - {self.producto.descripcion} ({self.cantidad} x {self.precio_unitario})"
+    
+class EventoInvalidacion(models.Model):
+    
+    #Identificacion
+    version = models.IntegerField(null=True, verbose_name=None)
+    #ambiente = models.models.CharField(_(""), max_length=50)
+    
