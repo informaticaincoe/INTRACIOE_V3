@@ -221,6 +221,7 @@ from decimal import Decimal, ROUND_HALF_UP
 @csrf_exempt
 @transaction.atomic
 def generar_factura_view(request):
+    print("Inicio generar dte")
     if request.method == 'GET':
         tipo_dte = request.GET.get('tipo_dte', '01')
         emisor_obj = Emisor_fe.objects.first()
@@ -232,8 +233,6 @@ def generar_factura_view(request):
         codigo_generacion = str(uuid.uuid4()).upper()
         fecha_generacion = timezone.now().date()
         hora_generacion = timezone.now().strftime('%H:%M:%S')
-        tipo_documento_receptor = str()
-        num_documento_receptor = str()
 
         emisor_data = {
             "nit": emisor_obj.nit if emisor_obj else "",
@@ -468,20 +467,20 @@ def generar_factura_view(request):
                 total_neto = (precio_neto * det.cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 #total_iva_item = (iva_unitario * det.cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) #BC: TEMPORALMENTE COMETAREADO YA QUE PARA FE EL CALCULO ES DIFERENTE
                 total_iva_item = ( ( iva_unitario * det.cantidad) / Decimal("1.13") * Decimal("0.13") ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                print(f"-Total IVA = {total_iva_item}")
+                
                 total_con_iva = (Decimal(det.precio_unitario) * det.cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
                 print(f"Item {idx}: IVA unitario = {iva_unitario}, Total IVA = {total_iva_item}, IVA almacenado = {det.iva_item}")
                 
                 #BC 03/03/25:para el caso de FE el campo tributos enviarlo null
                 tipo_dte_item = str(det.factura.tipo_dte.codigo)
-                if tipo_dte_item == "01":
+                if tipo_dte_item == COD_CONSUMIDOR_FINAL:
                     tributos = None  
                 else :
-                    #tributos = ["20"],
-                    tributos = "20",
+                    tributos = ["20"]
+                    #tributos = "20"
                     
-                print("...tributos ",tributos)
-
                 cuerpo_documento.append({
                     "numItem": idx,
                     "tipoItem": 1,
@@ -597,8 +596,8 @@ def generar_factura_view(request):
                 },
                 "apendice": None,
             }"""
-
-            factura_json = generar_json(tipo_dte, ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_documento, observaciones, total_iva_item)
+            
+            factura_json = generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_documento, observaciones, Decimal(str(total_iva_item)))
             print(f"JSON:  = {factura_json} ")
             
             factura.json_original = factura_json
@@ -622,11 +621,12 @@ def generar_factura_view(request):
     return JsonResponse({"error": "Método no permitido"}, status=405)
 
 #BC 05/03/2025:
-def generar_json(tipo_dte_generar, ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_documento, observaciones, total_iva_item):
-    
+def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_documento, observaciones, iva_item_total):
+    print("-Inicio llenar json")
+
     #Llenar json
     json_identificacion = {
-        "version": 3,
+        "version": tipo_dte_obj.version,
         "ambiente": ambiente_obj.codigo,
         "tipoDte": str(tipo_dte_obj.codigo),
         "numeroControl": str(factura.numero_control),
@@ -664,8 +664,8 @@ def generar_json(tipo_dte_generar, ambiente_obj, tipo_dte_obj, factura, emisor, 
     }
             
     json_receptor = {
-        "nit": str(receptor.num_documento),
-        "nrc": str(receptor.nrc),
+        #"nit": str(receptor.num_documento),
+        #"nrc": str(receptor.nrc) if str(receptor.nrc) else None,
         "nombre": str(receptor.nombre),
         "codActividad": "24310",
         "descActividad": "undición de hierro y acero",
@@ -677,12 +677,10 @@ def generar_json(tipo_dte_generar, ambiente_obj, tipo_dte_obj, factura, emisor, 
         "telefono": receptor.telefono or "",
         "correo": receptor.correo or "",
         #BC 04/03/2025
-        "nombreComercial": str(receptor.nombre)
+        #"nombreComercial": str(receptor.nombre)
     }
     
     json_otros_documentos = None
-    
-    json_cuerpo_documento =  cuerpo_documento
     
     total_operaciones = Decimal("0.00")
     
@@ -722,32 +720,56 @@ def generar_json(tipo_dte_generar, ambiente_obj, tipo_dte_obj, factura, emisor, 
     
     json_apendice = None
     
+    print("-Inicio modificacion de json")
     #Modificacion de json en base al tipo dte a generar
-    if tipo_dte_generar == COD_CONSUMIDOR_FINAL:
-        json_receptor["tipoDocumento"] = str(receptor.tipo_documento.codigo) if receptor.tipo_documento else "",
-        json_receptor["numDocumento"] = str(receptor.num_documento)
-        json_cuerpo_documento["ivaItem"] = float(total_iva_item)
-        json_resumen["totalIva"] = float(factura.total_iva)
-        json_resumen["montoTotalOperacion"] = float(factura.total_operaciones)
-        json_resumen["totalPagar"] = float(factura.total_pagar)
-    elif tipo_dte_generar == COD_CREDITO_FISCAL:
-        json_receptor["nombreComercial"] = str(receptor.nombreComercial)
-        json_resumen["ivaPerci1"] = float(factura.iva_percibido)
-        json_resumen["tributos"] = [
+    if receptor is not None:
+        nrc_receptor = None
+        print("-Nrc: ", receptor.nrc)
+        if receptor.nrc is not None and receptor.nrc !="None":
+            nrc_receptor = str(receptor.nrc)
+        json_receptor["nrc"] = nrc_receptor
+        
+    json_resumen["tributos"] = [
             {
                "codigo": "20",
                "descripcion": "Impuesto al valor agregado 13%",
                "valor": float(factura.total_iva)
             }
-            ]
+        ]
+        
+    if tipo_dte_obj.codigo == COD_CONSUMIDOR_FINAL:
+        json_receptor["tipoDocumento"] = str(receptor.tipo_documento.codigo) if receptor.tipo_documento else ""
+        json_receptor["numDocumento"] = str(receptor.num_documento) 
+        
+        #iva_item_total obtener solo el monto
+        valor_iva_item = iva_item_total
+        
+        #Recorrer items y modificar campo ivaItem cuando son FE
+        for i, cuerpo in enumerate(cuerpo_documento):
+            #Remover el item
+            cuerpo_documento.pop(i)
+            #Modificar campo
+            cuerpo["ivaItem"] = float(valor_iva_item)
+            #Agregar nuevamente el item
+            cuerpo_documento.insert(i, cuerpo)
+                   
+        json_resumen["totalIva"] = float(factura.total_iva)
+        json_resumen["montoTotalOperacion"] = float(factura.total_operaciones)
+        json_resumen["totalPagar"] = float(factura.total_pagar)
+        json_resumen["tributos"] = None
+    elif tipo_dte_obj.codigo == COD_CREDITO_FISCAL:
+        json_receptor["nit"] = str(receptor.num_documento)
+        json_receptor["nombreComercial"] = str(receptor.nombreComercial)
+        json_resumen["ivaPerci1"] = float(factura.iva_percibido)
+        
+        print("-Asignar tributos")
         #Asignar tributos
         tributo = json_resumen["tributos"]
         tributo_valor = tributo[0]
-        print(tributo_valor)
         subtotal = float(factura.sub_total)
         valor_tributos = float(tributo_valor["valor"])
         total_operaciones = subtotal + valor_tributos
-        json_resumen["montoTotalOperacion"] = total_operaciones
+        json_resumen["montoTotalOperacion"] = float(total_operaciones)
         total_pagar = json_resumen["montoTotalOperacion"] - json_resumen["ivaPerci1"] - json_resumen["ivaRete1"] - json_resumen["reteRenta"] - json_resumen["totalNoGravado"]
         json_resumen["totalPagar"] = total_pagar
             
@@ -762,7 +784,6 @@ def generar_json(tipo_dte_generar, ambiente_obj, tipo_dte_obj, factura, emisor, 
         "resumen": json_resumen,
         "extension": json_extension,
         "apendice": json_apendice
-        #"responseMh": json_respuesta_mh
     }
     
     return json_completo
@@ -980,6 +1001,20 @@ def enviar_factura_hacienda_view(request, factura_id):
 
         if envio_response.status_code == 200:
             factura.sello_recepcion = response_data.get("selloRecibido", "")
+            factura.recibido_mh=True
+            #Guardar respuesta de MH en json_original
+            json_response_data = {
+                "jsonRespuestaMh": response_data
+            }
+            json_original = factura.json_original
+            
+            #Combinar jsons
+            json_nuevo = json_original | json_response_data
+            #Convertir diccionario en json
+            json_respuesta_mh = json.dumps(json_nuevo)
+            #Al convertir un diccionario en json se guarda como un string, por lo que se debe convertir a json (loads)
+            json_original_campo = json.loads(json_respuesta_mh)
+            factura.json_original = json_original_campo
             factura.save()
             return JsonResponse({
                 "mensaje": "Factura enviada con éxito",
@@ -991,22 +1026,7 @@ def enviar_factura_hacienda_view(request, factura_id):
                 "status": envio_response.status_code,
                 "detalle": response_data
             }, status=envio_response.status_code)
-            print("envio_response", envio_response)
-            
-            #llenarlo
-        json_respuesta_mh = {
-            "version": 2,
-            "ambiente": "01",
-            "versionApp": 2,
-            "estado": "PROCESADO",
-            "codigoGeneracion": "A81BF3FC-EE1A-40C5-96F4-F54E4C2613E1",
-            "selloRecibido": "20246C83DCF76BDC4187BBDD72F27540D8E6TOZE",
-            "fhProcesamiento": "17/04/2024 07:24:16",
-            "clasificaMsg": "10",
-            "codigoMsg": "001",
-            "descripcionMsg": "RECIBIDO",
-            "observaciones": []
-        }
+
     except requests.exceptions.RequestException as e:
         return JsonResponse({
             "error": "Error de conexión con Hacienda",
