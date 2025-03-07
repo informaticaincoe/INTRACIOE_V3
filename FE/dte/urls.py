@@ -17,6 +17,7 @@ urlpatterns = [
     #path('detalle/<int:factura_id>/', views.detalle_factura_view, name='detalle_factura'),
     path('firmar/<int:factura_id>/', views.firmar_factura_view, name='firmar_factura'),
     path('enviar/<int:factura_id>/', views.enviar_factura_hacienda_view, name='enviar_factura_hacienda'),
+    path('invalidar/<int:factura_id>/', views.invalidacion_dte_view, name='invalidar_factura_hacienda'),
     #path('factura/pdf/<int:factura_id>/', views.generar_factura_pdf, name='generar_factura_pdf'),
     #path('factura/pdf/<int:factura_id>/', views.generar_factura_pdf_2, name='generar_factura_pdf_2'),
     path("factura_pdf/<int:factura_id>/", views.detalle_factura, name="detalle_factura"),

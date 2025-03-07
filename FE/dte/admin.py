@@ -11,7 +11,7 @@ from FE.dte.models import (INCOTERMS, ActividadEconomica, NumeroControl, Factura
                            TipoInvalidacion, TipoPersona, TipoTransmision, TipoContingencia, TipoRetencionIVAMH, 
                            TipoGeneracionDocumento, TipoTransporte, TiposDocIDReceptor, TiposEstablecimientos, 
                            TiposServicio_Medico, TipoItem, CondicionOperacion, FormasPago, Plazo, Producto,
-                            Descuento, DetalleFactura, TipoMoneda, TipoUnidadMedida)
+                            Descuento, DetalleFactura, TipoMoneda, TipoUnidadMedida, EventoInvalidacion)
 
 
 # Lista de todos los modelos a registrar
@@ -21,6 +21,11 @@ models = [
     TipoMoneda, TipoUnidadMedida,
 ]
 
+@admin.register(EventoInvalidacion)
+class EventoInvalidacion(admin.ModelAdmin):
+    list_display = ('id', 'factura', 'codigo_generacion_r', 'tipo_anulacion', 'motivo_anulacion', 'nombre_solicita', 'tipo_documento_solicita', 'hora_anulacion', 'fecha_anulacion')
+    search_fields = ('factura__numero_factura', 'codigo_generacion_r')
+    
 @admin.register(DetalleFactura)
 class DetalleFacturaAdmin(admin.ModelAdmin):
     list_display = ('id', 'factura', 'producto', 'cantidad', 'precio_unitario', 'descuento')

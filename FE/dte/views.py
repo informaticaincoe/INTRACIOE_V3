@@ -13,7 +13,7 @@ from django.views.decorators.csrf import csrf_exempt
 #from weasyprint import CSS, HTML
 from decimal import ROUND_HALF_UP, Decimal
 from intracoe import settings
-from .models import Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica, Producto, Receptor_fe, Tipo_dte, TipoMoneda, TipoUnidadMedida, TiposDocIDReceptor, Municipio
+from .models import Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica, Producto, Receptor_fe, Tipo_dte, TipoMoneda, TipoUnidadMedida, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos
 from FE.models import Token_data
 from django.db import transaction
 from django.utils import timezone
@@ -36,6 +36,8 @@ from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 
+from django.core import serializers
+
 FIRMADOR_URL = "http://192.168.2.25:8113/firmardocumento/"
 DJANGO_SERVER_URL = "http://127.0.0.1:8000"
 
@@ -50,6 +52,14 @@ HACIENDA_URL_PROD = "https://api.dtes.mh.gob.sv/fesv/recepciondte"
 #BC 04/03/2025: Constantes
 COD_CONSUMIDOR_FINAL = "01"
 COD_CREDITO_FISCAL = "03"
+VERSION_EVENTO_INVALIDACION = 2
+AMBIENTE = Ambiente.objects.get(codigo="01")
+COD_FACTURA_EXPORTACION = "11"
+COD_TIPO_INVALIDACION_RESCINDIR = 2
+COD_NOTA_CREDITO = "05"
+COD_COMPROBANTE_LIQUIDACION = "08"
+EMI_SOLICITA_INVALIDAR_DTE = "emisor"
+REC_SOLICITA_INVALIDAR_DTE = "receptor"
 
 #vistas para actividad economica
 def cargar_actividades(request):
@@ -627,7 +637,7 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
     #Llenar json
     json_identificacion = {
         "version": tipo_dte_obj.version,
-        "ambiente": ambiente_obj.codigo,
+        "ambiente":  ambiente_obj.codigo,
         "tipoDte": str(tipo_dte_obj.codigo),
         "numeroControl": str(factura.numero_control),
         "codigoGeneracion": str(factura.codigo_generacion),
@@ -787,11 +797,198 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
     }
     
     return json_completo
+
+@csrf_exempt    
+def invalidacion_dte_view(request, factura_id):
+    print("-Inicio invalidar dte- request ", request)
+    print("-factura id ", factura_id)
     
-    print(f"JSON GENERADO...: {json_completo}")
-        
-        
+    codigo_generacion_invalidacion = str(uuid.uuid4()).upper()
     
+    #Buscar dte a invalidar
+    invalidar_codigo_generacion = "39f71e48-c22b-4833-89e1-8256e16d9401"
+    
+    factura_invalidar = FacturaElectronica.objects.get(codigo_generacion=invalidar_codigo_generacion)
+    
+    #Tipo Invalidacion
+    tipo_invalidacion = TipoInvalidacion.objects.get(codigo="1") #Campo dinamico
+    
+    #Quien solicita invalidar el dte, el emisor o receptor
+    solicitud = "receptor" #Campo dinamico
+
+    #Llenar registro en tabla
+    invalidacion = EventoInvalidacion.objects.create(
+        codigo_generacion = codigo_generacion_invalidacion,
+        factura = factura_invalidar,
+        codigo_generacion_r = invalidar_codigo_generacion,
+        tipo_anulacion = tipo_invalidacion,
+        motivo_anulacion = tipo_invalidacion.descripcion, #Campo dinamico
+        nombre_solicita = factura_invalidar.dteemisor.nombre_razon_social,
+        tipo_documento_solicita = int(factura_invalidar.dteemisor.tipo_documento.codigo),
+        numero_documento_solicita = factura_invalidar.dteemisor.nit,
+        solicita_invalidacion = solicitud
+    )
+    
+    if factura_invalidar is not None:
+        
+        json_identificacion_inv = {
+            "version": int(VERSION_EVENTO_INVALIDACION), #Version vigente 2
+            "ambiente": str(Ambiente.codigo),
+            "codigoGeneracion": str(invalidacion.codigo_generacion),
+            "FecAnual": str(invalidacion.fecha_anulacion),
+            "horAnula": str(invalidacion.hora_anulacion.strftime('%H:%M:%S'))
+            
+        }
+        
+        tipo_establecimiento = TiposEstablecimientos.objects.get(codigo=invalidacion.factura.dteemisor.tipoestablecimiento.codigo)
+        json_emisor_inv = {
+            "nit": str(invalidacion.factura.dteemisor.nit),
+            "nombre": str(invalidacion.factura.dteemisor.nombre_razon_social),
+            "tipoEstablecimiento": str(tipo_establecimiento.codigo),
+            "nomEstablecimiento": str(tipo_establecimiento.descripcion),
+            "codEstableMH": str(invalidacion.factura.dteemisor.codigo_establecimiento or "M001"),
+            "codEstable": "0001",
+            "codPuntoVentaMH": str(invalidacion.factura.dteemisor.codigo_punto_venta or "P001"),
+            "codPuntoVenta": "0001",
+            "telefono": str(invalidacion.factura.dteemisor.telefono),
+            "correo": str(invalidacion.factura.dteemisor.email)
+        }
+        
+        #seccion documento
+        json_documento_inv = {
+            "tipoDte" : str(invalidacion.factura.tipo_dte.codigo),
+            "codigoGeneracion" : str(factura_invalidar.codigo_generacion),
+            "selloRecibido" : str(factura_invalidar.sello_recepcion),
+            "numeroControl" : str(factura_invalidar.numero_control),
+            "fechaEmi" : str(factura_invalidar.fecha_emision),
+            "tipoDocumento" : int(invalidacion.factura.dtereceptor.tipo_documento.codigo),
+            "numDocumento" : str(invalidacion.factura.dtereceptor.num_documento),
+            "nombre" : str(invalidacion.factura.dtereceptor.nombre),
+            "telefono" : str(invalidacion.factura.dtereceptor.telefono),
+            "correo" : str(invalidacion.factura.dtereceptor.correo) 
+        }
+        
+        json_motivo_inv = {
+            "tipoAnulacion" : int(invalidacion.tipo_anulacion.codigo),
+            "motivoAnulacion" : str(invalidacion.motivo_anulacion),
+            "nombreResponsable" : str(invalidacion.factura.dteemisor.nombre_razon_social),
+            "tipoDocResponsable" : int(invalidacion.factura.dteemisor.tipo_documento.codigo),
+            "numDocResponsable" : str(invalidacion.factura.dteemisor.nit),
+        }
+        
+        #Modificaciones en json segun el dte a invalidar
+        
+        #Si el DTE a invalidar es F, CCF o FEX agregar campo "montoIva"
+        tipo_dte_invalidar = invalidacion.factura.tipo_dte.codigo
+        if tipo_dte_invalidar == COD_CONSUMIDOR_FINAL or tipo_dte_invalidar == COD_CREDITO_FISCAL or tipo_dte_invalidar == COD_FACTURA_EXPORTACION:
+            json_documento_inv["montoIva"] = float(factura_invalidar.total_operaciones)
+        else:
+             json_documento_inv["montoIva"] = None
+        
+        #Si el tipo de invalidacion es codigo 1 o 3 llenar este campo con el codGeneracion del documento que reemplazara el dte a invalidar, no aplica para NC y Comp Liquidacion
+        if tipo_dte_invalidar != COD_NOTA_CREDITO and tipo_dte_invalidar != COD_COMPROBANTE_LIQUIDACION:
+            if int(invalidacion.tipo_anulacion.codigo) == COD_TIPO_INVALIDACION_RESCINDIR:
+                json_documento_inv["codigoGeneracionR"] = None
+            else:
+                json_documento_inv["codigoGeneracionR"] = str(invalidacion.codigo_generacion_r),
+            
+        if solicitud == EMI_SOLICITA_INVALIDAR_DTE:
+            json_motivo_inv["nombreSolicita"] = str(invalidacion.factura.dteemisor.nombre_razon_social),
+            json_motivo_inv["tipDocSolicita"] = int(invalidacion.factura.dteemisor.tipo_documento.codigo),
+            json_motivo_inv["numDocSolicita"] = str(invalidacion.factura.dteemisor.nit)
+        elif solicitud == REC_SOLICITA_INVALIDAR_DTE:
+            json_motivo_inv["nombreSolicita"] = str(invalidacion.factura.dtereceptor.nombre),
+            json_motivo_inv["tipDocSolicita"] = int(invalidacion.factura.dtereceptor.tipo_documento.codigo),
+            json_motivo_inv["numDocSolicita"] = str(invalidacion.factura.dtereceptor.num_documento)
+            
+        json_completo = {
+            "identificacion": json_identificacion_inv,
+            "emisor": json_emisor_inv,
+            "documento": json_documento_inv,
+            "motivo": json_motivo_inv
+        }
+        
+        json_invalidacion = json.dumps(json_completo)
+        json_original = json.loads(json_invalidacion)
+        invalidacion.json_invalidacion = json_original
+        invalidacion.save()
+    #firmar 
+    print("-Url firma ", request)
+    firmar_factura_anulacion_view(request, factura_id)
+    
+@csrf_exempt
+def firmar_factura_anulacion_view(request, factura_id): #id=160 cod_generacion=39f71e48-c22b-4833-89e1-8256e16d9401
+    """
+    Firma la factura y, si ya está firmada, la envía a Hacienda.
+    """
+    print("-Inicio firma invalidacion DTE - id factura ", factura_id)
+    evento_invalidacion = EventoInvalidacion.objects.filter(factura__id=factura_id).first()
+    invalidacion = evento_invalidacion#get_object_or_404(EventoInvalidacion, factura__id = factura_id)
+
+    token_data = Token_data.objects.filter(activado=True).first()
+    if not token_data:
+        return JsonResponse({"error": "No hay token activo registrado en la base de datos."}, status=401)
+
+    if not os.path.exists(CERT_PATH):
+        return JsonResponse({"error": "No se encontró el certificado en la ruta especificada."}, status=400)
+    
+    # Verificar y formatear el JSON original de la factura
+    print("-inicio verificacion formato json invalidacion")
+    try:
+        print("-if inicio verificacion formato json ", invalidacion.json_invalidacion)
+        if isinstance(invalidacion.json_invalidacion, dict):
+            dte_json_str = json.dumps(invalidacion.json_invalidacion, separators=(',', ':'))
+        else:
+            json_obj = json.loads(invalidacion.json_invalidacion)
+            dte_json_str = json.dumps(json_obj, separators=(',', ':'))
+    except Exception as e:
+        return JsonResponse({
+            "error": "El JSON original de la factura no es válido",
+            "detalle": str(e)
+        }, status=400)
+    print("-fin verificacion formato json INVALIDACION ")
+    # Construir el payload con los parámetros requeridos
+    payload = {
+        "nit": "06142811001040",   # Nit del contribuyente
+        "activo": True,            # Indicador activo
+        "passwordPri": "3nCr!pT@d0Pr1v@d@",   # Contraseña de la llave privada
+        "dteJson": invalidacion.json_invalidacion    # JSON del DTE como cadena
+    }
+
+    headers = {"Content-Type": "application/json"}
+
+    try:
+        response = requests.post(FIRMADOR_URL, json=payload, headers=headers)
+        
+        # Capturamos la respuesta completa
+        try:
+            response_data = response.json()
+            print("-Capturar respuesta MH", response_data)
+        except Exception as e:
+            # En caso de error al parsear el JSON, se guarda el texto crudo
+            response_data = {"error": "No se pudo parsear JSON", "detalle": response.text}
+        
+        # Guardar toda la respuesta en la factura para depuración (incluso si hubo error)
+        evento_invalidacion.json_firmado = response_data
+        evento_invalidacion.firmado = True
+        evento_invalidacion.save()
+
+        # Verificar si la firma fue exitosa
+        if response.status_code == 200 and response_data.get("status") == "OK":
+            # (Opcional) Guardar el JSON firmado en un archivo
+            json_signed_path = f"FE/json_facturas_firmadas/{invalidacion.codigo_generacion}.json"
+            os.makedirs(os.path.dirname(json_signed_path), exist_ok=True)
+            with open(json_signed_path, "w", encoding="utf-8") as json_file:
+                json.dump(response_data, json_file, indent=4, ensure_ascii=False)
+                print("-Respuesta 200 - cod generacion", invalidacion.codigo_generacion)
+            print("-Fin firma invalidacion DTE")
+            return redirect(reverse('detalle_factura', args=[factura_id]))
+        else:
+            # Se devuelve el error completo recibido
+            print("-Fin firma invalidacion DTE")
+            return JsonResponse({"error": "Error al firmar la factura", "detalle": response_data}, status=400)
+    except requests.exceptions.RequestException as e:
+        return JsonResponse({"error": "Error de conexión con el firmador", "detalle": str(e)}, status=500)
 
 
 #############################################################################################################
@@ -809,6 +1006,7 @@ def firmar_factura_view(request, factura_id):
     """
     Firma la factura y, si ya está firmada, la envía a Hacienda.
     """
+    print("-Inicio firma DTE")
     factura = get_object_or_404(FacturaElectronica, id=factura_id)
 
     token_data = Token_data.objects.filter(activado=True).first()
@@ -868,7 +1066,6 @@ def firmar_factura_view(request, factura_id):
         else:
             # Se devuelve el error completo recibido
             return JsonResponse({"error": "Error al firmar la factura", "detalle": response_data}, status=400)
-
     except requests.exceptions.RequestException as e:
         return JsonResponse({"error": "Error de conexión con el firmador", "detalle": str(e)}, status=500)
 
