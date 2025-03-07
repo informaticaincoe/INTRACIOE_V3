@@ -69,8 +69,9 @@ class TipoItem(models.Model):
 class Tipo_dte(models.Model):
     codigo = models.CharField(max_length=50)
     descripcion = models.CharField(max_length=50)
+    version = models.IntegerField(null=True, verbose_name=None)
     def __str__(self):
-        return f"{self.codigo} - {self.descripcion}"
+        return f"{self.codigo} - {self.descripcion} - {self.version}"
     
 class OtrosDicumentosAsociado(models.Model):
     codigo = models.CharField(max_length=50)
@@ -132,7 +133,8 @@ class TipoInvalidacion(models.Model):
     codigo = models.CharField(max_length=50)
     descripcion = models.CharField(max_length=50)
     def __str__(self):
-        return f"{self.codigo} - {self.descripcion}"
+        #return f"{self.codigo} - {self.descripcion}"
+        return f"{self.codigo}"
 
 class TipoDonacion(models.Model):
     codigo = models.CharField(max_length=50)
@@ -227,7 +229,8 @@ class Emisor_fe(models.Model):
     codigo_establecimiento = models.CharField(max_length=10, null=True, blank=True, verbose_name="Código de Establecimiento")
     codigo_punto_venta = models.CharField(max_length=50, blank=True, verbose_name="Codigo de Punto de Venta", null=True)
     ambiente = models.ForeignKey(Ambiente, on_delete=models.CASCADE)
-
+    nombre_establecimiento = models.CharField(max_length=255, null=True, blank=True, verbose_name="Nombre Establecimiento")
+    tipo_documento = models.ForeignKey(TiposDocIDReceptor, on_delete=models.CASCADE, null=True)
 
     def __str__(self):
         return f"{self.nombre_razon_social} ({self.nit})"
@@ -281,8 +284,8 @@ class FacturaElectronica(models.Model):
     #tipooperacion = models.ForeignKey(CondicionOperacion, on_delete=models.CASCADE, null=True)
     tipocontingencia = models.ForeignKey(TipoContingencia, on_delete=models.CASCADE, null=True)
     motivocontin = models.CharField(max_length=350, null=True)
-    fecha_emision = models.DateField(auto_now_add=True)
-    hora_emision = models.TimeField(auto_now_add=True)
+    fecha_emision = models.DateField(auto_now_add=True) 
+    hora_emision = models.TimeField(auto_now_add=True) 
     tipomoneda = models.ForeignKey(TipoMoneda, on_delete=models.CASCADE, null=True)
 
     #EMISOR
@@ -317,6 +320,7 @@ class FacturaElectronica(models.Model):
     json_original = models.JSONField()
     json_firmado = models.JSONField(blank=True, null=True)
     sello_recepcion = models.CharField(max_length=255, blank=True, null=True)
+    recibido_mh = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
         if not self.numero_control:
@@ -355,3 +359,34 @@ class DetalleFactura(models.Model):
 
     def __str__(self):
         return f"Factura {self.factura.numero_control} - {self.producto.descripcion} ({self.cantidad} x {self.precio_unitario})"
+    
+class EventoInvalidacion(models.Model):
+    
+    #Identificacion
+    #si una factura esta relacionada indica que tiene un evento de invalidacion
+    factura = models.ForeignKey(FacturaElectronica, on_delete=models.CASCADE, related_name='dte_invalidacion', help_text="Evento de invalidacion a la que pertenece la Factura")
+    codigo_generacion = models.UUIDField(default=uuid.uuid4, unique=True)
+    fecha_anulacion = models.DateField(auto_now_add=True, null=True)
+    hora_anulacion = models.TimeField(auto_now_add=True, null=True)
+
+    #Documento
+    #campo tipoDte, codigoGeneracion. selloHacienda, numeroControl y fechaEmision esta relacionado con la factura
+    codigo_generacion_r = models.CharField(max_length=50, blank=True, null=True)
+    #-Receptor: llena los campos tipoDocumento, numDocumento, nombre, telefono y correo [Acceder desde factura]
+    #-dtereceptor = models.ForeignKey(Receptor_fe, on_delete=models.CASCADE, related_name='dte_invalidar_receptor_FE')
+
+    #Motivo (tabla TipoInvalidacion)
+    tipo_anulacion = models.ForeignKey(TipoInvalidacion, on_delete=models.CASCADE, related_name='dte_tipo_invalidacion_FE')
+    motivo_anulacion = models.CharField(max_length=255, blank=True, null=True)
+    
+    #Llena los campos nombreResponsable, tipoDocResponsable y numDocResponsable [Acceder desde factura]
+    #dteemisor = models.ForeignKey(Emisor_fe, on_delete=models.CASCADE, related_name='dte_invalidacion_emisor_FE')
+    
+    nombre_solicita = models.CharField(max_length=255, verbose_name="Nombre o Razón Social", null=True) #Nombre de quien solicita la invalidacion, ya sea el receptor o emisor
+    tipo_documento_solicita = models.IntegerField(null=True) #Tipo de documento de quien solicita la invalidacion, ya sea el receptor o emisor
+    numero_documento_solicita = models.CharField(max_length=20, blank=True, null=True) #Numero de doc de quien solicita la invalidacion, ya sea el receptor o emisor
+    solicita_invalidacion = models.CharField(max_length=15, blank=True, null=True) #Especificar quien invalidara el dte. si el emisor o receptor
+    json_invalidacion = models.JSONField(blank=True, null=True)
+    json_firmado = models.JSONField(blank=True, null=True)
+    firmado = models.BooleanField(default=False)
+    
