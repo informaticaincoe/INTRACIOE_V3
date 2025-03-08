@@ -81,6 +81,12 @@
                 <i class="bi bi-pencil-square btn-print"></i> Enviar MH
             </button>
         </form>
+        <form action="{% url 'invalidar_factura_hacienda' factura.id %}" method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger btn-sm me-1 btn-print">
+                <i class="bi bi-pencil-square btn-print"></i> Invlidar
+            </button>
+        </form>
     </div>
     
 <div class="container factura-container">
