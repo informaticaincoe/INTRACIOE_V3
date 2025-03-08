@@ -44,7 +44,7 @@ class Producto(models.Model):
     descripcion = models.CharField(max_length=255)
     categoria = models.ForeignKey(Categoria, on_delete=models.SET_NULL, null=True, blank=True)
     unidad_medida = models.ForeignKey(UnidadMedida, on_delete=models.SET_NULL, null=True, blank=True)
-    
+    preunitario = models.DecimalField(max_digits=5, decimal_places=2)
     precio_compra = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     precio_venta = models.DecimalField(max_digits=10, decimal_places=2)
     stock = models.PositiveIntegerField(default=0)
