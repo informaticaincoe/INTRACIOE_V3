@@ -81,14 +81,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'widget_tweaks',
+    'django_select2',
     'RRHH',
     'FE',
     'CONTABILIDAD',
     'INFORMATICA',
-    'rest_framework',
-    'FE.dte',
-    'widget_tweaks',
-    'django_select2',
+    'INVENTARIO',
 ]
 
 MIDDLEWARE = [
@@ -113,6 +113,7 @@ TEMPLATES = [
             os.path.join(BASE_DIR, 'RRHH/templates'),
             os.path.join(BASE_DIR, 'CONTABILIDAD/templates'),
             os.path.join(BASE_DIR, 'INFORMATICA/templates'),
+            os.path.join(BASE_DIR, 'INVENTARIO/templates'),
         ],
         'APP_DIRS': True,
         'OPTIONS': {
