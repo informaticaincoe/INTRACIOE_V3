@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 from datetime import timedelta, datetime
 from decimal import ROUND_HALF_UP, Decimal
+from INVENTARIO.models import Producto
 import uuid
 
 class ActividadEconomica(models.Model):
@@ -191,15 +192,15 @@ class Descuento(models.Model):
         return f"{self.descripcion} - {self.porcentaje}%"
     
 #modelo para productos
-class Producto(models.Model):
-    codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
-    preunitario = models.DecimalField(max_digits=5, decimal_places=2)
-    stock = models.IntegerField()
-    tiene_descuento = models.BooleanField(default=False)
-    descuento = models.ForeignKey(Descuento, on_delete=models.CASCADE, null=True)
-    def __str__(self):
-        return f"{self.codigo} - {self.descripcion}"
+# class Producto_fe(models.Model):
+#     codigo = models.CharField(max_length=50)
+#     descripcion = models.CharField(max_length=50)
+#     preunitario = models.DecimalField(max_digits=5, decimal_places=2)
+#     stock = models.IntegerField()
+#     tiene_descuento = models.BooleanField(default=False)
+#     descuento = models.ForeignKey(Descuento, on_delete=models.CASCADE, null=True)
+#     def __str__(self):
+#         return f"{self.codigo} - {self.descripcion}"
 
 class Receptor_fe(models.Model):
     tipo_documento = models.ForeignKey(TiposDocIDReceptor, on_delete=models.CASCADE, null=True)
