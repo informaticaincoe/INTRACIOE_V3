@@ -484,7 +484,7 @@
       jsonData["productos_retencion_renta"] = retencionRentaProducts;
       
       try {
-          let response = await fetch('/dte/generar/', {
+          let response = await fetch('/fe/generar/', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(jsonData)
