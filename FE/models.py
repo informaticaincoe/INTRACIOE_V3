@@ -391,6 +391,8 @@ class EventoInvalidacion(models.Model):
     json_invalidacion = models.JSONField(blank=True, null=True)
     json_firmado = models.JSONField(blank=True, null=True)
     firmado = models.BooleanField(default=False)
+    sello_recepcion = models.CharField(max_length=255, blank=True, null=True)
+    recibido_mh = models.BooleanField(default=False)
     
 
 class Token_data(models.Model):
