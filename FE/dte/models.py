@@ -242,7 +242,7 @@ class NumeroControl(models.Model):
     class Meta:
     # BC: Crear restricción única en la combinación de 'anio' y 'tipo_dte'
         unique_together = (('anio', 'tipo_dte'),)
-        
+
     def __str__(self):
         return f"{self.anio} - {self.secuencia} - {self.tipo_dte}"
 
