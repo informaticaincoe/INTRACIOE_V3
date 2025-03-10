@@ -3,7 +3,8 @@ from django.utils import timezone
 from datetime import timedelta, datetime
 from decimal import ROUND_HALF_UP, Decimal
 from INVENTARIO.models import Producto
-import uuid
+import uuid 
+
 
 class ActividadEconomica(models.Model):
     codigo = models.CharField(max_length=50, verbose_name="Código de Actividad Económica")
