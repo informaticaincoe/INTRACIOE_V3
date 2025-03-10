@@ -513,7 +513,7 @@ document.addEventListener('DOMContentLoaded', function () {
     tipoDocumentoSelect.addEventListener('change', function () {
         const tipo_dte = this.value;
         // Realizar la petición AJAX para obtener el nuevo número de control
-        fetch(`/dte/obtener-numero-control/?tipo_dte=${tipo_dte}`)
+        fetch(`/fe/obtener-numero-control/?tipo_dte=${tipo_dte}`)
             .then(response => response.json())
             .then(data => {
                 numeroControlInput.value = data.numero_control;
@@ -529,7 +529,7 @@ document.addEventListener('DOMContentLoaded', function () {
   tipoDocumentoSelect.addEventListener('change', function () {
       const tipo_dte = this.value;
       // Realizar la petición AJAX para obtener el nuevo número de control
-      fetch(`/dte/obtener-numero-control/?tipo_dte=${tipo_dte}`)
+      fetch(`/fe/obtener-numero-control/?tipo_dte=${tipo_dte}`)
           .then(response => response.json())
           .then(data => {
               numeroControlInput.value = data.numero_control;
