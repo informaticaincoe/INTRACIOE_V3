@@ -6,6 +6,7 @@ from INVENTARIO.models import Producto
 import uuid 
 
 
+
 class ActividadEconomica(models.Model):
     codigo = models.CharField(max_length=50, verbose_name="Código de Actividad Económica")
     descripcion = models.TextField(verbose_name="Descripción")
