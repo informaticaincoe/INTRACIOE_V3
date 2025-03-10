@@ -323,6 +323,7 @@ class FacturaElectronica(models.Model):
     json_firmado = models.JSONField(blank=True, null=True)
     sello_recepcion = models.CharField(max_length=255, blank=True, null=True)
     recibido_mh = models.BooleanField(default=False)
+    estado = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
         if not self.numero_control:
@@ -385,7 +386,7 @@ class EventoInvalidacion(models.Model):
     #dteemisor = models.ForeignKey(Emisor_fe, on_delete=models.CASCADE, related_name='dte_invalidacion_emisor_FE')
     
     nombre_solicita = models.CharField(max_length=255, verbose_name="Nombre o Razón Social", null=True) #Nombre de quien solicita la invalidacion, ya sea el receptor o emisor
-    tipo_documento_solicita = models.IntegerField(null=True) #Tipo de documento de quien solicita la invalidacion, ya sea el receptor o emisor
+    tipo_documento_solicita = models.CharField(max_length=20, blank=True, null=True) #Tipo de documento de quien solicita la invalidacion, ya sea el receptor o emisor
     numero_documento_solicita = models.CharField(max_length=20, blank=True, null=True) #Numero de doc de quien solicita la invalidacion, ya sea el receptor o emisor
     solicita_invalidacion = models.CharField(max_length=15, blank=True, null=True) #Especificar quien invalidara el dte. si el emisor o receptor
     json_invalidacion = models.JSONField(blank=True, null=True)
@@ -393,6 +394,7 @@ class EventoInvalidacion(models.Model):
     firmado = models.BooleanField(default=False)
     sello_recepcion = models.CharField(max_length=255, blank=True, null=True)
     recibido_mh = models.BooleanField(default=False)
+    estado = models.BooleanField(default=False)
     
 
 class Token_data(models.Model):

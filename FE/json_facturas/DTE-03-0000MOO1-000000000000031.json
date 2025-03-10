@@ -1,16 +1,16 @@
 {
     "identificacion": {
-        "version": 1,
+        "version": 3,
         "ambiente": "01",
-        "tipoDte": "01",
-        "numeroControl": "DTE-01-0000MOO1-000000000000157",
-        "codigoGeneracion": "E3339516-72AA-478A-85B1-F2702824DAC4",
+        "tipoDte": "03",
+        "numeroControl": "DTE-03-0000MOO1-000000000000031",
+        "codigoGeneracion": "0EC41547-5D92-40AF-81BC-52FE9AF2AD08",
         "tipoModelo": 1,
         "tipoOperacion": 1,
         "tipoContingencia": null,
         "motivoContin": null,
         "fecEmi": "2025-03-10",
-        "horEmi": "13:23:39",
+        "horEmi": "13:48:45",
         "tipoMoneda": "USD"
     },
     "documentoRelacionado": null,
@@ -46,8 +46,8 @@
         "telefono": "604477435",
         "correo": "juniorfran@hotmail.es",
         "nrc": null,
-        "tipoDocumento": "36",
-        "numDocumento": "06142802961066"
+        "nit": "06142802961066",
+        "nombreComercial": "None"
     },
     "otrosDocumentos": null,
     "ventaTercero": null,
@@ -66,10 +66,11 @@
             "ventaNoSuj": 0.0,
             "ventaExenta": 0.0,
             "ventaGravada": 1.25,
-            "tributos": null,
+            "tributos": [
+                "20"
+            ],
             "psv": 0.0,
-            "noGravado": 0.0,
-            "ivaItem": 0.14
+            "noGravado": 0.0
         }
     ],
     "resumen": {
@@ -91,10 +92,16 @@
         "condicionOperacion": 1,
         "pagos": null,
         "numPagoElectronico": null,
-        "tributos": null,
-        "totalIva": 0.14,
-        "montoTotalOperacion": 1.25,
-        "totalPagar": 1.25
+        "tributos": [
+            {
+                "codigo": "20",
+                "descripcion": "Impuesto al valor agregado 13%",
+                "valor": 0.14
+            }
+        ],
+        "ivaPerci1": 0.0,
+        "montoTotalOperacion": 1.3900000000000001,
+        "totalPagar": 1.3900000000000001
     },
     "extension": {
         "nombEntrega": null,
