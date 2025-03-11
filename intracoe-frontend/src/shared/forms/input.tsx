@@ -22,7 +22,7 @@ export const Input: React.FC<InputProps> = ({
       placeholder={placeholder}
       value={value}
       onChange={onChange}
-      className={`border-border-color focus:outline-border rounded-sm border w-full px-3 py-2 focus:outline-1 ${className}`}
+      className={`border-border-color focus:outline-border w-full rounded-sm border px-3 py-2 focus:outline-1 ${className}`}
     />
   );
 };
