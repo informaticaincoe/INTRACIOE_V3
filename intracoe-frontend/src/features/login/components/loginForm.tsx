@@ -17,9 +17,8 @@ export const LoginForm = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handlerForm = (e:React.FormEvent) => {
+  const handlerForm = (e: React.FormEvent) => {
     e.preventDefault();
-    
 
     let newErrors = { username: '', password: '' };
 
@@ -35,10 +34,10 @@ export const LoginForm = () => {
     if (!newErrors.username && !newErrors.password) {
       console.log(formData.username, formData.password);
     }
-  }
+  };
 
   return (
-    <form className="flex flex-col gap-10 w-full">
+    <form className="flex w-full flex-col gap-10">
       <span className="flex flex-col gap-5">
         <span className="flex flex-col items-start">
           <label htmlFor="username">Usuario</label>
@@ -50,7 +49,7 @@ export const LoginForm = () => {
             onChange={handleChange}
           />
           {errors.username && (
-            <span className="text-red-500 text-sm">{errors.username}</span>
+            <span className="text-sm text-red-500">{errors.username}</span>
           )}
         </span>
 
@@ -64,11 +63,11 @@ export const LoginForm = () => {
             onChange={handleChange}
           />
           {errors.password && (
-            <span className="text-red-500 text-sm">{errors.password}</span>
+            <span className="text-sm text-red-500">{errors.password}</span>
           )}
         </span>
       </span>
-      <SendFormButton text='Ingresar' onClick={handlerForm}/>
+      <SendFormButton text="Ingresar" onClick={handlerForm} />
     </form>
   );
 };
