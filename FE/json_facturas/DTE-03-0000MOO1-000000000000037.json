@@ -3,14 +3,14 @@
         "version": 3,
         "ambiente": "01",
         "tipoDte": "03",
-        "numeroControl": "DTE-03-0000MOO1-000000000000043",
-        "codigoGeneracion": "CF9AB01C-6D36-4AD8-98A4-D4A0AA4DFF1B",
+        "numeroControl": "DTE-03-0000MOO1-000000000000037",
+        "codigoGeneracion": "5F53F1B7-E2C0-47BE-B93B-BB97C0FCC340",
         "tipoModelo": 1,
         "tipoOperacion": 1,
         "tipoContingencia": null,
         "motivoContin": null,
         "fecEmi": "2025-03-11",
-        "horEmi": "07:39:26",
+        "horEmi": "07:23:24",
         "tipoMoneda": "USD"
     },
     "documentoRelacionado": null,
@@ -89,7 +89,7 @@
         "totalNoGravado": 0.0,
         "totalLetras": "Uno con 25/100 USD",
         "saldoFavor": 0.0,
-        "condicionOperacion": 2,
+        "condicionOperacion": 1,
         "pagos": null,
         "numPagoElectronico": null,
         "tributos": [
@@ -100,8 +100,8 @@
             }
         ],
         "ivaPerci1": 0.0,
-        "montoTotalOperacion": 1.39,
-        "totalPagar": 1.39
+        "montoTotalOperacion": 1.3900000000000001,
+        "totalPagar": 1.3900000000000001
     },
     "extension": {
         "nombEntrega": null,
