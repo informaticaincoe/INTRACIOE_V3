@@ -1,12 +1,13 @@
 @import 'tailwindcss';
 
 body {
-    background-color: var(--color-body-bg);
+  background-color: var(--color-body-bg);
 }
 
 @theme {
-    --color-primary-yellow: #fca94e;
-    --color-primary-blue: #232c6e;
-    --color-body-bg: #F2F2F2;
-    --color-light-text: #757575;
+  --color-primary-yellow: #fca94e;
+  --color-primary-blue: #232c6e;
+  --color-body-bg: #f2f2f2;
+  --color-light-text: #757575;
+  --color-border-color: #e0e0e0;
 }
