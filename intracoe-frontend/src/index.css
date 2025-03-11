@@ -1,5 +1,11 @@
 @import 'tailwindcss';
 
+#root {
+  padding: 0% !important;
+  max-width: 100% !important;
+  font-family: 'Inter', sans-serif;
+}
+
 body {
   background-color: var(--color-body-bg);
 }
@@ -10,4 +16,5 @@ body {
   --color-body-bg: #f2f2f2;
   --color-light-text: #757575;
   --color-border-color: #e0e0e0;
+  --color-footer: #f5e1ca;
 }
