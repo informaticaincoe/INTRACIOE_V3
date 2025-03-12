@@ -10,7 +10,9 @@ export const Layout = () => {
       <div className="flex h-full w-full">
         <SideMenu />
         <div className="flex w-full flex-col justify-between">
-          <Outlet />
+          <article className="">
+            <Outlet />
+          </article>
           <Footer />
         </div>
       </div>

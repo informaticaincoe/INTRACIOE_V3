@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { Input } from '../../../shared/forms/input';
 import { SendFormButton } from '../../../shared/buttons/sendFormButton';
+import { useNavigate } from 'react-router';
 
 export const LoginForm = () => {
+  const navigate = useNavigate(); // Hook para navegar en React Router
+
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -33,6 +36,7 @@ export const LoginForm = () => {
 
     if (!newErrors.username && !newErrors.password) {
       console.log(formData.username, formData.password);
+      navigate('/');
     }
   };
 
