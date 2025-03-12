@@ -347,6 +347,7 @@ class DetalleFactura(models.Model):
     ventas_gravadas = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     pre_sug_venta = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     no_gravado = models.DecimalField(max_digits=10, decimal_places=2, null=True)
+    base_imponible = models.BooleanField(default=False)
     #iva_item = models.DecimalField(max_digits=10, decimal_places=2, blank=True, editable=False,help_text="IVA calculado (por ejemplo, 13% sobre el total sin IVA)")
     
     # def save(self, *args, **kwargs):
@@ -429,4 +430,6 @@ class Token_data(models.Model):
     class Meta:
         verbose_name = "Token Data"
         verbose_name_plural = "Token Data"
+        
 
+    
