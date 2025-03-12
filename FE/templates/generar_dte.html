@@ -103,6 +103,10 @@
           <label>Hora de Generación:</label>
           <input type="time" name="hora_generacion" class="form-control" readonly value="{{ hora_generacion }}">
         </div>
+        <div class="form-group">
+          <label>Documento Relacionado:</label>
+          <input type="text" name="documento_relacionado" class="form-control" id="documento_relacionado_input" value="{{ codigo_generacion_r }}">
+        </div>
       </div>
       
       <!-- Sección Receptor -->
@@ -463,6 +467,8 @@
 
       // Agregar el valor del select "tipo_documento"
       jsonData["tipo_item_select"] = document.querySelector('select[name="tipo_item_seleccionado"]').value;
+
+      jsonData["documento_relacionado_input"] = document.querySelector("input[name='documento_relacionado']").value;
       
       // Recopilar datos de productos
       let productos_ids = [];
