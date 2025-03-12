@@ -64,11 +64,11 @@ class TiposServicio_Medico(models.Model):
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
 
-class TipoItem(models.Model):
+"""class TipoItem(models.Model):
     codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=100)
     def __str__(self):
-        return f"{self.codigo} - {self.descripcion}"
+        return f"{self.codigo} - {self.descripcion}"""
 
 class Tipo_dte(models.Model):
     codigo = models.CharField(max_length=50)

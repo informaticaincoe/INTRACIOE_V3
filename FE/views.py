@@ -30,7 +30,7 @@ from django.views.decorators.csrf import csrf_exempt
 from decimal import ROUND_HALF_UP, Decimal
 from intracoe import settings
 from .models import Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica,  Receptor_fe, Tipo_dte, TipoMoneda, TipoUnidadMedida, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos
-from INVENTARIO.models import Producto
+from INVENTARIO.models import Producto, TipoItem
 from .models import Token_data
 from django.db import transaction
 from django.utils import timezone
@@ -272,7 +272,7 @@ def generar_factura_view(request):
         productos = Producto.objects.all()
         tipooperaciones = CondicionOperacion.objects.all()
         tipoDocumentos = Tipo_dte.objects.all()
-        
+        tipoItems = TipoItem.objects.all()
 
         context = {
             "numero_control": nuevo_numero,
@@ -283,7 +283,8 @@ def generar_factura_view(request):
             "receptores": receptores,
             "productos": productos,
             "tipooperaciones": tipooperaciones,
-            "tipoDocumentos": tipoDocumentos
+            "tipoDocumentos": tipoDocumentos,
+            "tipoItems": tipoItems
         }
         return render(request, "generar_dte.html", context)
 
@@ -295,6 +296,7 @@ def generar_factura_view(request):
             print(f"Numero de control: {numero_control}")
             codigo_generacion = data.get('codigo_generacion', '')
             receptor_id = data.get('receptor_id', None)
+            
             nit_receptor = data.get('nit_receptor', '')
             nombre_receptor = data.get('nombre_receptor', '')
             direccion_receptor = data.get('direccion_receptor', '')
@@ -302,6 +304,7 @@ def generar_factura_view(request):
             correo_receptor = data.get('correo_receptor', '')
             observaciones = data.get('observaciones', '')
             tipo_dte = data.get("tipo_documento_seleccionado", None) #BC: obtiene la seleccion del tipo de documento desde la pantalla del sistema
+            tipo_item = data.get("tipo_item_seleccionado", None)
             print(f"DTE seleccionado desde el form: {tipo_dte}")
 
             # Configuración adicional
@@ -411,7 +414,7 @@ def generar_factura_view(request):
                 iva_unitario = (precio_incl - precio_neto).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
                 # Totales por ítem
-                total_neto = (precio_neto * cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                total_neto = (precio_neto * cantidad) - descuento_monto.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 #total_iva_item = (iva_unitario * cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 #funcional total_iva_item = ( ( precio_incl * cantidad) / Decimal("1.13") * Decimal("0.13") ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 
@@ -509,7 +512,7 @@ def generar_factura_view(request):
                     
                 cuerpo_documento.append({
                     "numItem": idx,
-                    "tipoItem": 1,
+                    "tipoItem": tipo_item,
                     "numeroDocumento": None,
                     "codigo": str(det.producto.codigo),
                     "codTributo": None,
@@ -794,7 +797,8 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
         tributo_valor = tributo[0]
         subtotal = float(factura.sub_total)
         valor_tributos = float(tributo_valor["valor"])
-        total_operaciones = subtotal + valor_tributos
+        suma_operaciones = subtotal + valor_tributos
+        total_operaciones = Decimal(str(suma_operaciones)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         json_resumen["montoTotalOperacion"] = float(total_operaciones)
         total_pagar = json_resumen["montoTotalOperacion"] - json_resumen["ivaPerci1"] - json_resumen["ivaRete1"] - json_resumen["reteRenta"] - json_resumen["totalNoGravado"]
         json_resumen["totalPagar"] = total_pagar
@@ -847,28 +851,29 @@ def invalidacion_dte_view(request, factura_id):
     """
     
     #Tipo Invalidacion
-    tipo_invalidacion = TipoInvalidacion.objects.get(codigo="1") #Campo dinamico
+    tipo_invalidacion = TipoInvalidacion.objects.get(codigo="2") #Campo dinamico
     #Quien solicita invalidar el dte, el emisor o receptor
     solicitud = "receptor" #Campo dinamico
     
     try: 
         if factura_invalidar is not None:
-            
+            print("-Factura a invalidar encontrada", factura_invalidar)
             #Buscar si la factura ya tiene un evento de invalidacion
             evento_invalidacion = EventoInvalidacion.objects.filter(factura__codigo_generacion=factura_invalidar.codigo_generacion).first()
             
+            evento_invalidacion.tipo_anulacion = tipo_invalidacion
+            evento_invalidacion.motivo_anulacion = tipo_invalidacion.descripcion #Campo dinamico
+            evento_invalidacion.codigo_generacion_r = factura_invalidar.codigo_generacion
+            evento_invalidacion.solicita_invalidacion = solicitud
             if evento_invalidacion is None:
                 #Llenar registro en tabla
                 evento_invalidacion = EventoInvalidacion.objects.create(
                     codigo_generacion = codigo_generacion_invalidacion,
-                    factura = factura_invalidar,
-                    codigo_generacion_r = factura_invalidar.codigo_generacion,
-                    tipo_anulacion = tipo_invalidacion,
-                    motivo_anulacion = tipo_invalidacion.descripcion, #Campo dinamico
-                    solicita_invalidacion = solicitud
+                    factura = factura_invalidar
                 )
+            else:
+                evento_invalidacion.save()
             
-            print("-Inicio json anulacion")
             json_identificacion_inv = {
                 "version": int(VERSION_EVENTO_INVALIDACION), #Version vigente 2
                 "ambiente": "01", #str(Ambiente.codigo),
@@ -926,7 +931,7 @@ def invalidacion_dte_view(request, factura_id):
             if int(evento_invalidacion.tipo_anulacion.codigo) == COD_TIPO_INVALIDACION_RESCINDIR and tipo_dte_invalidar != COD_NOTA_CREDITO and tipo_dte_invalidar != COD_COMPROBANTE_LIQUIDACION:
                 json_documento_inv["codigoGeneracionR"] = None
             else:
-                json_documento_inv["codigoGeneracionR"] = "0501A8BC-64FB-4416-B8AB-ED2490322FA8".upper() #str(evento_invalidacion.codigo_generacion_r).upper() #campo en la vista
+                json_documento_inv["codigoGeneracionR"] = None#.upper() #str(evento_invalidacion.codigo_generacion_r).upper() #campo en la vista
                 print("codGeneracionR",json_documento_inv["codigoGeneracionR"])       
             #Asignar informacion de quien solicita la invalidacion, segun seleccion(receptor o emisor)
             if solicitud == EMI_SOLICITA_INVALIDAR_DTE:
@@ -952,13 +957,16 @@ def invalidacion_dte_view(request, factura_id):
             evento_invalidacion.tipo_documento_solicita = json_motivo_inv["tipDocSolicita"]
             evento_invalidacion.numero_documento_solicita = json_motivo_inv["numDocSolicita"]
             evento_invalidacion.save()
-        #respuestaMh = 
-        #return redirect (reverse('detalle_factura', args=[factura_id]))
+        else:
+            return JsonResponse({
+            "error": "Error DTE a invalidar no encontrado",
+            "detalle": str(e)
+        }) 
+        return redirect (reverse('detalle_factura', args=[factura_id]))
     except Exception as e:
-            codigo_generacion_invalidacion = str(uuid.uuid4()).upper()
-            print(f"Error al generar el evento de invalidación: {e}")
-            return JsonResponse({"error": str(e)}, status=400)
-    return JsonResponse({"error": "Método no permitido"}, status=405)
+        codigo_generacion_invalidacion = str(uuid.uuid4()).upper()
+        print(f"Error al generar el evento de invalidación: {e}")
+        return JsonResponse({"error": str(e)}, status=400)
     
 @csrf_exempt
 def firmar_factura_anulacion_view(request, factura_id): 
@@ -1172,8 +1180,8 @@ def enviar_factura_invalidacion_hacienda_view(request, factura_id):
             evento_invalidacion.estado=True
             evento_invalidacion.save()
             print("-Fin enviar invalidacion a MH")
-            respuestaMh = json_response_data["descripcionMsg"]
-            print("-Detalle RespuestaMH ", respuestaMh)
+            respuestaMh = json_response_data["jsonRespuestaMh"]["descripcionMsg"]
+            print("-Detalle RespuestaMH ", json_response_data["jsonRespuestaMh"]["descripcionMsg"])
             return JsonResponse({
                 "mensaje": "Factura invalidada con éxito",
                 "respuesta": response_data

@@ -38,6 +38,12 @@ class Descuento(models.Model):
     estdo = models.BooleanField(default=True)
     def __str__(self):
         return f"{self.descripcion} - {self.porcentaje}%"
+    
+class TipoItem(models.Model):
+    codigo = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=100)
+    def __str__(self):
+        return f"{self.codigo} - {self.descripcion}"
 
 class Producto(models.Model):
     codigo = models.CharField(max_length=50, unique=True)  # SKU único
@@ -55,6 +61,9 @@ class Producto(models.Model):
     descuento = models.ForeignKey(Descuento, on_delete=models.SET_NULL, null=True, blank=True)
     
     impuestos = models.ManyToManyField(Impuesto, blank=True)  # Soporte para múltiples impuestos
+    
+    tipo_item = models.ForeignKey(TipoItem, on_delete=models.SET_NULL, null=True, blank=True)
+    referencia_interna = models.CharField(max_length=50, null=True, editable=True, default=None)
     
     # Control de lotes y vencimientos (Opcional)
     maneja_lotes = models.BooleanField(default=False)
