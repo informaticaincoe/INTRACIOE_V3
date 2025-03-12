@@ -1,7 +1,11 @@
+import { Title } from '../../../../shared/text/title';
+import { TableContainer } from '../components/activitiesTable/tableContainer';
+
 export const ActivitiesPage = () => {
   return (
-    <>
-      <h1>Actividades economicas</h1>
-    </>
+    <div className="py-8">
+      <Title text="Actividades economicas" />
+      <TableContainer />
+    </div>
   );
 };
