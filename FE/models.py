@@ -2,7 +2,7 @@ from django.db import models
 from django.utils import timezone
 from datetime import timedelta, datetime
 from decimal import ROUND_HALF_UP, Decimal
-from INVENTARIO.models import Producto
+from INVENTARIO.models import Producto, TipoUnidadMedida
 import uuid
 
 class ActividadEconomica(models.Model):
@@ -62,11 +62,11 @@ class TiposServicio_Medico(models.Model):
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
 
-class TipoItem(models.Model):
+"""class TipoItem(models.Model):
     codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=100)
     def __str__(self):
-        return f"{self.codigo} - {self.descripcion}"
+        return f"{self.codigo} - {self.descripcion}"""
 
 class Tipo_dte(models.Model):
     codigo = models.CharField(max_length=50)
@@ -173,13 +173,6 @@ class TipoMoneda(models.Model):
     descripcion = models.CharField(max_length=50)
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
-    
-class TipoUnidadMedida(models.Model):
-    codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
-    def __str__(self):
-        return f"{self.codigo} - {self.descripcion}"
-    
         
 #modelo para descuentos por productos
 class Descuento(models.Model):
@@ -284,8 +277,8 @@ class FacturaElectronica(models.Model):
     codigo_generacion = models.UUIDField(default=uuid.uuid4, unique=True)
     tipomodelo = models.ForeignKey(Modelofacturacion, on_delete=models.CASCADE, null=True)
     #tipooperacion = models.ForeignKey(CondicionOperacion, on_delete=models.CASCADE, null=True)
-    tipocontingencia = models.ForeignKey(TipoContingencia, on_delete=models.CASCADE, null=True)
-    motivocontin = models.CharField(max_length=350, null=True)
+    tipocontingencia = models.ForeignKey(TipoContingencia, on_delete=models.CASCADE, null=True, blank=True)
+    motivocontin = models.CharField(max_length=350, null=True, blank=True)
     fecha_emision = models.DateField(auto_now_add=True) 
     hora_emision = models.TimeField(auto_now_add=True) 
     tipomoneda = models.ForeignKey(TipoMoneda, on_delete=models.CASCADE, null=True)
@@ -323,7 +316,10 @@ class FacturaElectronica(models.Model):
     json_firmado = models.JSONField(blank=True, null=True)
     sello_recepcion = models.CharField(max_length=255, blank=True, null=True)
     recibido_mh = models.BooleanField(default=False)
-
+    estado = models.BooleanField(default=False)
+    tipo_documento_relacionar = models.CharField(max_length=50, null=True)#Identificar si el documento es Fisico(F) o Electronico(E)
+    documento_relacionado = models.CharField(max_length=100, null=True)#Agregar el documento relacionado
+    
     def save(self, *args, **kwargs):
         if not self.numero_control:
             super().save(*args, **kwargs)
@@ -340,12 +336,15 @@ class DetalleFactura(models.Model):
     unidad_medida = models.ForeignKey(TipoUnidadMedida, on_delete=models.CASCADE, null=True)
     iva_item = models.DecimalField(max_digits=10, decimal_places=2, null=True, default=Decimal('0.00'),)
     precio_unitario = models.DecimalField(max_digits=10, decimal_places=2,help_text="Precio unitario del producto")
-    descuento = models.DecimalField(max_digits=5, decimal_places=2, default=0,help_text="Descuento aplicado (en monto) sobre el total sin IVA")
+    #descuento = models.DecimalField(max_digits=5, decimal_places=2, default=0,help_text="Descuento aplicado (en monto) sobre el total sin IVA")
     ventas_no_sujetas = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     ventas_exentas = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     ventas_gravadas = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     pre_sug_venta = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     no_gravado = models.DecimalField(max_digits=10, decimal_places=2, null=True)
+    base_imponible = models.BooleanField(default=False)
+    tiene_descuento = models.BooleanField(default=False)
+    descuento = models.ForeignKey(Descuento, on_delete=models.SET_NULL, null=True, blank=True)
     #iva_item = models.DecimalField(max_digits=10, decimal_places=2, blank=True, editable=False,help_text="IVA calculado (por ejemplo, 13% sobre el total sin IVA)")
     
     # def save(self, *args, **kwargs):
@@ -378,19 +377,22 @@ class EventoInvalidacion(models.Model):
     #-dtereceptor = models.ForeignKey(Receptor_fe, on_delete=models.CASCADE, related_name='dte_invalidar_receptor_FE')
 
     #Motivo (tabla TipoInvalidacion)
-    tipo_anulacion = models.ForeignKey(TipoInvalidacion, on_delete=models.CASCADE, related_name='dte_tipo_invalidacion_FE')
+    tipo_invalidacion = models.ForeignKey(TipoInvalidacion, on_delete=models.CASCADE, related_name='dte_tipo_invalidacion_FE')
     motivo_anulacion = models.CharField(max_length=255, blank=True, null=True)
     
     #Llena los campos nombreResponsable, tipoDocResponsable y numDocResponsable [Acceder desde factura]
     #dteemisor = models.ForeignKey(Emisor_fe, on_delete=models.CASCADE, related_name='dte_invalidacion_emisor_FE')
     
     nombre_solicita = models.CharField(max_length=255, verbose_name="Nombre o Razón Social", null=True) #Nombre de quien solicita la invalidacion, ya sea el receptor o emisor
-    tipo_documento_solicita = models.IntegerField(null=True) #Tipo de documento de quien solicita la invalidacion, ya sea el receptor o emisor
+    tipo_documento_solicita = models.CharField(max_length=20, blank=True, null=True) #Tipo de documento de quien solicita la invalidacion, ya sea el receptor o emisor
     numero_documento_solicita = models.CharField(max_length=20, blank=True, null=True) #Numero de doc de quien solicita la invalidacion, ya sea el receptor o emisor
     solicita_invalidacion = models.CharField(max_length=15, blank=True, null=True) #Especificar quien invalidara el dte. si el emisor o receptor
     json_invalidacion = models.JSONField(blank=True, null=True)
     json_firmado = models.JSONField(blank=True, null=True)
     firmado = models.BooleanField(default=False)
+    sello_recepcion = models.CharField(max_length=255, blank=True, null=True)
+    recibido_mh = models.BooleanField(default=False)
+    estado = models.BooleanField(default=False)
     
 
 class Token_data(models.Model):
@@ -425,4 +427,6 @@ class Token_data(models.Model):
     class Meta:
         verbose_name = "Token Data"
         verbose_name_plural = "Token Data"
+        
 
+    

@@ -2,15 +2,15 @@
     "identificacion": {
         "version": 1,
         "ambiente": "01",
-        "tipoDte": "03",
+        "tipoDte": "01",
         "numeroControl": "DTE-01-0000MOO1-000000000000218",
-        "codigoGeneracion": "C7CD7600-C45A-4CAA-ACBD-DE30AA628A4B",
+        "codigoGeneracion": "8973379E-7B1D-414E-B0D0-70EC3C3D43BC",
         "tipoModelo": 1,
         "tipoOperacion": 1,
         "tipoContingencia": null,
         "motivoContin": null,
-        "fecEmi": "2025-03-04",
-        "horEmi": "10:05:13",
+        "fecEmi": "2025-03-13",
+        "horEmi": "07:42:22",
         "tipoMoneda": "USD"
     },
     "documentoRelacionado": null,
@@ -35,9 +35,6 @@
         "codPuntoVenta": "0001"
     },
     "receptor": {
-        "tipoDocumento": "36",
-        "numDocumento": "06142802961066",
-        "nrc": null,
         "nombre": "Francisco Antonio Flores",
         "codActividad": "24310",
         "descActividad": "undición de hierro y acero",
@@ -47,58 +44,63 @@
             "complemento": "Carretera a Sonsonate, km 27 ½ Zona Industrial Lourdes, Calle Antigua Hda, La Libertad, El Salvador C.A"
         },
         "telefono": "604477435",
-        "correo": "juniorfran@hotmail.es"
+        "correo": "juniorfran@hotmail.es",
+        "nrc": null,
+        "tipoDocumento": "36",
+        "numDocumento": "06142802961066"
     },
     "otrosDocumentos": null,
     "ventaTercero": null,
     "cuerpoDocumento": [
         {
             "numItem": 1,
-            "tipoItem": 1,
+            "tipoItem": "4",
             "numeroDocumento": null,
-            "codigo": "PCH405",
+            "codigo": "PCH456",
             "codTributo": null,
-            "descripcion": "leche entera ira 26 250gb",
-            "cantidad": 1.0,
-            "uniMedida": 59,
-            "precioUni": 8.5,
+            "descripcion": "Leche entera de 250g",
+            "cantidad": 1,
+            "uniMedida": 99,
+            "precioUni": 0.16,
             "montoDescu": 0.0,
             "ventaNoSuj": 0.0,
             "ventaExenta": 0.0,
-            "ventaGravada": 7.52,
+            "ventaGravada": 1.25,
             "tributos": [
-                [
-                    "20"
-                ]
+                {
+                    "codigo": "20",
+                    "descripcion": "Impuesto al Valor Agregado 13%",
+                    "valor": 0.14
+                }
             ],
             "psv": 0.0,
             "noGravado": 0.0,
-            "ivaItem": 0.98
+            "ivaItem": 0.14
         }
     ],
     "resumen": {
         "totalNoSuj": 0.0,
         "totalExenta": 0.0,
-        "totalGravada": 7.52,
-        "subTotalVentas": 7.52,
+        "totalGravada": 1.25,
+        "subTotalVentas": 1.25,
         "descuNoSuj": 0.0,
         "descuExenta": 0.0,
         "descuGravada": 0.0,
         "porcentajeDescuento": 0.0,
         "totalDescu": 0.0,
-        "subTotal": 7.52,
+        "subTotal": 1.25,
         "ivaRete1": 0.0,
         "reteRenta": 0.0,
-        "montoTotalOperacion": 7.52,
         "totalNoGravado": 0.0,
-        "totalPagar": 8.5,
-        "totalLetras": "Ocho con 50/100 USD",
-        "totalIva": 0.98,
+        "totalLetras": "Uno con 25/100 USD",
         "saldoFavor": 0.0,
         "condicionOperacion": 1,
         "pagos": null,
+        "numPagoElectronico": null,
         "tributos": null,
-        "numPagoElectronico": null
+        "totalIva": 0.14,
+        "montoTotalOperacion": 1.25,
+        "totalPagar": 1.25
     },
     "extension": {
         "nombEntrega": null,

@@ -11,7 +11,7 @@ from .models import (INCOTERMS, ActividadEconomica, NumeroControl, FacturaElectr
                            Ambiente, Modelofacturacion, TipoDocContingencia, TipoDomicilioFiscal, TipoDonacion, 
                            TipoInvalidacion, TipoPersona, TipoTransmision, TipoContingencia, TipoRetencionIVAMH, 
                            TipoGeneracionDocumento, TipoTransporte, TiposDocIDReceptor, TiposEstablecimientos, 
-                           TiposServicio_Medico, TipoItem, CondicionOperacion, FormasPago, Plazo,
+                           TiposServicio_Medico, CondicionOperacion, FormasPago, Plazo,
                             Descuento, DetalleFactura, TipoMoneda, TipoUnidadMedida, EventoInvalidacion)
 
 
@@ -24,12 +24,12 @@ models = [
 
 @admin.register(EventoInvalidacion)
 class EventoInvalidacion(admin.ModelAdmin):
-    list_display = ('id', 'factura', 'codigo_generacion_r', 'tipo_anulacion', 'motivo_anulacion', 'nombre_solicita', 'tipo_documento_solicita', 'hora_anulacion', 'fecha_anulacion')
+    list_display = ('id', 'factura', 'codigo_generacion_r', 'tipo_invalidacion', 'motivo_anulacion', 'nombre_solicita', 'tipo_documento_solicita', 'hora_anulacion', 'fecha_anulacion')
     search_fields = ('factura__numero_factura', 'codigo_generacion_r')
     
 @admin.register(DetalleFactura)
 class DetalleFacturaAdmin(admin.ModelAdmin):
-    list_display = ('id', 'factura', 'producto', 'cantidad', 'precio_unitario', 'descuento')
+    list_display = ('id', 'factura', 'producto', 'cantidad', 'precio_unitario')
     search_fields = ('factura__numero_factura', 'producto__nombre')
     
 
@@ -144,10 +144,10 @@ class TiposServicioMedicoAdmin(admin.ModelAdmin):
     list_display = ('codigo', 'descripcion')
     search_fields = ('codigo', 'descripcion')
 
-@admin.register(TipoItem)
+"""@admin.register(TipoItem)
 class TipoItemAdmin(admin.ModelAdmin):
     list_display = ('codigo', 'descripcion')
-    search_fields = ('codigo', 'descripcion')
+    search_fields = ('codigo', 'descripcion')"""
 
 @admin.register(CondicionOperacion)
 class CondicionOperacionAdmin(admin.ModelAdmin):

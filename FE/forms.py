@@ -24,3 +24,4 @@ class EmisorForm(forms.ModelForm):
                 attrs={'data-placeholder': 'Busca actividades...'}
             ),
         }
+
