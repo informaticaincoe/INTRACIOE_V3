@@ -1,10 +1,11 @@
-import { Title } from "../../../../shared/text/title"
+import { Title } from '../../../../shared/text/title';
+import { UploadFileSection } from '../components/uploadExcel/uploadFileSection';
 
 export const UploadExcelPage = () => {
-    return (
-        <div className="py-8">
-            <Title text="Cargar actividades económicas" />
-            
-        </div>
-    )
-}
+  return (
+    <div>
+      <Title text="Cargar actividades económicas" />
+      <UploadFileSection />
+    </div>
+  );
+};

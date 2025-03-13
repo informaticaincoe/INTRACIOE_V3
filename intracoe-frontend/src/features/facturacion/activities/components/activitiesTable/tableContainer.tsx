@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ActivitiesData } from '../../interfaces/activitiesData';
 import { TableData } from './tableData';
 import { HeaderTable } from '../headerTable/headerTable';
+import { WhiteSectionsPage } from '../../../../../shared/containers/whiteSectionsPage';
 
 //datos de prueba
 const activityList = [
@@ -60,9 +61,11 @@ export const TableContainer = () => {
   }, []);
 
   return (
-    <div className="m-10 bg-white px-10 py-5">
-      <HeaderTable />
-      <TableData activities={activities} />
-    </div>
+    <WhiteSectionsPage>
+      <>
+        <HeaderTable />
+        <TableData activities={activities} />
+      </>
+    </WhiteSectionsPage>
   );
 };
