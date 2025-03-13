@@ -1,0 +1,35 @@
+/* Estilo para el botón de aceptación */
+.delete {
+  /* Color de fondo */
+  background-color: var(--color-red);
+  /* Color del texto */
+  color: white;
+  /* Sin borde */
+  border: none;
+  /* Relleno */
+  padding: 1.5% 3%;
+  /* Bordes redondeados */
+  border-radius: 0.3em;
+  /* Cursor tipo puntero */
+  cursor: pointer;
+}
+
+.delete:hover {
+  /* Cambio de color al pasar el ratón */
+  background-color: darkred;
+}
+
+.cancel {
+  /* Color de fondo */
+  background-color: white;
+  /* Color del texto */
+  color: var(--color-gray);
+  /* Sin borde */
+  border: 1px var(--color-gray) solid;
+  /* Relleno */
+  padding: 1.5% 3%;
+  /* Bordes redondeados */
+  border-radius: 0.3em;
+  /* Cursor tipo puntero */
+  cursor: pointer;
+}
