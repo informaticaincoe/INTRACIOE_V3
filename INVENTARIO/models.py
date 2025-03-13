@@ -45,6 +45,29 @@ class TipoItem(models.Model):
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
 
+class TipoTributo(models.Model):
+    codigo = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=100)
+    
+    def __str__(self):
+        return f"{self.codigo} - {self.descripcion}"
+
+class TipoValor(models.Model):
+    descripcion = models.CharField(max_length=50)
+    
+    def __str__(self):
+        return f"{self.descripcion}"
+
+class Tributo(models.Model):
+    tipo_tributo = models.ForeignKey(TipoTributo, on_delete=models.SET_NULL, null=True, blank=True)
+    codigo = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=100)
+    valor_tributo = models.CharField(max_length=100, null=True)#models.DecimalField(max_digits=10, decimal_places=2, null=True)
+    tipo_valor = models.ForeignKey(TipoValor, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    def __str__(self):
+        return f"{self.codigo} - {self.descripcion}"
+
 class Producto(models.Model):
     codigo = models.CharField(max_length=50, unique=True)  # SKU único
     descripcion = models.CharField(max_length=255)
@@ -64,6 +87,7 @@ class Producto(models.Model):
     
     tipo_item = models.ForeignKey(TipoItem, on_delete=models.SET_NULL, null=True, blank=True)
     referencia_interna = models.CharField(max_length=50, null=True, editable=True, default=None)
+    tributo = models.ForeignKey(Tributo, on_delete=models.CASCADE, null=False, default=1)
     
     # Control de lotes y vencimientos (Opcional)
     maneja_lotes = models.BooleanField(default=False)
