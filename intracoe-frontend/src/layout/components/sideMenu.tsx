@@ -106,7 +106,9 @@ export const SideMenu = () => {
     <div className="bg-white">
       <Menu
         onClick={onClick}
-        style={{ width: 256, opacity: '75%', fontFamily: 'Inter' }}
+
+        style={{ width: 300, opacity: '75%', fontFamily: 'Inter' }}
+
         defaultSelectedKeys={['1']}
         defaultOpenKeys={['dashboard']}
         mode="inline"

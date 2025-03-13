@@ -12,7 +12,9 @@ export const SendFormButton: React.FC<SendFormButtonProps> = ({
   return (
     <button
       type="button"
-      className="bg-primary-yellow mb-5 w-full rounded-md py-3 text-white"
+
+      className="bg-primary-yellow mb-5 w-full rounded-md py-3 text-white hover:cursor-pointer"
+
       onClick={onClick}
     >
       {text}
