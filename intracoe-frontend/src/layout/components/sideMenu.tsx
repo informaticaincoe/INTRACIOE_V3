@@ -1,9 +1,3 @@
-import React from 'react';
-import {
-  AppstoreOutlined,
-  MailOutlined,
-  SettingOutlined,
-} from '@ant-design/icons';
 import { MdDashboard } from 'react-icons/md';
 import { IoMdPerson } from 'react-icons/io';
 import { HiCurrencyDollar } from 'react-icons/hi2';
@@ -103,12 +97,16 @@ export const SideMenu = () => {
   };
 
   return (
-    <div className="bg-white">
+    <div className="h-full bg-white">
       <Menu
         onClick={onClick}
-
-        style={{ width: 300, opacity: '75%', fontFamily: 'Inter' }}
-
+        style={{
+          width: 300,
+          opacity: '75%',
+          fontFamily: 'Inter',
+          position: 'sticky',
+          top: 80,
+        }}
         defaultSelectedKeys={['1']}
         defaultOpenKeys={['dashboard']}
         mode="inline"

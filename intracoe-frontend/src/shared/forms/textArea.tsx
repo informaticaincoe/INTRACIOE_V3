@@ -21,7 +21,7 @@ export const TextArea: React.FC<TextAreaProps> = ({
         placeholder={placeholder}
         value={value}
         onChange={onChange}
-        className={`${className} border-border-color focus:outline-border w-full rounded-sm border px-3 py-2 focus:outline-1 h-32`}
+        className={`${className} border-border-color focus:outline-border h-32 w-full rounded-sm border px-3 py-2 focus:outline-1`}
       ></textarea>
     </>
   );

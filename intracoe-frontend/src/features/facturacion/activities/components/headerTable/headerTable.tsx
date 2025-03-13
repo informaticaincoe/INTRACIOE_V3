@@ -9,7 +9,7 @@ import { NewActivityForm } from '../forms/newActivityform';
 import { useNavigate } from 'react-router';
 
 export const HeaderTable = () => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState<'new' | 'excel' | null>(null);
 
@@ -19,7 +19,7 @@ export const HeaderTable = () => {
   };
 
   const handleUploadExcel = () => {
-    navigate('/uploadExcel')
+    navigate('/uploadExcel');
   };
 
   return (

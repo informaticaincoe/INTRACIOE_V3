@@ -11,32 +11,45 @@ body {
 }
 
 .p-multiselect-panel {
-  width: 40vw!important;
+  width: 40vw !important;
 }
 
-.p-multiselect-item{
+.p-multiselect-item {
   text-wrap: wrap;
 }
 
-.p-dialog{
-  
+.p-dialog {
 }
 
 input::file-selector-button {
   background-color: black;
   color: white;
-  padding: 1% 3%; 
+  padding: 1% 3%;
+}
+
+.p-inputtext {
+  padding: 1% 3%;
+}
+
+.p-dropdown-items {
+  width: 40vw;
+}
+
+.p-dropdown-item {
+  text-wrap: wrap;
 }
 
 @theme {
   --color-primary-yellow: #fca94e;
   --color-primary-blue: #232c6e;
-  --color-body-bg: #F2F2F2;
+  --color-body-bg: #f2f2f2;
   --color-light-text: #757575;
   --color-blue: #5998ff;
   --color-red: #fc0005;
   --color-gray: #7c7c7c;
   --color-green: #4caf50;
   --color-green-hover: #39973c;
+  --color-border-color: #e0e0e0;
+  --color-footer: #f5e1ca;
   --font-display: 'Inter', 'sans-serif';
 }
