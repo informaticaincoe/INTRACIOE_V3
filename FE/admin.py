@@ -24,12 +24,12 @@ models = [
 
 @admin.register(EventoInvalidacion)
 class EventoInvalidacion(admin.ModelAdmin):
-    list_display = ('id', 'factura', 'codigo_generacion_r', 'tipo_anulacion', 'motivo_anulacion', 'nombre_solicita', 'tipo_documento_solicita', 'hora_anulacion', 'fecha_anulacion')
+    list_display = ('id', 'factura', 'codigo_generacion_r', 'tipo_invalidacion', 'motivo_anulacion', 'nombre_solicita', 'tipo_documento_solicita', 'hora_anulacion', 'fecha_anulacion')
     search_fields = ('factura__numero_factura', 'codigo_generacion_r')
     
 @admin.register(DetalleFactura)
 class DetalleFacturaAdmin(admin.ModelAdmin):
-    list_display = ('id', 'factura', 'producto', 'cantidad', 'precio_unitario', 'descuento')
+    list_display = ('id', 'factura', 'producto', 'cantidad', 'precio_unitario')
     search_fields = ('factura__numero_factura', 'producto__nombre')
     
 

@@ -28,7 +28,7 @@ urlpatterns = [
     path("factura_pdf/<int:factura_id>/", views.detalle_factura, name="detalle_factura"),
 
     path('obtener-numero-control/', views.obtener_numero_control_ajax, name='obtener_numero_control_ajax'),
-
+    path('obtener-descuento/', views.seleccion_descuento_ajax, name='obtener_descuento'),
 
     #urls para actividad economica
     path('actividades/', views.actividad_economica_list, name='actividad_economica_list'),
