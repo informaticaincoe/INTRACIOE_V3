@@ -1,3 +1,4 @@
+
 import { Title } from '../../../../shared/text/title';
 import { TableContainer } from '../components/activitiesTable/tableContainer';
 

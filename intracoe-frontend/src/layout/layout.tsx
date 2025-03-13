@@ -13,6 +13,7 @@ export const Layout = () => {
           <article className="">
             <Outlet />
           </article>
+
           <Footer />
         </div>
       </div>

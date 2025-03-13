@@ -11,7 +11,7 @@ from .models import (INCOTERMS, ActividadEconomica, NumeroControl, FacturaElectr
                            Ambiente, Modelofacturacion, TipoDocContingencia, TipoDomicilioFiscal, TipoDonacion, 
                            TipoInvalidacion, TipoPersona, TipoTransmision, TipoContingencia, TipoRetencionIVAMH, 
                            TipoGeneracionDocumento, TipoTransporte, TiposDocIDReceptor, TiposEstablecimientos, 
-                           TiposServicio_Medico, TipoItem, CondicionOperacion, FormasPago, Plazo,
+                           TiposServicio_Medico, CondicionOperacion, FormasPago, Plazo,
                             Descuento, DetalleFactura, TipoMoneda, TipoUnidadMedida, EventoInvalidacion)
 
 
@@ -144,10 +144,10 @@ class TiposServicioMedicoAdmin(admin.ModelAdmin):
     list_display = ('codigo', 'descripcion')
     search_fields = ('codigo', 'descripcion')
 
-@admin.register(TipoItem)
+"""@admin.register(TipoItem)
 class TipoItemAdmin(admin.ModelAdmin):
     list_display = ('codigo', 'descripcion')
-    search_fields = ('codigo', 'descripcion')
+    search_fields = ('codigo', 'descripcion')"""
 
 @admin.register(CondicionOperacion)
 class CondicionOperacionAdmin(admin.ModelAdmin):

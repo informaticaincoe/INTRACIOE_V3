@@ -23,13 +23,7 @@ body {
 }
 
 @theme {
-  --color-primary-yellow: #fca94e;
-  --color-primary-blue: #232c6e;
-  --color-primary-blue-hover: #1b225c;
-  --color-body-bg: #f2f2f2;
-  --color-light-text: #757575;
-  --color-border-color: #e0e0e0;
-  --color-footer: #f5e1ca;
+
   --color-blue: #5998ff;
   --color-red: #fc0005;
   --color-gray: #7c7c7c;
