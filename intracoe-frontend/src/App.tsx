@@ -8,6 +8,7 @@ import { GenerateDocuments } from './features/facturacion/generateDocuments/page
 import { ProductsPage } from './features/bussiness/products/pages/productsPage';
 import { ServicesPage } from './features/bussiness/services/pages/ServicesPage';
 import { ConfigBussiness } from './features/bussiness/configBussiness/pages/ConfigBussiness';
+import { UploadExcelPage } from './features/facturacion/activities/pages/uploadExcelPage';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route path="/productos" element={<ProductsPage />} />
           <Route path="/servicios" element={<ServicesPage />} />
           <Route path="/empresa" element={<ConfigBussiness />} />
+          <Route path="/uploadExcel" element={<UploadExcelPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
