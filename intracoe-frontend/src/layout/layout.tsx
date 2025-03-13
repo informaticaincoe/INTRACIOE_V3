@@ -10,7 +10,7 @@ export const Layout = () => {
       <div className="flex h-full w-full">
         <SideMenu />
         <div className="flex w-full flex-col justify-between">
-          <article className="">
+          <article className="py-8">
             <Outlet />
           </article>
 
