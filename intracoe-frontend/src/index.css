@@ -1,0 +1,33 @@
+@import 'tailwindcss';
+
+#root {
+  padding: 0% !important;
+  max-width: 100% !important;
+  font-family: 'Inter', sans-serif;
+}
+
+body {
+  background-color: var(--color-body-bg);
+}
+
+.p-multiselect-panel {
+  width: 40vw!important;
+}
+
+.p-multiselect-item{
+  text-wrap: wrap;
+}
+
+.p-dialog{
+  
+}
+
+@theme {
+
+  --color-blue: #5998ff;
+  --color-red: #fc0005;
+  --color-gray: #7c7c7c;
+  --color-green: #4caf50;
+  --color-green-hover: #39973c;
+  --font-display: 'Inter', 'sans-serif';
+}

@@ -30,7 +30,7 @@ from django.views.decorators.csrf import csrf_exempt
 from decimal import ROUND_HALF_UP, Decimal
 from intracoe import settings
 from .models import Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica,  Receptor_fe, Tipo_dte, TipoMoneda, TipoUnidadMedida, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos
-from INVENTARIO.models import Producto
+from INVENTARIO.models import Producto, TipoItem, Tributo
 from .models import Token_data
 from django.db import transaction
 from django.utils import timezone
@@ -51,6 +51,8 @@ from reportlab.lib.units import inch
 from django.core import serializers
 from django.urls import reverse
 from django.views.decorators.http import require_POST
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 FIRMADOR_URL = "http://192.168.2.25:8113/firmardocumento/"
 DJANGO_SERVER_URL = "http://127.0.0.1:8000"
@@ -74,6 +76,8 @@ COD_NOTA_CREDITO = "05"
 COD_COMPROBANTE_LIQUIDACION = "08"
 EMI_SOLICITA_INVALIDAR_DTE = "emisor"
 REC_SOLICITA_INVALIDAR_DTE = "receptor"
+COD_TIPO_ITEM_OTROS = "4"
+COD_TRIBUTOS_SECCION_2 = "2"
 
 #vistas para actividad economica
 def cargar_actividades(request):
@@ -270,7 +274,7 @@ def generar_factura_view(request):
         productos = Producto.objects.all()
         tipooperaciones = CondicionOperacion.objects.all()
         tipoDocumentos = Tipo_dte.objects.all()
-        
+        tipoItems = TipoItem.objects.all()
 
         context = {
             "numero_control": nuevo_numero,
@@ -281,18 +285,22 @@ def generar_factura_view(request):
             "receptores": receptores,
             "productos": productos,
             "tipooperaciones": tipooperaciones,
-            "tipoDocumentos": tipoDocumentos
+            "tipoDocumentos": tipoDocumentos,
+            "tipoItems": tipoItems
         }
         return render(request, "generar_dte.html", context)
 
     elif request.method == 'POST':
         try:
+            items_permitidos = 2000
             data = json.loads(request.body)
+            docsRelacionados = []#Acumular los documentos relacionados
             # Datos básicos
             numero_control = data.get('numero_control', '')
             print(f"Numero de control: {numero_control}")
             codigo_generacion = data.get('codigo_generacion', '')
             receptor_id = data.get('receptor_id', None)
+            
             nit_receptor = data.get('nit_receptor', '')
             nombre_receptor = data.get('nombre_receptor', '')
             direccion_receptor = data.get('direccion_receptor', '')
@@ -300,7 +308,9 @@ def generar_factura_view(request):
             correo_receptor = data.get('correo_receptor', '')
             observaciones = data.get('observaciones', '')
             tipo_dte = data.get("tipo_documento_seleccionado", None) #BC: obtiene la seleccion del tipo de documento desde la pantalla del sistema
-            print(f"DTE seleccionado desde el form: {tipo_dte}")
+            tipo_item = data.get("tipo_item_seleccionado", None)
+            documento_relacionado = data.get("documento_relacionado", None)
+            print(f"-Tipo item: {tipo_item}")
 
             # Configuración adicional
             tipooperacion_id = data.get("condicion_operacion", None)
@@ -350,7 +360,9 @@ def generar_factura_view(request):
             ambiente_obj = Ambiente.objects.get(codigo="01")
             #tipo_dte_obj = Tipo_dte.objects.get("tipo_documento")
             tipo_dte_obj = Tipo_dte.objects.get(codigo=tipo_dte)
-            print(f"Tipo de documento a generar = {tipo_dte_obj}")
+            print(f"-Tipo de item a generar = {tipo_item}")
+            tipo_item_obj = TipoItem.objects.get(codigo="1")
+            print(f"Tipo de documento a generar = {tipo_item_obj}")
 
             tipomodelo_obj = Modelofacturacion.objects.get(codigo="1")
             tipooperacion_obj = CondicionOperacion.objects.get(id=tipooperacion_id) if tipooperacion_id else None
@@ -408,8 +420,10 @@ def generar_factura_view(request):
                 
                 iva_unitario = (precio_incl - precio_neto).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
+                descuento_monto = Decimal("0.00")  # Se asume 0 descuento por ítem
+                
                 # Totales por ítem
-                total_neto = (precio_neto * cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                total_neto = (precio_neto * cantidad) - descuento_monto.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 #total_iva_item = (iva_unitario * cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 #funcional total_iva_item = ( ( precio_incl * cantidad) / Decimal("1.13") * Decimal("0.13") ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 
@@ -417,7 +431,7 @@ def generar_factura_view(request):
                 
                 total_con_iva = (precio_incl * cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
-                descuento_monto = Decimal("0.00")  # Se asume 0 descuento por ítem
+                
 
                 detalle = DetalleFactura.objects.create(
                     factura=factura,
@@ -483,170 +497,266 @@ def generar_factura_view(request):
             # Construir el cuerpoDocumento para el JSON con desglose
             cuerpo_documento = []
             for idx, det in enumerate(factura.detalles.all(), start=1):
-                # Recalcular (para el JSON) usando los valores ya calculados:
-                #precio_neto = (Decimal(det.precio_unitario) / Decimal("1.13")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) #BC: TEMPORALMENTE COMETAREADO YA QUE PARA FE DEBE INCLUIRSE EL IVA EN EL PRECIO
-                precio_neto = (Decimal(det.precio_unitario) ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-                #iva_unitario = (Decimal(det.precio_unitario) - precio_neto).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) #BC: TEMPORALMENTE COMETAREADO YA QUE PARA FE DEBE INCLUIRSE EL IVA EN EL PRECIO
-                iva_unitario = (Decimal(det.precio_unitario)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-                total_neto = (precio_neto * det.cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-                #total_iva_item = (iva_unitario * det.cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) #BC: TEMPORALMENTE COMETAREADO YA QUE PARA FE EL CALCULO ES DIFERENTE
-                total_iva_item = ( ( iva_unitario * det.cantidad) / Decimal("1.13") * Decimal("0.13") ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-                print(f"-Total IVA = {total_iva_item}")
                 
-                total_con_iva = (Decimal(det.precio_unitario) * det.cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-
-                print(f"Item {idx}: IVA unitario = {iva_unitario}, Total IVA = {total_iva_item}, IVA almacenado = {det.iva_item}")
-                
+                tipo_venta = "gravada"
                 #BC 03/03/25:para el caso de FE el campo tributos enviarlo null
                 tipo_dte_item = str(det.factura.tipo_dte.codigo)
                 if tipo_dte_item == COD_CONSUMIDOR_FINAL:
                     tributos = None  
                 else :
                     tributos = ["20"]
-                    #tributos = "20"
+                        
+                print("-N° items: ", idx)
+                baseImponible = det.base_imponible
+                print("-Base imponible: ", det.base_imponible)
+                #Items permitidos 2000
+                if idx > items_permitidos:
+                    return JsonResponse({"error": "Cantidad máxima de ítems permitidos " }, {items_permitidos})
+                else:
+                    codTributo = None 
+                    #Verificar los documentos relacionados (maximo deben ser 50)
+                    if documento_relacionado is not None:
+                        #Agregar todos los documentos relacionados a la lista
+                        if docsRelacionados is not None:
+                            for docRelacionado in docsRelacionados:
+                                if docRelacionado != documento_relacionado:
+                                    docsRelacionados.append(documento_relacionado)
+                        else:
+                            docsRelacionados.append(documento_relacionado)
+                        print(f"-Lista de documentos relacionados: {docsRelacionados} ")
+                        #Si la lista ya supera 50 docs relacionados detener el proceso de agregado de items
+                        if len(docsRelacionados) > 50:
+                            documentosRelacionadosMensaje = "Cantidad maxima permitida de documentos relacionados: 50"
+                            return JsonResponse({"error": "Cantidad maxima permitida de documentos relacionados: 50" })
+
+                    #Cantidad = 1, Si se utiliza el campo base imponible, si el tipo de item es 4, ...
+                    if baseImponible is True or tipo_item_obj.codigo == COD_TIPO_ITEM_OTROS:
+                        cantidad = 1
+                    else:
+                        cantidad = det.cantidad
+                        print("-Cantidad modificada", cantidad)
+                        
+                    #Unidad de medida = 99 cuando el contribuyente preste un servicio
+                    if baseImponible is True or tipo_item_obj.codigo == COD_TIPO_ITEM_OTROS:
+                        uniMedida = int(TipoUnidadMedida.objects.get(codigo="99").codigo)
+                    else:
+                        uniMedida = int(det.unidad_medida.codigo) if det.unidad_medida.codigo.isdigit() else 59
+                    print("-Unidad de medida: ", uniMedida)
                     
-                cuerpo_documento.append({
-                    "numItem": idx,
-                    "tipoItem": 1,
-                    "numeroDocumento": None,
-                    "codigo": str(det.producto.codigo),
-                    "codTributo": None,
-                    "descripcion": str(det.producto.descripcion),
-                    "cantidad": float(det.cantidad),
-                    "uniMedida": int(det.unidad_medida.codigo) if det.unidad_medida.codigo.isdigit() else 59,
-                    "precioUni": float(precio_neto),      # Precio unitario neto
-                    #"ivaUnitario": float(iva_unitario),     # IVA unitario
-                    #"totalNeto": float(total_neto),         # Total neto por ítem
-                    #"totalIva": float(total_iva_item),       # Total IVA por ítem
-                    #"totalConIva": float(total_con_iva),     # Total con IVA por ítem
-                    "montoDescu": float(det.descuento),
-                    "ventaNoSuj": float(det.ventas_no_sujetas),
-                    "ventaExenta": float(det.ventas_exentas),
-                    "ventaGravada": float(det.ventas_gravadas),
-                    "tributos": tributos, #iva para todos los items 
-                    "psv": 0.0,
-                    "noGravado": float(det.no_gravado),
-                    #"ivaItem": float(total_iva_item)        # IVA total por línea
-                })
+                    #Campo codTributo
+                    cuerpo_documento_tributos = []
+                    if det.producto.tributo is None:
+                        seleccionarTributoMensaje = "Seleccionar tributo para el producto"
+                        return JsonResponse({"error": "Seleccionar tributo para el producto" })
+                    else:
+                        if tipo_item_obj.codigo == COD_TIPO_ITEM_OTROS:
+                            cantidad = 1
+                            #Tributo sujeto iva (asociado al prod)
+                            tributo = Tributo.objects.get(codigo=det.producto.tributo.codigo)
+                            precio_neto = (precio_neto * Decimal(tributo.valor_tributo)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                            print("-Precio neto tributo", precio_neto)
+                            
+                            codTributo = None 
+                            if tipo_venta == "gravada":
+                                # Codigo del tributo (tributos.codigo)
+                                tributoIva = Tributo.objects.get(codigo="20")#IVA este codigo solo aplica a ventas gravadas(ya que estan sujetas a iva)
+                                tributos = [
+                                    {
+                                        "codigo": tributoIva.codigo,
+                                        "descripcion": tributoIva.descripcion,
+                                        "valor": float(factura.total_iva)
+                                    }
+                                ]
+                            else:
+                                tributos = None
+                            
+                            #Si el tributo asociado el prod pertenece a la seccion 2 de la tabla agregar un segundo item
+                            if tributo.tipo_tributo.codigo == COD_TRIBUTOS_SECCION_2:
+                                print("-Crear nuevo item")
+                                #Nuevo item (requerido cuando el tributo es de la seccion 2)
+                                cuerpo_documento_tributos.append({
+                                    "numItem": idx+1,
+                                    "tipoItem": tipo_item_obj.codigo,
+                                    "numeroDocumento": None,
+                                    "codigo": str(det.producto.codigo),
+                                    "codTributo": tributo.codigo,
+                                    "descripcion": str(tributo.descripcion),
+                                    "cantidad": float(cantidad), #float(det.cantidad),
+                                    "uniMedida": uniMedida, #int(det.unidad_medida.codigo) if det.unidad_medida.codigo.isdigit() else 59,
+                                    "precioUni": float(precio_neto),      # Precio unitario neto
+                                    #"ivaUnitario": float(iva_unitario),     # IVA unitario
+                                    #"totalNeto": float(total_neto),         # Total neto por ítem
+                                    #"totalIva": float(total_iva_item),       # Total IVA por ítem
+                                    #"totalConIva": float(total_con_iva),     # Total con IVA por ítem
+                                    "montoDescu": float(0.0),
+                                    "ventaNoSuj": float(0.0),
+                                    "ventaExenta": float(0.0),
+                                    "ventaGravada": float(det.ventas_gravadas),#BC: Revisar
+                                    "tributos": tributos, #iva para todos los items 
+                                    "psv": 0.0,
+                                    "noGravado": float(0.0),
+                                    #"ivaItem": float(total_iva_item)        # IVA total por línea
+                                })
+                        
+                    # Recalcular (para el JSON) usando los valores ya calculados:
+                    #precio_neto = (Decimal(det.precio_unitario) / Decimal("1.13")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) #BC: TEMPORALMENTE COMETAREADO YA QUE PARA FE DEBE INCLUIRSE EL IVA EN EL PRECIO
+                    #precio_neto = (Decimal(det.precio_unitario) ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    #iva_unitario = (Decimal(det.precio_unitario) - precio_neto).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) #BC: TEMPORALMENTE COMETAREADO YA QUE PARA FE DEBE INCLUIRSE EL IVA EN EL PRECIO
+                    iva_unitario = (Decimal(det.precio_unitario)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    total_neto = (precio_neto * det.cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    #total_iva_item = (iva_unitario * det.cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) #BC: TEMPORALMENTE COMETAREADO YA QUE PARA FE EL CALCULO ES DIFERENTE
+                    total_iva_item = ( ( iva_unitario * det.cantidad) / Decimal("1.13") * Decimal("0.13") ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    print(f"-Total IVA = {total_iva_item}")
+                    
+                    total_con_iva = (Decimal(det.precio_unitario) * det.cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+                    print(f"Item {idx}: IVA unitario = {iva_unitario}, Total IVA = {total_iva_item}, IVA almacenado = {det.iva_item}")
+                        
+                    cuerpo_documento.append({
+                        "numItem": idx,
+                        "tipoItem": tipo_item,
+                        "numeroDocumento": documento_relacionado,
+                        "codigo": str(det.producto.codigo),
+                        "codTributo": codTributo,
+                        "descripcion": str(det.producto.descripcion),
+                        "cantidad": float(cantidad), #float(det.cantidad),
+                        "uniMedida": uniMedida, #int(det.unidad_medida.codigo) if det.unidad_medida.codigo.isdigit() else 59,
+                        "precioUni": float(precio_neto),      # Precio unitario neto
+                        #"ivaUnitario": float(iva_unitario),     # IVA unitario
+                        #"totalNeto": float(total_neto),         # Total neto por ítem
+                        #"totalIva": float(total_iva_item),       # Total IVA por ítem
+                        #"totalConIva": float(total_con_iva),     # Total con IVA por ítem
+                        "montoDescu": float(det.descuento),
+                        "ventaNoSuj": float(det.ventas_no_sujetas),
+                        "ventaExenta": float(det.ventas_exentas),
+                        "ventaGravada": float(det.ventas_gravadas),
+                        "tributos": tributos, #iva para todos los items 
+                        "psv": 0.0,
+                        "noGravado": float(det.no_gravado),
+                        #"ivaItem": float(total_iva_item)        # IVA total por línea
+                    })
+                                        
+                    #cuerpo_documento_tributos[0] = idx + 1
+                    cuerpo_documento.append(cuerpo_documento_tributos)
+                    
+                """factura_json = {
+                    "identificacion": {
+                        "version": 1,
+                        "ambiente": ambiente_obj.codigo,
+                        "tipoDte": str(tipo_dte_obj.codigo),
+                        "numeroControl": str(factura.numero_control),
+                        "codigoGeneracion": str(factura.codigo_generacion),
+                        "tipoModelo": 1,
+                        "tipoOperacion": 1,
+                        "tipoContingencia": None,
+                        "motivoContin": None,
+                        "fecEmi": str(factura.fecha_emision),
+                        "horEmi": factura.hora_emision.strftime('%H:%M:%S'),
+                        "tipoMoneda": str(factura.tipomoneda.codigo) if factura.tipomoneda else "USD"
+                    },
+                    "documentoRelacionado": None,
+                    "emisor": {
+                        "nit": str(emisor.nit),
+                        "nrc": str(emisor.nrc),
+                        "nombre": str(emisor.nombre_razon_social),
+                        "codActividad": str(emisor.actividades_economicas.first().codigo) if emisor.actividades_economicas.exists() else "",
+                        "descActividad": str(emisor.actividades_economicas.first().descripcion) if emisor.actividades_economicas.exists() else "",
+                        "nombreComercial": str(emisor.nombre_comercial),
+                        "tipoEstablecimiento": str(emisor.tipoestablecimiento.codigo) if emisor.tipoestablecimiento else "",
+                        "direccion": {
+                            "departamento": "05",
+                            "municipio": "19",
+                            "complemento": emisor.direccion_comercial
+                        },
+                        "telefono": str(emisor.telefono),
+                        "correo": str(emisor.email),
+                        "codEstableMH": str(emisor.codigo_establecimiento or "M001"),
+                        "codEstable": "0001",
+                        "codPuntoVentaMH": str(emisor.codigo_punto_venta or "P001"),
+                        "codPuntoVenta": "0001",
+                    },
+                    "receptor": {
+                        "tipoDocumento": tipo_documento_receptor,#str(receptor.tipo_documento.codigo) if receptor.tipo_documento else "",
+                        "numDocumento": num_documento_receptor,
+                        "nit": str(receptor.num_documento),
+                        "nrc": receptor.nrc,
+                        "nombre": str(receptor.nombre),
+                        "codActividad": "24310",
+                        "descActividad": "undición de hierro y acero",
+                        "direccion": {
+                            "departamento": "05",
+                            "municipio": "19",
+                            "complemento": receptor.direccion or ""
+                        },
+                        "telefono": receptor.telefono or "",
+                        "correo": receptor.correo or "",
+                        #BC 04/03/2025
+                        "nombreComercial": str(receptor.nombreComercial)
+                    },
+                    "otrosDocumentos": None,
+                    "ventaTercero": None,
+                    "cuerpoDocumento": cuerpo_documento,
+                    "resumen": {
+                        "totalNoSuj": float(factura.total_no_sujetas),
+                        "totalExenta": float(factura.total_exentas),
+                        "totalGravada": float(factura.total_gravadas),
+                        "subTotalVentas": float(factura.sub_total_ventas),
+                        "descuNoSuj": float(factura.descuen_no_sujeto),
+                        "descuExenta": float(factura.descuento_exento),
+                        "descuGravada": float(factura.descuento_gravado),
+                        "porcentajeDescuento": float(factura.por_descuento),
+                        "totalDescu": float(factura.total_descuento),
+                        "subTotal": float(factura.sub_total),
+                        "ivaRete1": float(factura.iva_retenido),
+                        "reteRenta": float(factura.retencion_renta),
+                        "montoTotalOperacion": float(factura.total_operaciones),
+                        "totalNoGravado": float(factura.total_no_gravado),
+                        "totalPagar": float(factura.total_pagar),
+                        "totalLetras": factura.total_letras,
+                        "totalIva": float(factura.total_iva),
+                        "saldoFavor": 0.0,
+                        "condicionOperacion": int(factura.condicion_operacion.codigo) if factura.condicion_operacion and factura.condicion_operacion.codigo.isdigit() else 1,
+                        "pagos": None,
+                        "tributos": None,
+                        "numPagoElectronico": None
+                    },
+                    "extension": {
+                        "nombEntrega": None,
+                        "docuEntrega": None,
+                        "nombRecibe": None,
+                        "docuRecibe": None,
+                        "observaciones": observaciones,
+                        "placaVehiculo": None
+                    },
+                    "apendice": None,
+                }"""
+
+                factura_json = generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_documento, observaciones, Decimal(str(total_iva_item)), Decimal(str(precio_neto)), baseImponible, tipo_venta)
                 
-            """factura_json = {
-                "identificacion": {
-                    "version": 1,
-                    "ambiente": ambiente_obj.codigo,
-                    "tipoDte": str(tipo_dte_obj.codigo),
-                    "numeroControl": str(factura.numero_control),
-                    "codigoGeneracion": str(factura.codigo_generacion),
-                    "tipoModelo": 1,
-                    "tipoOperacion": 1,
-                    "tipoContingencia": None,
-                    "motivoContin": None,
-                    "fecEmi": str(factura.fecha_emision),
-                    "horEmi": factura.hora_emision.strftime('%H:%M:%S'),
-                    "tipoMoneda": str(factura.tipomoneda.codigo) if factura.tipomoneda else "USD"
-                },
-                "documentoRelacionado": None,
-                "emisor": {
-                    "nit": str(emisor.nit),
-                    "nrc": str(emisor.nrc),
-                    "nombre": str(emisor.nombre_razon_social),
-                    "codActividad": str(emisor.actividades_economicas.first().codigo) if emisor.actividades_economicas.exists() else "",
-                    "descActividad": str(emisor.actividades_economicas.first().descripcion) if emisor.actividades_economicas.exists() else "",
-                    "nombreComercial": str(emisor.nombre_comercial),
-                    "tipoEstablecimiento": str(emisor.tipoestablecimiento.codigo) if emisor.tipoestablecimiento else "",
-                    "direccion": {
-                        "departamento": "05",
-                        "municipio": "19",
-                        "complemento": emisor.direccion_comercial
-                    },
-                    "telefono": str(emisor.telefono),
-                    "correo": str(emisor.email),
-                    "codEstableMH": str(emisor.codigo_establecimiento or "M001"),
-                    "codEstable": "0001",
-                    "codPuntoVentaMH": str(emisor.codigo_punto_venta or "P001"),
-                    "codPuntoVenta": "0001",
-                },
-                "receptor": {
-                    "tipoDocumento": tipo_documento_receptor,#str(receptor.tipo_documento.codigo) if receptor.tipo_documento else "",
-                    "numDocumento": num_documento_receptor,
-                    "nit": str(receptor.num_documento),
-                    "nrc": receptor.nrc,
-                    "nombre": str(receptor.nombre),
-                    "codActividad": "24310",
-                    "descActividad": "undición de hierro y acero",
-                    "direccion": {
-                        "departamento": "05",
-                        "municipio": "19",
-                        "complemento": receptor.direccion or ""
-                    },
-                    "telefono": receptor.telefono or "",
-                    "correo": receptor.correo or "",
-                    #BC 04/03/2025
-                    "nombreComercial": str(receptor.nombreComercial)
-                },
-                "otrosDocumentos": None,
-                "ventaTercero": None,
-                "cuerpoDocumento": cuerpo_documento,
-                "resumen": {
-                    "totalNoSuj": float(factura.total_no_sujetas),
-                    "totalExenta": float(factura.total_exentas),
-                    "totalGravada": float(factura.total_gravadas),
-                    "subTotalVentas": float(factura.sub_total_ventas),
-                    "descuNoSuj": float(factura.descuen_no_sujeto),
-                    "descuExenta": float(factura.descuento_exento),
-                    "descuGravada": float(factura.descuento_gravado),
-                    "porcentajeDescuento": float(factura.por_descuento),
-                    "totalDescu": float(factura.total_descuento),
-                    "subTotal": float(factura.sub_total),
-                    "ivaRete1": float(factura.iva_retenido),
-                    "reteRenta": float(factura.retencion_renta),
-                    "montoTotalOperacion": float(factura.total_operaciones),
-                    "totalNoGravado": float(factura.total_no_gravado),
-                    "totalPagar": float(factura.total_pagar),
-                    "totalLetras": factura.total_letras,
-                    "totalIva": float(factura.total_iva),
-                    "saldoFavor": 0.0,
-                    "condicionOperacion": int(factura.condicion_operacion.codigo) if factura.condicion_operacion and factura.condicion_operacion.codigo.isdigit() else 1,
-                    "pagos": None,
-                    "tributos": None,
-                    "numPagoElectronico": None
-                },
-                "extension": {
-                    "nombEntrega": None,
-                    "docuEntrega": None,
-                    "nombRecibe": None,
-                    "docuRecibe": None,
-                    "observaciones": observaciones,
-                    "placaVehiculo": None
-                },
-                "apendice": None,
-            }"""
-            
-            factura_json = generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_documento, observaciones, Decimal(str(total_iva_item)))
-            
-            factura.json_original = factura_json
-            factura.save()
+                factura.json_original = factura_json
+                factura.save()
 
-            # Guardar el JSON en la carpeta "FE/json_facturas"
-            json_path = os.path.join("FE/json_facturas", f"{factura.numero_control}.json")
-            os.makedirs(os.path.dirname(json_path), exist_ok=True)
-            with open(json_path, "w", encoding="utf-8") as f:
-                json.dump(factura_json, f, indent=4, ensure_ascii=False)
+                # Guardar el JSON en la carpeta "FE/json_facturas"
+                json_path = os.path.join("FE/json_facturas", f"{factura.numero_control}.json")
+                os.makedirs(os.path.dirname(json_path), exist_ok=True)
+                with open(json_path, "w", encoding="utf-8") as f:
+                    json.dump(factura_json, f, indent=4, ensure_ascii=False)
 
-            return JsonResponse({
-                "mensaje": "Factura generada correctamente",
-                "factura_id": factura.id,
-                "numero_control": factura.numero_control,
-                "redirect": reverse('detalle_factura', args=[factura.id])
-            })
+                return JsonResponse({
+                    "mensaje": "Factura generada correctamente",
+                    "factura_id": factura.id,
+                    "numero_control": factura.numero_control,
+                    "redirect": reverse('detalle_factura', args=[factura.id])
+                })
         except Exception as e:
             print(f"Error al generar la factura: {e}")
             return JsonResponse({"error": str(e)}, status=400)
     return JsonResponse({"error": "Método no permitido"}, status=405)
 
 #BC 05/03/2025:
-def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_documento, observaciones, iva_item_total):
+def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_documento, observaciones, iva_item_total, precio_neto, baseImponible, tipoVenta):
     print("-Inicio llenar json")
-
+        
     #Llenar json
     json_identificacion = {
         "version": tipo_dte_obj.version,
@@ -743,7 +853,6 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
     
     json_apendice = None
     
-    print("-Inicio modificacion de json")
     #Modificacion de json en base al tipo dte a generar
     if receptor is not None:
         nrc_receptor = None
@@ -774,7 +883,25 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
             cuerpo["ivaItem"] = float(valor_iva_item)
             #Agregar nuevamente el item
             cuerpo_documento.insert(i, cuerpo)
-                   
+            
+            if cuerpo["tipoItem"] != COD_TIPO_ITEM_OTROS:
+                cuerpo["codTributo"] = None
+                if tipoVenta != "gravada" and baseImponible == True:
+                    cuerpo["tributos"] = None
+            else:
+                cuerpo["cantidad"] = 1
+                cuerpo["precioUni"] = cuerpo["precioUni"] * factura
+                
+            #Precio unitario
+            print("-Base imponible", baseImponible)
+            if baseImponible is True:
+                cuerpo["precioUni"] = Decimal("0.00")
+            elif cuerpo["tipoItem"] == COD_TIPO_ITEM_OTROS:
+                print("-Base imponible", baseImponible)
+                cuerpo["precioUni"] = float(precio_neto)#Modificar
+                print("-Precio neto", float(precio_neto))
+ 
+        print("-Json resumen ", json_resumen) 
         json_resumen["totalIva"] = float(factura.total_iva)
         json_resumen["montoTotalOperacion"] = float(factura.total_operaciones)
         json_resumen["totalPagar"] = float(factura.total_pagar)
@@ -790,11 +917,13 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
         tributo_valor = tributo[0]
         subtotal = float(factura.sub_total)
         valor_tributos = float(tributo_valor["valor"])
-        total_operaciones = subtotal + valor_tributos
+        suma_operaciones = subtotal + valor_tributos
+        total_operaciones = Decimal(str(suma_operaciones)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         json_resumen["montoTotalOperacion"] = float(total_operaciones)
         total_pagar = json_resumen["montoTotalOperacion"] - json_resumen["ivaPerci1"] - json_resumen["ivaRete1"] - json_resumen["reteRenta"] - json_resumen["totalNoGravado"]
         json_resumen["totalPagar"] = total_pagar
             
+    print("-Json completo")
     json_completo = {
         "identificacion": json_identificacion,
         "documentoRelacionado": json_documento_relacionado,
@@ -812,137 +941,163 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
 
 @csrf_exempt    
 def invalidacion_dte_view(request, factura_id):
-    print("-Inicio invalidar dte- request ", request)
-    print("-factura id ", factura_id)
+    
+    #Generar json, firmar, enviar a mh
     
     codigo_generacion_invalidacion = str(uuid.uuid4()).upper()
-    
-    #Buscar dte a invalidar
-    invalidar_codigo_generacion = "f7789756-928f-45b6-b733-ae4b7886213e"
-    
-    #factura_invalidar = FacturaElectronica.objects.get(codigo_generacion=invalidar_codigo_generacion)
-    factura_invalidar = FacturaElectronica.objects.get(id=factura_id)
+    print("-Codigo generacion evento invalidacion ", codigo_generacion_invalidacion)
+    factura_invalidar = FacturaElectronica.objects.get(id=factura_id)#Buscar dte a invalidar
+    """#Validar plazos de invalidacion
+    tipo_dte = str(factura_invalidar.tipo_dte.codigo)
+    if tipo_dte == COD_CONSUMIDOR_FINAL or tipo_dte == COD_FACTURA_EXPORTACION:
+        #3 meses permitidos par FE y FEX
+        fecha_actual = datetime.now()
+        fecha_limite_inv = fecha_actual - relativedelta(months=3)
+        #24 horas para el resto de DTEs
+        fecha_hora_emision = factura_invalidar.fecha_emision + " " + factura_invalidar.hora_emision
+        diferencia = fecha_actual - fecha_hora_emision
+                
+        print("-Fecha limite ", fecha_limite_inv)
+        print("-Fecha de emision", factura_invalidar.fecha_emision)
+        
+        if factura_invalidar.fecha_emision > fecha_limite_inv:
+            return JsonResponse({
+                "mensaje": "No permitido, plazo para invalidar documento 3 meses"
+            })
+        else:
+            if diferencia >= timedelta(days=1):
+                return JsonResponse({
+                    "mensaje": "No permitido, plazo para invalidar documento 24 horas"
+                })
+    """
     
     #Tipo Invalidacion
     tipo_invalidacion = TipoInvalidacion.objects.get(codigo="2") #Campo dinamico
-    
     #Quien solicita invalidar el dte, el emisor o receptor
     solicitud = "receptor" #Campo dinamico
     
-    #Buscar si ya existe un evento de invalidacion para la factura a invalidar
-    invalidacion = EventoInvalidacion.objects.filter(factura__codigo_generacion=factura_invalidar.codigo_generacion).first()
-    print("-Inicio crear evento de invalidacion", invalidacion)
-    if invalidacion is None:
-        print("-Creando evento de invalidacion")
-        #Llenar registro en tabla
-        invalidacion = EventoInvalidacion.objects.create(
-            codigo_generacion = codigo_generacion_invalidacion,
-            factura = factura_invalidar,
-            codigo_generacion_r = invalidar_codigo_generacion,
-            tipo_anulacion = tipo_invalidacion,
-            motivo_anulacion = tipo_invalidacion.descripcion, #Campo dinamico
-            nombre_solicita = factura_invalidar.dteemisor.nombre_razon_social,
-            tipo_documento_solicita = int(factura_invalidar.dteemisor.tipo_documento.codigo),
-            numero_documento_solicita = factura_invalidar.dteemisor.nit,
-            solicita_invalidacion = solicitud
-        )
-        print("-Evento de invalidacion creado")
-    
-    if factura_invalidar is not None:
-        print("-Inicio json anulacion")
-        json_identificacion_inv = {
-            "version": 1, #int(VERSION_EVENTO_INVALIDACION), #Version vigente 2
-            "ambiente": "01", #str(Ambiente.codigo),
-            "codigoGeneracion": str(invalidacion.codigo_generacion).upper(),
-            "FecAnual": str(invalidacion.fecha_anulacion),
-            "horAnula": str(invalidacion.hora_anulacion.strftime('%H:%M:%S'))
-        }
-        
-        tipo_establecimiento = TiposEstablecimientos.objects.get(codigo=invalidacion.factura.dteemisor.tipoestablecimiento.codigo)
-        json_emisor_inv = {
-            "nit": str(invalidacion.factura.dteemisor.nit),
-            "nombre": str(invalidacion.factura.dteemisor.nombre_razon_social),
-            "tipoEstablecimiento": str(tipo_establecimiento.codigo),
-            "nomEstablecimiento": str(tipo_establecimiento.descripcion),
-            "codEstableMH": str(invalidacion.factura.dteemisor.codigo_establecimiento or "M001"),
-            "codEstable": "0001",
-            "codPuntoVentaMH": str(invalidacion.factura.dteemisor.codigo_punto_venta or "P001"),
-            "codPuntoVenta": "0001",
-            "telefono": str(invalidacion.factura.dteemisor.telefono),
-            "correo": str(invalidacion.factura.dteemisor.email)
-        }
-        
-        #seccion documento
-        json_documento_inv = {
-            "tipoDte" : str(invalidacion.factura.tipo_dte.codigo),
-            "codigoGeneracion" : str(factura_invalidar.codigo_generacion).upper(),
-            "selloRecibido" : str(factura_invalidar.sello_recepcion),
-            "numeroControl" : str(factura_invalidar.numero_control),
-            "fechaEmi" : str(factura_invalidar.fecha_emision),
-            "tipoDocumento" : int(invalidacion.factura.dtereceptor.tipo_documento.codigo),
-            "numDocumento" : str(invalidacion.factura.dtereceptor.num_documento),
-            "nombre" : str(invalidacion.factura.dtereceptor.nombre),
-            "telefono" : str(invalidacion.factura.dtereceptor.telefono),
-            "correo" : str(invalidacion.factura.dtereceptor.correo) 
-        }
-        
-        json_motivo_inv = {
-            "tipoAnulacion" : int(invalidacion.tipo_anulacion.codigo),
-            "motivoAnulacion" : str(invalidacion.motivo_anulacion),
-            "nombreResponsable" : str(invalidacion.factura.dteemisor.nombre_razon_social),
-            "tipoDocResponsable" : int(invalidacion.factura.dteemisor.tipo_documento.codigo),
-            "numDocResponsable" : str(invalidacion.factura.dteemisor.nit),
-        }
-        
-        #Modificaciones en json segun el dte a invalidar
-        
-        #Si el DTE a invalidar es F, CCF o FEX agregar campo "montoIva"
-        tipo_dte_invalidar = invalidacion.factura.tipo_dte.codigo
-        if tipo_dte_invalidar == COD_CONSUMIDOR_FINAL or tipo_dte_invalidar == COD_CREDITO_FISCAL or tipo_dte_invalidar == COD_FACTURA_EXPORTACION:
-            json_documento_inv["montoIva"] = float(factura_invalidar.total_operaciones)
-        else:
-             json_documento_inv["montoIva"] = None
-        
-        #Si el tipo de invalidacion es codigo 1 o 3 llenar este campo con el codGeneracion del documento que reemplazara el dte a invalidar, no aplica para NC y Comp Liquidacion
-        if tipo_dte_invalidar != COD_NOTA_CREDITO and tipo_dte_invalidar != COD_COMPROBANTE_LIQUIDACION:
-            if int(invalidacion.tipo_anulacion.codigo) == COD_TIPO_INVALIDACION_RESCINDIR:
+    try: 
+        if factura_invalidar is not None:
+            print("-Factura a invalidar encontrada", factura_invalidar)
+            #Buscar si la factura ya tiene un evento de invalidacion
+            evento_invalidacion = EventoInvalidacion.objects.filter(factura__codigo_generacion=factura_invalidar.codigo_generacion).first()
+            
+            evento_invalidacion.tipo_anulacion = tipo_invalidacion
+            evento_invalidacion.motivo_anulacion = tipo_invalidacion.descripcion #Campo dinamico
+            evento_invalidacion.codigo_generacion_r = factura_invalidar.codigo_generacion
+            evento_invalidacion.solicita_invalidacion = solicitud
+            if evento_invalidacion is None:
+                #Llenar registro en tabla
+                evento_invalidacion = EventoInvalidacion.objects.create(
+                    codigo_generacion = codigo_generacion_invalidacion,
+                    factura = factura_invalidar
+                )
+            else:
+                evento_invalidacion.save()
+            
+            json_identificacion_inv = {
+                "version": int(VERSION_EVENTO_INVALIDACION), #Version vigente 2
+                "ambiente": "01", #str(Ambiente.codigo),
+                "codigoGeneracion": str(evento_invalidacion.codigo_generacion).upper(),
+                "fecAnula": str(evento_invalidacion.fecha_anulacion),
+                "horAnula": str(evento_invalidacion.hora_anulacion.strftime('%H:%M:%S'))
+            }
+            
+            tipo_establecimiento = TiposEstablecimientos.objects.get(codigo=evento_invalidacion.factura.dteemisor.tipoestablecimiento.codigo)
+            
+            json_emisor_inv = {
+                "nit": str(evento_invalidacion.factura.dteemisor.nit),
+                "nombre": str(evento_invalidacion.factura.dteemisor.nombre_razon_social),
+                "tipoEstablecimiento": str(tipo_establecimiento.codigo),
+                "nomEstablecimiento": str(tipo_establecimiento.descripcion),
+                "codEstableMH": str(evento_invalidacion.factura.dteemisor.codigo_establecimiento or "M001"),
+                "codEstable": "0001",
+                "codPuntoVentaMH": str(evento_invalidacion.factura.dteemisor.codigo_punto_venta or "P001"),
+                "codPuntoVenta": "0001",
+                "telefono": str(evento_invalidacion.factura.dteemisor.telefono),
+                "correo": str(evento_invalidacion.factura.dteemisor.email)
+            }
+            
+            json_documento_inv = {
+                "tipoDte" : str(evento_invalidacion.factura.tipo_dte.codigo),
+                "codigoGeneracion" : str(factura_invalidar.codigo_generacion).upper(),
+                "selloRecibido" : str(factura_invalidar.sello_recepcion),
+                "numeroControl" : str(factura_invalidar.numero_control),
+                "fecEmi" : str(factura_invalidar.fecha_emision),
+                "tipoDocumento" : str(evento_invalidacion.factura.dtereceptor.tipo_documento.codigo),
+                "numDocumento" : str(evento_invalidacion.factura.dtereceptor.num_documento),
+                "nombre" : str(evento_invalidacion.factura.dtereceptor.nombre),
+                "telefono" : str(evento_invalidacion.factura.dtereceptor.telefono),
+                "correo" : str(evento_invalidacion.factura.dtereceptor.correo) 
+            }
+            
+            json_motivo_inv = {
+                "tipoAnulacion" : int(evento_invalidacion.tipo_anulacion.codigo),
+                "motivoAnulacion" : str(evento_invalidacion.motivo_anulacion),
+                "nombreResponsable" : str(evento_invalidacion.factura.dteemisor.nombre_razon_social),
+                "tipDocResponsable" : str(evento_invalidacion.factura.dteemisor.tipo_documento.codigo),
+                "numDocResponsable" : str(evento_invalidacion.factura.dteemisor.nit),
+            }
+            
+            #----------Modificaciones en json segun el dte a invalidar
+            
+            #Si el DTE a invalidar es F, CCF o FEX agregar campo "montoIva"
+            tipo_dte_invalidar = evento_invalidacion.factura.tipo_dte.codigo
+            if tipo_dte_invalidar == COD_CONSUMIDOR_FINAL or tipo_dte_invalidar == COD_CREDITO_FISCAL or tipo_dte_invalidar == COD_FACTURA_EXPORTACION:
+                json_documento_inv["montoIva"] = float(factura_invalidar.total_operaciones)
+            else:
+                json_documento_inv["montoIva"] = None
+            
+            #Si el tipo de invalidacion es codigo 1 o 3 llenar este campo con el codGeneracion del documento que reemplazara el dte a invalidar, no aplica para NC y Comp Liquidacion
+            if int(evento_invalidacion.tipo_anulacion.codigo) == COD_TIPO_INVALIDACION_RESCINDIR and tipo_dte_invalidar != COD_NOTA_CREDITO and tipo_dte_invalidar != COD_COMPROBANTE_LIQUIDACION:
                 json_documento_inv["codigoGeneracionR"] = None
             else:
-                json_documento_inv["codigoGeneracionR"] = str(invalidacion.codigo_generacion_r)
+                json_documento_inv["codigoGeneracionR"] = None#.upper() #str(evento_invalidacion.codigo_generacion_r).upper() #campo en la vista
+                print("codGeneracionR",json_documento_inv["codigoGeneracionR"])       
+            #Asignar informacion de quien solicita la invalidacion, segun seleccion(receptor o emisor)
+            if solicitud == EMI_SOLICITA_INVALIDAR_DTE:
+                json_motivo_inv["nombreSolicita"] = str(evento_invalidacion.factura.dteemisor.nombre_razon_social)
+                json_motivo_inv["tipDocSolicita"] = str(evento_invalidacion.factura.dteemisor.tipo_documento.codigo)
+                json_motivo_inv["numDocSolicita"] = str(evento_invalidacion.factura.dteemisor.nit)
+            elif solicitud == REC_SOLICITA_INVALIDAR_DTE:
+                json_motivo_inv["nombreSolicita"] = str(evento_invalidacion.factura.dtereceptor.nombre)
+                json_motivo_inv["tipDocSolicita"] = str(evento_invalidacion.factura.dtereceptor.tipo_documento.codigo)
+                json_motivo_inv["numDocSolicita"] = str(evento_invalidacion.factura.dtereceptor.num_documento)
             
-        if solicitud == EMI_SOLICITA_INVALIDAR_DTE:
-            json_motivo_inv["nombreSolicita"] = str(invalidacion.factura.dteemisor.nombre_razon_social)
-            json_motivo_inv["tipDocSolicita"] = int(invalidacion.factura.dteemisor.tipo_documento.codigo)
-            json_motivo_inv["numDocSolicita"] = str(invalidacion.factura.dteemisor.nit)
-        elif solicitud == REC_SOLICITA_INVALIDAR_DTE:
-            json_motivo_inv["nombreSolicita"] = str(invalidacion.factura.dtereceptor.nombre)
-            json_motivo_inv["tipDocSolicita"] = int(invalidacion.factura.dtereceptor.tipo_documento.codigo)
-            json_motivo_inv["numDocSolicita"] = str(invalidacion.factura.dtereceptor.num_documento)
-        
-        print("-json-motivo: ", json_motivo_inv["nombreSolicita"])
-        json_completo = {
-            "identificacion": json_identificacion_inv,
-            "emisor": json_emisor_inv,
-            "documento": json_documento_inv,
-            "motivo": json_motivo_inv,
-            "documentoRelacionado": None
-        }
-        
-        json_invalidacion = json.dumps(json_completo)
-        json_original = json.loads(json_invalidacion)
-        invalidacion.json_invalidacion = json_original
-        invalidacion.save()
-    #firmar 
-    firmar_factura_anulacion_view(request, factura_id)
+            json_completo = {
+                "identificacion": json_identificacion_inv,
+                "emisor": json_emisor_inv,
+                "documento": json_documento_inv,
+                "motivo": json_motivo_inv
+            }
+            
+            json_invalidacion = json.dumps(json_completo)
+            json_invalidacion_completo = json.loads(json_invalidacion)
+            evento_invalidacion.json_invalidacion = json_invalidacion_completo
+            evento_invalidacion.nombre_solicita = json_motivo_inv["nombreSolicita"]
+            evento_invalidacion.tipo_documento_solicita = json_motivo_inv["tipDocSolicita"]
+            evento_invalidacion.numero_documento_solicita = json_motivo_inv["numDocSolicita"]
+            evento_invalidacion.save()
+        else:
+            return JsonResponse({
+            "error": "Error DTE a invalidar no encontrado",
+            "detalle": str(e)
+        }) 
+        return redirect (reverse('detalle_factura', args=[factura_id]))
+    except Exception as e:
+        codigo_generacion_invalidacion = str(uuid.uuid4()).upper()
+        print(f"Error al generar el evento de invalidación: {e}")
+        return JsonResponse({"error": str(e)}, status=400)
     
 @csrf_exempt
-def firmar_factura_anulacion_view(request, factura_id): #id=160 cod_generacion=39f71e48-c22b-4833-89e1-8256e16d9401
+def firmar_factura_anulacion_view(request, factura_id): 
     """
     Firma la factura y, si ya está firmada, la envía a Hacienda.
     """
     print("-Inicio firma invalidacion DTE - id factura ", factura_id)
+    #Buscar factura a firmar
     evento_invalidacion = EventoInvalidacion.objects.filter(factura__id=factura_id).first()
-    invalidacion = evento_invalidacion#get_object_or_404(EventoInvalidacion, factura__id = factura_id)
+    #invalidacion = evento_invalidacion
 
     token_data = Token_data.objects.filter(activado=True).first()
     if not token_data:
@@ -952,27 +1107,23 @@ def firmar_factura_anulacion_view(request, factura_id): #id=160 cod_generacion=3
         return JsonResponse({"error": "No se encontró el certificado en la ruta especificada."}, status=400)
     
     # Verificar y formatear el JSON original de la factura
-    print("-inicio verificacion formato json invalidacion ", invalidacion.json_invalidacion)
     try:
-        print("-if inicio verificacion formato json ", invalidacion.json_invalidacion)
-        if isinstance(invalidacion.json_invalidacion, dict):
-            dte_json_str = json.dumps(invalidacion.json_invalidacion, separators=(',', ':'))
+        if isinstance(evento_invalidacion.json_invalidacion, dict):
+            dte_json_str = json.dumps(evento_invalidacion.json_invalidacion, separators=(',', ':'))
         else:
-            json_obj = json.loads(invalidacion.json_invalidacion)
+            json_obj = json.loads(evento_invalidacion.json_invalidacion)
             dte_json_str = json.dumps(json_obj, separators=(',', ':'))
     except Exception as e:
-        print("-error: El JSON original de la factura no es válido")
         return JsonResponse({
             "error": "El JSON original de la factura no es válido",
             "detalle": str(e)
         }, status=400)
-    print("-fin verificacion formato json INVALIDACION ")
     # Construir el payload con los parámetros requeridos
     payload = {
         "nit": "06142811001040",   # Nit del contribuyente
         "activo": True,            # Indicador activo
         "passwordPri": "3nCr!pT@d0Pr1v@d@",   # Contraseña de la llave privada
-        "dteJson": invalidacion.json_invalidacion    # JSON del DTE como cadena
+        "dteJson": evento_invalidacion.json_invalidacion    # JSON del DTE como cadena
     }
 
     headers = {"Content-Type": "application/json"}
@@ -983,7 +1134,6 @@ def firmar_factura_anulacion_view(request, factura_id): #id=160 cod_generacion=3
         # Capturamos la respuesta completa
         try:
             response_data = response.json()
-            print("-Capturar respuesta MH", response_data)
         except Exception as e:
             # En caso de error al parsear el JSON, se guarda el texto crudo
             response_data = {"error": "No se pudo parsear JSON", "detalle": response.text}
@@ -996,27 +1146,23 @@ def firmar_factura_anulacion_view(request, factura_id): #id=160 cod_generacion=3
         # Verificar si la firma fue exitosa
         if response.status_code == 200 and response_data.get("status") == "OK":
             # (Opcional) Guardar el JSON firmado en un archivo
-            json_signed_path = f"FE/json_facturas_firmadas/{invalidacion.codigo_generacion}.json"
+            json_signed_path = f"FE/json_facturas_firmadas/{evento_invalidacion.codigo_generacion}.json"
             os.makedirs(os.path.dirname(json_signed_path), exist_ok=True)
             with open(json_signed_path, "w", encoding="utf-8") as json_file:
                 json.dump(response_data, json_file, indent=4, ensure_ascii=False)
-                print("-Respuesta 200 - cod generacion", invalidacion.codigo_generacion)
-            print("-Fin firma invalidacion DTE", redirect(reverse('detalle_factura', args=[factura_id])))
-            
-            print("-Inicio enviar invalidacion a MH")
-            enviar_factura_invalidacion_hacienda_view(factura_id)
+            print("-Fin firma invalidacion DTE - id factura ", factura_id)
+            #enviar_factura_invalidacion_hacienda_view(factura_id)
             return redirect(reverse('detalle_factura', args=[factura_id]))
         else:
             # Se devuelve el error completo recibido
-            print("-Error firma invalidacion DTE")
             return JsonResponse({"error": "Error al firmar la factura", "detalle": response_data}, status=400)
     except requests.exceptions.RequestException as e:
         return JsonResponse({"error": "Error de conexión con el firmador", "detalle": str(e)}, status=500)
 
 @csrf_exempt
 #@require_POST
-def enviar_factura_invalidacion_hacienda_view(factura_id):
-    print("-Paso 1 funcion enviar_factura_invalidacion_hacienda_view")
+def enviar_factura_invalidacion_hacienda_view(request, factura_id):
+    print("-Inicio enviar invalidacion a MH")
     # Paso 1: Autenticación contra el servicio de Hacienda
     nit_empresa = "06142811001040"
     pwd = "Q#3P9l5&@aF!gT2sA"
@@ -1029,19 +1175,14 @@ def enviar_factura_invalidacion_hacienda_view(factura_id):
 
     try:
         auth_response = requests.post(auth_url, data=auth_data, headers=auth_headers)
-        print("-Post", auth_response)
         try:
             auth_response_data = auth_response.json()
-            print("-Post try", auth_response)
         except ValueError:
-            print("-Post error", auth_response)
             return JsonResponse({
                 "error": "Error al decodificar la respuesta de autenticación",
                 "detalle": auth_response.text
             }, status=500)
-        print("-Verificar respuestas de MH")
         if auth_response.status_code == 200:
-            print("-Respuesta 200")
             token_body = auth_response_data.get("body", {})
             token = token_body.get("token")
             token_type = token_body.get("tokenType", "Bearer")
@@ -1073,19 +1214,14 @@ def enviar_factura_invalidacion_hacienda_view(factura_id):
         }, status=500)
 
     # Paso 2: Enviar la factura firmada a Hacienda
-    print("Paso 2 E nviar la factura a Hacienda")
-    factura = get_object_or_404(FacturaElectronica, id=factura_id)
-    evento_invalidacion = get_object_or_404(EventoInvalidacion, factura__id=factura_id)
-    print("-Evento de invalidacion - Enviar factura firmada ", evento_invalidacion.json_invalidacion)
+    #factura = get_object_or_404(FacturaElectronica, id=factura_id)
+    evento_invalidacion = EventoInvalidacion.objects.filter(factura__id=factura_id).first()
     # if not factura.firmado:
     #     return JsonResponse({"error": "La factura no está firmada"}, status=400)
 
     token_data_obj = Token_data.objects.filter(activado=True).first()
     if not token_data_obj or not token_data_obj.token:
         return JsonResponse({"error": "No hay token activo para enviar la factura"}, status=401)
-
-    codigo_generacion_str = str(evento_invalidacion.codigo_generacion)
-    print("-Codigo generacion del evento de invalidacionv", codigo_generacion_str)
 
     # --- Validación y limpieza del documento firmado ---
     documento_str = evento_invalidacion.json_firmado
@@ -1094,7 +1230,7 @@ def enviar_factura_invalidacion_hacienda_view(factura_id):
 
     # Eliminar posibles caracteres BOM y espacios innecesarios
     documento_str = documento_str.lstrip('\ufeff').strip().upper()
-    print("Json firmado: ", documento_str)
+    print("Json invalidacion firmado: ", documento_str)
 
     try:
         if isinstance(evento_invalidacion.json_firmado, str):
@@ -1118,9 +1254,8 @@ def enviar_factura_invalidacion_hacienda_view(factura_id):
     envio_json = {
         "ambiente": "01",  # "00" para Pruebas; "01" para Producción
         "idEnvio": int(evento_invalidacion.id),
-        "version": 1, #int(evento_invalidacion.json_invalidacion["identificacion"]["version"]),
-        "documento": str(documento_token),#,  # Enviamos solo el JWT firmado
-        "tipoDte": str(evento_invalidacion.json_invalidacion["documento"]["tipoDte"]),
+        "version": int(evento_invalidacion.json_invalidacion["identificacion"]["version"]),
+        "documento": str(documento_token) #Enviamos solo el JWT firmado
     }
 
     envio_headers = {
@@ -1128,14 +1263,12 @@ def enviar_factura_invalidacion_hacienda_view(factura_id):
         "User-Agent": "DjangoApp",
         "Content-Type": "application/json"
     }
-
-    print("-Envio headers: ", envio_headers)
-    
+        
     try:
         envio_response = requests.post(
-            "https://api.dtes.mh.gob.sv/fesv/recepciondte",
-            json=envio_json,
-            headers=envio_headers
+            "https://api.dtes.mh.gob.sv/fesv/anulardte",
+            headers=envio_headers,
+            json=envio_json
         )
         
         print("Envio response status code:", envio_response.status_code)
@@ -1149,6 +1282,7 @@ def enviar_factura_invalidacion_hacienda_view(factura_id):
             print("Error al decodificar JSON en envío:", e)
 
         if envio_response.status_code == 200:
+            print("Respuesta MH ", envio_response.status_code)
             evento_invalidacion.sello_recepcion = response_data.get("selloRecibido", "")
             evento_invalidacion.recibido_mh=True
             #Guardar respuesta de MH en json_original
@@ -1164,15 +1298,21 @@ def enviar_factura_invalidacion_hacienda_view(factura_id):
             #Al convertir un diccionario en json se guarda como un string, por lo que se debe convertir a json (loads)
             json_original_campo = json.loads(json_respuesta_mh)
             evento_invalidacion.json_invalidacion = json_original_campo
+            evento_invalidacion.estado=True
             evento_invalidacion.save()
+            print("-Fin enviar invalidacion a MH")
+            respuestaMh = json_response_data["jsonRespuestaMh"]["descripcionMsg"]
+            print("-Detalle RespuestaMH ", json_response_data["jsonRespuestaMh"]["descripcionMsg"])
             return JsonResponse({
-                "mensaje": "Factura enviada con éxito",
+                "mensaje": "Factura invalidada con éxito",
                 "respuesta": response_data
             })
         else:
-            print("-Error response: ", response_data)
+            evento_invalidacion.estado=False
+            evento_invalidacion.save()
+            print("-Detalle RespuestaMH ", response_data["descripcionMsg"])
             return JsonResponse({
-                "error": "Error al enviar la factura",
+                "error": "Error al invalidar la factura",
                 "status": envio_response.status_code,
                 "detalle": response_data
             }, status=envio_response.status_code)
@@ -1404,12 +1544,15 @@ def enviar_factura_hacienda_view(request, factura_id):
             #Al convertir un diccionario en json se guarda como un string, por lo que se debe convertir a json (loads)
             json_original_campo = json.loads(json_respuesta_mh)
             factura.json_original = json_original_campo
+            factura.estado=True
             factura.save()
             return JsonResponse({
                 "mensaje": "Factura enviada con éxito",
                 "respuesta": response_data
             })
         else:
+            factura.estado=False
+            factura.save()
             return JsonResponse({
                 "error": "Error al enviar la factura",
                 "status": envio_response.status_code,

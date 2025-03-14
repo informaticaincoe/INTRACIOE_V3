@@ -1,16 +1,16 @@
 {
     "identificacion": {
-        "version": 1,
+        "version": 3,
         "ambiente": "01",
         "tipoDte": "03",
         "numeroControl": "DTE-03-0000MOO1-000000000000043",
-        "codigoGeneracion": "6F3C72B7-3DC4-4529-A17F-0BBF6822AD04",
+        "codigoGeneracion": "CF9AB01C-6D36-4AD8-98A4-D4A0AA4DFF1B",
         "tipoModelo": 1,
         "tipoOperacion": 1,
         "tipoContingencia": null,
         "motivoContin": null,
-        "fecEmi": "2025-03-05",
-        "horEmi": "10:40:32",
+        "fecEmi": "2025-03-11",
+        "horEmi": "07:39:26",
         "tipoMoneda": "USD"
     },
     "documentoRelacionado": null,
@@ -35,21 +35,19 @@
         "codPuntoVenta": "0001"
     },
     "receptor": {
-        "tipoDocumento": null,
-        "numDocumento": null,
-        "nit": "06142802961066",
-        "nrc": null,
-        "nombre": "Francisco Antonio Flores",
+        "nombre": "Dominick Norberto Hernandez Alfaro",
         "codActividad": "24310",
         "descActividad": "undición de hierro y acero",
         "direccion": {
             "departamento": "05",
             "municipio": "19",
-            "complemento": "Carretera a Sonsonate, km 27 ½ Zona Industrial Lourdes, Calle Antigua Hda, La Libertad, El Salvador C.A"
+            "complemento": "final 2 calle pte p´sj 4 block o urb el sauce"
         },
-        "telefono": "604477435",
-        "correo": "juniorfran@hotmail.es",
-        "nombreComercial": "Francisco Antonio Flores"
+        "telefono": "60447435",
+        "correo": "informatica@grupoincoe.com",
+        "nrc": "3228055",
+        "nit": "062280967",
+        "nombreComercial": "HERNANDEZ ALFARO DOMINICK NORBERTO"
     },
     "otrosDocumentos": null,
     "ventaTercero": null,
@@ -58,49 +56,52 @@
             "numItem": 1,
             "tipoItem": 1,
             "numeroDocumento": null,
-            "codigo": "PCH405",
+            "codigo": "PCH456",
             "codTributo": null,
-            "descripcion": "leche entera ira 26 250gb",
+            "descripcion": "Leche entera de 250g",
             "cantidad": 1.0,
             "uniMedida": 59,
-            "precioUni": 8.5,
+            "precioUni": 1.25,
             "montoDescu": 0.0,
             "ventaNoSuj": 0.0,
             "ventaExenta": 0.0,
-            "ventaGravada": 7.52,
+            "ventaGravada": 1.25,
             "tributos": [
-                [
-                    "20"
-                ]
+                "20"
             ],
             "psv": 0.0,
-            "noGravado": 0.0,
-            "ivaItem": 0.98
+            "noGravado": 0.0
         }
     ],
     "resumen": {
         "totalNoSuj": 0.0,
         "totalExenta": 0.0,
-        "totalGravada": 7.52,
-        "subTotalVentas": 7.52,
+        "totalGravada": 1.25,
+        "subTotalVentas": 1.25,
         "descuNoSuj": 0.0,
         "descuExenta": 0.0,
         "descuGravada": 0.0,
         "porcentajeDescuento": 0.0,
         "totalDescu": 0.0,
-        "subTotal": 7.52,
+        "subTotal": 1.25,
         "ivaRete1": 0.0,
         "reteRenta": 0.0,
-        "montoTotalOperacion": 7.52,
         "totalNoGravado": 0.0,
-        "totalPagar": 8.5,
-        "totalLetras": "Ocho con 50/100 USD",
-        "totalIva": 0.98,
+        "totalLetras": "Uno con 25/100 USD",
         "saldoFavor": 0.0,
         "condicionOperacion": 2,
         "pagos": null,
-        "tributos": null,
-        "numPagoElectronico": null
+        "numPagoElectronico": null,
+        "tributos": [
+            {
+                "codigo": "20",
+                "descripcion": "Impuesto al valor agregado 13%",
+                "valor": 0.14
+            }
+        ],
+        "ivaPerci1": 0.0,
+        "montoTotalOperacion": 1.39,
+        "totalPagar": 1.39
     },
     "extension": {
         "nombEntrega": null,
