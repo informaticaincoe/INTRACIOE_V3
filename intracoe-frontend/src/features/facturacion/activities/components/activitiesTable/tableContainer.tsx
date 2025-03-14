@@ -3,6 +3,7 @@ import { ActivitiesData } from '../../interfaces/activitiesData';
 import { TableData } from './tableData';
 import { HeaderTable } from '../headerTable/headerTable';
 import { WhiteSectionsPage } from '../../../../../shared/containers/whiteSectionsPage';
+import { getAllActivities } from '../../services/activitiesServices';
 
 //datos de prueba
 const activityList = [
@@ -58,7 +59,12 @@ export const TableContainer = () => {
   //consumo de api
   useEffect(() => {
     setActivities(activityList);
+    fetchActivities()
   }, []);
+
+  const fetchActivities =()=>{
+    getAllActivities()
+  }
 
   return (
     <WhiteSectionsPage>

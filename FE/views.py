@@ -857,10 +857,10 @@ def generar_factura_view(request):
             factura.save()
 
                 # Guardar el JSON en la carpeta "FE/json_facturas"
-                json_path = os.path.join("FE/json_facturas", f"{factura.numero_control}.json")
-                os.makedirs(os.path.dirname(json_path), exist_ok=True)
-                with open(json_path, "w", encoding="utf-8") as f:
-                    json.dump(factura_json, f, indent=4, ensure_ascii=False)
+            json_path = os.path.join("FE/json_facturas", f"{factura.numero_control}.json")
+            os.makedirs(os.path.dirname(json_path), exist_ok=True)
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(factura_json, f, indent=4, ensure_ascii=False)
 
                 return JsonResponse({
                     "mensaje": "Factura generada correctamente",
