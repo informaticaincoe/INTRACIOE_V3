@@ -8,7 +8,7 @@ import { RiFileExcel2Fill } from 'react-icons/ri';
 import { NewActivityForm } from '../forms/newActivityform';
 import { useNavigate } from 'react-router';
 
-export const HeaderTable = () => {
+export const HeaderTable = ({ setActivities }: { setActivities: any }) => {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState<'new' | 'excel' | null>(null);
