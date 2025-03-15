@@ -1,47 +1,23 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivitiesData } from '../../features/facturacion/activities/interfaces/activitiesData';
 import { Toast } from 'primereact/toast';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
+import { Dialog } from 'primereact/dialog';
 // import styles from "./modalCustom.module.css"
 
 interface ViewModalProps {
   activity: ActivitiesData;
-  onClose: () => void; // Función para cerrar el modal
+  visible: boolean;
+  setVisible: any;
+
 }
 
-export const ViewModal: React.FC<ViewModalProps> = ({ activity, onClose }) => {
-  const toast = useRef<Toast | null>(null);
+export const ViewModal: React.FC<ViewModalProps> = ({ activity, visible, setVisible }) => {
 
-  const accept = () => {
-    if (toast.current) {
-      toast.current.show({
-        severity: 'info',
-        summary: 'Confirmed',
-        detail: 'Activity deleted',
-        life: 3000,
-      });
-    }
-    onClose();
-  };
-
-  const reject = () => {
-    if (toast.current) {
-      toast.current.show({
-        severity: 'warn',
-        summary: 'Rejected',
-        detail: 'You have rejected',
-        life: 3000,
-      });
-    }
-    onClose();
-  };
-
-  const showTemplate = () => {
-    confirmDialog({
-      group: 'templating',
-      header: <p className="px-10 text-2xl">Detalle de actividad económica</p>,
-      message: (
-        <div className="flex-column align-items-center border-bottom-1 surface-border flex w-full">
+  return (
+    <>
+      <Dialog header={<p className="text-2xl px-10">Detalle actividad económica</p>} visible={visible} style={{ width: '50vw' }} onHide={() => { if (!visible) return; setVisible(false); }}>
+        <div className="flex-column align-items-center border-bottom-1 surface-border flex w-full px-7">
           <table className="font-display text-md">
             <tbody>
               <tr>
@@ -54,27 +30,14 @@ export const ViewModal: React.FC<ViewModalProps> = ({ activity, onClose }) => {
               </tr>
             </tbody>
           </table>
+
         </div>
-      ),
-      accept,
-      reject,
-    });
-  };
-
-  useEffect(() => {
-    if (activity) {
-      showTemplate();
-    }
-  }, [activity]);
-
-  return (
-    <>
-      <Toast ref={toast} />
-      <ConfirmDialog
-        group="templating"
-        acceptLabel={'Ok'}
-        rejectLabel="Cancelar"
-      />
+        <div className='flex justify-end'>
+          <button className='bg-primary-blue text-white rounded-md px-7 py-2 flex justify-end border hover:cursor-pointer' onClick={()=>setVisible(false) }>
+            Ok
+          </button>
+        </div>
+      </Dialog>
     </>
   );
 };
