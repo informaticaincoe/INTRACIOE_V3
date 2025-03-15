@@ -1,76 +1,57 @@
 import { useEffect, useState } from 'react';
 import { ActivitiesData } from '../../interfaces/activitiesData';
-import { TableData } from './tableData';
 import { HeaderTable } from '../headerTable/headerTable';
 import { WhiteSectionsPage } from '../../../../../shared/containers/whiteSectionsPage';
 import { getAllActivities } from '../../services/activitiesServices';
-
-//datos de prueba
-const activityList = [
-  {
-    codigo: '46375',
-    descripcion: 'Venta al por mayor de productos lacteos',
-  },
-  {
-    codigo: '47816',
-    descripcion: 'Venta al por menor de bebidas',
-  },
-  {
-    codigo: '47815',
-    descripcion: 'Venta al por menor de bebidas',
-  },
-  {
-    codigo: '47814',
-    descripcion: 'Venta al por menor de bebidas',
-  },
-  {
-    codigo: '47813',
-    descripcion: 'Venta al por menor de bebidas',
-  },
-  {
-    codigo: '47810',
-    descripcion: 'Venta al por menor de bebidas',
-  },
-  {
-    codigo: '47816',
-    descripcion: 'Venta al por menor de bebidas',
-  },
-  {
-    codigo: '47815',
-    descripcion: 'Venta al por menor de bebidas',
-  },
-  {
-    codigo: '47814',
-    descripcion: 'Venta al por menor de bebidas',
-  },
-  {
-    codigo: '47813',
-    descripcion: 'Venta al por menor de bebidas',
-  },
-  {
-    codigo: '47810',
-    descripcion: 'Venta al por menor de bebidas',
-  },
-];
+import { DataTable } from 'primereact/datatable';
+import { Column } from 'primereact/column';
+import Actions from './actionsTable';
+import 'primereact/resources/themes/lara-light-blue/theme.css';
 
 export const TableContainer = () => {
   const [activities, setActivities] = useState<ActivitiesData[]>([]);
 
   //consumo de api
   useEffect(() => {
-    setActivities(activityList);
-    fetchActivities()
-  }, []);
+    fetchActivities();
+  }, [setActivities]);
 
-  const fetchActivities =()=>{
-    getAllActivities()
-  }
+  const fetchActivities = async () => {
+    const data = await getAllActivities();
+    setActivities(data);
+  };
+
+  const onDelete = () => {
+    fetchActivities();
+  };
 
   return (
     <WhiteSectionsPage>
       <>
-        <HeaderTable />
-        <TableData activities={activities} />
+        <HeaderTable setActivities={setActivities} />
+        <>
+          <DataTable
+            value={activities}
+            paginator
+            rows={5}
+            rowsPerPageOptions={[5, 10, 25, 50]}
+          >
+            <Column
+              field="codigo"
+              header={<p className="text-black">CODIGO</p>}
+            ></Column>
+            <Column
+              field="descripcion"
+              header={<p className="text-black">DESCRIPCIÓN</p>}
+            ></Column>
+            <Column
+              header="ACCIONES"
+              body={(activity: ActivitiesData) => (
+                <Actions activity={activity} onDelete={onDelete} />
+              )}
+            />
+          </DataTable>
+        </>
       </>
     </WhiteSectionsPage>
   );

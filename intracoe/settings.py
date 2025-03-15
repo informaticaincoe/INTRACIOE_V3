@@ -26,19 +26,11 @@ SECRET_KEY = 'django-insecure--t^=e+nnmjaah90onb$_&@5(kv1-_c!sjr^y1vov!(v0!5wa$a
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS=['*']
+ALLOWED_HOSTS=['*']               
 
-ALLOWED_HOSTS=['http://localhost:5173']
-
-               
-
-CORS_ORIGIN_ALLOW_ALL = False
-
-CORS_ORIGIN_WHITELIST = (
-
-       'http://localhost:5173',
-
-)
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',  # Asegúrate de que esta URL esté incluida
+]
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -48,8 +40,6 @@ CORS_ALLOW_HEADERS = [
     'accept',
     # otros encabezados que necesites
 ]
-
-ALLOWED_HOSTS = ['*']
 
 CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:8000',
@@ -120,12 +110,12 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'intracoe.urls'

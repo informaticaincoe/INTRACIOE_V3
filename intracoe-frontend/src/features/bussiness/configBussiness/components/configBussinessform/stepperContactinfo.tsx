@@ -3,21 +3,17 @@ import { Input } from '../../../../../shared/forms/input';
 import { SelectDepartmentComponent } from '../../../../../shared/Select/selectDepartmentComponent';
 import { SelectMunicipios } from '../../../../../shared/Select/selectMunicipios';
 
-
-const StepperContactinfo = (
-  {
-    formData,
-    handleChange,
-    handleDepartamento,
-    handleMunicipio
-  }: {
-    formData: any;
-    handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    handleDepartamento: (value: string) => void;
-    handleMunicipio: (value: string) => void;
-
-  }
-) => {
+const StepperContactinfo = ({
+  formData,
+  handleChange,
+  handleDepartamento,
+  handleMunicipio,
+}: {
+  formData: any;
+  handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleDepartamento: (value: string) => void;
+  handleMunicipio: (value: string) => void;
+}) => {
   return (
     <form className="flex flex-col gap-5">
       <span className="w-full text-start">

@@ -182,9 +182,15 @@ def autenticacion(request):
 ######################################################
 
 # Vista para obtener el detalle de una Actividad Económica
+class ActividadEconomicaListAPIView(generics.ListAPIView):
+    queryset = ActividadEconomica.objects.all()
+    serializer_class = ActividadEconomicaSerializer
+    
 class ActividadEconomicaDetailAPIView(generics.RetrieveAPIView):
     queryset = ActividadEconomica.objects.all()
     serializer_class = ActividadEconomicaSerializer
+    
+    
 
 # Vista para crear una nueva Actividad Económica
 class ActividadEconomicaCreateAPIView(generics.CreateAPIView):
