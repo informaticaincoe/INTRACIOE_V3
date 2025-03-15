@@ -1,6 +1,6 @@
-import { Divider } from "primereact/divider";
-import { WhiteSectionsPage } from "../../../../shared/containers/whiteSectionsPage";
-import { Title } from "../../../../shared/text/title";
+import { Divider } from 'primereact/divider';
+import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPage';
+import { Title } from '../../../../shared/text/title';
 
 export const GenerateDocuments = () => {
   return (
@@ -9,11 +9,9 @@ export const GenerateDocuments = () => {
 
       <WhiteSectionsPage>
         <>
-          <h1 className="font-bold text-start">Datos del emisor</h1>
+          <h1 className="text-start font-bold">Datos del emisor</h1>
           <Divider className="m-0 p-0"></Divider>
-          <table>
-            
-          </table>
+          <table></table>
 
           <span>
             <span className="flex gap-5">
@@ -35,7 +33,6 @@ export const GenerateDocuments = () => {
           </span>
         </>
       </WhiteSectionsPage>
-
     </>
   );
 };

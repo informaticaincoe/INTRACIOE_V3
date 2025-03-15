@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { Toast } from 'primereact/toast';
-import { ActivitiesData } from '../../features/facturacion/activities/interfaces/activitiesData';
+import { ActivitiesData } from '../../interfaces/activitiesData';
 import styles from './modalCustom.module.css';
-import { deleteActivity } from '../../features/facturacion/activities/services/activitiesServices';
+import { deleteActivity } from '../../services/activitiesServices';
 
 interface DeleteModalProps {
   activity: ActivitiesData;
@@ -72,7 +72,7 @@ export const DeleteModal: React.FC<DeleteModalProps> = ({
   const handleDeleteActivity = async () => {
     const response = await deleteActivity(activity.id);
     onDelete();
-    onClose()
+    onClose();
     console.log(response);
   };
 

@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from FE.views import enviar_factura_invalidacion_hacienda_view, firmar_factura_anulacion_view, invalidacion_dte_view, generar_json, num_to_letras
-from .serializers import ActividadEconomicaSerializer, ReceptorSerializer, FacturaElectronicaSerializer
+from .serializers import ActividadEconomicaSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer
 from .models import (
     ActividadEconomica, Emisor_fe, Receptor_fe, FacturaElectronica, DetalleFactura,
     Ambiente, CondicionOperacion, Modelofacturacion, NumeroControl,
@@ -211,6 +211,7 @@ class ActividadEconomicaDeleteAPIView(generics.DestroyAPIView):
 # RECEPTOR
 ######################################################
 
+
 class ObtenerReceptorAPIView(APIView):
     """
     Devuelve los datos de un receptor en formato JSON.
@@ -227,8 +228,14 @@ class ObtenerReceptorAPIView(APIView):
 ######################################################
 # EMISOR
 ######################################################
+class EmisorListAPIView(generics.ListAPIView):
+    queryset = Emisor_fe.objects.all()
+    serializer_class = EmisorSerializer
 
-
+class EmisorCreateAPIView(generics.CreateAPIView):
+    queryset = Emisor_fe.objects.all()
+    serializer_class = EmisorSerializer  
+    
 ######################################################
 # PRODUCTOS Y SERVICIOS
 ######################################################

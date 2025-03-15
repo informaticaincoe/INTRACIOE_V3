@@ -10,8 +10,6 @@ import { createActivity } from '../../services/activitiesServices';
 
 export const UploadFileSection = () => {
   const [excelData, setExcelData] = useState<ActivitiesDataNew[]>([]);
-
-  // const readExcel = (file: File) => {
   //   const reader = new FileReader();
   //   reader.onload = (e: ProgressEvent<FileReader>) => {
   //     const ab = e.target?.result;
