@@ -6,14 +6,20 @@ import { useState } from 'react';
 import { IoIosAdd } from 'react-icons/io';
 import { RiFileExcel2Fill } from 'react-icons/ri';
 import { NewActivityForm } from '../forms/newActivityform';
+import { useNavigate } from 'react-router';
 
 export const HeaderTable = () => {
+  const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState<'new' | 'excel' | null>(null);
 
   const handleNewActivity = (type: any) => {
     setShowModal(!showModal);
     setModalType(type);
+  };
+
+  const handleUploadExcel = () => {
+    navigate('/uploadExcel');
   };
 
   return (
@@ -34,6 +40,9 @@ export const HeaderTable = () => {
               text="Cargar desde excel"
               icon={<RiFileExcel2Fill size={20} />}
               className="bg-green hover:bg-green-hover"
+              onClick={() => {
+                handleUploadExcel();
+              }}
             />
           </article>
         </article>

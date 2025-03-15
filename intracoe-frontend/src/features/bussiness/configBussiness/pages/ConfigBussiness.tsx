@@ -1,7 +1,11 @@
+import { Title } from '../../../../shared/text/title';
+import { StepperContainer } from '../components/configBussinessform/stepperFormContainer';
+
 export const ConfigBussiness = () => {
   return (
     <>
-      <h1>Configurar empresa</h1>
+      <Title text="Configurar empresa" />
+      <StepperContainer />
     </>
   );
 };

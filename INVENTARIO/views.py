@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.core.paginator import Paginator
-from .models import Producto, MovimientoInventario, Compra, DevolucionVenta, DevolucionCompra, Categoria, UnidadMedida, Descuento, Impuesto, Almacen
+from .models import Producto, MovimientoInventario, Compra, DevolucionVenta, DevolucionCompra, Categoria, UnidadMedida, Impuesto, Almacen
 
 # Listar productos
 def listar_productos(request):
@@ -25,7 +25,7 @@ def listar_productos(request):
 def crear_producto(request):
     categorias = Categoria.objects.all()
     unidades_medida = UnidadMedida.objects.all()
-    descuentos = Descuento.objects.all()
+    #descuentos = Descuento.objects.all()
     impuestos = Impuesto.objects.all()
     almacenes = Almacen.objects.all()
 
@@ -39,8 +39,8 @@ def crear_producto(request):
         stock = request.POST.get('stock')
         stock_minimo = request.POST.get('stock_minimo')
         stock_maximo = request.POST.get('stock_maximo')
-        tiene_descuento = request.POST.get('tiene_descuento') == 'on'
-        descuento_id = request.POST.get('descuento') if tiene_descuento else None
+        #tiene_descuento = request.POST.get('tiene_descuento') == 'on'
+        #descuento_id = request.POST.get('descuento') if tiene_descuento else None
         impuesto_ids = request.POST.getlist('impuestos')
         maneja_lotes = request.POST.get('maneja_lotes') == 'on'
         fecha_vencimiento = request.POST.get('fecha_vencimiento') if maneja_lotes else None
@@ -57,8 +57,8 @@ def crear_producto(request):
             stock=stock,
             stock_minimo=stock_minimo,
             stock_maximo=stock_maximo,
-            tiene_descuento=tiene_descuento,
-            descuento_id=descuento_id,
+            # tiene_descuento=tiene_descuento,
+            # escuento_id=descuento_id,
             maneja_lotes=maneja_lotes,
             fecha_vencimiento=fecha_vencimiento,
             imagen=imagen
@@ -72,7 +72,7 @@ def crear_producto(request):
     return render(request, 'productos/formulario.html', {
         'categorias': categorias,
         'unidades_medida': unidades_medida,
-        'descuentos': descuentos,
+        #'descuentos': descuentos,
         'impuestos': impuestos,
         'almacenes': almacenes
     })
