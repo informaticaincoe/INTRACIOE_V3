@@ -310,6 +310,7 @@ class FacturaElectronica(models.Model):
     condicion_operacion = models.ForeignKey(CondicionOperacion, on_delete=models.CASCADE, null=True)
     iva_percibido = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     saldo_favor = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    formas_Pago = models.JSONField(default=list, blank=True)
 
     #ESTADO DEL DOCUMENTO
     firmado = models.BooleanField(default=False)

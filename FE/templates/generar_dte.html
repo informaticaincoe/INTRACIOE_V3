@@ -309,29 +309,29 @@
       </div>
 
       <div class="modal-body">
-        <table id="tabla-productos-modal" class="table">
+        <table id="tabla-formaspago-modal" class="table">
           <thead>
             <tr>
-              <th>Seleccionar</th>
               <th>Codigo</th>
               <th>Forma de Pago</th>
               <th># Referencia</th>
+              <th>Seleccionar</th>
             </tr>
           </thead>
           <tbody>
             {% for fp in formasPago %}
             <tr data-id="{{ fp.id }}">
-              <td><input type="checkbox" class="formapago-checkbox"></td>
+              <td >{{ fp.codigo }}</td>
               <td>{{ fp.codigo }}</td>
               <td>{{ fp.descripcion }}</td>
-              <td><input class="referencia-input" style="width: 90px;"></td>
+              <td><input id="referencia_input" class="referencia-input" style="width: 90px;"></td>
+              <td><input type="checkbox" id="checkbox_fp" class="formapago-checkbox" onclick="cargarFormasPagoModal(this, {{fp.id}})"></td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-primary" onclick="cargarProductosModal(document.getElementById('descuento_select').value)">Agregar</button>
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
       </div>
     </div>
@@ -432,6 +432,48 @@
             .catch(error => console.error('Error:', error));
     });
     cargarProductosModal(descuento_id)
+  });
+
+  // Función para cargar formas depago desde el modal
+  document.addEventListener('DOMContentLoaded', function () {
+    const checkboxs = document.querySelectorAll('.formapago-checkbox');
+
+    // Itera sobre cada checkbox y agrega un listener de cambio (change)
+    checkboxs.forEach(function (checkbox) {
+      checkbox.addEventListener('change', function() {
+          const fila = checkbox.closest('tr');  // Obtener la fila seleccionada
+          const fpId = fila.getAttribute('data-id')
+          const num_referencia = fila.querySelector('.formapago-checkbox').value;
+
+          if(checkbox.checked){
+            //const num_referencia = document.getElementById('referencia_input').value;
+            //if (checkbox.checked){
+              fetch(`/fe/obtener-forma-pago/?fp_id=${fpId}&num_ref=${num_referencia}`)
+                  .then(response => {
+                    if (!response.ok) {  // Verifica si la respuesta fue exitosa (200-299)
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();  // Intenta convertir la respuesta a JSON
+                  })
+                  .catch(error => console.error('Error:', error));
+              }
+          
+          // Acción cuando se selecciona o deselecciona un checkbox
+          console.log('Producto seleccionado:', fila.cells[1].textContent);  // Nombre del producto
+      });
+   });
+
+
+    function cargarFormasPagoModal(fpId) {
+      const checkboxs = document.querySelectorAll('.formapago-checkbox');
+      console.log("Formas de Pago seleccionada:", fpId);
+      const num_referencia = document.getElementById('referencia_input').value;
+      //if (checkbox.checked){
+        fetch(`/fe/obtener-forma-pago/?fp_id=${fpId}&num_ref=${num_referencia}`)
+              .then(response => response.json())
+              .catch(error => console.error('Error:', error));
+        //}
+    }
   });
 
   // Función para cargar productos desde el modal
@@ -565,6 +607,8 @@
       jsonData["documento_select"] = document.querySelector('select[name="documento_seleccionado"]').value;
 
       jsonData["descuento_select"] = document.querySelector('select[name="descuento_seleccionado"]').value;
+
+      jsonData["descuento_select"] = document.querySelector('select[name="descuento_seleccionado"]').value;
       
       // Recopilar datos de productos
       let productos_ids = [];
@@ -655,6 +699,7 @@ document.addEventListener('DOMContentLoaded', function () {
 document.getElementById("retencion_iva_checkbox").addEventListener("change", function () {
   document.getElementById("btn-retencion-iva").style.display = this.checked ? "inline-block" : "none";
 });
+
 
 </script>
 {% endblock %}

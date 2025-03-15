@@ -1999,3 +1999,26 @@ def seleccion_descuento_ajax(request):
     print("-Descuento url: ", descuento_porcentaje)
     return JsonResponse({'descuento': descuento_porcentaje})
 
+def agregar_formas_pago_ajax(request):
+    print("-Formas de pago url: ", request)
+    try:
+        formas_pago = []
+        forma_pago_id = request.GET.get("fp_id")
+        num_referencia = request.GET.get("num_ref")
+        
+        if forma_pago_id:
+            formaPago = FormasPago.objects.get(id=forma_pago_id)
+            if formaPago is not None:
+                formas_pago_json = [
+                    {
+                        "codigo": formaPago.codigo,
+                        "descripcion": formaPago.descripcion,
+                        "referencia": num_referencia
+                    }
+                ]
+                formas_pago.append(formas_pago_json)
+                print("-Formas de pago seleccionadas : ", formas_pago)
+        return JsonResponse({'formasPago': forma_pago_id})
+    except Exception as e:
+        print(f"Ocurrió un error: {e}")
+    
