@@ -20,6 +20,18 @@ export const StepperConfigBill = ({
   return (
     <form className="flex flex-col gap-5">
       <span className="w-full text-start">
+        <label htmlFor="tipo_documento" className="">
+          Tipo de documento
+        </label>
+        <Input
+          name="tipo_documento"
+          type="text"
+          placeholder=""
+          value={formData.tipo_documento}
+          onChange={handleChange}
+        />
+      </span>
+      <span className="w-full text-start">
         <label htmlFor="nit" className="">
           NIT de emisor
         </label>
@@ -42,22 +54,22 @@ export const StepperConfigBill = ({
         />
       </span>
       <span className="w-full text-start">
-        <label htmlFor="nombreComercial">Nombre comercial</label>
+        <label htmlFor="nombre_comercial">Nombre comercial</label>
         <Input
-          name="nombreComercial"
+          name="nombre_comercial"
           type="text"
           placeholder=""
-          value={formData.nombreComercial}
+          value={formData.nombre_comercial}
           onChange={handleChange}
         />
       </span>
       <span className="w-full text-start">
-        <label htmlFor="razonSocial">Nombre o razón social</label>
+        <label htmlFor="nombre_razon_social">Nombre o razón social</label>
         <Input
-          name="razonSocial"
+          name="nombre_razon_social"
           type="text"
           placeholder=""
-          value={formData.razonSocial}
+          value={formData.nombre_razon_social}
           onChange={handleChange}
         />
       </span>
@@ -69,30 +81,30 @@ export const StepperConfigBill = ({
         />
       </span>
       <span className="w-full text-start">
-        <label htmlFor="codigoPuntoVenta">Código punto de venta</label>
+        <label htmlFor="codigo_punto_venta">Código punto de venta</label>
         <Input
-          name="codigoPuntoVenta"
+          name="codigo_punto_venta"
           type="text"
           placeholder=""
-          value={formData.codigoPuntoVenta}
+          value={formData.codigo_punto_venta}
           onChange={handleChange}
         />
       </span>
       <span className="w-full text-start">
-        <label htmlFor="codigoEstablecimiento">Código de establecimiento</label>
+        <label htmlFor="codigo_establecimiento">Código de establecimiento</label>
         <Input
-          name="codigoEstablecimiento"
+          name="codigo_establecimiento"
           type="text"
           placeholder=""
-          value={formData.codigoEstablecimiento}
+          value={formData.codigo_establecimiento}
           onChange={handleChange}
         />
       </span>
       <span className="w-full text-start">
-        <label htmlFor="actividades-economicas">Actividades economicas</label>
+        <label htmlFor="actividades_economicas">Actividades economicas</label>
 
         <SelectActividadesEconomicas
-          actividades={formData.actividadesEconomicas}
+          actividades={formData.actividades_economicas}
           setActividades={handleSelectActividadesEconomicas}
         />
       </span>

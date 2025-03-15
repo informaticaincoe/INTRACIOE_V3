@@ -7,8 +7,9 @@ import { ActivitiesPage } from './features/facturacion/activities/pages/activiti
 import { GenerateDocuments } from './features/facturacion/generateDocuments/pages/GenerateDocuments';
 import { ProductsPage } from './features/bussiness/products/pages/productsPage';
 import { ServicesPage } from './features/bussiness/services/pages/ServicesPage';
-import { ConfigBussiness } from './features/bussiness/configBussiness/pages/ConfigBussiness';
 import { UploadExcelPage } from './features/facturacion/activities/pages/uploadExcelPage';
+import { ConfigBussiness } from './features/bussiness/configBussiness/pages/ConfigBussiness';
+import { EmpresaPage } from './features/bussiness/configBussiness/pages/empresaPage';
 
 function App() {
   return (
@@ -21,7 +22,8 @@ function App() {
           <Route path="/generar-documentos" element={<GenerateDocuments />} />
           <Route path="/productos" element={<ProductsPage />} />
           <Route path="/servicios" element={<ServicesPage />} />
-          <Route path="/empresa" element={<ConfigBussiness />} />
+          <Route path="/empresa/crear" element={<ConfigBussiness />} />
+          <Route path="/empresa" element={<EmpresaPage />} />
           <Route path="/uploadExcel" element={<UploadExcelPage />} />
         </Route>
       </Routes>
