@@ -1,7 +1,5 @@
-import React from 'react'
+import React from 'react';
 
 export const SeccionDatosEmisor = () => {
-  return (
-    <div>SeccionDatosEmisor</div>
-  )
-}
+  return <div>SeccionDatosEmisor</div>;
+};

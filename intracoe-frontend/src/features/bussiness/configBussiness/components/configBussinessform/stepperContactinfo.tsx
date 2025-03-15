@@ -18,6 +18,18 @@ const StepperContactinfo = ({
     <form className="flex flex-col gap-5">
       <span className="w-full text-start">
         <label htmlFor="departamento" className="">
+          Dirección comercial
+        </label>
+        <Input
+          name="direccion_comercial"
+          type="text"
+          placeholder=""
+          value={formData.direccion_comercial}
+          onChange={handleChange}
+        />
+      </span>
+      <span className="w-full text-start">
+        <label htmlFor="departamento" className="">
           Departamento
         </label>
         <SelectDepartmentComponent
@@ -34,12 +46,12 @@ const StepperContactinfo = ({
         />
       </span>
       <span className="w-full text-start">
-        <label htmlFor="direccionComercial">Dirección comercial</label>
+        <label htmlFor="direccion_comercial">Dirección comercial</label>
         <Input
-          name="direccionComercial"
+          name="direccion_comercial"
           type="text"
           placeholder=""
-          value={formData.direccionComercial}
+          value={formData.direccion_comercial}
           onChange={handleChange}
         />
       </span>

@@ -5,23 +5,26 @@ import { useRef, useState } from 'react';
 import { WhiteSectionsPage } from '../../../../../shared/containers/whiteSectionsPage';
 import { StepperConfigBill } from './stepperConfigBill';
 import StepperContactinfo from './stepperContactinfo';
+import { createEmpresaById } from '../../services/empresaServices';
+import { Empresa } from '../../interfaces/empresaInterfaces';
 
 export const StepperContainer = () => {
   const stepperRef = useRef<Stepper | null>(null);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Empresa>({
+    tipo_documento:'',
     nit: '',
     nrc: '',
-    nombreComercial: '',
-    razonSocial: '',
+    nombre_establecimiento:'',
+    nombre_comercial: '',
+    nombre_razon_social: '',
     ambiente: '',
-    codigoPuntoVenta: '',
-    codigoEstablecimiento: '',
-    actividadesEconomicas: '',
-    tipoEstablecimiento: '',
-    departamento: '',
+    codigo_punto_venta: '',
+    codigo_establecimiento: '',
+    actividades_economicas: [],
+    tipoestablecimiento: '',
     municipio: '',
-    direccionComercial: '',
+    direccion_comercial: '',
     telefono: '',
     email: '',
   });
@@ -47,9 +50,16 @@ export const StepperContainer = () => {
     }
   };
 
-  const handleSendForm = (e: React.FormEvent) => {
+  const handleSendForm = async(e: React.FormEvent) => {
     e.preventDefault();
     console.log(formData);
+
+    try {
+      const response = await createEmpresaById(formData)
+    } catch (error) {
+      console.log(error)
+    }
+
   };
 
   const handleSelectAmbiente = (value: string) => {
@@ -57,15 +67,20 @@ export const StepperContainer = () => {
   };
 
   const handleSelectActividadesEconomicas = (value: string) => {
-    setFormData({ ...formData, actividadesEconomicas: value });
+    console.log(value)
+    // setFormData({ ...formData, actividadesEconomicas: value });
   };
 
   const handleTipoEstablecimiento = (value: string) => {
-    setFormData({ ...formData, tipoEstablecimiento: value });
+    console.log(value)
+
+    // setFormData({ ...formData, tipoEstablecimiento: value });
   };
 
   const handleDepartamento = (value: string) => {
-    setFormData({ ...formData, departamento: value });
+    console.log(value)
+
+    // setFormData({ ...formData, departamento: value });
   };
 
   const handleMunicipio = (value: string) => {

@@ -39,11 +39,11 @@ export const TableContainer = () => {
             <Column
               field="codigo"
               header={<p className="text-black">CODIGO</p>}
-            ></Column>
+            />
             <Column
               field="descripcion"
               header={<p className="text-black">DESCRIPCIÓN</p>}
-            ></Column>
+            />
             <Column
               header="ACCIONES"
               body={(activity: ActivitiesData) => (
