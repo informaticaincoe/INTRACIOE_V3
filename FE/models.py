@@ -309,6 +309,8 @@ class FacturaElectronica(models.Model):
     total_iva = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     condicion_operacion = models.ForeignKey(CondicionOperacion, on_delete=models.CASCADE, null=True)
     iva_percibido = models.DecimalField(max_digits=10, decimal_places=2, null=True)
+    saldo_favor = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    formas_Pago = models.JSONField(default=list, blank=True)
 
     #ESTADO DEL DOCUMENTO
     firmado = models.BooleanField(default=False)
@@ -317,8 +319,8 @@ class FacturaElectronica(models.Model):
     sello_recepcion = models.CharField(max_length=255, blank=True, null=True)
     recibido_mh = models.BooleanField(default=False)
     estado = models.BooleanField(default=False)
-    tipo_documento_relacionar = models.CharField(max_length=50, null=True)#Identificar si el documento es Fisico(F) o Electronico(E)
-    documento_relacionado = models.CharField(max_length=100, null=True)#Agregar el documento relacionado
+    tipo_documento_relacionar = models.CharField(max_length=50, null=True, blank=True)#Identificar si el documento es Fisico(F) o Electronico(E)
+    documento_relacionado = models.CharField(max_length=100, null=True, blank=True)#Agregar el documento relacionado
     
     def save(self, *args, **kwargs):
         if not self.numero_control:

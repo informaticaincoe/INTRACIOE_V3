@@ -166,6 +166,7 @@
               <th>Total Neto</th>
               <th>Total IVA</th>
               <th>Total con IVA</th>
+              <th>Descuento</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -191,7 +192,7 @@
           <div class="col-md-3">
             <div class="form-group">
               <label>Descuento (%)</label>
-              <input type="number" id="descuento-global" class="form-control" value="0" min="0" max="100" oninput="actualizarResumen()">
+              <input type="number" id="descuento-global" name="descuento_global_input" class="form-control" value="0" min="0" max="100" oninput="actualizarResumen()">
             </div>
           </div>
         </div>
@@ -200,9 +201,18 @@
             <p><strong>Monto Descuento:</strong> $<span id="monto-descuento">0.00</span></p>
           </div>
           <div class="col-md-6">
+            <strong>Saldo a Favor:</strong><input name="saldo_favor" id="saldo_favor_input" class="form-control" value="{{ saldo_favor }}">
+          </div>
+          <div class="col-md-6">
             <p><strong>Total a Pagar:</strong> $<span id="total-pagar">0.00</span></p>
           </div>
-        </div>
+      </div>
+
+      <!-- Botón para abrir el modal de productos -->
+      <div class="form-section">
+        <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#formasPagoModal">
+          + Formas de Pago
+        </button>
       </div>
       
       <!-- Botón de Envío -->
@@ -210,6 +220,7 @@
     </form>
   </div>
 </div>
+
 
 <!-- Modal para seleccionar productos (sin descuento en el modal) -->
 <div class="modal fade" id="productosModal" tabindex="-1" role="dialog" aria-labelledby="productosModalLabel" aria-hidden="true">
@@ -265,10 +276,11 @@
                   {% endfor %}
                 </select>
               </td>
-              <td class="monto-descuento">
+              <td>
                 <select name="descuento_seleccionado" class="form-control" id="descuento_select">
                   {% for descuento in descuentos %}
-                    <option value="{{ descuento.id }}">{{ descuento.porcentaje }}</option>
+                    <option  value="{{ descuento.id }}"> {{ descuento.porcentaje }}
+                    </option>
                   {% endfor %}
                 </select>
               </td>
@@ -278,12 +290,54 @@
         </table>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-primary" onclick="cargarProductosModal()">Cargar Productos</button>
+        <button type="button" class="btn btn-primary" onclick="cargarProductosModal(document.getElementById('descuento_select').value)">Cargar Productos</button>
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
       </div>
     </div>
   </div>
 </div>
+
+<!-- Modal para seleccionar formas de pago -->
+<div class="modal fade" id="formasPagoModal" tabindex="-1" role="dialog" aria-labelledby="formasPagoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="formaPagoModalLabel">Seleccionar Forma de Pago</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <table id="tabla-formaspago-modal" class="table">
+          <thead>
+            <tr>
+              <th>Codigo</th>
+              <th>Forma de Pago</th>
+              <th># Referencia</th>
+              <th>Seleccionar</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for fp in formasPago %}
+            <tr data-id="{{ fp.id }}">
+              <td >{{ fp.codigo }}</td>
+              <td>{{ fp.codigo }}</td>
+              <td>{{ fp.descripcion }}</td>
+              <td><input id="referencia_input" class="referencia-input" style="width: 90px;"></td>
+              <td><input type="checkbox" id="checkbox_fp" class="formapago-checkbox" onclick="cargarFormasPagoModal(this, {{fp.id}})"></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <!-- Modal para retención de IVA -->
 <div class="modal fade" id="retencionIvaModal" tabindex="-1" role="dialog" aria-labelledby="retencionIvaModalLabel" aria-hidden="true">
@@ -367,8 +421,64 @@
       });
   });
 
+  //Obtener seleccion del descuento
+  document.addEventListener('DOMContentLoaded', function () {
+    const descuSeleccionado = document.getElementById('descuento_select');
+
+    descuSeleccionado.addEventListener('change', function (){
+      const descuento_id = this.value;
+      fetch(`/fe/obtener-descuento/?descuento_id=${descuento_id}`)
+            .then(response => response.json())
+            .catch(error => console.error('Error:', error));
+    });
+    cargarProductosModal(descuento_id)
+  });
+
+  // Función para cargar formas depago desde el modal
+  document.addEventListener('DOMContentLoaded', function () {
+    const checkboxs = document.querySelectorAll('.formapago-checkbox');
+
+    // Itera sobre cada checkbox y agrega un listener de cambio (change)
+    checkboxs.forEach(function (checkbox) {
+      checkbox.addEventListener('change', function() {
+          const fila = checkbox.closest('tr');  // Obtener la fila seleccionada
+          const fpId = fila.getAttribute('data-id')
+          const num_referencia = fila.querySelector('.formapago-checkbox').value;
+
+          if(checkbox.checked){
+            //const num_referencia = document.getElementById('referencia_input').value;
+            //if (checkbox.checked){
+              fetch(`/fe/obtener-forma-pago/?fp_id=${fpId}&num_ref=${num_referencia}`)
+                  .then(response => {
+                    if (!response.ok) {  // Verifica si la respuesta fue exitosa (200-299)
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();  // Intenta convertir la respuesta a JSON
+                  })
+                  .catch(error => console.error('Error:', error));
+              }
+          
+          // Acción cuando se selecciona o deselecciona un checkbox
+          console.log('Producto seleccionado:', fila.cells[1].textContent);  // Nombre del producto
+      });
+   });
+
+
+    function cargarFormasPagoModal(fpId) {
+      const checkboxs = document.querySelectorAll('.formapago-checkbox');
+      console.log("Formas de Pago seleccionada:", fpId);
+      const num_referencia = document.getElementById('referencia_input').value;
+      //if (checkbox.checked){
+        fetch(`/fe/obtener-forma-pago/?fp_id=${fpId}&num_ref=${num_referencia}`)
+              .then(response => response.json())
+              .catch(error => console.error('Error:', error));
+        //}
+    }
+  });
+
   // Función para cargar productos desde el modal
-  function cargarProductosModal() {
+  function cargarProductosModal(descuento) {
+    console.log("Descuento seleccionado:", descuento);
       var modalRows = document.querySelectorAll('#tabla-productos-modal tbody tr');
       modalRows.forEach(function(row) {
           var checkbox = row.querySelector('.producto-checkbox');
@@ -380,7 +490,10 @@
               var precio = parseFloat(precioStr.replace(',', '.'));
               var cantidad = row.querySelector('.cantidad-input').value;
               var tipoItem = row.querySelector('.tipo_item_select');
-              agregarProductoFilaTabla(productoId, productoText, precio_incl, cantidad);
+
+              //Obtener seleccion del descuento
+              //var descuentoSeleccionado = document.getElementById('descuento_select'); //row.querySelector('.descuento_select');
+              agregarProductoFilaTabla(productoId, productoText, precio_incl, cantidad, descuento);
           }
       });
       actualizarResumen();
@@ -388,7 +501,7 @@
   }
 
   // Función para agregar una fila a la tabla de productos
-  function agregarProductoFilaTabla(productoId, productoText, precio_incl, cantidad) {
+  function agregarProductoFilaTabla(productoId, productoText, precio_incl, cantidad, descuentoSeleccionado) {
       // Calcular precio neto y IVA unitario
       let neto_unitario = parseFloat((precio_incl / 1.13).toFixed(2));
       let iva_unitario = parseFloat((precio_incl - neto_unitario).toFixed(2));
@@ -420,6 +533,7 @@
           <td class="total-neto">${total_neto.toFixed(2)}</td>
           <td class="total-iva">${total_iva.toFixed(2)}</td>
           <td class="total-incl">${total_incl.toFixed(2)}</td>
+          <td class="descuento_select">${descuentoSeleccionado}</td>
           <td><button type="button" class="btn btn-danger btn-sm" onclick="eliminarProductoFila(this)">Eliminar</button></td>
       `;
       tableBody.appendChild(row);
@@ -493,6 +607,8 @@
       jsonData["documento_select"] = document.querySelector('select[name="documento_seleccionado"]').value;
 
       jsonData["descuento_select"] = document.querySelector('select[name="descuento_seleccionado"]').value;
+
+      jsonData["descuento_select"] = document.querySelector('select[name="descuento_seleccionado"]').value;
       
       // Recopilar datos de productos
       let productos_ids = [];
@@ -506,6 +622,7 @@
       jsonData["productos_ids"] = productos_ids;
       jsonData["cantidades"] = cantidades;
       jsonData["montos_totales"] = totales_incl;
+      jsonData["saldo_favor_input"] = document.getElementById("saldo_favor_input").value;
       
       // Envío de retenciones
       jsonData["retencion_iva"] = document.getElementById("retencion_iva_checkbox").checked;
@@ -579,20 +696,10 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 });
 
-//Obtener seleccion del descuento
-document.addEventListener('DOMContentLoaded', function () {
-  const descuSeleccionado = document.getElementById('descuento_select');
-
-  descuSeleccionado.addEventListener('change', function (){
-    const descuento_id = this.value;
-    fetch(`/fe/obtener-descuento/?descuento_id=${descuento_id}`)
-          .then(response => response.json())
-          .then(data => {
-            descuSeleccionado.value = data.descuento_select;
-          })
-          .catch(error => console.error('Error:', error));
-  });
+document.getElementById("retencion_iva_checkbox").addEventListener("change", function () {
+  document.getElementById("btn-retencion-iva").style.display = this.checked ? "inline-block" : "none";
 });
+
 
 </script>
 {% endblock %}
