@@ -1,6 +1,6 @@
 from django.urls import path
 
-from FE.api_views import ActividadEconomicaCreateAPIView, ActividadEconomicaDeleteAPIView, ActividadEconomicaDetailAPIView, ActividadEconomicaListAPIView, ActividadEconomicaUpdateAPIView, EnviarFacturaHaciendaAPIView, FirmarFacturaAPIView, GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, autenticacion
+from FE.api_views import ActividadEconomicaCreateAPIView, ActividadEconomicaDeleteAPIView, ActividadEconomicaDetailAPIView, ActividadEconomicaListAPIView, ActividadEconomicaUpdateAPIView, EmisorCreateAPIView, EnviarFacturaHaciendaAPIView, FirmarFacturaAPIView, GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, autenticacion, EmisorListAPIView
 from . import views
 from .views import (
     ActividadEconomicaDetailView,
@@ -42,6 +42,12 @@ urlpatterns = [
     path('api/actividad/crear/', ActividadEconomicaCreateAPIView.as_view(), name='actividad_create_api'),
     path('api/actividad/actualizar/<int:pk>/', ActividadEconomicaUpdateAPIView.as_view(), name='actividad_update_api'),
     path('api/actividad/eliminar/<int:pk>/', ActividadEconomicaDeleteAPIView.as_view(), name='actividad_delete_api'),
+    
+    #URLS API EMISOR
+    path('api/emisor/', EmisorListAPIView.as_view(), name='emisor_list_api'),
+    path('api/emisor/crear/', EmisorCreateAPIView.as_view(), name='emisor_create_api'),
+    
+
 
     ################################################################################################################################################
     ################################################################################################################################################

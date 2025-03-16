@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { IoEyeOutline } from 'react-icons/io5';
 import { MdDeleteOutline } from 'react-icons/md';
+import { RiEdit2Line } from 'react-icons/ri';
 import { ActivitiesData } from '../../interfaces/activitiesData';
-import { DeleteModal } from '../../../../../shared/modal/deleteModal';
-import { ViewModal } from '../../../../../shared/modal/viewModal';
+import { DeleteModal } from '../modales/deleteModal';
+import { ViewModal } from '../modales/viewModal';
+import { EditModal } from '../modales/editModal';
 
 type ActionsProps = {
   activity: ActivitiesData;
@@ -13,6 +15,7 @@ type ActionsProps = {
 const Actions: React.FC<ActionsProps> = ({ activity, onDelete }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showEditModal, setEditViewModal] = useState(false);
 
   const [selectedActivity, setSelectedActivity] =
     useState<ActivitiesData | null>(null);
@@ -27,6 +30,12 @@ const Actions: React.FC<ActionsProps> = ({ activity, onDelete }) => {
     setShowViewModal(true);
   };
 
+  const handleEdit = (activity: ActivitiesData) => {
+    console.log('edit');
+    setSelectedActivity(activity);
+    setEditViewModal(true);
+  };
+
   return (
     <>
       <div className="group flex gap-5 text-sm">
@@ -34,15 +43,25 @@ const Actions: React.FC<ActionsProps> = ({ activity, onDelete }) => {
           className="flex items-center gap-1 hover:cursor-pointer"
           onClick={() => handleview(activity)}
         >
-          <IoEyeOutline size={20} color="#7C7C7C" />
-          <p className="text-gray">Ver</p>
+          <IoEyeOutline
+            size={20}
+            style={{ color: 'var(--color-primary-yellow)' }}
+          />
+          <p className="text-primary-yellow">Ver</p>
         </button>
         <button
           className="flex items-center gap-1 hover:cursor-pointer"
           onClick={() => handleDelete(activity)}
         >
-          <MdDeleteOutline size={20} color="#FC0005" />
+          <MdDeleteOutline size={20} style={{ color: 'var(--color-red)' }} />
           <p className="text-red">Eliminar</p>
+        </button>
+        <button
+          className="flex items-center gap-1 hover:cursor-pointer"
+          onClick={() => handleEdit(activity)}
+        >
+          <RiEdit2Line size={20} style={{ color: 'var(--color-blue)' }} />
+          <p className="text-blue">Editar</p>
         </button>
       </div>
 
@@ -59,6 +78,15 @@ const Actions: React.FC<ActionsProps> = ({ activity, onDelete }) => {
           activity={selectedActivity}
           visible={showViewModal}
           setVisible={setShowViewModal}
+        />
+      )}
+      {showEditModal && selectedActivity && (
+        <EditModal
+          activity={selectedActivity}
+          visible={showEditModal}
+          setVisible={setEditViewModal}
+          onClose={() => setEditViewModal(false)}
+          onDelete={onDelete}
         />
       )}
     </>
