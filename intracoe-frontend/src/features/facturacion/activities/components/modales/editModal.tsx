@@ -1,25 +1,31 @@
-import { useState } from 'react';
-import { Dialog } from 'primereact/dialog';
-import React from 'react';
-import './antdesignCustom.module.css';
+import React, { useState } from 'react';
+import { ActivitiesData } from '../../interfaces/activitiesData';
+import { updateActivity } from '../../services/activitiesServices';
 import { Input } from '../../../../../shared/forms/input';
-import { createActivity } from '../../services/activitiesServices';
+import { Dialog } from 'primereact/dialog';
 
-interface NewActivityProps {
+interface EditModalProps {
+  activity: ActivitiesData;
+  onClose: () => void; // Función para cerrar el modal
+  onDelete: () => void; // Función para cerrar el modal
   visible: boolean;
   setVisible: any;
 }
 
-export const NewActivityForm: React.FC<NewActivityProps> = ({
+export const EditModal: React.FC<EditModalProps> = ({
+  activity,
+  onClose,
+  onDelete,
   visible,
   setVisible,
 }) => {
   const [formData, setFormData] = useState({
-    codigo: '',
-    actividad_economica: '',
+    codigo: activity.codigo,
+    descripcion: activity.descripcion,
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log(e.target.value);
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -27,19 +33,11 @@ export const NewActivityForm: React.FC<NewActivityProps> = ({
     e.preventDefault();
     const body = {
       codigo: formData.codigo,
-      descripcion: formData.actividad_economica,
+      descripcion: formData.descripcion,
     };
-
-    console.log('body:', body);
-    console.log('tipo:', typeof body);
-
-    try {
-      const response = await createActivity(body);
-      console.log(response);
-      setVisible(false);
-    } catch (error) {
-      console.log(error);
-    }
+    const response = await updateActivity(activity.id, body);
+    onDelete();
+    onClose();
   };
 
   return (
@@ -71,10 +69,10 @@ export const NewActivityForm: React.FC<NewActivityProps> = ({
               Actividad Economica:
             </label>
             <Input
-              name="actividad_economica"
+              name="descripcion"
               placeholder="actividad"
               type="text"
-              value={formData.actividad_economica}
+              value={formData.descripcion}
               onChange={handleChange}
             />
           </span>
