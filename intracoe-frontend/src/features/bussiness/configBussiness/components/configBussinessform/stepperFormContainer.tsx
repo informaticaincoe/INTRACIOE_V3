@@ -38,16 +38,18 @@ export const StepperContainer = () => {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>, formType: string) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    formType: string
+  ) => {
     if (formType === 'formData') {
       setFormData({ ...formData, [e.target.name]: e.target.value });
     }
   };
 
   const handleSendForm = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log(formData)
-
+    e.preventDefault();
+    console.log(formData);
   };
 
   const handleSelectAmbiente = (value: string) => {
@@ -70,16 +72,19 @@ export const StepperContainer = () => {
     setFormData({ ...formData, municipio: value });
   };
 
-  
   return (
     <WhiteSectionsPage className="mx-[20%]">
       <Stepper ref={stepperRef} style={{ flexBasis: '50rem' }}>
         <StepperPanel header="Configurar factura">
           <StepperConfigBill
             formData={formData}
-            handleChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange(e, 'formData')}
-            handleSelectAmbiente={handleSelectAmbiente}// Pasar el manejador de select como prop
-            handleSelectActividadesEconomicas={handleSelectActividadesEconomicas}
+            handleChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              handleChange(e, 'formData')
+            }
+            handleSelectAmbiente={handleSelectAmbiente} // Pasar el manejador de select como prop
+            handleSelectActividadesEconomicas={
+              handleSelectActividadesEconomicas
+            }
             handleTipoEstablecimiento={handleTipoEstablecimiento}
           />
           <div className="justify-content-end flex pt-4">
@@ -94,7 +99,9 @@ export const StepperContainer = () => {
         <StepperPanel header="Información de contacto">
           <StepperContactinfo
             formData={formData}
-            handleChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange(e, 'formData')}
+            handleChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              handleChange(e, 'formData')
+            }
             handleDepartamento={handleDepartamento}
             handleMunicipio={handleMunicipio}
           />
