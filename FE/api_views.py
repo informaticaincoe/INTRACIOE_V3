@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from FE.views import enviar_factura_invalidacion_hacienda_view, firmar_factura_anulacion_view, invalidacion_dte_view, generar_json, num_to_letras
-from .serializers import ActividadEconomicaSerializer, AmbienteSerializer, DepartamentoSerializer, MunicipioSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, TiposDocIDReceptorSerializer, TiposEstablecimientosSerializer
+from .serializers import ActividadEconomicaSerializer, AmbienteSerializer, DepartamentoSerializer, MunicipioSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, TipoDteSerializer, TiposDocIDReceptorSerializer, TiposEstablecimientosSerializer
 from .models import (
     ActividadEconomica, Departamento, Emisor_fe, Municipio, Receptor_fe, FacturaElectronica, DetalleFactura,
     Ambiente, CondicionOperacion, Modelofacturacion, NumeroControl,
@@ -261,6 +261,10 @@ class MunicipioListAPIView(generics.ListAPIView):
         departamento_id = self.kwargs['pk']
         # Filtrar los municipios por el departamento
         return Municipio.objects.filter(departamento_id=departamento_id)
+
+class TipoDTEListAPIView(generics.ListAPIView):
+    queryset = Tipo_dte.objects.all()
+    serializer_class = TipoDteSerializer
     
 ######################################################
 # PRODUCTOS Y SERVICIOS

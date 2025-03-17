@@ -9,7 +9,6 @@ import {
   TipoDocumento,
   TipoEstablecimiento,
 } from '../../interfaces/empresaInterfaces';
-import { ActivitiesData } from '../../../../facturacion/activities/interfaces/activitiesData';
 
 export const StepperConfigBill = ({
   formData,
@@ -107,8 +106,8 @@ export const StepperConfigBill = ({
         <span className="text-red pr-1">*</span>
         <label htmlFor="ambiente">Ambiente</label>
         <SelectAmbienteComponent
-          ambiente={formData.ambiente} // Pasamos el valor actual de 'ambiente'
-          setSelectAmbiente={handleSelectAmbiente} // Pasamos la función que actualiza el estado
+          ambiente={formData.ambiente}
+          setSelectAmbiente={handleSelectAmbiente}
         />
         {errores.ambiente && (
           <span className="text-sm text-red-500">{errores.ambiente}</span>

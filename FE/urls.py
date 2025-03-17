@@ -1,6 +1,6 @@
 from django.urls import path
 
-from FE.api_views import ActividadEconomicaCreateAPIView, ActividadEconomicaDeleteAPIView, ActividadEconomicaDetailAPIView, ActividadEconomicaListAPIView, ActividadEconomicaUpdateAPIView, AmbientesListAPIView, DepartamentosListAPIView, EmisorCreateAPIView, EnviarFacturaHaciendaAPIView, FirmarFacturaAPIView, GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, MunicipioListAPIView, ObtenerReceptorAPIView, TipoDocIDReceptorListAPIView, TiposEstablecimientosListAPIView, autenticacion, EmisorListAPIView
+from FE.api_views import ActividadEconomicaCreateAPIView, ActividadEconomicaDeleteAPIView, ActividadEconomicaDetailAPIView, ActividadEconomicaListAPIView, ActividadEconomicaUpdateAPIView, AmbientesListAPIView, DepartamentosListAPIView, EmisorCreateAPIView, EnviarFacturaHaciendaAPIView, FirmarFacturaAPIView, GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, MunicipioListAPIView, ObtenerReceptorAPIView, TipoDTEListAPIView, TipoDocIDReceptorListAPIView, TiposEstablecimientosListAPIView, autenticacion, EmisorListAPIView
 from . import views
 from .views import (
     ActividadEconomicaDetailView,
@@ -61,6 +61,9 @@ urlpatterns = [
     
     #URLS MUNICIPIOS SEGUN DEPARTAMENTO
     path('api/municipio/<int:pk>/', MunicipioListAPIView.as_view(), name='municipio_list_api'),
+    
+    #URLS TIPO DE DOCUMENTO FACTURA
+    path('api/tipo-dte/', TipoDTEListAPIView.as_view(), name='tipo_dte_api'),    
     
     ################################################################################################################################################
     ################################################################################################################################################
