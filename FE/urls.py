@@ -1,6 +1,6 @@
 from django.urls import path
 
-from FE.api_views import ActividadEconomicaCreateAPIView, ActividadEconomicaDeleteAPIView, ActividadEconomicaDetailAPIView, ActividadEconomicaListAPIView, ActividadEconomicaUpdateAPIView, EmisorCreateAPIView, EnviarFacturaHaciendaAPIView, FirmarFacturaAPIView, GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, autenticacion, EmisorListAPIView
+from FE.api_views import ActividadEconomicaCreateAPIView, ActividadEconomicaDeleteAPIView, ActividadEconomicaDetailAPIView, ActividadEconomicaListAPIView, ActividadEconomicaUpdateAPIView, AmbientesListAPIView, DepartamentosListAPIView, EmisorCreateAPIView, EnviarFacturaHaciendaAPIView, FirmarFacturaAPIView, GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, MunicipioListAPIView, ObtenerReceptorAPIView, TipoDTEListAPIView, TipoDocIDReceptorListAPIView, TiposEstablecimientosListAPIView, autenticacion, EmisorListAPIView
 from . import views
 from .views import (
     ActividadEconomicaDetailView,
@@ -47,8 +47,24 @@ urlpatterns = [
     path('api/emisor/', EmisorListAPIView.as_view(), name='emisor_list_api'),
     path('api/emisor/crear/', EmisorCreateAPIView.as_view(), name='emisor_create_api'),
     
-
-
+    #URLS TIPO DOCUMENTO
+    path('api/tipo-id-receptor/', TipoDocIDReceptorListAPIView.as_view(), name='tipo_doc_id_receptor_list_api'),
+    
+    #URLS AMBIENTE
+    path('api/ambientes/', AmbientesListAPIView.as_view(), name='ambientes_list_api'),
+    
+    #URLS TIPOS ESTABLECIMIENTO
+    path('api/tipo-establecimiento/', TiposEstablecimientosListAPIView.as_view(), name='establecimientos_list_api'),
+    
+    #URLS DEPARTAMENTOS
+    path('api/departamentos/', DepartamentosListAPIView.as_view(), name='departamentos_list_api'),
+    
+    #URLS MUNICIPIOS SEGUN DEPARTAMENTO
+    path('api/municipio/<int:pk>/', MunicipioListAPIView.as_view(), name='municipio_list_api'),
+    
+    #URLS TIPO DE DOCUMENTO FACTURA
+    path('api/tipo-dte/', TipoDTEListAPIView.as_view(), name='tipo_dte_api'),    
+    
     ################################################################################################################################################
     ################################################################################################################################################
 

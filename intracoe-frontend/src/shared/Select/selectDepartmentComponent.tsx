@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { DepartmentAndMunicipality } from './departmentAndMunicipalityData';
 import { Dropdown } from 'primereact/dropdown';
+import { getAllDepartamentos } from '../../features/bussiness/configBussiness/services/ubicacionService';
 
 interface SelectDeparmentInterface {
   department: any;
@@ -13,12 +13,27 @@ export const SelectDepartmentComponent: React.FC<SelectDeparmentInterface> = ({
   const [departmentList, setDepartmentList] = useState<any[]>([]);
 
   useEffect(() => {
-    const departmentFetch = DepartmentAndMunicipality.map((element) => ({
-      name: element.departamento,
-      code: element.codigo,
-    }));
-    setDepartmentList(departmentFetch);
+    fetchDepartaments();
   }, []);
+
+  const fetchDepartaments = async () => {
+    try {
+      const response = await getAllDepartamentos();
+
+      console.log(response);
+      const departmentFetch = response.map(
+        (element: { id: string; descripcion: any; codigo: any }) => ({
+          id: element.id,
+          name: element.descripcion,
+          code: element.codigo,
+        })
+      );
+      console.log('departmentFetch', departmentFetch);
+      setDepartmentList(departmentFetch);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   return (
     <div className="justify-content-center flex">

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { DepartmentAndMunicipality } from './departmentAndMunicipalityData';
 import { Dropdown } from 'primereact/dropdown';
+import { getMunicipiosByDepartamentos } from '../../features/bussiness/configBussiness/services/ubicacionService';
 
 interface SelectMunicipioInterface {
   department: any; // Recibe el departamento seleccionado
@@ -13,29 +14,31 @@ export const SelectMunicipios: React.FC<SelectMunicipioInterface> = ({
   municipio,
   setMunicipio,
 }) => {
-  const [municipalities, setMunicipalities] = useState<any[]>([]);
+  const [municipalities, setMunicipalities] = useState<[]>([]);
 
   useEffect(() => {
-    console.log(department);
-    if (department) {
-      // Filtramos los municipios según el departamento seleccionado
-      const departmentData = DepartmentAndMunicipality.find(
-        (d) => d.codigo === department.code
-      );
+    fetchMunicipalitiesByDepartment();
+  }, [department, department]);
 
-      if (departmentData) {
-        console.log(departmentData.municipios);
-
-        const municipalityListAux = departmentData.municipios.map(
-          (element) => ({
-            name: element.municipio,
+  const fetchMunicipalitiesByDepartment = async () => {
+    try {
+      if (department.id != '') {
+        console.log(department.id);
+        const response = await getMunicipiosByDepartamentos(department.id);
+        const municipalityList = response.map(
+          (element: { id: string; descripcion: any; codigo: any }) => ({
+            id: element.id,
+            name: element.descripcion,
             code: element.codigo,
           })
         );
-        setMunicipalities(municipalityListAux);
+        console.log(municipalityList);
+        setMunicipalities(municipalityList);
       }
+    } catch (error) {
+      console.log(error);
     }
-  }, [department, department]); // Se ejecuta cuando cambia el departamento seleccionado
+  };
 
   return (
     <div className="justify-content-center flex">
