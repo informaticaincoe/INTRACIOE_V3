@@ -1,11 +1,10 @@
 import axios from 'axios';
-import { RequestEmpresa } from '../interfaces/empresaInterfaces';
 
 const BASEURL = import.meta.env.VITE_URL_BASE;
 
-export const getAllEmpresas = async () => {
+export const getAllDepartamentos = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/emisor/`, {
+    const response = await axios.get(`${BASEURL}/departamentos/`, {
       headers: {
         'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
       },
@@ -17,21 +16,16 @@ export const getAllEmpresas = async () => {
   }
 };
 
-export const getEmpresaById = (id: number) => {
-  console.log(id);
-};
-
-export const createEmpresaById = async (data: any) => {
+export const getMunicipiosByDepartamentos = async (idDepartmento: number) => {
   try {
-    const response = await axios.post(`${BASEURL}/emisor/crear/`, data, {
+    const response = await axios.get(`${BASEURL}/municipio/${idDepartmento}/`, {
       headers: {
         'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
       },
     });
-    console.log(response);
-    return response;
+    console.log(response.data);
+    return response.data;
   } catch (error) {
     console.log(error);
-    throw new Error();
   }
 };

@@ -12,9 +12,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from FE.views import enviar_factura_invalidacion_hacienda_view, firmar_factura_anulacion_view, invalidacion_dte_view, generar_json, num_to_letras
-from .serializers import ActividadEconomicaSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer
+from .serializers import ActividadEconomicaSerializer, AmbienteSerializer, DepartamentoSerializer, MunicipioSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, TiposDocIDReceptorSerializer, TiposEstablecimientosSerializer
 from .models import (
-    ActividadEconomica, Emisor_fe, Receptor_fe, FacturaElectronica, DetalleFactura,
+    ActividadEconomica, Departamento, Emisor_fe, Municipio, Receptor_fe, FacturaElectronica, DetalleFactura,
     Ambiente, CondicionOperacion, Modelofacturacion, NumeroControl,
     Tipo_dte, TipoMoneda, TipoUnidadMedida, TiposDocIDReceptor, EventoInvalidacion, 
     Receptor_fe, TipoInvalidacion, TiposEstablecimientos, Token_data
@@ -189,8 +189,6 @@ class ActividadEconomicaListAPIView(generics.ListAPIView):
 class ActividadEconomicaDetailAPIView(generics.RetrieveAPIView):
     queryset = ActividadEconomica.objects.all()
     serializer_class = ActividadEconomicaSerializer
-    
-    
 
 # Vista para crear una nueva Actividad Económica
 class ActividadEconomicaCreateAPIView(generics.CreateAPIView):
@@ -235,6 +233,34 @@ class EmisorListAPIView(generics.ListAPIView):
 class EmisorCreateAPIView(generics.CreateAPIView):
     queryset = Emisor_fe.objects.all()
     serializer_class = EmisorSerializer  
+    
+######################################################
+# Configuracion de empresa
+######################################################
+class TipoDocIDReceptorListAPIView(generics.ListAPIView):
+    queryset = TiposDocIDReceptor.objects.all()
+    serializer_class = TiposDocIDReceptorSerializer
+    
+class AmbientesListAPIView(generics.ListAPIView):
+    queryset = Ambiente.objects.all()
+    serializer_class = AmbienteSerializer
+    
+class TiposEstablecimientosListAPIView(generics.ListAPIView):
+    queryset = TiposEstablecimientos.objects.all()
+    serializer_class = TiposEstablecimientosSerializer
+    
+class DepartamentosListAPIView(generics.ListAPIView):
+    queryset = Departamento.objects.all()
+    serializer_class = DepartamentoSerializer
+    
+class MunicipioListAPIView(generics.ListAPIView):
+    serializer_class = MunicipioSerializer
+    
+    def get_queryset(self):
+        # Obtener el id del departamento de la URL
+        departamento_id = self.kwargs['pk']
+        # Filtrar los municipios por el departamento
+        return Municipio.objects.filter(departamento_id=departamento_id)
     
 ######################################################
 # PRODUCTOS Y SERVICIOS

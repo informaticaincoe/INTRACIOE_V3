@@ -1,13 +1,11 @@
-import React from 'react'
-import { Title } from '../../../../shared/text/title'
-import { TableContainerEmpresa } from '../components/empresaTable/tableContainerEmpresa'
+import { Title } from '../../../../shared/text/title';
+import { TableContainerEmpresa } from '../components/empresaTable/tableContainerEmpresa';
 
 export const EmpresaPage = () => {
   return (
     <>
-          <Title text="Configurar empresa" />
-          <TableContainerEmpresa/>
-
-        </>
-  )
-}
+      <Title text="Configurar empresa" />
+      <TableContainerEmpresa />
+    </>
+  );
+};
