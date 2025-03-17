@@ -18,6 +18,11 @@ body {
   text-wrap: wrap;
 }
 
+.p-multiselect-label {
+  overflow: hidden !important;
+  width: 40vw !important;
+}
+
 .p-dialog {
 }
 

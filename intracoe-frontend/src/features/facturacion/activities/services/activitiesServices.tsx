@@ -9,7 +9,6 @@ export const getAllActivities = async () => {
     const response = await axios.get(
       'http://127.0.0.1:8000/api/api/actividad/'
     );
-    console.log(response.data);
     return response.data;
   } catch (error) {
     console.log('Error en la solicitud:', error);
@@ -23,7 +22,6 @@ export const createActivity = async (activity: ActivitiesDataNew) => {
         'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
       },
     });
-    console.log(response);
     return response;
   } catch (error) {
     console.log(error);
