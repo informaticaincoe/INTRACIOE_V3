@@ -10,6 +10,8 @@ export const WhiteSectionsPage: React.FC<WhiteSectionPageProps> = ({
   className,
 }) => {
   return (
-    <div className={`m-10 bg-white px-10 py-5 rounded-md ${className}`}>{children}</div>
+    <div className={`m-14 rounded-md bg-white px-10 py-5 ${className}`}>
+      {children}
+    </div>
   );
 };
