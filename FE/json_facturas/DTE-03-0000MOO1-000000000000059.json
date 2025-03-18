@@ -1,16 +1,16 @@
 {
     "identificacion": {
-        "version": 1,
+        "version": 3,
         "ambiente": "01",
         "tipoDte": "03",
         "numeroControl": "DTE-03-0000MOO1-000000000000059",
-        "codigoGeneracion": "24B91585-F0CE-4B5C-9965-1A9AA06EF63C",
+        "codigoGeneracion": "739B6DEC-EDFD-4ABF-B96F-9D44113F2E84",
         "tipoModelo": 1,
         "tipoOperacion": 1,
         "tipoContingencia": null,
         "motivoContin": null,
-        "fecEmi": "2025-03-05",
-        "horEmi": "13:41:06",
+        "fecEmi": "2025-03-18",
+        "horEmi": "07:11:20",
         "tipoMoneda": "USD"
     },
     "documentoRelacionado": null,
@@ -35,8 +35,6 @@
         "codPuntoVenta": "0001"
     },
     "receptor": {
-        "nit": "06142802961066",
-        "nrc": null,
         "nombre": "Francisco Antonio Flores",
         "codActividad": "24310",
         "descActividad": "undición de hierro y acero",
@@ -47,46 +45,71 @@
         },
         "telefono": "604477435",
         "correo": "juniorfran@hotmail.es",
+        "nrc": null,
+        "nit": "06142802961066",
         "nombreComercial": "None"
     },
     "otrosDocumentos": null,
-    "ventaTercero": [
-        null
+    "ventaTercero": null,
+    "cuerpoDocumento": [
+        {
+            "numItem": 1,
+            "tipoItem": 2,
+            "numeroDocumento": null,
+            "codigo": "PCH456",
+            "codTributo": null,
+            "descripcion": "Leche entera de 250g",
+            "cantidad": 1.0,
+            "uniMedida": 59,
+            "precioUni": 9.62,
+            "montoDescu": 0.0,
+            "ventaNoSuj": 0.0,
+            "ventaExenta": 0.0,
+            "ventaGravada": 1.11,
+            "tributos": [
+                "20"
+            ],
+            "psv": 0.0,
+            "noGravado": 0.0
+        }
     ],
-    "cuerpoDocumento": {
-        "cuerpoDocumento": []
-    },
     "resumen": {
         "totalNoSuj": 0.0,
         "totalExenta": 0.0,
-        "totalGravada": 7.52,
-        "subTotalVentas": 7.52,
+        "totalGravada": 1.11,
+        "subTotalVentas": 1.11,
         "descuNoSuj": 0.0,
         "descuExenta": 0.0,
-        "descuGravada": 0.0,
+        "descuGravada": 0.09,
         "porcentajeDescuento": 0.0,
-        "totalDescu": 0.0,
-        "subTotal": 7.52,
+        "totalDescu": 0.09,
+        "subTotal": 1.11,
         "ivaRete1": 0.0,
         "reteRenta": 0.0,
-        "montoTotalOperacion": 7.52,
         "totalNoGravado": 0.0,
-        "totalPagar": 8.5,
-        "totalLetras": "Ocho con 50/100 USD",
-        "saldoFavor": 0.0,
+        "totalLetras": "Uno con 25/100 USD",
+        "saldoFavor": null,
         "condicionOperacion": 1,
-        "pagos": null,
+        "pagos": [
+            {
+                "codigo": "01",
+                "montoPago": 1.0,
+                "referencia": null,
+                "plazo": null,
+                "periodo": null
+            }
+        ],
         "numPagoElectronico": null,
         "tributos": [
             {
                 "codigo": "20",
-                "descripcion": "Impuesto al valor agregado 13%",
-                "valor": 0.98
+                "descripcion": "Impuesto al Valor Agregado 13%",
+                "valor": "0.13"
             }
         ],
-        "ivaPerci1": [
-            0.0
-        ]
+        "ivaPerci1": 0.0,
+        "montoTotalOperacion": 1.24,
+        "totalPagar": 1.24
     },
     "extension": {
         "nombEntrega": null,
@@ -96,18 +119,5 @@
         "observaciones": "",
         "placaVehiculo": null
     },
-    "apendice": null,
-    "responseMh": {
-        "version": 2,
-        "ambiente": "01",
-        "versionApp": 2,
-        "estado": "PROCESADO",
-        "codigoGeneracion": "A81BF3FC-EE1A-40C5-96F4-F54E4C2613E1",
-        "selloRecibido": "20246C83DCF76BDC4187BBDD72F27540D8E6TOZE",
-        "fhProcesamiento": "17/04/2024 07:24:16",
-        "clasificaMsg": "10",
-        "codigoMsg": "001",
-        "descripcionMsg": "RECIBIDO",
-        "observaciones": []
-    }
+    "apendice": null
 }

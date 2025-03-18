@@ -81,6 +81,14 @@
               </button>
             </div>
           </div>
+          <!--  No gravados (cargos/abonos que afectan la base imponible) -->
+          <div class="col-md-4">
+            <div class="form-group">
+              <label>
+                <input type="checkbox" name="no_gravado" id="no_gravado_checkbox"> Base imponible
+              </label>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -201,7 +209,7 @@
             <p><strong>Monto Descuento:</strong> $<span id="monto-descuento">0.00</span></p>
           </div>
           <div class="col-md-6">
-            <strong>Saldo a Favor:</strong><input name="saldo_favor" id="saldo_favor_input" class="saldo-favor-input" value="{{ saldo_favor }}">
+            <strong>Saldo a Favor:</strong><input name="saldo_favor" id="saldo_favor_input" class="saldo-favor-input" value="0">
           </div>
           <div class="col-md-6">
             <p><strong>Total a Pagar:</strong> $<span id="total-pagar">0.00</span></p>
@@ -443,6 +451,32 @@
     const condicion_operacion = document.getElementById('condicion_op').value;
     const saldo_favor = document.getElementById('saldo_favor_input').value
 
+    var modalRows = document.querySelectorAll('#tabla-formaspago-modal tbody tr');
+
+      modalRows.forEach(function(row) {
+          var checkbox = row.querySelector('.formapago-checkbox');
+          if (checkbox.checked) {
+              //var fpId = row.getAttribute('data-id');
+              var fpDescripcion = row.cells[1].textContent.trim();
+
+              //campos adicionales
+              const fila = checkbox.closest('tr');  // Obtener la fila seleccionada
+              const fpId = fila.getAttribute('data-id');
+              const num_referencia_fp = fila.querySelector('.referencia-input').value;
+              const monto_fp = fila.querySelector('.monto-input').value;
+              const periodo_plazo = fila.querySelector('.periodo-input').value
+
+              fetch(`/fe/obtener-forma-pago/?fp_id=${fpId}&num_ref=${num_referencia_fp}&monto_fp=${monto_fp}&periodo=${periodo_plazo}&saldo_favor_r=${saldo_favor}&condicion_op=${condicion_operacion}`)
+                  .then(response => {
+                    if (!response.ok) {  // Verifica si la respuesta fue exitosa (200-299)
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();  // Intenta convertir la respuesta a JSON
+                  })
+                  .catch(error => console.error('Error:', error));
+          }
+      });
+
     checkboxs.forEach(function (checkbox) {
       checkbox.addEventListener('change', function() {
           const fila = checkbox.closest('tr');  // Obtener la fila seleccionada
@@ -633,6 +667,8 @@
           retencionRentaProducts.push(checkbox.value);
       });
       jsonData["productos_retencion_renta"] = retencionRentaProducts;
+
+      jsonData["no_gravado"] = document.getElementById("no_gravado_checkbox").checked;
       
       try {
           let response = await fetch('/fe/generar/', {
