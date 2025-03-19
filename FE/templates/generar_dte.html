@@ -153,6 +153,28 @@
           </div>
         </div>
       </div>
+
+      <!-- Documento a Relacionar -->
+        <div class="form-group">
+          <div class="row">
+            <div class="col-md-5">
+                <label>Tipo de documento a relacionar:</label>
+                <select name="documento_seleccionado" class="form-control" id="documento_select">
+                  {% for tipo in tipoGenDocumentos %}
+                    <option value="{{ tipo.codigo }}">{{ tipo.descripcion }}</option>
+                  {% endfor %}
+              </select>
+              </div>
+              <div class="col-md-4">
+                <label>Documento Relacionado(CCF/CR):</label>
+                <input type="text" name="documento_relacionado" class="form-control" id="documento_relacionado_input">
+              </div>
+              <div class="col-md-3">
+              <BR/>
+                <button type="button" class="btn btn-secondary" onclick="cargarDocsRelacionados()">Agregar</button>
+              </div>
+            </div>
+        </div>
       
       <!-- Botón para abrir el modal de productos -->
       <div class="form-section">
@@ -239,22 +261,6 @@
         <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
           <span aria-hidden="true">&times;</span>
         </button>
-      </div>
-
-      <!-- Documento a Relacionar -->
-      <div class="modal-header">
-          <div class="col-md-6">
-              <label>Tipo de documento a relacionar:</label>
-                <select name="documento_seleccionado" class="form-control" id="documento_select">
-                    <option value="S">Seleccionar Tipo de Documento</option>
-                    <option value="F">Físico</option>
-                    <option value="E">Electrónico</option>
-                </select> 
-          </div>
-          <div class="col-md-6">
-              <label>Documento Relacionado:</label>
-              <input type="text" name="documento_relacionado" class="form-control" id="documento_relacionado_input" value="{{ documento_relacionado }}">
-          </div>
       </div>
 
       <div class="modal-body">
@@ -476,30 +482,7 @@
                   .catch(error => console.error('Error:', error));
           }
       });
-
-    checkboxs.forEach(function (checkbox) {
-      checkbox.addEventListener('change', function() {
-          const fila = checkbox.closest('tr');  // Obtener la fila seleccionada
-          const fpId = fila.getAttribute('data-id');
-          const num_referencia_fp = fila.querySelector('.referencia-input').value;
-          const monto_fp = fila.querySelector('.monto-input').value;
-          const periodo_plazo = fila.querySelector('.periodo-input').value
-
-          if(checkbox.checked){
-              fetch(`/fe/obtener-forma-pago/?fp_id=${fpId}&num_ref=${num_referencia_fp}&monto_fp=${monto_fp}&periodo=${periodo_plazo}&saldo_favor_r=${saldo_favor}&condicion_op=${condicion_operacion}`)
-                  .then(response => {
-                    if (!response.ok) {  // Verifica si la respuesta fue exitosa (200-299)
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();  // Intenta convertir la respuesta a JSON
-                  })
-                  .catch(error => console.error('Error:', error));
-          }
-          
-          // Acción cuando se selecciona o deselecciona un checkbox
-          console.log('Periodo:', periodo_plazo);
-      });
-    });
+      console.log('Fila:', modalRows);
   }
 
   // Función para cargar productos desde el modal
@@ -729,6 +712,22 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById("btn-retencion-iva").style.display = this.checked ? "inline-block" : "none";
 });
 
+ // Función para agregar docs relacionados
+ function cargarDocsRelacionados() {
+  const tipoDte = document.getElementById('tipo_documento_select').value
+  const tipoDocRelacionar = document.getElementById('documento_select').value;
+  const documentoRelacionado = document.getElementById('documento_relacionado_input').value;
+
+  console.log('tipo documento:', tipoDocRelacionar);
+  console.log('numero documento:', documentoRelacionado);
+  // Realizar la petición AJAX para obtener el nuevo número de control
+  fetch(`/fe/documento-relacionado/?tipo_dte=${tipoDte}&tipo_doc=${tipoDocRelacionar}&num_documento=${documentoRelacionado}`)
+      .then(response => response.json())
+      .then(data => {
+          documentoRelacionado.value = data.documento_relacionado;
+      })
+      .catch(error => console.error('Error:', error));
+}
 
 </script>
 {% endblock %}

@@ -31,7 +31,7 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from decimal import ROUND_HALF_UP, ConversionSyntax, Decimal
 from intracoe import settings
-from .models import Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica,  Receptor_fe, Tipo_dte, TipoMoneda, TipoUnidadMedida, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos, Descuento, FormasPago, Plazo
+from .models import Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica,  Receptor_fe, Tipo_dte, TipoMoneda, TipoUnidadMedida, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos, Descuento, FormasPago, Plazo, TipoGeneracionDocumento
 from INVENTARIO.models import Producto, TipoItem, Tributo
 from .models import Token_data
 from django.db import transaction
@@ -55,6 +55,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+from django.db.models import Q
 
 FIRMADOR_URL = "http://192.168.2.25:8113/firmardocumento/"
 DJANGO_SERVER_URL = "http://127.0.0.1:8000"
@@ -83,8 +84,11 @@ COD_TIPO_ITEM_OTROS = "4"
 COD_TRIBUTOS_SECCION_2 = "2"
 COD_DOCUMENTO_RELACIONADO_NO_SELEC = "S"
 ID_CONDICION_OPERACION = 2
+RELACIONAR_DOC_FISICO = 1
+RELACIONAR_DOC_ELECTRONICO = 2
 
 formas_pago = [] #Asignar formas de pago
+documentos_relacionados = []
 
 #vistas para actividad economica
 def cargar_actividades(request):
@@ -365,6 +369,7 @@ def generar_factura_view(request):
         tipoItems = TipoItem.objects.all()
         descuentos = Descuento.objects.all()
         formasPago = FormasPago.objects.all()
+        tipoGeneracionDocumentos = TipoGeneracionDocumento.objects.all()
 
         context = {
             "numero_control": nuevo_numero,
@@ -378,7 +383,8 @@ def generar_factura_view(request):
             "tipoDocumentos": tipoDocumentos,
             "tipoItems": tipoItems,
             "descuentos": descuentos,
-            "formasPago": formasPago
+            "formasPago": formasPago,
+            "tipoGenDocumentos": tipoGeneracionDocumentos
         }
         return render(request, "generar_dte.html", context)
 
@@ -403,7 +409,7 @@ def generar_factura_view(request):
             tipo_item = data.get("tipo_item_select", None)
             print("Tipo de item seleccionado: ", tipo_item)
             tipo_doc_relacionar = data.get("documento_seleccionado", None)
-            documento_relacionado = data.get("documento_relacionado", None)
+            documento_relacionado = data.get("documento_select", None)
             porcentaje_descuento = data.get("descuento_select", "0")
             porcentaje_descuento_item = Decimal(porcentaje_descuento.replace(",", "."))
             
@@ -411,9 +417,11 @@ def generar_factura_view(request):
             # Configuración adicional
             tipooperacion_id = data.get("condicion_operacion", None)
             porcentaje_retencion_iva = Decimal(data.get("porcentaje_retencion_iva", "0"))
+            print("-Porcentaje retencion IVA: ", porcentaje_retencion_iva)
             retencion_iva = data.get("retencion_iva", False)
             productos_retencion_iva = data.get("productos_retencion_iva", [])
             porcentaje_retencion_renta = Decimal(data.get("porcentaje_retencion_renta", "0"))
+            print("-Porcentaje retencion renta: ", porcentaje_retencion_renta)
             retencion_renta = data.get("retencion_renta", False)
             productos_retencion_renta = data.get("productos_retencion_renta", [])
             formaPago = data.get("forma_pago_seleccionada", None)
@@ -568,14 +576,15 @@ def generar_factura_view(request):
                     print("-Precio neto: ", precio_neto)
                     precio_neto = precio_neto * Decimal(tributo_valor).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                     print("-Precio neto con valor trib: ", precio_neto)
-                
+                    
+                precio_neto = Decimal(precio_neto)          
                 iva_unitario = (precio_incl - precio_neto).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-                total_iva_item = ( ( precio_incl * cantidad) / Decimal("1.13") * Decimal("0.13") ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                #total_iva_item = ( ( precio_incl * cantidad) / Decimal("1.13") * Decimal("0.13") ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                total_iva_item = ( ( precio_neto * cantidad) / Decimal("1.13") * Decimal("0.13") ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 #Campo descuento por bonificaciones(montoDescu)
                 #descuento_monto = descuento_monto # Se asume 0 descuento por ítem
                 
                 porcentaje_descuento_item = Descuento.objects.get(id=porcentaje_descuento)
-                print("-Descuento a aplicar: ", porcentaje_descuento)
                 if porcentaje_descuento_item.porcentaje > Decimal("0.00"):
                     descuento_aplicado=True
                 else:
@@ -664,10 +673,12 @@ def generar_factura_view(request):
 
             # Calcular retenciones (globales sobre el total neto de cada detalle)
             if retencion_iva and porcentaje_retencion_iva > 0:
+                print("-inicio calcular retenciones iva")
                 for detalle in factura.detalles.all():
                     if str(detalle.producto.id) in productos_retencion_iva:
                         DecimalRetIva += (detalle.total_sin_descuento * porcentaje_retencion_iva / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
             if retencion_renta and porcentaje_retencion_renta > 0:
+                print("-inicio calcular retenciones")
                 for detalle in factura.detalles.all():
                     if str(detalle.producto.id) in productos_retencion_renta:
                         DecimalRetRenta += (detalle.total_sin_descuento * porcentaje_retencion_renta / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
@@ -774,7 +785,7 @@ def generar_factura_view(request):
                                     "ventaExenta": float(0.0),
                                     "ventaGravada": float(det.ventas_gravadas),#BC: Revisar
                                     "tributos": tributos, #iva para todos los items 
-                                    "psv": 0.0,
+                                    "psv": float(precio_neto), #0.0,
                                     "noGravado": float(0.0),
                                     #"ivaItem": float(total_iva_item)        # IVA total por línea
                                 })
@@ -813,7 +824,7 @@ def generar_factura_view(request):
                         "ventaExenta": float(det.ventas_exentas),
                         "ventaGravada": float(det.ventas_gravadas),
                         "tributos": tributos, #iva para todos los items 
-                        "psv": 0.0,
+                        "psv": float(precio_neto), #0.0,
                         "noGravado": float(det.no_gravado),
                         #"ivaItem": float(total_iva_item)        # IVA total por línea
                     })
@@ -990,6 +1001,12 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
             "codPuntoVentaMH": str(emisor.codigo_punto_venta or "P001"),
             "codPuntoVenta": "0001",
         }
+        
+        """if tipo_dte_obj.codigo != COD_NOTA_CREDITO:
+            json_emisor["codEstableMH"] = str(emisor.codigo_establecimiento or "M001"),
+            json_emisor["codEstable"] = "0001",
+            json_emisor["codPuntoVentaMH"] = str(emisor.codigo_punto_venta or "P001"),
+            json_emisor["codPuntoVenta"] = "0001","""
                 
         json_receptor = {
             #"nit": str(receptor.num_documento),
@@ -1122,6 +1139,22 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
         if json_resumen["saldoFavor"] is not None and json_resumen["saldoFavor"] !="" and Decimal(json_resumen["saldoFavor"]).compare(Decimal("0.00")) > 0:
             print("-Asignar condicion operacion 1")
             json_resumen["condicionOperacion"] = int(CondicionOperacion.objects.get(codigo="1").codigo) #Al contado
+            
+        #Verificar que el monto consolidado de formas de pago aplique para el total a pagar
+        print("-Formas de pago: ", json_resumen["pagos"])
+        f_pagos = json_resumen["pagos"]
+        total_pagar_resumen = Decimal(json_resumen["totalPagar"])
+        print("-Total pagar resumen: ", total_pagar_resumen)
+        monto_total_fp = Decimal("0.00")
+        
+        for fp in f_pagos:
+            monto_total_fp += Decimal(fp["montoPago"])
+            print("-Monto total fp: ", monto_total_fp)
+            
+        if monto_total_fp.compare(Decimal("0.00")) > 0 and monto_total_fp.compare(total_pagar_resumen) < 0:
+            print("-Monto fp menor al total a pagar")
+            errorFormaPago = JsonResponse({"error": "El pago parcial es inferior al pago total", "Pago recibido": monto_total_fp})
+            print("-error fp: ", errorFormaPago)
             
         json_completo = {
             "identificacion": json_identificacion,
@@ -2103,7 +2136,6 @@ def agregar_formas_pago_ajax(request):
         if tiene_saldoF:
             formas_pago_json["codigo"] = str(codFormaPago.codigo)
         if int(condicion_operacion) > 0 and int(condicion_operacion) == int(ID_CONDICION_OPERACION):
-            print("-Condicion operacion 2")
             formas_pago_json["codigo"] = None
             formas_pago_json["montoPago"] = float(monto)
             formas_pago_json["plazo"] = str(Plazo.objects.get(id=1).codigo) #Plazo por días
@@ -2123,3 +2155,69 @@ def agregar_formas_pago_ajax(request):
         print(f"Ocurrió un error: {e}")
         return None
     
+def agregar_docs_relacionados_ajax(request):
+    try:
+        print("-Inicio generar documentos relaciondos")
+        tipo_dte = request.GET.get("tipo_dte", None)
+        tipo_doc_relacionar = request.GET.get("tipo_doc", None)
+        numero_documento = request.GET.get("num_documento", None)
+        
+        print("-Tipo doc relacionar: ", tipo_doc_relacionar)
+        print("-Numero doc relacionar: ", numero_documento)
+        
+        global documentos_relacionados
+        
+        docs_permitidos = 50
+        tipo_dte_ob = Tipo_dte.objects.get(codigo=tipo_dte)
+        factura_relacionar = None
+        documentoRelacionado = []
+        tipo_documento = None
+        
+        #Si supera el limite de documentos relacionados detener el proceso
+        if documentos_relacionados is not None and documentos_relacionados !=[]:
+            for idx, docR in enumerate(documentos_relacionados, start=1):
+                if idx > docs_permitidos:
+                    return JsonResponse({"error": "Limite de documentos relacionados: " }, {docs_permitidos})
+                
+                #No permitir relacionar documentos de diferentes tipos, es decir, si es NC no se pueden asociar CCF y NC al mismo tiempo
+                
+            print("Documentos relacionados agregados: ", idx)
+        
+        #Buscar documento relacionado
+        if tipo_doc_relacionar:
+            if tipo_doc_relacionar == RELACIONAR_DOC_FISICO:
+                # Q permite realizar busqueda por varios campos
+                #factura_relacionar = FacturaElectronica.objects.get( Q(numero_control=numero_documento) & (Q(tipo_dte.codigo == "03") | Q(tipo_dte.codigo == "07")) )
+                factura_relacionar = FacturaElectronica.objects.get( numero_control=numero_documento )
+            else:#documento electronico
+                #factura_relacionar = FacturaElectronica.objects.get( Q(codigo_generacion=numero_documento) & (Q(tipo_dte.codigo == "03") | Q(tipo_dte.codigo == "07")) )
+                factura_relacionar = FacturaElectronica.objects.get( codigo_generacion=numero_documento )
+        
+        print("-Factura a relacionar encontrada")
+        #Si existe el documento generar estructura de documentos relacionados
+        if factura_relacionar is not None and factura_relacionar.estado and factura_relacionar.sello_recepcion is not None and factura_relacionar.sello_recepcion !="":
+            tipo_documento = factura_relacionar.tipo_dte.codigo
+            #Crear json
+            documento_relacionado_json  = {
+                "tipoDocumento": str(tipo_documento) if str(tipo_documento) else None,
+                "tipoGeneracion": int(tipo_doc_relacionar),
+                "numeroDocumento": str(numero_documento),
+                "fechaEmision": str(factura_relacionar.fecha_emision)
+            }
+            documentoRelacionado.append(documento_relacionado_json)
+            print("-Lista documentos relacionados: ", documentos_relacionados)
+            #Generar vista
+            
+            
+            data = json.loads(request.body)
+            data["condicion_operacion"] = factura_relacionar.condicion_operacion
+            print("-Condicion operacion doc relacionado: ", data["condicion_operacion"])
+        elif factura_relacionar is None:
+            notificar_respuesta = "Error: Documento a relacionar no encontrado."
+        else:
+            notificar_respuesta = "Verifica que el DTE este vigente para poder relacionarlo."
+            
+        return JsonResponse({'docs_relacionados': documentos_relacionados})
+    except Exception as e:
+        print(f"Ocurrió un error: {e}")
+        return None
