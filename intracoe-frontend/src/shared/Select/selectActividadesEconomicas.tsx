@@ -1,5 +1,4 @@
-import { Dropdown } from 'primereact/dropdown';
-import { useEffect, useState } from 'react';
+import { HTMLProps, useEffect, useState } from 'react';
 import './selectCustomStyle.css';
 import { getAllActivities } from '../../features/facturacion/activities/services/activitiesServices';
 import { ActivitiesData } from '../../features/facturacion/activities/interfaces/activitiesData';
@@ -7,12 +6,13 @@ import { MultiSelect, MultiSelectChangeEvent } from 'primereact/multiselect';
 
 interface selectActividadesEconomicasInterface {
   actividades: ActivitiesData[]; // Asegúrate de que actividades sea un array de objetos ActivitiesData
-  setActividades: (value: ActivitiesData) => void;
+  setActividades: (value: ActivitiesData[]) => void;
+  className?: HTMLProps<HTMLElement>['className'];
 }
 
 export const SelectActividadesEconomicas: React.FC<
   selectActividadesEconomicasInterface
-> = ({ actividades, setActividades }) => {
+> = ({ actividades, setActividades, className }) => {
   const [listActividades, setListSetActividades] = useState<ActivitiesData[]>(
     []
   );
@@ -40,14 +40,14 @@ export const SelectActividadesEconomicas: React.FC<
 
   return (
     <div>
-      <div className="justify-content-center flex">
+      <div>
         <MultiSelect
           value={actividades}
           onChange={(e: MultiSelectChangeEvent) => setActividades(e.value)}
           options={listActividades}
           optionLabel="descripcion"
           placeholder="Seleccionar actividad economica"
-          className="md:w-20rem w-full"
+          className={`${className} w-contain`}
           filter
         />
       </div>
@@ -61,7 +61,6 @@ export const SelectActividadesEconomicas: React.FC<
                 className="list-inside list-disc px-5 text-black"
               >
                 {actividad.descripcion}{' '}
-                {/* Mostrar la descripción de la actividad */}
               </li>
             ))}
           </ul>
