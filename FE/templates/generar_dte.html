@@ -160,6 +160,7 @@
             <div class="col-md-5">
                 <label>Tipo de documento a relacionar:</label>
                 <select name="documento_seleccionado" class="form-control" id="documento_select">
+                  <option value="S">Seleccione el tipo de documento a relacionar</option>
                   {% for tipo in tipoGenDocumentos %}
                     <option value="{{ tipo.codigo }}">{{ tipo.descripcion }}</option>
                   {% endfor %}
@@ -290,6 +291,7 @@
                   {% endfor %}
                 </select>
               </td>
+              <td><input type="hidden" class="cantidad-input" min="1" style="width: 80px;"></td>
               <td>
                 <select name="descuento_seleccionado" class="form-control" id="descuento_select">
                   {% for descuento in descuentos %}
@@ -304,7 +306,7 @@
         </table>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-primary" onclick="cargarProductosModal(document.getElementById('descuento_select').value , document.getElementById('tipo_item_select').value)">Cargar Productos</button>
+        <button type="button" class="btn btn-primary" onclick="cargarProductosModal(document.getElementById('descuento_select').value)">Cargar Productos</button>
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
       </div>
     </div>
@@ -487,6 +489,8 @@
 
   // Función para cargar productos desde el modal
   function cargarProductosModal(descuento) {
+    const documentoRelacionado = document.getElementById('documento_relacionado_input').value;
+
       var modalRows = document.querySelectorAll('#tabla-productos-modal tbody tr');
       modalRows.forEach(function(row) {
           var checkbox = row.querySelector('.producto-checkbox');
@@ -498,7 +502,8 @@
               var precio = parseFloat(precioStr.replace(',', '.'));
               var cantidad = row.querySelector('.cantidad-input').value;
               var tipoItem = row.querySelector('.tipo_item_select');
-
+              var numero_relacionado = documentoRelacionado;
+              console.log('doc relacionado:', numero_relacionado);
               //Obtener seleccion del descuento
               //var descuentoSeleccionado = document.getElementById('descuento_select'); //row.querySelector('.descuento_select');
               agregarProductoFilaTabla(productoId, productoText, precio_incl, cantidad, descuento);

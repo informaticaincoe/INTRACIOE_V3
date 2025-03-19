@@ -77,6 +77,7 @@ AMBIENTE = Ambiente.objects.get(codigo="01")
 COD_FACTURA_EXPORTACION = "11"
 COD_TIPO_INVALIDACION_RESCINDIR = 2
 COD_NOTA_CREDITO = "05"
+COD_NOTA_DEBITO = "06"
 COD_COMPROBANTE_LIQUIDACION = "08"
 EMI_SOLICITA_INVALIDAR_DTE = "emisor"
 REC_SOLICITA_INVALIDAR_DTE = "receptor"
@@ -546,7 +547,7 @@ def generar_factura_view(request):
                 #precio_neto = (precio_incl ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 
                 #Campo tributos
-                if (base_imponible_checkbox is False and tipo_item_obj.codigo == COD_TIPO_ITEM_OTROS) or tipo_dte_obj.codigo == COD_CREDITO_FISCAL: #factura.tipo_dte.codigo != COD_CONSUMIDOR_FINAL and
+                if (base_imponible_checkbox is False and tipo_item_obj.codigo == COD_TIPO_ITEM_OTROS) or tipo_dte_obj.codigo != COD_CONSUMIDOR_FINAL: #factura.tipo_dte.codigo != COD_CONSUMIDOR_FINAL and
                     # Codigo del tributo (tributos.codigo)
                     tributoIva = Tributo.objects.get(codigo="20")#IVA este codigo solo aplica a ventas gravadas(ya que estan sujetas a iva)
                     tributo_valor = Tributo.objects.get(codigo="20").valor_tributo
@@ -642,6 +643,7 @@ def generar_factura_view(request):
                     total_operaciones = total_gravada + valorTributo
                 else:
                     total_operaciones = total_gravada
+                    
                 print("-Calcular el total de operaciones: ", total_operaciones)
                 
                 if tipo_dte_obj.codigo == COD_CONSUMIDOR_FINAL:
@@ -650,6 +652,9 @@ def generar_factura_view(request):
                     #total_con_iva = (precio_neto * cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                     total_con_iva = total_operaciones - DecimalIvaPerci - DecimalRetIva - DecimalRetRenta - total_no_gravado
                     print("-Total pagar: ", total_con_iva)
+                    
+                if tipo_dte_obj.codigo == COD_NOTA_CREDITO or tipo_dte_obj.codigo == COD_NOTA_DEBITO:
+                    total_operaciones = (total_gravada + valorTributo + DecimalIvaPerci) - DecimalRetIva
                 
                 total_iva += total_iva_item
                 total_pagar += total_con_iva
@@ -693,6 +698,7 @@ def generar_factura_view(request):
             if tipo_doc_relacionar is COD_DOCUMENTO_RELACIONADO_NO_SELEC:
                 tipo_doc_relacionar = None
                 documento_relacionado = None
+            print("-Documentos relacionados generar_view: ", documentos_relacionados)
 
             # Actualizar totales en la factura
             factura.total_no_sujetas = Decimal("0.00")
@@ -731,20 +737,6 @@ def generar_factura_view(request):
                 else:
                     codTributo = None 
                     tributo_valor = None
-                    #Verificar los documentos relacionados (maximo deben ser 50)
-                    if tipo_doc_relacionar is not None and tipo_doc_relacionar != COD_DOCUMENTO_RELACIONADO_NO_SELEC:
-                        #Agregar todos los documentos relacionados a la lista
-                        if docsRelacionados is not None:
-                            for docRelacionado in docsRelacionados:
-                                if docRelacionado != documento_relacionado:
-                                    docsRelacionados.append(documento_relacionado)
-                        else:
-                            docsRelacionados.append(documento_relacionado)
-                        print(f"-Lista de documentos relacionados: {docsRelacionados} ")
-                        #Si la lista ya supera 50 docs relacionados detener el proceso de agregado de items
-                        if len(docsRelacionados) > 50:
-                            documentosRelacionadosMensaje = "Cantidad maxima permitida de documentos relacionados: 50"
-                            return JsonResponse({"error": "Cantidad maxima permitida de documentos relacionados: 50" })
                     
                     #Campo codTributo
                     cuerpo_documento_tributos = []
@@ -2156,6 +2148,7 @@ def agregar_formas_pago_ajax(request):
         return None
     
 def agregar_docs_relacionados_ajax(request):
+    #NC y ND permiten relacionar los documenos: 03 y 07
     try:
         print("-Inicio generar documentos relaciondos")
         tipo_dte = request.GET.get("tipo_dte", None)
@@ -2208,10 +2201,12 @@ def agregar_docs_relacionados_ajax(request):
             print("-Lista documentos relacionados: ", documentos_relacionados)
             #Generar vista
             
-            
+            # Construir el cuerpoDocumento para el JSON con desglose
+            cuerpo_documento = []
             data = json.loads(request.body)
             data["condicion_operacion"] = factura_relacionar.condicion_operacion
             print("-Condicion operacion doc relacionado: ", data["condicion_operacion"])
+
         elif factura_relacionar is None:
             notificar_respuesta = "Error: Documento a relacionar no encontrado."
         else:
