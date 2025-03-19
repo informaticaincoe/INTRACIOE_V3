@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from FE.views import enviar_factura_invalidacion_hacienda_view, firmar_factura_anulacion_view, invalidacion_dte_view, generar_json, num_to_letras
-from .serializers import ActividadEconomicaSerializer, AmbienteSerializer, DepartamentoSerializer, MunicipioSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, TipoDteSerializer, TiposDocIDReceptorSerializer, TiposEstablecimientosSerializer
+from .serializers import ActividadEconomicaSerializer, AmbienteSerializer, DepartamentoSerializer, MunicipioSerializer, ProductoSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, TipoDteSerializer, TiposDocIDReceptorSerializer, TiposEstablecimientosSerializer
 from .models import (
     ActividadEconomica, Departamento, Emisor_fe, Municipio, Receptor_fe, FacturaElectronica, DetalleFactura,
     Ambiente, CondicionOperacion, Modelofacturacion, NumeroControl,
@@ -266,11 +266,17 @@ class TipoDTEListAPIView(generics.ListAPIView):
     queryset = Tipo_dte.objects.all()
     serializer_class = TipoDteSerializer
     
+class recptorListAPIView(generics.ListAPIView):
+    queryset = Receptor_fe.objects.all()
+    serializer_class = ReceptorSerializer
+    
 ######################################################
 # PRODUCTOS Y SERVICIOS
 ######################################################
 
-
+class productosListAPIView(generics.ListAPIView):
+    queryset = Producto.objects.all()
+    serializer_class = ProductoSerializer
 ######################################################
 # GENERACION DE DOCUMENTOS ELECTRONICOS
 ######################################################

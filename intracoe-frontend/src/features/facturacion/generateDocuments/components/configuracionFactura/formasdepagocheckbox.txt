@@ -1,0 +1,73 @@
+import React, { useEffect, useState } from 'react'
+import { PaymentMethodInteface, paymentMethodsList } from './formasdePagoData'
+import { Checkbox, CheckboxChangeEvent } from 'primereact/checkbox';
+import { Divider } from 'primereact/divider';
+
+
+export const FormasdePago = () => {
+    const [formasPago, setFormasPago] = useState<PaymentMethodInteface[]>([])
+    const [selectedCategories, setSelectedCategories] = useState<PaymentMethodInteface[]>([]);
+
+
+    const onCategoryChange = (e: CheckboxChangeEvent) => {
+        let _selectedCategories = [...selectedCategories];
+
+        if (e.checked) {
+            // Si está marcado, agregamos la categoría
+            _selectedCategories.push(e.value);
+        } else {
+            // Si está desmarcado, eliminamos la categoría por su código
+            _selectedCategories = _selectedCategories.filter(category => category.codigo !== e.value.codigo);
+        }
+
+        setSelectedCategories(_selectedCategories);
+    };
+
+
+    useEffect(() => {
+        setFormasPago(paymentMethodsList)
+    }, [])
+    return (
+        <>
+            <div className=" flex flex-col justify-content-center">
+            <label className='text-start pb-5 opacity-70'>Metodos de pago</label>
+
+                <div className="flex flex-col gap-3 w-full px-5">
+
+                    {formasPago.map((category) => {
+                        return (
+                            <>
+                                <div className='w-full'>
+                                    <div key={category.codigo} className="flex align-items-center">
+                                        <Checkbox inputId={category.codigo} name={category.codigo} value={category} onChange={onCategoryChange} checked={selectedCategories.some((item) => item.codigo === category.codigo)} />
+                                        <label htmlFor={category.codigo} className="ml-2">
+                                            {category.descripcion}
+                                        </label>
+                                    </div>
+                                    <Divider />
+                                </div>
+                                {selectedCategories.some((item) => item.codigo === category.codigo) &&
+                                    <div className='flex flex-col gap-5 px-10 rounded-md bg-slate-200 py-8 mb-10'>
+                                        <span className='flex flex-col items-start'>
+                                            <label htmlFor="montoPago">Monto de Pago</label>
+                                            <input type="text" placeholder='monto a pagar' className=' w-full border px-3 py-2 rounded-md border-gray-400' />
+                                        </span>
+                                        <span className='flex flex-col items-start'>
+                                            <label htmlFor="montoPago">Referencia</label>
+                                            <input type="text" placeholder='Referencia' className=' w-full border px-3 py-2 rounded-md border-gray-400' />
+                                        </span>
+                                        <span className='flex flex-col items-start'>
+                                            <label htmlFor="montoPago">Periodo</label>
+                                            <input type="text" placeholder='periodo' className=' w-full border px-4 py-2 rounded-md border-gray-400' />
+                                        </span>
+                                    </div>
+                                }
+                            </>
+                        );
+                    })}
+
+                </div>
+            </div>
+        </>
+    )
+}
