@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Input } from '../../../../../shared/forms/input';
+import { Input } from '../../../../../../shared/forms/input';
 
 interface Item {
   name: string;

@@ -1,6 +1,6 @@
 import { Checkbox } from 'primereact/checkbox';
 import { useState } from 'react';
-import { Input } from '../../../../../shared/forms/input';
+import { Input } from '../../../../../../shared/forms/input';
 
 export const CheckBoxVentaTerceros = () => {
   const [checked, setChecked] = useState<boolean>(false);
