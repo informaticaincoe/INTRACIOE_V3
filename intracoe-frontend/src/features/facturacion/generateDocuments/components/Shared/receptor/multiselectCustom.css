@@ -1,0 +1,12 @@
+.p-multiselect-panel {
+  width: 40vw !important;
+}
+
+.p-multiselect-item {
+  text-wrap: wrap;
+}
+
+.p-multiselect-label {
+  overflow: hidden !important;
+  width: 40vw !important;
+}
