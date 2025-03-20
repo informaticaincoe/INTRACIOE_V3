@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react';
-import { getAllTipoDte } from '../../services/tipoDte';
+import { getAllTipoDte } from '../../../services/tipoDte';
 import { Dropdown } from 'primereact/dropdown';
 
-// interface SeccionconfiguracionFacturaInterface {
-//     tipoDteLista: any;
-//     setTipoDte: any;
-//     tipoDte: any;
-// }
+interface SeccionconfiguracionFacturaInterface {
+  tipoDocumento: any;
+  setTipoDocumento: any;
+}
 
-export const DropDownTipoDte = () => {
-  const [selectedTipoDte, setSelectedTipoDte] = useState<any>(''); // valor seleccionado
+export const DropDownTipoDte: React.FC<
+  SeccionconfiguracionFacturaInterface
+> = ({ tipoDocumento, setTipoDocumento }) => {
+  // const [selectedTipoDte, setSelectedTipoDte] = useState<any>(''); // valor seleccionado
   const [tipoDteTempList, setTipoDteTempLista] = useState<any[]>([]); // Lista de tipos de documentos
 
   useEffect(() => {
@@ -34,13 +35,10 @@ export const DropDownTipoDte = () => {
 
   return (
     <div className="flex flex-col items-start gap-1">
-      <label htmlFor={selectedTipoDte.id} className="opacity-70">
-        Tipo de documento
-      </label>
+      <label className="opacity-70">Tipo de documento</label>
       <Dropdown
-        id={selectedTipoDte.id}
-        value={selectedTipoDte} // El valor seleccionado actualmente (ahora es el id del tipo de documento)
-        onChange={(e: { value: any }) => setSelectedTipoDte(e.value)} // Actualiza el estado con el tipo de documento seleccionado
+        value={tipoDocumento} // El valor seleccionado actualmente (ahora es el id del tipo de documento)
+        onChange={(e: { value: any }) => setTipoDocumento(e.value)} // Actualiza el estado con el tipo de documento seleccionado
         options={tipoDteTempList} // Las opciones que vienen del API
         optionLabel="name" // Mostrar 'descripcion' de cada opción
         placeholder="Seleccionar tipo de documento"
