@@ -30,6 +30,7 @@ export const SelectTipoIdDocumento: React.FC<
 
       if (data.length > 0) {
         setTipoDocId(data);
+        console.log(data[0]);
         setTipoIdDocumento(data[0]); // Establecer el valor del primer elemento como seleccionado
       }
     } catch (error) {

@@ -2,6 +2,7 @@ const Data = {
   numeroControl: 'DTE-01-0000MOO1-000000000000100',
   CodigoGeneracion: '2B51B3C4-33FE-43A9-BBDA-4648ADDD0BAF',
 };
+
 export const IdentifcacionSeccion = () => {
   var dateVariable = new Date();
   return (

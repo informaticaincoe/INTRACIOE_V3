@@ -281,6 +281,10 @@ class productosListAPIView(generics.ListAPIView):
 # GENERACION DE DOCUMENTOS ELECTRONICOS
 ######################################################
 
+class FacturasListAPIView(generics.ListAPIView):
+    queryset = FacturaElectronica.objects.all()
+    serializer_class = FacturaElectronicaSerializer
+    
 class FacturaListAPIView(APIView):
     """
     Vista API que devuelve un listado de FacturaElectronica con filtros y paginación.

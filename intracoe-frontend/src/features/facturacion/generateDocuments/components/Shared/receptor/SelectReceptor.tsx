@@ -4,10 +4,10 @@ import { Dialog } from 'primereact/dialog';
 import { Stepper } from 'primereact/stepper';
 import { StepperPanel } from 'primereact/stepperpanel';
 import { Button } from 'primereact/button';
-import { Input } from '../../../../../shared/forms/input';
-import { SelectTipoIdDocumento } from '../../../../../shared/Select/selectTipoIdDocumento';
-import { SelectActividadesEconomicas } from '../../../../../shared/Select/selectActividadesEconomicas';
-import { ActivitiesData } from '../../../activities/interfaces/activitiesData';
+import { Input } from '../../../../../../shared/forms/input';
+import { SelectTipoIdDocumento } from '../../../../../../shared/Select/selectTipoIdDocumento';
+import { SelectActividadesEconomicas } from '../../../../../../shared/Select/selectActividadesEconomicas';
+import { ActivitiesData } from '../../../../activities/interfaces/activitiesData';
 import { RadioButton, RadioButtonChangeEvent } from 'primereact/radiobutton';
 import {
   Ambiente,
@@ -15,9 +15,9 @@ import {
   Municipio,
   TipoDocumento,
   TipoEstablecimiento,
-} from '../../../../bussiness/configBussiness/interfaces/empresaInterfaces';
-import { SelectDepartmentComponent } from '../../../../../shared/Select/selectDepartmentComponent';
-import { SelectMunicipios } from '../../../../../shared/Select/selectMunicipios';
+} from '../../../../../bussiness/configBussiness/interfaces/empresaInterfaces';
+import { SelectDepartmentComponent } from '../../../../../../shared/Select/selectDepartmentComponent';
+import { SelectMunicipios } from '../../../../../../shared/Select/selectMunicipios';
 
 const receptorData = [
   {
@@ -52,6 +52,12 @@ interface formData {
   direccion: string;
 }
 
+interface StepperProps {
+  // Define las propiedades adecuadas según el componente Stepper
+  style?: React.CSSProperties;
+  ref?: React.RefObject<Stepper>;
+}
+
 export const SelectReceptor = () => {
   const [selectedReceptor, setSelectedReceptor] = useState<any>('');
   const [receptorAuxData, setReceptorAuxData] = useState<any[]>([]);
@@ -61,7 +67,7 @@ export const SelectReceptor = () => {
   } | null>(null);
   const [receptor, setTipoReceptor] = useState<string>('');
 
-  const stepperRef = useRef<any>(null);
+  const stepperRef = useRef<Stepper | null>(null); // Tipar correctamente el ref
 
   useEffect(() => {
     fetchTipoDte();
@@ -113,17 +119,6 @@ export const SelectReceptor = () => {
     setFormData({ ...formData, tipo_documento: value });
   };
 
-  const handleNext = () => {
-    if (stepperRef.current) {
-      stepperRef.current.nextCallback();
-    }
-  };
-
-  const handlePrev = () => {
-    if (stepperRef.current) {
-      stepperRef.current.prevCallback();
-    }
-  };
 
   return (
     <>
@@ -160,7 +155,7 @@ export const SelectReceptor = () => {
           setVisibleModal(false);
         }}
       >
-        <div className="card justify-content-center flex">
+        <div className="card flex justify-content-center">
           <Stepper ref={stepperRef} style={{ flexBasis: '50rem' }}>
             <StepperPanel header="información general">
               <div className="flex flex-col gap-8">
@@ -242,7 +237,7 @@ export const SelectReceptor = () => {
                 <div className="flex w-full items-end pt-4">
                   <Button
                     label="Siguiente"
-                    onClick={() => stepperRef.current.nextCallback()}
+                    onClick={() => stepperRef.current?.nextCallback()}
                     unstyled
                     className="hover: bg-primary-blue mt-5 cursor-pointer self-end rounded-md px-6 py-3 text-white"
                   />
@@ -303,11 +298,11 @@ export const SelectReceptor = () => {
                     label="Regresar"
                     unstyled
                     className="border-primary-blue text-primary-blue mt-5 cursor-pointer rounded-md border bg-white px-6 py-3 hover:cursor-pointer"
-                    onClick={() => stepperRef.current.prevCallback()}
+                    onClick={() => stepperRef.current?.nextCallback()}
                   />
                   <Button
                     label="Guardar"
-                    onClick={() => stepperRef.current.nextCallback()}
+                    onClick={() => stepperRef.current?.prevCallback()}
                     unstyled
                     className="bg-primary-blue mt-5 cursor-pointer self-end rounded-md px-6 py-3 text-white hover:cursor-pointer"
                   />
