@@ -1,6 +1,6 @@
 from django.urls import path
 
-from FE.api_views import ActividadEconomicaCreateAPIView, ActividadEconomicaDeleteAPIView, ActividadEconomicaDetailAPIView, ActividadEconomicaUpdateAPIView, EnviarFacturaHaciendaAPIView, FirmarFacturaAPIView, GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, autenticacion
+from FE.api_views import ActividadEconomicaCreateAPIView, ActividadEconomicaDeleteAPIView, ActividadEconomicaDetailAPIView, ActividadEconomicaListAPIView, ActividadEconomicaUpdateAPIView, AmbientesListAPIView, DepartamentosListAPIView, EmisorCreateAPIView, EnviarFacturaHaciendaAPIView, FacturaListAPIView, FacturasListAPIView, FirmarFacturaAPIView, GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, MunicipioListAPIView, ObtenerReceptorAPIView, TipoDTEListAPIView, TipoDocIDReceptorListAPIView, TiposEstablecimientosListAPIView, autenticacion, EmisorListAPIView, productosListAPIView, recptorListAPIView
 from . import views
 from .views import (
     ActividadEconomicaDetailView,
@@ -36,12 +36,42 @@ urlpatterns = [
     path('api/factura/enviar_hacienda/<int:factura_id>/', EnviarFacturaHaciendaAPIView.as_view(), name='enviar_factura_hacienda_api'),
 
     # URLS DE API ACTIVIDAD ECONOMICA 
+    path('api/actividad/', ActividadEconomicaListAPIView.as_view(), name='actividad_list_api'),
 
     path('api/actividad/<int:pk>/', ActividadEconomicaDetailAPIView.as_view(), name='actividad_detail_api'),
     path('api/actividad/crear/', ActividadEconomicaCreateAPIView.as_view(), name='actividad_create_api'),
     path('api/actividad/actualizar/<int:pk>/', ActividadEconomicaUpdateAPIView.as_view(), name='actividad_update_api'),
     path('api/actividad/eliminar/<int:pk>/', ActividadEconomicaDeleteAPIView.as_view(), name='actividad_delete_api'),
-
+    
+    #URLS API EMISOR
+    path('api/emisor/', EmisorListAPIView.as_view(), name='emisor_list_api'),
+    path('api/emisor/crear/', EmisorCreateAPIView.as_view(), name='emisor_create_api'),
+    
+    #URLS TIPO DOCUMENTO
+    path('api/tipo-id-receptor/', TipoDocIDReceptorListAPIView.as_view(), name='tipo_doc_id_receptor_list_api'),
+    
+    #URLS AMBIENTE
+    path('api/ambientes/', AmbientesListAPIView.as_view(), name='ambientes_list_api'),
+    
+    #URLS TIPOS ESTABLECIMIENTO
+    path('api/tipo-establecimiento/', TiposEstablecimientosListAPIView.as_view(), name='establecimientos_list_api'),
+    
+    #URLS DEPARTAMENTOS
+    path('api/departamentos/', DepartamentosListAPIView.as_view(), name='departamentos_list_api'),
+    
+    #URLS MUNICIPIOS SEGUN DEPARTAMENTO
+    path('api/municipio/<int:pk>/', MunicipioListAPIView.as_view(), name='municipio_list_api'),
+    
+    #URLS TIPO DE DOCUMENTO FACTURA
+    path('api/tipo-dte/', TipoDTEListAPIView.as_view(), name='tipo_dte_api'),    
+    
+    path('api/receptor/', recptorListAPIView.as_view(), name='tipo_dte_api'),    
+    
+    path('api/productos/', productosListAPIView.as_view(), name='tipo_dte_api'),   
+    
+    path('api/facturas/', FacturasListAPIView.as_view(), name='factura_dte_api'),   
+    
+    
     ################################################################################################################################################
     ################################################################################################################################################
 
@@ -70,7 +100,8 @@ urlpatterns = [
 
     path('obtener-numero-control/', views.obtener_numero_control_ajax, name='obtener_numero_control_ajax'),
     path('obtener-descuento/', views.seleccion_descuento_ajax, name='obtener_descuento'),
-
+    path('obtener-forma-pago/', views.agregar_formas_pago_ajax, name='agregar_formas_pago_ajax'),
+    path('documento-relacionado/', views.agregar_docs_relacionados_ajax, name='agregar_docs_relacionados_ajax'),
 
     #urls para actividad economica
     path('actividades/', views.actividad_economica_list, name='actividad_economica_list'),

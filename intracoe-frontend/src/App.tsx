@@ -7,8 +7,8 @@ import { ActivitiesPage } from './features/facturacion/activities/pages/activiti
 import { GenerateDocuments } from './features/facturacion/generateDocuments/pages/GenerateDocuments';
 import { ProductsPage } from './features/bussiness/products/pages/productsPage';
 import { ServicesPage } from './features/bussiness/services/pages/ServicesPage';
-import { ConfigBussiness } from './features/bussiness/configBussiness/pages/ConfigBussiness';
 import { UploadExcelPage } from './features/facturacion/activities/pages/uploadExcelPage';
+import { ConfigBussiness } from './features/bussiness/configBussiness/pages/ConfigBussiness';
 
 function App() {
   return (

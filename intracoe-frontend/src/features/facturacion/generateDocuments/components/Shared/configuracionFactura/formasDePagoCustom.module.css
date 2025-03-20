@@ -1,0 +1,25 @@
+.inputWrapper {
+  background-color: transparent !important;
+  border: none;
+}
+
+.p-inputwrapper {
+  background-color: transparent !important;
+  border: none;
+}
+
+.dropdownPanel {
+  max-width: 100% !important;
+  /* Limita el ancho del panel */
+  width: 10vw !important;
+  /* Ancho de la lista */
+  overflow-x: hidden;
+  /* Evita el scroll horizontal */
+}
+.dropdownitems {
+  width: 10vw !important;
+}
+
+.p-dropdown-items {
+  width: 10vw;
+}
