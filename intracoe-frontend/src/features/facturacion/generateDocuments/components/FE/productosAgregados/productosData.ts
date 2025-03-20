@@ -2,7 +2,7 @@ export const productosData = [
   {
     id: 1,
     codigo: '001',
-    descripcion: 'Producto A',
+    descripcion: 'PCH405 - leche entera ira 26 250gb',
     precio_unitario: '10.00',
     cantidad: 2,
     descuento: 0,
@@ -18,7 +18,7 @@ export const productosData = [
   {
     id: 2,
     codigo: '002',
-    descripcion: 'Producto B',
+    descripcion: 'PCH405 - leche entera ira 26 250gbsssss',
     precio_unitario: '20.00',
     cantidad: 3,
     descuento: 0,
@@ -30,10 +30,8 @@ export const productosData = [
     seleccionar: false,
     monto_a_anular: 0,
     iva_percibido: 0,
-    
   },
 ];
-
 
 export interface Product {
   id: number;
@@ -47,6 +45,6 @@ export interface Product {
   total_neto: number;
   total_iva: number;
   total_con_iva: number;
-  iva_percibido: number,
-  seleccionar:boolean,
+  iva_percibido: number;
+  seleccionar: boolean;
 }

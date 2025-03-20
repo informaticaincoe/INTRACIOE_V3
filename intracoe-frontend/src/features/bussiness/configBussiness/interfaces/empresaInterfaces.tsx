@@ -1,6 +1,6 @@
 import { ActivitiesData } from '../../../facturacion/activities/interfaces/activitiesData';
 
-export interface EmpresaForm {
+export interface EmisorInterface {
   nit: string;
   nrc: string;
   nombre_razon_social: string;

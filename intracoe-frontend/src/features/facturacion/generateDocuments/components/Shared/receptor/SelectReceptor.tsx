@@ -119,7 +119,6 @@ export const SelectReceptor = () => {
     setFormData({ ...formData, tipo_documento: value });
   };
 
-
   return (
     <>
       <div className="flex flex-col items-start gap-1">
@@ -155,7 +154,7 @@ export const SelectReceptor = () => {
           setVisibleModal(false);
         }}
       >
-        <div className="card flex justify-content-center">
+        <div className="card justify-content-center flex">
           <Stepper ref={stepperRef} style={{ flexBasis: '50rem' }}>
             <StepperPanel header="información general">
               <div className="flex flex-col gap-8">
