@@ -550,11 +550,10 @@ def generar_factura_view(request):
                 if (base_imponible_checkbox is False and tipo_item_obj.codigo == COD_TIPO_ITEM_OTROS) or tipo_dte_obj.codigo != COD_CONSUMIDOR_FINAL: #factura.tipo_dte.codigo != COD_CONSUMIDOR_FINAL and
                     # Codigo del tributo (tributos.codigo)
                     tributoIva = Tributo.objects.get(codigo="20")#IVA este codigo solo aplica a ventas gravadas(ya que estan sujetas a iva)
-                    tributo_valor = Tributo.objects.get(codigo="20").valor_tributo
+                    tributo_valor = tributoIva.valor_tributo
                     tributos = [str(tributoIva.codigo)]
                 else:
                     tributos = None
-                print("-Tributos: ", tributos)
                 
                 print("-tributo_valor: ", tributo_valor)
                 if tributo_valor is None:
@@ -729,7 +728,6 @@ def generar_factura_view(request):
             for idx, det in enumerate(factura.detalles.all(), start=1):
                         
                 print("-N° items: ", idx)
-                #baseImponible = det.base_imponible
                 print("-Base imponible: ", base_imponible_checkbox)
                 #Items permitidos 2000
                 if idx > items_permitidos:
@@ -971,7 +969,10 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
             "tipoMoneda": str(factura.tipomoneda.codigo) if factura.tipomoneda else "USD"
         }
         
-        json_documento_relacionado = None
+        if tipo_dte_obj.codigo == COD_NOTA_CREDITO or tipo_dte_obj.codigo == COD_NOTA_DEBITO:
+            json_documento_relacionado = documentos_relacionados
+        else:
+            json_documento_relacionado = None
         
         json_emisor = {
             "nit": str(emisor.nit),
@@ -1019,7 +1020,7 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
         
         json_otros_documentos = None
         
-        total_operaciones = Decimal("0.00")
+        #total_operaciones = Decimal("0.00")
         
         pagos = formas_pago
         print("Pagos: ", pagos)
@@ -1048,9 +1049,7 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
             #"tributos": None,
             "numPagoElectronico": None
         }
-        
-        print("-Subtoltalventas: ", json_resumen["subTotalVentas"])
-        
+                
         json_extension = {
             "nombEntrega": None,
             "docuEntrega": None,
@@ -1080,7 +1079,6 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
                 "valor": float(valorTributo)
                 }
             ]
-        print("-Valor tributos: ", json_resumen["tributos"])
         
         if tipo_dte_obj.codigo == COD_CONSUMIDOR_FINAL:
             json_receptor["tipoDocumento"] = str(receptor.tipo_documento.codigo) if receptor.tipo_documento else ""
@@ -1098,38 +1096,23 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
                 cuerpo["ivaItem"] = float(valor_iva_item)
                 #Agregar nuevamente el item
                 cuerpo_documento.insert(i, cuerpo)
+                
                 if cuerpo["tipoItem"] != COD_TIPO_ITEM_OTROS:
-                    #cuerpo["codTributo"] = None
                     if base_imponible_checkbox == True:
                         cuerpo["tributos"] = None
-            print("-Cod tributo del cuerpo doc: ", cuerpo["codTributo"])
+                        
             json_resumen["totalIva"] = float(factura.total_iva)
-            #json_resumen["montoTotalOperacion"] = float(factura.total_operaciones)
             json_resumen["totalPagar"] = float(factura.total_pagar)
             json_resumen["tributos"] = None
-        elif tipo_dte_obj.codigo == COD_CREDITO_FISCAL:
+        elif tipo_dte_obj.codigo == COD_CREDITO_FISCAL or tipo_dte_obj.codigo == COD_NOTA_CREDITO or tipo_dte_obj.codigo == COD_NOTA_DEBITO:
             json_receptor["nit"] = str(receptor.num_documento)
             json_receptor["nombreComercial"] = str(receptor.nombreComercial)
             json_resumen["ivaPerci1"] = float(factura.iva_percibido)
             
             if base_imponible_checkbox == True:
                 json_resumen["tributos"] = None
-            
-            print("-Asignar tributos")
-            #Asignar tributos
-            if json_resumen["tributos"] is not None and json_resumen["tributos"] !="":
-                tributo = json_resumen["tributos"]
-                tributo_valor = tributo[0]
-                subtotal = float(factura.sub_total)
-                valor_tributos = float(tributo_valor["valor"])
-                #suma_operaciones = subtotal + valor_tributos
-                #total_operaciones = Decimal(str(suma_operaciones)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-                #json_resumen["montoTotalOperacion"] = float(total_operaciones)
-                #total_pagar = json_resumen["montoTotalOperacion"] - json_resumen["ivaPerci1"] - json_resumen["ivaRete1"] - json_resumen["reteRenta"] - json_resumen["totalNoGravado"]
-                #json_resumen["totalPagar"] = total_pagar
                 
         if json_resumen["saldoFavor"] is not None and json_resumen["saldoFavor"] !="" and Decimal(json_resumen["saldoFavor"]).compare(Decimal("0.00")) > 0:
-            print("-Asignar condicion operacion 1")
             json_resumen["condicionOperacion"] = int(CondicionOperacion.objects.get(codigo="1").codigo) #Al contado
             
         #Verificar que el monto consolidado de formas de pago aplique para el total a pagar
@@ -2163,7 +2146,6 @@ def agregar_docs_relacionados_ajax(request):
         docs_permitidos = 50
         tipo_dte_ob = Tipo_dte.objects.get(codigo=tipo_dte)
         factura_relacionar = None
-        documentoRelacionado = []
         tipo_documento = None
         
         #Si supera el limite de documentos relacionados detener el proceso
@@ -2172,7 +2154,7 @@ def agregar_docs_relacionados_ajax(request):
                 if idx > docs_permitidos:
                     return JsonResponse({"error": "Limite de documentos relacionados: " }, {docs_permitidos})
                 
-                #No permitir relacionar documentos de diferentes tipos, es decir, si es NC no se pueden asociar CCF y NC al mismo tiempo
+                #No permitir relacionar documentos de diferentes tipos, es decir, si es NC no se pueden asociar CCF y NR al mismo tiempo
                 
             print("Documentos relacionados agregados: ", idx)
         
@@ -2197,10 +2179,14 @@ def agregar_docs_relacionados_ajax(request):
                 "numeroDocumento": str(numero_documento),
                 "fechaEmision": str(factura_relacionar.fecha_emision)
             }
-            documentoRelacionado.append(documento_relacionado_json)
+            documentos_relacionados.append(documento_relacionado_json)
             print("-Lista documentos relacionados: ", documentos_relacionados)
-            #Generar vista
             
+            #Generar vista
+            #Convertir json a diccionario para acceder a los campos
+            json_doc_relacionado = json.loads(factura_relacionar.json_original)
+            total_pagar_doc_r = json_doc_relacionado["resumen"]["totalPagar"]
+            print("Total a pagar del documento relacionado: ", total_pagar_doc_r)
             # Construir el cuerpoDocumento para el JSON con desglose
             cuerpo_documento = []
             data = json.loads(request.body)
