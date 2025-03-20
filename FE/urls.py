@@ -113,7 +113,7 @@ urlpatterns = [
     path('obtener-numero-control/', views.obtener_numero_control_ajax, name='obtener_numero_control_ajax'),
     path('obtener-descuento/', views.seleccion_descuento_ajax, name='obtener_descuento'),
     path('obtener-forma-pago/', views.agregar_formas_pago_ajax, name='agregar_formas_pago_ajax'),
-    path('documento-relacionado/', views.agregar_docs_relacionados_ajax, name='agregar_docs_relacionados_ajax'),
+    path('documento-relacionado/', views.obtener_factura_por_codigo, name='obtener_factura_por_codigo'),
 
     #urls para actividad economica
     path('actividades/', views.actividad_economica_list, name='actividad_economica_list'),
