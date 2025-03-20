@@ -310,7 +310,7 @@ class FacturaElectronica(models.Model):
     condicion_operacion = models.ForeignKey(CondicionOperacion, on_delete=models.CASCADE, null=True)
     iva_percibido = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     saldo_favor = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    formas_Pago = models.JSONField(default=list, blank=True)
+    formas_Pago = models.JSONField(blank=True, null=True)
 
     #ESTADO DEL DOCUMENTO
     firmado = models.BooleanField(default=False)
@@ -320,7 +320,8 @@ class FacturaElectronica(models.Model):
     recibido_mh = models.BooleanField(default=False)
     estado = models.BooleanField(default=False)
     tipo_documento_relacionar = models.CharField(max_length=50, null=True, blank=True)#Identificar si el documento es Fisico(F) o Electronico(E)
-    documento_relacionado = models.CharField(max_length=100, null=True, blank=True)#Agregar el documento relacionado
+    documento_relacionado = models.JSONField(blank=True, null=True)#models.CharField(max_length=100, null=True, blank=True)#Agregar el documento relacionado
+    base_imponible = models.BooleanField(default=False)
     
     def save(self, *args, **kwargs):
         if not self.numero_control:
@@ -344,11 +345,10 @@ class DetalleFactura(models.Model):
     ventas_gravadas = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     pre_sug_venta = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     no_gravado = models.DecimalField(max_digits=10, decimal_places=2, null=True)
-    base_imponible = models.BooleanField(default=False)
     tiene_descuento = models.BooleanField(default=False)
     descuento = models.ForeignKey(Descuento, on_delete=models.SET_NULL, null=True, blank=True)
     #iva_item = models.DecimalField(max_digits=10, decimal_places=2, blank=True, editable=False,help_text="IVA calculado (por ejemplo, 13% sobre el total sin IVA)")
-    
+    saldo_favor = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
     # def save(self, *args, **kwargs):
     #     # Calcular el total sin IVA
     #     self.total_sin_iva = (self.cantidad * self.precio_unitario) - self.descuento
@@ -395,7 +395,6 @@ class EventoInvalidacion(models.Model):
     sello_recepcion = models.CharField(max_length=255, blank=True, null=True)
     recibido_mh = models.BooleanField(default=False)
     estado = models.BooleanField(default=False)
-    
 
 class Token_data(models.Model):
     nit_empresa = models.CharField(max_length=20, unique=True)  # NIT de la empresa
