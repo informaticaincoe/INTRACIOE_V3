@@ -4,20 +4,22 @@ import { Title } from '../../../../shared/text/title';
 import { useEffect, useState } from 'react';
 import { getAllEmpresas } from '../../../bussiness/configBussiness/services/empresaServices';
 import { DatosEmisorCard } from '../components/Shared/datosEmisor/datosEmisorCard';
-import { DropDownTipoDte } from '../components/Shared/configuracionFactura/DropdownTipoDte';
-import { SelectCondicionOperacion } from '../components/Shared/configuracionFactura/selectCondicionOperacion';
-import { SelectModeloFactura } from '../components/Shared/configuracionFactura/selectModeloFactura';
-import { SelectTipoTransmisión } from '../components/Shared/configuracionFactura/selectTipoTransmisión';
-import { CheckBoxVentaTerceros } from '../components/Shared/configuracionFactura/checkboxVentaTerceros';
+import { DropDownTipoDte } from '../components/Shared/configuracionFactura/tipoDocumento/DropdownTipoDte';
+import { SelectCondicionOperacion } from '../components/Shared/configuracionFactura/condicionOperacion/selectCondicionOperacion';
+import { SelectTipoTransmisión } from '../components/Shared/configuracionFactura/tipoTransmision/selectTipoTransmisión';
+import { CheckBoxVentaTerceros } from '../components/Shared/configuracionFactura/ventaTerceros/checkboxVentaTerceros';
 import { IdentifcacionSeccion } from '../components/Shared/identificacion.tsx/identifcacionSeccion';
 import { SelectReceptor } from '../components/Shared/receptor/SelectReceptor';
 import { TablaProductosAgregados } from '../components/FE/productosAgregados/tablaProductosAgregados';
 import { ModalListaProdcutos } from '../components/FE/productosAgregados/modalListaProdcutos';
-import { FormasdePago } from '../components/Shared/configuracionFactura/formasdePago';
-import { ModalListaFacturas } from '../components/Shared/tablaFacturas/modalListaFacturas';
+import { FormasdePagoForm } from '../components/Shared/configuracionFactura/formasDePago/formasdePagoForm';
+import { ModalListaFacturas } from '../components/Shared/tablaFacturasSeleccionar/modalListaFacturas';
 import { TablaProductosFacturaNotasCredito } from '../components/NotaCredito/tablaProductosFacturaNotasCredito';
 import { TablaProductosFacturaNotasDebito } from '../components/NotaDebito/TablaProductosFacturaNotasDebito';
 import { TablaProductosCreditoFiscal } from '../components/CreditoFiscal/TablaProductosCreditoFiscal';
+import { ButtonDocumentosRelacionados } from '../components/Shared/configuracionFactura/documentosRelacionados/ButtonDocumentosRelacionados';
+import { SelectModeloFactura } from '../components/Shared/configuracionFactura/modeloDeFacturacion/selectModeloFactura';
+import { SendFormButton } from '../../../../shared/buttons/sendFormButton';
 
 export const GenerateDocuments = () => {
   const [emisorData, setEmisorData] = useState({
@@ -29,10 +31,12 @@ export const GenerateDocuments = () => {
   });
   const [showProductsModal, setShowProductsModal] = useState(false);
   const [showfacturasModal, setShowfacturasModal] = useState(false);
+  const [visibleDocumentoRelacionadomodal, setVisibleDocumentoRelacionadomodal] = useState(false);
+  const [condicionDeOperacion, setCondicionDeOperacion] = useState("A contado")
 
   const [tipoDocumento, setTipoDocumento] = useState<{
     name: string;
-    code: number;
+    code: string;
   }>();
 
   useEffect(() => {
@@ -43,6 +47,7 @@ export const GenerateDocuments = () => {
     console.log('tipoDocumento', tipoDocumento);
   }, [tipoDocumento]);
 
+  {/******** Consumo de API *******/ }
   const fetchEmisarInfo = async () => {
     try {
       const response = await getAllEmpresas();
@@ -61,6 +66,8 @@ export const GenerateDocuments = () => {
   const generarFactura = () => {
     console.log('enviado');
   };
+
+  {/*******************************/ }
   return (
     <>
       <Title text="Generar documentos" />
@@ -91,17 +98,17 @@ export const GenerateDocuments = () => {
             </h1>
             <Divider className="m-0 p-0"></Divider>
             <div className="flex flex-col gap-8">
-              <DropDownTipoDte
-                tipoDocumento={tipoDocumento}
-                setTipoDocumento={setTipoDocumento}
-              />
-              <SelectCondicionOperacion />
+              <div className="flex flex-col items-start gap-1">
+                <label className="opacity-70">Tipo de documento</label>
+                <DropDownTipoDte
+                  tipoDocumento={tipoDocumento}
+                  setTipoDocumento={setTipoDocumento}
+                />
+              </div>
+              <SelectCondicionOperacion condicionDeOperacion={condicionDeOperacion} setCondicionDeOperacion={setCondicionDeOperacion} />
               <SelectModeloFactura />
               <SelectTipoTransmisión />
-              {
-                tipoDocumento?.code != 4 &&
-                <FormasdePago />
-              }
+              {tipoDocumento?.code != "04" && <FormasdePagoForm />}
               <CheckBoxVentaTerceros />
             </div>
           </div>
@@ -128,23 +135,26 @@ export const GenerateDocuments = () => {
         </div>
       </WhiteSectionsPage>
 
-      {/*Seccion productos*/}
+      {/********* Seccion productos *********/}
       {/* Tipo de documento: FE */}
-      {tipoDocumento?.code === 1 && (
+      {tipoDocumento?.code === "01" && (
         <WhiteSectionsPage>
           <div className="pt-2 pb-5">
             <div className="flex justify-between">
               <h1 className="text-start text-xl font-bold">
                 Productos agregados
               </h1>
-              <button
-                className="bg-primary-blue rounded-md px-5 py-3 text-white hover:cursor-pointer"
-                onClick={() => setShowProductsModal(true)}
-              >
-                Añadir producto
-              </button>
+              <span className='flex gap-4'>
+                <ButtonDocumentosRelacionados visible={visibleDocumentoRelacionadomodal} setVisible={setVisibleDocumentoRelacionadomodal} />
+                <SendFormButton
+                  className="bg-primary-blue rounded-md px-5 text-white hover:cursor-pointer text-nowrap"
+                  onClick={() => setShowProductsModal(true)}
+                  text={"Añadir producto"}
+                />
+              </span>
             </div>
-            <Divider className="m-0 p-0"></Divider>
+
+            <Divider className=""></Divider>
             <TablaProductosAgregados />
             <ModalListaProdcutos
               visible={showProductsModal}
@@ -155,7 +165,7 @@ export const GenerateDocuments = () => {
       )}
 
       {/* Tipo de documento: Nota de Creditos */}
-      {tipoDocumento?.code === 4 && (
+      {tipoDocumento?.code === "04" && (
         <WhiteSectionsPage>
           <div className="pt-2 pb-5">
             <div className="flex justify-between">
@@ -180,7 +190,7 @@ export const GenerateDocuments = () => {
       )}
 
       {/* Tipo de documento: Nota de Debito */}
-      {tipoDocumento?.code === 5 && (
+      {tipoDocumento?.code === "05" && (
         <WhiteSectionsPage>
           <div className="pt-2 pb-5">
             <div className="flex justify-between">
@@ -205,7 +215,7 @@ export const GenerateDocuments = () => {
       )}
 
       {/* Tipo de documento: Credito fiscal */}
-      {tipoDocumento?.code === 2 && (
+      {tipoDocumento?.code === "02" && (
         <WhiteSectionsPage>
           <div className="pt-2 pb-5">
             <div className="flex justify-between">
