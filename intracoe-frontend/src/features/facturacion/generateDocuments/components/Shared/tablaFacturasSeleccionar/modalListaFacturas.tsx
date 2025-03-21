@@ -8,12 +8,12 @@ import { useState } from 'react';
 import { FacturaData } from './facturaData';
 
 interface FacturaData {
-  codigoGeneracion: string,
-  numeroControl: string,
-  fechaRemision: string,
-  receptor:string,
-  montoTotal:number,
-  seleccionar: boolean,
+  codigoGeneracion: string;
+  numeroControl: string;
+  fechaRemision: string;
+  receptor: string;
+  montoTotal: number;
+  seleccionar: boolean;
 }
 
 interface ModalListfacturaInterface {
@@ -52,7 +52,6 @@ export const ModalListaFacturas: React.FC<ModalListfacturaInterface> = ({
     const selected = updatedfactura.filter((product) => product.seleccionar);
     setSelectedfactura(selected); // Guardamos los productos seleccionados en la variable
   };
-
 
   const footerContent = (
     <div>
@@ -108,7 +107,7 @@ export const ModalListaFacturas: React.FC<ModalListfacturaInterface> = ({
             <p>{rowData.fechaRemision}</p>
           )}
         />
-         <Column
+        <Column
           header={<p className="text-sm">RECEPTOR</p>}
           body={(rowData: FacturaData, { rowIndex }: any) => (
             <p>{rowData.receptor}</p>

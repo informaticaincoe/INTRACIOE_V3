@@ -12,7 +12,7 @@ import {
 import {
   Ambiente,
   Departamento,
-  EmpresaForm,
+  EmisorInterface,
   Municipio,
   TipoDocumento,
   TipoEstablecimiento,
@@ -24,7 +24,7 @@ export const StepperContainer = () => {
   const toast = useRef<Toast>(null);
   const stepperRef = useRef<Stepper | null>(null);
 
-  const [formData, setFormData] = useState<EmpresaForm>({
+  const [formData, setFormData] = useState<EmisorInterface>({
     tipo_documento: { id: '', descripcion: '', code: '' },
     nit: '',
     nrc: '',
@@ -212,6 +212,19 @@ export const StepperContainer = () => {
       });
     }
   };
+
+  useEffect(()=>{
+    fetchInformacionEmpresa()
+  },[])
+
+  const fetchInformacionEmpresa = async() => {
+    try {
+      const response = await getAllEmpresas()
+      console.log("response", response)
+    } catch (error) {
+      console.log(error)
+    } 
+  }
 
   return (
     <WhiteSectionsPage className="mx-[20%]">
