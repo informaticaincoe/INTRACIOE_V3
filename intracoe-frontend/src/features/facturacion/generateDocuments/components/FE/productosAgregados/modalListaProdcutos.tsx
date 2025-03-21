@@ -3,19 +3,9 @@ import { Checkbox, CheckboxChangeEvent } from 'primereact/checkbox';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { Dialog } from 'primereact/dialog';
-import { InputText } from 'primereact/inputtext';
 import { useState } from 'react';
-import { productosData } from './productosData';
-
-interface Product {
-  id: string;
-  codigo: string;
-  descripcion: string;
-  precio_unitario: string;
-  cantidad: string;
-  no_grabado: boolean;
-  seleccionar: boolean;
-}
+import { Product, productosData } from './productosData';
+import { InputNumber, InputNumberValueChangeEvent } from 'primereact/inputnumber';
 
 interface ModalListProductsInterface {
   visible: any;
@@ -31,11 +21,11 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
 
   // Función para manejar cambios en la cantidad
   const handleCantidadChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
+    e: InputNumberValueChangeEvent,
     index: number
   ) => {
     const updatedProducts = [...products];
-    updatedProducts[index].cantidad = e.target.value;
+    updatedProducts[index].cantidad = e.value ?? 1 ;
     setProducts(updatedProducts);
   };
 
@@ -105,11 +95,11 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
         <Column
           header={<p className="text-sm">CANTIDAD</p>}
           body={(rowData: Product, { rowIndex }: any) => (
-            <InputText
-              type="number"
-              value={rowData.cantidad} // 'cantidad' es un string
-              onChange={(e) => handleCantidadChange(e, rowIndex)}
+            <InputNumber
+              value={rowData.cantidad}
+              onValueChange={(e: InputNumberValueChangeEvent) => handleCantidadChange(e, rowIndex)}
               className="w-[5rem]"
+              min={1}
             />
           )}
         />

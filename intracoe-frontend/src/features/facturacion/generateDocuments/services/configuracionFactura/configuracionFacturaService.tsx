@@ -10,3 +10,30 @@ export const getAllTipoDte = async () => {
     throw new Error();
   }
 };
+
+export const getAllCondicionDeOperacion = async () => {
+  try {
+    const response = await axios.get(`${BASEURL}/condicion-operacion/`);
+    return response.data
+  } catch (error) {
+    throw new Error()
+  }
+}
+
+export const getAllModelosDeFacturacion = async () => {
+  try {
+    const response = await axios.get(`${BASEURL}/modelo-facturacion/`);
+    return response.data
+  } catch (error) {
+    throw new Error()
+  }
+}
+
+export const getAllTipoTransmision = async () => {
+  try {
+    const response = await axios.get(`${BASEURL}/tipo-transmision/`);
+    return response.data
+  } catch (error) {
+    throw new Error()
+  }
+}

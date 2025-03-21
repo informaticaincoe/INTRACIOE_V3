@@ -9,7 +9,7 @@ export const getAllEmpresas = async () => {
         'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
       },
     });
-    console.log(response.data);
+    console.log("response.data", response.data);
     return response.data;
   } catch (error) {
     console.log(error);
@@ -34,3 +34,15 @@ export const createEmpresaById = async (data: any) => {
     throw new Error();
   }
 };
+
+export const getCodigoEstablecimientoById = async(idEstablecimiento: any) => {
+  try {
+    const response = await axios.post(`${BASEURL}/emisor/crear/`, {
+      headers: {
+        'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
+      },
+    });
+  } catch (error) {
+    throw new Error();
+  }
+}

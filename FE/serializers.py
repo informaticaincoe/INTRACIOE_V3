@@ -3,6 +3,7 @@ from rest_framework import serializers
 from rest_framework import serializers
 from .models import (
     Departamento,
+    TipoTransmision,
     Token_data,
     Ambiente,
     CondicionOperacion,
@@ -23,7 +24,7 @@ from .models import (
     TiposEstablecimientos,
     TipoGeneracionDocumento
 )
-from INVENTARIO.models import Producto, TipoItem
+from INVENTARIO.models import Producto, TipoItem, TipoTributo, Tributo
 
 # Serializer para la autenticación vía API
 class AuthRequestSerializer(serializers.Serializer):
@@ -44,10 +45,19 @@ class ActividadEconomicaSerializer(serializers.ModelSerializer):
         model = ActividadEconomica
         fields = ['id', 'codigo', 'descripcion']
 
+# Serializador para Emisor_fe
 class EmisorSerializer(serializers.ModelSerializer):
+    # Campo adicional para mostrar el codigo del tipo de establecimiento
+    tipo_establecimiento_codigo = serializers.SerializerMethodField()
+
     class Meta:
         model = Emisor_fe
-        fields = '__all__'
+        fields = '__all__'  # Esto incluirá todos los campos del modelo y el campo adicional
+
+    def get_tipo_establecimiento_codigo(self, obj):
+        # Verificamos si el tipoestablecimiento existe y luego devolvemos el 'codigo'
+        return obj.tipoestablecimiento.codigo if obj.tipoestablecimiento else None
+
 
 class ReceptorSerializer(serializers.ModelSerializer):
     class Meta:
@@ -150,4 +160,23 @@ class TiposEstablecimientosSerializer(serializers.ModelSerializer):
 class TiposGeneracionDocumentoSerializer(serializers.ModelSerializer):
     class Meta:
         model = TipoGeneracionDocumento
+        fields = '__all__'
+
+
+class TiposTributosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoTributo
+        fields = '__all__'
+
+
+
+class TributosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tributo
+        fields = '__all__'
+
+
+class TipoTransmisionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoTransmision
         fields = '__all__'

@@ -10,8 +10,9 @@ import './InputNumberCustom.css';
 import { FaCheckCircle } from 'react-icons/fa';
 import { ModalEliminarItemDeLista } from '../../Shared/modal/modalEliminarItemDeLista';
 import { ModalAgregarRetencion } from '../../Shared/modal/modalAgregarRetencion';
+import { ModalAgregarTributo } from '../../Shared/modal/modalAgregarTributo';
 
-export const TablaProductosAgregados = ({}) => {
+export const TablaProductosAgregados = ({ }) => {
   const [products, setProducts] = useState<Product[]>(productosData);
   const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
   const [rowClick, setRowClick] = useState<boolean>(true);
@@ -53,6 +54,10 @@ export const TablaProductosAgregados = ({}) => {
     setVisibleRetencionModal(true);
   };
 
+  const handleTributosModal = () => {
+    setVisibleTributoModal(true)
+  }
+
   return (
     <>
       {selectedProducts.length > 0 && ( // Verificar si hay productos seleccionados
@@ -68,7 +73,10 @@ export const TablaProductosAgregados = ({}) => {
             >
               <p className="text-red">Eliminar</p>
             </button>
-            <span className="border-blue flex items-center gap-2 rounded-md border px-3 py-1 hover:cursor-pointer">
+            <span
+              className="border-blue flex items-center gap-2 rounded-md border px-3 py-1 hover:cursor-pointer"
+              onClick={handleTributosModal}
+            >
               <p className="text-blue">Agregar tributo</p>
             </span>
             <span
@@ -88,6 +96,11 @@ export const TablaProductosAgregados = ({}) => {
       <ModalAgregarRetencion
         setVisible={setVisibleRetencionModal}
         visible={visibleRetencionModal}
+      />
+
+      <ModalAgregarTributo
+        setVisible={setVisibleTributoModal}
+        visible={visibleTributoModal}
       />
 
       <DataTable
@@ -145,6 +158,10 @@ export const TablaProductosAgregados = ({}) => {
         />
         <Column
           body={(rowData: Product) => <p>$ {rowData.total_neto}</p>}
+          header={<p className="text-sm uppercase">TOTAL tributos</p>}
+        ></Column>
+        <Column
+          body={(rowData: Product) => <p>$ {rowData.total_neto}</p>}
           header={<p className="text-sm">TOTAL NETO</p>}
         ></Column>
         <Column
@@ -155,10 +172,6 @@ export const TablaProductosAgregados = ({}) => {
           body={(rowData: Product) => <p>$ {rowData.total_con_iva}</p>}
           header={<p className="text-sm">TOTAL CON IVA</p>}
         ></Column>
-        {/* <Column
-          body={(rowData: Product) => <MenuAcciones />}
-          header={<p className="text-sm uppercase">Acciones</p>}
-        ></Column> */}
       </DataTable>
     </>
   );

@@ -57,7 +57,7 @@ export const ButtonDocumentosRelacionados: React.FC<ButtonDocumentosRelacionados
     <div className="flex w-full flex-col items-start">
       <span className="flex gap-3 text-start">
         <SendFormButton
-          onClick={(e) => setVisible(true)} text={'Relacionar documento'} className="text-nowrap bg-blue-yellow border-primary-blue border px-5 text-primary-blue"></SendFormButton>
+          onClick={( ) => setVisible(true)} text={'Relacionar documento'} className="text-nowrap bg-blue-yellow border-primary-blue border px-5 text-primary-blue"></SendFormButton>
       </span>
 
       <Dialog visible={visible} onHide={() => { if (!visible) return; setVisible(false); }} >

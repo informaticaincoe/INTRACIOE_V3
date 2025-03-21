@@ -20,7 +20,6 @@ export const DropDownTipoDte: React.FC<
   const fetchTipoDte = async () => {
     try {
       const response = await getAllTipoDte();
-      console.log('responsessss', response);
 
       setTipoDteTempLista(
         response.map((documento: { descripcion: any; codigo: any }) => ({

@@ -1,8 +1,7 @@
 import { Divider } from 'primereact/divider';
 import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPage';
 import { Title } from '../../../../shared/text/title';
-import { useEffect, useState } from 'react';
-import { getAllEmpresas } from '../../../bussiness/configBussiness/services/empresaServices';
+import { useState } from 'react';
 import { DatosEmisorCard } from '../components/Shared/datosEmisor/datosEmisorCard';
 import { DropDownTipoDte } from '../components/Shared/configuracionFactura/tipoDocumento/DropdownTipoDte';
 import { SelectCondicionOperacion } from '../components/Shared/configuracionFactura/condicionOperacion/selectCondicionOperacion';
@@ -20,52 +19,46 @@ import { TablaProductosCreditoFiscal } from '../components/CreditoFiscal/TablaPr
 import { ButtonDocumentosRelacionados } from '../components/Shared/configuracionFactura/documentosRelacionados/ButtonDocumentosRelacionados';
 import { SelectModeloFactura } from '../components/Shared/configuracionFactura/modeloDeFacturacion/selectModeloFactura';
 import { SendFormButton } from '../../../../shared/buttons/sendFormButton';
+import { defaulReceptorData, ReceptorInterface } from '../../../../shared/interfaces/interfaces';
 
 export const GenerateDocuments = () => {
-  const [emisorData, setEmisorData] = useState({
-    nit: '',
-    nombre: '',
-    telefono: '',
-    email: '',
-    direccion_comercial: '',
-  });
   const [showProductsModal, setShowProductsModal] = useState(false);
   const [showfacturasModal, setShowfacturasModal] = useState(false);
   const [visibleDocumentoRelacionadomodal, setVisibleDocumentoRelacionadomodal] = useState(false);
-  const [condicionDeOperacion, setCondicionDeOperacion] = useState("A contado")
-
+  const [condicionDeOperacion, setCondicionDeOperacion] = useState<string>("01") //Id de la condicion de operacion
+  const [receptor, setReceptor] = useState<ReceptorInterface>(defaulReceptorData)
   const [tipoDocumento, setTipoDocumento] = useState<{
     name: string;
     code: string;
   }>();
 
-  useEffect(() => {
-    fetchEmisarInfo();
-  }, []);
-
-  useEffect(() => {
-    console.log('tipoDocumento', tipoDocumento);
-  }, [tipoDocumento]);
-
-  {/******** Consumo de API *******/ }
-  const fetchEmisarInfo = async () => {
-    try {
-      const response = await getAllEmpresas();
-      setEmisorData({
-        nit: response[0].nit,
-        nombre: response[0].nombre_razon_social,
-        telefono: response[0].telefono,
-        email: response[0].email,
-        direccion_comercial: response[0].direccion_comercial,
-      });
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
   const generarFactura = () => {
-    console.log('enviado');
-  };
+    const data = {
+      "tipo_documento_seleccionado": tipoDocumento?.code,
+      "tipooperacion_id": condicionDeOperacion,
+      "tipomodelo_obj": condicionDeOperacion,
+      "recptor_temp": receptor //TODO: obtener toda la informacion por medio del id
+    }
+    console.log(data)
+  }
+  //************************************/
+  // OBTENCION DE DATOS
+  //************************************/
+  // useEffect(() => {
+  //   console.log("Emisor:", emisorData);
+  // }, [emisorData]);
+
+  // useEffect(() => {
+  //   console.log("condicionDeOperacion:", condicionDeOperacion);
+  // }, [condicionDeOperacion]);
+
+  // useEffect(() => {
+  //   console.log('tipoDocumento', tipoDocumento);
+  // }, [tipoDocumento]);
+
+  //************************************/
+  // CONSUMO DE API
+  //************************************/
 
   {/*******************************/ }
   return (
@@ -78,13 +71,7 @@ export const GenerateDocuments = () => {
           <div className="pt2 pb-5">
             <h1 className="text-start text-xl font-bold">Datos del emisor</h1>
             <Divider className="m-0 p-0"></Divider>
-            <DatosEmisorCard
-              nit={emisorData.nit}
-              nombre={emisorData.nombre}
-              telefono={emisorData.telefono}
-              email={emisorData.email}
-              direccion_comercial={emisorData.direccion_comercial}
-            />
+            <DatosEmisorCard />
           </div>
         </>
       </WhiteSectionsPage>
@@ -131,7 +118,7 @@ export const GenerateDocuments = () => {
             Seleccione el receptor
           </h1>
           <Divider className="m-0 p-0"></Divider>
-          <SelectReceptor />
+          <SelectReceptor receptor={receptor} setReceptor={setReceptor} />
         </div>
       </WhiteSectionsPage>
 
@@ -269,7 +256,7 @@ export const GenerateDocuments = () => {
         <button
           type="button"
           className="bg-primary-yellow mb-5 self-start rounded-md px-5 py-3 text-white hover:cursor-pointer"
-          onClick={generarFactura}
+          onClick={() => generarFactura()}
         >
           Generar factura
         </button>
