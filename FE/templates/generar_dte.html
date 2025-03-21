@@ -168,11 +168,13 @@
               </div>
               <div class="col-md-4">
                 <label>Documento Relacionado(CCF/CR):</label>
+                {% comment %} <input type="text" name="documento_relacionado" class="form-control" id="documento_relacionado_input"> {% endcomment %}
                 <input type="text" name="documento_relacionado" class="form-control" id="documento_relacionado_input">
               </div>
               <div class="col-md-3">
                 <BR/>
-                <button type="button" class="btn btn-secondary" onclick="cargarDocsRelacionados()">Agregar</button>
+                {% comment %} <button type="button" class="btn btn-secondary" onclick="cargarDocsRelacionados()">Agregar</button> {% endcomment %}
+                <button type="button" class="btn btn-secondary" onclick="cargarFacturaRelacionada()">Agregar</button>
               </div>
             </div>
         </div>
@@ -717,22 +719,140 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById("btn-retencion-iva").style.display = this.checked ? "inline-block" : "none";
 });
 
- // Función para agregar docs relacionados
- function cargarDocsRelacionados() {
-  const tipoDte = document.getElementById('tipo_documento_select').value
-  const tipoDocRelacionar = document.getElementById('documento_select').value;
-  const documentoRelacionado = document.getElementById('documento_relacionado_input').value;
 
-  console.log('tipo documento:', tipoDocRelacionar);
-  console.log('numero documento:', documentoRelacionado);
-  // Realizar la petición AJAX para obtener el nuevo número de control
-  fetch(`/fe/documento-relacionado/?tipo_dte=${tipoDte}&tipo_doc=${tipoDocRelacionar}&num_documento=${documentoRelacionado}`)
+
+  // Función para cargar la factura relacionada y sus productos en una subtabla
+  function cargarFacturaRelacionada() {
+    const codigoGeneracion = document.getElementById('documento_relacionado_input').value.trim();
+    if (!codigoGeneracion) {
+      alert("Por favor, ingresa el código de generación.");
+      return;
+    }
+    fetch(`/fe/documento-relacionado/?codigo_generacion=${codigoGeneracion}`)
       .then(response => response.json())
       .then(data => {
-          documentoRelacionado.value = data.documento_relacionado;
+        if(data.error){
+          alert(data.error);
+          return;
+        }
+        // Se espera que 'data' incluya: codigo_generacion, fecha_emision, total y un array "productos"
+        agregarFacturaFilaTabla(data);
       })
-      .catch(error => console.error('Error:', error));
-}
+      .catch(error => {
+        console.error('Error:', error);
+        alert("Error al obtener la factura.");
+      });
+  }
+
+  // Función que agrega dos filas a la tabla de productos:
+  // - Una fila con el encabezado de la factura relacionada.
+  // - Otra fila con una subtabla para listar los productos.
+  function agregarFacturaFilaTabla(factura) {
+    var tableBody = document.querySelector('#tabla-productos tbody');
+
+    // Fila de encabezado de la factura relacionada
+    var headerRow = document.createElement('tr');
+    headerRow.innerHTML = `
+      <td colspan="9" style="background-color: #d9edf7; text-align: left;">
+        <strong>Factura relacionada:</strong> ${factura.codigo_generacion} || Fecha emisión: ${factura.fecha_emision} || Total: ${factura.total}
+        <button type="button" class="btn btn-danger btn-sm" onclick="eliminarFacturaRelacionada(this)">Eliminar factura</button>
+      </td>
+    `;
+    tableBody.appendChild(headerRow);
+
+    // Fila que contendrá la subtabla
+    var subtableRow = document.createElement('tr');
+    var td = document.createElement('td');
+    td.setAttribute('colspan', '9');
+
+    // Creación de la subtabla
+    var nestedTable = document.createElement('table');
+    nestedTable.classList.add('table', 'table-bordered');
+    nestedTable.innerHTML = `
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Precio Unitario (Neto)</th>
+          <th>IVA Unitario</th>
+          <th>Cantidad</th>
+          <th>Total Neto</th>
+          <th>Total IVA</th>
+          <th>Total con IVA</th>
+          <th>Descuento</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    `;
+    td.appendChild(nestedTable);
+    subtableRow.appendChild(td);
+    tableBody.appendChild(subtableRow);
+
+    // Agregar cada producto de la factura a la subtabla
+    if (factura.detalles && factura.detalles.length > 0) {
+      factura.detalles.forEach(function(producto) {
+        agregarProductoAFacturaSubtabla(nestedTable.querySelector('tbody'), producto);
+      });
+    }
+  }
+
+  // Función para agregar cada producto a la subtabla.
+  // Se incluye un input para modificar la cantidad y un botón para eliminar el producto.
+  function agregarProductoAFacturaSubtabla(tbody, producto) {
+    let precio_incl = parseFloat(producto.precio_unitario);
+    let neto_unitario = parseFloat((precio_incl / 1.13).toFixed(2));
+    let iva_unitario = parseFloat((precio_incl - neto_unitario).toFixed(2));
+    let qty = parseFloat(producto.cantidad);
+    let total_neto = parseFloat((neto_unitario * qty).toFixed(2));
+    let total_iva = parseFloat((iva_unitario * qty).toFixed(2));
+    let total_incl = parseFloat((precio_incl * qty).toFixed(2));
+  
+    var row = document.createElement('tr');
+    row.setAttribute('data-id', producto.id);
+    row.innerHTML = `
+      <td>${producto.producto}</td>
+      <td class="precio-neto">${neto_unitario.toFixed(2)}</td>
+      <td class="iva-unitario">${iva_unitario.toFixed(2)}</td>
+      <td><input type="number" class="cantidad-input" value="${qty}" min="1" oninput="actualizarFilaSubtabla(this)"></td>
+      <td class="total-neto">${total_neto.toFixed(2)}</td>
+      <td class="total-iva">${total_iva.toFixed(2)}</td>
+      <td class="total-incl">${total_incl.toFixed(2)}</td>
+      <td class="descuento_select">${producto.descuento || ''}</td>
+      <td><button type="button" class="btn btn-danger btn-sm" onclick="eliminarProductoSubtabla(this)">Eliminar</button></td>
+    `;
+    tbody.appendChild(row);
+  }
+
+  // Actualiza la fila de la subtabla al cambiar la cantidad
+  function actualizarFilaSubtabla(input) {
+    let row = input.closest('tr');
+    let precio_neto = parseFloat(row.querySelector('.precio-neto').textContent);
+    let iva_unitario = parseFloat(row.querySelector('.iva-unitario').textContent);
+    let cantidad = parseFloat(input.value) || 0;
+    row.querySelector('.total-neto').textContent = (precio_neto * cantidad).toFixed(2);
+    row.querySelector('.total-iva').textContent = (iva_unitario * cantidad).toFixed(2);
+    row.querySelector('.total-incl').textContent = ((precio_neto + iva_unitario) * cantidad).toFixed(2);
+    // Aquí podrías actualizar un resumen global si fuese necesario
+  }
+
+  // Elimina un producto de la subtabla
+  function eliminarProductoSubtabla(btn) {
+    let row = btn.closest('tr');
+    row.parentNode.removeChild(row);
+  }
+
+  // Elimina la factura relacionada completa (encabezado y subtabla)
+  function eliminarFacturaRelacionada(btn) {
+    let headerRow = btn.closest('tr');
+    let tableBody = headerRow.parentNode;
+    let nextRow = headerRow.nextElementSibling;
+    tableBody.removeChild(headerRow);
+    if (nextRow) {
+      tableBody.removeChild(nextRow);
+    }
+  }
+
 
 </script>
 {% endblock %}
