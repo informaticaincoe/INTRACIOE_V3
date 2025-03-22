@@ -1,44 +1,71 @@
-import { Dropdown } from 'primereact/dropdown';
-import { useState } from 'react';
+import { HTMLProps, useEffect, useState } from 'react';
 import './selectCustomStyle.css';
+import { getAllActivities } from '../../features/facturacion/activities/services/activitiesServices';
+import { ActivitiesData } from '../../features/facturacion/activities/interfaces/activitiesData';
+import { MultiSelect, MultiSelectChangeEvent } from 'primereact/multiselect';
 
 interface selectActividadesEconomicasInterface {
-  actividades: any;
-  setActividades: any;
+  actividades: ActivitiesData[]; // Asegúrate de que actividades sea un array de objetos ActivitiesData
+  setActividades: (value: ActivitiesData[]) => void;
+  className?: HTMLProps<HTMLElement>['className'];
 }
 
 export const SelectActividadesEconomicas: React.FC<
   selectActividadesEconomicasInterface
-> = ({ actividades, setActividades }) => {
-  const cities = [
-    { name: 'Transporte de pasajeros marítimo y de cabotaje', code: '1' },
-    { name: 'Venta al por menor de textiles y confecciones usados', code: '2' },
-    {
-      name: 'Venta al por menor de medicamentos farmacéuticos y otros materiales y artículos de uso médico, odontológico y veterinario',
-      code: '3',
-    },
-    { name: 'Almacenes (venta de diversos artículos)', code: '4' },
-    {
-      name: 'Reparación y reconstrucción de vías, stop y otros artículos de fibra de vidrio',
-      code: '5',
-    },
-    {
-      name: 'Venta al por menor de materiales de construcción, electrodomésticos, accesorios para autos y similares en puestos de feria y mercados',
-      code: '6',
-    },
-  ];
+> = ({ actividades, setActividades, className }) => {
+  const [listActividades, setListSetActividades] = useState<ActivitiesData[]>(
+    []
+  );
+
+  useEffect(() => {
+    fetchActividadesList();
+  }, []);
+
+  const fetchActividadesList = async () => {
+    try {
+      const response = await getAllActivities();
+
+      const data = response.map(
+        (doc: { id: string; descripcion: any; codigo: any }) => ({
+          id: doc.id,
+          descripcion: doc.descripcion,
+          code: doc.codigo,
+        })
+      );
+      setListSetActividades(data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   return (
-    <div className="justify-content-center flex">
-      <Dropdown
-        value={actividades}
-        onChange={(e) => setActividades(e.value)}
-        options={cities}
-        optionLabel="name"
-        placeholder="Seleccionar actividad economica"
-        className="md:w-14rem font-display w-full"
-        filter
-      />
+    <div>
+      <div>
+        <MultiSelect
+          value={actividades}
+          onChange={(e: MultiSelectChangeEvent) => setActividades(e.value)}
+          options={listActividades}
+          optionLabel="descripcion"
+          placeholder="Seleccionar actividad economica"
+          className={`${className} w-contain`}
+          filter
+        />
+      </div>
+      {actividades.length > 0 && (
+        <div className="py-5">
+          <strong>Actividades seleccionadas:</strong>
+          <ul>
+            {actividades.map((actividad) => (
+              <li
+                key={actividad.codigo} // Usamos el código para que sea único
+                className="list-inside list-disc px-5 text-black"
+              >
+                {actividad.descripcion}{' '}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,5 +1,5 @@
 export interface ActivitiesData {
-  id: number;
+  id: string;
   codigo: string;
   descripcion: string;
 }

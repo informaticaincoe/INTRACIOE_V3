@@ -1,5 +1,7 @@
 import { Dropdown } from 'primereact/dropdown';
 import './selectCustomStyle.css';
+import { useEffect, useState } from 'react';
+import { getAllAmbientes } from '../../features/bussiness/configBussiness/services/ambienteService';
 
 interface SelectAmbienteProps {
   ambiente: any;
@@ -10,18 +12,36 @@ export const SelectAmbienteComponent: React.FC<SelectAmbienteProps> = ({
   ambiente,
   setSelectAmbiente,
 }) => {
-  // const [selectedAmbiente, setSelectedAmbiente] = useState(null);
-  const cities = [
-    { name: 'Modo producción', code: '1' },
-    { name: 'Modo prueba', code: '2' },
-  ];
+  const [selectedAmbiente, setSelectedAmbiente] = useState<[]>([]);
+
+  useEffect(() => {
+    fetchListaAmbiente();
+  }, []);
+
+  const fetchListaAmbiente = async () => {
+    try {
+      const response = await getAllAmbientes();
+
+      const data = response.map(
+        (doc: { id: string; descripcion: any; codigo: any }) => ({
+          id: doc.id,
+          name: doc.descripcion,
+          code: doc.codigo,
+        })
+      );
+
+      setSelectedAmbiente(data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   return (
     <div className="justify-content-center flex">
       <Dropdown
-        value={ambiente} // El valor seleccionado se pasa desde el componente superior
-        onChange={(e) => setSelectAmbiente(e.value)} // Al seleccionar un valor, se actualiza el estado en el componente superior
-        options={cities}
+        value={ambiente}
+        onChange={(e) => setSelectAmbiente(e.value)}
+        options={selectedAmbiente}
         optionLabel="name"
         placeholder="Seleccionar ambiente"
         className="md:w-14rem font-display w-full"

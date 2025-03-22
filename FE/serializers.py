@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from rest_framework import serializers
 from .models import (
+    Departamento,
     Token_data,
     Ambiente,
     CondicionOperacion,
@@ -20,6 +21,7 @@ from .models import (
     EventoInvalidacion,
     TipoInvalidacion,
     TiposEstablecimientos,
+    TipoGeneracionDocumento
 )
 from INVENTARIO.models import Producto, TipoItem
 
@@ -125,7 +127,11 @@ class TiposDocIDReceptorSerializer(serializers.ModelSerializer):
     class Meta:
         model = TiposDocIDReceptor
         fields = '__all__'
-
+        
+class DepartamentoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Departamento
+        fields = '__all__'
 class MunicipioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Municipio
@@ -139,4 +145,9 @@ class TipoInvalidacionSerializer(serializers.ModelSerializer):
 class TiposEstablecimientosSerializer(serializers.ModelSerializer):
     class Meta:
         model = TiposEstablecimientos
+        fields = '__all__'
+
+class TiposGeneracionDocumentoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoGeneracionDocumento
         fields = '__all__'

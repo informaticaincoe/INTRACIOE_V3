@@ -18,7 +18,20 @@ body {
   text-wrap: wrap;
 }
 
-.p-dialog {
+.p-multiselect-label {
+  overflow: hidden !important;
+  width: 100% !important;
+}
+
+.p-multiselect {
+  width: 40vw !important;
+}
+
+.p-checkbox,
+.p-checkbox-box {
+  border-radius: 0.2rem !important;
+  height: 1.6rem;
+  width: 1.6rem;
 }
 
 input::file-selector-button {
@@ -27,16 +40,15 @@ input::file-selector-button {
   padding: 1% 3%;
 }
 
-.p-inputtext {
-  padding: 1% 3%;
-}
-
 .p-dropdown-items {
-  width: 40vw;
 }
 
 .p-dropdown-item {
   text-wrap: wrap;
+}
+
+.p-inputnumber-input {
+  width: 5vw;
 }
 
 @theme {
