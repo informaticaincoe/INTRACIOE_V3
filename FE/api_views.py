@@ -12,12 +12,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from FE.views import enviar_factura_invalidacion_hacienda_view, firmar_factura_anulacion_view, invalidacion_dte_view, generar_json, num_to_letras
-from .serializers import ActividadEconomicaSerializer, AmbienteSerializer, DepartamentoSerializer, MunicipioSerializer, ProductoSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, TipoDteSerializer, TiposDocIDReceptorSerializer, TiposEstablecimientosSerializer
 
+from .serializers import ActividadEconomicaSerializer, AmbienteSerializer, CondicionOperacionSerializer, DepartamentoSerializer, ModelofacturacionSerializer, MunicipioSerializer, ProductoSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, TipoDteSerializer, TiposDocIDReceptorSerializer, TiposEstablecimientosSerializer, TiposGeneracionDocumentoSerializer
 from .models import (
     ActividadEconomica, Departamento, Emisor_fe, Municipio, Receptor_fe, FacturaElectronica, DetalleFactura,
     Ambiente, CondicionOperacion, Modelofacturacion, NumeroControl,
-    Tipo_dte, TipoMoneda, TipoUnidadMedida, TiposDocIDReceptor, EventoInvalidacion, 
+    Tipo_dte, TipoGeneracionDocumento, TipoMoneda, TipoUnidadMedida, TiposDocIDReceptor, EventoInvalidacion, 
     Receptor_fe, TipoInvalidacion, TiposEstablecimientos, Token_data, Descuento, FormasPago, TipoGeneracionDocumento, Plazo
 )
 from INVENTARIO.models import Producto, TipoItem, Tributo
@@ -272,14 +272,29 @@ class MunicipioListAPIView(generics.ListAPIView):
         departamento_id = self.kwargs['pk']
         # Filtrar los municipios por el departamento
         return Municipio.objects.filter(departamento_id=departamento_id)
+class recptorListAPIView(generics.ListAPIView):
+    queryset = Receptor_fe.objects.all()
+    serializer_class = ReceptorSerializer
+    
+class tipoGeneracionDocumentoListAPIView(generics.ListAPIView):
+    queryset = TipoGeneracionDocumento.objects.all()
+    serializer_class = TiposGeneracionDocumentoSerializer
+
+######################################################
+# Configuracion de factura
+######################################################
 
 class TipoDTEListAPIView(generics.ListAPIView):
     queryset = Tipo_dte.objects.all()
     serializer_class = TipoDteSerializer
     
-class recptorListAPIView(generics.ListAPIView):
-    queryset = Receptor_fe.objects.all()
-    serializer_class = ReceptorSerializer
+class CondicionDeOperacionListAPIView(generics.ListAPIView):
+    queryset = CondicionOperacion.objects.all()
+    serializer_class = CondicionOperacionSerializer
+    
+class ModeloDeFacturacionListAPIView(generics.ListAPIView):
+    queryset = Modelofacturacion.objects.all()
+    serializer_class = ModelofacturacionSerializer
     
 ######################################################
 # PRODUCTOS Y SERVICIOS

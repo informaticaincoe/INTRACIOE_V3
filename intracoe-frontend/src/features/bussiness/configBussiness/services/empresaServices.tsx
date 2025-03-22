@@ -1,5 +1,4 @@
-import axios from 'axios';
-import { RequestEmpresa } from '../interfaces/empresaInterfaces';
+import axios from 'axios'
 
 const BASEURL = import.meta.env.VITE_URL_BASE;
 

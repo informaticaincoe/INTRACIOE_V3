@@ -29,11 +29,11 @@ export const SelectModeloFactura = () => {
 
   return (
     <div className="flex flex-col items-start gap-1">
-      <label htmlFor={selectedModeloFacturacion.id} className="opacity-70">
-        Tipo de documento
+      <label htmlFor={selectedModeloFacturacion.codigo} className="opacity-70">
+        Modelo de facturación {selectedModeloFacturacion.codigo}
       </label>
       <Dropdown
-        id={selectedModeloFacturacion.id}
+        id={selectedModeloFacturacion.codigo}
         value={selectedModeloFacturacion}
         onChange={(e: { value: any }) => setSelectedModeloFacturacion(e.value)}
         options={tipoModeloFacturacion}

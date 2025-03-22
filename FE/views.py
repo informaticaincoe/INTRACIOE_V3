@@ -123,6 +123,8 @@ def cargar_actividades(request):
         form = ExcelUploadForm()
     return render(request, 'actividad_economica/cargar_actividades.html', {'form': form})
 
+
+
 def actividad_economica_list(request):
     actividades = ActividadEconomica.objects.all()
     # Paginación
@@ -228,7 +230,49 @@ def obtener_receptor(request, receptor_id):
         return JsonResponse(data)
     except Receptor_fe.DoesNotExist:
         return JsonResponse({"error": "Receptor no encontrado"}, status=404)
+    
+# VISTA PARA OBTENER EL DOCUMENTO RELACIONADO Y MOSTRARLO EN MI TABLA
 
+def obtener_factura_por_codigo(request):
+    codigo_generacion = request.GET.get("codigo_generacion")
+    try:
+        factura = FacturaElectronica.objects.get(codigo_generacion=codigo_generacion)
+        detalles_list = []
+        # Recorre cada detalle asociado a la factura usando el related_name "detalles"
+        for detalle in factura.detalles.all():
+            # Se asume que el precio_unitario incluye IVA y se calcula el precio neto e IVA unitario
+            neto_unitario = detalle.precio_unitario / Decimal('1.13')
+            iva_unitario = detalle.precio_unitario - neto_unitario
+            total_neto = neto_unitario * detalle.cantidad
+            total_iva = iva_unitario * detalle.cantidad
+            total_incl = detalle.precio_unitario * detalle.cantidad
+
+            detalles_list.append({
+                "producto": f"{detalle.producto.codigo} - {detalle.producto.descripcion}",
+                "cantidad": detalle.cantidad,
+                "precio_unitario": str(detalle.precio_unitario),
+                "neto_unitario": str(round(neto_unitario, 2)),
+                "iva_unitario": str(round(iva_unitario, 2)),
+                "total_neto": str(round(total_neto, 2)),
+                "total_iva": str(round(total_iva, 2)),
+                "total_incl": str(round(total_incl, 2)),
+                "descuento": str(detalle.descuento.porcentaje) if detalle.descuento else ""
+            })
+        
+        print(detalles_list)
+        
+        data = {
+            "codigo_generacion": str(factura.codigo_generacion),
+            "tipo_documento": factura.tipo_dte.descripcion if factura.tipo_dte else "",
+            "num_documento": factura.numero_control,
+            "fecha_emision": factura.fecha_emision.strftime("%Y-%m-%d"),
+            "fecha_vencimiento": factura.fecha_emision.strftime("%Y-%m-%d") if factura.fecha_emision else "",
+            "total": str(factura.total_pagar),
+            "detalles": detalles_list  # Aquí se incluye el detalle de los productos
+        }
+        return JsonResponse(data)
+    except FacturaElectronica.DoesNotExist:
+        return JsonResponse({"error": "Factura no encontrada"}, status=404)
 ######################################################################################################################
 
 #########################################################################################################

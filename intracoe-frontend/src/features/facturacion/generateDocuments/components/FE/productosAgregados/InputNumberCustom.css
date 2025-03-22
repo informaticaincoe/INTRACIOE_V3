@@ -1,11 +1,11 @@
 .p-inputnumber-input {
-    width: 10vw!important;
+  width: 6vw !important;
 }
 
 .p-inputnumber-input:disabled {
-    background-color: #E0E0E0;
+  background-color: #e0e0e0;
 }
 
 .p-inputtext:disabled {
-    background-color: #E0E0E0;
+  background-color: #e0e0e0;
 }

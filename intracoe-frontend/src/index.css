@@ -41,13 +41,14 @@ input::file-selector-button {
 }
 
 .p-dropdown-items {
-  width: 40vw;
 }
 
 .p-dropdown-item {
   text-wrap: wrap;
 }
-.selectActReceptor {
+
+.p-inputnumber-input {
+  width: 5vw;
 }
 
 @theme {

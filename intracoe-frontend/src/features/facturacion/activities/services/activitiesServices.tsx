@@ -52,7 +52,7 @@ export const updateActivity = async (
   }
 };
 
-export const deleteActivity = async (id: number) => {
+export const deleteActivity = async (id: string) => {
   try {
     const response = await axios.delete(`${BASEURL}/actividad/eliminar/${id}/`);
     console.log(response);
