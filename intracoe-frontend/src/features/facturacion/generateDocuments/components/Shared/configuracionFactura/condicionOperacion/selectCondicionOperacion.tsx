@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { getAllCondicionDeOperacion } from '../../../../services/configuracionFactura/configuracionFacturaService';
+import { ConfiguracionFacturaInterface } from '../../../../../../../shared/interfaces/interfaces';
 
 interface Item {
   name: string;
@@ -6,21 +8,27 @@ interface Item {
 }
 
 
-interface SelectCondicionOperacionProps{
-  condicionDeOperacion:any,
-  setCondicionDeOperacion:any
+interface SelectCondicionOperacionProps {
+  condicionDeOperacion: any,
+  setCondicionDeOperacion: any
 }
 
-export const SelectCondicionOperacion:React.FC<SelectCondicionOperacionProps> = ({condicionDeOperacion, setCondicionDeOperacion}) => {
-  const items: Item[] = [
-    { name: 'A contado', value: 1 },
-    { name: 'Credito', value: 2 },
-    { name: 'Otro', value: 3 },
-  ];
+export const SelectCondicionOperacion: React.FC<SelectCondicionOperacionProps> = ({ condicionDeOperacion, setCondicionDeOperacion }) => {
+  const [condicionOperacionApiList, setCondicionOperacionApiList] = useState<ConfiguracionFacturaInterface[]>([])
 
-  useEffect(()=>{
-    
-  })
+  useEffect(() => {
+    fetchCondicionDeOperaciones()
+  },[])
+
+  const fetchCondicionDeOperaciones = async () => {
+    try {
+      const condicionOperaciones = await getAllCondicionDeOperacion()
+      setCondicionOperacionApiList(condicionOperaciones)
+      setCondicionDeOperacion(condicionOperaciones[0].codigo)
+    } catch (error) {
+      console.log(error)
+    }
+  }
 
   const [formData, setFormData] = useState({
     otraOperacion: '',
@@ -37,13 +45,12 @@ export const SelectCondicionOperacion:React.FC<SelectCondicionOperacionProps> = 
       </label>
       <div className="flex flex-col gap-8">
         <div className="flex gap-10">
-          {items.map((item) => (
+          {condicionOperacionApiList.map((item) => (
             <button
-              key={item.value}
-              className={`btn ${condicionDeOperacion === item.name ? 'bg-primary-blue text-white' : 'border-primary-blue text-primary-blue border bg-white'} h-14 w-50 rounded-md`} // Cambiar estilo según si está seleccionado
-              onClick={() => setCondicionDeOperacion(item.name)} //TODO: Enviar id en lugar del nombre
+              className={`${condicionDeOperacion === item.codigo ? 'bg-primary-blue text-white' : 'border-primary-blue text-primary-blue border bg-white'} h-14 w-50 rounded-md`} // Cambiar estilo según si está seleccionado
+              onClick={() => setCondicionDeOperacion(item.codigo)} //TODO: Enviar id en lugar del nombre
             >
-              {item.name}
+              {item.descripcion}
             </button>
           ))}
         </div>

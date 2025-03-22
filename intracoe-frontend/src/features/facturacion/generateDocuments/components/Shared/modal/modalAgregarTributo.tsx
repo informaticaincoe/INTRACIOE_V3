@@ -1,11 +1,15 @@
 import { Checkbox } from 'primereact/checkbox';
 import { Dialog } from 'primereact/dialog';
 import { Divider } from 'primereact/divider';
+import { Dropdown } from 'primereact/dropdown';
 import {
   InputNumber,
   InputNumberValueChangeEvent,
 } from 'primereact/inputnumber';
 import React, { useEffect, useState } from 'react';
+import { getAllTipoTributos, getAllTributosByTipo } from '../../../services/tributos/tributos';
+import { TipoTributos, Tributos } from '../../../interfaces/Tributos';
+import { MultiSelect } from 'primereact/multiselect';
 
 interface ModalAgregarTibutoInterface {
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
@@ -13,27 +17,57 @@ interface ModalAgregarTibutoInterface {
   setVisible: any;
 }
 
-export const ModalAgregarTrinuto: React.FC<ModalAgregarTibutoInterface> = ({
+export const ModalAgregarTributo: React.FC<ModalAgregarTibutoInterface> = ({
   onClick,
   visible,
   setVisible,
 }) => {
-  const [checkedIva, setCheckedIva] = useState<boolean>(false);
-  const [checkedRenta, setCheckedRenta] = useState<boolean>(false);
-  const [iva, setIva] = useState<number>(0);
-  const [renta, setRenta] = useState<number>(0);
-  const [tributos, setTributos] = useState();
+  const [tipoTributo, setTipoTributo] = useState<TipoTributos[]>([]);
+  const [selectedTipoTributo, setSelectedTipoTributo] = useState<TipoTributos>();
 
-  // useEffect(()=>{
-  //     console.log("")
-  // },[checkedIva, checkedRenta])
+  const [tributos, setTributos] = useState<Tributos[]>([])
+  const [selectedTributos, setSelectedTributos] = useState<Tributos[]>([])
+
+
+  useEffect(() => {
+    fetchTipoTributos()
+  }, [])
+
+
+  useEffect(() => {
+    console.log(selectedTributos)
+  }, [selectedTributos])
+
+  useEffect(() => {
+    fetchTributosSegunTipo()
+  }, [selectedTipoTributo])
+
+  const fetchTipoTributos = async () => {
+    try {
+      const tipoTributosData = await getAllTipoTributos()
+      setTipoTributo(tipoTributosData)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  const fetchTributosSegunTipo = async () => {
+    if (selectedTipoTributo) {
+      try {
+        const tipoTributosData = await getAllTributosByTipo(selectedTipoTributo.id)
+        setTributos(tipoTributosData)
+      } catch (error) {
+        console.log(error)
+      }
+    }
+  }
 
   return (
     <div className="justify-content-center flex">
       <Dialog
-        header="Eliminar de la lista"
+        header="Agregar tributos"
         visible={visible}
-        style={{ width: '40vw' }}
+        style={{ width: '50%' }}
         onHide={() => {
           if (!visible) return;
           setVisible(false);
@@ -42,63 +76,49 @@ export const ModalAgregarTrinuto: React.FC<ModalAgregarTibutoInterface> = ({
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
             <>
-              <span className="flex gap-2">
-                <Checkbox
-                  inputId="VentaTerceros"
-                  onChange={(e) => setCheckedIva(e.checked ?? false)}
-                  checked={checkedIva}
-                ></Checkbox>
-                <label htmlFor="VentaTerceros">IVA</label>
-              </span>
+              <label htmlFor="VentaTerceros">Tipo tributos</label>
+              <Dropdown
+                value={selectedTipoTributo}
+                onChange={(e) => setSelectedTipoTributo(e.value)}
+                options={tipoTributo}
+                optionLabel="descripcion"
+                placeholder="Seleccionar tipo de tributo"
+                className="md:w-14rem font-display w-full"
+              />
             </>
             <>
               <label htmlFor="porcentajeRetencion">
-                Porcentaje de retención
+                Tributo
               </label>
-              <InputNumber
-                prefix="%"
-                inputId="withoutgrouping"
-                value={iva}
-                onValueChange={(e: InputNumberValueChangeEvent) =>
-                  setIva(e.value ?? 0)
-                }
-                className="w-full"
-                disabled={!checkedIva}
+              <MultiSelect
+                value={selectedTributos}
+                onChange={(e) => setSelectedTributos(e.value)}
+                options={tributos}
+                optionLabel="descripcion"
+                placeholder="Seleccionar tipo de tributo"
+                className="md:w-14rem font-display w-full"
               />
             </>
           </div>
-
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-col gap-2">
-              <span className="flex gap-2">
-                <Checkbox
-                  inputId="VentaTerceros"
-                  onChange={(e) => setCheckedRenta(e.checked ?? false)}
-                  checked={checkedRenta}
-                ></Checkbox>
-                <label htmlFor="VentaTerceros">Renta</label>
-              </span>
-            </div>
-            <div>
-              <label htmlFor="porcentajeRetencion">
-                Porcentaje de retención
-              </label>
-              <InputNumber
-                prefix="%"
-                inputId="withoutgrouping"
-                value={renta}
-                onValueChange={(e: InputNumberValueChangeEvent) =>
-                  setRenta(e.value ?? 0)
-                }
-                className="w-full"
-                disabled={!checkedRenta}
-              />
-            </div>
-          </div>
         </div>
         <Divider />
+
+        <div>
+          <h2 className='font-semibold text-lg'>Tributos aplicados</h2>
+          <ul className='list-disc list-inside px-4'>
+            {
+              selectedTributos.map((tributo) => (
+                <li>
+                  {tributo.descripcion}
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+
+        <Divider />
         <span className="flex justify-between">
-          {/* <p>Total retencion: {calcularTotalRetencion()}%</p> */}
+          <p>Total retencion: $0.00</p>
           <span className="flex justify-end gap-2">
             <button
               className="bg-primary-blue w-[8vw] rounded-md py-2 text-white hover:cursor-pointer"

@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { IoEyeOutline } from 'react-icons/io5';
 import { MdDeleteOutline } from 'react-icons/md';
 import { RiEdit2Line } from 'react-icons/ri';
-import { ActivitiesData } from '../../interfaces/activitiesData';
 import { DeleteModal } from '../modales/deleteModal';
 import { ViewModal } from '../modales/viewModal';
 import { EditModal } from '../modales/editModal';
+import { ActivitiesData } from '../../../../../shared/interfaces/interfaces';
 
 type ActionsProps = {
   activity: ActivitiesData;
@@ -31,7 +31,6 @@ const Actions: React.FC<ActionsProps> = ({ activity, onDelete }) => {
   };
 
   const handleEdit = (activity: ActivitiesData) => {
-    console.log('edit');
     setSelectedActivity(activity);
     setEditViewModal(true);
   };
