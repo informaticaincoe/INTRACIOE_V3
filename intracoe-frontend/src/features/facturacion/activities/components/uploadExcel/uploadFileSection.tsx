@@ -5,8 +5,8 @@ import { read, utils } from 'xlsx';
 //icons
 import { LuUpload } from 'react-icons/lu';
 import { useState } from 'react';
-import { ActivitiesDataNew } from '../../interfaces/activitiesData';
 import { createActivity } from '../../services/activitiesServices';
+import { ActivitiesDataNew } from '../../../../../shared/interfaces/interfaces';
 
 export const UploadFileSection = () => {
   const [excelData, setExcelData] = useState<ActivitiesDataNew[]>([]);

@@ -1,5 +1,5 @@
-import { ActivitiesData } from '../../interfaces/activitiesData';
 import { Dialog } from 'primereact/dialog';
+import { ActivitiesData } from '../../../../../shared/interfaces/interfaces';
 // import styles from "./modalCustom.module.css"
 
 interface ViewModalProps {

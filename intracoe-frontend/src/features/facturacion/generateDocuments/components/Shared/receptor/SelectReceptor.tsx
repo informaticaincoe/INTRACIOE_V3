@@ -7,17 +7,11 @@ import { Button } from 'primereact/button';
 import { Input } from '../../../../../../shared/forms/input';
 import { SelectTipoIdDocumento } from '../../../../../../shared/Select/selectTipoIdDocumento';
 import { SelectActividadesEconomicas } from '../../../../../../shared/Select/selectActividadesEconomicas';
-import { ActivitiesData } from '../../../../activities/interfaces/activitiesData';
 import { RadioButton, RadioButtonChangeEvent } from 'primereact/radiobutton';
-import {
-  Ambiente,
-  Departamento,
-  Municipio,
-  TipoDocumento,
-  TipoEstablecimiento,
-} from '../../../../../bussiness/configBussiness/interfaces/empresaInterfaces';
 import { SelectDepartmentComponent } from '../../../../../../shared/Select/selectDepartmentComponent';
 import { SelectMunicipios } from '../../../../../../shared/Select/selectMunicipios';
+import { getAllReceptor } from '../../../services/receptor/receptorServices';
+import { ActivitiesData, Departamento, EmisorInterface, Municipio, ReceptorInterface, TipoDocumento } from '../../../../../../shared/interfaces/interfaces';
 
 const receptorData = [
   {
@@ -32,91 +26,57 @@ const receptorData = [
   },
 ];
 
-interface formData {
-  nit: string;
-  nrc: string;
-  nombre_razon_social: string;
-  nombre_comercial: string;
-  direccion_comercial: string;
-  telefono: string;
-  email: string;
-  codigo_establecimiento: string;
-  codigo_punto_venta: string;
-  nombre_establecimiento: string | null;
-  tipoestablecimiento: TipoEstablecimiento;
-  departamento: Departamento;
-  municipio: Municipio;
-  ambiente: Ambiente;
-  tipo_documento: TipoDocumento;
-  actividades_economicas: ActivitiesData[];
-  direccion: string;
-}
 
 interface StepperProps {
-  // Define las propiedades adecuadas según el componente Stepper
-  style?: React.CSSProperties;
-  ref?: React.RefObject<Stepper>;
+  receptor: ReceptorInterface,
+  setReceptor:(receptor:ReceptorInterface) => void
 }
 
-export const SelectReceptor = () => {
+export const SelectReceptor:React.FC<StepperProps> = ({receptor, setReceptor}) => {
   const [selectedReceptor, setSelectedReceptor] = useState<any>('');
   const [receptorAuxData, setReceptorAuxData] = useState<any[]>([]);
   const [visibleModal, setVisibleModal] = useState(false);
   const [tipoIdDocumento, setTipoIdDocumento] = useState<{
     name?: string;
   } | null>(null);
-  const [receptor, setTipoReceptor] = useState<string>('');
+  const [tipoReceptor, setTipoReceptor] = useState<string>('');
 
-  const stepperRef = useRef<Stepper | null>(null); // Tipar correctamente el ref
+  const stepperRef = useRef<Stepper | null>(null); // TODO: Tipar correctamente el ref
 
   useEffect(() => {
     fetchTipoDte();
   }, []);
 
   const fetchTipoDte = async () => {
-    setReceptorAuxData(receptorData);
+    try {
+      const response = await getAllReceptor()
+      setReceptorAuxData(response);
+    }
+    catch (error) {
+      console.log(error)
+    }
   };
-
-  const [formData, setFormData] = useState<formData>({
-    tipo_documento: { id: '', descripcion: '', code: '' },
-    nit: '',
-    nrc: '',
-    nombre_establecimiento: '',
-    nombre_comercial: '',
-    nombre_razon_social: '',
-    ambiente: { id: '', descripcion: '', code: '' },
-    codigo_punto_venta: '',
-    codigo_establecimiento: '',
-    actividades_economicas: [],
-    tipoestablecimiento: { id: '', descripcion: '', code: '' },
-    departamento: { id: '', descripcion: '', code: '' },
-    municipio: { id: '', descripcion: '', code: '' },
-    direccion_comercial: '',
-    telefono: '',
-    email: '',
-    direccion: '',
-  });
 
   const handleSelectActividadesEconomicas = (value: ActivitiesData[]) => {
     console.log(value);
-    setFormData({ ...formData, actividades_economicas: value });
+    setReceptor({ ...receptor, actividades_economicas: value });
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setReceptor({ ...receptor, [e.target.name]: e.target.value });
   };
   const handleDepartamento = (value: Departamento) => {
     console.log(value);
 
-    setFormData({ ...formData, departamento: value });
+    setReceptor({ ...receptor, departamento: value });
   };
 
   const handleMunicipio = (value: Municipio) => {
-    setFormData({ ...formData, municipio: value });
+    setReceptor({ ...receptor, municipio: value });
   };
 
   const handleTipoDocId = (value: TipoDocumento) => {
-    setFormData({ ...formData, tipo_documento: value });
+    setReceptor({ ...receptor, tipo_documento: value });
   };
 
   return (
@@ -128,11 +88,11 @@ export const SelectReceptor = () => {
         <div className="flex w-full justify-between gap-10">
           <Dropdown
             id={selectedReceptor.id}
-            value={selectedReceptor}
-            onChange={(e: { value: any }) => setSelectedReceptor(e.value)}
+            value={receptor}
+            onChange={(e: { value: any }) => setReceptor(e.value)}
             options={receptorAuxData}
             optionLabel="nombre"
-            optionValue="num_documento"
+            optionValue="id"
             placeholder="Seleccione un receptor"
             className="font-display w-full text-start"
           />
@@ -159,17 +119,7 @@ export const SelectReceptor = () => {
             <StepperPanel header="información general">
               <div className="flex flex-col gap-8">
                 <span>
-                  <label htmlFor="">Nombre o razón social</label>
-                  <Input
-                    name="razon_social"
-                    placeholder="Nombre o razón social"
-                    type="text"
-                    value={formData.nombre_razon_social}
-                    onChange={handleChange}
-                  />
-                </span>
-                <span>
-                  <label htmlFor="">Nombre o razón social</label>
+                  <label htmlFor="">Tipo de documento de identificacion</label>
                   <SelectTipoIdDocumento
                     tipoIdDocumento={tipoIdDocumento}
                     setTipoIdDocumento={setTipoIdDocumento}
@@ -184,14 +134,14 @@ export const SelectReceptor = () => {
                     name="num_documento"
                     placeholder=""
                     type="text"
-                    value={formData.nit}
+                    value={receptor.num_documento}
                     onChange={handleChange}
                   />
                 </span>
                 <span>
                   <label htmlFor="">Actividad economica</label>
                   <SelectActividadesEconomicas
-                    actividades={formData.actividades_economicas}
+                    actividades={receptor.actividades_economicas}
                     setActividades={handleSelectActividadesEconomicas}
                     className={'selectActReceptor'}
                   />
@@ -208,7 +158,7 @@ export const SelectReceptor = () => {
                           onChange={(e: RadioButtonChangeEvent) =>
                             setTipoReceptor(e.value)
                           }
-                          checked={receptor === 'natural'}
+                          checked={tipoReceptor === 'natural'}
                         />
                         <label htmlFor="natural" className="ml-2">
                           Natural
@@ -222,7 +172,7 @@ export const SelectReceptor = () => {
                           onChange={(e: RadioButtonChangeEvent) =>
                             setTipoReceptor(e.value)
                           }
-                          checked={receptor === 'juridica'}
+                          checked={tipoReceptor === 'juridica'}
                         />
                         <label htmlFor="juridica" className="ml-2">
                           Juridica
@@ -248,35 +198,35 @@ export const SelectReceptor = () => {
                 <span>
                   <label htmlFor="">Departamento</label>
                   <SelectDepartmentComponent
-                    department={formData.departamento}
+                    department={receptor.departamento}
                     setDepartment={handleDepartamento}
                   />
                 </span>
                 <span>
                   <label htmlFor="">Municipio</label>
                   <SelectMunicipios
-                    department={formData.departamento}
-                    municipio={formData.municipio}
+                    department={receptor.municipio}
+                    municipio={receptor.municipio}
                     setMunicipio={handleMunicipio}
                   />
                 </span>
                 <span>
-                  <label htmlFor="num_documento">Direccion</label>
+                  <label htmlFor="direccion">Direccion</label>
                   <Input
                     name="direccion"
                     placeholder=""
                     type="text"
-                    value={formData.direccion}
+                    value={receptor.direccion}
                     onChange={handleChange}
                   />
                 </span>
                 <span>
-                  <label htmlFor="num_documento">Teléfono</label>
+                  <label htmlFor="telefono">Teléfono</label>
                   <Input
                     name="telefono"
                     placeholder=""
                     type="text"
-                    value={formData.telefono}
+                    value={receptor.telefono}
                     onChange={handleChange}
                   />
                 </span>
@@ -286,7 +236,7 @@ export const SelectReceptor = () => {
                     name="email"
                     placeholder=""
                     type="text"
-                    value={formData.email}
+                    value={receptor.correo}
                     onChange={handleChange}
                   />
                 </span>

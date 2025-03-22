@@ -12,14 +12,14 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from FE.views import enviar_factura_invalidacion_hacienda_view, firmar_factura_anulacion_view, invalidacion_dte_view, generar_json, num_to_letras
-from .serializers import ActividadEconomicaSerializer, AmbienteSerializer, CondicionOperacionSerializer, DepartamentoSerializer, ModelofacturacionSerializer, MunicipioSerializer, ProductoSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, TipoDteSerializer, TiposDocIDReceptorSerializer, TiposEstablecimientosSerializer, TiposGeneracionDocumentoSerializer
+from .serializers import ActividadEconomicaSerializer, AmbienteSerializer, CondicionOperacionSerializer, DepartamentoSerializer, ModelofacturacionSerializer, MunicipioSerializer, ProductoSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, TipoDteSerializer, TipoTransmisionSerializer, TiposDocIDReceptorSerializer, TiposEstablecimientosSerializer, TiposGeneracionDocumentoSerializer, TiposTributosSerializer, TributosSerializer
 from .models import (
     ActividadEconomica, Departamento, Emisor_fe, Municipio, Receptor_fe, FacturaElectronica, DetalleFactura,
     Ambiente, CondicionOperacion, Modelofacturacion, NumeroControl,
-    Tipo_dte, TipoGeneracionDocumento, TipoMoneda, TipoUnidadMedida, TiposDocIDReceptor, EventoInvalidacion, 
+    Tipo_dte, TipoGeneracionDocumento, TipoMoneda, TipoTransmision, TipoUnidadMedida, TiposDocIDReceptor, EventoInvalidacion, 
     Receptor_fe, TipoInvalidacion, TiposEstablecimientos, Token_data
 )
-from INVENTARIO.models import Producto, TipoItem
+from INVENTARIO.models import Producto, TipoItem, TipoTributo, Tributo
 
 
 FIRMADOR_URL = "http://192.168.2.25:8113/firmardocumento/"
@@ -209,7 +209,6 @@ class ActividadEconomicaDeleteAPIView(generics.DestroyAPIView):
 # RECEPTOR
 ######################################################
 
-
 class ObtenerReceptorAPIView(APIView):
     """
     Devuelve los datos de un receptor en formato JSON.
@@ -248,6 +247,7 @@ class AmbientesListAPIView(generics.ListAPIView):
 class TiposEstablecimientosListAPIView(generics.ListAPIView):
     queryset = TiposEstablecimientos.objects.all()
     serializer_class = TiposEstablecimientosSerializer
+
     
 class DepartamentosListAPIView(generics.ListAPIView):
     queryset = Departamento.objects.all()
@@ -285,6 +285,11 @@ class ModeloDeFacturacionListAPIView(generics.ListAPIView):
     queryset = Modelofacturacion.objects.all()
     serializer_class = ModelofacturacionSerializer
     
+class TipoTransmisionListAPIView(generics.ListAPIView):
+    queryset = TipoTransmision.objects.all()
+    serializer_class = TipoTransmisionSerializer
+    
+    
 ######################################################
 # PRODUCTOS Y SERVICIOS
 ######################################################
@@ -292,6 +297,20 @@ class ModeloDeFacturacionListAPIView(generics.ListAPIView):
 class productosListAPIView(generics.ListAPIView):
     queryset = Producto.objects.all()
     serializer_class = ProductoSerializer
+
+class TiposTributosListAPIView(generics.ListAPIView):
+    queryset = TipoTributo.objects.all()
+    serializer_class = TiposTributosSerializer
+    
+class TributoListAPIView(generics.ListAPIView):
+    serializer_class = TributosSerializer
+    
+    def get_queryset(self):
+        # Obtener el id del departamento de la URL
+        tipo_tributo_id = self.kwargs['tipo_valor']
+        # Filtrar los municipios por el departamento
+        return Tributo.objects.filter(tipo_valor=tipo_tributo_id)
+
 ######################################################
 # GENERACION DE DOCUMENTOS ELECTRONICOS
 ######################################################

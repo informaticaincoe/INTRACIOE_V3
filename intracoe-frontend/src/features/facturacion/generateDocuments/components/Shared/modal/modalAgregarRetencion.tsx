@@ -39,7 +39,7 @@ export const ModalAgregarRetencion: React.FC<ModalEliminarInterface> = ({
   return (
     <div className="justify-content-center flex">
       <Dialog
-        header="Eliminar de la lista"
+        header="Agregar retención"
         visible={visible}
         style={{ width: '40vw' }}
         onHide={() => {
@@ -47,7 +47,7 @@ export const ModalAgregarRetencion: React.FC<ModalEliminarInterface> = ({
           setVisible(false);
         }}
       >
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-5 py-5">
           <div className="flex flex-col gap-2">
             <>
               <span className="flex gap-2">
