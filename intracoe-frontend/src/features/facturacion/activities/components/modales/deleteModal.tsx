@@ -1,17 +1,20 @@
 import { useEffect, useRef } from 'react';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { Toast } from 'primereact/toast';
-import { ActivitiesData } from '../../features/facturacion/activities/interfaces/activitiesData';
+import { ActivitiesData } from '../../interfaces/activitiesData';
 import styles from './modalCustom.module.css';
+import { deleteActivity } from '../../services/activitiesServices';
 
 interface DeleteModalProps {
   activity: ActivitiesData;
   onClose: () => void; // Función para cerrar el modal
+  onDelete: () => void; // Función para cerrar el modal
 }
 
 export const DeleteModal: React.FC<DeleteModalProps> = ({
   activity,
   onClose,
+  onDelete,
 }) => {
   const toast = useRef<Toast | null>(null);
 
@@ -24,7 +27,11 @@ export const DeleteModal: React.FC<DeleteModalProps> = ({
         life: 3000,
       });
     }
-    onClose();
+    try {
+      handleDeleteActivity();
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const reject = () => {
@@ -47,7 +54,7 @@ export const DeleteModal: React.FC<DeleteModalProps> = ({
         <div className="flex-column align-items-center border-bottom-1 surface-border flex w-full">
           <span>
             ¿Estas seguro que deseas eliminar la actividad economica:{' '}
-            <span className="italic">"{activity.descripcion}"</span>?
+            <span className="italic">{activity.descripcion}</span>?
           </span>
         </div>
       ),
@@ -61,6 +68,13 @@ export const DeleteModal: React.FC<DeleteModalProps> = ({
       showTemplate();
     }
   }, [activity]);
+
+  const handleDeleteActivity = async () => {
+    const response = await deleteActivity(activity.id);
+    onDelete();
+    onClose();
+    console.log(response);
+  };
 
   return (
     <>

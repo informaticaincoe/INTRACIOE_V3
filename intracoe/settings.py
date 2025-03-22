@@ -26,7 +26,20 @@ SECRET_KEY = 'django-insecure--t^=e+nnmjaah90onb$_&@5(kv1-_c!sjr^y1vov!(v0!5wa$a
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS=['*']               
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',  # Asegúrate de que esta URL esté incluida
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_HEADERS = [
+    'content-type',
+    'authorization',
+    'accept',
+    # otros encabezados que necesites
+]
 
 CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:8000',
@@ -38,6 +51,8 @@ CSRF_TRUSTED_ORIGINS = [
     'https://intracoe.incoe.cloud',
     'http://intracoe.incoe.cloud',
     'https://192.168.100.81',
+    'http://localhost:5173',  # Puerto de tu frontend (React)
+    'http://127.0.0.1:5173',  # Alternativa para localhost
 ]
 
 ## CONFIGURACION DE CORREOS ##############################
@@ -89,11 +104,13 @@ INSTALLED_APPS = [
     'CONTABILIDAD',
     'INFORMATICA',
     'INVENTARIO',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
