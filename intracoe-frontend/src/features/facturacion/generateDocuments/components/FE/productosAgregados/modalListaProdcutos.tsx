@@ -3,21 +3,56 @@ import { Checkbox, CheckboxChangeEvent } from 'primereact/checkbox';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { Dialog } from 'primereact/dialog';
-import { useState } from 'react';
-import { Product, productosData } from './productosData';
+import { useEffect, useState } from 'react';
+import { defaultProductosData, ProductosTabla } from './productosData';
 import { InputNumber, InputNumberValueChangeEvent } from 'primereact/inputnumber';
+import { getAllProducts } from '../../../services/productos/productosServices';
+import { SendFormButton } from '../../../../../../shared/buttons/sendFormButton';
 
 interface ModalListProductsInterface {
   visible: any;
   setVisible: any;
+  setListProducts:any;
+
 }
 
 export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
   visible,
   setVisible,
+  setListProducts
 }) => {
-  const [products, setProducts] = useState<Product[]>(productosData);
-  const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductosTabla[]>([defaultProductosData]);
+  const [selectedProducts, setSelectedProducts] = useState<ProductosTabla[]>([]);
+
+  useEffect(() => {
+    fetchProductos()
+  }, [])
+
+
+  const fetchProductos = async () => {
+    try {
+      const response = await getAllProducts()
+      const productos = response.map((product) => ({
+        id: product.id,
+        codigo: product.codigo,
+        descripcion: product.descripcion,
+        precio_unitario: product.preunitario,
+        cantidad: 1,
+        no_grabado: false,
+        descuento: 0,
+        iva_unitario: 0,
+        total_neto: 0,
+        total_iva: 0,
+        total_con_iva: 0,
+        iva_percibido: 0,
+        seleccionar: false,
+      }));
+ 
+      setProducts(productos)
+    } catch (error) {
+      console.log(error)
+    }
+  }
 
   // Función para manejar cambios en la cantidad
   const handleCantidadChange = (
@@ -25,7 +60,7 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
     index: number
   ) => {
     const updatedProducts = [...products];
-    updatedProducts[index].cantidad = e.value ?? 1 ;
+    updatedProducts[index].cantidad = e.value ?? 1;
     setProducts(updatedProducts);
   };
 
@@ -44,11 +79,17 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
     setSelectedProducts(selected); // Guardamos los productos seleccionados en la variable
   };
 
+  const guardarProductos =(selectedProducts:ProductosTabla[])=> {
+    console.log(selectedProducts)
+    setListProducts(selectedProducts)
+  }
+
   const footerContent = (
     <div>
-      <button onClick={() => setVisible(false)} autoFocus>
-        Close
-      </button>
+      <SendFormButton onClick={() => guardarProductos(selectedProducts)} text='Agregar' className='bg-primary-blue text-white px-10'/>
+
+      <SendFormButton onClick={() => setVisible(false)} text='Cerrar' className='border border-primary-blue px-10'/>
+        
     </div>
   );
 
@@ -76,7 +117,7 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
         rowsPerPageOptions={[5, 10, 25, 50]}
       >
         <Column
-          body={(rowData: Product, { rowIndex }: any) => (
+          body={(rowData: ProductosTabla, { rowIndex }: any) => (
             <Checkbox
               checked={rowData.seleccionar} // Usa el estado de "seleccionar"
               onChange={(e) => handleSelectChange(e, rowIndex)} // Maneja el cambio solo para "seleccionar"
@@ -85,16 +126,16 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
           header={<p className="text-sm">SELECCIONAR</p>}
         />
         <Column
-          body={(rowData: Product) => <p>{rowData.descripcion}</p>}
+          body={(rowData: ProductosTabla) => <p>{rowData.descripcion}</p>}
           header={<p className="text-sm">PRODUCTOS</p>}
         />
         <Column
-          body={(rowData: Product) => <p>$ {rowData.precio_unitario}</p>}
+          body={(rowData: ProductosTabla) => <p>$ {rowData.precio_unitario}</p>}
           header={<p className="text-sm">PRECIO UNITARIO</p>}
         />
         <Column
           header={<p className="text-sm">CANTIDAD</p>}
-          body={(rowData: Product, { rowIndex }: any) => (
+          body={(rowData: ProductosTabla, { rowIndex }: any) => (
             <InputNumber
               value={rowData.cantidad}
               onValueChange={(e: InputNumberValueChangeEvent) => handleCantidadChange(e, rowIndex)}

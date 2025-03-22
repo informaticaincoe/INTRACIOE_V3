@@ -1,7 +1,7 @@
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
-import React, { useState } from 'react';
-import { Product, productosData } from './productosData';
+import React, { useEffect, useState } from 'react';
+import { productosData, ProductosTabla } from './productosData';
 import {
   InputNumber,
   InputNumberValueChangeEvent,
@@ -12,19 +12,27 @@ import { ModalEliminarItemDeLista } from '../../Shared/modal/modalEliminarItemDe
 import { ModalAgregarRetencion } from '../../Shared/modal/modalAgregarRetencion';
 import { ModalAgregarTributo } from '../../Shared/modal/modalAgregarTributo';
 
-export const TablaProductosAgregados = ({ }) => {
-  const [products, setProducts] = useState<Product[]>(productosData);
+interface TablaProductosAgregadosProps {
+  listProducts: ProductosTabla[],
+  setListProducts: any
+}
+
+export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = ({ setListProducts, listProducts }) => {
   const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
-  const [rowClick, setRowClick] = useState<boolean>(true);
+  const [rowClick] = useState<boolean>(true);
   const [visibleDeleteModal, setVisibleDeleteModal] = useState<boolean>(false);
   const [visibleTributoModal, setVisibleTributoModal] =
     useState<boolean>(false);
   const [visibleRetencionModal, setVisibleRetencionModal] =
     useState<boolean>(false);
 
+  useEffect(() => {
+    console.log("list:", listProducts);
+  }, [listProducts]);
+
   // Función para manejar cambios en la cantidad de un producto específico
   const handleCantidadChange = (value: number | null, productId: number) => {
-    setProducts((prevProducts) =>
+    setListProducts((prevProducts: any[]) =>
       prevProducts.map((product) =>
         product.id === productId
           ? { ...product, cantidad: value ?? 0 }
@@ -35,8 +43,8 @@ export const TablaProductosAgregados = ({ }) => {
 
   // Función para manejar cambios en el descuento de un producto específico
   const handleDescuentoChange = (value: number | null, productId: number) => {
-    setProducts((prevProducts) =>
-      prevProducts.map((product) =>
+    setListProducts((prevProducts: any[]) =>
+      prevProducts.map((product: { id: number; }) =>
         product.id === productId
           ? { ...product, descuento: value ?? 0 }
           : product
@@ -56,6 +64,15 @@ export const TablaProductosAgregados = ({ }) => {
 
   const handleTributosModal = () => {
     setVisibleTributoModal(true)
+  }
+
+  const handlerEliminarItem = () => {
+    const filterList = listProducts.filter(product => {
+      selectedProducts.forEach((item) => product.id != item.id)
+    }
+    ) //lista actualizada
+    setListProducts(filterList)
+    setSelectedProducts([])
   }
 
   return (
@@ -92,6 +109,8 @@ export const TablaProductosAgregados = ({ }) => {
         setVisible={setVisibleDeleteModal}
         visible={visibleDeleteModal}
         size={selectedProducts.length}
+        onClick={handlerEliminarItem}
+
       />
       <ModalAgregarRetencion
         setVisible={setVisibleRetencionModal}
@@ -104,7 +123,7 @@ export const TablaProductosAgregados = ({ }) => {
       />
 
       <DataTable
-        value={products}
+        value={listProducts}
         tableStyle={{ minWidth: '50rem' }}
         paginator
         rows={5}
@@ -124,16 +143,16 @@ export const TablaProductosAgregados = ({ }) => {
           header={<p className="text-sm">PRODUCTO</p>}
         ></Column>
         <Column
-          body={(rowData: Product) => <p>$ {rowData.precio_unitario}</p>}
+          body={(rowData: ProductosTabla) => <p>$ {rowData.precio_unitario}</p>}
           header={<p className="text-sm">PRECIO UNITARIO</p>}
         ></Column>
         <Column
-          body={(rowData: Product) => <p>$ {rowData.precio_unitario}</p>}
+          body={(rowData: ProductosTabla) => <p>$ {rowData.iva_unitario}</p>}
           header={<p className="text-sm">IVA UNITARIO</p>}
         ></Column>
         <Column
           header={<p className="text-sm">CANTIDAD</p>}
-          body={(rowData: Product) => (
+          body={(rowData: ProductosTabla) => (
             <InputNumber
               inputId="withoutgrouping"
               value={rowData.cantidad}
@@ -145,7 +164,7 @@ export const TablaProductosAgregados = ({ }) => {
         />
         <Column
           header={<p className="text-sm">DESCUENTO(%)</p>}
-          body={(rowData: Product) => (
+          body={(rowData: ProductosTabla) => (
             <InputNumber
               prefix="%"
               inputId="withoutgrouping"
@@ -157,19 +176,19 @@ export const TablaProductosAgregados = ({ }) => {
           )}
         />
         <Column
-          body={(rowData: Product) => <p>$ {rowData.total_neto}</p>}
+          body={(rowData: ProductosTabla) => <p>$ {rowData.total_neto}</p>}
           header={<p className="text-sm uppercase">TOTAL tributos</p>}
         ></Column>
         <Column
-          body={(rowData: Product) => <p>$ {rowData.total_neto}</p>}
+          body={(rowData: ProductosTabla) => <p>$ {rowData.total_neto}</p>}
           header={<p className="text-sm">TOTAL NETO</p>}
         ></Column>
         <Column
-          body={(rowData: Product) => <p>$ {rowData.total_neto}</p>}
+          body={(rowData: ProductosTabla) => <p>$ {rowData.total_iva}</p>}
           header={<p className="text-sm">TOTAL IVA</p>}
         ></Column>
         <Column
-          body={(rowData: Product) => <p>$ {rowData.total_con_iva}</p>}
+          body={(rowData: ProductosTabla) => <p>$ {rowData.total_con_iva}</p>}
           header={<p className="text-sm">TOTAL CON IVA</p>}
         ></Column>
       </DataTable>

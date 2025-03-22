@@ -50,7 +50,6 @@ export const SelectReceptor:React.FC<StepperProps> = ({receptor, setReceptor}) =
   const fetchTipoDte = async () => {
     try {
       const response = await getAllReceptor()
-      console.log(response)
       setReceptorAuxData(response);
     }
     catch (error) {

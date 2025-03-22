@@ -195,3 +195,59 @@ export interface ConfiguracionFacturaInterface {
   codigo: string,
   descripcion: string
 }
+
+export interface ProductoResponse {
+  id: number;
+  codigo: string;
+  descripcion: string;
+  categoria: Categoria | null;
+  unidad_medida: TipoUnidadMedida | null;
+  preunitario: number;
+  precio_compra: number;
+  precio_venta: number;
+  stock: number;
+  stock_minimo: number;
+  stock_maximo: number;
+  impuestos: Impuesto[];
+  tipo_item: TipoItem | null;
+  referencia_interna: string | null;
+  tributo: Tributo;
+  maneja_lotes: boolean;
+  fecha_vencimiento: string | null;
+  almacenes: Almacen[];
+  imagen: string | null;
+  creado: string;
+  actualizado: string;
+}
+
+// Interfaces para las relaciones de claves foráneas (si es necesario)
+export interface Categoria {
+  id: number;
+  nombre: string;
+}
+
+export interface TipoUnidadMedida {
+  id: number;
+  nombre: string;
+}
+
+export interface Impuesto {
+  id: number;
+  nombre: string;
+  porcentaje: number;
+}
+
+export interface TipoItem {
+  id: number;
+  nombre: string;
+}
+
+export interface Tributo {
+  id: number;
+  nombre: string;
+}
+
+export interface Almacen {
+  id: number;
+  nombre: string;
+}

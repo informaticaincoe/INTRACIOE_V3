@@ -33,11 +33,11 @@ export const productosData = [
   },
 ];
 
-export interface Product {
+export interface ProductosTabla {
   id: number;
   codigo: string;
   descripcion: string;
-  precio_unitario: string;
+  precio_unitario: number;
   cantidad: number;
   no_grabado: boolean;
   descuento: number;
@@ -47,4 +47,21 @@ export interface Product {
   total_con_iva: number;
   iva_percibido: number;
   seleccionar: boolean;
+}
+
+
+export const defaultProductosData = {
+  id: 0,
+  codigo: "",
+  descripcion: "",
+  precio_unitario: 0,
+  cantidad: 0,
+  no_grabado: false,
+  descuento: 0,
+  iva_unitario: 0,
+  total_neto: 0,
+  total_iva: 0,
+  total_con_iva: 0,
+  iva_percibido: 0,
+  seleccionar: false,
 }

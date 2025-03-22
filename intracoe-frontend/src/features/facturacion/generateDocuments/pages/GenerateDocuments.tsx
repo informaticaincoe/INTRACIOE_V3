@@ -1,7 +1,7 @@
 import { Divider } from 'primereact/divider';
 import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPage';
 import { Title } from '../../../../shared/text/title';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DatosEmisorCard } from '../components/Shared/datosEmisor/datosEmisorCard';
 import { DropDownTipoDte } from '../components/Shared/configuracionFactura/tipoDocumento/DropdownTipoDte';
 import { SelectCondicionOperacion } from '../components/Shared/configuracionFactura/condicionOperacion/selectCondicionOperacion';
@@ -20,6 +20,7 @@ import { ButtonDocumentosRelacionados } from '../components/Shared/configuracion
 import { SelectModeloFactura } from '../components/Shared/configuracionFactura/modeloDeFacturacion/selectModeloFactura';
 import { SendFormButton } from '../../../../shared/buttons/sendFormButton';
 import { defaulReceptorData, ReceptorInterface } from '../../../../shared/interfaces/interfaces';
+import { ProductosTabla } from '../components/FE/productosAgregados/productosData';
 
 export const GenerateDocuments = () => {
   const [showProductsModal, setShowProductsModal] = useState(false);
@@ -31,6 +32,9 @@ export const GenerateDocuments = () => {
     name: string;
     code: string;
   }>();
+  const [listProducts, setListProducts] = useState<ProductosTabla[]>([])
+
+  let SubTotal = 0
 
   const generarFactura = () => {
     const data = {
@@ -44,9 +48,9 @@ export const GenerateDocuments = () => {
   //************************************/
   // OBTENCION DE DATOS
   //************************************/
-  // useEffect(() => {
-  //   console.log("Emisor:", emisorData);
-  // }, [emisorData]);
+  useEffect(() => {
+    console.log("list:", listProducts);
+  }, [listProducts]);
 
   // useEffect(() => {
   //   console.log("condicionDeOperacion:", condicionDeOperacion);
@@ -61,6 +65,15 @@ export const GenerateDocuments = () => {
   //************************************/
 
   {/*******************************/ }
+
+  const CalcularSubTotal =()=>{
+    let aux=0
+    listProducts.forEach((item)=>{
+    aux += item.cantidad * item.precio_unitario
+    })
+
+    return aux
+  }
   return (
     <>
       <Title text="Generar documentos" />
@@ -142,10 +155,11 @@ export const GenerateDocuments = () => {
             </div>
 
             <Divider className=""></Divider>
-            <TablaProductosAgregados />
+            <TablaProductosAgregados listProducts={listProducts} setListProducts={setListProducts} />
             <ModalListaProdcutos
               visible={showProductsModal}
               setVisible={setShowProductsModal}
+              setListProducts={setListProducts}
             />
           </div>
         </WhiteSectionsPage>
@@ -221,6 +235,7 @@ export const GenerateDocuments = () => {
             <ModalListaProdcutos
               visible={showProductsModal}
               setVisible={setShowProductsModal}
+              setListProducts={setListProducts}
             />
           </div>
         </WhiteSectionsPage>
@@ -235,7 +250,7 @@ export const GenerateDocuments = () => {
           <Divider className="m-0 p-0"></Divider>
           <div className="grid grid-cols-4 gap-4 text-start">
             <p className="opacity-60">SubTotal Neto:</p>
-            <p>$21.24</p>
+            <p>${CalcularSubTotal()}</p>
 
             <p className="opacity-60">Total IVA:</p>
             <p>$2.78</p>
