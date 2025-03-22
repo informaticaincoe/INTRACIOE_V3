@@ -1,6 +1,7 @@
 from django.urls import path
 
 from FE.api_views import ActividadEconomicaCreateAPIView, ActividadEconomicaDeleteAPIView, ActividadEconomicaDetailAPIView, ActividadEconomicaListAPIView, ActividadEconomicaUpdateAPIView, AmbientesListAPIView, DepartamentosListAPIView, EmisorCreateAPIView, EnviarFacturaHaciendaAPIView, FacturaListAPIView, FacturasListAPIView, FirmarFacturaAPIView, GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, MunicipioListAPIView, ObtenerReceptorAPIView, TipoDTEListAPIView, TipoDocIDReceptorListAPIView, TiposEstablecimientosListAPIView, autenticacion, EmisorListAPIView, productosListAPIView, recptorListAPIView
+
 from . import views
 from .views import (
     ActividadEconomicaDetailView,
@@ -14,7 +15,8 @@ from .views import (
     generar_factura_view,
     invalidacion_dte_view,
     obtener_numero_control_ajax,
-    obtener_receptor
+    obtener_receptor,
+    generar_documento_ajuste
 )
 
 
@@ -34,7 +36,8 @@ urlpatterns = [
     path('api/factura/generar/', GenerarFacturaAPIView.as_view(), name='generar_factura_api'),
     path('api/factura/firmar/<int:factura_id>/', FirmarFacturaAPIView.as_view(), name='firmar_factura_api'),
     path('api/factura/enviar_hacienda/<int:factura_id>/', EnviarFacturaHaciendaAPIView.as_view(), name='enviar_factura_hacienda_api'),
-
+    path('api/factura_ajuste/generar/', GenerarDocumentoAjusteAPIView.as_view(), name='generar_factura_ajuste_api'), #Nota de credito y nota de debito
+    
     # URLS DE API ACTIVIDAD ECONOMICA 
     path('api/actividad/', ActividadEconomicaListAPIView.as_view(), name='actividad_list_api'),
 
@@ -77,7 +80,9 @@ urlpatterns = [
 
     #urls para procesamiento de facturas
     path('generar/', generar_factura_view, name='generar_factura'),
-
+    
+    # URLS DTE AJUSTE
+    path('factura/generar_ajuste/', generar_documento_ajuste, name='generar_ajuste_factura'),
 
     #path('detalle/<int:factura_id>/', views.detalle_factura_view, name='detalle_factura'),
     path('listar_facturas/', views.factura_list, name='listar_facturas'),

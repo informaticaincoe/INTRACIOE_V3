@@ -15,7 +15,7 @@
 
 <div class="container mt-5">
   <div class="card shadow p-4">
-    <h2 class="text-center mb-4">Generar Factura Electrónica</h2>
+    <h2 class="text-center mb-4">Generar Documento de Ajuste</h2>
     
     <!-- Sección Datos del Emisor -->
     {% if emisor %}
@@ -30,7 +30,7 @@
     </div>
     {% endif %}
     
-    <form onsubmit="enviarFormulario(event)">
+    <form onsubmit="enviarFormularioAjuste(event)">
       <!-- Sección de Configuración Adicional -->
       <div class="form-section">
         <h4>Configuración de Factura</h4>
@@ -174,9 +174,6 @@
                 <BR/>
                 <button type="button" class="btn btn-secondary" onclick="cargarDocsRelacionados()">Agregar</button>
               </div>
-
-              <p><strong> Total Pagar CCF:</strong> {{ total_pagar_doc_r }}</p>
-
             </div>
         </div>
       
@@ -200,7 +197,6 @@
               <th>Total Neto</th>
               <th>Total IVA</th>
               <th>Total con IVA</th>
-              <th>Descuento</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -276,7 +272,6 @@
               <th>Precio Unitario (IVA incluido)</th>
               <th>Cantidad</th>
               <th>Tipo de ítem</th>
-              <th>Descuento</th>
             </tr>
           </thead>
           <tbody>
@@ -607,7 +602,7 @@
       $('#retencionRentaModal').modal('hide');
   }
 
-  async function enviarFormulario(event) {
+  async function enviarFormularioAjuste(event) {
       event.preventDefault();
       
       // Recopilar datos del formulario
@@ -669,7 +664,7 @@
       jsonData["no_gravado"] = document.getElementById("no_gravado_checkbox").checked;
       
       try {
-          let response = await fetch('/fe/generar/', {
+          let response = await fetch('fe/factura/generar_ajuste/', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(jsonData)
