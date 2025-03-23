@@ -11,7 +11,7 @@ from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from FE.views import enviar_factura_invalidacion_hacienda_view, firmar_factura_anulacion_view, invalidacion_dte_view, generar_json, num_to_letras
+from FE.views import enviar_factura_invalidacion_hacienda_view, firmar_factura_anulacion_view, invalidacion_dte_view, generar_json, num_to_letras, agregar_formas_pago_ajax, generar_json_contingencia
 
 from .serializers import ActividadEconomicaSerializer, AmbienteSerializer, CondicionOperacionSerializer, DepartamentoSerializer, ModelofacturacionSerializer, MunicipioSerializer, ProductoSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, TipoDteSerializer, TiposDocIDReceptorSerializer, TiposEstablecimientosSerializer, TiposGeneracionDocumentoSerializer
 from .models import (
@@ -926,6 +926,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
             items_permitidos = 2000
             docsRelacionados = []#Acumular los documentos relacionados
             data = request.data
+            contingencia = False
             
             # Datos básicos
             numero_control = nuevo_numero
@@ -946,8 +947,8 @@ class GenerarDocumentoAjusteAPIView(APIView):
             observaciones = data.get('observaciones', '')
             tipo_dte = data.get("tipo_documento_seleccionado", None) #BC: obtiene la seleccion del tipo de documento desde la pantalla del sistema
             tipo_item = data.get("tipo_item_select", None)
-            tipo_doc_relacionar = data.get("documento_seleccionado", None)
-            documento_relacionado = data.get("documento_select", None)
+            tipo_doc_relacionar = data.get("documento_seleccionado", [])
+            documento_relacionado = data.get("documento_select", [])
             porcentaje_descuento = data.get("descuento_select", None)
             if porcentaje_descuento:
                 porcentaje_descuento_item = Decimal(porcentaje_descuento.replace(",", "."))
@@ -1222,6 +1223,8 @@ class GenerarDocumentoAjusteAPIView(APIView):
                         
                 print("-N° items: ", idx)
                 print("-Base imponible: ", base_imponible_checkbox)
+                
+                print("-Codigo generacion factura: ", det.factura.codigo_generacion)
                 #Items permitidos 2000
                 if idx > items_permitidos:
                     return Response({"error": "Cantidad máxima de ítems permitidos " }, {items_permitidos})
@@ -1244,7 +1247,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
                                 cuerpo_documento_tributos.append({
                                     "numItem": idx+1,
                                     "tipoItem": int(tipo_item_obj.codigo),
-                                    "numeroDocumento": None,
+                                    "numeroDocumento": str(documento_relacionado),
                                     "codigo": str(det.producto.codigo),
                                     "codTributo": codTributo,
                                     "descripcion": str(tributo.descripcion),
@@ -1262,24 +1265,31 @@ class GenerarDocumentoAjusteAPIView(APIView):
                         
                     print(f"Item {idx}: IVA unitario = {iva_unitario}, Total IVA = {total_iva_item}, IVA almacenado = {det.iva_item}")
                     
-                    cuerpo_documento.append({
-                        "numItem": idx,
-                        "tipoItem": int(tipo_item_obj.codigo),
-                        "numeroDocumento": str(documento_relacionado),
-                        "codigo": str(det.producto.codigo),
-                        "codTributo": codTributo,
-                        "descripcion": str(det.producto.descripcion),
-                        "cantidad": float(cantidad), 
-                        "uniMedida": int(unidad_medida_obj.codigo), 
-                        "precioUni": float(precio_neto),
-                        "montoDescu": float(porcentaje_descuento_item.porcentaje),
-                        "ventaNoSuj": float(det.ventas_no_sujetas),
-                        "ventaExenta": float(det.ventas_exentas),
-                        "ventaGravada": float(det.ventas_gravadas),
-                        "tributos": tributos, 
-                        "psv": float(precio_neto), 
-                        "noGravado": float(det.no_gravado),
-                    })
+                    if contingencia:#Detalle contingencia
+                        cuerpo_documento.append({
+                            "noItem": idx,
+                            "tipoDoc": str(det.factura_id.codigo_generacion),
+                            "codigoGeneracion": str(emisor.nombre_razon_social)
+                        })
+                    else:
+                        cuerpo_documento.append({
+                            "numItem": idx,
+                            "tipoItem": int(tipo_item_obj.codigo),
+                            "numeroDocumento": str(documento_relacionado),
+                            "codigo": str(det.producto.codigo),
+                            "codTributo": codTributo,
+                            "descripcion": str(det.producto.descripcion),
+                            "cantidad": float(cantidad), 
+                            "uniMedida": int(unidad_medida_obj.codigo), 
+                            "precioUni": float(precio_neto),
+                            "montoDescu": float(porcentaje_descuento_item.porcentaje),
+                            "ventaNoSuj": float(det.ventas_no_sujetas),
+                            "ventaExenta": float(det.ventas_exentas),
+                            "ventaGravada": float(det.ventas_gravadas),
+                            "tributos": tributos, 
+                            "psv": float(precio_neto), 
+                            "noGravado": float(det.no_gravado),
+                        })
                                         
                     if cuerpo_documento_tributos is None:
                         cuerpo_documento.append(cuerpo_documento_tributos)
@@ -1331,11 +1341,14 @@ class GenerarDocumentoAjusteAPIView(APIView):
                 notificar_respuesta = "Error: Documento a relacionar no encontrado."
             else:
                 notificar_respuesta = "Verifica que el DTE este vigente para poder relacionarlo."
-            
-            factura_json = generar_json(
-                ambiente_obj, tipo_dte_obj, factura, emisor, receptor,
-                cuerpo_documento, observaciones, Decimal(str(total_iva_item)), base_imponible_checkbox, saldo_favor, documentos_relacionados
-            )
+                
+            if contingencia:
+                generar_json_contingencia(emisor, cuerpo_documento)
+            else:
+                factura_json = generar_json(
+                    ambiente_obj, tipo_dte_obj, factura, emisor, receptor,
+                    cuerpo_documento, observaciones, Decimal(str(total_iva_item)), base_imponible_checkbox, saldo_favor, documentos_relacionados, contingencia
+                )
             
             factura.json_original = factura_json
             if formas_pago is not None and formas_pago !=[]:

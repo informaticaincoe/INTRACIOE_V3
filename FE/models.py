@@ -430,4 +430,9 @@ class Token_data(models.Model):
         verbose_name_plural = "Token Data"
         
 
-    
+    class EventoContingencia(models.Model):
+        #Identificacion
+        codigo_generacion = models.UUIDField(default=uuid.uuid4, unique=True)
+        fecha_transmicion = models.DateField(auto_now_add=True, null=True)
+        hora_transmision = models.TimeField(auto_now_add=True, null=True)
+
