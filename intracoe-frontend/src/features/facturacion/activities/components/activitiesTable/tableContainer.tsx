@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { ActivitiesData } from '../../interfaces/activitiesData';
 import { HeaderTable } from '../headerTable/headerTable';
 import { WhiteSectionsPage } from '../../../../../shared/containers/whiteSectionsPage';
 import { getAllActivities } from '../../services/activitiesServices';
@@ -7,6 +6,7 @@ import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import Actions from './actionsTable';
 import 'primereact/resources/themes/lara-light-blue/theme.css';
+import { ActivitiesData } from '../../../../../shared/interfaces/interfaces';
 
 export const TableContainer = () => {
   const [activities, setActivities] = useState<ActivitiesData[]>([]);

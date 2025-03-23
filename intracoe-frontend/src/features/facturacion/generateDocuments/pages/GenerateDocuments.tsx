@@ -2,65 +2,78 @@ import { Divider } from 'primereact/divider';
 import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPage';
 import { Title } from '../../../../shared/text/title';
 import { useEffect, useState } from 'react';
-import { getAllEmpresas } from '../../../bussiness/configBussiness/services/empresaServices';
 import { DatosEmisorCard } from '../components/Shared/datosEmisor/datosEmisorCard';
-import { DropDownTipoDte } from '../components/Shared/configuracionFactura/DropdownTipoDte';
-import { SelectCondicionOperacion } from '../components/Shared/configuracionFactura/selectCondicionOperacion';
-import { SelectModeloFactura } from '../components/Shared/configuracionFactura/selectModeloFactura';
-import { SelectTipoTransmisión } from '../components/Shared/configuracionFactura/selectTipoTransmisión';
-import { CheckBoxVentaTerceros } from '../components/Shared/configuracionFactura/checkboxVentaTerceros';
+import { DropDownTipoDte } from '../components/Shared/configuracionFactura/tipoDocumento/DropdownTipoDte';
+import { SelectCondicionOperacion } from '../components/Shared/configuracionFactura/condicionOperacion/selectCondicionOperacion';
+import { SelectTipoTransmisión } from '../components/Shared/configuracionFactura/tipoTransmision/selectTipoTransmisión';
+import { CheckBoxVentaTerceros } from '../components/Shared/configuracionFactura/ventaTerceros/checkboxVentaTerceros';
 import { IdentifcacionSeccion } from '../components/Shared/identificacion.tsx/identifcacionSeccion';
 import { SelectReceptor } from '../components/Shared/receptor/SelectReceptor';
 import { TablaProductosAgregados } from '../components/FE/productosAgregados/tablaProductosAgregados';
 import { ModalListaProdcutos } from '../components/FE/productosAgregados/modalListaProdcutos';
-import { FormasdePago } from '../components/Shared/configuracionFactura/formasdePago';
-import { ModalListaFacturas } from '../components/Shared/tablaFacturas/modalListaFacturas';
+import { FormasdePagoForm } from '../components/Shared/configuracionFactura/formasDePago/formasdePagoForm';
+import { ModalListaFacturas } from '../components/Shared/tablaFacturasSeleccionar/modalListaFacturas';
 import { TablaProductosFacturaNotasCredito } from '../components/NotaCredito/tablaProductosFacturaNotasCredito';
 import { TablaProductosFacturaNotasDebito } from '../components/NotaDebito/TablaProductosFacturaNotasDebito';
 import { TablaProductosCreditoFiscal } from '../components/CreditoFiscal/TablaProductosCreditoFiscal';
+import { ButtonDocumentosRelacionados } from '../components/Shared/configuracionFactura/documentosRelacionados/ButtonDocumentosRelacionados';
+import { SelectModeloFactura } from '../components/Shared/configuracionFactura/modeloDeFacturacion/selectModeloFactura';
+import { SendFormButton } from '../../../../shared/buttons/sendFormButton';
+import { defaulReceptorData, ReceptorInterface } from '../../../../shared/interfaces/interfaces';
+import { ProductosTabla } from '../components/FE/productosAgregados/productosData';
 
 export const GenerateDocuments = () => {
-  const [emisorData, setEmisorData] = useState({
-    nit: '',
-    nombre: '',
-    telefono: '',
-    email: '',
-    direccion_comercial: '',
-  });
   const [showProductsModal, setShowProductsModal] = useState(false);
   const [showfacturasModal, setShowfacturasModal] = useState(false);
-
+  const [visibleDocumentoRelacionadomodal, setVisibleDocumentoRelacionadomodal] = useState(false);
+  const [condicionDeOperacion, setCondicionDeOperacion] = useState<string>("01") //Id de la condicion de operacion
+  const [receptor, setReceptor] = useState<ReceptorInterface>(defaulReceptorData)
   const [tipoDocumento, setTipoDocumento] = useState<{
     name: string;
-    code: number;
+    code: string;
   }>();
+  const [listProducts, setListProducts] = useState<ProductosTabla[]>([])
 
-  useEffect(() => {
-    fetchEmisarInfo();
-  }, []);
-
-  useEffect(() => {
-    console.log('tipoDocumento', tipoDocumento);
-  }, [tipoDocumento]);
-
-  const fetchEmisarInfo = async () => {
-    try {
-      const response = await getAllEmpresas();
-      setEmisorData({
-        nit: response[0].nit,
-        nombre: response[0].nombre_razon_social,
-        telefono: response[0].telefono,
-        email: response[0].email,
-        direccion_comercial: response[0].direccion_comercial,
-      });
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  let SubTotal = 0
 
   const generarFactura = () => {
-    console.log('enviado');
-  };
+    const data = {
+      "tipo_documento_seleccionado": tipoDocumento?.code,
+      "tipooperacion_id": condicionDeOperacion,
+      "tipomodelo_obj": condicionDeOperacion,
+      "recptor_temp": receptor //TODO: obtener toda la informacion por medio del id
+    }
+    console.log(data)
+  }
+  //************************************/
+  // OBTENCION DE DATOS
+  //************************************/
+  useEffect(() => {
+    console.log("list:", listProducts);
+  }, [listProducts]);
+
+  // useEffect(() => {
+  //   console.log("condicionDeOperacion:", condicionDeOperacion);
+  // }, [condicionDeOperacion]);
+
+  // useEffect(() => {
+  //   console.log('tipoDocumento', tipoDocumento);
+  // }, [tipoDocumento]);
+
+  //************************************/
+  // CONSUMO DE API
+  //************************************/
+
+  {/*******************************/ }
+
+  const CalcularSubTotal =()=>{
+    let aux=0
+    listProducts.forEach((item)=>{
+    aux += item.cantidad * item.precio_unitario
+    })
+
+    return aux
+  }
   return (
     <>
       <Title text="Generar documentos" />
@@ -71,13 +84,7 @@ export const GenerateDocuments = () => {
           <div className="pt2 pb-5">
             <h1 className="text-start text-xl font-bold">Datos del emisor</h1>
             <Divider className="m-0 p-0"></Divider>
-            <DatosEmisorCard
-              nit={emisorData.nit}
-              nombre={emisorData.nombre}
-              telefono={emisorData.telefono}
-              email={emisorData.email}
-              direccion_comercial={emisorData.direccion_comercial}
-            />
+            <DatosEmisorCard />
           </div>
         </>
       </WhiteSectionsPage>
@@ -91,17 +98,17 @@ export const GenerateDocuments = () => {
             </h1>
             <Divider className="m-0 p-0"></Divider>
             <div className="flex flex-col gap-8">
-              <DropDownTipoDte
-                tipoDocumento={tipoDocumento}
-                setTipoDocumento={setTipoDocumento}
-              />
-              <SelectCondicionOperacion />
+              <div className="flex flex-col items-start gap-1">
+                <label className="opacity-70">Tipo de documento</label>
+                <DropDownTipoDte
+                  tipoDocumento={tipoDocumento}
+                  setTipoDocumento={setTipoDocumento}
+                />
+              </div>
+              <SelectCondicionOperacion condicionDeOperacion={condicionDeOperacion} setCondicionDeOperacion={setCondicionDeOperacion} />
               <SelectModeloFactura />
               <SelectTipoTransmisión />
-              {
-                tipoDocumento?.code != 4 &&
-                <FormasdePago />
-              }
+              {tipoDocumento?.code != "04" && <FormasdePagoForm />}
               <CheckBoxVentaTerceros />
             </div>
           </div>
@@ -124,38 +131,42 @@ export const GenerateDocuments = () => {
             Seleccione el receptor
           </h1>
           <Divider className="m-0 p-0"></Divider>
-          <SelectReceptor />
+          <SelectReceptor receptor={receptor} setReceptor={setReceptor} />
         </div>
       </WhiteSectionsPage>
 
-      {/*Seccion productos*/}
+      {/********* Seccion productos *********/}
       {/* Tipo de documento: FE */}
-      {tipoDocumento?.code === 1 && (
+      {tipoDocumento?.code === "01" && (
         <WhiteSectionsPage>
           <div className="pt-2 pb-5">
             <div className="flex justify-between">
               <h1 className="text-start text-xl font-bold">
                 Productos agregados
               </h1>
-              <button
-                className="bg-primary-blue rounded-md px-5 py-3 text-white hover:cursor-pointer"
-                onClick={() => setShowProductsModal(true)}
-              >
-                Añadir producto
-              </button>
+              <span className='flex gap-4'>
+                <ButtonDocumentosRelacionados visible={visibleDocumentoRelacionadomodal} setVisible={setVisibleDocumentoRelacionadomodal} />
+                <SendFormButton
+                  className="bg-primary-blue rounded-md px-5 text-white hover:cursor-pointer text-nowrap"
+                  onClick={() => setShowProductsModal(true)}
+                  text={"Añadir producto"}
+                />
+              </span>
             </div>
-            <Divider className="m-0 p-0"></Divider>
-            <TablaProductosAgregados />
+
+            <Divider className=""></Divider>
+            <TablaProductosAgregados listProducts={listProducts} setListProducts={setListProducts} />
             <ModalListaProdcutos
               visible={showProductsModal}
               setVisible={setShowProductsModal}
+              setListProducts={setListProducts}
             />
           </div>
         </WhiteSectionsPage>
       )}
 
       {/* Tipo de documento: Nota de Creditos */}
-      {tipoDocumento?.code === 4 && (
+      {tipoDocumento?.code === "04" && (
         <WhiteSectionsPage>
           <div className="pt-2 pb-5">
             <div className="flex justify-between">
@@ -180,7 +191,7 @@ export const GenerateDocuments = () => {
       )}
 
       {/* Tipo de documento: Nota de Debito */}
-      {tipoDocumento?.code === 5 && (
+      {tipoDocumento?.code === "05" && (
         <WhiteSectionsPage>
           <div className="pt-2 pb-5">
             <div className="flex justify-between">
@@ -205,7 +216,7 @@ export const GenerateDocuments = () => {
       )}
 
       {/* Tipo de documento: Credito fiscal */}
-      {tipoDocumento?.code === 2 && (
+      {tipoDocumento?.code === "02" && (
         <WhiteSectionsPage>
           <div className="pt-2 pb-5">
             <div className="flex justify-between">
@@ -224,6 +235,7 @@ export const GenerateDocuments = () => {
             <ModalListaProdcutos
               visible={showProductsModal}
               setVisible={setShowProductsModal}
+              setListProducts={setListProducts}
             />
           </div>
         </WhiteSectionsPage>
@@ -238,7 +250,7 @@ export const GenerateDocuments = () => {
           <Divider className="m-0 p-0"></Divider>
           <div className="grid grid-cols-4 gap-4 text-start">
             <p className="opacity-60">SubTotal Neto:</p>
-            <p>$21.24</p>
+            <p>${CalcularSubTotal()}</p>
 
             <p className="opacity-60">Total IVA:</p>
             <p>$2.78</p>
@@ -259,7 +271,7 @@ export const GenerateDocuments = () => {
         <button
           type="button"
           className="bg-primary-yellow mb-5 self-start rounded-md px-5 py-3 text-white hover:cursor-pointer"
-          onClick={generarFactura}
+          onClick={() => generarFactura()}
         >
           Generar factura
         </button>

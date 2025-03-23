@@ -1,18 +1,6 @@
 import { Dropdown } from 'primereact/dropdown';
 import { useEffect, useState } from 'react';
-
-const TipoTransmisionData = [
-  {
-    id: 1,
-    codigo: 1,
-    descripcion: 'Transmisión normal',
-  },
-  {
-    id: 2,
-    codigo: 2,
-    descripcion: 'Transmisión con contingencia',
-  },
-];
+import { getAllTipoTransmision } from '../../../../services/configuracionFactura/configuracionFacturaService';
 
 export const SelectTipoTransmisión = () => {
   const [selectedTipoTransmision, setSelectedTipoTransmision] =
@@ -26,7 +14,8 @@ export const SelectTipoTransmisión = () => {
   }, []);
 
   const fetchTipoDte = async () => {
-    setTipoTransmisionTempLista(TipoTransmisionData);
+    const response = await getAllTipoTransmision()
+    setTipoTransmisionTempLista(response);
   };
 
   return (

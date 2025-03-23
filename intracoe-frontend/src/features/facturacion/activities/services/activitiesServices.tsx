@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ActivitiesDataNew } from '../interfaces/activitiesData';
+import { ActivitiesDataNew } from '../../../../shared/interfaces/interfaces';
 
 const BASEURL = import.meta.env.VITE_URL_BASE;
 
@@ -16,6 +16,7 @@ export const getAllActivities = async () => {
 };
 
 export const createActivity = async (activity: ActivitiesDataNew) => {
+  console.log("activity", activity)
   try {
     const response = await axios.post(`${BASEURL}/actividad/crear/`, activity, {
       headers: {

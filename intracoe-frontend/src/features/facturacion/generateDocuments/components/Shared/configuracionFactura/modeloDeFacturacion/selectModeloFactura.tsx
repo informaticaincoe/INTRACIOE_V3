@@ -1,18 +1,6 @@
 import { Dropdown } from 'primereact/dropdown';
 import { useEffect, useState } from 'react';
-
-const modelosFacturacion = [
-  {
-    id: 1,
-    codigo: 1,
-    descripcion: 'Modelo Facturación diferido',
-  },
-  {
-    id: 2,
-    codigo: 2,
-    descripcion: 'Modelo Facturación previo',
-  },
-];
+import { getAllModelosDeFacturacion } from '../../../../services/configuracionFactura/configuracionFacturaService';
 
 export const SelectModeloFactura = () => {
   const [selectedModeloFacturacion, setSelectedModeloFacturacion] =
@@ -24,16 +12,17 @@ export const SelectModeloFactura = () => {
   }, []);
 
   const fetchTipoDte = async () => {
-    setTipoModeloFacturacion(modelosFacturacion);
+    const response = await getAllModelosDeFacturacion()
+    setTipoModeloFacturacion(response);
   };
 
   return (
     <div className="flex flex-col items-start gap-1">
-      <label htmlFor={selectedModeloFacturacion.id} className="opacity-70">
-        Tipo de documento
+      <label htmlFor={selectedModeloFacturacion.codigo} className="opacity-70">
+        Modelo de facturación {selectedModeloFacturacion.codigo}
       </label>
       <Dropdown
-        id={selectedModeloFacturacion.id}
+        id={selectedModeloFacturacion.codigo}
         value={selectedModeloFacturacion}
         onChange={(e: { value: any }) => setSelectedModeloFacturacion(e.value)}
         options={tipoModeloFacturacion}

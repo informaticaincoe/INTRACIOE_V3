@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { ActivitiesData } from '../../interfaces/activitiesData';
 import { updateActivity } from '../../services/activitiesServices';
 import { Input } from '../../../../../shared/forms/input';
 import { Dialog } from 'primereact/dialog';
+import { ActivitiesData } from '../../../../../shared/interfaces/interfaces';
 
 interface EditModalProps {
   activity: ActivitiesData;
@@ -19,7 +19,8 @@ export const EditModal: React.FC<EditModalProps> = ({
   visible,
   setVisible,
 }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ActivitiesData>({
+    id: activity.id,
     codigo: activity.codigo,
     descripcion: activity.descripcion,
   });
@@ -35,7 +36,7 @@ export const EditModal: React.FC<EditModalProps> = ({
       codigo: formData.codigo,
       descripcion: formData.descripcion,
     };
-    const response = await updateActivity(activity.id, body);
+    const response = await updateActivity(formData.id, body);
     onDelete();
     onClose();
   };
