@@ -56,6 +56,8 @@ from django.views.decorators.http import require_POST
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from django.db.models import Q
+from datetime import date
+from datetime import datetime
 
 FIRMADOR_URL = "http://192.168.2.25:8113/firmardocumento/"
 DJANGO_SERVER_URL = "http://127.0.0.1:8000"
@@ -87,6 +89,7 @@ COD_DOCUMENTO_RELACIONADO_NO_SELEC = "S"
 ID_CONDICION_OPERACION = 2
 RELACIONAR_DOC_FISICO = 1
 RELACIONAR_DOC_ELECTRONICO = 2
+COD_TIPO_CONTINGENCIA = "5"
 
 formas_pago = [] #Asignar formas de pago
 documentos_relacionados = []
@@ -875,7 +878,7 @@ def generar_factura_view(request):
     return JsonResponse({"error": "Método no permitido"}, status=405)
 
 #BC 05/03/2025:
-def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_documento, observaciones, iva_item_total, base_imponible_checkbox, saldo_favor, documentos_relacionados):
+def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_documento, observaciones, iva_item_total, base_imponible_checkbox, saldo_favor, documentos_relacionados, contingencia):
     print("-Inicio llenar json")
     try:
         if saldo_favor is None or saldo_favor == "":
@@ -1065,6 +1068,59 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
             print(f"Error al generar el json de la factura: {e}")
             return JsonResponse({"error": str(e)}, status=400)
 
+def generar_json_contingencia(emisor, detalle):
+    try:
+        ambiente_obj = Ambiente.objects.get(codigo="00")
+        codigo_generacion = str(uuid.uuid4()).upper()
+        
+        evento_contingencia = None
+        json_identificacion = {
+            "version": 3,
+            "ambiente":  str(ambiente_obj.codigo),
+            "codigoGeneracion": str(codigo_generacion),
+            "fTransmision": str(evento_contingencia.fecha_transmicion),
+            "hTransmision": evento_contingencia.hora_emision.strftime('%H:%M:%S')
+        }
+        
+        json_emisor = {
+            "nit": str(emisor.nit),
+            "nombre": str(emisor.nombre_razon_social),
+            "nombreResponsable": str(emisor.nombre_razon_social), #CORREGIR
+            ".tipoDocResponsable ": str(emisor.nombre_razon_social), #CORREGIR
+            "numeroDocResponsable ": str(emisor.nombre_razon_social), #CORREGIR
+            "tipoEstablecimiento": str(emisor.tipoestablecimiento.codigo) if emisor.tipoestablecimiento else "",
+            "codEstableMH": str(emisor.codigo_establecimiento or "M001"),
+            "codPuntoVenta": "0001",
+            "telefono": str(emisor.telefono),
+            "correo": str(emisor.email)
+        }
+        
+        json_motivo = {
+            "fInicio": date.today().strftime('%H:%M:%S'),
+            "fFin":  date.today().strftime('%H:%M:%S'),
+            "hInicio": datetime.now().strftime('%H:%M:%S'), #La estructura de la hora de entrada en contingencia será definida por la Administración Tributaria
+            "hFin": datetime.now().strftime('%H:%M:%S'), #La estructura de la hora de salida en contingencia será definida por la Administración Tributaria
+            "tipoContingencia": None, #CAT-005 Tipo de Contingencia 
+            "motivoContingencia": evento_contingencia.hora_emision.strftime('%H:%M:%S')
+        }
+        
+        #Especifiar motivo de contingencia
+        tipo_contingencia = None
+        if tipo_contingencia is not None and tipo_contingencia == COD_TIPO_CONTINGENCIA:
+            json_motivo["motivoContingencia"] = None #Explicar motivo contingencia
+        else:
+            json_motivo["motivoContingencia"] = None
+        
+        json_completo = {
+            "identificacion": json_identificacion,
+            "emisor": json_emisor,
+            "detalleDTE": detalle,
+            "motivo": json_motivo
+        }
+        
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 @csrf_exempt    
 def invalidacion_dte_view(request, factura_id):
     
@@ -1219,7 +1275,7 @@ def invalidacion_dte_view(request, factura_id):
         codigo_generacion_invalidacion = str(uuid.uuid4()).upper()
         print(f"Error al generar el evento de invalidación: {e}")
         return JsonResponse({"error": str(e)}, status=400)
-    
+            
 #VISTAS PARA FIRMAR Y GENERAR EL SELLO DE RECEPCION CON HACIENDA
 
 @csrf_exempt
@@ -2484,7 +2540,7 @@ def generar_documento_ajuste(request):
                                 cuerpo_documento_tributos.append({
                                     "numItem": idx+1,
                                     "tipoItem": int(tipo_item_obj.codigo),
-                                    "numeroDocumento": None,
+                                    "numeroDocumento": str(documento_relacionado),
                                     "codigo": str(det.producto.codigo),
                                     "codTributo": codTributo,
                                     "descripcion": str(tributo.descripcion),
