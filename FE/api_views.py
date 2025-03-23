@@ -265,6 +265,7 @@ class DepartamentosListAPIView(generics.ListAPIView):
     serializer_class = DepartamentoSerializer
     
 class MunicipioListAPIView(generics.ListAPIView):
+
     serializer_class = MunicipioSerializer
     
     def get_queryset(self):
@@ -272,6 +273,7 @@ class MunicipioListAPIView(generics.ListAPIView):
         departamento_id = self.kwargs['pk']
         # Filtrar los municipios por el departamento
         return Municipio.objects.filter(departamento_id=departamento_id)
+    
 class recptorListAPIView(generics.ListAPIView):
     queryset = Receptor_fe.objects.all()
     serializer_class = ReceptorSerializer
