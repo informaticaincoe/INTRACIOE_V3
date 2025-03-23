@@ -220,7 +220,6 @@ class ActividadEconomicaDeleteAPIView(generics.DestroyAPIView):
 # RECEPTOR
 ######################################################
 
-
 class ObtenerReceptorAPIView(APIView):
     """
     Devuelve los datos de un receptor en formato JSON.
@@ -259,6 +258,7 @@ class AmbientesListAPIView(generics.ListAPIView):
 class TiposEstablecimientosListAPIView(generics.ListAPIView):
     queryset = TiposEstablecimientos.objects.all()
     serializer_class = TiposEstablecimientosSerializer
+
     
 class DepartamentosListAPIView(generics.ListAPIView):
     queryset = Departamento.objects.all()
@@ -296,6 +296,11 @@ class ModeloDeFacturacionListAPIView(generics.ListAPIView):
     queryset = Modelofacturacion.objects.all()
     serializer_class = ModelofacturacionSerializer
     
+class TipoTransmisionListAPIView(generics.ListAPIView):
+    queryset = TipoTransmision.objects.all()
+    serializer_class = TipoTransmisionSerializer
+    
+    
 ######################################################
 # PRODUCTOS Y SERVICIOS
 ######################################################
@@ -303,6 +308,20 @@ class ModeloDeFacturacionListAPIView(generics.ListAPIView):
 class productosListAPIView(generics.ListAPIView):
     queryset = Producto.objects.all()
     serializer_class = ProductoSerializer
+
+class TiposTributosListAPIView(generics.ListAPIView):
+    queryset = TipoTributo.objects.all()
+    serializer_class = TiposTributosSerializer
+    
+class TributoListAPIView(generics.ListAPIView):
+    serializer_class = TributosSerializer
+    
+    def get_queryset(self):
+        # Obtener el id del departamento de la URL
+        tipo_tributo_id = self.kwargs['tipo_valor']
+        # Filtrar los municipios por el departamento
+        return Tributo.objects.filter(tipo_valor=tipo_tributo_id)
+
 ######################################################
 # GENERACION DE DOCUMENTOS ELECTRONICOS
 ######################################################

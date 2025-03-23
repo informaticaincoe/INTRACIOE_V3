@@ -28,11 +28,10 @@ export const FormasdePagoForm = () => {
   });
 
   useEffect(() => {
-    console.log(guardarListAux);
+    // console.log(guardarListAux);s
   }, [formData]);
 
   const handleChange = (e: InputNumberValueChangeEvent) => {
-    console.log(e.target.name, e.target.value);
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
