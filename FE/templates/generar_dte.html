@@ -11,6 +11,22 @@
   table, th, td { border: 1px solid #ccc; }
   th, td { padding: 8px; text-align: center; }
   .resumen { background: #e9ecef; padding: 10px; border-radius: 8px; margin-top: 20px; }
+
+  .subtable-header {
+    background-color: #d9edf7; 
+    text-align: left; 
+    padding: 10px; 
+    border: 2px solid #ccc; 
+    border-radius: 4px;
+  }
+  .subtable-header-content {
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+  }
+  .subtable-info {
+    line-height: 1.4; /* Ajusta la separación de líneas */
+  }
 </style>
 
 <div class="container mt-5">
@@ -154,33 +170,36 @@
         </div>
       </div>
 
-      <!-- Documento a Relacionar -->
-        <div class="form-group">
-          <div class="row">
-            <div class="col-md-5">
-                <label>Tipo de documento a relacionar:</label>
-                <select name="documento_seleccionado" class="form-control" id="documento_select">
-                  <option value="S">Seleccione el tipo de documento a relacionar</option>
-                  {% for tipo in tipoGenDocumentos %}
-                    <option value="{{ tipo.codigo }}">{{ tipo.descripcion }}</option>
-                  {% endfor %}
-              </select>
-              </div>
-              <div class="col-md-4">
-                <label>Documento Relacionado(CCF/CR):</label>
-                {% comment %} <input type="text" name="documento_relacionado" class="form-control" id="documento_relacionado_input"> {% endcomment %}
-                <input type="text" name="documento_relacionado" class="form-control" id="documento_relacionado_input">
-              </div>
-              <div class="col-md-3">
-                <BR/>
-                {% comment %} <button type="button" class="btn btn-secondary" onclick="cargarDocsRelacionados()">Agregar</button> {% endcomment %}
-                <button type="button" class="btn btn-secondary" onclick="cargarFacturaRelacionada()">Agregar</button>
-              </div>
-
-              <p><strong> Total Pagar CCF:</strong> {{ total_pagar_doc_r }}</p>
-
-            </div>
+      <!-- Sección Documento a Relacionar -->
+      <div class="form-group">
+        <div class="row">
+          <div class="col-md-5">
+            <label>Tipo de documento a relacionar:</label>
+            <select name="documento_seleccionado" class="form-control" id="documento_select">
+              <option value="S">Seleccione el tipo de documento a relacionar</option>
+              {% for tipo in tipoGenDocumentos %}
+                <option value="{{ tipo.codigo }}">{{ tipo.descripcion }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <!-- Aquí se mostrará según el tipo relacionado -->
+          <div class="col-md-4" id="div-electronic" style="display: none;">
+            <label>Documento (Electronico):</label>
+            <input type="text" name="documento_relacionado" class="form-control" id="documento_relacionado_input">
+          </div>
+          <div class="col-md-4" id="div-physical" style="display: none;">
+            <label>Documento (Físico):</label>
+            <button type="button" class="btn btn-secondary" onclick="abrirModalDocFisico()">+ Físico</button>
+          </div>
+          <div class="col-md-3">
+            <br/>
+            <button type="button" class="btn btn-secondary" id="btn_add_relacion" onclick="cargarFacturaRelacionada()">Agregar</button>
+          </div>
+          <div class="col-md-12 mt-2">
+            <p><strong>Total Pagar CCF:</strong> {{ total_pagar_doc_r }}</p>
+          </div>
         </div>
+      </div>
       
       <!-- Botón para abrir el modal de productos -->
       <div class="form-section">
@@ -210,6 +229,14 @@
             <!-- Se llenará dinámicamente -->
           </tbody>
         </table>
+      </div>
+
+      <div class="container mt-4">
+        <h4>Facturas Relacionadas</h4>
+        <!-- Contenedor con alto máximo y scroll vertical -->
+        <div id="facturasAccordion" class="accordion" style="max-height: 400px; overflow-y: auto;">
+          <!-- Los ítems del acordeón se agregarán aquí dinámicamente -->
+        </div>
       </div>
       
       <!-- Sección Resumen y Descuento Global -->
@@ -313,6 +340,42 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-primary" onclick="cargarProductosModal(document.getElementById('descuento_select').value)">Cargar Productos</button>
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para Documento Físico -->
+<div class="modal fade" id="modalDocFisico" tabindex="-1" aria-labelledby="modalDocFisicoLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalDocFisicoLabel">Documento Físico</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Campos que se enviarán para el documento físico -->
+        <div class="mb-3">
+          <label for="fisico-numero-control" class="form-label">Número de Control</label>
+          <input type="text" id="fisico-numero-control" class="form-control">
+        </div>
+        <div class="mb-3">
+          <label for="fisico-codigo-generacion" class="form-label">Código de Generación</label>
+          <input type="text" id="fisico-codigo-generacion" class="form-control">
+        </div>
+        <div class="mb-3">
+          <label for="fisico-fecha" class="form-label">Fecha</label>
+          <input type="date" id="fisico-fecha" class="form-control">
+        </div>
+        <div class="mb-3">
+          <label for="fisico-hora" class="form-label">Hora</label>
+          <input type="time" id="fisico-hora" class="form-control">
+        </div>
+        <!-- Puedes agregar más campos si es necesario -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="guardarDocFisico()">Guardar Documento</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
       </div>
     </div>
   </div>
@@ -423,12 +486,37 @@
   </div>
 </div>
 
-<script
-  src="https://code.jquery.com/jquery-3.7.1.js"
-  integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
-  crossorigin="anonymous"></script>
+<!-- Bootstrap 5 y jQuery (si lo usas) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.js"
+        integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
+        crossorigin="anonymous"></script>
 
-<script>
+<script>  
+
+  // Función para abrir el modal de Documento Físico
+  function abrirModalDocFisico() {
+    var modal = new bootstrap.Modal(document.getElementById('modalDocFisico'));
+    modal.show();
+  }
+
+    // Mostrar campo o botón según el tipo de documento relacionado
+    document.getElementById("documento_select").addEventListener("change", function(){
+      if(this.value === "2") { // Electrónico
+        document.getElementById("div-electronic").style.display = "block";
+        document.getElementById("div-physical").style.display = "none";
+        document.getElementById("btn_add_relacion").style.display = "block";
+      } else if(this.value === "1") { // Físico
+        document.getElementById("div-electronic").style.display = "none";
+        document.getElementById("div-physical").style.display = "none";
+        document.getElementById("btn_add_relacion").style.display = "none";
+        abrirModalDocFisico();
+      } else {
+        document.getElementById("div-electronic").style.display = "none";
+        document.getElementById("div-physical").style.display = "none";
+      }
+    });
+
   // Mostrar u ocultar botones de retención según checkbox
   document.getElementById("retencion_iva_checkbox").addEventListener("change", function () {
       document.getElementById("btn-retencion-iva").style.display = this.checked ? "inline-block" : "none";
@@ -457,6 +545,8 @@
     });
     cargarProductosModal(descuento_id)
   });
+
+    
 
   // Función para cargar formas depago desde el modal
   function cargarFormasPagoModal(fpId) {
@@ -579,28 +669,45 @@
       actualizarResumen();
   }
 
-  // Función para actualizar el resumen global
+
+  // Actualiza el resumen global sumando la tabla principal y todas las facturas relacionadas
   function actualizarResumen() {
-      let sumNeto = 0, sumIVA = 0, sumIncl = 0;
-      document.querySelectorAll('#tabla-productos tbody tr').forEach(function(row) {
-          sumNeto += parseFloat(row.querySelector('.total-neto').textContent);
-          sumIVA += parseFloat(row.querySelector('.total-iva').textContent);
-          sumIncl += parseFloat(row.querySelector('.total-incl').textContent);
-      });
-      document.getElementById("subtotal-neto").textContent = sumNeto.toFixed(2);
-      document.getElementById("total-iva").textContent = sumIVA.toFixed(2);
-      document.getElementById("total-incl").textContent = sumIncl.toFixed(2);
-      
-      // Calcular descuento global y total a pagar
-      let descuentoPorc = parseFloat(document.getElementById("descuento-global").value) || 0;
-      let montoDescuento = (sumIncl * descuentoPorc / 100).toFixed(2);
-      let totalPagar = (sumIncl - montoDescuento).toFixed(2);
-
-      document.getElementById("subtotal-neto").textContent = sumNeto.toFixed(2) * descuentoPorc;
-
-      document.getElementById("monto-descuento").textContent = montoDescuento;
-      document.getElementById("total-pagar").textContent = totalPagar;
+    let sumNeto = 0, sumIVA = 0, sumIncl = 0;
+    
+    // Sumar productos de la tabla principal
+    const mainRows = document.querySelectorAll('#tabla-productos tbody tr:not([data-skip-sum])');
+    mainRows.forEach(function(row) {
+      let netoCell = row.querySelector('.total-neto');
+      if (netoCell) {
+        sumNeto += parseFloat(netoCell.textContent) || 0;
+        sumIVA += parseFloat(row.querySelector('.total-iva').textContent) || 0;
+        sumIncl += parseFloat(row.querySelector('.total-incl').textContent) || 0;
+      }
+    });
+    
+    // Sumar productos de las facturas relacionadas en el acordeón
+    const invoiceRows = document.querySelectorAll('#facturasAccordion .accordion-body table tbody tr');
+    invoiceRows.forEach(function(row) {
+      let netoCell = row.querySelector('.total-neto');
+      if (netoCell) {
+        sumNeto += parseFloat(netoCell.textContent) || 0;
+        sumIVA += parseFloat(row.querySelector('.total-iva').textContent) || 0;
+        sumIncl += parseFloat(row.querySelector('.total-incl').textContent) || 0;
+      }
+    });
+    
+    document.getElementById("subtotal-neto").textContent = sumNeto.toFixed(2);
+    document.getElementById("total-iva").textContent = sumIVA.toFixed(2);
+    document.getElementById("total-incl").textContent = sumIncl.toFixed(2);
+    
+    let descuentoPorc = parseFloat(document.getElementById("descuento-global").value) || 0;
+    let montoDescuento = (sumIncl * descuentoPorc / 100).toFixed(2);
+    let totalPagar = (sumIncl - montoDescuento).toFixed(2);
+    
+    document.getElementById("monto-descuento").textContent = montoDescuento;
+    document.getElementById("total-pagar").textContent = totalPagar;
   }
+
 
   function guardarRetencionIVA() {
       $('#retencionIvaModal').modal('hide');
@@ -620,8 +727,6 @@
       });
       // Agregar el valor del select "tipo_documento"
       jsonData["tipo_documento_select"] = document.querySelector('select[name="tipo_documento_seleccionado"]').value;
-
-      
 
       // Agregar el valor del tipo de documento a relacionar
       jsonData["documento_select"] = document.querySelector('select[name="documento_seleccionado"]').value;
@@ -730,55 +835,67 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 
-
-  // Función para cargar la factura relacionada y sus productos en una subtabla
-  function cargarFacturaRelacionada() {
-    const codigoGeneracion = document.getElementById('documento_relacionado_input').value.trim();
-    if (!codigoGeneracion) {
-      alert("Por favor, ingresa el código de generación.");
-      return;
-    }
-    fetch(`/fe/documento-relacionado/?codigo_generacion=${codigoGeneracion}`)
-      .then(response => response.json())
-      .then(data => {
-        if(data.error){
-          alert(data.error);
-          return;
-        }
-        // Se espera que 'data' incluya: codigo_generacion, fecha_emision, total y un array "productos"
-        agregarFacturaFilaTabla(data);
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert("Error al obtener la factura.");
-      });
+// Función para cargar la factura relacionada y sus productos en una subtabla
+function cargarFacturaRelacionada() {
+  const codigoGeneracion = document.getElementById('documento_relacionado_input').value.trim();
+  if (!codigoGeneracion) {
+    alert("Por favor, ingresa el código de generación.");
+    return;
   }
+  fetch(`/fe/documento-relacionado/?codigo_generacion=${codigoGeneracion}`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.error) {
+        alert(data.error);
+        return;
+      }
+      console.log("Factura recibida:", data);
+      agregarFacturaAccordion(data);
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert("Error al obtener la factura.");
+    });
+    actualizarResumen();
+}
 
-  // Función que agrega dos filas a la tabla de productos:
-  // - Una fila con el encabezado de la factura relacionada.
-  // - Otra fila con una subtabla para listar los productos.
-  function agregarFacturaFilaTabla(factura) {
-    var tableBody = document.querySelector('#tabla-productos tbody');
+function agregarFacturaAccordion(factura) {
+  const facturaId = factura.codigo_generacion; // Se asume que es único
+  const accordion = document.getElementById('facturasAccordion');
 
-    // Fila de encabezado de la factura relacionada
-    var headerRow = document.createElement('tr');
-    headerRow.innerHTML = `
-      <td colspan="9" style="background-color: #d9edf7; text-align: left;">
-        <strong>Factura relacionada:</strong> ${factura.codigo_generacion} || Fecha emisión: ${factura.fecha_emision} || Total: ${factura.total}
-        <button type="button" class="btn btn-danger btn-sm" onclick="eliminarFacturaRelacionada(this)">Eliminar factura</button>
-      </td>
-    `;
-    tableBody.appendChild(headerRow);
+  const accordionItem = document.createElement('div');
+  accordionItem.classList.add('accordion-item');
+  accordionItem.setAttribute('data-factura-id', facturaId);
 
-    // Fila que contendrá la subtabla
-    var subtableRow = document.createElement('tr');
-    var td = document.createElement('td');
-    td.setAttribute('colspan', '9');
+  accordionItem.innerHTML = `
+    <h2 class="accordion-header" id="heading-${facturaId}">
+      <div class="d-flex justify-content-between align-items-center w-100">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${facturaId}" aria-expanded="false" aria-controls="collapse-${facturaId}">
+          Factura: ${factura.codigo_generacion} | Fecha: ${factura.fecha_emision} | Total: ${factura.total}
+        </button>
+        <button type="button" class="btn btn-danger btn-sm ms-2" onclick="eliminarFacturaAccordion('${facturaId}')">
+          Eliminar
+        </button>
+      </div>
+    </h2>
+    <div id="collapse-${facturaId}" class="accordion-collapse collapse" aria-labelledby="heading-${facturaId}" data-bs-parent="#facturasAccordion">
+      <div class="accordion-body">
+        ${crearTablaDetalles(factura.detalles)}
+      </div>
+    </div>
+  `;
 
-    // Creación de la subtabla
-    var nestedTable = document.createElement('table');
-    nestedTable.classList.add('table', 'table-bordered');
-    nestedTable.innerHTML = `
+  accordion.appendChild(accordionItem);
+  actualizarResumen();
+}
+
+ // Genera la tabla de detalles (productos) para una factura
+ function crearTablaDetalles(detalles) {
+  // Filtra detalles que no sean productos reales (si hay alguna línea TOTAL, por ejemplo)
+  let detallesFiltrados = detalles.filter(item => !item.producto.toUpperCase().includes("TOTAL"));
+  
+  let tablaHTML = `
+    <table class="table table-bordered">
       <thead>
         <tr>
           <th>Producto</th>
@@ -793,76 +910,130 @@ document.addEventListener('DOMContentLoaded', function () {
         </tr>
       </thead>
       <tbody>
+  `;
+  detallesFiltrados.forEach(function(prod) {
+    // Suponemos que el precio_unitario incluye IVA a 13%
+    let precioIncl = parseFloat(prod.precio_unitario);
+    let neto = precioIncl / 1.13;
+    let iva = precioIncl - neto;
+    let cantidad = parseFloat(prod.cantidad);
+    let totalNeto = neto * cantidad;
+    let totalIVA = iva * cantidad;
+    let totalIncl = precioIncl * cantidad;
+    
+    tablaHTML += `
+      <tr data-id="${prod.id}">
+        <td>${prod.producto}</td>
+        <td>${neto.toFixed(2)}</td>
+        <td>${iva.toFixed(2)}</td>
+        <td>
+          <input type="number" class="form-control form-control-sm cantidad-input-invoice" value="${cantidad}" min="1" onchange="actualizarFilaInvoice(this)">
+        </td>
+        <td class="total-neto">${totalNeto.toFixed(2)}</td>
+        <td class="total-iva">${totalIVA.toFixed(2)}</td>
+        <td class="total-incl">${totalIncl.toFixed(2)}</td>
+        <td>${prod.descuento || ''}</td>
+        <td>
+          <button type="button" class="btn btn-danger btn-sm" onclick="eliminarProductoInvoice(this)">Eliminar</button>
+        </td>
+      </tr>
+    `;
+  });
+  tablaHTML += `
       </tbody>
-    `;
-    td.appendChild(nestedTable);
-    subtableRow.appendChild(td);
-    tableBody.appendChild(subtableRow);
+    </table>
+  `;
+  return tablaHTML;
+  actualizarResumen();
+}
 
-    // Agregar cada producto de la factura a la subtabla
-    if (factura.detalles && factura.detalles.length > 0) {
-      factura.detalles.forEach(function(producto) {
-        agregarProductoAFacturaSubtabla(nestedTable.querySelector('tbody'), producto);
-      });
-    }
-  }
-
-  // Función para agregar cada producto a la subtabla.
-  // Se incluye un input para modificar la cantidad y un botón para eliminar el producto.
-  function agregarProductoAFacturaSubtabla(tbody, producto) {
-    let precio_incl = parseFloat(producto.precio_unitario);
-    let neto_unitario = parseFloat((precio_incl / 1.13).toFixed(2));
-    let iva_unitario = parseFloat((precio_incl - neto_unitario).toFixed(2));
-    let qty = parseFloat(producto.cantidad);
-    let total_neto = parseFloat((neto_unitario * qty).toFixed(2));
-    let total_iva = parseFloat((iva_unitario * qty).toFixed(2));
-    let total_incl = parseFloat((precio_incl * qty).toFixed(2));
+// Actualiza una fila de la factura en el acordeón cuando cambia la cantidad
+function actualizarFilaInvoice(input) {
+  let row = input.closest('tr');
+  let precioUnitario = parseFloat(row.cells[1].textContent);
+  let ivaUnitario = parseFloat(row.cells[2].textContent);
+  let cantidad = parseFloat(input.value) || 0;
   
-    var row = document.createElement('tr');
-    row.setAttribute('data-id', producto.id);
-    row.innerHTML = `
-      <td>${producto.producto}</td>
-      <td class="precio-neto">${neto_unitario.toFixed(2)}</td>
-      <td class="iva-unitario">${iva_unitario.toFixed(2)}</td>
-      <td><input type="number" class="cantidad-input" value="${qty}" min="1" oninput="actualizarFilaSubtabla(this)"></td>
-      <td class="total-neto">${total_neto.toFixed(2)}</td>
-      <td class="total-iva">${total_iva.toFixed(2)}</td>
-      <td class="total-incl">${total_incl.toFixed(2)}</td>
-      <td class="descuento_select">${producto.descuento || ''}</td>
-      <td><button type="button" class="btn btn-danger btn-sm" onclick="eliminarProductoSubtabla(this)">Eliminar</button></td>
+  let totalNeto = precioUnitario * cantidad;
+  let totalIVA = ivaUnitario * cantidad;
+  let totalIncl = (precioUnitario + ivaUnitario) * cantidad;
+  
+  row.querySelector('.total-neto').textContent = totalNeto.toFixed(2);
+  row.querySelector('.total-iva').textContent = totalIVA.toFixed(2);
+  row.querySelector('.total-incl').textContent = totalIncl.toFixed(2);
+  
+  actualizarResumen();
+}
+
+// Elimina un producto dentro de la factura (acordeón)
+function eliminarProductoInvoice(btn) {
+  let row = btn.closest('tr');
+  row.parentNode.removeChild(row);
+  actualizarResumen();
+}
+
+// Función para eliminar un ítem del acordeón (la factura relacionada)
+function eliminarFacturaAccordion(facturaId) {
+  const accordion = document.getElementById('facturasAccordion');
+  const item = accordion.querySelector(`[data-factura-id="${facturaId}"]`);
+  if (item) {
+    accordion.removeChild(item);
+    actualizarResumen();
+  }
+}
+
+  // Función para guardar el Documento Físico y agregarlo al acordeón
+  function guardarDocFisico() {
+    const docFisico = {
+      numero_control: document.getElementById('fisico-numero-control').value,
+      codigo_generacion: document.getElementById('fisico-codigo-generacion').value,
+      fecha: document.getElementById('fisico-fecha').value,
+      hora: document.getElementById('fisico-hora').value,
+      // Aquí puedes agregar otros campos que necesites
+      total: "0.00", // Si tienes cálculo para total, ajústalo aquí
+      detalles: []   // Si hay detalles predefinidos o se ingresan luego, puedes dejarlo vacío
+    };
+    console.log("Documento físico guardado:", docFisico);
+    agregarFacturaAccordionFisica(docFisico);
+    var myModalEl = document.getElementById('modalDocFisico');
+    var modalInstance = bootstrap.Modal.getInstance(myModalEl);
+    modalInstance.hide();
+  }
+
+  // Agrega el documento físico al acordeón
+  function agregarFacturaAccordionFisica(doc) {
+    const docId = doc.codigo_generacion;
+    const accordion = document.getElementById('facturasAccordion');
+
+    const accordionItem = document.createElement('div');
+    accordionItem.classList.add('accordion-item');
+    accordionItem.setAttribute('data-factura-id', docId);
+
+    accordionItem.innerHTML = `
+      <h2 class="accordion-header" id="heading-${docId}">
+        <div class="d-flex justify-content-between align-items-center w-100">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${docId}" aria-expanded="false" aria-controls="collapse-${docId}">
+            Documento Físico: ${doc.codigo_generacion} | Fecha: ${doc.fecha} | Total: ${doc.total}
+          </button>
+          <button type="button" class="btn btn-danger btn-sm ms-2" onclick="eliminarFacturaAccordion('${docId}')">
+            Eliminar
+          </button>
+        </div>
+      </h2>
+      <div id="collapse-${docId}" class="accordion-collapse collapse" aria-labelledby="heading-${docId}" data-bs-parent="#facturasAccordion">
+        <div class="accordion-body">
+          ${crearTablaDetalles(doc.detalles)}
+        </div>
+      </div>
     `;
-    tbody.appendChild(row);
+    accordion.appendChild(accordionItem);
+    actualizarResumen();
   }
 
-  // Actualiza la fila de la subtabla al cambiar la cantidad
-  function actualizarFilaSubtabla(input) {
-    let row = input.closest('tr');
-    let precio_neto = parseFloat(row.querySelector('.precio-neto').textContent);
-    let iva_unitario = parseFloat(row.querySelector('.iva-unitario').textContent);
-    let cantidad = parseFloat(input.value) || 0;
-    row.querySelector('.total-neto').textContent = (precio_neto * cantidad).toFixed(2);
-    row.querySelector('.total-iva').textContent = (iva_unitario * cantidad).toFixed(2);
-    row.querySelector('.total-incl').textContent = ((precio_neto + iva_unitario) * cantidad).toFixed(2);
-    // Aquí podrías actualizar un resumen global si fuese necesario
-  }
-
-  // Elimina un producto de la subtabla
-  function eliminarProductoSubtabla(btn) {
-    let row = btn.closest('tr');
-    row.parentNode.removeChild(row);
-  }
-
-  // Elimina la factura relacionada completa (encabezado y subtabla)
-  function eliminarFacturaRelacionada(btn) {
-    let headerRow = btn.closest('tr');
-    let tableBody = headerRow.parentNode;
-    let nextRow = headerRow.nextElementSibling;
-    tableBody.removeChild(headerRow);
-    if (nextRow) {
-      tableBody.removeChild(nextRow);
-    }
-  }
-
+// Llamamos a actualizarResumen() al cargar la página para inicializar el resumen
+document.addEventListener('DOMContentLoaded', function () {
+  actualizarResumen();
+});
 
 </script>
 {% endblock %}
