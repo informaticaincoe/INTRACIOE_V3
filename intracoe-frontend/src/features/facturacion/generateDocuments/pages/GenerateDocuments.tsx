@@ -1,7 +1,7 @@
 import { Divider } from 'primereact/divider';
 import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPage';
 import { Title } from '../../../../shared/text/title';
-import { useEffect, useState } from 'react';
+import { SetStateAction, useEffect, useState } from 'react';
 import { DatosEmisorCard } from '../components/Shared/datosEmisor/datosEmisorCard';
 import { DropDownTipoDte } from '../components/Shared/configuracionFactura/tipoDocumento/DropdownTipoDte';
 import { SelectCondicionOperacion } from '../components/Shared/configuracionFactura/condicionOperacion/selectCondicionOperacion';
@@ -19,9 +19,10 @@ import { TablaProductosCreditoFiscal } from '../components/CreditoFiscal/TablaPr
 import { ButtonDocumentosRelacionados } from '../components/Shared/configuracionFactura/documentosRelacionados/ButtonDocumentosRelacionados';
 import { SelectModeloFactura } from '../components/Shared/configuracionFactura/modeloDeFacturacion/selectModeloFactura';
 import { SendFormButton } from '../../../../shared/buttons/sendFormButton';
-import { defaulReceptorData, ReceptorInterface } from '../../../../shared/interfaces/interfaces';
+import { defaulReceptorData, defaultEmisorData, EmisorInterface, ReceptorInterface } from '../../../../shared/interfaces/interfaces';
 import { ProductosTabla } from '../components/FE/productosAgregados/productosData';
 import { ResumenTotalesCard } from '../components/Shared/resumenTotales/resumenTotalesCard';
+import { FormItemStatusContextProps } from 'antd/es/form/context';
 
 export const GenerateDocuments = () => {
   const [showProductsModal, setShowProductsModal] = useState(false);
@@ -29,20 +30,39 @@ export const GenerateDocuments = () => {
   const [visibleDocumentoRelacionadomodal, setVisibleDocumentoRelacionadomodal] = useState(false);
   const [condicionDeOperacion, setCondicionDeOperacion] = useState<string>("01") //Id de la condicion de operacion
   const [receptor, setReceptor] = useState<ReceptorInterface>(defaulReceptorData)
-  const [tipoDocumento, setTipoDocumento] = useState<{
-    name: string;
-    code: string;
-  }>();
+  const [emisorData, setEmisorData] = useState<EmisorInterface>(defaultEmisorData);
+  const [tipoDocumento, setTipoDocumento] = useState<{ name: string; code: string; }>({ name: "Factura", code: "01" });
   const [listProducts, setListProducts] = useState<ProductosTabla[]>([])
-
-  let SubTotal = 0
+  // const [idListProducts, setIdListProducts] = useState<number[]>([])
+  const [formasPagoList, setFormasPagoList] = useState<any[]>([])
 
   const generarFactura = () => {
     const data = {
+      //Datos del receptor
+      "receptor_id": receptor.id,
+      "nit_receptor": receptor.num_documento,
+      "nombre_receptor": receptor.nombre,
+      "direccion_receptor": receptor.direccion,
+      "telefono_receptor": receptor.telefono,
+      "correo_receptor": receptor.correo,
+      //configuracion factura
       "tipo_documento_seleccionado": tipoDocumento?.code,
-      "tipooperacion_id": condicionDeOperacion,
-      "tipomodelo_obj": condicionDeOperacion,
-      "recptor_temp": receptor //TODO: obtener toda la informacion por medio del id
+      "tipo_item_select": "1", //TODO: obtener segun la lista de productos de forma dinamica
+      "condicion_operacion": condicionDeOperacion,
+      //prodcutos
+      "producto_id": listProducts,
+      //documentos relacionados
+      "documento_seleccionado": "",
+      //descuento
+      "descuento_select": null,
+      "porcentaje_descuento_item": "0.00",
+      "retencion_iva": false,
+      "porcentaje_retencion_iva":0.00,
+      "retencion_renta": false,
+      "porcentaje_retencion_renta":0.00,
+      //tipos de pago
+      "fp_id": formasPagoList
+
     }
     console.log(data)
   }
@@ -50,8 +70,8 @@ export const GenerateDocuments = () => {
   // OBTENCION DE DATOS
   //************************************/
   useEffect(() => {
-    console.log("list:", listProducts);
-  }, [listProducts]);
+    console.log("formasPagoListmain ", formasPagoList)
+  }, [formasPagoList]);
 
   // useEffect(() => {
   //   console.log("condicionDeOperacion:", condicionDeOperacion);
@@ -78,7 +98,7 @@ export const GenerateDocuments = () => {
           <div className="pt2 pb-5">
             <h1 className="text-start text-xl font-bold">Datos del emisor</h1>
             <Divider className="m-0 p-0"></Divider>
-            <DatosEmisorCard />
+            <DatosEmisorCard emisorData={emisorData} setEmisorData={setEmisorData} />
           </div>
         </>
       </WhiteSectionsPage>
@@ -102,7 +122,6 @@ export const GenerateDocuments = () => {
               <SelectCondicionOperacion condicionDeOperacion={condicionDeOperacion} setCondicionDeOperacion={setCondicionDeOperacion} />
               <SelectModeloFactura />
               <SelectTipoTransmisión />
-              {tipoDocumento?.code != "04" && <FormasdePagoForm />}
               <CheckBoxVentaTerceros />
             </div>
           </div>
@@ -114,7 +133,7 @@ export const GenerateDocuments = () => {
         <div className="pt2 pb-5">
           <h1 className="text-start text-xl font-bold">Identificación</h1>
           <Divider className="m-0 p-0"></Divider>
-          <IdentifcacionSeccion />
+          <IdentifcacionSeccion tipoDocumento={tipoDocumento.code} tipoEstablecimiento={emisorData.tipo_establecimiento_codigo} puntoVenta={emisorData.codigo_punto_venta} />
         </div>
       </WhiteSectionsPage>
 
@@ -155,6 +174,8 @@ export const GenerateDocuments = () => {
               setVisible={setShowProductsModal}
               setListProducts={setListProducts}
             />
+              <FormasdePagoForm formasPagoList={formasPagoList} setFormasPagoList={setFormasPagoList} />
+
           </div>
         </WhiteSectionsPage>
       )}
@@ -242,7 +263,7 @@ export const GenerateDocuments = () => {
             <h1 className="text-start text-xl font-bold">Resumen de totales</h1>
           </div>
           <Divider className="m-0 p-0"></Divider>
-          <ResumenTotalesCard listProducts={listProducts}/>
+          <ResumenTotalesCard listProducts={listProducts} />
         </div>
       </WhiteSectionsPage>
 

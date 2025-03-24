@@ -45,8 +45,11 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
         total_iva: 0,
         total_con_iva: 0,
         iva_percibido: 0,
+        total_tributos: 0,
         seleccionar: false,
       }));
+
+      console.log("productos", productos)
  
       setProducts(productos)
     } catch (error) {

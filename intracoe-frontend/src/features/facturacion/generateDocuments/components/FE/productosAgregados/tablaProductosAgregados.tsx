@@ -1,7 +1,7 @@
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import React, { useEffect, useState } from 'react';
-import { productosData, ProductosTabla } from './productosData';
+import { ProductosTabla } from './productosData';
 import {
   InputNumber,
   InputNumberValueChangeEvent,
@@ -53,7 +53,7 @@ export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = (
   };
 
   const handleDelete = () => {
-    console.log(selectedProducts);
+    console.log("selectedProducts", selectedProducts);
     setVisibleDeleteModal(true);
   };
 
@@ -67,13 +67,18 @@ export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = (
   }
 
   const handlerEliminarItem = () => {
+    // Filtrar los productos que NO están seleccionados
     const filterList = listProducts.filter(product => {
-      selectedProducts.forEach((item) => product.id != item.id)
-    }
-    ) //lista actualizada
-    setListProducts(filterList)
-    setSelectedProducts([])
+      // Verificar si el producto no está en selectedProducts
+      return !selectedProducts.some(item => product.id === item.id);
+    });
+  
+    console.log("filterList", filterList);
+    setListProducts(filterList); // Actualizar la lista de productos
+    setSelectedProducts([]); // Limpiar los productos seleccionados
+    setVisibleDeleteModal(false);
   }
+  
 
   return (
     <>
@@ -176,7 +181,7 @@ export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = (
           )}
         />
         <Column
-          body={(rowData: ProductosTabla) => <p>$ {rowData.total_neto}</p>}
+          body={(rowData: ProductosTabla) => <p>$ {rowData.total_tributos}</p>}
           header={<p className="text-sm uppercase">TOTAL tributos</p>}
         ></Column>
         <Column
