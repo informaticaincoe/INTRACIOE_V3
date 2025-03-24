@@ -315,7 +315,7 @@ class TiposTributosListAPIView(generics.ListAPIView):
     queryset = TipoTributo.objects.all()
     serializer_class = TiposTributosSerializer
     
-class TributoListAPIView(generics.ListAPIView):
+class TributoByTipoListAPIView(generics.ListAPIView):
     serializer_class = TributosSerializer
     
     def get_queryset(self):
@@ -323,6 +323,10 @@ class TributoListAPIView(generics.ListAPIView):
         tipo_tributo_id = self.kwargs['tipo_valor']
         # Filtrar los municipios por el departamento
         return Tributo.objects.filter(tipo_valor=tipo_tributo_id)
+
+class TributoDetailsAPIView(generics.RetrieveAPIView):
+    queryset = Tributo.objects.all()
+    serializer_class = TributosSerializer
 
 ######################################################
 # GENERACION DE DOCUMENTOS ELECTRONICOS
