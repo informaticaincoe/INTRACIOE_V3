@@ -492,7 +492,9 @@
         integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
         crossorigin="anonymous"></script>
 
-<script>  
+<script>
+
+  var facturasRelacionadas = [];
 
   // Función para abrir el modal de Documento Físico
   function abrirModalDocFisico() {
@@ -774,6 +776,9 @@
       jsonData["productos_retencion_renta"] = retencionRentaProducts;
 
       jsonData["no_gravado"] = document.getElementById("no_gravado_checkbox").checked;
+
+      // Aquí incluimos el arreglo de facturas relacionadas
+      jsonData["facturas_relacionadas"] = facturasRelacionadas;
       
       try {
           let response = await fetch('/fe/generar/', {
@@ -859,35 +864,39 @@ function cargarFacturaRelacionada() {
     actualizarResumen();
 }
 
-function agregarFacturaAccordion(factura) {
-  const facturaId = factura.codigo_generacion; // Se asume que es único
-  const accordion = document.getElementById('facturasAccordion');
+  // Función para agregar una factura electrónica al acordeón y al arreglo global
+  function agregarFacturaAccordion(factura) {
+    const facturaId = factura.codigo_generacion;
+    const accordion = document.getElementById('facturasAccordion');
 
-  const accordionItem = document.createElement('div');
-  accordionItem.classList.add('accordion-item');
-  accordionItem.setAttribute('data-factura-id', facturaId);
+    const accordionItem = document.createElement('div');
+    accordionItem.classList.add('accordion-item');
+    accordionItem.setAttribute('data-factura-id', facturaId);
 
-  accordionItem.innerHTML = `
-    <h2 class="accordion-header" id="heading-${facturaId}">
-      <div class="d-flex justify-content-between align-items-center w-100">
-        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${facturaId}" aria-expanded="false" aria-controls="collapse-${facturaId}">
-          Factura: ${factura.codigo_generacion} | Fecha: ${factura.fecha_emision} | Total: ${factura.total}
-        </button>
-        <button type="button" class="btn btn-danger btn-sm ms-2" onclick="eliminarFacturaAccordion('${facturaId}')">
-          Eliminar
-        </button>
+    accordionItem.innerHTML = `
+      <h2 class="accordion-header" id="heading-${facturaId}">
+        <div class="d-flex justify-content-between align-items-center w-100">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${facturaId}" aria-expanded="false" aria-controls="collapse-${facturaId}">
+            Factura: ${factura.codigo_generacion} | Fecha: ${factura.fecha_emision} | Total: ${factura.total}
+          </button>
+          <button type="button" class="btn btn-danger btn-sm ms-2" onclick="eliminarFacturaAccordion('${facturaId}')">
+            Eliminar
+          </button>
+        </div>
+      </h2>
+      <div id="collapse-${facturaId}" class="accordion-collapse collapse" aria-labelledby="heading-${facturaId}" data-bs-parent="#facturasAccordion">
+        <div class="accordion-body">
+          ${crearTablaDetalles(factura.detalles)}
+        </div>
       </div>
-    </h2>
-    <div id="collapse-${facturaId}" class="accordion-collapse collapse" aria-labelledby="heading-${facturaId}" data-bs-parent="#facturasAccordion">
-      <div class="accordion-body">
-        ${crearTablaDetalles(factura.detalles)}
-      </div>
-    </div>
-  `;
+    `;
 
-  accordion.appendChild(accordionItem);
-  actualizarResumen();
-}
+    accordion.appendChild(accordionItem);
+    actualizarResumen();
+    // Agregamos la factura al arreglo global
+    facturasRelacionadas.push(factura);
+  }
+
 
  // Genera la tabla de detalles (productos) para una factura
  function crearTablaDetalles(detalles) {
@@ -980,6 +989,11 @@ function eliminarFacturaAccordion(facturaId) {
     accordion.removeChild(item);
     actualizarResumen();
   }
+
+  // Quitar del arreglo global
+  facturasRelacionadas = facturasRelacionadas.filter(function(factura) {
+    return factura.codigo_generacion !== facturaId;
+  });
 }
 
   // Función para guardar el Documento Físico y agregarlo al acordeón
@@ -1028,11 +1042,17 @@ function eliminarFacturaAccordion(facturaId) {
     `;
     accordion.appendChild(accordionItem);
     actualizarResumen();
+
+    // Agregamos la factura al arreglo global
+  facturasRelacionadas.push(factura);
   }
 
 // Llamamos a actualizarResumen() al cargar la página para inicializar el resumen
 document.addEventListener('DOMContentLoaded', function () {
   actualizarResumen();
+
+  // Agregamos el documento físico al arreglo global
+  facturasRelacionadas.push(doc);
 });
 
 </script>
