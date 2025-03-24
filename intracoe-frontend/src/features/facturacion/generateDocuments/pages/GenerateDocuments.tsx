@@ -21,6 +21,7 @@ import { SelectModeloFactura } from '../components/Shared/configuracionFactura/m
 import { SendFormButton } from '../../../../shared/buttons/sendFormButton';
 import { defaulReceptorData, ReceptorInterface } from '../../../../shared/interfaces/interfaces';
 import { ProductosTabla } from '../components/FE/productosAgregados/productosData';
+import { ResumenTotalesCard } from '../components/Shared/resumenTotales/resumenTotalesCard';
 
 export const GenerateDocuments = () => {
   const [showProductsModal, setShowProductsModal] = useState(false);
@@ -66,14 +67,7 @@ export const GenerateDocuments = () => {
 
   {/*******************************/ }
 
-  const CalcularSubTotal =()=>{
-    let aux=0
-    listProducts.forEach((item)=>{
-    aux += item.cantidad * item.precio_unitario
-    })
 
-    return aux
-  }
   return (
     <>
       <Title text="Generar documentos" />
@@ -248,22 +242,7 @@ export const GenerateDocuments = () => {
             <h1 className="text-start text-xl font-bold">Resumen de totales</h1>
           </div>
           <Divider className="m-0 p-0"></Divider>
-          <div className="grid grid-cols-4 gap-4 text-start">
-            <p className="opacity-60">SubTotal Neto:</p>
-            <p>${CalcularSubTotal()}</p>
-
-            <p className="opacity-60">Total IVA:</p>
-            <p>$2.78</p>
-
-            <p className="opacity-60">Total con IVA:</p>
-            <p>$21.24</p>
-
-            <p className="opacity-60">Monto descuento:</p>
-            <p>$0.0</p>
-
-            <p>Total a pagar:</p>
-            <p>$21.60</p>
-          </div>
+          <ResumenTotalesCard listProducts={listProducts}/>
         </div>
       </WhiteSectionsPage>
 

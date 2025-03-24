@@ -319,8 +319,8 @@ class FacturaElectronica(models.Model):
     sello_recepcion = models.CharField(max_length=255, blank=True, null=True)
     recibido_mh = models.BooleanField(default=False)
     estado = models.BooleanField(default=False)
-    tipo_documento_relacionar = models.CharField(max_length=50, null=True, blank=True)#Identificar si el documento es Fisico(F) o Electronico(E)
-    documento_relacionado = models.CharField(max_length=100, null=True, blank=True)#Agregar el documento relacionado
+    #tipo_documento_relacionar = models.CharField(max_length=50, null=True, blank=True)#Identificar si el documento es Fisico(F) o Electronico(E)
+    #documento_relacionado = models.CharField(max_length=100, null=True, blank=True)#Agregar el documento relacionado
     base_imponible = models.BooleanField(default=False)
     
     def save(self, *args, **kwargs):
@@ -349,6 +349,8 @@ class DetalleFactura(models.Model):
     descuento = models.ForeignKey(Descuento, on_delete=models.SET_NULL, null=True, blank=True)
     #iva_item = models.DecimalField(max_digits=10, decimal_places=2, blank=True, editable=False,help_text="IVA calculado (por ejemplo, 13% sobre el total sin IVA)")
     saldo_favor = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    tipo_documento_relacionar = models.CharField(max_length=50, null=True, blank=True)#Identificar si el documento es Fisico(F) o Electronico(E)
+    documento_relacionado = models.CharField(max_length=100, null=True, blank=True)#Agregar el documento relacionado
     # def save(self, *args, **kwargs):
     #     # Calcular el total sin IVA
     #     self.total_sin_iva = (self.cantidad * self.precio_unitario) - self.descuento
