@@ -10,8 +10,6 @@ import {
 import { plazosListTemp } from '../plazos';
 import styles from './formasDePagoCustom.module.css';
 import { getAllMetodosDePago } from '../../../../services/configuracionFactura/configuracionFacturaService';
-import { Chip } from 'primereact/chip';
-import { Card } from 'antd';
 import { InputText } from 'primereact/inputtext';
 import { FaXmark } from "react-icons/fa6";
 
@@ -37,13 +35,12 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({ formasPagoLi
   });
 
   useEffect(()=>{
-    setFormasPagoList(infoPagoLista)
+    const aux = 
+    infoPagoLista.map(pago=>{
+      return pago.codigo
+    })
+    setFormasPagoList(aux)
   },[infoPagoLista])
-
-  // useEffect(() => {
-  //   console.log("infoPagoLista", infoPagoLista);
-  //   formasPagoList
-  // }, [infoPagoLista]);
 
   useEffect(() => {
     fetchFormasDePagoList();
@@ -198,7 +195,7 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({ formasPagoLi
                   </span>
                 </div>
                 {infoPagoLista && infoPagoLista.length > 0 && (
-                  <div className="grid grid-cols-2 gap-5 auto-rows-min">
+                  <div className="grid grid-cols-2 gap-5 auto-rows-min" key={new Date().getTime()}>
                     {infoPagoLista.map((pago, index) => {
                       <button ></button>
                       return (

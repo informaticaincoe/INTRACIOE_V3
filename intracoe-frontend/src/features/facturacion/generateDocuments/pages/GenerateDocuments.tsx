@@ -45,24 +45,31 @@ export const GenerateDocuments = () => {
       "direccion_receptor": receptor.direccion,
       "telefono_receptor": receptor.telefono,
       "correo_receptor": receptor.correo,
+      "observaciones": "", //TODO: agregar observaciones
+      "tipo_item_select": 1, //TODO: obtener segun la lista de productos de forma dinamica
+      //documentos relacionados
+      "documento_seleccionado": "", //TODO:
+      "documento_select": "",//TODO:
+      "descuento_select": null,//TODO:
+      //descuento
+      "porcentaje_descuento_item": "0.00", //TODO:
       //configuracion factura
       "tipo_documento_seleccionado": tipoDocumento?.code,
-      "tipo_item_select": "1", //TODO: obtener segun la lista de productos de forma dinamica
       "condicion_operacion": condicionDeOperacion,
+      
       //prodcutos
       "producto_id": listProducts,
-      //documentos relacionados
-      "documento_seleccionado": "",
-      //descuento
-      "descuento_select": null,
-      "porcentaje_descuento_item": "0.00",
-      "retencion_iva": false,
-      "porcentaje_retencion_iva":0.00,
-      "retencion_renta": false,
-      "porcentaje_retencion_renta":0.00,
-      //tipos de pago
-      "fp_id": formasPagoList
 
+      //retnecion
+      "retencion_iva": false,
+      "porcentaje_retencion_iva": "0.00",
+      // "retencion_renta": false,
+      // "porcentaje_retencion_renta": 0.00,
+
+      //tipos de pago
+      "fp_id": {
+        "codigo":formasPagoList
+      }
     }
     console.log(data)
   }
@@ -174,7 +181,7 @@ export const GenerateDocuments = () => {
               setVisible={setShowProductsModal}
               setListProducts={setListProducts}
             />
-              <FormasdePagoForm formasPagoList={formasPagoList} setFormasPagoList={setFormasPagoList} />
+            <FormasdePagoForm formasPagoList={formasPagoList} setFormasPagoList={setFormasPagoList} />
 
           </div>
         </WhiteSectionsPage>
