@@ -16,7 +16,7 @@ from .views import (
     invalidacion_dte_view,
     obtener_numero_control_ajax,
     obtener_receptor,
-    generar_documento_ajuste
+    generar_documento_ajuste_view
 )
 
 
@@ -108,7 +108,7 @@ urlpatterns = [
     path('generar/', generar_factura_view, name='generar_factura'),
     
     # URLS DTE AJUSTE
-    path('factura/generar_ajuste/', generar_documento_ajuste, name='generar_ajuste_factura'),
+    path('generar_ajuste/', generar_documento_ajuste_view, name='generar_ajuste_factura'),
 
     #path('detalle/<int:factura_id>/', views.detalle_factura_view, name='detalle_factura'),
     path('listar_facturas/', views.factura_list, name='listar_facturas'),
