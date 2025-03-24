@@ -13,14 +13,14 @@ from rest_framework.response import Response
 from rest_framework import status
 from FE.views import enviar_factura_invalidacion_hacienda_view, firmar_factura_anulacion_view, invalidacion_dte_view, generar_json, num_to_letras, agregar_formas_pago_ajax, generar_json_contingencia
 
-from .serializers import ActividadEconomicaSerializer, AmbienteSerializer, CondicionOperacionSerializer, DepartamentoSerializer, ModelofacturacionSerializer, MunicipioSerializer, ProductoSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, TipoDteSerializer, TiposDocIDReceptorSerializer, TiposEstablecimientosSerializer, TiposGeneracionDocumentoSerializer
+from .serializers import ActividadEconomicaSerializer, AmbienteSerializer, CondicionOperacionSerializer, DepartamentoSerializer, ModelofacturacionSerializer, MunicipioSerializer, ProductoSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, TipoDteSerializer, TipoTransmisionSerializer, TiposDocIDReceptorSerializer, TiposEstablecimientosSerializer, TiposGeneracionDocumentoSerializer, TiposTributosSerializer, TributosSerializer
 from .models import (
     ActividadEconomica, Departamento, Emisor_fe, Municipio, Receptor_fe, FacturaElectronica, DetalleFactura,
     Ambiente, CondicionOperacion, Modelofacturacion, NumeroControl,
-    Tipo_dte, TipoGeneracionDocumento, TipoMoneda, TipoUnidadMedida, TiposDocIDReceptor, EventoInvalidacion, 
+    Tipo_dte, TipoGeneracionDocumento, TipoMoneda, TipoTransmision, TipoUnidadMedida, TiposDocIDReceptor, EventoInvalidacion, 
     Receptor_fe, TipoInvalidacion, TiposEstablecimientos, Token_data, Descuento, FormasPago, TipoGeneracionDocumento, Plazo
 )
-from INVENTARIO.models import Producto, TipoItem, Tributo
+from INVENTARIO.models import Producto, TipoItem, TipoTributo, Tributo
 from django.db.models import Q
 
 
@@ -265,6 +265,7 @@ class DepartamentosListAPIView(generics.ListAPIView):
     serializer_class = DepartamentoSerializer
     
 class MunicipioListAPIView(generics.ListAPIView):
+
     serializer_class = MunicipioSerializer
     
     def get_queryset(self):
@@ -272,6 +273,7 @@ class MunicipioListAPIView(generics.ListAPIView):
         departamento_id = self.kwargs['pk']
         # Filtrar los municipios por el departamento
         return Municipio.objects.filter(departamento_id=departamento_id)
+    
 class recptorListAPIView(generics.ListAPIView):
     queryset = Receptor_fe.objects.all()
     serializer_class = ReceptorSerializer
