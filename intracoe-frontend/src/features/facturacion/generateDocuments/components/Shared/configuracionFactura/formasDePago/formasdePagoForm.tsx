@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { PaymentMethodInteface, paymentMethodsList } from './formasdePagoData';
+import { MouseEvent, useEffect, useState } from 'react';
+import { PaymentMethodInteface } from './formasdePagoData';
 import { Dropdown } from 'primereact/dropdown';
 import { FaRegCreditCard } from 'react-icons/fa6';
 import { MultiSelectChangeEvent } from 'primereact/multiselect';
@@ -9,55 +9,47 @@ import {
 } from 'primereact/inputnumber';
 import { plazosListTemp } from '../plazos';
 import styles from './formasDePagoCustom.module.css';
+import { getAllMetodosDePago } from '../../../../services/configuracionFactura/configuracionFacturaService';
+import { InputText } from 'primereact/inputtext';
+import { FaXmark } from "react-icons/fa6";
 
-export const FormasdePagoForm = () => {
-  const [listFormasdePago, setListFormasdePago] = useState<
-    PaymentMethodInteface[]
-  >([]);
-  const [paymentSelected, setPaymentSelected] =
-    useState<PaymentMethodInteface>();
+interface FormasdePagoFormProps {
+  formasPagoList: any,
+  setFormasPagoList: any
+}
+
+export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({ formasPagoList, setFormasPagoList }) => {
+  const [listFormasdePago, setListFormasdePago] = useState<PaymentMethodInteface[]>([]);
+  const [paymentSelected, setPaymentSelected] = useState<PaymentMethodInteface>();
   const [plazosList, setPlazosList] = useState<any[]>([]);
   const [selectedPlazosList, setSelectedPlazosList] = useState<number>(1);
-  const [guardarListAux, setGuardarListAux] = useState<any[]>([]);
+  const [infoPagoLista, setInfoPagoLista] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
+    id: 0,
+    idTipoPago: 0,
     montoPago: 0,
-    referecia: 0,
+    referecia: "",
     periodo: 0,
     plazo: {},
   });
 
-  useEffect(() => {
-    // console.log(guardarListAux);s
-  }, [formData]);
-
-  const handleChange = (e: InputNumberValueChangeEvent) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const onClick = () => {
-    if (paymentSelected) {
-      setGuardarListAux((prevState) => [
-        ...prevState,
-        {
-          ...formData,
-          codigo: paymentSelected.codigo,
-          descripcion: paymentSelected.descripcion,
-        },
-      ]);
-    }
-
-    // limpiar formulario
-    setFormData({ montoPago: 0, referecia: 0, periodo: 0, plazo: {} });
-  };
+  useEffect(()=>{
+    const aux = 
+    infoPagoLista.map(pago=>{
+      return pago.codigo
+    })
+    setFormasPagoList(aux)
+  },[infoPagoLista])
 
   useEffect(() => {
-    fetchActividadesList();
+    fetchFormasDePagoList();
     fetchPlazoList();
   }, []);
 
-  const fetchActividadesList = () => {
-    setListFormasdePago(paymentMethodsList);
+  const fetchFormasDePagoList = async () => {
+    const response = await getAllMetodosDePago()
+    setListFormasdePago(response);
   };
 
   const fetchPlazoList = () => {
@@ -68,6 +60,35 @@ export const FormasdePagoForm = () => {
     }
   };
 
+  const handleChange = (e: InputNumberValueChangeEvent | React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const onClick = () => {
+    if (paymentSelected) {
+      setInfoPagoLista((prevState) => [
+        ...prevState,
+        {
+          ...formData,
+          idTipoPago: paymentSelected.id,
+          codigo: paymentSelected.codigo,
+          descripcion: paymentSelected.descripcion,
+          id: new Date().getTime()
+        },
+      ]);
+    }
+
+    // limpiar formulario
+    setFormData({ id: 0, idTipoPago: 0, montoPago: 0, referecia: "", periodo: 0, plazo: {} });
+  };
+
+  const deleteFromList = (e: any) => {
+    console.log(e);
+  
+    // Filtra la lista infoPagoLista para eliminar el item cuyo id coincide con e.id
+    setInfoPagoLista(infoPagoLista.filter((pago) => pago.id !== e.id));
+  };
+  
   return (
     <div className="flex w-full flex-col items-start">
       <p className="text-start opacity-70">Métodos de pago</p>
@@ -81,7 +102,7 @@ export const FormasdePagoForm = () => {
               }
               options={listFormasdePago}
               optionLabel="descripcion"
-              placeholder="Seleccionar actividad economica"
+              placeholder="Seleccionar metodo de pago"
               className="w-full text-start"
               filter
             />
@@ -119,11 +140,11 @@ export const FormasdePagoForm = () => {
                         <span className="p-inputgroup-addon">
                           <FaRegCreditCard />
                         </span>
-                        <InputNumber
+                        <InputText
                           name="referecia"
-                          placeholder="Price"
+                          placeholder="Número referencia"
                           value={formData.referecia}
-                          onValueChange={(e: InputNumberValueChangeEvent) =>
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                             handleChange(e)
                           }
                         />
@@ -148,30 +169,15 @@ export const FormasdePagoForm = () => {
                       />
                       <span className="p-inputgroup-addon">
                         <Dropdown
-                          value={selectedPlazosList} // Esto es solo el valor 'codigo'
+                          value={selectedPlazosList}
                           onChange={(e: { value: any }) =>
                             setSelectedPlazosList(e.value)
                           }
                           options={plazosList}
-                          optionLabel="valor" // El texto visible en las opciones
-                          optionValue="codigo" // Este es el valor que debe coincidir con 'selectedPlazosList'
+                          optionLabel="valor"
+                          optionValue="codigo"
                           placeholder="Seleccionar tipo de plazo"
                           className={`md:w-14rem font-display flex w-full gap-2 bg-none text-start text-nowrap ${styles.inputWrapper}`}
-                        //FIXME: Revisar estilos para reducir ancho de la lista
-                        // pt={{
-                        //     panel: {
-                        //         className: `${styles.dropdownPanel}`,  // Aplica el estilo personalizado para el panel
-                        //     },
-                        //     itemGroup: {
-                        //         className: `${styles.dropdownItems}`,  // Aplica el estilo personalizado para las opciones
-                        //     },
-                        //     root: {
-                        //         className: `${styles.dropdownItems}`
-                        //     },
-                        //     wrapper: {
-                        //         className: `${styles.dropdownItems}`
-                        //     }
-                        // }}
                         />
                       </span>
                     </div>
@@ -188,38 +194,18 @@ export const FormasdePagoForm = () => {
                     </button>
                   </span>
                 </div>
-                {guardarListAux && (
-                  <div className="flex flex-col gap-5">
-                    {guardarListAux.map((ele, index) => {
+                {infoPagoLista && infoPagoLista.length > 0 && (
+                  <div className="grid grid-cols-2 gap-5 auto-rows-min" key={new Date().getTime()}>
+                    {infoPagoLista.map((pago, index) => {
+                      <button ></button>
                       return (
-                        <div className="flex flex-col gap-1">
-                          {paymentSelected && (
-                            <h2 className="text-start font-bold">
-                              {ele.descripcion}
-                            </h2>
-                          )}
-
-                          {ele.montoPago && (
-                            <span className="flex gap-2">
-                              <p>Monto a pagar:</p>
-                              <p key={index}> ${ele.montoPago}</p>
-                            </span>
-                          )}
-                          {ele.referecia != 0 && (
-                            <span className="flex gap-2">
-                              <p>referencia:</p>
-                              <p key={index}> {ele.referecia}</p>
-                            </span>
-                          )}
-                          {ele.periodo && (
-                            <span className="flex gap-2">
-                              <p>periodo:</p>
-                              <p key={index}>
-                                {' '}
-                                {ele.periodo} {selectedPlazosList}
-                              </p>
-                            </span>
-                          )}
+                        <div className='relative border border-border-color rounded-md'>
+                          <button className="absolute right-0 px-5 py-4 hover:text-gray hover:cursor-pointer" onClick={() => deleteFromList(pago)}><FaXmark className='text-border-color' /></button>
+                          <div className=" flex text-center gap-2 py-4 flex-col items-center justify-center" key={index}>
+                            <p className='opacity-70 '>{pago.descripcion}</p> {/* Asegúrate de usar el campo correcto */}
+                            <p className='font-semibold text-2xl'>$ {pago.montoPago}</p> {/* Asegúrate de usar el campo correcto */}
+                            <p className='opacity-70'>{pago.referecia}</p> {/* Asegúrate de usar el campo correcto */}
+                          </div>
                         </div>
                       );
                     })}

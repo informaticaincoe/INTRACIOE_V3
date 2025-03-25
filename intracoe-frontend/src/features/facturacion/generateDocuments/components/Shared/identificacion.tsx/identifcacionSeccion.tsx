@@ -3,15 +3,26 @@ const Data = {
   CodigoGeneracion: '2B51B3C4-33FE-43A9-BBDA-4648ADDD0BAF',
 };
 
-export const IdentifcacionSeccion = () => {
+interface IdentifcacionSeccionProps {
+  tipoDocumento:string,
+  tipoEstablecimiento:string,
+  puntoVenta:string
+}
+
+export const IdentifcacionSeccion:React.FC<IdentifcacionSeccionProps> = ({ tipoDocumento, tipoEstablecimiento, puntoVenta }) => {
   var dateVariable = new Date();
+  var numeroDeContro = 0
+
+  const GenerarNumeroDeControl = () => {
+    return 'DTE-' + tipoDocumento + '00' + tipoEstablecimiento + puntoVenta
+  }
   return (
     <>
       <div className="grid grid-cols-[auto_1fr] items-start justify-start gap-4 font-medium">
         <span className="text-start text-black opacity-50">
           Número de control:
         </span>
-        <span className="text-start">{Data.numeroControl}</span>
+        <span className="text-start">{GenerarNumeroDeControl()}</span>
         <span className="text-start text-black opacity-50">
           Codigo de generación:
         </span>

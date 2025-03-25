@@ -1,9 +1,13 @@
-import { useEffect, useState } from "react";
-import { defaultEmisorData, EmisorInterface } from "../../../../../../shared/interfaces/interfaces";
+import { useEffect } from "react";
+import { EmisorInterface } from "../../../../../../shared/interfaces/interfaces";
 import { getAllEmpresas } from "../../../../../bussiness/configBussiness/services/empresaServices";
 
-export const DatosEmisorCard = () => {
-  const [emisorData, setEmisorData] = useState<EmisorInterface>(defaultEmisorData);
+interface DatosEmisorData{
+  emisorData: EmisorInterface,
+  setEmisorData :any
+}
+
+export const DatosEmisorCard:React.FC<DatosEmisorData> = ({ emisorData, setEmisorData }) => {
 
   useEffect(()=>{
     fetchEmisorInfo();
