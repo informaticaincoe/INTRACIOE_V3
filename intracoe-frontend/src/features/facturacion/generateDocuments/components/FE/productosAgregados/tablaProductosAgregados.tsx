@@ -9,30 +9,34 @@ import {
 import './InputNumberCustom.css';
 import { FaCheckCircle } from 'react-icons/fa';
 import { ModalEliminarItemDeLista } from '../../Shared/modal/modalEliminarItemDeLista';
-import { ModalAgregarRetencion } from '../../Shared/modal/modalAgregarRetencion';
 import { ModalAgregarTributo } from '../../Shared/modal/modalAgregarTributo';
+import { getAllDescuentos } from '../../../services/productos/productosServices';
+import { Dropdown } from 'primereact/dropdown';
 
 interface TablaProductosAgregadosProps {
   listProducts: ProductosTabla[],
   setListProducts: any,
-  setCantidadListProducts:any,
-  setIdListProducts:any
-
+  setCantidadListProducts: any,
+  setIdListProducts: any,
+  setDescuentoItem: any,
+  descuentoItem: number
 }
 
-export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = ({ setListProducts, listProducts, setCantidadListProducts, setIdListProducts }) => {
+export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = ({ setListProducts, listProducts, setCantidadListProducts, setIdListProducts, setDescuentoItem, descuentoItem }) => {
   const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
   const [rowClick] = useState<boolean>(true);
   const [visibleDeleteModal, setVisibleDeleteModal] = useState<boolean>(false);
-  const [visibleTributoModal, setVisibleTributoModal] =
-    useState<boolean>(false);
-  const [visibleRetencionModal, setVisibleRetencionModal] =
-    useState<boolean>(false);
+  const [visibleTributoModal, setVisibleTributoModal] = useState<boolean>(false);
+  const [descuentosList, setDescuentosList] = useState<any[]>([]) // variable para almacenar al lista de descuentos y mostrarla en un dropdown
 
   useEffect(() => {
-    console.log("list:", listProducts);
-    const auxId = listProducts.map((product)=> product.id )
-    const auxCantidad = listProducts.map((product)=> product.cantidad )
+    fetchDescuento()
+    console.log(listProducts)
+  }, [])
+
+  useEffect(() => {
+    const auxId = listProducts.map((product) => product.id)
+    const auxCantidad = listProducts.map((product) => product.cantidad)
 
     setCantidadListProducts(auxCantidad)
     setIdListProducts(auxId)
@@ -42,11 +46,23 @@ export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = (
   // Función para manejar cambios en la cantidad de un producto específico
   const handleCantidadChange = (value: number | null, productId: number) => {
     setListProducts((prevProducts: any[]) =>
-      prevProducts.map((product) =>
-        product.id === productId
-          ? { ...product, cantidad: value ?? 0 }
-          : product
-      )
+      prevProducts.map((product) => {
+        if (product.id === productId) {
+          const nuevaCantidad = value ?? 1;
+          const totalNeto = product.precio_unitario * nuevaCantidad;
+          const totalIVA = product.iva_unitario * nuevaCantidad;
+          const totalConIVA = totalNeto + totalIVA;
+
+          return {
+            ...product,
+            cantidad: nuevaCantidad,
+            total_neto: totalNeto,
+            total_iva: totalIVA,
+            total_con_iva: totalConIVA,
+          };
+        }
+        return product;
+      })
     );
   };
 
@@ -66,11 +82,6 @@ export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = (
     setVisibleDeleteModal(true);
   };
 
-  const handleRetencion = () => {
-    console.log(selectedProducts);
-    setVisibleRetencionModal(true);
-  };
-
   const handleTributosModal = () => {
     setVisibleTributoModal(true)
   }
@@ -81,13 +92,22 @@ export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = (
       // Verificar si el producto no está en selectedProducts
       return !selectedProducts.some(item => product.id === item.id);
     });
-  
+
     console.log("filterList", filterList);
     setListProducts(filterList); // Actualizar la lista de productos
     setSelectedProducts([]); // Limpiar los productos seleccionados
     setVisibleDeleteModal(false);
   }
-  
+
+  const fetchDescuento = async () => {
+    try {
+      const response = await getAllDescuentos()
+      setDescuentosList(response)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
 
   return (
     <>
@@ -110,12 +130,6 @@ export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = (
             >
               <p className="text-blue">Agregar tributo</p>
             </span>
-            <span
-              className="border-blue flex items-center gap-2 rounded-md border px-3 py-1 hover:cursor-pointer"
-              onClick={handleRetencion}
-            >
-              <p className="text-blue">Agregar retención</p>
-            </span>
           </span>
         </div>
       )}
@@ -125,10 +139,6 @@ export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = (
         size={selectedProducts.length}
         onClick={handlerEliminarItem}
 
-      />
-      <ModalAgregarRetencion
-        setVisible={setVisibleRetencionModal}
-        visible={visibleRetencionModal}
       />
 
       <ModalAgregarTributo
@@ -177,16 +187,15 @@ export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = (
           )}
         />
         <Column
-          header={<p className="text-sm">DESCUENTO(%)</p>}
+          header={<p className="text-sm">DESCUENTO</p>}
           body={(rowData: ProductosTabla) => (
-            <InputNumber
-              prefix="%"
-              inputId="withoutgrouping"
-              value={rowData.descuento}
-              onValueChange={(e: InputNumberValueChangeEvent) =>
-                handleDescuentoChange(e.value ?? 0, rowData.id)
-              }
-            />
+            <Dropdown
+              value={descuentoItem}
+              onChange={(e) => handleDescuentoChange(e.value, rowData.id)}
+              options={descuentosList}
+              optionLabel="porcentaje"
+              optionValue="id"
+              className="w-full md:w-14rem" />
           )}
         />
         <Column
@@ -194,17 +203,17 @@ export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = (
           header={<p className="text-sm uppercase">TOTAL tributos</p>}
         ></Column>
         <Column
-          body={(rowData: ProductosTabla) => <p>$ {rowData.total_neto}</p>}
+          body={(rowData: ProductosTabla) => <p>$ {rowData.total_neto.toFixed(2)}</p>}
           header={<p className="text-sm">TOTAL NETO</p>}
-        ></Column>
+        />
         <Column
-          body={(rowData: ProductosTabla) => <p>$ {rowData.total_iva}</p>}
+          body={(rowData: ProductosTabla) => <p>$ {rowData.total_iva.toFixed(2)}</p>}
           header={<p className="text-sm">TOTAL IVA</p>}
-        ></Column>
+        />
         <Column
-          body={(rowData: ProductosTabla) => <p>$ {rowData.total_con_iva}</p>}
+          body={(rowData: ProductosTabla) => <p>$ {rowData.total_con_iva.toFixed(2)}</p>}
           header={<p className="text-sm">TOTAL CON IVA</p>}
-        ></Column>
+        />
       </DataTable>
     </>
   );

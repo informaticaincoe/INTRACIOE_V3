@@ -32,22 +32,33 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
   const fetchProductos = async () => {
     try {
       const response = await getAllProducts()
-      const productos = response.map((product) => ({
-        id: product.id,
-        codigo: product.codigo,
-        descripcion: product.descripcion,
-        precio_unitario: product.preunitario,
-        cantidad: 1,
-        no_grabado: false,
-        descuento: 0,
-        iva_unitario: 0,
-        total_neto: 0,
-        total_iva: 0,
-        total_con_iva: 0,
-        iva_percibido: 0,
-        total_tributos: 0,
-        seleccionar: false,
-      }));
+      const productos = response.map((product) => {
+        const cantidadInicial = 1;
+        const precioUnitario = product.preunitario;
+        const ivaUnitario = precioUnitario * 0.12;
+        const totalNeto = precioUnitario * cantidadInicial;
+        const totalIVA = ivaUnitario * cantidadInicial;
+        const totalConIVA = totalNeto + totalIVA;
+      
+        return {
+          id: product.id,
+          codigo: product.codigo,
+          descripcion: product.descripcion,
+          precio_unitario: precioUnitario,
+          cantidad: cantidadInicial,
+          no_grabado: false,
+          descuento: 0,
+          iva_unitario: ivaUnitario,
+          total_neto: totalNeto,
+          total_iva: totalIVA,
+          iva_percibido: 0,
+          total_tributos: 0,
+          total_con_iva: totalConIVA,
+          seleccionar: false,
+        };
+      });
+      
+      console.log("productos response", response)
 
       console.log("productos", productos)
  
@@ -63,11 +74,16 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
     index: number
   ) => {
     const updatedProducts = [...products];
-    updatedProducts[index].cantidad = e.value ?? 1;
+    const nuevaCantidad = e.value ?? 1;
+    const producto = updatedProducts[index];
+  
+    producto.cantidad = nuevaCantidad;
+    producto.total_iva = producto.iva_unitario * nuevaCantidad;
+  
     setProducts(updatedProducts);
   };
+  
 
-  // Función para manejar la selección de productos
   // Función para manejar la selección de productos
   const handleSelectChange = (
     e: CheckboxChangeEvent, // Cambiar el tipo del evento a CheckboxChangeEvent

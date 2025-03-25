@@ -3,6 +3,7 @@ from rest_framework import serializers
 from rest_framework import serializers
 from .models import (
     Departamento,
+    Descuento,
     FormasPago,
     TipoTransmision,
     Token_data,
@@ -73,6 +74,11 @@ class ProductoSerializer(serializers.ModelSerializer):
 class TipoItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = TipoItem
+        fields = '__all__'
+
+class DescuentoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Descuento
         fields = '__all__'
 
 class FacturaElectronicaSerializer(serializers.ModelSerializer):
