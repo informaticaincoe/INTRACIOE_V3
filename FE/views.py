@@ -387,7 +387,29 @@ def export_facturas_excel(request):
     wb.save(response)
     return response
 
-
+def obtener_listado_productos_view(request):
+    tipo_dte = request.GET.get('tipo_dte', '01')
+    tipo_dte_obj = Tipo_dte.objects.get(codigo=tipo_dte)
+    productos = Producto.objects.all()
+    print(f"Tipo dte[productos]: {tipo_dte} URL: {request.method} Productos: {productos}")
+    
+    if productos:
+        if tipo_dte_obj.codigo == COD_CONSUMIDOR_FINAL:
+            #recorrer todos los productos y mostrarlos con IVA si aplica
+            for producto in productos:
+                print(f"-inicio recorrer productos: tipo_dte {tipo_dte_obj.codigo}")
+                if tipo_dte_obj.codigo == COD_CONSUMIDOR_FINAL:
+                    print(f"-Producto: {producto} precioUni = {producto.preunitario}")
+                    producto.preunitario *= Decimal("1.13")
+                    print(f"Producto: {producto} precio_modificado = {producto.preunitario}")
+                else:
+                    productos = Producto.objects.all()
+    
+    if request.method == 'GET':
+        return productos
+    elif request.method == 'POST':
+        return render(request, 'generar_dte.html', {'productos': productos})
+    
 @csrf_exempt
 @transaction.atomic
 def generar_factura_view(request):
@@ -414,10 +436,10 @@ def generar_factura_view(request):
         } if emisor_obj else None
 
         receptores = list(Receptor_fe.objects.values("id", "num_documento", "nombre"))
-        productos = Producto.objects.all()
+        #productos = Producto.objects.all()
+        productos = obtener_listado_productos_view(request)
         tipooperaciones = CondicionOperacion.objects.all()
         tipoDocumentos = Tipo_dte.objects.exclude( Q(codigo=COD_NOTA_CREDITO) | Q(codigo=COD_NOTA_DEBITO) )
-        print("-Tipos dte: ", tipoDocumentos)
         tipoItems = TipoItem.objects.all()
         descuentos = Descuento.objects.all()
         formasPago = FormasPago.objects.all()
@@ -2186,6 +2208,7 @@ def agregar_formas_pago_ajax(request):
     #data = request.data
     global formas_pago
     formas_pago = []
+    
     try:
         formas_pago_id = request.GET.get("fp_id")#request.GET.get("fp_id")
         num_referencia = request.GET.get("num_ref", None)
@@ -2203,10 +2226,10 @@ def agregar_formas_pago_ajax(request):
         
         monto = Decimal("0.00")
         montoFp = Decimal("0.00")
-                
+        formaPago = None
+        
         if formas_pago_id is not None and formas_pago_id !=[]:
             for fp in formas_pago_id:
-                print("-codigo forma pago: ", fp)
                 try:
                     if saldo_favor is not None and saldo_favor !="":
                         saldo = Decimal(saldo_favor)
@@ -2220,11 +2243,6 @@ def agregar_formas_pago_ajax(request):
                 except ConversionSyntax:
                     print(f"Error: '{saldo}' no es un valor decimal válido.")
                 
-                #formaPago = FormasPago.objects.get(codigo=fp)
-                #codigo_fp = fp["codigo"]
-                codigo_fp = formaPago.codigo
-                print("-codigo fp: ", codigo_fp)
-                #formaPago = FormasPago.objects.get(codigo=codigo_fp)
                 if formaPago is not None:
                     formas_pago_json  = {
                         "codigo": str(formaPago.codigo),
@@ -2232,35 +2250,24 @@ def agregar_formas_pago_ajax(request):
                         "referencia": str(num_referencia),
                         "plazo": None
                     }
-                print("-Condicion operacion: ", condicion_operacion)
-                if tiene_saldoF:
-                    formas_pago_json["codigo"] = str(codFormaPago.codigo)
-                if condicion_operacion is not None and int(condicion_operacion) > 0 and int(condicion_operacion) == int(ID_CONDICION_OPERACION):
-                    formas_pago_json["codigo"] = None
-                    formas_pago_json["montoPago"] = float(monto)
-                    formas_pago_json["plazo"] = str(Plazo.objects.get(id=1).codigo) #Plazo por días
-                    formas_pago_json["periodo"] = int(periodo_plazo)
-                else:
-                    formas_pago_json["periodo"] = None
-                    
-                if formas_pago_json["codigo"] == "01": #Forma d pago billetes y monedas
-                    formas_pago_json["referencia"] = None
-                    
-                formas_pago.append(formas_pago_json)
                 
-                if formas_pago is not None and formas_pago !="":
-                    for fp in formas_pago:
-                        print("fp: ", fp)
-                        montoFp += Decimal(fp["montoPago"])
-                    print("-Total formas pago: ", montoFp)
+                    if tiene_saldoF:
+                        formas_pago_json["codigo"] = str(formaPago.codigo)
+                    if condicion_operacion is not None and int(condicion_operacion) > 0 and int(condicion_operacion) == int(ID_CONDICION_OPERACION):
+                        formas_pago_json["codigo"] = None
+                        formas_pago_json["montoPago"] = float(monto)
+                        formas_pago_json["plazo"] = str(Plazo.objects.get(id=1).codigo) #Plazo por días
+                        formas_pago_json["periodo"] = int(periodo_plazo)
+                    else:
+                        formas_pago_json["periodo"] = None
+                        
+                    if formas_pago_json["codigo"] == "01": #Forma d pago billetes y monedas
+                        formas_pago_json["referencia"] = None
                     
-                if montoFp > monto_total:
-                            total_pagar = monto_total
-                            pago_cliente = montoFp
-                            vuelto = pago_cliente - total_pagar
-                            print(f"-total a pagar = {total_pagar} pago cliente = {pago_cliente} vuelto = {vuelto}")
-                            return JsonResponse({"No Permitido": "El monto ingresado es mayor que el total a pagar" })
-                
+                    formas_pago.append(formas_pago_json)
+                    print("-Agregar forma pago: ", formas_pago)
+                    
+                    return JsonResponse({"No Permitido": "El monto ingresado es mayor que el total a pagar" })
             print("-Formas de pago seleccionadas: ", formas_pago)
         
         return JsonResponse({'formasPago': formas_pago})

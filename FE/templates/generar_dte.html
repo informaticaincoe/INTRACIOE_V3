@@ -196,7 +196,7 @@
             <button type="button" class="btn btn-secondary" id="btn_add_relacion" onclick="cargarFacturaRelacionada()">Agregar</button>
           </div>
           <div class="col-md-12 mt-2">
-            <p><strong>Total Pagar CCF:</strong> {{ total_pagar_doc_r }}</p>
+            <p><strong>Total Pagar documento relacionado:</strong> {{ total_pagar_doc_r }}</p>
           </div>
         </div>
       </div>
@@ -392,6 +392,9 @@
         </button>
       </div>
 
+      <p><strong>Total a Pagar:</strong> $<span id="total-pagar-fp">0.00</span></p>
+      <p><strong>Recibido:</strong> $<span id="recibido">0.00</span></p>
+
       <div class="modal-body">
         <table id="tabla-formaspago-modal" class="table">
           <thead>
@@ -548,8 +551,7 @@
     cargarProductosModal(descuento_id)
   });
 
-    
-
+  let totalCompletado = false
   // Función para cargar formas depago desde el modal
   function cargarFormasPagoModal(fpId) {
     const checkboxs = document.querySelectorAll('.formapago-checkbox');
@@ -558,12 +560,16 @@
     const total_pagar = document.getElementById("total-pagar").textContent;
 
     var modalRows = document.querySelectorAll('#tabla-formaspago-modal tbody tr');
+    var recibido_fp = 0
 
       modalRows.forEach(function(row) {
           var checkbox = row.querySelector('.formapago-checkbox');
           if (checkbox.checked) {
               //var fpId = row.getAttribute('data-id');
               var fpDescripcion = row.cells[1].textContent.trim();
+              var monto = 0
+              var sumatoria_recibido_fp = 0
+              var total_pagar_resumen = 0
 
               //campos adicionales
               const fila = checkbox.closest('tr');  // Obtener la fila seleccionada
@@ -571,6 +577,40 @@
               const num_referencia_fp = fila.querySelector('.referencia-input').value;
               const monto_fp = fila.querySelector('.monto-input').value;
               const periodo_plazo = fila.querySelector('.periodo-input').value
+              monto = parseFloat(monto_fp)
+
+              console.log("total completado = ", totalCompletado, "sumatoria_recibido = ", sumatoria_recibido_fp, "total pagar = ", total_pagar_resumen)
+              //Si el pago recibido coincide con el total a pagar no permitir agregar mas formas de pago
+              if (totalCompletado) {
+                checkbox.checked = false;  // Desmarcar el checkbox si ya se selecciono
+                return;
+              }
+              
+              if(totalCompletado==false && sumatoria_recibido_fp < total_pagar_resumen){
+                console.log("total no aplica = ", recibido_fp)
+                recibido_fp += monto
+                total_pagar_resumen = document.getElementById("total-pagar").textContent
+
+                sumatoria_recibido_fp = parseFloat(recibido_fp).toFixed(2)
+                document.getElementById("recibido").textContent = sumatoria_recibido_fp;
+                checkbox.checked = true;
+                checkbox.disabled = false; 
+                totalCompletado = false; 
+              }else if(sumatoria_recibido_fp > total_pagar_resumen){
+                console.log("total recibido mayor= ", recibido_fp)
+                if (checkbox.checked) {
+                  totalCompletado = true; 
+                  checkbox.disabled = true;
+                  monto_fp -= 0;
+                  document.getElementById("recibido").textContent = parseFloat(recibido_fp).toFixed(2);
+                  alert("El monto total ya ha sido alcanzado, no puedes seleccionar más.");
+                  return;
+                }
+              }else{
+                recibido_fp += monto
+                document.getElementById("recibido").textContent = parseFloat(recibido_fp).toFixed(2);
+              }
+              console.log("total recibido = ", recibido_fp)
 
               fetch(`/fe/obtener-forma-pago/?fp_id=${fpId}&num_ref=${num_referencia_fp}&monto_fp=${monto_fp}&periodo=${periodo_plazo}&saldo_favor_r=${saldo_favor}&condicion_op=${condicion_operacion}&total_pagar=${total_pagar}`)
                   .then(response => {
@@ -588,6 +628,8 @@
   // Función para cargar productos desde el modal
   function cargarProductosModal(descuento) {
     const documentoRelacionado = document.getElementById('documento_relacionado_input').value;
+    const dte_seleccionado = document.getElementById('tipo_documento_select').value
+    console.log("DTE: ", dte_seleccionado)
 
       var modalRows = document.querySelectorAll('#tabla-productos-modal tbody tr');
       modalRows.forEach(function(row) {
@@ -595,7 +637,8 @@
           if (checkbox.checked) {
               var productoId = row.getAttribute('data-id');
               var productoText = row.cells[1].textContent.trim();
-              var precio_incl = parseFloat(row.querySelector('.precio-unitario').getAttribute('data-precio'));
+              var precio_incl = parseFloat(row.querySelector('.precio-unitario').getAttribute('data-precio') );
+              console.log("precio inc = ", precio_incl)
               var precioStr = row.querySelector('.precio-unitario').getAttribute('data-precio');
               var precio = parseFloat(precioStr.replace(',', '.'));
               var cantidad = row.querySelector('.cantidad-input').value;
@@ -709,6 +752,7 @@
     
     document.getElementById("monto-descuento").textContent = montoDescuento;
     document.getElementById("total-pagar").textContent = totalPagar;
+    document.getElementById("total-pagar-fp").textContent = totalPagar
   }
 
 
@@ -1054,6 +1098,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Agregamos el documento físico al arreglo global
   facturasRelacionadas.push(doc);
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+  const tipoDteSelect = document.getElementById('tipo_documento_select');
+
+  tipoDteSelect.addEventListener('change', function () {
+      const tipo_dte = this.value;
+      fetch(`/fe/obtener-listado-productos/?tipo_dte=${tipo_dte}`)
+          .then(response => response.json())
+          .catch(error => console.error('Error:', error));
+  });
 });
 
 </script>
