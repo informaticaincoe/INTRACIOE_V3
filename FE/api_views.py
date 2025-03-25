@@ -462,6 +462,7 @@ class GenerarFacturaAPIView(APIView):
         global formas_pago
         try:
             items_permitidos = 2000
+            contingencia = False
             data = request.data
             
             # Datos básicos
@@ -844,7 +845,7 @@ class GenerarFacturaAPIView(APIView):
             print(f"Tipo de dte a generarJson = {tipo_dte_obj}")
             factura_json = generar_json(
                 ambiente_obj, tipo_dte_obj, factura, emisor, receptor,
-                cuerpo_documento, observaciones, Decimal(str(total_iva_item)), base_imponible_checkbox, saldo_favor
+                cuerpo_documento, observaciones, Decimal(str(total_iva_item)), base_imponible_checkbox, saldo_favor, documentos_relacionados, contingencia
             )
             
             factura.json_original = factura_json
