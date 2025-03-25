@@ -406,7 +406,7 @@
           </thead>
           <tbody>
             {% for fp in formasPago %}
-            <tr data-id="{{ fp.id }}">
+            <tr data-id="{{ fp.codigo }}">
               <td >{{ fp.codigo }}</td>
               <td>{{ fp.descripcion }}</td>
               <td><input type="number" id="monto_input" class="monto-input" style="width: 90px;" min="0" max="100" value="0"></td>
@@ -555,6 +555,7 @@
     const checkboxs = document.querySelectorAll('.formapago-checkbox');
     const condicion_operacion = document.getElementById('condicion_op').value;
     const saldo_favor = document.getElementById('saldo_favor_input').value
+    const total_pagar = document.getElementById("total-pagar").textContent;
 
     var modalRows = document.querySelectorAll('#tabla-formaspago-modal tbody tr');
 
@@ -571,7 +572,7 @@
               const monto_fp = fila.querySelector('.monto-input').value;
               const periodo_plazo = fila.querySelector('.periodo-input').value
 
-              fetch(`/fe/obtener-forma-pago/?fp_id=${fpId}&num_ref=${num_referencia_fp}&monto_fp=${monto_fp}&periodo=${periodo_plazo}&saldo_favor_r=${saldo_favor}&condicion_op=${condicion_operacion}`)
+              fetch(`/fe/obtener-forma-pago/?fp_id=${fpId}&num_ref=${num_referencia_fp}&monto_fp=${monto_fp}&periodo=${periodo_plazo}&saldo_favor_r=${saldo_favor}&condicion_op=${condicion_operacion}&total_pagar=${total_pagar}`)
                   .then(response => {
                     if (!response.ok) {  // Verifica si la respuesta fue exitosa (200-299)
                         throw new Error('Network response was not ok');

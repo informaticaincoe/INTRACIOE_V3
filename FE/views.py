@@ -416,7 +416,8 @@ def generar_factura_view(request):
         receptores = list(Receptor_fe.objects.values("id", "num_documento", "nombre"))
         productos = Producto.objects.all()
         tipooperaciones = CondicionOperacion.objects.all()
-        tipoDocumentos = Tipo_dte.objects.all()
+        tipoDocumentos = Tipo_dte.objects.exclude( Q(codigo=COD_NOTA_CREDITO) | Q(codigo=COD_NOTA_DEBITO) )
+        print("-Tipos dte: ", tipoDocumentos)
         tipoItems = TipoItem.objects.all()
         descuentos = Descuento.objects.all()
         formasPago = FormasPago.objects.all()
@@ -2186,54 +2187,55 @@ def agregar_formas_pago_ajax(request):
     global formas_pago
     formas_pago = []
     try:
-        formas_pago_cod = request.GET.get("fp_id")#request.GET.get("fp_id")
+        formas_pago_id = request.GET.get("fp_id")#request.GET.get("fp_id")
         num_referencia = request.GET.get("num_ref", None)
-        monto_total = request.GET.get("total_pagar", "0")
+        monto_total = Decimal(request.GET.get("total_pagar", "0"))
         
         if num_referencia == "":
             num_referencia = None
             
         monto_fp = request.GET.get("monto_fp", 0)#request.GET.get("monto_fp", "0")
-        print("-Monto fp: ", monto_fp)
         periodo_plazo = request.GET.get("periodo", None)
-        condicion_operacion = request.GET.get("condicion_operacion", None)
+        condicion_operacion = request.GET.get("condicion_operacion", 0)
 
         saldo_favor = request.GET.get("saldo_favor_input", None)
         tiene_saldoF = False
         
         monto = Decimal("0.00")
+        montoFp = Decimal("0.00")
                 
-        if formas_pago_cod is not None and formas_pago_cod !=[]:
-            for fp in formas_pago_cod:
+        if formas_pago_id is not None and formas_pago_id !=[]:
+            for fp in formas_pago_id:
                 print("-codigo forma pago: ", fp)
                 try:
                     if saldo_favor is not None and saldo_favor !="":
                         saldo = Decimal(saldo_favor)
                         if  saldo.compare(Decimal("0.00")) > 0:
                             tiene_saldoF = True
-                            codFormaPago = FormasPago.objects.get(codigo="99")
+                            formaPago = FormasPago.objects.get(codigo="99")
+                        else:
+                            formaPago = FormasPago.objects.get(id=fp)
                     else:
                         saldo_favor = Decimal("0.00")
                 except ConversionSyntax:
                     print(f"Error: '{saldo}' no es un valor decimal válido.")
                 
-                if formas_pago_cod:
-                    formaPago = FormasPago.objects.get(id=fp)
-                    #codigo_fp = fp["codigo"]
-                    codigo_fp = formaPago.codigo
-                    print("-codigo fp: ", codigo_fp)
-                    #formaPago = FormasPago.objects.get(codigo=codigo_fp)
-                    if formaPago is not None:
-                        formas_pago_json  = {
-                            "codigo": str(formaPago.codigo),
-                            "montoPago": float(monto_fp),
-                            "referencia": str(num_referencia),
-                            "plazo": None
-                        }
-                
+                #formaPago = FormasPago.objects.get(codigo=fp)
+                #codigo_fp = fp["codigo"]
+                codigo_fp = formaPago.codigo
+                print("-codigo fp: ", codigo_fp)
+                #formaPago = FormasPago.objects.get(codigo=codigo_fp)
+                if formaPago is not None:
+                    formas_pago_json  = {
+                        "codigo": str(formaPago.codigo),
+                        "montoPago": float(monto_fp),
+                        "referencia": str(num_referencia),
+                        "plazo": None
+                    }
+                print("-Condicion operacion: ", condicion_operacion)
                 if tiene_saldoF:
                     formas_pago_json["codigo"] = str(codFormaPago.codigo)
-                if int(condicion_operacion) > 0 and int(condicion_operacion) == int(ID_CONDICION_OPERACION):
+                if condicion_operacion is not None and int(condicion_operacion) > 0 and int(condicion_operacion) == int(ID_CONDICION_OPERACION):
                     formas_pago_json["codigo"] = None
                     formas_pago_json["montoPago"] = float(monto)
                     formas_pago_json["plazo"] = str(Plazo.objects.get(id=1).codigo) #Plazo por días
@@ -2246,18 +2248,18 @@ def agregar_formas_pago_ajax(request):
                     
                 formas_pago.append(formas_pago_json)
                 
-                if formas_pago.exists():
-                    montoFp = Decimal("0.00")
+                if formas_pago is not None and formas_pago !="":
                     for fp in formas_pago:
                         print("fp: ", fp)
                         montoFp += Decimal(fp["montoPago"])
-                        if montoFp > monto_total:
+                    print("-Total formas pago: ", montoFp)
+                    
+                if montoFp > monto_total:
                             total_pagar = monto_total
                             pago_cliente = montoFp
                             vuelto = pago_cliente - total_pagar
-                            print("-Vuelto: ", vuelto)
+                            print(f"-total a pagar = {total_pagar} pago cliente = {pago_cliente} vuelto = {vuelto}")
                             return JsonResponse({"No Permitido": "El monto ingresado es mayor que el total a pagar" })
-                    print("-Total formas pago: ", montoFp)
                 
             print("-Formas de pago seleccionadas: ", formas_pago)
         
