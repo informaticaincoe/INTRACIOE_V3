@@ -196,7 +196,7 @@
             <button type="button" class="btn btn-secondary" id="btn_add_relacion" onclick="cargarFacturaRelacionada()">Agregar</button>
           </div>
           <div class="col-md-12 mt-2">
-            <p><strong>Total Pagar CCF:</strong> {{total_ccf}}</p>
+            <p><strong>Total Pagar CCF:</strong> <span id="total_doc_relacionado"></span></p>
           </div>
         </div>
       </div>
@@ -272,7 +272,7 @@
       </div>
       
       <!-- Botón de Envío -->
-      <button type="submit" class="btn btn-primary mt-3">Generar Factura</button>
+      <button type="submit" id="btnGenerar" class="btn btn-primary mt-3">Generar Factura</button>
     </form>
   </div>
 </div>
@@ -702,8 +702,19 @@
     document.getElementById("monto-descuento").textContent = montoDescuento;
     document.getElementById("total-pagar").textContent = totalPagar;
 
-    if (document.getElementById("total-pagar").textContent ) {
-      alert("El total de la nota de credito no debe ser mayor a total a pagar del credito fiscal")
+    let btnGenerar = document.getElementById("btnGenerar")
+    let tipo_dte = document.getElementById('tipo_documento_select').value;
+
+    if (document.getElementById("total-pagar").textContent > total_ccf && tipo_dte=="05") {
+      alert("La nota de crédito no debe superar el saldo adeudado del crédito fiscal. tipo_dte: ", tipo_dte)
+      btnGenerar.disabled  = true;
+      return;
+    }if (document.getElementById("total-pagar").textContent < total_ccf && tipo_dte=="06") {
+      alert("La nota de crédito no debe superar el saldo adeudado del crédito fiscal. tipo_dte: ", tipo_dte)
+      btnGenerar.disabled  = true;
+      return;
+    }else{
+      btnGenerar.disabled  = false;
       return;
     }
   }
@@ -838,7 +849,7 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById("btn-retencion-iva").style.display = this.checked ? "inline-block" : "none";
 });
 
-
+let total_ccf
 // Función para cargar la factura relacionada y sus productos en una subtabla
 function cargarFacturaRelacionada() {
   const codigoGeneracion = document.getElementById('documento_relacionado_input').value.trim();
@@ -854,6 +865,8 @@ function cargarFacturaRelacionada() {
         return;
       }
       console.log("Factura recibida:", data);
+      total_ccf = data.total;
+      document.getElementById("total_doc_relacionado").innerText = total_ccf;
       agregarFacturaAccordion(data);
     })
     .catch(error => {
@@ -863,12 +876,10 @@ function cargarFacturaRelacionada() {
     actualizarResumen();
 }
 
-  const total_ccf = 0
   // Función para agregar una factura electrónica al acordeón y al arreglo global
   function agregarFacturaAccordion(factura) {
     const facturaId = factura.codigo_generacion;
     const accordion = document.getElementById('facturasAccordion');
-    total_ccf = factura.total
     const accordionItem = document.createElement('div');
     accordionItem.classList.add('accordion-item');
     accordionItem.setAttribute('data-factura-id', facturaId);
