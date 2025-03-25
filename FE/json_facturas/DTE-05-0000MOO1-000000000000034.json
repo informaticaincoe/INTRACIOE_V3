@@ -1,0 +1,126 @@
+{
+    "identificacion": {
+        "version": 3,
+        "ambiente": "01",
+        "tipoDte": "05",
+        "numeroControl": "DTE-05-0000MOO1-000000000000034",
+        "codigoGeneracion": "A4808D51-F1B7-49A7-80EE-1DA1F181B448",
+        "tipoModelo": 1,
+        "tipoOperacion": 1,
+        "tipoContingencia": null,
+        "motivoContin": null,
+        "fecEmi": "2025-03-24",
+        "horEmi": "14:57:18",
+        "tipoMoneda": "USD"
+    },
+    "documentoRelacionado": [
+        {
+            "tipoDocumento": "03",
+            "tipoGeneracion": 2,
+            "numeroDocumento": "7CE715D2-3269-4CFB-BCE9-D563AC45EEBC",
+            "fechaEmision": "2025-03-21"
+        }
+    ],
+    "emisor": {
+        "nit": "06142811001040",
+        "nrc": "1278913",
+        "nombre": "Inversiones Comerciales Escobar SA de CV",
+        "codActividad": "46375",
+        "descActividad": "Venta al por mayor de productos lacteos",
+        "nombreComercial": "Inversiones Comerciales Escobar SA de CV",
+        "tipoEstablecimiento": "02",
+        "direccion": {
+            "departamento": "05",
+            "municipio": "19",
+            "complemento": "Carretera a Sonsonate, km 27 ½ Zona Industrial Lourdes, Calle Antigua Hda, La Libertad, El Salvador C.A"
+        },
+        "telefono": "77462310",
+        "correo": "informatica@grupoincoe.com"
+    },
+    "receptor": {
+        "nit": "062280967",
+        "nombre": "Dominick Norberto Hernandez Alfaro",
+        "codActividad": "47816",
+        "descActividad": "Venta al por menor de bebidas",
+        "nombreComercial": "HERNANDEZ ALFARO DOMINICK NORBERTO",
+        "direccion": {
+            "departamento": "05",
+            "municipio": "25",
+            "complemento": "final 2 calle pte p´sj 4 block o urb el sauce"
+        },
+        "telefono": "60447435",
+        "correo": "informatica@grupoincoe.com",
+        "nrc": "3228055"
+    },
+    "ventaTercero": null,
+    "cuerpoDocumento": [
+        {
+            "numItem": 1,
+            "tipoItem": 1,
+            "numeroDocumento": "7CE715D2-3269-4CFB-BCE9-D563AC45EEBC",
+            "cantidad": 1.0,
+            "codigo": "PCH010",
+            "codTributo": null,
+            "uniMedida": 99,
+            "descripcion": "caja entera de leche, 30 tiras de 26 g",
+            "precioUni": 0.88,
+            "montoDescu": 0.0,
+            "ventaNoSuj": 0.0,
+            "ventaExenta": 0.0,
+            "ventaGravada": 0.88,
+            "tributos": [
+                "20"
+            ]
+        },
+        {
+            "numItem": 2,
+            "tipoItem": 1,
+            "numeroDocumento": "7CE715D2-3269-4CFB-BCE9-D563AC45EEBC",
+            "cantidad": 1.0,
+            "codigo": "PCH456",
+            "codTributo": null,
+            "uniMedida": 59,
+            "descripcion": "Leche entera de 250g",
+            "precioUni": 1.11,
+            "montoDescu": 0.0,
+            "ventaNoSuj": 0.0,
+            "ventaExenta": 0.0,
+            "ventaGravada": 1.11,
+            "tributos": [
+                "20"
+            ]
+        }
+    ],
+    "resumen": {
+        "totalNoSuj": 0.0,
+        "totalExenta": 0.0,
+        "totalGravada": 1.99,
+        "subTotalVentas": 1.99,
+        "descuNoSuj": 0.0,
+        "descuExenta": 0.0,
+        "descuGravada": 0.0,
+        "totalDescu": 0.0,
+        "subTotal": 1.99,
+        "ivaPerci1": 0.0,
+        "ivaRete1": 0.0,
+        "reteRenta": 0.0,
+        "montoTotalOperacion": 2.25,
+        "totalLetras": "Tres con 24/100 USD",
+        "condicionOperacion": 1,
+        "tributos": [
+            {
+                "codigo": "20",
+                "descripcion": "Impuesto al Valor Agregado 13%",
+                "valor": 0.26
+            }
+        ]
+    },
+    "extension": {
+        "nombEntrega": null,
+        "docuEntrega": null,
+        "nombRecibe": null,
+        "docuRecibe": null,
+        "observaciones": ""
+    },
+    "apendice": null
+}

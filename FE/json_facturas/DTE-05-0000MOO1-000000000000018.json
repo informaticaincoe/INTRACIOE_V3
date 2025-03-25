@@ -1,0 +1,89 @@
+{
+    "identificacion": {
+        "version": 3,
+        "ambiente": "01",
+        "tipoDte": "05",
+        "numeroControl": "DTE-05-0000MOO1-000000000000018",
+        "codigoGeneracion": "B9655546-2D91-456D-8942-98E7F691740B",
+        "tipoModelo": 1,
+        "tipoOperacion": 1,
+        "tipoContingencia": null,
+        "motivoContin": null,
+        "fecEmi": "2025-03-24",
+        "horEmi": "11:59:15",
+        "tipoMoneda": "USD"
+    },
+    "documentoRelacionado": [
+        {
+            "tipoDocumento": "03",
+            "tipoGeneracion": 2,
+            "numeroDocumento": "7CE715D2-3269-4CFB-BCE9-D563AC45EEBC",
+            "fechaEmision": "2025-03-21"
+        }
+    ],
+    "emisor": {
+        "nit": "06142811001040",
+        "nrc": "1278913",
+        "nombre": "Inversiones Comerciales Escobar SA de CV",
+        "codActividad": "46375",
+        "descActividad": "Venta al por mayor de productos lacteos",
+        "nombreComercial": "Inversiones Comerciales Escobar SA de CV",
+        "tipoEstablecimiento": "02",
+        "direccion": {
+            "departamento": "05",
+            "municipio": "19",
+            "complemento": "Carretera a Sonsonate, km 27 ½ Zona Industrial Lourdes, Calle Antigua Hda, La Libertad, El Salvador C.A"
+        },
+        "telefono": "77462310",
+        "correo": "informatica@grupoincoe.com"
+    },
+    "receptor": {
+        "nit": "062280967",
+        "nombre": "Dominick Norberto Hernandez Alfaro",
+        "codActividad": "47816",
+        "descActividad": "Venta al por menor de bebidas",
+        "nombreComercial": "HERNANDEZ ALFARO DOMINICK NORBERTO",
+        "direccion": {
+            "departamento": "05",
+            "municipio": "25",
+            "complemento": "final 2 calle pte p´sj 4 block o urb el sauce"
+        },
+        "telefono": "60447435",
+        "correo": "informatica@grupoincoe.com",
+        "nrc": "3228055"
+    },
+    "ventaTercero": null,
+    "cuerpoDocumento": [],
+    "resumen": {
+        "totalNoSuj": 0.0,
+        "totalExenta": 0.0,
+        "totalGravada": 0.0,
+        "subTotalVentas": 0.0,
+        "descuNoSuj": 0.0,
+        "descuExenta": 0.0,
+        "descuGravada": 0.0,
+        "totalDescu": 0.0,
+        "subTotal": 0.0,
+        "ivaPerci1": 0.0,
+        "ivaRete1": 0.0,
+        "reteRenta": 0.0,
+        "montoTotalOperacion": 0.0,
+        "totalLetras": "Cero con 00/100 USD",
+        "condicionOperacion": 1,
+        "tributos": [
+            {
+                "codigo": "20",
+                "descripcion": "Impuesto al Valor Agregado 13%",
+                "valor": 0.0
+            }
+        ]
+    },
+    "extension": {
+        "nombEntrega": null,
+        "docuEntrega": null,
+        "nombRecibe": null,
+        "docuRecibe": null,
+        "observaciones": ""
+    },
+    "apendice": null
+}
