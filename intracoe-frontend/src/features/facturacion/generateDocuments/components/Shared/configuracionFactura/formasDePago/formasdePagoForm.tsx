@@ -34,13 +34,17 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({ formasPagoLi
     plazo: {},
   });
 
-  useEffect(()=>{
+  useEffect(() => {
     const aux = 
-    infoPagoLista.map(pago=>{
-      return pago.codigo
-    })
-    setFormasPagoList(aux)
-  },[infoPagoLista])
+      infoPagoLista.map(pago => {
+        return {
+          codigo: pago.codigo,  // Solo incluimos el campo 'codigo'
+        };
+      });
+    console.log("aux", aux);
+    setFormasPagoList(aux);  // Asignamos solo los objetos con 'codigo'
+  }, [infoPagoLista]);
+  
 
   useEffect(() => {
     fetchFormasDePagoList();

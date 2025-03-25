@@ -466,7 +466,8 @@ class GenerarFacturaAPIView(APIView):
             
             # Datos básicos
             numero_control = nuevo_numero
-            codigo_generacion = self.cod_generacion
+             # Generar UUID en cada solicitud POST
+            codigo_generacion = str(uuid.uuid4()).upper()
             print(f"Numero de control: {numero_control} Codigo generacion: {self.cod_generacion}")
             
             receptor_id = data.get('receptor_id', None)

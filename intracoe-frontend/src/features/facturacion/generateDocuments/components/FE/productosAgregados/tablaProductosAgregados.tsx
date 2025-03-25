@@ -14,10 +14,13 @@ import { ModalAgregarTributo } from '../../Shared/modal/modalAgregarTributo';
 
 interface TablaProductosAgregadosProps {
   listProducts: ProductosTabla[],
-  setListProducts: any
+  setListProducts: any,
+  setCantidadListProducts:any,
+  setIdListProducts:any
+
 }
 
-export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = ({ setListProducts, listProducts }) => {
+export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = ({ setListProducts, listProducts, setCantidadListProducts, setIdListProducts }) => {
   const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
   const [rowClick] = useState<boolean>(true);
   const [visibleDeleteModal, setVisibleDeleteModal] = useState<boolean>(false);
@@ -28,6 +31,12 @@ export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = (
 
   useEffect(() => {
     console.log("list:", listProducts);
+    const auxId = listProducts.map((product)=> product.id )
+    const auxCantidad = listProducts.map((product)=> product.cantidad )
+
+    setCantidadListProducts(auxCantidad)
+    setIdListProducts(auxId)
+
   }, [listProducts]);
 
   // Función para manejar cambios en la cantidad de un producto específico

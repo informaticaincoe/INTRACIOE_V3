@@ -1,7 +1,7 @@
 import { Divider } from 'primereact/divider';
 import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPage';
 import { Title } from '../../../../shared/text/title';
-import { SetStateAction, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DatosEmisorCard } from '../components/Shared/datosEmisor/datosEmisorCard';
 import { DropDownTipoDte } from '../components/Shared/configuracionFactura/tipoDocumento/DropdownTipoDte';
 import { SelectCondicionOperacion } from '../components/Shared/configuracionFactura/condicionOperacion/selectCondicionOperacion';
@@ -22,7 +22,8 @@ import { SendFormButton } from '../../../../shared/buttons/sendFormButton';
 import { defaulReceptorData, defaultEmisorData, EmisorInterface, ReceptorInterface } from '../../../../shared/interfaces/interfaces';
 import { ProductosTabla } from '../components/FE/productosAgregados/productosData';
 import { ResumenTotalesCard } from '../components/Shared/resumenTotales/resumenTotalesCard';
-import { FormItemStatusContextProps } from 'antd/es/form/context';
+import { generarFacturaService, getFacturaCodigos } from '../services/factura/facturaServices';
+import { v4 as uuidv4 } from 'uuid';
 
 export const GenerateDocuments = () => {
   const [showProductsModal, setShowProductsModal] = useState(false);
@@ -33,12 +34,17 @@ export const GenerateDocuments = () => {
   const [emisorData, setEmisorData] = useState<EmisorInterface>(defaultEmisorData);
   const [tipoDocumento, setTipoDocumento] = useState<{ name: string; code: string; }>({ name: "Factura", code: "01" });
   const [listProducts, setListProducts] = useState<ProductosTabla[]>([])
-  // const [idListProducts, setIdListProducts] = useState<number[]>([])
+  const [idListProducts, setIdListProducts] = useState<number[]>([])
+  const [cantidadListProducts, setCantidadListProducts] = useState<number[]>([])
   const [formasPagoList, setFormasPagoList] = useState<any[]>([])
+  const [numeroControl, setNumeroControl] = useState("");
+  const [codigoGeneracion, setCodigoGeneracion] = useState("");
 
-  const generarFactura = () => {
+  const generarFactura = async () => {
     const data = {
       //Datos del receptor
+      "codigo_generacion": codigoGeneracion,
+      "numero_control": numeroControl,
       "receptor_id": receptor.id,
       "nit_receptor": receptor.num_documento,
       "nombre_receptor": receptor.nombre,
@@ -56,9 +62,13 @@ export const GenerateDocuments = () => {
       //configuracion factura
       "tipo_documento_seleccionado": tipoDocumento?.code,
       "condicion_operacion": condicionDeOperacion,
-      
+
       //prodcutos
-      "producto_id": listProducts,
+      "productos_ids": idListProducts,
+      "cantidades": cantidadListProducts,
+      "producto_id": idListProducts[0],
+      "monto_fp": "1.42",
+      "num_ref": null,
 
       //retnecion
       "retencion_iva": false,
@@ -67,19 +77,40 @@ export const GenerateDocuments = () => {
       // "porcentaje_retencion_renta": 0.00,
 
       //tipos de pago
-      "fp_id": {
-        "codigo":formasPagoList
-      }
+      "fp_id": formasPagoList,
+      "facturas_relacionadas": [], // Puedes dejarlo vacío o asignar un valor válido
+      "documentos_relacionados":"",
+      "contingencia": false,
     }
     console.log(data)
+
+    try {
+      const response = await generarFacturaService(data)
+      console.log(response)
+    }
+    catch (error) {
+      console.log(error)
+    }
   }
   //************************************/
   // OBTENCION DE DATOS
   //************************************/
   useEffect(() => {
-    console.log("formasPagoListmain ", formasPagoList)
-  }, [formasPagoList]);
+    fetchCodigos
+  }, []);
 
+
+  const fetchCodigos = async () => {
+    try {
+      const response = await getFacturaCodigos()
+      setCodigoGeneracion(response.codigo_generacion)
+      setNumeroControl(response.numero_control)
+      generarFactura(); // Enviar la factura
+
+    } catch (error) {
+      console.log(error)
+    }
+  }
   // useEffect(() => {
   //   console.log("condicionDeOperacion:", condicionDeOperacion);
   // }, [condicionDeOperacion]);
@@ -93,6 +124,13 @@ export const GenerateDocuments = () => {
   //************************************/
 
   {/*******************************/ }
+
+
+  const handleClickGenerarFactura = async () => {
+
+    generarFactura()
+  };
+
 
 
   return (
@@ -175,7 +213,7 @@ export const GenerateDocuments = () => {
             </div>
 
             <Divider className=""></Divider>
-            <TablaProductosAgregados listProducts={listProducts} setListProducts={setListProducts} />
+            <TablaProductosAgregados listProducts={listProducts} setListProducts={setListProducts} setCantidadListProducts={setCantidadListProducts} setIdListProducts={setIdListProducts} />
             <ModalListaProdcutos
               visible={showProductsModal}
               setVisible={setShowProductsModal}
@@ -278,7 +316,7 @@ export const GenerateDocuments = () => {
         <button
           type="button"
           className="bg-primary-yellow mb-5 self-start rounded-md px-5 py-3 text-white hover:cursor-pointer"
-          onClick={() => generarFactura()}
+          onClick={handleClickGenerarFactura}
         >
           Generar factura
         </button>
