@@ -439,6 +439,7 @@ def generar_factura_view(request):
             items_permitidos = 2000
             data = json.loads(request.body)
             docsRelacionados = []#Acumular los documentos relacionados
+            contingencia = False
             # Datos básicos
             numero_control = data.get('numero_control', '')
             print(f"Numero de control: {numero_control}")
@@ -850,7 +851,7 @@ def generar_factura_view(request):
                 
             factura_json = generar_json(
                 ambiente_obj, tipo_dte_obj, factura, emisor, receptor,
-                cuerpo_documento, observaciones, Decimal(str(total_iva_item)), base_imponible_checkbox, saldo_favor
+                cuerpo_documento, observaciones, Decimal(str(total_iva_item)), base_imponible_checkbox, saldo_favor, documentos_relacionados, contingencia
             )
             
             factura.json_original = factura_json
@@ -1119,7 +1120,7 @@ def generar_json_doc_ajuste(ambiente_obj, tipo_dte_obj, factura, emisor, recepto
             "telefono": str(emisor.telefono),
             "correo": str(emisor.email)
         }
-                
+        
         json_receptor = {
             "nit": str(receptor.num_documento),
             "nombre": str(receptor.nombre),            
@@ -1134,7 +1135,7 @@ def generar_json_doc_ajuste(ambiente_obj, tipo_dte_obj, factura, emisor, recepto
             "telefono": receptor.telefono or "",
             "correo": receptor.correo or "",
         }
-                
+        
         json_resumen = {
             "totalNoSuj": float(abs(factura.total_no_sujetas)),
             "totalExenta": float(abs(factura.total_exentas)),
