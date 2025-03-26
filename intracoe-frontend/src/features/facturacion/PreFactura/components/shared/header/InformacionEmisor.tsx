@@ -24,13 +24,11 @@ export const InformacionEmisor: React.FC<InformacionEmisorProps> = ({ emisor, da
                 <p>Codigo generacion: {datosFactura.codigoGeneracion}</p>
                 <p>Numero de control: {datosFactura.numeroControl}</p>
             </span>
-            <span className="">
-                <span className="border-2  border-border-color rounded-md flex flex-col justify-center items-center">
-                  <p className="font-bold">Factura Electronica</p>
-                  <img className="size-24" src="https://upload.wikimedia.org/wikipedia/commons/d/d7/Commons_QR_code.png" alt="qr" />  
-                  <p>Generado: {datosFactura.fechaEmision}</p>
-                  <p>{datosFactura.horaEmision}</p>
-                </span>
+            <span className="border-2  border-border-color rounded-md flex flex-col justify-center items-center py-2">
+                <p className="font-bold">Factura Electronica</p>
+                <img className="size-20" src="https://upload.wikimedia.org/wikipedia/commons/d/d7/Commons_QR_code.png" alt="qr" />
+                <p className="text-sm text-nowrap">Generado: {datosFactura.fechaEmision}</p>
+                <p className="text-sm text-nowrap">{datosFactura.horaEmision}</p>
             </span>
         </div>
     )
