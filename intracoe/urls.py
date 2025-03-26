@@ -20,5 +20,5 @@ urlpatterns = [
     path('select2/', include('django_select2.urls')),
 
     # Incluir las rutas de la API (asegúrate de ajustar 'fe.urls' al nombre correcto de tu app)
-    path('api/', include('FE.urls')),
+    path('api/', include('FE.urls_api')),
 ]
