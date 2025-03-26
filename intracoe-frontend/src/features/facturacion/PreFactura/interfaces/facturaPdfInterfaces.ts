@@ -88,6 +88,43 @@ export interface FacturaResponse {
     codPuntoVenta: string;
   }
   
+
+  export const EmisorDefault = {
+    nit: '',
+    nrc: "",
+    nombre: "",
+    codActividad: "",
+    descActividad: "",
+    nombreComercial: "",
+    tipoEstablecimiento: "",
+    direccion: {
+      departamento: "",
+      municipio: "",
+      complemento: "",
+    },
+    telefono: "",
+    correo: "",
+    codEstableMH: "",
+    codEstable: "",
+    codPuntoVentaMH: "",
+    codPuntoVenta: "",
+  }
+
+  export const ReceptorDefault = {
+    nombre: "",
+    codActividad: "",
+    descActividad: "",
+    direccion: {
+      departamento: "",
+      municipio: "",
+      complemento: "",
+    },
+    telefono: "",
+    correo: "",
+    nrc: null,
+    tipoDocumento: "",
+    numDocumento: "",
+  }
   export interface Receptor {
     nombre: string;
     codActividad: string;
@@ -160,3 +197,15 @@ export interface FacturaResponse {
     placaVehiculo: string | null;
   }
   
+  export const DatosFacturaDefault = {
+    codigoGeneracion: "",
+    numeroControl: "",
+    fechaEmision: "",
+    horaEmision: ""
+  }
+  export interface DatosFactura{
+    codigoGeneracion: string,
+    numeroControl: string,
+    fechaEmision:string,
+    horaEmision:string
+  }
