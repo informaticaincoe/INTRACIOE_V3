@@ -15,22 +15,23 @@ export const TablaProductosFE: React.FC<TablaProductosFEInterface> = ({ producto
     return (
         <>
             <table className="table-auto border w-full border-border-color text-start rounded-md ">
-                <thead className="rounded-md">
+                <thead>
                     <tr className="text-center">
-                        <td className="p-2 border-r border-border-color text-center">N°</td>
-                        <td className="p-2 border-r border-border-color">Cantidad:</td>
-                        <td className="p-2 border-r border-border-color">Código</td>
-                        <td className="p-2 border-r border-border-color">Descripción</td>
-                        <td className="p-2 border-r border-border-color">Precio unitario</td>
-                        <td className="p-2 border-r border-border-color">Otros montos no afectos</td>
-                        <td className="p-2 border-r border-border-color">Descuento por item</td>
-                        <td className="p-2 border-r border-border-color">Ventas no sujetas</td>
-                        <td className="p-2 border-r border-border-color">Ventas exentas</td>
-                        <td className="p-2">Ventas grabadas</td>
+                        <th className="p-2 border-r border-border-color text-center">N°</th>
+                        <th className="p-2 border-r border-border-color">Cantidad:</th>
+                        <th className="p-2 border-r border-border-color">Código</th>
+                        <th className="p-2 border-r border-border-color">Descripción</th>
+                        <th className="p-2 border-r border-border-color">Precio unitario</th>
+                        <th className="p-2 border-r border-border-color">Otros montos no afectos</th>
+                        <th className="p-2 border-r border-border-color">Descuento por item</th>
+                        <th className="p-2 border-r border-border-color">Ventas no sujetas</th>
+                        <th className="p-2 border-r border-border-color">Ventas exentas</th>
+                        <th className="p-2">Ventas grabadas</th>
                     </tr>
-
                 </thead>
-                <tbody className="pb-5">
+
+
+                <tbody>
                     {
                         productos.map((producto, index) => (
                             <tr>

@@ -35,7 +35,7 @@ export const generarFacturaService = async (id: string) => {
         totalIva: response.data.total_iva
       },
       pagoEnLetras: response.data.total_letras,
-      condicionOpeacion:response.data.condicion_operacion,
+      condicionOpeacion: response.data.condicion_operacion,
       extension: response.data.json_original.extension
     };
   } catch (error) {
@@ -43,3 +43,22 @@ export const generarFacturaService = async (id: string) => {
     throw new Error();
   }
 };
+
+export const FirmarFactura = async (id: string) => {
+  try {
+    const response = await axios.post(`${BASEURL}/factura/firmar/${id}/`);
+    console.log(response)
+  }
+  catch (error) {
+    console.log(error)
+  }
+}
+
+export const EnviarHacienda = async(id:string) =>{
+  try {
+    const response = await axios.post(`${BASEURL}/factura/enviar_hacienda/${id}/`);
+    console.log(response)
+  } catch (error) {
+    console.log(error)
+  }
+}

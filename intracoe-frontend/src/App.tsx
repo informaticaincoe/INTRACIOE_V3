@@ -20,12 +20,12 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/actividades-economicas" element={<ActivitiesPage />} />
           <Route path="/generar-documentos" element={<GenerateDocuments />} />
+        <Route path="/factura/:id" element={<FacturaVisualizacionPage />} />
           <Route path="/productos" element={<ProductsPage />} />
           <Route path="/servicios" element={<ServicesPage />} />
           <Route path="/empresa" element={<ConfigBussiness />} />
           <Route path="/uploadExcel" element={<UploadExcelPage />} />
         </Route>
-        <Route path="/factura/:id" element={<FacturaVisualizacionPage />} />
 
       </Routes>
     </BrowserRouter>

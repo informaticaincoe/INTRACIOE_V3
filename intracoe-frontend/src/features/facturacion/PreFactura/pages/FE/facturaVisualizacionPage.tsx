@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router";
-import { generarFacturaService } from "../../services/facturavisualizacionServices";
+import { EnviarHacienda, FirmarFactura, generarFacturaService } from "../../services/facturavisualizacionServices";
 import { InformacionEmisor } from "../../components/shared/header/InformacionEmisor";
 import { CuerpoDocumento, CuerpoDocumentoDefault, DatosFactura, DatosFacturaDefault, Emisor, EmisorDefault, Extension, ExtensionDefault, Receptor, ReceptorDefault, ResumenDefalt, resumenTablaFE, resumenTablaFEDefault } from "../../interfaces/facturaPdfInterfaces";
 import { InformacionReceptor } from "../../components/shared/receptor/InformacionReceptor";
@@ -14,6 +14,53 @@ import { CondicionOperacion } from "../../components/shared/extension/CondicionD
 import { SeccionExtension } from "../../components/shared/extension/seccionExtension";
 import { Contactos } from "../../components/shared/footer/contactos";
 
+import { Title } from "../../../../../shared/text/title";
+
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import { usePDF } from "react-to-pdf";
+
+
+const exportToPDF = async () => {
+    const element = document.getElementById('content-id');
+    if (!element) return;
+
+    const canvas = await html2canvas(element, {
+        useCORS: true,
+        scale: 3, // mejor resolución
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+
+    const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+    });
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+
+    // 🧠 Calcular altura proporcional manteniendo aspecto
+    const imgProps = {
+        width: canvas.width,
+        height: canvas.height,
+    };
+
+    const ratio = imgProps.height / imgProps.width;
+    const imgHeight = pageWidth * ratio;
+
+    const xOffset = (pageWidth - canvas.width * (pageWidth / canvas.width)) / 2;
+
+    const imgWidth = pageWidth;
+    const x = (pageWidth - imgWidth) / 2; // normalmente esto será 0, pero lo dejamos flexible
+
+    // ✅ Añadir imagen con altura real proporcional
+
+    pdf.addImage(imgData, 'PNG', xOffset, 0, imgWidth, imgHeight);
+    pdf.save('factura.pdf');
+};
+
+
+
 export const FacturaVisualizacionPage = () => {
     let { id } = useParams();
     const [emisor, setEmisor] = useState<Emisor>(EmisorDefault)
@@ -25,7 +72,7 @@ export const FacturaVisualizacionPage = () => {
     const [pagoEnLetras, setPagoEnLetras] = useState<string>("")
     const [condicionOperacion, setCondicionOperacion] = useState<number>(0)
 
-
+    const { toPDF, targetRef } = usePDF({ filename: 'page.pdf' });
     useEffect(() => {
         fetchDatosFactura()
     }, [])
@@ -50,27 +97,76 @@ export const FacturaVisualizacionPage = () => {
             console.log(error)
         }
     }
+
+    const firmarFactura = async () => {
+        try {
+            if (id) {
+                const response = await FirmarFactura(id)
+                console.log(response)
+                enviarHacienda()
+            }
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    const enviarHacienda = async () => {
+        if (id) {
+            try {
+                const response = await EnviarHacienda(id)
+            } catch (error) {
+                console.log(error)
+            }
+        }
+    }
     return (
-        <div className="flex justify-between items-center w-full">
-            <div className="py-5 px-5 w-3/5 bg-white border">
-                <InformacionEmisor emisor={emisor} datosFactura={datosFactura} />
-                <InformacionReceptor receptor={receptor} />
-                <TablaVentaTerceros />
-                <SeccionDocumentosRelacionados />
-                <SeccionOtrosDocumentosRelacionados />
-                <TablaProductosFE productos={productos} />
-                <div className="grid grid-cols-2 py-5 gap-x-5">
-                    <span className="flex flex-col gap-7">
-                        <PagoEnLetras cantidadAPagar={pagoEnLetras} />
-                        <CondicionOperacion condicion={condicionOperacion} />
-                        <SeccionExtension extension={extension} />
-                    </span>
-                    <span>
-                        <TablaResumenFE resumen={resumen} />
-                    </span>
-                </div>
-                <Contactos emisor={emisor} />
+        <>
+            <Title text="Factura" />
+
+            <button onClick={exportToPDF}>
+                Descargar PDF
+            </button>
+
+            <button onClick={firmarFactura}>
+                Enviar Hacienda
+            </button>
+
+            <div>
+                <button onClick={() => toPDF()}>Download PDF</button>
             </div>
-        </div>
+            <div id="content-id"
+                style={{
+                    background: '#fff',
+                    fontSize: '0.8vw',
+                    padding: '1vw',
+
+                }}>
+                <div className="py-5 px-2 my-2 bg-white" ref={targetRef}>
+                    <InformacionEmisor emisor={emisor} datosFactura={datosFactura} />
+                    <InformacionReceptor receptor={receptor} />
+                    <TablaVentaTerceros />
+                    <SeccionDocumentosRelacionados />
+                    <SeccionOtrosDocumentosRelacionados />
+                    <TablaProductosFE productos={productos} />
+                    <div className="grid grid-cols-2 pt-5 gap-x-5">
+                        <span className="flex flex-col gap-3">
+                            <PagoEnLetras cantidadAPagar={pagoEnLetras} />
+                            <CondicionOperacion condicion={condicionOperacion} />
+                            <div className="border border-border-color rounded-md text-start p-2">
+                                <div className="flex ">
+                                    <p><span className="font-bold">Oberservaciones: </span>{extension.observaciones}</p>
+                                    <p><span className="font-bold"></span>{extension.nombEntrega}</p>
+                                </div>
+                            </div>
+                            <SeccionExtension extension={extension} />
+                        </span>
+                        <span>
+                            <TablaResumenFE resumen={resumen} />
+                        </span>
+                    </div>
+                    <Contactos emisor={emisor} />
+                </div>
+            </div>
+        </>
     )
 }
