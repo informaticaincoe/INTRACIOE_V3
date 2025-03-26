@@ -27,7 +27,6 @@ export const getAllTributosByTipo = async(id:number) => {
 export const getTributoById = async(id:number) => {
     try {
         const response = await axios.get(`${BASEURL}/tributo/${id}/`)
-        console.log(response)
         return response.data
     } catch (error) {
         console.log(error)
