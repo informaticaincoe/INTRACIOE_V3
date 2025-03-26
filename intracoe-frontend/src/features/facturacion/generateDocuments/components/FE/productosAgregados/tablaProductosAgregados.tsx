@@ -22,7 +22,7 @@ interface TablaProductosAgregadosProps {
   descuentoItem: number
 }
 
-export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = ({ setListProducts, listProducts, setCantidadListProducts, setIdListProducts, setDescuentoItem, descuentoItem }) => {
+export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = ({ setListProducts, listProducts, setCantidadListProducts, setIdListProducts }) => {
   const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
   const [rowClick] = useState<boolean>(true);
   const [visibleDeleteModal, setVisibleDeleteModal] = useState<boolean>(false);
@@ -75,6 +75,7 @@ export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = (
           : product
       )
     );
+
   };
 
   const handleDelete = () => {
@@ -190,7 +191,7 @@ export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = (
           header={<p className="text-sm">DESCUENTO</p>}
           body={(rowData: ProductosTabla) => (
             <Dropdown
-              value={descuentoItem}
+              value={rowData.descuento}
               onChange={(e) => handleDescuentoChange(e.value, rowData.id)}
               options={descuentosList}
               optionLabel="porcentaje"
