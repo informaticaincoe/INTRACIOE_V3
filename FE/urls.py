@@ -19,7 +19,6 @@ from .views import (
 
 #renombrar el archivo
 urlpatterns = [
-    
     #urls para procesamiento de facturas
     path('generar/', generar_factura_view, name='generar_factura'),
     

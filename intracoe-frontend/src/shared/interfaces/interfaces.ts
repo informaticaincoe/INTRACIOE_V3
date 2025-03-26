@@ -71,26 +71,26 @@ export interface EmisorInterface {
 }
 
 export const defaulReceptorData: ReceptorInterface = {
+  id: '',
   tipo_documento: { id: '', descripcion: '', code: '' },
   num_documento: '',
   nrc: '',
-  nombre_establecimiento: '',
-  nombre_comercial: '',
+  nombre: '',
   actividades_economicas: [],
-  departamento: { id: '', descripcion: '', code: '' },
   municipio: { id: '', descripcion: '', code: '' },
   direccion: '',
   telefono: '',
   correo: '',
+  nombre_comercial: ""
 }
 export interface ReceptorInterface {
+  id: string;
   tipo_documento: TipoDocumento,
   num_documento: string,
   nrc: string,
-  nombre_establecimiento: string,
+  nombre: string,
   actividades_economicas: ActivitiesData[]
   municipio: { id: string, descripcion: string, code: string },
-  departamento: { id: string, descripcion: string, code: string },
   direccion: string,
   telefono: string,
   correo: string,
@@ -211,7 +211,7 @@ export interface ProductoResponse {
   impuestos: Impuesto[];
   tipo_item: TipoItem | null;
   referencia_interna: string | null;
-  tributo: Tributo;
+  tributo: number; //TODO: Verificar que sea un arreglo de tributos
   maneja_lotes: boolean;
   fecha_vencimiento: string | null;
   almacenes: Almacen[];
@@ -250,4 +250,13 @@ export interface Tributo {
 export interface Almacen {
   id: number;
   nombre: string;
+}
+
+export interface Descuento {
+  id: number,
+  porcentaje: number,
+  descripcion: string,
+  fecha_inicio: string,
+  fecha_fin: string,
+  estdo: boolean
 }

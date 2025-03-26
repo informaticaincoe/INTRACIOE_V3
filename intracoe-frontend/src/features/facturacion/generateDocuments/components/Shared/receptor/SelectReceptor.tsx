@@ -11,20 +11,7 @@ import { RadioButton, RadioButtonChangeEvent } from 'primereact/radiobutton';
 import { SelectDepartmentComponent } from '../../../../../../shared/Select/selectDepartmentComponent';
 import { SelectMunicipios } from '../../../../../../shared/Select/selectMunicipios';
 import { getAllReceptor } from '../../../services/receptor/receptorServices';
-import { ActivitiesData, Departamento, EmisorInterface, Municipio, ReceptorInterface, TipoDocumento } from '../../../../../../shared/interfaces/interfaces';
-
-const receptorData = [
-  {
-    id: 1,
-    num_documento: '06142802961066',
-    nombre: '06142802961066 - Francisco Antonio Flores',
-  },
-  {
-    id: 2,
-    num_documento: '062280967',
-    nombre: '06142802961066 - Dominick Norberto Hernandez Alfaro',
-  },
-];
+import { ActivitiesData, Departamento, Municipio, ReceptorInterface, TipoDocumento } from '../../../../../../shared/interfaces/interfaces';
 
 
 interface StepperProps {
@@ -33,8 +20,7 @@ interface StepperProps {
 }
 
 export const SelectReceptor:React.FC<StepperProps> = ({receptor, setReceptor}) => {
-  const [selectedReceptor, setSelectedReceptor] = useState<any>('');
-  const [receptorAuxData, setReceptorAuxData] = useState<any[]>([]);
+  const [receptoresList, setReceptoreLists] = useState<ReceptorInterface[]>([]);
   const [visibleModal, setVisibleModal] = useState(false);
   const [tipoIdDocumento, setTipoIdDocumento] = useState<{
     name?: string;
@@ -44,13 +30,14 @@ export const SelectReceptor:React.FC<StepperProps> = ({receptor, setReceptor}) =
   const stepperRef = useRef<Stepper | null>(null); // TODO: Tipar correctamente el ref
 
   useEffect(() => {
-    fetchTipoDte();
+    fetchReceptores()
   }, []);
 
-  const fetchTipoDte = async () => {
+
+  const fetchReceptores = async () => {
     try {
       const response = await getAllReceptor()
-      setReceptorAuxData(response);
+      setReceptoreLists(response);
     }
     catch (error) {
       console.log(error)
@@ -65,11 +52,12 @@ export const SelectReceptor:React.FC<StepperProps> = ({receptor, setReceptor}) =
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setReceptor({ ...receptor, [e.target.name]: e.target.value });
   };
-  const handleDepartamento = (value: Departamento) => {
-    console.log(value);
 
-    setReceptor({ ...receptor, departamento: value });
-  };
+  // const handleDepartamento = (value: Departamento) => {
+  //   console.log(value);
+
+  //   setReceptor({ ...receptor, departamento: value });
+  // };
 
   const handleMunicipio = (value: Municipio) => {
     setReceptor({ ...receptor, municipio: value });
@@ -82,17 +70,16 @@ export const SelectReceptor:React.FC<StepperProps> = ({receptor, setReceptor}) =
   return (
     <>
       <div className="flex flex-col items-start gap-1">
-        <label htmlFor={selectedReceptor.id} className="opacity-70">
+        <label htmlFor={receptor.id} className="opacity-70">
           Receptor
         </label>
         <div className="flex w-full justify-between gap-10">
           <Dropdown
-            id={selectedReceptor.id}
+            id={receptor.id}
             value={receptor}
             onChange={(e: { value: any }) => setReceptor(e.value)}
-            options={receptorAuxData}
+            options={receptoresList}
             optionLabel="nombre"
-            optionValue="id"
             placeholder="Seleccione un receptor"
             className="font-display w-full text-start"
           />
@@ -197,10 +184,10 @@ export const SelectReceptor:React.FC<StepperProps> = ({receptor, setReceptor}) =
               <div className="flex flex-col gap-8">
                 <span>
                   <label htmlFor="">Departamento</label>
-                  <SelectDepartmentComponent
+                  {/* <SelectDepartmentComponent
                     department={receptor.departamento}
                     setDepartment={handleDepartamento}
-                  />
+                  /> */}
                 </span>
                 <span>
                   <label htmlFor="">Municipio</label>
