@@ -81,6 +81,8 @@ documentos_relacionados = []
 tipo_dte_doc_relacionar = None
 documento_relacionado = False
 productos_ids_r = []
+tipo_documento_dte = "01"
+productos_inventario = None
 
 #vistas para actividad economica
 def cargar_actividades(request):
@@ -307,7 +309,16 @@ def num_to_letras(numero):
         return "Conversión no disponible"
 
 def obtener_numero_control_ajax(request):
+    global tipo_documento_dte 
+    global productos_inventario
     tipo_dte = request.GET.get('tipo_dte', '01')  # Valor por defecto '03' si no se envía ninguno
+    
+    #Asignar tipo de documento seleccionado a variable global que posteriormente sera utilzada para retornar productos
+    tipo_documento_dte = tipo_dte
+    productos_inventario = Producto
+    #productos_inventario = obtener_listado_productos_view()
+    #obtener_listado_productos_view()
+    print("-Productos num control: ", productos_inventario)
     #iniciar_dte = request.GET.get('iniciar_dte', False)
     print(f"Inicializando DTE Vista: {tipo_dte}")
     nuevo_numero = NumeroControl.preview_numero_control(tipo_dte)
@@ -387,38 +398,63 @@ def export_facturas_excel(request):
     wb.save(response)
     return response
 
-def obtener_listado_productos_view(request):
-    tipo_dte = request.GET.get('tipo_dte', '01')
-    tipo_dte_obj = Tipo_dte.objects.get(codigo=tipo_dte)
+from django.core.handlers.wsgi import WSGIRequest
+from io import BytesIO
+
+
+def obtener_listado_productos_view():
+    global tipo_documento_dte
+    tipo_dte_obj = Tipo_dte.objects.get(codigo=tipo_documento_dte)
     productos = Producto.objects.all()
-    print(f"Tipo dte[productos]: {tipo_dte} URL: {request.method} Productos: {productos}")
     
     if productos:
-        if tipo_dte_obj.codigo == COD_CONSUMIDOR_FINAL:
-            #recorrer todos los productos y mostrarlos con IVA si aplica
-            for producto in productos:
-                print(f"-inicio recorrer productos: tipo_dte {tipo_dte_obj.codigo}")
-                if tipo_dte_obj.codigo == COD_CONSUMIDOR_FINAL:
-                    print(f"-Producto: {producto} precioUni = {producto.preunitario}")
-                    producto.preunitario *= Decimal("1.13")
-                    print(f"Producto: {producto} precio_modificado = {producto.preunitario}")
-                else:
-                    productos = Producto.objects.all()
+        #recorrer todos los productos y mostrarlos con IVA si aplica
+        for producto in productos:
+            print("-Precio: ", producto.preunitario)
+            if tipo_dte_obj.codigo == COD_CONSUMIDOR_FINAL:
+                producto.preunitario = producto.preunitario * Decimal("1.13")
+                print(f"-precio unitario: {producto.preunitario} ")
+            else:
+                producto.preunitario = producto.preunitario / Decimal("1.13")
+                print(f"-ccf precio unitario: {producto.preunitario} ")
+    #return productos_modal
+    context = {
+            "productos": productos
+        }
+    print("-Context: ", context)
     
-    if request.method == 'GET':
-        return productos
-    elif request.method == 'POST':
-        return render(request, 'generar_dte.html', {'productos': productos})
+    env = {
+        'REQUEST_METHOD': 'GET',
+        'PATH_INFO': '/fe/generar/',
+        'QUERY_STRING': 'tipo_dte=03',  # Aquí están los parámetros GET que quieres modificar
+        'wsgi.input': BytesIO(),  # Se necesita un flujo de entrada vacío
+        'CONTENT_TYPE': '',
+        'CONTENT_LENGTH': '',
+    }
+    
+    env['QUERY_STRING'] = ''  # Esto elimina todos los parámetros de la URL
+    
+    request = WSGIRequest(env)
+
+    # Copiar los parámetros GET y limpiarlos
+    request.GET = request.GET.copy()  # Necesitamos copiar para poder modificarla
+    request.GET.clear()  # Limpiar todos los parámetros GET
+    
+    print("-requeste modificado:. ", request)
+    #return render(request, "generar_dte.html", context)
+    return productos
     
 @csrf_exempt
 @transaction.atomic
 def generar_factura_view(request):
-    print("Inicio generar dte")
+    print("Inicio generar dte request:. ", request)
     #global formas_pago = [] #Asignar formas de pago
     if request.method == 'GET':
-        tipo_dte = request.GET.get('tipo_dte', '01')
-        emisor_obj = Emisor_fe.objects.first()
+        global tipo_documento_dte
+        tipo_dte = tipo_documento_dte
+        print("requeste view: ", request)
         
+        emisor_obj = Emisor_fe.objects.first()
         if emisor_obj:
             nuevo_numero = NumeroControl.preview_numero_control(tipo_dte)#dte selc. por defecto FE
         else:
@@ -435,9 +471,11 @@ def generar_factura_view(request):
             "email": emisor_obj.email if emisor_obj else "",
         } if emisor_obj else None
 
+        print("-Modificar productos")
         receptores = list(Receptor_fe.objects.values("id", "num_documento", "nombre"))
-        #productos = Producto.objects.all()
-        productos = obtener_listado_productos_view(request)
+        productos = Producto.objects.all()
+        #productos = obtener_listado_productos_view()
+        print("productos modificados: ", productos)
         tipooperaciones = CondicionOperacion.objects.all()
         tipoDocumentos = Tipo_dte.objects.exclude( Q(codigo=COD_NOTA_CREDITO) | Q(codigo=COD_NOTA_DEBITO) )
         tipoItems = TipoItem.objects.all()
@@ -490,7 +528,7 @@ def generar_factura_view(request):
             porcentaje_descuento_item = Decimal(porcentaje_descuento.replace(",", "."))
             
             # Configuración adicional
-            tipooperacion_id = data.get("condicion_operacion", None)
+            tipooperacion_id = data.get("condicion_operacion", 1)
             porcentaje_retencion_iva = Decimal(data.get("porcentaje_retencion_iva", "0"))
             print("-Porcentaje retencion IVA: ", porcentaje_retencion_iva)
             retencion_iva = data.get("retencion_iva", False)
