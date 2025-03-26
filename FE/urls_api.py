@@ -1,6 +1,6 @@
 from django.urls import path
 
-from FE.api_views import ActividadEconomicaCreateAPIView, ActividadEconomicaDeleteAPIView, ActividadEconomicaDetailAPIView, ActividadEconomicaListAPIView, ActividadEconomicaUpdateAPIView, AmbientesListAPIView, CondicionDeOperacionListAPIView, DepartamentosListAPIView, EmisorCreateAPIView, EnviarFacturaHaciendaAPIView, FacturaListAPIView, FirmarFacturaAPIView, GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, ModeloDeFacturacionListAPIView, MunicipioListAPIView, ObtenerReceptorAPIView, TipoDTEListAPIView, TipoDocIDReceptorListAPIView, TipoTransmisionListAPIView, TiposEstablecimientosListAPIView, TiposTributosListAPIView, TiposTributosSerializer, TributoByTipoListAPIView, TributoDetailsAPIView, autenticacion, EmisorListAPIView, productosListAPIView, recptorListAPIView, tipoGeneracionDocumentoListAPIView, GenerarDocumentoAjusteAPIView
+from FE.api_views import ActividadEconomicaCreateAPIView, ActividadEconomicaDeleteAPIView, ActividadEconomicaDetailAPIView, ActividadEconomicaListAPIView, ActividadEconomicaUpdateAPIView, AmbientesListAPIView, CondicionDeOperacionListAPIView, DepartamentosListAPIView, DescuentosAPIView, EmisorCreateAPIView, EnviarFacturaHaciendaAPIView, FacturaDetailAPIView, FacturaListAPIView, FirmarFacturaAPIView, FormasPagosListAPIView, GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, ModeloDeFacturacionListAPIView, MunicipioListAPIView, ObtenerReceptorAPIView, TipoDTEListAPIView, TipoDocIDReceptorListAPIView, TipoTransmisionListAPIView, TiposEstablecimientosListAPIView, TiposTributosListAPIView, TiposTributosSerializer, TributoByTipoListAPIView, TributoDetailsAPIView, autenticacion, EmisorListAPIView, productosListAPIView, recptorListAPIView, tipoGeneracionDocumentoListAPIView, GenerarDocumentoAjusteAPIView
 from FE.serializers import TributosSerializer
 from . import views
 
@@ -18,6 +18,8 @@ urlpatterns = [
 
     path('api/invalidar_dte/<int:factura_id>/', InvalidarDteUnificadoAPIView.as_view(), name='api_invalidar_firmar_enviar'),
     path('api/factura/generar/', GenerarFacturaAPIView.as_view(), name='generar_factura_api'),
+    path('api/factura_pdf/<int:pk>/', FacturaDetailAPIView.as_view(), name='factura_pdf_api'),
+    
     path('api/factura/firmar/<int:factura_id>/', FirmarFacturaAPIView.as_view(), name='firmar_factura_api'),
     path('api/factura/enviar_hacienda/<int:factura_id>/', EnviarFacturaHaciendaAPIView.as_view(), name='enviar_factura_hacienda_api'),
     path('api/factura_ajuste/generar/', GenerarDocumentoAjusteAPIView.as_view(), name='generar_factura_ajuste_api'), #Nota de credito y nota de debito
@@ -54,6 +56,7 @@ urlpatterns = [
     
     #URL PRODUCTOS
     path('api/productos/', productosListAPIView.as_view(), name='tipo_dte_api'),   
+    path('api/descuentos/', DescuentosAPIView.as_view(), name='descuentos_api'),
     
     #URL FACTURAS
     path('api/facturas/', FacturaListAPIView.as_view(), name='factura_dte_api'),   
@@ -87,4 +90,7 @@ urlpatterns = [
     #path('api/contingencia_dte/<int:factura_id>/', ContingenciaDteAPIView.as_view(), name='contingencia_dte_api_view'),
     path('api/tipo-transmision/', TipoTransmisionListAPIView.as_view(), name='modelo_facturacion_list_api'),
     
+    #FORMAS DE PAGO
+    path('api/formas-pago/', FormasPagosListAPIView.as_view(), name='formas_pago_list_api'),
+
 ]

@@ -339,6 +339,10 @@ class TributoDetailsAPIView(generics.RetrieveAPIView):
 # GENERACION DE DOCUMENTOS ELECTRONICOS
 ######################################################
     
+class FacturaDetailAPIView(generics.RetrieveAPIView):
+    queryset = FacturaElectronica.objects.all()
+    serializer_class = FacturaElectronicaSerializer
+
 class FacturaListAPIView(APIView):
     """
     Vista API que devuelve un listado de FacturaElectronica con filtros y paginación.

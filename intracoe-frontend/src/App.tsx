@@ -9,6 +9,7 @@ import { ProductsPage } from './features/bussiness/products/pages/productsPage';
 import { ServicesPage } from './features/bussiness/services/pages/ServicesPage';
 import { UploadExcelPage } from './features/facturacion/activities/pages/uploadExcelPage';
 import { ConfigBussiness } from './features/bussiness/configBussiness/pages/ConfigBussiness';
+import { FacturaVisualizacionPage } from './features/facturacion/PreFactura/pages/FE/facturaVisualizacionPage';
 
 function App() {
   return (
@@ -24,6 +25,8 @@ function App() {
           <Route path="/empresa" element={<ConfigBussiness />} />
           <Route path="/uploadExcel" element={<UploadExcelPage />} />
         </Route>
+        <Route path="/factura/:id" element={<FacturaVisualizacionPage />} />
+
       </Routes>
     </BrowserRouter>
   );
