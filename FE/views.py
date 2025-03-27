@@ -81,6 +81,8 @@ documentos_relacionados = []
 tipo_dte_doc_relacionar = None
 documento_relacionado = False
 productos_ids_r = []
+tipo_documento_dte = "01"
+productos_inventario = None
 
 #vistas para actividad economica
 def cargar_actividades(request):
@@ -307,7 +309,16 @@ def num_to_letras(numero):
         return "Conversión no disponible"
 
 def obtener_numero_control_ajax(request):
+    global tipo_documento_dte 
+    global productos_inventario
     tipo_dte = request.GET.get('tipo_dte', '01')  # Valor por defecto '03' si no se envía ninguno
+    
+    #Asignar tipo de documento seleccionado a variable global que posteriormente sera utilzada para retornar productos
+    tipo_documento_dte = tipo_dte
+    productos_inventario = Producto
+    #productos_inventario = obtener_listado_productos_view()
+    #obtener_listado_productos_view()
+    print("-Productos num control: ", productos_inventario)
     #iniciar_dte = request.GET.get('iniciar_dte', False)
     print(f"Inicializando DTE Vista: {tipo_dte}")
     nuevo_numero = NumeroControl.preview_numero_control(tipo_dte)
@@ -387,16 +398,63 @@ def export_facturas_excel(request):
     wb.save(response)
     return response
 
+from django.core.handlers.wsgi import WSGIRequest
+from io import BytesIO
 
+
+def obtener_listado_productos_view():
+    global tipo_documento_dte
+    tipo_dte_obj = Tipo_dte.objects.get(codigo=tipo_documento_dte)
+    productos = Producto.objects.all()
+    
+    if productos:
+        #recorrer todos los productos y mostrarlos con IVA si aplica
+        for producto in productos:
+            print("-Precio: ", producto.preunitario)
+            if tipo_dte_obj.codigo == COD_CONSUMIDOR_FINAL:
+                producto.preunitario = producto.preunitario * Decimal("1.13")
+                print(f"-precio unitario: {producto.preunitario} ")
+            else:
+                producto.preunitario = producto.preunitario / Decimal("1.13")
+                print(f"-ccf precio unitario: {producto.preunitario} ")
+    #return productos_modal
+    context = {
+            "productos": productos
+        }
+    print("-Context: ", context)
+    
+    env = {
+        'REQUEST_METHOD': 'GET',
+        'PATH_INFO': '/fe/generar/',
+        'QUERY_STRING': 'tipo_dte=03',  # Aquí están los parámetros GET que quieres modificar
+        'wsgi.input': BytesIO(),  # Se necesita un flujo de entrada vacío
+        'CONTENT_TYPE': '',
+        'CONTENT_LENGTH': '',
+    }
+    
+    env['QUERY_STRING'] = ''  # Esto elimina todos los parámetros de la URL
+    
+    request = WSGIRequest(env)
+
+    # Copiar los parámetros GET y limpiarlos
+    request.GET = request.GET.copy()  # Necesitamos copiar para poder modificarla
+    request.GET.clear()  # Limpiar todos los parámetros GET
+    
+    print("-requeste modificado:. ", request)
+    #return render(request, "generar_dte.html", context)
+    return productos
+    
 @csrf_exempt
 @transaction.atomic
 def generar_factura_view(request):
-    print("Inicio generar dte")
+    print("Inicio generar dte request:. ", request)
     #global formas_pago = [] #Asignar formas de pago
     if request.method == 'GET':
-        tipo_dte = request.GET.get('tipo_dte', '01')
-        emisor_obj = Emisor_fe.objects.first()
+        global tipo_documento_dte
+        tipo_dte = tipo_documento_dte
+        print("requeste view: ", request)
         
+        emisor_obj = Emisor_fe.objects.first()
         if emisor_obj:
             nuevo_numero = NumeroControl.preview_numero_control(tipo_dte)#dte selc. por defecto FE
         else:
@@ -413,10 +471,13 @@ def generar_factura_view(request):
             "email": emisor_obj.email if emisor_obj else "",
         } if emisor_obj else None
 
+        print("-Modificar productos")
         receptores = list(Receptor_fe.objects.values("id", "num_documento", "nombre"))
         productos = Producto.objects.all()
+        #productos = obtener_listado_productos_view()
+        print("productos modificados: ", productos)
         tipooperaciones = CondicionOperacion.objects.all()
-        tipoDocumentos = Tipo_dte.objects.all()
+        tipoDocumentos = Tipo_dte.objects.exclude( Q(codigo=COD_NOTA_CREDITO) | Q(codigo=COD_NOTA_DEBITO) )
         tipoItems = TipoItem.objects.all()
         descuentos = Descuento.objects.all()
         formasPago = FormasPago.objects.all()
@@ -467,7 +528,7 @@ def generar_factura_view(request):
             porcentaje_descuento_item = Decimal(porcentaje_descuento.replace(",", "."))
             
             # Configuración adicional
-            tipooperacion_id = data.get("condicion_operacion", None)
+            tipooperacion_id = data.get("condicion_operacion", 1)
             porcentaje_retencion_iva = Decimal(data.get("porcentaje_retencion_iva", "0"))
             print("-Porcentaje retencion IVA: ", porcentaje_retencion_iva)
             retencion_iva = data.get("retencion_iva", False)
@@ -2186,80 +2247,66 @@ def agregar_formas_pago_ajax(request):
     #data = request.data
     global formas_pago
     formas_pago = []
+    
     try:
-        formas_pago_cod = request.GET.get("fp_id")#request.GET.get("fp_id")
+        formas_pago_id = request.GET.get("fp_id")#request.GET.get("fp_id")
         num_referencia = request.GET.get("num_ref", None)
-        monto_total = request.GET.get("total_pagar", "0")
+        monto_total = Decimal(request.GET.get("total_pagar", "0"))
         
         if num_referencia == "":
             num_referencia = None
             
         monto_fp = request.GET.get("monto_fp", 0)#request.GET.get("monto_fp", "0")
-        print("-Monto fp: ", monto_fp)
         periodo_plazo = request.GET.get("periodo", None)
-        condicion_operacion = request.GET.get("condicion_operacion", None)
+        condicion_operacion = request.GET.get("condicion_operacion", 0)
 
         saldo_favor = request.GET.get("saldo_favor_input", None)
         tiene_saldoF = False
         
         monto = Decimal("0.00")
-                
-        if formas_pago_cod is not None and formas_pago_cod !=[]:
-            for fp in formas_pago_cod:
-                print("-codigo forma pago: ", fp)
+        montoFp = Decimal("0.00")
+        formaPago = None
+        
+        if formas_pago_id is not None and formas_pago_id !=[]:
+            for fp in formas_pago_id:
                 try:
                     if saldo_favor is not None and saldo_favor !="":
                         saldo = Decimal(saldo_favor)
                         if  saldo.compare(Decimal("0.00")) > 0:
                             tiene_saldoF = True
-                            codFormaPago = FormasPago.objects.get(codigo="99")
+                            formaPago = FormasPago.objects.get(codigo="99")
+                        else:
+                            formaPago = FormasPago.objects.get(id=fp)
                     else:
                         saldo_favor = Decimal("0.00")
                 except ConversionSyntax:
                     print(f"Error: '{saldo}' no es un valor decimal válido.")
                 
-                if formas_pago_cod:
-                    formaPago = FormasPago.objects.get(id=fp)
-                    #codigo_fp = fp["codigo"]
-                    codigo_fp = formaPago.codigo
-                    print("-codigo fp: ", codigo_fp)
-                    #formaPago = FormasPago.objects.get(codigo=codigo_fp)
-                    if formaPago is not None:
-                        formas_pago_json  = {
-                            "codigo": str(formaPago.codigo),
-                            "montoPago": float(monto_fp),
-                            "referencia": str(num_referencia),
-                            "plazo": None
-                        }
+                if formaPago is not None:
+                    formas_pago_json  = {
+                        "codigo": str(formaPago.codigo),
+                        "montoPago": float(monto_fp),
+                        "referencia": str(num_referencia),
+                        "plazo": None
+                    }
                 
-                if tiene_saldoF:
-                    formas_pago_json["codigo"] = str(codFormaPago.codigo)
-                if int(condicion_operacion) > 0 and int(condicion_operacion) == int(ID_CONDICION_OPERACION):
-                    formas_pago_json["codigo"] = None
-                    formas_pago_json["montoPago"] = float(monto)
-                    formas_pago_json["plazo"] = str(Plazo.objects.get(id=1).codigo) #Plazo por días
-                    formas_pago_json["periodo"] = int(periodo_plazo)
-                else:
-                    formas_pago_json["periodo"] = None
+                    if tiene_saldoF:
+                        formas_pago_json["codigo"] = str(formaPago.codigo)
+                    if condicion_operacion is not None and int(condicion_operacion) > 0 and int(condicion_operacion) == int(ID_CONDICION_OPERACION):
+                        formas_pago_json["codigo"] = None
+                        formas_pago_json["montoPago"] = float(monto)
+                        formas_pago_json["plazo"] = str(Plazo.objects.get(id=1).codigo) #Plazo por días
+                        formas_pago_json["periodo"] = int(periodo_plazo)
+                    else:
+                        formas_pago_json["periodo"] = None
+                        
+                    if formas_pago_json["codigo"] == "01": #Forma d pago billetes y monedas
+                        formas_pago_json["referencia"] = None
                     
-                if formas_pago_json["codigo"] == "01": #Forma d pago billetes y monedas
-                    formas_pago_json["referencia"] = None
+                    formas_pago.append(formas_pago_json)
+                    print("-Agregar forma pago: ", formas_pago)
                     
-                formas_pago.append(formas_pago_json)
-                
-                if formas_pago.exists():
-                    montoFp = Decimal("0.00")
-                    for fp in formas_pago:
-                        print("fp: ", fp)
-                        montoFp += Decimal(fp["montoPago"])
-                        if montoFp > monto_total:
-                            total_pagar = monto_total
-                            pago_cliente = montoFp
-                            vuelto = pago_cliente - total_pagar
-                            print("-Vuelto: ", vuelto)
-                            return JsonResponse({"No Permitido": "El monto ingresado es mayor que el total a pagar" })
-                    print("-Total formas pago: ", montoFp)
-                
+                    return JsonResponse({"No Permitido": "El monto ingresado es mayor que el total a pagar" })
             print("-Formas de pago seleccionadas: ", formas_pago)
         
         return JsonResponse({'formasPago': formas_pago})

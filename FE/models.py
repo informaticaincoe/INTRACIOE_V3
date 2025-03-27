@@ -226,6 +226,7 @@ class Emisor_fe(models.Model):
     ambiente = models.ForeignKey(Ambiente, on_delete=models.CASCADE)
     nombre_establecimiento = models.CharField(max_length=255, null=True, blank=True, verbose_name="Nombre Establecimiento")
     tipo_documento = models.ForeignKey(TiposDocIDReceptor, on_delete=models.CASCADE, null=True)
+    logo = models.ImageField(upload_to='media/productos/', null=True, blank=True) #logo empresa
 
     def __str__(self):
         return f"{self.nombre_razon_social} ({self.nit})"
