@@ -288,11 +288,13 @@ export const DatosFacturaDefault = {
   codigoGeneracion: "",
   numeroControl: "",
   fechaEmision: "",
-  horaEmision: ""
+  horaEmision: "",
+  selloRemision:""
 }
 export interface DatosFactura {
   codigoGeneracion: string,
   numeroControl: string,
   fechaEmision: string,
-  horaEmision: string
+  horaEmision: string,
+  selloRemision:string
 }

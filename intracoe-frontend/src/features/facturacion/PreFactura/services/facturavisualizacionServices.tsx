@@ -14,7 +14,8 @@ export const generarFacturaService = async (id: string) => {
         codigoGeneracion: response.data.codigo_generacion,
         numeroControl: response.data.numero_control,
         fechaEmision: response.data.fecha_emision,
-        horaEmision: response.data.hora_emision
+        horaEmision: response.data.hora_emision,
+        selloRemision: response.data.sello_recepcion
       },
       productos: response.data.json_original.cuerpoDocumento,
       resumen: {
@@ -43,22 +44,3 @@ export const generarFacturaService = async (id: string) => {
     throw new Error();
   }
 };
-
-export const FirmarFactura = async (id: string) => {
-  try {
-    const response = await axios.post(`${BASEURL}/factura/firmar/${id}/`);
-    console.log(response)
-  }
-  catch (error) {
-    console.log(error)
-  }
-}
-
-export const EnviarHacienda = async(id:string) =>{
-  try {
-    const response = await axios.post(`${BASEURL}/factura/enviar_hacienda/${id}/`);
-    console.log(response)
-  } catch (error) {
-    console.log(error)
-  }
-}

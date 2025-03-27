@@ -58,16 +58,18 @@ input::file-selector-button {
   width: 5vw;
 }
 
-table {
-  border-collapse: collapse;
-  border-radius: 0.2rem;
-  border-style: hidden; /* hide standard table (collapsed) border */
-  box-shadow: 0 0 0 2px #e0e0e0; /* this draws the table border  */ 
+.page {
+  position: relative;
+  height: 1122px; /* aprox para carta (11in * 96dpi) */
 }
 
-td {
-  border: 2px solid #e0e0e0;
+.footer-fixed {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
 }
+
 
 @theme {
   --color-primary-yellow: #fca94e;

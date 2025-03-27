@@ -412,7 +412,8 @@ class GenerarFacturaAPIView(APIView):
     # permission_classes = [permissions.IsAuthenticated]
     def get(self, request, format=None):
         print("Inicio generar dte")
-        tipo_dte = request.query_params.get('tipo_dte', '01')
+        tipo_dte = request.query_params.get('tipo_dte', '01') #obtener el tipo dte por parametro, tipo dte 01 por defecto si no se enviar tipo dte
+
         emisor_obj = Emisor_fe.objects.first()
 
         if emisor_obj:
@@ -477,7 +478,6 @@ class GenerarFacturaAPIView(APIView):
              # Generar UUID en cada solicitud POST
             codigo_generacion = str(uuid.uuid4()).upper()
             print(f"Numero de control: {numero_control} Codigo generacion: {self.cod_generacion}")
-            
             receptor_id = data.get('receptor_id', None)
             receptor = Receptor_fe.objects.get(id=receptor_id)
             nit_receptor = data.get('nit_receptor', receptor.num_documento)
@@ -492,8 +492,9 @@ class GenerarFacturaAPIView(APIView):
             tipo_doc_relacionar = data.get("documento_seleccionado", None)
             documento_relacionado = data.get("documento_select", None)
             porcentaje_descuento = data.get("descuento_select", None)
-            if porcentaje_descuento:
-                porcentaje_descuento_item = Decimal(porcentaje_descuento.replace(",", "."))
+            print("*descuento:", porcentaje_descuento)
+            # if porcentaje_descuento:
+                # porcentaje_descuento_item = Decimal(porcentaje_descuento.replace(",", "."))
             print(f"DTE seleccionado desde el form: {tipo_dte}")
 
             # Configuración adicional
