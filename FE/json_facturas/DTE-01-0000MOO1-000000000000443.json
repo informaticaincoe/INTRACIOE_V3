@@ -4,13 +4,13 @@
         "ambiente": "01",
         "tipoDte": "01",
         "numeroControl": "DTE-01-0000MOO1-000000000000443",
-        "codigoGeneracion": "4DE2421D-5C91-456B-9692-4E70FA456D97",
+        "codigoGeneracion": "1087DA2E-17EC-4518-83E7-E42EF9F3FD33",
         "tipoModelo": 1,
         "tipoOperacion": 1,
         "tipoContingencia": null,
         "motivoContin": null,
-        "fecEmi": "2025-03-25",
-        "horEmi": "22:09:00",
+        "fecEmi": "2025-03-27",
+        "horEmi": "08:54:48",
         "tipoMoneda": "USD"
     },
     "documentoRelacionado": null,
@@ -101,7 +101,7 @@
         "docuEntrega": null,
         "nombRecibe": null,
         "docuRecibe": null,
-        "observaciones": "",
+        "observaciones": " ",
         "placaVehiculo": null
     },
     "apendice": null

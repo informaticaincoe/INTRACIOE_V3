@@ -4,13 +4,13 @@
         "ambiente": "01",
         "tipoDte": "01",
         "numeroControl": "DTE-01-0000MOO1-000000000000449",
-        "codigoGeneracion": "1BBC36ED-43B6-4413-BECF-72E1814FD7CA",
+        "codigoGeneracion": "D638F4B2-2ADE-4895-93E6-6C557E31A4DD",
         "tipoModelo": 1,
         "tipoOperacion": 1,
         "tipoContingencia": null,
         "motivoContin": null,
-        "fecEmi": "2025-03-26",
-        "horEmi": "21:31:55",
+        "fecEmi": "2025-03-27",
+        "horEmi": "09:15:39",
         "tipoMoneda": "USD"
     },
     "documentoRelacionado": null,
@@ -91,7 +91,15 @@
         "totalLetras": "Uno con 41/100 USD",
         "saldoFavor": 0.0,
         "condicionOperacion": 1,
-        "pagos": [],
+        "pagos": [
+            {
+                "codigo": "01",
+                "montoPago": 1.42,
+                "referencia": null,
+                "plazo": null,
+                "periodo": null
+            }
+        ],
         "numPagoElectronico": null,
         "tributos": null,
         "totalIva": 0.16
@@ -101,7 +109,7 @@
         "docuEntrega": null,
         "nombRecibe": null,
         "docuRecibe": null,
-        "observaciones": "",
+        "observaciones": " ",
         "placaVehiculo": null
     },
     "apendice": null

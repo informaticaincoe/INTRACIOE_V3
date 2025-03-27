@@ -2313,6 +2313,81 @@ def agregar_formas_pago_ajax(request):
     except Exception as e:
         print(f"Ocurrió un error: {e}")
         return None
+
+def agregar_formas_pago_api(request):
+    print("-Fromas de pago view: ", request)
+    data = request.data
+    global formas_pago
+    formas_pago = []
+    
+    try:
+        formas_pago_id = data.get("fp_id", [])
+        print("-Id forma de pago: ", formas_pago_id)
+        num_referencia = data.get("num_ref", None)
+        
+        if num_referencia == "":
+            num_referencia = None
+            
+        monto_fp = data.get("monto_fp", 0)#request.GET.get("monto_fp", "0")
+        periodo_plazo = data.get("periodo", None)
+        condicion_operacion = data.get("condicion_operacion", 0)
+
+        saldo_favor = data.get("saldo_favor_input", None)
+        tiene_saldoF = False
+        
+        monto = Decimal("0.00")
+        formaPago = None
+        
+        print("-Inicio formas de pago: ", formas_pago_id)
+        if formas_pago_id is not None and formas_pago_id !=[]:
+            print("recorrer formas de pago seleccionadas")
+            for fp in formas_pago_id:
+                try:
+                    formaPago = FormasPago.objects.get(id=fp)
+                    print("Saldo favor = ", saldo_favor)
+                    if saldo_favor is not None and saldo_favor !="":
+                        saldo = Decimal(saldo_favor)
+                        if  saldo.compare(Decimal("0.00")) > 0:
+                            tiene_saldoF = True
+                            formaPago = FormasPago.objects.get(codigo="99")
+                    else:
+                        saldo_favor = Decimal("0.00")
+                    print("Forma de pago encontrada: ", formaPago)
+                except ConversionSyntax:
+                    print(f"Error: '{saldo}' no es un valor decimal válido.")
+                
+                print("-Generar json fp: ", formaPago)
+                if formaPago is not None:
+                    formas_pago_json  = {
+                        "codigo": str(formaPago.codigo),
+                        "montoPago": float(monto_fp),
+                        "referencia": str(num_referencia),
+                        "plazo": None
+                    }
+                
+                    if tiene_saldoF:
+                        formas_pago_json["codigo"] = str(formaPago.codigo)
+                    if condicion_operacion is not None and int(condicion_operacion) > 0 and int(condicion_operacion) == int(ID_CONDICION_OPERACION):
+                        formas_pago_json["codigo"] = None
+                        formas_pago_json["montoPago"] = float(monto)
+                        formas_pago_json["plazo"] = str(Plazo.objects.get(id=1).codigo) #Plazo por días
+                        formas_pago_json["periodo"] = int(periodo_plazo)
+                    else:
+                        formas_pago_json["periodo"] = None
+                        
+                    if formas_pago_json["codigo"] == "01": #Forma d pago billetes y monedas
+                        formas_pago_json["referencia"] = None
+                    
+                    formas_pago.append(formas_pago_json)
+                    print("-Agregar forma pago: ", formas_pago)
+                    
+                    return Response({"No Permitido": "El monto ingresado es mayor que el total a pagar" })
+            print("-Formas de pago seleccionadas: ", formas_pago)
+        
+        return Response({'formasPago': formas_pago})
+    except Exception as e:
+        print(f"Ocurrió un error: {e}")
+        return None
     
 def agregar_docs_relacionados_ajax(request):
     #NC y ND permiten relacionar los documenos: 03 y 07

@@ -220,7 +220,6 @@
               <th>Total Neto</th>
               <th>Total IVA</th>
               <th>Total con IVA</th>
-              <th>Descuento</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -305,6 +304,7 @@
               <th>Cantidad</th>
               <th>Tipo de ítem</th>
               <th>Descuento</th>
+              <th>P. IVA</th>
             </tr>
           </thead>
           <tbody>
@@ -322,7 +322,6 @@
                   {% endfor %}
                 </select>
               </td>
-              <td><input type="hidden" class="cantidad-input" min="1" style="width: 80px;"></td>
               <td>
                 <select name="descuento_seleccionado" class="form-control" id="descuento_select">
                   {% for descuento in descuentos %}
@@ -331,6 +330,7 @@
                   {% endfor %}
                 </select>
               </td>
+              <td class="producto-con-iva">{{ producto.precio_iva }}</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -637,6 +637,8 @@
               var productoId = row.getAttribute('data-id');
               console.log("producto id cargarProductosModal= ", productoId)
               var productoText = row.cells[1].textContent.trim();
+              var precio_con_iva = row.querySelector('.producto-con-iva').value
+              console.log("Precio con iva: ", precio_con_iva)
 
               //PRECIO Unitario
               var precio_incl = parseFloat(row.querySelector('.precio-unitario').getAttribute('data-precio').replace(',', '.')).toFixed(2);
@@ -679,10 +681,10 @@
         qty = parseFloat(cantidad);
         total_neto = parseFloat((neto_unitario * qty).toFixed(2));
 
-        pre_unitario_iva = (neto_unitario + parseFloat((neto_unitario * 0.13).toFixed(2)))
-        total_incl = parseFloat( pre_unitario_iva * qty).toFixed(2) ;
+        let pre_unitario_iva = parseFloat(precio_incl) + parseFloat(iva_unitario);
+        total_incl = parseFloat(pre_unitario_iva * qty).toFixed(2) ;
 
-        console.log("neto_iva = ", pre_unitario_iva)
+        console.log("pre_inc = ", precio_incl, "iva_uni = ", iva_unitario, "total_iva = ", pre_unitario_iva )
         console.log("-Total con iva = ", total_incl, "pre unitario = ", neto_unitario, " iva unitario = ", iva_unitario)
       }
       total_iva = parseFloat((iva_unitario * qty).toFixed(2));
