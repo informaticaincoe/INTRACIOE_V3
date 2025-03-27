@@ -3,17 +3,16 @@ import { DataTable } from 'primereact/datatable';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
 import React, { useState } from 'react';
-import { Product, productosData } from '../FE/productosAgregados/productosData';
 import {
   InputNumber,
   InputNumberValueChangeEvent,
 } from 'primereact/inputnumber';
 import { FaCheckCircle } from 'react-icons/fa';
 import { ModalEliminarItemDeLista } from '../Shared/modal/modalEliminarItemDeLista';
-import { ModalAgregarRetencion } from '../Shared/modal/modalAgregarRetencion';
+import { ProductosTabla } from '../FE/productosAgregados/productosData';
 
 export const TablaProductosCreditoFiscal = ({}) => {
-  const [products, setProducts] = useState<Product[]>(productosData);
+  const [products, setProducts] = useState<ProductosTabla[]>();
   const [rowClick, setRowClick] = useState<boolean>(true);
   const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
   const [visibleDeleteModal, setVisibleDeleteModal] = useState<boolean>(false);

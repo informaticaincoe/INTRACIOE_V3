@@ -2,12 +2,12 @@ import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { InputText } from 'primereact/inputtext';
 import React, { useState } from 'react';
-import { Product, productosData } from '../FE/productosAgregados/productosData';
 import { Checkbox, CheckboxChangeEvent } from 'primereact/checkbox';
 import {
   InputNumber,
   InputNumberValueChangeEvent,
 } from 'primereact/inputnumber';
+import { ProductosTabla } from '../FE/productosAgregados/productosData';
 
 interface ProductosAAnular {
   id: string;
@@ -15,8 +15,8 @@ interface ProductosAAnular {
 }
 
 export const TablaProductosFacturaNotasCredito = ({}) => {
-  const [products, setProducts] = useState<Product[]>(productosData);
-  const [selectedProductos, setSelectedProductos] = useState<Product[]>([]); // Productos seleccionados
+  const [products, setProducts] = useState<ProductosTabla[]>();
+  const [selectedProductos, setSelectedProductos] = useState<ProductosTabla[]>([]); // Productos seleccionados
   const [descripcionAnulacion, setDescripcionAnulacion] = useState<{
     [key: string]: string;
   }>({}); // Descripciones por producto

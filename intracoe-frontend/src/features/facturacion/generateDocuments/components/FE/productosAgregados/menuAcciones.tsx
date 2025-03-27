@@ -22,9 +22,6 @@ export const MenuAcciones = () => {
     {
       label: 'Agregar tributo',
     },
-    {
-      label: 'Agregar retención',
-    },
   ];
 
   return (
