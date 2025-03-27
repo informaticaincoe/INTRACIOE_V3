@@ -58,6 +58,17 @@ input::file-selector-button {
   width: 5vw;
 }
 
+table {
+  border-collapse: collapse;
+  border-radius: 0.2rem;
+  border-style: hidden; /* hide standard table (collapsed) border */
+  box-shadow: 0 0 0 2px #e0e0e0; /* this draws the table border  */ 
+}
+
+td {
+  border: 2px solid #e0e0e0;
+}
+
 @theme {
   --color-primary-yellow: #fca94e;
   --color-primary-blue: #232c6e;

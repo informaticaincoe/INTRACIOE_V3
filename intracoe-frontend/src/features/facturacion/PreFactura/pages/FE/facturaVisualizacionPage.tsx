@@ -137,8 +137,8 @@ export const FacturaVisualizacionPage = () => {
             <div id="content-id"
                 style={{
                     background: '#fff',
-                    fontSize: '0.8vw',
-                    padding: '1vw',
+                    fontSize: '1vw',
+                    padding: '2vw',
 
                 }}>
                 <div className="py-5 px-2 my-2 bg-white" ref={targetRef}>
@@ -152,7 +152,7 @@ export const FacturaVisualizacionPage = () => {
                         <span className="flex flex-col gap-3">
                             <PagoEnLetras cantidadAPagar={pagoEnLetras} />
                             <CondicionOperacion condicion={condicionOperacion} />
-                            <div className="border border-border-color rounded-md text-start p-2">
+                            <div className="border-2 border-border-color rounded-md text-start py-3 px-4">
                                 <div className="flex ">
                                     <p><span className="font-bold">Oberservaciones: </span>{extension.observaciones}</p>
                                     <p><span className="font-bold"></span>{extension.nombEntrega}</p>
