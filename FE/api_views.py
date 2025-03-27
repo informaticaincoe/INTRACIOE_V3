@@ -13,7 +13,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from FE.views import enviar_factura_invalidacion_hacienda_view, firmar_factura_anulacion_view, invalidacion_dte_view, generar_json, num_to_letras, agregar_formas_pago_ajax, generar_json_contingencia, generar_json_doc_ajuste
 
-from .serializers import ActividadEconomicaSerializer, AmbienteSerializer, CondicionOperacionSerializer, DepartamentoSerializer, ModelofacturacionSerializer, MunicipioSerializer, ProductoSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, TipoDteSerializer, TipoTransmisionSerializer, TiposDocIDReceptorSerializer, TiposEstablecimientosSerializer, TiposGeneracionDocumentoSerializer, TiposTributosSerializer, TributosSerializer
+from .serializers import ActividadEconomicaSerializer, AmbienteSerializer, CondicionOperacionSerializer, DepartamentoSerializer, DescuentoSerializer, FormasPagosSerializer, ModelofacturacionSerializer, MunicipioSerializer, ProductoSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, TipoDteSerializer, TipoTransmisionSerializer, TiposDocIDReceptorSerializer, TiposEstablecimientosSerializer, TiposGeneracionDocumentoSerializer, TiposTributosSerializer, TributosSerializer
 from .models import (
     ActividadEconomica, Departamento, Emisor_fe, Municipio, Receptor_fe, FacturaElectronica, DetalleFactura,
     Ambiente, CondicionOperacion, Modelofacturacion, NumeroControl,
@@ -301,8 +301,15 @@ class ModeloDeFacturacionListAPIView(generics.ListAPIView):
 class TipoTransmisionListAPIView(generics.ListAPIView):
     queryset = TipoTransmision.objects.all()
     serializer_class = TipoTransmisionSerializer
-    
-    
+
+class FormasPagosListAPIView(generics.ListAPIView):
+    queryset = FormasPago.objects.all()
+    serializer_class = FormasPagosSerializer
+     
+class DescuentosAPIView(generics.ListAPIView):
+    queryset = Descuento.objects.all()
+    serializer_class = DescuentoSerializer
+     
 ######################################################
 # PRODUCTOS Y SERVICIOS
 ######################################################
@@ -331,11 +338,11 @@ class TributoDetailsAPIView(generics.RetrieveAPIView):
 ######################################################
 # GENERACION DE DOCUMENTOS ELECTRONICOS
 ######################################################
-
-class FacturasListAPIView(generics.ListAPIView):
+    
+class FacturaDetailAPIView(generics.RetrieveAPIView):
     queryset = FacturaElectronica.objects.all()
     serializer_class = FacturaElectronicaSerializer
-    
+
 class FacturaListAPIView(APIView):
     """
     Vista API que devuelve un listado de FacturaElectronica con filtros y paginación.
@@ -462,11 +469,13 @@ class GenerarFacturaAPIView(APIView):
         global formas_pago
         try:
             items_permitidos = 2000
+            contingencia = False
             data = request.data
             
             # Datos básicos
             numero_control = nuevo_numero
-            codigo_generacion = self.cod_generacion
+             # Generar UUID en cada solicitud POST
+            codigo_generacion = str(uuid.uuid4()).upper()
             print(f"Numero de control: {numero_control} Codigo generacion: {self.cod_generacion}")
             
             receptor_id = data.get('receptor_id', None)
@@ -843,7 +852,7 @@ class GenerarFacturaAPIView(APIView):
             print(f"Tipo de dte a generarJson = {tipo_dte_obj}")
             factura_json = generar_json(
                 ambiente_obj, tipo_dte_obj, factura, emisor, receptor,
-                cuerpo_documento, observaciones, Decimal(str(total_iva_item)), base_imponible_checkbox, saldo_favor
+                cuerpo_documento, observaciones, Decimal(str(total_iva_item)), base_imponible_checkbox, saldo_favor, documentos_relacionados, contingencia
             )
             
             factura.json_original = factura_json

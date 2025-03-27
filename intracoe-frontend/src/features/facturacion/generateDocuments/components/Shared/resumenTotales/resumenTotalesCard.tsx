@@ -1,27 +1,28 @@
 import React from 'react'
 import { ProductosTabla } from '../../FE/productosAgregados/productosData'
+import { InputNumber, InputNumberValueChangeEvent } from 'primereact/inputnumber'
 
 interface ResumenTotalesCardProps {
-    listProducts:ProductosTabla[]
+    listProducts: ProductosTabla[],
+    setDescuentoGeneral: any,
+    descuentoGeneral:number
 }
 
-export const ResumenTotalesCard:React.FC<ResumenTotalesCardProps> = ({listProducts}) => {
+export const ResumenTotalesCard: React.FC<ResumenTotalesCardProps> = ({ listProducts, setDescuentoGeneral, descuentoGeneral }) => {
 
     const CalcularTotalNeto = () => {
         let aux = 0
         listProducts.forEach((item) => {
             aux += item.cantidad * item.precio_unitario
         })
-
         return aux
     }
 
     const CalcularDescuento = () => {
         let aux = 0
         listProducts.forEach((item) => {
-            aux += item.cantidad * (item.precio_unitario * (item.descuento/100))
+            aux += item.cantidad * (item.precio_unitario * (item.descuento / 100))
         })
-
         return aux
     }
 
@@ -41,6 +42,16 @@ export const ResumenTotalesCard:React.FC<ResumenTotalesCardProps> = ({listProduc
 
             <p className='opacity-60'>Total a pagar:</p>
             <p>$21.60</p>
+
+            <p className='opacity-60'>Descuento general:</p>
+            <InputNumber
+                prefix="%"
+                value={descuentoGeneral}
+                onValueChange={(e: InputNumberValueChangeEvent) =>
+                    setDescuentoGeneral(e.value ?? 0)
+                }
+                style={{padding:0, height:'2rem'}}
+            />
         </div>
     )
 }

@@ -39,7 +39,6 @@ export const ModalListaFacturas: React.FC<ModalListfacturaInterface> = ({
   // };
 
   // Función para manejar la selección de productos
-  // Función para manejar la selección de productos
   const handleSelectChange = (
     e: CheckboxChangeEvent, // Cambiar el tipo del evento a CheckboxChangeEvent
     index: number
