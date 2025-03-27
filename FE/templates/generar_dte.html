@@ -678,8 +678,12 @@
         iva_unitario = parseFloat((neto_unitario * 0.13).toFixed(2));
         qty = parseFloat(cantidad);
         total_neto = parseFloat((neto_unitario * qty).toFixed(2));
-        total_incl = ( (neto_unitario + ivaUnitario ) * qty) ;
-        console.log("-Total con iva= ", total_incl)
+
+        pre_unitario_iva = (neto_unitario + parseFloat((neto_unitario * 0.13).toFixed(2)))
+        total_incl = parseFloat( pre_unitario_iva * qty).toFixed(2) ;
+
+        console.log("neto_iva = ", pre_unitario_iva)
+        console.log("-Total con iva = ", total_incl, "pre unitario = ", neto_unitario, " iva unitario = ", iva_unitario)
       }
       total_iva = parseFloat((iva_unitario * qty).toFixed(2));
 
