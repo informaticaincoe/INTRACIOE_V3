@@ -1,6 +1,6 @@
 from django.urls import path
 
-from FE.api_views import ActividadEconomicaCreateAPIView, ActividadEconomicaDeleteAPIView, ActividadEconomicaDetailAPIView, ActividadEconomicaListAPIView, ActividadEconomicaUpdateAPIView, AmbientesListAPIView, CondicionDeOperacionListAPIView, DepartamentosListAPIView, DescuentosAPIView, EmisorCreateAPIView, EnviarFacturaHaciendaAPIView, FacturaDetailAPIView, FacturaListAPIView, FirmarFacturaAPIView, FormasPagosListAPIView, GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, ModeloDeFacturacionListAPIView, MunicipioListAPIView, ObtenerReceptorAPIView, TipoDTEDetailAPIView, TipoDTEListAPIView, TipoDocIDReceptorListAPIView, TipoTransmisionListAPIView, TiposEstablecimientosListAPIView, TiposTributosListAPIView, TiposTributosSerializer, TributoByTipoListAPIView, TributoDetailsAPIView, autenticacion, EmisorListAPIView, productosListAPIView, recptorListAPIView, tipoGeneracionDocumentoListAPIView, GenerarDocumentoAjusteAPIView
+from FE.api_views import ActividadEconomicaCreateAPIView, ActividadEconomicaDeleteAPIView, ActividadEconomicaDetailAPIView, ActividadEconomicaListAPIView, ActividadEconomicaUpdateAPIView, AmbientesListAPIView, CondicionDeOperacionDetailAPIView, CondicionDeOperacionListAPIView, DepartamentosListAPIView, DescuentosAPIView, EmisorCreateAPIView, EnviarFacturaHaciendaAPIView, FacturaDetailAPIView, FacturaListAPIView, FirmarFacturaAPIView, FormasPagosListAPIView, GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, ModeloDeFacturacionListAPIView, MunicipioListAPIView, ObtenerReceptorAPIView, TipoDTEDetailAPIView, TipoDTEListAPIView, TipoDocIDReceptorDetailAPIView, TipoDocIDReceptorListAPIView, TipoTransmisionListAPIView, TiposEstablecimientosListAPIView, TiposTributosListAPIView, TiposTributosSerializer, TributoByTipoListAPIView, TributoDetailsAPIView, autenticacion, EmisorListAPIView, productosListAPIView, recptorListAPIView, tipoGeneracionDocumentoListAPIView, GenerarDocumentoAjusteAPIView
 from FE.serializers import TributosSerializer
 from . import views
 
@@ -38,6 +38,7 @@ urlpatterns = [
     
     #URLS TIPO DOCUMENTO
     path('api/tipo-id-receptor/', TipoDocIDReceptorListAPIView.as_view(), name='tipo_doc_id_receptor_list_api'),
+    path('api/tipo-id-receptor/<str:codigo>/', TipoDocIDReceptorDetailAPIView.as_view(), name='tipo_doc_id_receptor_datail_api'),
     
     #URLS AMBIENTE
     path('api/ambientes/', AmbientesListAPIView.as_view(), name='ambientes_list_api'),
@@ -66,7 +67,6 @@ urlpatterns = [
     path('api/tipo-generacion-facturas/', tipoGeneracionDocumentoListAPIView.as_view(), name='generacion_dte_api'), 
     
     #---------- URLS TRIBUTOS ----------#
-    
     #URL TIPOS DE TRIBUTOS
     path('api/tipo-tributos/', TiposTributosListAPIView.as_view(), name='tipo_tributos_api'),
     
@@ -76,7 +76,6 @@ urlpatterns = [
     #TRIBUTOS POR ID    
     path('api/tributo/<int:pk>/', TributoDetailsAPIView.as_view(), name='tributo_api'), 
     
-    
     #---------- URLS CONFIGURACION DE FACTURA ----------#
     #TIPO DE DOCUMENTO FACTURA
     path('api/tipo-dte/', TipoDTEListAPIView.as_view(), name='tipo_dte_list_api'),    
@@ -84,6 +83,7 @@ urlpatterns = [
     
     #CONDICION DE OPERACION
     path('api/condicion-operacion/', CondicionDeOperacionListAPIView.as_view(), name='condicion_operacion_list_api'),
+    path('api/condicion-operacion/<str:codigo>/', CondicionDeOperacionDetailAPIView.as_view(), name='condicion_operacion_list_api'),
     
     #MODELO DE FACTURACION
     path('api/modelo-facturacion/', ModeloDeFacturacionListAPIView.as_view(), name='modelo_facturacion_list_api'),

@@ -6,8 +6,7 @@ const BASEURL = import.meta.env.VITE_URL_BASE;
 export const generarFacturaService = async (id: string) => {
   try {
     const response = await axios.get<FacturaResponse>(`${BASEURL}/factura_pdf/${id}/`);
-    console.log("response.data", response.data)
-
+console.log("response factura API", response)
     return {
       emisor: response.data.json_original.emisor,
       receptor: response.data.json_original.receptor,

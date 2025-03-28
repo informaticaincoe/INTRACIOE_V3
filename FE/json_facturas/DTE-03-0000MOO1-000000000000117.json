@@ -4,13 +4,13 @@
         "ambiente": "01",
         "tipoDte": "03",
         "numeroControl": "DTE-03-0000MOO1-000000000000117",
-        "codigoGeneracion": "A7B4377C-527A-44A6-B928-01BD55149D7A",
+        "codigoGeneracion": "839D7CDD-B32B-4819-9506-9CF0D35C6420",
         "tipoModelo": 1,
         "tipoOperacion": 1,
         "tipoContingencia": null,
         "motivoContin": null,
-        "fecEmi": "2025-03-27",
-        "horEmi": "14:12:39",
+        "fecEmi": "2025-03-28",
+        "horEmi": "13:55:56",
         "tipoMoneda": "USD"
     },
     "documentoRelacionado": null,
@@ -61,61 +61,41 @@
             "descripcion": "Leche entera de 250g",
             "cantidad": 1.0,
             "uniMedida": 59,
-            "precioUni": 1.25,
+            "precioUni": 1.11,
             "montoDescu": 0.0,
             "ventaNoSuj": 0.0,
             "ventaExenta": 0.0,
-            "ventaGravada": 1.25,
+            "ventaGravada": 1.11,
             "tributos": [
                 "20"
             ],
-            "psv": 1.25,
-            "noGravado": 0.0
-        },
-        {
-            "numItem": 2,
-            "tipoItem": 1,
-            "numeroDocumento": null,
-            "codigo": "PCH010",
-            "codTributo": null,
-            "descripcion": "caja entera de leche, 30 tiras de 26 g",
-            "cantidad": 1.0,
-            "uniMedida": 99,
-            "precioUni": 1.0,
-            "montoDescu": 0.0,
-            "ventaNoSuj": 0.0,
-            "ventaExenta": 0.0,
-            "ventaGravada": 1.0,
-            "tributos": [
-                "20"
-            ],
-            "psv": 1.0,
+            "psv": 1.11,
             "noGravado": 0.0
         }
     ],
     "resumen": {
         "totalNoSuj": 0.0,
         "totalExenta": 0.0,
-        "totalGravada": 2.25,
-        "subTotalVentas": 2.25,
+        "totalGravada": 1.11,
+        "subTotalVentas": 1.11,
         "descuNoSuj": 0.0,
         "descuExenta": 0.0,
         "descuGravada": 0.0,
         "porcentajeDescuento": 0.0,
         "totalDescu": 0.0,
-        "subTotal": 2.25,
+        "subTotal": 1.11,
         "ivaRete1": 0.0,
         "reteRenta": 0.0,
-        "montoTotalOperacion": 2.54,
+        "montoTotalOperacion": 1.25,
         "totalNoGravado": 0.0,
-        "totalPagar": 3.95,
-        "totalLetras": "Tres con 95/100 USD",
+        "totalPagar": 1.25,
+        "totalLetras": "Uno con 25/100 USD",
         "saldoFavor": 0.0,
         "condicionOperacion": 1,
         "pagos": [
             {
                 "codigo": "01",
-                "montoPago": 2.54,
+                "montoPago": 1.42,
                 "referencia": null,
                 "plazo": null,
                 "periodo": null
@@ -126,7 +106,7 @@
             {
                 "codigo": "20",
                 "descripcion": "Impuesto al Valor Agregado 13%",
-                "valor": 0.29
+                "valor": 0.14
             }
         ],
         "ivaPerci1": 0.0

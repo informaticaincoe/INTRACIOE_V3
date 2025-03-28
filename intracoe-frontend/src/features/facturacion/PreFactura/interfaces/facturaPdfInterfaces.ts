@@ -43,6 +43,11 @@ export interface FacturaResponse {
   condicion_operacion: number;
 }
 
+export interface TipoIdentificacion {
+  id: number,
+  codigo: string,
+  descripcion:string
+}
 export interface JsonOriginal {
   identificacion: Identificacion;
   documentoRelacionado: any;
@@ -133,8 +138,9 @@ export interface Receptor {
   telefono: string;
   correo: string;
   nrc: string | null;
-  tipoDocumento: string;
-  numDocumento: string;
+  tipoDocumento?: string;
+  numDocumento?: string;
+  nit?: string
 }
 
 export interface Direccion {

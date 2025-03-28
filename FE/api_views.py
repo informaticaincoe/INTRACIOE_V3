@@ -250,6 +250,11 @@ class EmisorCreateAPIView(generics.CreateAPIView):
 class TipoDocIDReceptorListAPIView(generics.ListAPIView):
     queryset = TiposDocIDReceptor.objects.all()
     serializer_class = TiposDocIDReceptorSerializer
+
+class TipoDocIDReceptorDetailAPIView(generics.RetrieveAPIView):
+    queryset = TiposDocIDReceptor.objects.all()
+    serializer_class = TiposDocIDReceptorSerializer
+    lookup_field = 'codigo'
     
 class AmbientesListAPIView(generics.ListAPIView):
     queryset = Ambiente.objects.all()
@@ -298,7 +303,12 @@ class TipoDTEDetailAPIView(generics.RetrieveAPIView):
 class CondicionDeOperacionListAPIView(generics.ListAPIView):
     queryset = CondicionOperacion.objects.all()
     serializer_class = CondicionOperacionSerializer
-    
+
+class CondicionDeOperacionDetailAPIView(generics.RetrieveAPIView):
+    queryset = CondicionOperacion.objects.all()
+    serializer_class = CondicionOperacionSerializer
+    lookup_field = 'codigo'
+
 class ModeloDeFacturacionListAPIView(generics.ListAPIView):
     queryset = Modelofacturacion.objects.all()
     serializer_class = ModelofacturacionSerializer

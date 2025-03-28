@@ -27,6 +27,7 @@ import { usePDF } from "react-to-pdf";
 import { EnviarHacienda } from "../../../generateDocuments/services/factura/facturaServices";
 import { Toast } from "primereact/toast";
 import CustomToast, { CustomToastRef, ToastSeverity } from "../../../../../shared/toast/customToast";
+import { getCondicionDeOperacionById } from "../../../generateDocuments/services/configuracionFactura/configuracionFacturaService";
 
 const exportToPDF = async () => {
     const element = document.getElementById('content-id');
@@ -87,14 +88,14 @@ export const FacturaVisualizacionPage = () => {
         });
     };
 
-    const clear = () => {
-        toastBC.current?.clear();
-        setVisible(false);
-    };
-
     useEffect(() => {
         fetchDatosFactura()
     }, [])
+
+    const fetchCondicionOperacionDescripcion = async (id:number)=>{
+        const response = await getCondicionDeOperacionById(id) 
+        setCondicionOperacion(response.descripcion)
+    }
 
     const enviarHacienda = async () => {
         if (id) {
@@ -112,8 +113,7 @@ export const FacturaVisualizacionPage = () => {
         try {
             if (id) {
                 const response = await generarFacturaService(id)
-                console.log(response.emisor)
-                console.log(response.receptor)
+                console.log("response factura visualizacion", response)
                 setEmisor(response.emisor)
                 setDatosFactura(response.datosFactura)
                 setReceptor(response.receptor)
@@ -121,7 +121,7 @@ export const FacturaVisualizacionPage = () => {
                 setResumen(response.resumen)
                 setExtension(response.extension)
                 setPagoEnLetras(response.pagoEnLetras)
-                setCondicionOperacion(response.condicionOpeacion)
+                fetchCondicionOperacionDescripcion(response.condicionOpeacion)
             }
         }
         catch (error) {
@@ -162,7 +162,7 @@ export const FacturaVisualizacionPage = () => {
                     <SeccionDocumentosRelacionados />
                     <SeccionOtrosDocumentosRelacionados />
                     <div className="flex flex-col">
-                        <TablaProductosFE productos={productos} />
+                        <TablaProductosFE productos={productos} tipo_dte={datosFactura.tipoDte} />
                         <div id='footer'>
                             <div className="grid grid-cols-2 pt-5 gap-x-5">
                                 <span className="flex flex-col gap-3">
