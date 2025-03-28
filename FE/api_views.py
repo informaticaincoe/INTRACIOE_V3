@@ -11,7 +11,7 @@ from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from FE.views import enviar_factura_invalidacion_hacienda_view, firmar_factura_anulacion_view, invalidacion_dte_view, generar_json, num_to_letras, agregar_formas_pago_ajax, generar_json_contingencia, generar_json_doc_ajuste
+from FE.views import enviar_factura_invalidacion_hacienda_view, firmar_factura_anulacion_view, invalidacion_dte_view, generar_json, num_to_letras, agregar_formas_pago_api, generar_json_contingencia, generar_json_doc_ajuste
 
 from .serializers import ActividadEconomicaSerializer, AmbienteSerializer, CondicionOperacionSerializer, DepartamentoSerializer, DescuentoSerializer, FormasPagosSerializer, ModelofacturacionSerializer, MunicipioSerializer, ProductoSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, TipoDteSerializer, TipoTransmisionSerializer, TiposDocIDReceptorSerializer, TiposEstablecimientosSerializer, TiposGeneracionDocumentoSerializer, TiposTributosSerializer, TributosSerializer
 from .models import (
@@ -412,7 +412,8 @@ class GenerarFacturaAPIView(APIView):
     # permission_classes = [permissions.IsAuthenticated]
     def get(self, request, format=None):
         print("Inicio generar dte")
-        tipo_dte = request.query_params.get('tipo_dte', '01')
+        tipo_dte = request.query_params.get('tipo_dte', '01') #obtener el tipo dte por parametro, tipo dte 01 por defecto si no se enviar tipo dte
+
         emisor_obj = Emisor_fe.objects.first()
 
         if emisor_obj:
@@ -477,7 +478,6 @@ class GenerarFacturaAPIView(APIView):
              # Generar UUID en cada solicitud POST
             codigo_generacion = str(uuid.uuid4()).upper()
             print(f"Numero de control: {numero_control} Codigo generacion: {self.cod_generacion}")
-            
             receptor_id = data.get('receptor_id', None)
             receptor = Receptor_fe.objects.get(id=receptor_id)
             nit_receptor = data.get('nit_receptor', receptor.num_documento)
@@ -492,8 +492,9 @@ class GenerarFacturaAPIView(APIView):
             tipo_doc_relacionar = data.get("documento_seleccionado", None)
             documento_relacionado = data.get("documento_select", None)
             porcentaje_descuento = data.get("descuento_select", None)
-            if porcentaje_descuento:
-                porcentaje_descuento_item = Decimal(porcentaje_descuento.replace(",", "."))
+            print("*descuento:", porcentaje_descuento)
+            # if porcentaje_descuento:
+                # porcentaje_descuento_item = Decimal(porcentaje_descuento.replace(",", "."))
             print(f"DTE seleccionado desde el form: {tipo_dte}")
 
             # Configuración adicional
@@ -514,7 +515,7 @@ class GenerarFacturaAPIView(APIView):
             num_referencia = data.get("num_ref", None)
             monto_fp = data.get("monto_fp", "0")
             periodo_plazo = data.get("periodo", None)   
-            agregar_formas_pago_ajax(request)
+            agregar_formas_pago_api(request)
             
             if saldo_favor is not None and saldo_favor !="":
                 saldo_f = Decimal(saldo_favor)
@@ -650,7 +651,7 @@ class GenerarFacturaAPIView(APIView):
                     print("-Precio neto: ", precio_neto)
                     precio_neto = precio_neto * Decimal(tributo_valor).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                     print("-Precio neto con valor trib: ", precio_neto)
-                   
+                
                 precio_neto = Decimal(precio_neto)          
                 iva_unitario = (precio_incl - precio_neto).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 total_iva_item = ( ( precio_neto * cantidad) / Decimal("1.13") * Decimal("0.13") ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)

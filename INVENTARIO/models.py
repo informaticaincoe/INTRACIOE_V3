@@ -94,6 +94,7 @@ class Producto(models.Model):
     tipo_item = models.ForeignKey(TipoItem, on_delete=models.SET_NULL, null=True, blank=True)
     referencia_interna = models.CharField(max_length=50, null=True, editable=True, default=None)
     tributo = models.ForeignKey(Tributo, on_delete=models.CASCADE, null=False, default=1)
+    precio_iva = models.BooleanField(default=False) #Indicar si el producto se guarda con IVA
     
     # Control de lotes y vencimientos (Opcional)
     maneja_lotes = models.BooleanField(default=False)
