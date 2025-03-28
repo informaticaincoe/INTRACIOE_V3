@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { generarFacturaService } from "../../services/facturavisualizacionServices";
 import { InformacionEmisor } from "../../components/shared/header/InformacionEmisor";
 import { CuerpoDocumento, CuerpoDocumentoDefault, DatosFactura, DatosFacturaDefault, Emisor, EmisorDefault, Extension, ExtensionDefault, Receptor, ReceptorDefault, resumenTablaFE, resumenTablaFEDefault } from "../../interfaces/facturaPdfInterfaces";
@@ -64,8 +64,9 @@ export const FacturaVisualizacionPage = () => {
     const [extension, setExtension] = useState<Extension>(ExtensionDefault)
     const [pagoEnLetras, setPagoEnLetras] = useState<string>("")
     const [condicionOperacion, setCondicionOperacion] = useState<number>(0)
+    const navigate = useNavigate();
 
-    const { toPDF, targetRef } = usePDF({ filename: 'page.pdf' });
+    const { targetRef } = usePDF({ filename: 'page.pdf' });
 
     useEffect(() => {
         fetchDatosFactura()
@@ -96,9 +97,14 @@ export const FacturaVisualizacionPage = () => {
         <>
             <Title text="Factura generada con éxito" />
 
-            <button onClick={exportToPDF} className="bg-primary-blue text-white rounded-md px-8 py-3 mb-7 mt-5">
-                Descargar PDF
-            </button>
+            <div className="flex justify-center gap-5">
+                <button onClick={exportToPDF} className="bg-primary-blue text-white rounded-md px-8 py-3 mb-7 mt-5">
+                    Descargar PDF
+                </button>
+                <button onClick={()=> navigate("/generar-documentos")} className="border border-primary-blue text-primary-blue bg-white rounded-md px-8 py-3 mb-7 mt-5">
+                    Realizar otra factura
+                </button>
+            </div>
             <div id="content-id"
                 style={{
                     fontSize: '1vw',

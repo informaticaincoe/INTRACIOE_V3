@@ -109,14 +109,14 @@ export const GenerateDocuments = () => {
       if (id) {
         const response = await FirmarFactura(id)
         console.log(response)
-        EnviarHacienda(id)
+        enviarHacienda(id)
       }
     } catch (error) {
       console.log(error)
     }
   }
 
-  const EnviarHacienda = async (id: string) => {
+  const enviarHacienda = async (id: string) => {
     try {
       if (id) {
         const response = await EnviarHacienda(id)
