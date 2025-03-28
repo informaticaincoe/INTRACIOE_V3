@@ -35,7 +35,7 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
       const productos = response.map((product) => {
         const cantidadInicial = 1;
         const precioUnitario = product.preunitario;
-        const ivaUnitario = precioUnitario * 0.12;
+        const ivaUnitario = precioUnitario * 0.13;
         const totalNeto = precioUnitario * cantidadInicial;
         const totalIVA = ivaUnitario * cantidadInicial;
         const totalConIVA = totalNeto + totalIVA;
@@ -98,10 +98,16 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
     setSelectedProducts(selected); // Guardamos los productos seleccionados en la variable
   };
 
-  const guardarProductos =(selectedProducts:ProductosTabla[])=> {
-    console.log(selectedProducts)
-    setListProducts(selectedProducts)
-  }
+  const guardarProductos = (selectedProducts: ProductosTabla[]) => {
+    // Aquí aseguramos que cada producto tenga un valor de descuento predeterminado
+    const productosConDescuento = selectedProducts.map(product => ({
+      ...product,
+      descuento: product.descuento || 2, // Si no tiene descuento, se asigna 0 (o el valor que desees)
+    }));
+  
+    setListProducts(productosConDescuento);
+  };
+  
 
   const footerContent = (
     <div>

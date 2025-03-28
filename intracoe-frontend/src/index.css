@@ -6,6 +6,13 @@
   font-family: 'Inter', sans-serif;
 }
 
+
+@layer base {
+  img {
+    @apply inline-block;
+  }
+}
+
 body {
   background-color: var(--color-body-bg);
 }
@@ -49,6 +56,17 @@ input::file-selector-button {
 
 .p-inputnumber-input {
   width: 5vw;
+}
+
+table {
+  border-collapse: collapse;
+  border-radius: 0.2rem;
+  border-style: hidden; /* hide standard table (collapsed) border */
+  box-shadow: 0 0 0 2px #e0e0e0; /* this draws the table border  */ 
+}
+
+td {
+  border: 2px solid #e0e0e0;
 }
 
 @theme {

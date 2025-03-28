@@ -1,11 +1,16 @@
 export const TablaVentaTerceros = () => {
     return (
-        <div className="py-5">
-            <h1 className="uppercase font-bold">Venta a terceros</h1>
-            <div className="grid grid-cols-[30%_70%] border-2 border-border-color rounded-md">
-                <p>NIT:</p>
-                <p>Nombre, denominacion o razon social</p>
-            </div>
+        <div className="pt-5">
+            <h1 className="uppercase font-bold">Venta a cuenta de terceros</h1>
+            <table className="border-2 w-full border-border-color text-start rounded-md table-fixed ">
+                <thead className="rounded-md">
+                    <tr>
+                        <td className=" p-2 border-r-2 border-border-color">Tipo de documento:</td>
+                        <td className="p-2">Nombre,denominación o razon social:</td>
+                        <td></td>
+                    </tr>
+                </thead>
+            </table>
         </div>
     )
 }

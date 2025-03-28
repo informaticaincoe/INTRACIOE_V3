@@ -101,13 +101,22 @@ export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = (
   }
 
   const fetchDescuento = async () => {
-    try {
-      const response = await getAllDescuentos()
-      setDescuentosList(response)
-    } catch (error) {
-      console.log(error)
-    }
+  try {
+    const response = await getAllDescuentos();
+    setDescuentosList(response);
+
+    // Aquí se establece el primer descuento de cada producto si no tiene descuento asignado
+    setListProducts((prevProducts: any[]) =>
+      prevProducts.map((product) => ({
+        ...product,
+        descuento: product.descuento || response[0]?.id, // Si no tiene descuento, se asigna el primer descuento
+      }))
+    );
+  } catch (error) {
+    console.log(error);
   }
+};
+
 
 
   return (
