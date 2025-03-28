@@ -524,8 +524,9 @@ def generar_factura_view(request):
             tipo_doc_relacionar = data.get("documento_seleccionado", None)
             documento_relacionado = data.get("documento_relacionado", [])
             print(f"Tipo de doc a relacionar: {tipo_doc_relacionar} Numero de documento: {documento_relacionado}")
-            porcentaje_descuento = data.get("descuento_select", None)
+            porcentaje_descuento = data.get("descuento_select", "0")
             porcentaje_descuento_item = Decimal(porcentaje_descuento.replace(",", "."))
+            print(f"Porcentaje descuento: {porcentaje_descuento_item}")
             
             # Configuración adicional
             tipooperacion_id = data.get("condicion_operacion", 1)
@@ -541,6 +542,8 @@ def generar_factura_view(request):
             print("-Id forma de pago: ", formas_pago_id)
             
             descuento_global = data.get("descuento_global_input", "0")
+            monto_descuento = data.get("monto_descuento", "0")
+            print(f"descuento global = {descuento_global}, monto descuento = {monto_descuento}")
             saldo_favor = data.get("saldo_favor_input", "0")
             base_imponible_checkbox = data.get("no_gravado", False)
             
@@ -671,10 +674,10 @@ def generar_factura_view(request):
                 if base_imponible_checkbox is True:
                     precio_neto = float(0.00)
                 elif base_imponible_checkbox is False and tipo_dte_obj.codigo == COD_CONSUMIDOR_FINAL : #si es FE agregarle iva al prod
-                    precio_neto = (precio_incl * Decimal("1.13") ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    precio_neto = (precio_incl * cantidad * Decimal("1.13") ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                     #total_iva_item = ( ( precio_incl * cantidad) / Decimal("1.13") * Decimal("0.13") ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 else:  #Cuando no es FE quitarle iva al precio si se aplico desde el producto
-                    precio_neto = (precio_incl).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    precio_neto = (precio_incl * cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                     #BC: verificar si el precio del prod para ccf ya viene con iva
                     #total_iva_item = ( ( precio_incl * cantidad) / Decimal("1.13") * Decimal("0.13") ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 print(f"Precio Incl = {precio_incl}, Precio neto = {precio_neto}, tipo dte:  {tipo_dte}")
@@ -685,22 +688,28 @@ def generar_factura_view(request):
                 precio_neto = Decimal(precio_neto)          
                 iva_unitario = (precio_incl - precio_neto).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 #total_iva_item = ( ( precio_incl * cantidad) / Decimal("1.13") * Decimal("0.13") ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-                total_iva_item = ( ( precio_neto * cantidad) / Decimal("1.13") * Decimal("0.13") ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                total_iva_item = ( precio_neto / Decimal("1.13") * Decimal("0.13") ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 #Campo descuento por bonificaciones(montoDescu)
                 #descuento_monto = descuento_monto # Se asume 0 descuento por ítem
                 
-                porcentaje_descuento_item = Descuento.objects.get(id=porcentaje_descuento)
+                ("-Descuento por item = ", porcentaje_descuento_item)
+                #PENDIENTE: enviar id de descuento desde el html para guardar el objeto en la tabla detalle
+                porcentaje_descuento_item = Descuento.objects.get(porcentaje=porcentaje_descuento_item)
+                
                 if porcentaje_descuento_item.porcentaje > Decimal("0.00"):
                     descuento_aplicado=True
                 else:
                     descuento_aplicado = False
-                print("-Descuento por item", porcentaje_descuento_item.porcentaje)
+                print("-Descuento por item", porcentaje_descuento_item)
                 
                 #descuento_monto = Decimal("0.00")  # Se asume 0 descuento por ítem
                 
                 # Totales por ítem
                 #Campo Ventas gravadas
-                total_neto = ((precio_neto * cantidad) - (porcentaje_descuento_item.porcentaje / Decimal("100"))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                monto_descuento = precio_neto * porcentaje_descuento_item.porcentaje#(porcentaje_descuento_item.porcentaje / Decimal("100"))
+                total_neto = (precio_neto - monto_descuento).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                
+                print(f"-precio neto = {precio_neto}, descuento = {monto_descuento}, porcentaje = {porcentaje_descuento_item.porcentaje / Decimal("100")} ")
                 
                 #total_iva_item = (iva_unitario * cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 #funcional total_iva_item = ( ( precio_incl * cantidad) / Decimal("1.13") * Decimal("0.13") ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
@@ -804,9 +813,9 @@ def generar_factura_view(request):
             factura.sub_total_ventas = total_gravada
             factura.descuen_no_sujeto = Decimal("0.00")
             factura.descuento_exento = Decimal("0.00")
-            factura.descuento_gravado = total_descuento_gravado
+            factura.descuento_gravado = float(total_descuento_gravado * 100)
             factura.por_descuento = descuento_global #Decimal("0.00")
-            factura.total_descuento = total_descuento_gravado
+            factura.total_descuento = float(monto_descuento)
             factura.sub_total = total_gravada
             factura.iva_retenido = DecimalRetIva
             factura.retencion_renta = DecimalRetRenta
