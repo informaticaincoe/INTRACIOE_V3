@@ -289,6 +289,11 @@ class tipoGeneracionDocumentoListAPIView(generics.ListAPIView):
 class TipoDTEListAPIView(generics.ListAPIView):
     queryset = Tipo_dte.objects.all()
     serializer_class = TipoDteSerializer
+
+class TipoDTEDetailAPIView(generics.RetrieveAPIView):
+    queryset = Tipo_dte.objects.all()
+    serializer_class = TipoDteSerializer
+    lookup_field = 'codigo'
     
 class CondicionDeOperacionListAPIView(generics.ListAPIView):
     queryset = CondicionOperacion.objects.all()

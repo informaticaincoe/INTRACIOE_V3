@@ -15,11 +15,11 @@ export const generarFacturaService = async (data: any) => {
   }
 };
 
-export const getFacturaCodigos = async (tipo_dte:string) => {
+export const getFacturaCodigos = async (tipo_dte: string) => {
   try {
     const response = await axios.get(`${BASEURL}/factura/generar/`, {
       params: {
-        tipo_dte: {tipo_dte}
+        tipo_dte
       }
     });
     console.log("response get codigos", response.data)
@@ -43,10 +43,11 @@ export const FirmarFactura = async (id: string) => {
 export const EnviarHacienda = async (id: string) => {
   try {
     const response = await axios.post(`${BASEURL}/factura/enviar_hacienda/${id}/`);
-    console.log("response enviar factura", response.data)
-
-    console.log(response)
+    console.log(response);
+    return response; // Devuelve si todo bien
   } catch (error) {
-    console.log(error)
+    console.error("Error desde EnviarHacienda:", error);
+    throw error; // ¡Importante! Propaga el error para que se pueda capturar fuera
   }
-}
+};
+
