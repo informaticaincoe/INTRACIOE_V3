@@ -22,7 +22,7 @@ import { SendFormButton } from '../../../../shared/buttons/sendFormButton';
 import { defaulReceptorData, defaultEmisorData, EmisorInterface, ReceptorInterface } from '../../../../shared/interfaces/interfaces';
 import { ProductosTabla } from '../components/FE/productosAgregados/productosData';
 import { ResumenTotalesCard } from '../components/Shared/resumenTotales/resumenTotalesCard';
-import { generarFacturaService, getFacturaCodigos } from '../services/factura/facturaServices';
+import { EnviarHacienda, FirmarFactura, generarFacturaService, getFacturaCodigos } from '../services/factura/facturaServices';
 import { CheckBoxRetencion } from '../components/Shared/configuracionFactura/Retencion/checkBoxRetencion';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { useNavigate } from 'react-router';
@@ -50,7 +50,10 @@ export const GenerateDocuments = () => {
   const navigate = useNavigate()
 
   const generarFactura = async () => {
-    
+    let descuentos = null
+    if (listProducts[0] && listProducts[0].descuento) { 
+      descuentos = listProducts[0].descuento.id;
+  }
     const data = {
       /*Datos del receptor*/
       "codigo_generacion": codigoGeneracion,
@@ -66,12 +69,11 @@ export const GenerateDocuments = () => {
       "documento_seleccionado": "", //TODO: documentos relacionados
       "documento_select": "",//TODO: documentos relacionados
       /*descuento*/
-      "descuento_select": listProducts[0].descuento.toString(),//TODO: Descuento por item
+      "descuento_select": descuentos,//TODO: Descuento por item
 
       "tipo_documento_seleccionado": tipoDocumento?.code,
       "condicion_operacion": condicionDeOperacion,
       "observaciones": observaciones,
-
       /*prodcutos*/
       "productos_ids": idListProducts,
       "cantidades": cantidadListProducts,
@@ -81,7 +83,7 @@ export const GenerateDocuments = () => {
 
       /*retencion*/
       "retencion_iva": tieneRetencionIva,
-      "porcentaje_retencion_iva": (retencionIva/100).toString,
+      "porcentaje_retencion_iva": (retencionIva / 100).toString,
       // "retencion_renta": false,
       // "porcentaje_retencion_renta": 0.00,
 
@@ -94,28 +96,52 @@ export const GenerateDocuments = () => {
       const response = await generarFacturaService(data)
       console.log(response)
       console.log(response.factura_id)
-      navigate(`/factura/${response.factura_id}`);
+      firmarFactura(response.factura_id)
 
     }
     catch (error) {
       console.log(error)
     }
   }
+
+  const firmarFactura = async (id: string) => {
+    try {
+      if (id) {
+        const response = await FirmarFactura(id)
+        console.log(response)
+        enviarHacienda(id)
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  const enviarHacienda = async (id: string) => {
+    try {
+      if (id) {
+        const response = await EnviarHacienda(id)
+        console.log(response)
+        navigate(`/factura/${id}`);
+
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
   //************************************/
   // OBTENCION DE DATOS
   //************************************/
   useEffect(() => {
     fetchIdentificacionData()
-  }, []);
+  }, [tipoDocumento]);
 
 
   const fetchIdentificacionData = async () => {
     try {
-      const response = await getFacturaCodigos()
+      const response = await getFacturaCodigos(tipoDocumento.code)
       setCodigoGeneracion(response.codigo_generacion)
       setNumeroControl(response.numero_control)
-      generarFactura();
-
     } catch (error) {
       console.log(error)
     }
@@ -160,7 +186,7 @@ export const GenerateDocuments = () => {
               <SelectModeloFactura />
               <SelectTipoTransmisión />
               <CheckBoxVentaTerceros />
-              <CheckBoxRetencion setTieneRetencionIva={setTieneRetencionIva} setRetencionIva={setRetencionIva} retencionIva={retencionIva} tieneRetencionIva={tieneRetencionIva}/>
+              <CheckBoxRetencion setTieneRetencionIva={setTieneRetencionIva} setRetencionIva={setRetencionIva} retencionIva={retencionIva} tieneRetencionIva={tieneRetencionIva} />
             </div>
           </div>
         </>
@@ -171,7 +197,7 @@ export const GenerateDocuments = () => {
         <div className="pt2 pb-5">
           <h1 className="text-start text-xl font-bold">Identificación</h1>
           <Divider className="m-0 p-0"></Divider>
-          <IdentifcacionSeccion codigoGeneracion={codigoGeneracion} numeroControl={numeroControl}/>
+          <IdentifcacionSeccion codigoGeneracion={codigoGeneracion} numeroControl={numeroControl} />
         </div>
       </WhiteSectionsPage>
 
@@ -216,7 +242,7 @@ export const GenerateDocuments = () => {
             <span className='flex flex-col justify-start items-start py-5'>
               <p className='opacity-70'>Observaciones</p>
               <div className="flex justify-content-center w-full">
-                <InputTextarea autoResize value={observaciones} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setObservaciones(e.target.value)} rows={3}  style={{width:'100%'}}/>
+                <InputTextarea autoResize value={observaciones} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setObservaciones(e.target.value)} rows={3} style={{ width: '100%' }} />
               </div>
             </span>
           </div>
@@ -306,7 +332,7 @@ export const GenerateDocuments = () => {
             <h1 className="text-start text-xl font-bold">Resumen de totales</h1>
           </div>
           <Divider className="m-0 p-0"></Divider>
-          <ResumenTotalesCard listProducts={listProducts} setDescuentoGeneral={descuentoGeneral} descuentoGeneral={descuentoGeneral}/>
+          <ResumenTotalesCard listProducts={listProducts} setDescuentoGeneral={descuentoGeneral} descuentoGeneral={descuentoGeneral} />
         </div>
       </WhiteSectionsPage>
 

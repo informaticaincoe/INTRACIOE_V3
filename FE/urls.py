@@ -13,7 +13,8 @@ from .views import (
     invalidacion_dte_view,
     obtener_numero_control_ajax,
     obtener_receptor,
-    generar_documento_ajuste_view
+    generar_documento_ajuste_view, 
+    obtener_listado_productos_view
 )
 
 
@@ -63,4 +64,7 @@ urlpatterns = [
     path('emisor/new/', EmisorCreateView.as_view(), name='emisor_create'),
     path('emisor/<int:pk>/edit/', EmisorUpdateView.as_view(), name='emisor_update'),
     path('emisor/<int:pk>/delete/', EmisorDeleteView.as_view(), name='emisor_delete'),
+    
+    #LISTADO DE PRODUCTOS
+    path('obtener-listado-productos/', views.obtener_listado_productos_view, name='obtener_listado_productos_view'),
 ]

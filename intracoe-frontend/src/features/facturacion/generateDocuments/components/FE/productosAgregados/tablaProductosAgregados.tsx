@@ -102,13 +102,20 @@ export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = (
 
   const fetchDescuento = async () => {
     try {
-      const response = await getAllDescuentos()
-      setDescuentosList(response)
-    } catch (error) {
-      console.log(error)
-    }
-  }
+      const response = await getAllDescuentos();
+      setDescuentosList(response);
 
+      // Aquí se establece el primer descuento de cada producto si no tiene descuento asignado
+      setListProducts((prevProducts: any[]) =>
+        prevProducts.map((product) => ({
+          ...product,
+          descuento: product.descuento || response[0]?.id, // Si no tiene descuento, se asigna el primer descuento
+        }))
+      );
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   return (
     <>
@@ -172,7 +179,7 @@ export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = (
           header={<p className="text-sm">PRECIO UNITARIO</p>}
         ></Column>
         <Column
-          body={(rowData: ProductosTabla) => <p>$ {rowData.iva_unitario}</p>}
+          body={(rowData: ProductosTabla) => <p>$ {(rowData.iva_unitario).toFixed(2)}</p>}
           header={<p className="text-sm">IVA UNITARIO</p>}
         ></Column>
         <Column
@@ -195,7 +202,6 @@ export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = (
               onChange={(e) => handleDescuentoChange(e.value, rowData.id)}
               options={descuentosList}
               optionLabel="porcentaje"
-              optionValue="id"
               className="w-full md:w-14rem" />
           )}
         />

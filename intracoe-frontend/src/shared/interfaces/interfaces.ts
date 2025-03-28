@@ -254,7 +254,7 @@ export interface Almacen {
 
 export interface Descuento {
   id: number,
-  porcentaje: number,
+  porcentaje: string,
   descripcion: string,
   fecha_inicio: string,
   fecha_fin: string,
