@@ -1,16 +1,16 @@
 {
     "identificacion": {
-        "version": 1,
+        "version": 3,
         "ambiente": "01",
-        "tipoDte": "01",
-        "numeroControl": "DTE-01-0000MOO1-000000000000452",
-        "codigoGeneracion": "C219DAF1-10AE-40DF-A9D8-66A28DBD37AF",
+        "tipoDte": "03",
+        "numeroControl": "DTE-03-0000MOO1-000000000000117",
+        "codigoGeneracion": "A7B4377C-527A-44A6-B928-01BD55149D7A",
         "tipoModelo": 1,
         "tipoOperacion": 1,
         "tipoContingencia": null,
         "motivoContin": null,
         "fecEmi": "2025-03-27",
-        "horEmi": "11:26:53",
+        "horEmi": "14:12:39",
         "tipoMoneda": "USD"
     },
     "documentoRelacionado": null,
@@ -35,19 +35,19 @@
         "codPuntoVenta": "0001"
     },
     "receptor": {
-        "nombre": "Francisco Antonio Flores",
+        "nombre": "Dominick Norberto Hernandez Alfaro",
         "codActividad": "47816",
         "descActividad": "Venta al por menor de bebidas",
         "direccion": {
             "departamento": "05",
             "municipio": "25",
-            "complemento": "Carretera a Sonsonate, km 27 ½ Zona Industrial Lourdes, Calle Antigua Hda, La Libertad, El Salvador C.A"
+            "complemento": "final 2 calle pte p´sj 4 block o urb el sauce"
         },
-        "telefono": "604477435",
-        "correo": "juniorfran@hotmail.es",
-        "nrc": null,
-        "tipoDocumento": "36",
-        "numDocumento": "06142802961066"
+        "telefono": "60447435",
+        "correo": "informatica@grupoincoe.com",
+        "nrc": "3228055",
+        "nit": "062280967",
+        "nombreComercial": "HERNANDEZ ALFARO DOMINICK NORBERTO"
     },
     "otrosDocumentos": null,
     "ventaTercero": null,
@@ -61,48 +61,75 @@
             "descripcion": "Leche entera de 250g",
             "cantidad": 1.0,
             "uniMedida": 59,
-            "precioUni": 1.41,
+            "precioUni": 1.25,
             "montoDescu": 0.0,
             "ventaNoSuj": 0.0,
             "ventaExenta": 0.0,
-            "ventaGravada": 1.41,
-            "tributos": null,
-            "psv": 1.41,
-            "noGravado": 0.0,
-            "ivaItem": 0.16
+            "ventaGravada": 1.25,
+            "tributos": [
+                "20"
+            ],
+            "psv": 1.25,
+            "noGravado": 0.0
+        },
+        {
+            "numItem": 2,
+            "tipoItem": 1,
+            "numeroDocumento": null,
+            "codigo": "PCH010",
+            "codTributo": null,
+            "descripcion": "caja entera de leche, 30 tiras de 26 g",
+            "cantidad": 1.0,
+            "uniMedida": 99,
+            "precioUni": 1.0,
+            "montoDescu": 0.0,
+            "ventaNoSuj": 0.0,
+            "ventaExenta": 0.0,
+            "ventaGravada": 1.0,
+            "tributos": [
+                "20"
+            ],
+            "psv": 1.0,
+            "noGravado": 0.0
         }
     ],
     "resumen": {
         "totalNoSuj": 0.0,
         "totalExenta": 0.0,
-        "totalGravada": 1.41,
-        "subTotalVentas": 1.41,
+        "totalGravada": 2.25,
+        "subTotalVentas": 2.25,
         "descuNoSuj": 0.0,
         "descuExenta": 0.0,
         "descuGravada": 0.0,
         "porcentajeDescuento": 0.0,
         "totalDescu": 0.0,
-        "subTotal": 1.41,
+        "subTotal": 2.25,
         "ivaRete1": 0.0,
         "reteRenta": 0.0,
-        "montoTotalOperacion": 1.41,
+        "montoTotalOperacion": 2.54,
         "totalNoGravado": 0.0,
-        "totalPagar": 1.41,
-        "totalLetras": "Uno con 41/100 USD",
+        "totalPagar": 3.95,
+        "totalLetras": "Tres con 95/100 USD",
         "saldoFavor": 0.0,
         "condicionOperacion": 1,
         "pagos": [
             {
                 "codigo": "01",
-                "montoPago": 1.25,
+                "montoPago": 2.54,
                 "referencia": null,
                 "plazo": null,
                 "periodo": null
             }
         ],
         "numPagoElectronico": null,
-        "tributos": null,
-        "totalIva": 0.16
+        "tributos": [
+            {
+                "codigo": "20",
+                "descripcion": "Impuesto al Valor Agregado 13%",
+                "valor": 0.29
+            }
+        ],
+        "ivaPerci1": 0.0
     },
     "extension": {
         "nombEntrega": null,
