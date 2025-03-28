@@ -12,7 +12,7 @@ import { SendFormButton } from '../../../../../../shared/buttons/sendFormButton'
 interface ModalListProductsInterface {
   visible: any;
   setVisible: any;
-  setListProducts:any;
+  setListProducts: any;
 
 }
 
@@ -37,9 +37,9 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
         const precioUnitario = product.preunitario;
         const ivaUnitario = precioUnitario * 0.13;
         const totalNeto = precioUnitario * cantidadInicial;
-        const totalIVA = ivaUnitario * cantidadInicial;
+        const totalIVA = (ivaUnitario) * cantidadInicial;
         const totalConIVA = totalNeto + totalIVA;
-      
+
         return {
           id: product.id,
           codigo: product.codigo,
@@ -47,7 +47,8 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
           precio_unitario: precioUnitario,
           cantidad: cantidadInicial,
           no_grabado: false,
-          descuento: 0,
+          descuento: null,
+          descuentoValor: "0.0",
           iva_unitario: ivaUnitario,
           total_neto: totalNeto,
           total_iva: totalIVA,
@@ -57,11 +58,11 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
           seleccionar: false,
         };
       });
-      
+
       console.log("productos response", response)
 
       console.log("productos", productos)
- 
+
       setProducts(productos)
     } catch (error) {
       console.log(error)
@@ -76,13 +77,13 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
     const updatedProducts = [...products];
     const nuevaCantidad = e.value ?? 1;
     const producto = updatedProducts[index];
-  
+
     producto.cantidad = nuevaCantidad;
     producto.total_iva = producto.iva_unitario * nuevaCantidad;
-  
+
     setProducts(updatedProducts);
   };
-  
+
 
   // Función para manejar la selección de productos
   const handleSelectChange = (
@@ -104,17 +105,17 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
       ...product,
       descuento: product.descuento || 2, // Si no tiene descuento, se asigna 0 (o el valor que desees)
     }));
-  
+
     setListProducts(productosConDescuento);
   };
-  
+
 
   const footerContent = (
     <div>
-      <SendFormButton onClick={() => guardarProductos(selectedProducts)} text='Agregar' className='bg-primary-blue text-white px-10'/>
+      <SendFormButton onClick={() => guardarProductos(selectedProducts)} text='Agregar' className='bg-primary-blue text-white px-10' />
 
-      <SendFormButton onClick={() => setVisible(false)} text='Cerrar' className='border border-primary-blue px-10'/>
-        
+      <SendFormButton onClick={() => setVisible(false)} text='Cerrar' className='border border-primary-blue px-10' />
+
     </div>
   );
 

@@ -10,6 +10,7 @@ import { ServicesPage } from './features/bussiness/services/pages/ServicesPage';
 import { UploadExcelPage } from './features/facturacion/activities/pages/uploadExcelPage';
 import { ConfigBussiness } from './features/bussiness/configBussiness/pages/ConfigBussiness';
 import { FacturaVisualizacionPage } from './features/facturacion/PreFactura/pages/FE/facturaVisualizacionPage';
+import { ListadoFActuras } from './features/facturacion/Listadofacturas/pages/listadoFacturas';
 
 function App() {
   return (
@@ -20,8 +21,9 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/actividades-economicas" element={<ActivitiesPage />} />
           <Route path="/generar-documentos" element={<GenerateDocuments />} />
-        <Route path="/factura/:id" element={<FacturaVisualizacionPage />} />
+          <Route path="/factura/:id" element={<FacturaVisualizacionPage />} />
           <Route path="/productos" element={<ProductsPage />} />
+          <Route path="/listado-facturas" element={<ListadoFActuras />} />
           <Route path="/servicios" element={<ServicesPage />} />
           <Route path="/empresa" element={<ConfigBussiness />} />
           <Route path="/uploadExcel" element={<UploadExcelPage />} />

@@ -169,3 +169,5 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+/FE/json_facturas
+/FE/json_facturas_firmadas
