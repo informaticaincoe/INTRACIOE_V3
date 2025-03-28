@@ -45,7 +45,8 @@ export interface ProductosTabla {
   total_neto: number;
   total_iva: number;
   total_con_iva: number;
-  iva_percibido: number;
+  iva_percibido: number
+  total_tributos:number;
   seleccionar: boolean;
 }
 
@@ -63,5 +64,6 @@ export const defaultProductosData = {
   total_iva: 0,
   total_con_iva: 0,
   iva_percibido: 0,
+  total_tributos: 0,
   seleccionar: false,
 }

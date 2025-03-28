@@ -38,3 +38,12 @@ export const getAllTipoTransmision = async () => {
     throw new Error()
   }
 }
+
+export const getAllMetodosDePago = async () =>{
+  try {
+    const response = await axios.get(`${BASEURL}/formas-pago/`);
+    return response.data
+  } catch (error) {
+    console.log(error)
+  }
+}

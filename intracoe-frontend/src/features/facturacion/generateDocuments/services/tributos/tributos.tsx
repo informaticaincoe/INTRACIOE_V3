@@ -15,8 +15,18 @@ export const getAllTipoTributos = async() => {
 
 export const getAllTributosByTipo = async(id:number) => {
     try {
-        const response = await axios.get(`${BASEURL}/tributos/${id}/`)
+        const response = await axios.get(`${BASEURL}/tributos/tipo/${id}/`)
         console.log(response)
+        return response.data
+    } catch (error) {
+        console.log(error)
+        throw new Error
+    }
+}
+
+export const getTributoById = async(id:number) => {
+    try {
+        const response = await axios.get(`${BASEURL}/tributo/${id}/`)
         return response.data
     } catch (error) {
         console.log(error)
