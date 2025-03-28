@@ -94,8 +94,6 @@ export const GenerateDocuments = () => {
 
     try {
       const response = await generarFacturaService(data)
-      console.log(response)
-      console.log(response.factura_id)
       firmarFactura(response.factura_id)
 
     }
@@ -108,21 +106,7 @@ export const GenerateDocuments = () => {
     try {
       if (id) {
         const response = await FirmarFactura(id)
-        console.log(response)
-        enviarHacienda(id)
-      }
-    } catch (error) {
-      console.log(error)
-    }
-  }
-
-  const enviarHacienda = async (id: string) => {
-    try {
-      if (id) {
-        const response = await EnviarHacienda(id)
-        console.log(response)
         navigate(`/factura/${id}`);
-
       }
     } catch (error) {
       console.log(error)
@@ -133,9 +117,13 @@ export const GenerateDocuments = () => {
   // OBTENCION DE DATOS
   //************************************/
   useEffect(() => {
+    console.log("tipoDocumento", tipoDocumento)
+    console.log("tipoDocumento", numeroControl)
+
     fetchIdentificacionData()
   }, [tipoDocumento]);
 
+  
 
   const fetchIdentificacionData = async () => {
     try {
@@ -151,6 +139,7 @@ export const GenerateDocuments = () => {
     generarFactura()
   };
 
+  //************************************/
   return (
     <>
       <Title text="Generar documentos" />
@@ -213,8 +202,8 @@ export const GenerateDocuments = () => {
       </WhiteSectionsPage>
 
       {/********* Seccion productos *********/}
-      {/* Tipo de documento: FE */}
-      {tipoDocumento?.code === "01" && (
+      {/* Tipo de documento: FE y Credito fiscal */}
+      {(tipoDocumento?.code === "01" || tipoDocumento?.code === "03" ) && (
         <WhiteSectionsPage>
           <div className="pt-2 pb-5">
             <div className="flex justify-between">
@@ -231,7 +220,7 @@ export const GenerateDocuments = () => {
               </span>
             </div>
 
-            <Divider className=""></Divider>
+            <Divider />
             <TablaProductosAgregados listProducts={listProducts} setListProducts={setListProducts} setCantidadListProducts={setCantidadListProducts} setIdListProducts={setIdListProducts} setDescuentoItem={setDescuentoItem} descuentoItem={descuentoItem} />
             <ModalListaProdcutos
               visible={showProductsModal}
@@ -300,7 +289,7 @@ export const GenerateDocuments = () => {
       )}
 
       {/* Tipo de documento: Credito fiscal */}
-      {tipoDocumento?.code === "02" && (
+      {/* {tipoDocumento?.code === "03" && (
         <WhiteSectionsPage>
           <div className="pt-2 pb-5">
             <div className="flex justify-between">
@@ -315,7 +304,7 @@ export const GenerateDocuments = () => {
               </button>
             </div>
             <Divider className="m-0 p-0"></Divider>
-            <TablaProductosCreditoFiscal />
+            <TablaProductosCreditoFiscal listProducts={listProducts} setListProducts={setListProducts} setCantidadListProducts={setCantidadListProducts} setIdListProducts={setIdListProducts} setDescuentoItem={setDescuentoItem} descuentoItem={descuentoItem} />
             <ModalListaProdcutos
               visible={showProductsModal}
               setVisible={setShowProductsModal}
@@ -323,7 +312,7 @@ export const GenerateDocuments = () => {
             />
           </div>
         </WhiteSectionsPage>
-      )}
+      )} */}
 
       {/*Seccion totales resumen*/}
       <WhiteSectionsPage>

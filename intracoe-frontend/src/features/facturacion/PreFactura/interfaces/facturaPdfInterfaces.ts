@@ -43,6 +43,11 @@ export interface FacturaResponse {
   condicion_operacion: number;
 }
 
+export interface TipoIdentificacion {
+  id: number,
+  codigo: string,
+  descripcion:string
+}
 export interface JsonOriginal {
   identificacion: Identificacion;
   documentoRelacionado: any;
@@ -133,8 +138,9 @@ export interface Receptor {
   telefono: string;
   correo: string;
   nrc: string | null;
-  tipoDocumento: string;
-  numDocumento: string;
+  tipoDocumento?: string;
+  numDocumento?: string;
+  nit?: string
 }
 
 export interface Direccion {
@@ -200,7 +206,7 @@ export const ResumenDefalt = {
   totalPagar: 0,
   totalLetras: "",
   saldoFavor: 0,
-  condicionOperacion: 0,
+  condicionOperacion: "",
   pagos: [],
   numPagoElectronico: "",
   tributos: "",
@@ -208,62 +214,52 @@ export const ResumenDefalt = {
 }
 
 export const resumenTablaFEDefault = {
-  totalExenta: 0,
-  totalGravada: 0,
-  subTotalVentas: 0,
-  descuNoSuj: 0,
-  descuExenta: 0,
-  descuGravada: 0,
-  // porcentajeDescuento: 0,
-  // totalDescu: 0,
-  subTotal: 0,
-  ivaRete: 0,
-  reteRenta: 0,
-  montoTotalOperacion: 0,
-  totalNoGravado: 0,
-  totalPagar: 0,
-  totalIva: 0
-}
-export interface resumenTablaFE {
-  totalExenta: number;
-  totalGravada: number;
-  subTotalVentas: number;
-  descuNoSuj: number;
-  descuExenta: number;
-  descuGravada: number;
-  // porcentajeDescuento: number;
-  // totalDescu: number;
-  subTotal: number;
-  ivaRete: number;
-  reteRenta: number;
-  montoTotalOperacion: number;
-  totalNoGravado: number;
-  totalPagar: number;
-  totalIva: number
+  totalNoSuj: "",
+  totalExenta: "",
+  totalGravada: "",
+  subTotalVentas: "",
+  descuNoSuj: "",
+  descuExenta: "",
+  descuGravada: "",
+  porcentajeDescuento: "",
+  totalDescu: "",
+  subTotal: "",
+  ivaRete: "",
+  reteRenta: "",
+  montoTotalOperacion: "",
+  totalNoGravado: "",
+  totalPagar: "",
+  totalLetras: "",
+  saldoFavor: "",
+  condicionOperacion: 0,
+  pagos: [],
+  numPagoElectronico: "",
+  tributos: "",
+  totalIva: "",
 }
 export interface Resumen {
-  totalNoSuj: number;
-  totalExenta: number;
-  totalGravada: number;
-  subTotalVentas: number;
-  descuNoSuj: number;
-  descuExenta: number;
-  descuGravada: number;
-  porcentajeDescuento: number;
-  totalDescu: number;
-  subTotal: number;
-  ivaRete: number;
-  reteRenta: number;
-  montoTotalOperacion: number;
-  totalNoGravado: number;
-  totalPagar: number;
+  totalNoSuj: string;
+  totalExenta: string;
+  totalGravada: string;
+  subTotalVentas: string;
+  descuNoSuj: string;
+  descuExenta: string;
+  descuGravada: string;
+  porcentajeDescuento: string;
+  totalDescu: string;
+  subTotal: string;
+  ivaRete: string;
+  reteRenta: string;
+  montoTotalOperacion: string;
+  totalNoGravado: string;
+  totalPagar: string;
   totalLetras: string;
-  saldoFavor: number;
+  saldoFavor: string | null;
   condicionOperacion: number;
   pagos: any[];
   numPagoElectronico: string | null;
   tributos: any;
-  totalIva: number;
+  totalIva: string;
 }
 
 export const ExtensionDefault ={
@@ -285,13 +281,16 @@ export interface Extension {
 }
 
 export const DatosFacturaDefault = {
+  tipoDte: "",
   codigoGeneracion: "",
   numeroControl: "",
   fechaEmision: "",
   horaEmision: "",
-  selloRemision:""
+  selloRemision:"",
+
 }
 export interface DatosFactura {
+  tipoDte:string
   codigoGeneracion: string,
   numeroControl: string,
   fechaEmision: string,

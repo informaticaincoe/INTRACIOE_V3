@@ -4,13 +4,13 @@
         "ambiente": "01",
         "tipoDte": "01",
         "numeroControl": "DTE-01-0000MOO1-000000000000452",
-        "codigoGeneracion": "647A32EC-8CCF-4F38-A7C6-2546D8B53E1C",
+        "codigoGeneracion": "C219DAF1-10AE-40DF-A9D8-66A28DBD37AF",
         "tipoModelo": 1,
         "tipoOperacion": 1,
         "tipoContingencia": null,
         "motivoContin": null,
         "fecEmi": "2025-03-27",
-        "horEmi": "07:14:17",
+        "horEmi": "11:26:53",
         "tipoMoneda": "USD"
     },
     "documentoRelacionado": null,
@@ -91,7 +91,15 @@
         "totalLetras": "Uno con 41/100 USD",
         "saldoFavor": 0.0,
         "condicionOperacion": 1,
-        "pagos": [],
+        "pagos": [
+            {
+                "codigo": "01",
+                "montoPago": 1.25,
+                "referencia": null,
+                "plazo": null,
+                "periodo": null
+            }
+        ],
         "numPagoElectronico": null,
         "tributos": null,
         "totalIva": 0.16

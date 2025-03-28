@@ -4,13 +4,13 @@
         "ambiente": "01",
         "tipoDte": "01",
         "numeroControl": "DTE-01-0000MOO1-000000000000456",
-        "codigoGeneracion": "52B709E7-D17F-476C-9ACD-E95B0477426C",
+        "codigoGeneracion": "FAA78A4A-DAB8-4218-831C-6608150E7839",
         "tipoModelo": 1,
         "tipoOperacion": 1,
         "tipoContingencia": null,
         "motivoContin": null,
         "fecEmi": "2025-03-27",
-        "horEmi": "08:09:28",
+        "horEmi": "13:11:45",
         "tipoMoneda": "USD"
     },
     "documentoRelacionado": null,
@@ -69,32 +69,66 @@
             "tributos": null,
             "psv": 1.41,
             "noGravado": 0.0,
-            "ivaItem": 0.16
+            "ivaItem": 0.13
+        },
+        {
+            "numItem": 2,
+            "tipoItem": 1,
+            "numeroDocumento": null,
+            "codigo": "PCH010",
+            "codTributo": null,
+            "descripcion": "caja entera de leche, 30 tiras de 26 g",
+            "cantidad": 1.0,
+            "uniMedida": 99,
+            "precioUni": 1.13,
+            "montoDescu": 0.0,
+            "ventaNoSuj": 0.0,
+            "ventaExenta": 0.0,
+            "ventaGravada": 1.13,
+            "tributos": null,
+            "psv": 1.13,
+            "noGravado": 0.0,
+            "ivaItem": 0.13
         }
     ],
     "resumen": {
         "totalNoSuj": 0.0,
         "totalExenta": 0.0,
-        "totalGravada": 1.41,
-        "subTotalVentas": 1.41,
+        "totalGravada": 2.54,
+        "subTotalVentas": 2.54,
         "descuNoSuj": 0.0,
         "descuExenta": 0.0,
         "descuGravada": 0.0,
         "porcentajeDescuento": 0.0,
         "totalDescu": 0.0,
-        "subTotal": 1.41,
+        "subTotal": 2.54,
         "ivaRete1": 0.0,
         "reteRenta": 0.0,
-        "montoTotalOperacion": 1.41,
+        "montoTotalOperacion": 2.54,
         "totalNoGravado": 0.0,
-        "totalPagar": 1.41,
-        "totalLetras": "Uno con 41/100 USD",
+        "totalPagar": 2.54,
+        "totalLetras": "Dos con 54/100 USD",
         "saldoFavor": 0.0,
         "condicionOperacion": 1,
-        "pagos": [],
+        "pagos": [
+            {
+                "codigo": "02",
+                "montoPago": 1.0,
+                "referencia": "None",
+                "plazo": null,
+                "periodo": null
+            },
+            {
+                "codigo": "01",
+                "montoPago": 1.54,
+                "referencia": null,
+                "plazo": null,
+                "periodo": null
+            }
+        ],
         "numPagoElectronico": null,
         "tributos": null,
-        "totalIva": 0.16
+        "totalIva": 0.29
     },
     "extension": {
         "nombEntrega": null,

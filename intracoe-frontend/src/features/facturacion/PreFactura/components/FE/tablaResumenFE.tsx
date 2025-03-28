@@ -1,7 +1,7 @@
-import { resumenTablaFE } from "../../interfaces/facturaPdfInterfaces"
+import { Resumen } from "../../interfaces/facturaPdfInterfaces"
 
 interface TablaResumentFEProps {
-    resumen: resumenTablaFE
+    resumen: Resumen
 }
 
 export const TablaResumenFE:React.FC<TablaResumentFEProps> = ({resumen}) => {
@@ -28,6 +28,10 @@ export const TablaResumenFE:React.FC<TablaResumentFEProps> = ({resumen}) => {
                     <tr>
                         <td className="align-middle py-1 px-3 border-2 border-border-color text-end">Sub-total:</td>
                         <td className="align-middle py-1 px-3 border-2 border-border-color text-start">$ {resumen.subTotal}</td>
+                    </tr>
+                    <tr className="text-center">
+                        <td className="align-middle py-1 px-3 border-2 border-border-color text-end">Total IVA:</td>
+                        <td className="align-middle py-1 px-3 border-2 border-border-color text-start">$ {resumen.totalIva}</td>
                     </tr>
                     <tr className="text-center">
                         <td className="align-middle py-1 px-3 border-2 border-border-color text-end">IVA retenido:</td>
