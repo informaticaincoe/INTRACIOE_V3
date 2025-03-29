@@ -565,7 +565,6 @@
     const condicion_operacion = document.getElementById('condicion_op').value;
     const saldo_favor = document.getElementById('saldo_favor_input').value
     const total_pagar = document.getElementById("total-pagar").textContent;
-
     var modalRows = document.querySelectorAll('#tabla-formaspago-modal tbody tr');
     var recibido_fp = 0
 
@@ -805,14 +804,12 @@
     //Monto global y monto a ventas gravadas
     descu_gravado = parseFloat(document.getElementById("descuento_gravado").value) || 0;
     suma_descuentos = (parseFloat(sumMontoDescu * 100) || 0) + (parseFloat(descu_gravado) || 0);
-    console.log("suma escuentos = ", suma_descuentos);
     let descuentoPorc = parseFloat(document.getElementById("descuento-global").value) || 0;
     let montoDescuento = (sumIncl * descuentoPorc / 100).toFixed(2);
     //let totalPagar = (sumIncl - montoDescuento).toFixed(2);
 
     //Descuento global de ventas gravadas
     let descuentoPorcGravado = parseFloat(document.getElementById("descuento_gravado").value) || 0;
-    console.log("descuento gravado = ", descuentoPorcGravado)
     let montoDescuGravado = (sumIncl * descuentoPorcGravado / 100).toFixed(2);
     let subTotal = (sumIncl - montoDescuGravado - montoDescuento).toFixed(2);
     let montoTotalOperacion = parseFloat(subTotal).toFixed(2);
