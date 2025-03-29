@@ -542,10 +542,15 @@ def generar_factura_view(request):
             print("-Id forma de pago: ", formas_pago_id)
             
             descuento_global = data.get("descuento_global_input", "0")
-            monto_descuento = data.get("monto_descuento", "0")
-            print(f"descuento global = {descuento_global}, monto descuento = {monto_descuento}")
+            
             saldo_favor = data.get("saldo_favor_input", "0")
             base_imponible_checkbox = data.get("no_gravado", False)
+            
+            #Descuento gravado
+            descu_gravado = data.get("descuento_gravado", "0")
+            #Total descuento = descuento por item + descuento global gravado
+            monto_descuento = data.get("monto_descuento", "0")
+            print(f"descuento global = {descuento_global}, monto descuento = {descu_gravado}")
             
             if saldo_favor is not None and saldo_favor !="":
                 saldo_f = Decimal(saldo_favor)
@@ -626,6 +631,7 @@ def generar_factura_view(request):
             total_operaciones = Decimal("0.00")
             total_descuento_gravado = Decimal("0.00")
             total_no_gravado = Decimal("0.00")
+            sub_total = Decimal("0.00")
             
             #Campos DTE
             tributo_valor = None
@@ -649,6 +655,7 @@ def generar_factura_view(request):
                     cantidad = 1
                 else:
                     cantidad = int(cantidades[index]) if index < len(cantidades) else 1
+                print("-Cantidad: ", cantidad, "index: ", index)
                 
                 # El precio del producto ya incluye IVA (por ejemplo, 8.50)
                 precio_incl = producto.preunitario
@@ -706,10 +713,22 @@ def generar_factura_view(request):
                 
                 # Totales por ítem
                 #Campo Ventas gravadas
-                monto_descuento = precio_neto * porcentaje_descuento_item.porcentaje#(porcentaje_descuento_item.porcentaje / Decimal("100"))
-                total_neto = (precio_neto - monto_descuento).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-                
-                print(f"-precio neto = {precio_neto}, descuento = {monto_descuento}, porcentaje = {porcentaje_descuento_item.porcentaje / Decimal("100")} ")
+                if monto_descuento is None:
+                    monto_descuento = Decimal("0.00")
+                print(f"Monto descuento: {monto_descuento}, precio neto = {precio_neto}, descuento grav = {descu_gravado}")
+                #Descuento a ventas gravadas
+                if descu_gravado is None or descu_gravado == "":
+                    descu_gravado = Decimal("0.00")
+                    
+                #total_descuento_gravado = (precio_neto * Decimal(descu_gravado)) / 100
+                total_descuento_gravado = (precio_neto * porcentaje_descuento_item.porcentaje).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                print("calcular descuento: ", porcentaje_descuento_item.porcentaje, "descuento total = ", total_descuento_gravado)
+                #total_neto = (precio_neto - total_descuento_gravado).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                total_neto = (precio_neto - total_descuento_gravado).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                print(f"-precio neto = {precio_neto}, total neto = {total_neto}, desc gravado = {descu_gravado} ")
+                #Subtotal resumen = subTotalVentas - decuento global gravado
+                decuento_gravado = (total_neto * descu_gravado / 100).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                sub_total = total_neto #- decuento_gravado
                 
                 #total_iva_item = (iva_unitario * cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 #funcional total_iva_item = ( ( precio_incl * cantidad) / Decimal("1.13") * Decimal("0.13") ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
@@ -751,15 +770,15 @@ def generar_factura_view(request):
                 total_gravada += total_neto
                 
                 #Calcular el valor del tributo
-                if tipo_dte_obj.codigo == COD_CREDITO_FISCAL:
+                if tributo_valor is not None:
                     valorTributo = ( Decimal(total_gravada) * Decimal(tributo_valor) ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-                    total_operaciones = total_gravada + valorTributo
+                    total_operaciones = sub_total + valorTributo
                 else:
-                    total_operaciones = total_gravada
+                    total_operaciones = sub_total
                     
                 print(f"total_pagar = {total_pagar}, tot_operaxiones = {total_operaciones}, iva_peerci = {DecimalIvaPerci}, iva_rete = {DecimalRetIva}, rete_renta = {DecimalRetRenta}, total_no_grav = {total_no_gravado}")
                 if tipo_dte_obj.codigo == COD_CONSUMIDOR_FINAL:
-                    total_con_iva = (precio_neto * cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    total_con_iva = (total_operaciones - DecimalRetIva - DecimalRetRenta - total_no_gravado).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 else:
                     #total_con_iva = (precio_neto * cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                     total_con_iva = total_operaciones - DecimalIvaPerci - DecimalRetIva - DecimalRetRenta - total_no_gravado
@@ -781,9 +800,9 @@ def generar_factura_view(request):
                 print("-Aplicar tributo sujeto iva")
                 valor_porcentaje = Decimal(porcentaje_descuento_item.porcentaje)
                 
-                if valor_porcentaje.compare(Decimal("0.00")) > 0:
-                    total_descuento_gravado += porcentaje_descuento_item.porcentaje
-                print("-Total desc gravado: ", total_descuento_gravado)
+                #if valor_porcentaje.compare(Decimal("0.00")) > 0:
+                    #total_descuento_gravado += porcentaje_descuento_item.porcentaje
+                #print("-Total desc gravado: ", total_descuento_gravado)
                 
             # Calcular retenciones (globales sobre el total neto de cada detalle)
             if retencion_iva and porcentaje_retencion_iva > 0:
@@ -805,7 +824,7 @@ def generar_factura_view(request):
             if tipo_doc_relacionar is COD_DOCUMENTO_RELACIONADO_NO_SELEC:
                 tipo_doc_relacionar = None
                 documento_relacionado = None
-
+            print("...monto descuento", monto_descuento)
             # Actualizar totales en la factura
             factura.total_no_sujetas = Decimal("0.00")
             factura.total_exentas = Decimal("0.00")
@@ -813,10 +832,10 @@ def generar_factura_view(request):
             factura.sub_total_ventas = total_gravada
             factura.descuen_no_sujeto = Decimal("0.00")
             factura.descuento_exento = Decimal("0.00")
-            factura.descuento_gravado = float(total_descuento_gravado * 100)
+            factura.descuento_gravado = float(descu_gravado)
             factura.por_descuento = descuento_global #Decimal("0.00")
             factura.total_descuento = float(monto_descuento)
-            factura.sub_total = total_gravada
+            factura.sub_total = sub_total
             factura.iva_retenido = DecimalRetIva
             factura.retencion_renta = DecimalRetRenta
             factura.total_operaciones = total_operaciones #total_gravada
@@ -923,7 +942,7 @@ def generar_factura_view(request):
                     #cuerpo_documento_tributos[0] = idx + 1
                     if cuerpo_documento_tributos is None:
                         cuerpo_documento.append(cuerpo_documento_tributos)
-                  
+                
                 print(f"Item {idx}: IVA unitario = {iva_unitario}, Total IVA = {total_iva_item}, IVA almacenado = {det.iva_item}")
                 
             factura_json = generar_json(
@@ -2582,7 +2601,7 @@ def generar_documento_ajuste_view(request):
             if documento_relacionado:
                 productos_ids += productos_ids_r
             cantidades = data.get('cantidades', [])
-            print(f"id productos relacionados: {productos_ids_r} cantidad: {cantidades}")
+            print(f"id productos: {productos_ids_r} descuentos: {descuentos}")
             # En este caso, se asume que el descuento por producto es 0 (se aplica globalmente)
             
             if numero_control:

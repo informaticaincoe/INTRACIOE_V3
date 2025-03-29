@@ -219,8 +219,8 @@
               <th>Cantidad</th>
               <th>Descuento por ítem</th>
               <th>Total Neto</th>
-              <th>Total IVA</th>
-              <th>T. Op. Gravadas</th>
+              <th>IVA por ítem</th>
+              <th>Ventas Gravadas</th>
               <th>Aplica IVA</th>
               <th>Acciones</th>
             </tr>
@@ -261,13 +261,13 @@
           <div class="col-md-6">
             <div class="form-group">
               <label>Descuento (Ventas g.)</label>
-              <input type="number" id="descuento-gravado" name="descuento_global_input" class="form-control" value="0" min="0" max="100" oninput="actualizarResumen()">
+              <input type="number" id="descuento_gravado" name="descuento_gravado_input" class="form-control" value="0" min="0" max="100" oninput="actualizarResumen()">
             </div>
           </div>
         </div>
         <div class="row">
           <div class="col-md-6">
-            <p><strong>Monto Descuento:</strong> $<span id="monto-descuento" name="monto_descuento">0.00</span></p>
+            <p><strong>Monto Descuento:</strong> $<span id="monto_descuento" name="monto_descuento_input">0.00</span></p>
           </div>
           <div class="col-md-6">
             <strong>Saldo a Favor:</strong><input name="saldo_favor" id="saldo_favor_input" class="saldo-favor-input" value="0">
@@ -337,7 +337,7 @@
                 </select>
               </td>
               <td>
-                <select name="descuento_seleccionado" class="form-control" id="descuento_select" onchange="seleccionarDescuento(this)">
+                <select name="descuento_seleccionado" class="descuento-input" id="descuento_select" onchange="seleccionarDescuento(this)">
                   {% for descuento in descuentos %}
                     <option class="descuento-item" data-descuento="{{descuento.porcentaje}}" value="{{ descuento.porcentaje }}"> {{ descuento.porcentaje }}</option>
                   {% endfor %}
@@ -803,23 +803,24 @@
     document.getElementById("total-incl").textContent = sumIncl.toFixed(2);
 
     //Monto global y monto a ventas gravadas
-    descu_gravado = parseFloat(document.getElementById("descuento-gravado").value) || 0;
+    descu_gravado = parseFloat(document.getElementById("descuento_gravado").value) || 0;
     suma_descuentos = (parseFloat(sumMontoDescu * 100) || 0) + (parseFloat(descu_gravado) || 0);
-
+    console.log("suma escuentos = ", suma_descuentos);
     let descuentoPorc = parseFloat(document.getElementById("descuento-global").value) || 0;
     let montoDescuento = (sumIncl * descuentoPorc / 100).toFixed(2);
     //let totalPagar = (sumIncl - montoDescuento).toFixed(2);
 
     //Descuento global de ventas gravadas
-    let descuentoPorcGravado = parseFloat(document.getElementById("descuento-gravado").value) || 0;
+    let descuentoPorcGravado = parseFloat(document.getElementById("descuento_gravado").value) || 0;
+    console.log("descuento gravado = ", descuentoPorcGravado)
     let montoDescuGravado = (sumIncl * descuentoPorcGravado / 100).toFixed(2);
-    let subTotal = (sumIncl - montoDescuGravado).toFixed(2);
+    let subTotal = (sumIncl - montoDescuGravado - montoDescuento).toFixed(2);
     let montoTotalOperacion = parseFloat(subTotal).toFixed(2);
     let totalPagar = montoTotalOperacion ;
 
     // Es la sumatoria de descuentos por item, monto global de descuento a ventas no sujetas, exenta y gravadas
     //document.getElementById("monto-descuento").textContent = montoDescuento;
-    document.getElementById("monto-descuento").textContent = parseFloat(suma_descuentos);
+    document.getElementById("monto_descuento").textContent = parseFloat(suma_descuentos);
     document.getElementById("total-pagar").textContent = totalPagar;
     document.getElementById("total-pagar-fp").textContent = totalPagar;
     document.getElementById("sub-total-resumen").textContent = parseFloat(subTotal).toFixed(2);
@@ -853,7 +854,8 @@
       jsonData["descuento_select"] = document.querySelector('select[name="descuento_seleccionado"]').value;
       // Agregar el valor del select "tipo_item"
       jsonData["tipo_item_select"] = document.querySelector('select[name="tipo_item_seleccionado"]').value;
-      jsonData["monto-descuento"] = document.querySelector('select[name="monto_descuento"]');
+      jsonData["monto_descuento"] = document.getElementById("monto_descuento").textContent;
+      jsonData["descuento_gravado"] = parseFloat(document.getElementById("descuento_gravado").value) || 0;
       
       // Recopilar datos de productos
       let productos_ids = [];
@@ -863,7 +865,7 @@
           productos_ids.push(row.getAttribute('data-id'));
           cantidades.push(row.querySelector('.cantidad-input').value);
           totales_incl.push(row.querySelector('.total-incl').textContent);
-      });
+      });      
 
       jsonData["productos_ids"] = productos_ids;
       jsonData["cantidades"] = cantidades;
