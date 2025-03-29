@@ -125,8 +125,6 @@ export const TablaProductosFacturaNotasDebito: React.FC<TablaProductosFacturaNot
                         onValueChange={(e: InputNumberValueChangeEvent) =>
                           handleCantidadChange(e.value ?? null, factura.codigo_generacion, rowData.producto_id)
                         }
-
-                        disabled={!seleccionados[rowData.producto_id.toString()]}
                       />
                     )}
                   />
@@ -138,7 +136,7 @@ export const TablaProductosFacturaNotasDebito: React.FC<TablaProductosFacturaNot
                         onValueChange={(e: InputNumberValueChangeEvent) =>
                           handleMontoAumentarChange(e.value ?? null, factura.codigo_generacion, rowData.producto_id)
                         }
-                        disabled={!seleccionados[rowData.producto_id.toString()]}
+                        
                       />
                     )}
                   />

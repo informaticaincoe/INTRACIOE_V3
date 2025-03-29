@@ -75,3 +75,13 @@ export const getFacturaBycodigo = async (codigo_generacion:string) => {
     throw new Error()
   }
 }
+
+
+export const getTiposGeneracionDocumento = async () => {
+  try {
+    const response = await axios.get(`${BASEURL}/tipo-generacion-facturas/`)
+    return response.data
+  } catch (error) {
+    throw new Error()
+  }
+}

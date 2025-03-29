@@ -19,7 +19,7 @@ import { TablaProductosCreditoFiscal } from '../components/CreditoFiscal/TablaPr
 import { ButtonDocumentosRelacionados } from '../components/Shared/configuracionFactura/documentosRelacionados/ButtonDocumentosRelacionados';
 import { SelectModeloFactura } from '../components/Shared/configuracionFactura/modeloDeFacturacion/selectModeloFactura';
 import { SendFormButton } from '../../../../shared/buttons/sendFormButton';
-import { defaulReceptorData, defaultEmisorData, EmisorInterface, FacturaPorCodigoGeneracionResponse, ReceptorInterface } from '../../../../shared/interfaces/interfaces';
+import { defaulReceptorData, defaultEmisorData, EmisorInterface, FacturaPorCodigoGeneracionResponse, ReceptorInterface, TipoGeneracionFactura } from '../../../../shared/interfaces/interfaces';
 import { ProductosTabla } from '../components/FE/productosAgregados/productosData';
 import { ResumenTotalesCard } from '../components/Shared/resumenTotales/resumenTotalesCard';
 import { EnviarHacienda, FirmarFactura, generarFacturaService, generarNotaCreditoService, getFacturaBycodigo, getFacturaCodigos } from '../services/factura/facturaServices';
@@ -27,6 +27,7 @@ import { CheckBoxRetencion } from '../components/Shared/configuracionFactura/Ret
 import { InputTextarea } from 'primereact/inputtextarea';
 import { useNavigate } from 'react-router';
 import { Input } from '../../../../shared/forms/input';
+import { DropFownTipoDeDocumentoGeneracion } from '../components/NotaDebito/DropDownTipoDeDocumentoGeneracion';
 
 export const GenerateDocuments = () => {
   const [showProductsModal, setShowProductsModal] = useState(false); //mostrar modal con lista de productos
@@ -48,7 +49,7 @@ export const GenerateDocuments = () => {
   const [descuentoGeneral, setDescuentoGeneral] = useState<number>(0)
   const [descuentoItem, setDescuentoItem] = useState<number>(0)
   const [facturasAjuste, setFacturasAjuste] = useState<FacturaPorCodigoGeneracionResponse[]>([]);
-
+  const [tipoGeneracionFactura, setTipoGeneracionFactura] = useState<TipoGeneracionFactura | null>(null)
 
   const [formData, setFormData] = useState({
     codigo: '',
@@ -66,7 +67,7 @@ export const GenerateDocuments = () => {
     }
     const data = {
       /*Datos del receptor*/
-      "codigo_generacion": codigoGeneracion,
+      // "codigo_generacion": codigoGeneracion ?? "",
       "numero_control": numeroControl,
       "receptor_id": receptor.id,
       "nit_receptor": receptor.num_documento,
@@ -74,49 +75,39 @@ export const GenerateDocuments = () => {
       "direccion_receptor": receptor.direccion,
       "telefono_receptor": receptor.telefono,
       "correo_receptor": receptor.correo,
-      "tipo_item_select": 1, //TODO: obtener segun la lista de productos de forma dinamica
-      /*documentos relacionados*/
-      "documento_seleccionado": "2", //TODO: documentos relacionados
-      "documento_select": facturasAjuste[0].codigo_generacion,//TODO: documentos relacionados
-      /*descuento*/
+      "tipo_item_select": 1, //TODO: obtener segun la lista de productos de forma dinamica (bien o servicio)
+      "documento_seleccionado": tipoGeneracionFactura?.code ?? "", //TODO: tipo de documento relacionado
+      "documento_select": facturasAjuste[0]?.codigo_generacion ?? "",//TODO: id documento a relacionar
       "descuento_select": descuentos,//TODO: Descuento por item
-
-      "tipo_documento_seleccionado": tipoDocumento?.code,
-      "condicion_operacion": condicionDeOperacion,
+      "tipo_documento_seleccionado": tipoDocumento?.code, //tipo DTE
+      "condicion_operacion": condicionDeOperacion, //contado, credito, otros
       "observaciones": observaciones,
-      /*prodcutos*/
       "productos_ids": idListProducts,
-      "cantidades": cantidadListProducts,
+      "cantidades": cantidadListProducts, //cantidad de cada producto de la factura
       "producto_id": idListProducts[0],
       "monto_fp": "1.42",
       "num_ref": null,
 
-      /*retencion*/
       "retencion_iva": tieneRetencionIva,
       "porcentaje_retencion_iva": (retencionIva / 100).toString,
       // "retencion_renta": false,
       // "porcentaje_retencion_renta": 0.00,
-
-      /*tipos de pago*/
       "fp_id": formasPagoList,
     }
-    console.log(data)
-console.log(tipoDocumento)
+    console.log("data", data)
     try {
-      if(tipoDocumento.code == '05' ){
-      const response = await generarNotaCreditoService(data)
-      console.log("05")
-      firmarFactura(response.factura_id)
-    }
-    else {
-      const response = await generarFacturaService(data)
-      console.log("otro")
+      if (tipoDocumento.code == '05') {
+        const response = await generarNotaCreditoService(data)
+        console.log("05")
+        firmarFactura(response.factura_id)
+      }
+      else {
+        const response = await generarFacturaService(data)
+        console.log("otro")
 
-      firmarFactura(response.factura_id)
+        firmarFactura(response.factura_id)
 
-    }
-      
-
+      }
     }
     catch (error) {
       console.log(error)
@@ -137,11 +128,11 @@ console.log(tipoDocumento)
   const fetchFacturaARelacionar = async () => {
     try {
       const response = await getFacturaBycodigo(formData.codigo);
-  
+
       // Verificar si ya existe
       const yaExiste = facturasAjuste.some(f => f.codigo_generacion === response.codigo_generacion);
       if (yaExiste) return;
-  
+
       // Inyectar propiedades adicionales en los productos
       const facturaProcesada: FacturaPorCodigoGeneracionResponse = {
         ...response,
@@ -151,15 +142,14 @@ console.log(tipoDocumento)
           monto_a_aumentar: 0
         }))
       };
-  
+
       setFacturasAjuste(prev => [...prev, facturaProcesada]);
       setFormData({ codigo: '' }); // Limpiar input
     } catch (error) {
       console.log(error);
     }
   };
-  
-  
+
   //************************************/
   // OBTENCION DE DATOS
   //************************************/
@@ -248,10 +238,10 @@ console.log(tipoDocumento)
 
       {/********* Seccion productos *********/}
       {/* Tipo de documento: FE y Credito fiscal */}
-      {(tipoDocumento?.code === "01" || tipoDocumento?.code === "03") && (
+      {(tipoDocumento?.code === "01" || tipoDocumento?.code === "03" || tipoDocumento?.code === "05") && (
         <WhiteSectionsPage>
           <div className="pt-2 pb-5">
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <h1 className="text-start text-xl font-bold">
                 Productos agregados
               </h1>
@@ -272,13 +262,6 @@ console.log(tipoDocumento)
               setVisible={setShowProductsModal}
               setListProducts={setListProducts}
             />
-            <FormasdePagoForm formasPagoList={formasPagoList} setFormasPagoList={setFormasPagoList} />
-            <span className='flex flex-col justify-start items-start py-5'>
-              <p className='opacity-70'>Observaciones</p>
-              <div className="flex justify-content-center w-full">
-                <InputTextarea autoResize value={observaciones} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setObservaciones(e.target.value)} rows={3} style={{ width: '100%' }} />
-              </div>
-            </span>
           </div>
         </WhiteSectionsPage>
       )}
@@ -292,8 +275,10 @@ console.log(tipoDocumento)
                 Facturas seleccionada
               </h1>
             </div>
-            <Divider className="m-0 p-0"></Divider>
+            <Divider className="m-0 p-0" />
             <div className='flex items-center pb-5'>
+              <label htmlFor="tipoDocumentoGeneracion" className='text-nowrap'>Tipo documento de generación:</label>
+              <DropFownTipoDeDocumentoGeneracion tipoGeneracionFactura={tipoGeneracionFactura} setTipoGeneracionFactura={setTipoGeneracionFactura} />
               <label htmlFor="codigo" className='text-nowrap'>Codigo de generacion:</label>
               <Input
                 name="codigo"
@@ -313,7 +298,6 @@ console.log(tipoDocumento)
             {facturasAjuste &&
               <TablaProductosFacturaNotasDebito facturasAjuste={facturasAjuste} setFacturasAjuste={setFacturasAjuste} />
             }
-
 
             {/* <ModalListaFacturas
               visible={showfacturasModal}
@@ -344,7 +328,6 @@ console.log(tipoDocumento)
             ) : (
               <p>Cargando factura...</p>
             )}
-
 
             <ModalListaFacturas
               visible={showfacturasModal}
@@ -379,6 +362,23 @@ console.log(tipoDocumento)
           </div>
         </WhiteSectionsPage>
       )} */}
+
+      {/*Seccion formas de pago*/}
+      <WhiteSectionsPage>
+        <>
+          <h1 className="text-start text-xl font-bold text-nowrap">
+            Formas de pago
+          </h1>
+          <Divider />
+          <FormasdePagoForm formasPagoList={formasPagoList} setFormasPagoList={setFormasPagoList} />
+          <span className='flex flex-col justify-start items-start py-5 pt-10'>
+            <p className='opacity-70'>Observaciones</p>
+            <div className="flex justify-content-center w-full">
+              <InputTextarea autoResize value={observaciones} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setObservaciones(e.target.value)} rows={3} style={{ width: '100%' }} />
+            </div>
+          </span>
+        </>
+      </WhiteSectionsPage>
 
       {/*Seccion totales resumen*/}
       <WhiteSectionsPage>

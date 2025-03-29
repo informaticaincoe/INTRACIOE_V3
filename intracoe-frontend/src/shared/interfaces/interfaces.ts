@@ -297,3 +297,9 @@ export interface FacturaPorCodigoGeneracionResponse {
   receptor: FacturaReceptor;
   productos: FacturaDetalleItem[];
 }
+
+
+export interface TipoGeneracionFactura {
+  name: string;
+  code: string;
+}
