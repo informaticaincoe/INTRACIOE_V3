@@ -19,24 +19,25 @@ import { TablaProductosCreditoFiscal } from '../components/CreditoFiscal/TablaPr
 import { ButtonDocumentosRelacionados } from '../components/Shared/configuracionFactura/documentosRelacionados/ButtonDocumentosRelacionados';
 import { SelectModeloFactura } from '../components/Shared/configuracionFactura/modeloDeFacturacion/selectModeloFactura';
 import { SendFormButton } from '../../../../shared/buttons/sendFormButton';
-import { defaulReceptorData, defaultEmisorData, EmisorInterface, ReceptorInterface } from '../../../../shared/interfaces/interfaces';
+import { defaulReceptorData, defaultEmisorData, EmisorInterface, FacturaPorCodigoGeneracionResponse, ReceptorInterface } from '../../../../shared/interfaces/interfaces';
 import { ProductosTabla } from '../components/FE/productosAgregados/productosData';
 import { ResumenTotalesCard } from '../components/Shared/resumenTotales/resumenTotalesCard';
-import { EnviarHacienda, FirmarFactura, generarFacturaService, getFacturaCodigos } from '../services/factura/facturaServices';
+import { EnviarHacienda, FirmarFactura, generarFacturaService, generarNotaCreditoService, getFacturaBycodigo, getFacturaCodigos } from '../services/factura/facturaServices';
 import { CheckBoxRetencion } from '../components/Shared/configuracionFactura/Retencion/checkBoxRetencion';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { useNavigate } from 'react-router';
+import { Input } from '../../../../shared/forms/input';
 
 export const GenerateDocuments = () => {
-  const [showProductsModal, setShowProductsModal] = useState(false);
-  const [showfacturasModal, setShowfacturasModal] = useState(false);
-  const [visibleDocumentoRelacionadomodal, setVisibleDocumentoRelacionadomodal] = useState(false);
-  const [condicionDeOperacion, setCondicionDeOperacion] = useState<string>("01") //Id de la condicion de operacion
-  const [receptor, setReceptor] = useState<ReceptorInterface>(defaulReceptorData)
-  const [emisorData, setEmisorData] = useState<EmisorInterface>(defaultEmisorData);
-  const [tipoDocumento, setTipoDocumento] = useState<{ name: string; code: string; }>({ name: "Factura", code: "01" });
-  const [listProducts, setListProducts] = useState<ProductosTabla[]>([])
-  const [idListProducts, setIdListProducts] = useState<string[]>([])
+  const [showProductsModal, setShowProductsModal] = useState(false); //mostrar modal con lista de productos
+  const [showfacturasModal, setShowfacturasModal] = useState(false); //mostrar modal con lista de facturas a relacionar
+  const [visibleDocumentoRelacionadomodal, setVisibleDocumentoRelacionadomodal] = useState(false); //
+  const [condicionDeOperacion, setCondicionDeOperacion] = useState<string>("01") //id de la condicion de operacion (01 por defecto)
+  const [receptor, setReceptor] = useState<ReceptorInterface>(defaulReceptorData) // almacenar informacion del receptor
+  const [emisorData, setEmisorData] = useState<EmisorInterface>(defaultEmisorData); // almcenar informacion del emisor
+  const [tipoDocumento, setTipoDocumento] = useState<{ name: string; code: string; }>({ name: "Factura", code: "01" }); // almcenar tipo de dte
+  const [listProducts, setListProducts] = useState<ProductosTabla[]>([]) //lista de productos que tendra la factura
+  const [idListProducts, setIdListProducts] = useState<string[]>([]) // lista con solo los id de los productos que tendra la factura
   const [cantidadListProducts, setCantidadListProducts] = useState<string[]>([])
   const [formasPagoList, setFormasPagoList] = useState<any[]>([])
   const [numeroControl, setNumeroControl] = useState("");
@@ -46,14 +47,23 @@ export const GenerateDocuments = () => {
   const [tieneRetencionIva, setTieneRetencionIva] = useState<boolean>(false)
   const [descuentoGeneral, setDescuentoGeneral] = useState<number>(0)
   const [descuentoItem, setDescuentoItem] = useState<number>(0)
+  const [facturasAjuste, setFacturasAjuste] = useState<FacturaPorCodigoGeneracionResponse[]>([]);
 
+
+  const [formData, setFormData] = useState({
+    codigo: '',
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
   const navigate = useNavigate()
 
   const generarFactura = async () => {
     let descuentos = null
-    if (listProducts[0] && listProducts[0].descuento) { 
+    if (listProducts[0] && listProducts[0].descuento) {
       descuentos = listProducts[0].descuento.id;
-  }
+    }
     const data = {
       /*Datos del receptor*/
       "codigo_generacion": codigoGeneracion,
@@ -66,8 +76,8 @@ export const GenerateDocuments = () => {
       "correo_receptor": receptor.correo,
       "tipo_item_select": 1, //TODO: obtener segun la lista de productos de forma dinamica
       /*documentos relacionados*/
-      "documento_seleccionado": "", //TODO: documentos relacionados
-      "documento_select": "",//TODO: documentos relacionados
+      "documento_seleccionado": "2", //TODO: documentos relacionados
+      "documento_select": facturasAjuste[0].codigo_generacion,//TODO: documentos relacionados
       /*descuento*/
       "descuento_select": descuentos,//TODO: Descuento por item
 
@@ -91,10 +101,21 @@ export const GenerateDocuments = () => {
       "fp_id": formasPagoList,
     }
     console.log(data)
-
+console.log(tipoDocumento)
     try {
-      const response = await generarFacturaService(data)
+      if(tipoDocumento.code == '05' ){
+      const response = await generarNotaCreditoService(data)
+      console.log("05")
       firmarFactura(response.factura_id)
+    }
+    else {
+      const response = await generarFacturaService(data)
+      console.log("otro")
+
+      firmarFactura(response.factura_id)
+
+    }
+      
 
     }
     catch (error) {
@@ -113,6 +134,32 @@ export const GenerateDocuments = () => {
     }
   }
 
+  const fetchFacturaARelacionar = async () => {
+    try {
+      const response = await getFacturaBycodigo(formData.codigo);
+  
+      // Verificar si ya existe
+      const yaExiste = facturasAjuste.some(f => f.codigo_generacion === response.codigo_generacion);
+      if (yaExiste) return;
+  
+      // Inyectar propiedades adicionales en los productos
+      const facturaProcesada: FacturaPorCodigoGeneracionResponse = {
+        ...response,
+        productos: response.productos.map(p => ({
+          ...p,
+          cantidad_editada: p.cantidad,
+          monto_a_aumentar: 0
+        }))
+      };
+  
+      setFacturasAjuste(prev => [...prev, facturaProcesada]);
+      setFormData({ codigo: '' }); // Limpiar input
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  
+  
   //************************************/
   // OBTENCION DE DATOS
   //************************************/
@@ -122,8 +169,6 @@ export const GenerateDocuments = () => {
 
     fetchIdentificacionData()
   }, [tipoDocumento]);
-
-  
 
   const fetchIdentificacionData = async () => {
     try {
@@ -203,7 +248,7 @@ export const GenerateDocuments = () => {
 
       {/********* Seccion productos *********/}
       {/* Tipo de documento: FE y Credito fiscal */}
-      {(tipoDocumento?.code === "01" || tipoDocumento?.code === "03" ) && (
+      {(tipoDocumento?.code === "01" || tipoDocumento?.code === "03") && (
         <WhiteSectionsPage>
           <div className="pt-2 pb-5">
             <div className="flex justify-between">
@@ -238,7 +283,47 @@ export const GenerateDocuments = () => {
         </WhiteSectionsPage>
       )}
 
-      {/* Tipo de documento: Nota de Creditos */}
+      {/* Tipo de documento: Nota de Credito */}
+      {tipoDocumento?.code === "05" && (
+        <WhiteSectionsPage>
+          <div className="pt-2 pb-5">
+            <div className="flex justify-between">
+              <h1 className="text-start text-xl font-bold text-nowrap">
+                Facturas seleccionada
+              </h1>
+            </div>
+            <Divider className="m-0 p-0"></Divider>
+            <div className='flex items-center pb-5'>
+              <label htmlFor="codigo" className='text-nowrap'>Codigo de generacion:</label>
+              <Input
+                name="codigo"
+                placeholder="codigo"
+                type="text"
+                className='ml-3 mr-10'
+                value={formData.codigo}
+                onChange={handleChange}
+              />
+              <button
+                className="bg-primary-blue rounded-md px-5 py-3 text-white hover:cursor-pointer text-nowrap"
+                onClick={() => fetchFacturaARelacionar()}
+              >
+                seleccionar factura
+              </button>
+            </div>
+            {facturasAjuste &&
+              <TablaProductosFacturaNotasDebito facturasAjuste={facturasAjuste} setFacturasAjuste={setFacturasAjuste} />
+            }
+
+
+            {/* <ModalListaFacturas
+              visible={showfacturasModal}
+              setVisible={setShowfacturasModal}
+            /> */}
+          </div>
+        </WhiteSectionsPage>
+      )}
+
+      {/* Tipo de documento: Nota de Debito */}
       {tipoDocumento?.code === "04" && (
         <WhiteSectionsPage>
           <div className="pt-2 pb-5">
@@ -254,32 +339,13 @@ export const GenerateDocuments = () => {
               </button>
             </div>
             <Divider className="m-0 p-0"></Divider>
-            <TablaProductosFacturaNotasCredito />
-            <ModalListaFacturas
-              visible={showfacturasModal}
-              setVisible={setShowfacturasModal}
-            />
-          </div>
-        </WhiteSectionsPage>
-      )}
+            {facturasAjuste ? (
+              <TablaProductosFacturaNotasDebito facturasAjuste={facturasAjuste} setFacturasAjuste={setFacturasAjuste} />
+            ) : (
+              <p>Cargando factura...</p>
+            )}
 
-      {/* Tipo de documento: Nota de Debito */}
-      {tipoDocumento?.code === "05" && (
-        <WhiteSectionsPage>
-          <div className="pt-2 pb-5">
-            <div className="flex justify-between">
-              <h1 className="text-start text-xl font-bold">
-                Factura seleccionada
-              </h1>
-              <button
-                className="bg-primary-blue rounded-md px-5 py-3 text-white hover:cursor-pointer"
-                onClick={() => setShowfacturasModal(true)}
-              >
-                seleccionar factura
-              </button>
-            </div>
-            <Divider className="m-0 p-0"></Divider>
-            <TablaProductosFacturaNotasDebito />
+
             <ModalListaFacturas
               visible={showfacturasModal}
               setVisible={setShowfacturasModal}
