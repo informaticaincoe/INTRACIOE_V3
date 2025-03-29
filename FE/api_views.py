@@ -953,6 +953,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
         tipo_dte = request.query_params.get('tipo_dte', '05')
         nuevo_numero = NumeroControl.preview_numero_control(tipo_dte)
         global formas_pago
+        documentos_relacionados = []
         try:
             items_permitidos = 2000
             docsRelacionados = []#Acumular los documentos relacionados
@@ -961,7 +962,8 @@ class GenerarDocumentoAjusteAPIView(APIView):
             
             # Datos básicos
             numero_control = nuevo_numero
-            codigo_generacion = self.cod_generacion
+            #codigo_generacion = self.cod_generacion
+            codigo_generacion = str(uuid.uuid4()).upper()
             print(f"Numero de control: {numero_control} Codigo generacion: {codigo_generacion}")
             
             #Datos del receptor
@@ -1304,8 +1306,6 @@ class GenerarDocumentoAjusteAPIView(APIView):
                         cuerpo_documento.append(cuerpo_documento_tributos)
                 print(f"Item {idx}: IVA unitario = {iva_unitario}, Total IVA = {total_iva_item}, IVA almacenado = {det.iva_item}")
                 
-            #### Agregar validaciones en json de documentos relacionados
-            global documentos_relacionados
         
             docs_permitidos = 50
             #tipo_dte_ob = Tipo_dte.objects.get(codigo=tipo_dte)
@@ -1475,7 +1475,7 @@ class EnviarFacturaHaciendaAPIView(APIView):
             "User-Agent": "MiAplicacionDjango/1.0"
         }
         auth_data = {"user": nit_empresa, "pwd": pwd}
-
+        documentos_relacionados = []
         try:
             auth_response = requests.post(auth_url, data=auth_data, headers=auth_headers)
             try:

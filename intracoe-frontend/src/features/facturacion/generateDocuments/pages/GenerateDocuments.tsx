@@ -65,9 +65,7 @@ export const GenerateDocuments = () => {
     if (listProducts[0] && listProducts[0].descuento) {
       descuentos = listProducts[0].descuento.id;
     }
-    const data = {
-      /*Datos del receptor*/
-      // "codigo_generacion": codigoGeneracion ?? "",
+    const dataFECF = {
       "numero_control": numeroControl,
       "receptor_id": receptor.id,
       "nit_receptor": receptor.num_documento,
@@ -94,15 +92,46 @@ export const GenerateDocuments = () => {
       // "porcentaje_retencion_renta": 0.00,
       "fp_id": formasPagoList,
     }
-    console.log("data", data)
+
+    const dataNCND = {
+      "receptor_id": receptor.id,
+      "nit_receptor": receptor.num_documento,
+      "nombre_receptor": receptor.nombre,
+      "direccion_receptor": receptor.direccion,
+      "telefono_receptor": receptor.telefono,
+      "correo_receptor": receptor.correo,
+      "observaciones": observaciones,
+      "tipo_documento_seleccionado": tipoDocumento?.code, //tipo DTE
+      "tipo_item_select": 1, //TODO: obtener segun la lista de productos de forma dinamica (bien o servicio)
+
+      "documento_seleccionado": tipoGeneracionFactura?.code ?? "", //TODO: tipo de documento relacionado
+      "documento_select": facturasAjuste[0]?.codigo_generacion.toUpperCase() ?? "",//TODO: id documento a relacionar
+      "descuento_select": descuentos ?? null,//TODO: Descuento por item
+      "porcentaje_descuento_item": "0.00", //TODO: descuento por item
+      "condicion_operacion": condicionDeOperacion, //contado, credito, otros
+      "porcentaje_retencion_iva": (retencionIva / 100).toString(),
+      "retencion_iva": retencionIva.toString(),
+      "fp_id": formasPagoList,
+      "producto_id": idListProducts[0],
+      "num_ref": null,
+      "productos_ids": idListProducts,
+      "cantidades": cantidadListProducts, //cantidad de cada producto de la factura
+      "monto_fp": "1.42",
+
+      // "retencion_renta": false,
+      // "porcentaje_retencion_renta": 0.00,
+    }
+    console.log("dataFECF", dataFECF)
+    console.log("dataNCND", dataNCND)
+
     try {
       if (tipoDocumento.code == '05') {
-        const response = await generarNotaCreditoService(data)
+        const response = await generarNotaCreditoService(dataNCND)
         console.log("05")
         firmarFactura(response.factura_id)
       }
       else {
-        const response = await generarFacturaService(data)
+        const response = await generarFacturaService(dataFECF)
         console.log("otro")
 
         firmarFactura(response.factura_id)
