@@ -58,6 +58,8 @@ RELACIONAR_DOC_FISICO = 1
 
 formas_pago = [] #Asignar formas de pago
 documentos_relacionados = []
+productos_ids_r = []
+cantidades_prod_r = []
 
 ######################################################
 # AUTENTICACION
@@ -980,15 +982,20 @@ class GenerarDocumentoAjusteAPIView(APIView):
             observaciones = data.get('observaciones', '')
             tipo_dte = data.get("tipo_documento_seleccionado", None) #BC: obtiene la seleccion del tipo de documento desde la pantalla del sistema
             tipo_item = data.get("tipo_item_select", None)
-            tipo_doc_relacionar = data.get("documento_seleccionado", [])
-            documento_relacionado = data.get("documento_select", [])
-            porcentaje_descuento = data.get("descuento_select", None)
+            tipo_doc_relacionar = data.get("documento_seleccionado", []) #tipo documento relacionado(FISICO - ELECTRONICO)
+            documento_relacionado = data.get("documento_relacionado", []) #Numero de documento relacionado
+            #obtener_factura_por_codigo_api(request)
+            if documento_relacionado is None or documento_relacionado == []:
+                documento_relacionado = None
+            else:
+                documento_relacionado = documento_relacionado.upper()
+            porcentaje_descuento = data.get("descuento_select", "0")
             if porcentaje_descuento:
-                porcentaje_descuento_item = Decimal(porcentaje_descuento.replace(",", "."))
-            print("-Descuento: ", porcentaje_descuento)
+                porcentaje_descuento_producto = porcentaje_descuento.replace(",", ".")
+            print("-Descuento: ", porcentaje_descuento_producto)
                 
             # Configuración adicional
-            tipooperacion_id = data.get("condicion_operacion", None)
+            tipooperacion_id = data.get("condicion_operacion", 1)
             porcentaje_retencion_iva = Decimal(data.get("porcentaje_retencion_iva", "0"))
             retencion_iva = data.get("retencion_iva", False)
             productos_retencion_iva = data.get("productos_retencion_iva", [])
@@ -997,11 +1004,39 @@ class GenerarDocumentoAjusteAPIView(APIView):
             productos_retencion_renta = data.get("productos_retencion_renta", [])
             
             descuento_global = data.get("descuento_global_input", "0")
+            
+            saldo_favor = data.get("saldo_favor_input", "0")
             base_imponible_checkbox = data.get("no_gravado", False)
+            
+            #Descuento gravado
+            descu_gravado = data.get("descuento_gravado", "0")
+            #Total descuento = descuento por item + descuento global gravado
+            monto_descuento = data.get("monto_descuento", "0")
+            print(f"descuento global = {descuento_global}, monto descuento = {descu_gravado}")
+            
+            if saldo_favor is not None and saldo_favor !="":
+                saldo_f = Decimal(saldo_favor)
+                if saldo_f > Decimal("0.00"):
+                    saldo_favor = saldo_f * Decimal("-1")
+                else:
+                    saldo_favor = Decimal("0.00")
+            else:
+                saldo_favor = Decimal("0.00")
 
             # Datos de productos
             productos_ids = data.get('productos_ids', [])
             cantidades = data.get('cantidades', [])
+            print(f"productos.: = {productos_ids}, cantidades.: = {cantidades}")
+            
+            if productos_ids_r is not None and len(productos_ids_r)>0:
+                for id in productos_ids_r:
+                    productos_ids.append(id)
+                
+            if cantidades_prod_r is not None and len(cantidades_prod_r)>0:
+                for c in cantidades_prod_r:
+                    cantidades.append(c)
+            
+            print(f"id productos: {productos_ids}, cantidades: {cantidades}")
             # En este caso, se asume que el descuento por producto es 0 (se aplica globalmente)
             
             if numero_control:
@@ -1068,17 +1103,24 @@ class GenerarDocumentoAjusteAPIView(APIView):
             DecimalIvaPerci = Decimal("0.00")
             total_operaciones = Decimal("0.00")
             total_descuento_gravado = Decimal("0.00")
+            total_no_gravado = Decimal("0.00")
+            sub_total = Decimal("0.00")
+            porc_descuento_global = Decimal("0.00")
+            total_iva_item = Decimal("0.00")
+            precio_inc_neto = Decimal("0.00")
+            descuento_gravado = Decimal("0.00")
             
             #Campos DTE
             tributo_valor = None
 
             # Recorrer productos para crear detalles (realizando el desglose)
+            print("productos.: ", productos_ids)
             for index, prod_id in enumerate(productos_ids):
                 try:
                     producto = Producto.objects.get(id=prod_id)
                 except Producto.DoesNotExist:
                     continue
-                
+                total_pagar  = Decimal("0.00")
                 # Obtener unidad de medida
                 #Unidad de medida = 99 cuando el contribuyente preste un servicio
                 if base_imponible_checkbox is True or tipo_item_obj.codigo == COD_TIPO_ITEM_OTROS:
@@ -1091,6 +1133,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
                     cantidad = 1
                 else:
                     cantidad = int(cantidades[index]) if index < len(cantidades) else 1
+                print("-Cantidad: ", cantidad, "index: ", index)
                 
                 # El precio del producto ya incluye IVA 
                 precio_incl = producto.preunitario
@@ -1106,33 +1149,25 @@ class GenerarDocumentoAjusteAPIView(APIView):
                 
                 if tributo_valor is None:
                     tributo_valor = Decimal("0.00")
-                    
+                
                 #Campo precioUni
                 if base_imponible_checkbox is True:
                     precio_neto = float(0.00)
                 else:
-                    precio_neto = (precio_incl / Decimal("1.13")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-                print(f"Precio Incl = {precio_incl}, Precio neto = {precio_neto}, tipo dte:  {tipo_dte}")
-                    
-                #Campo codTributo
-                cuerpo_documento_tributos = []
-                tributo = None
-                if producto.tributo is None:
-                    seleccionarTributoMensaje = "Seleccionar tributo para el producto"
-                    return Response({"error": "Seleccionar tributo para el producto" })
-                elif tipo_item_obj.codigo == COD_TIPO_ITEM_OTROS: 
-                    #Tributo sujeto iva (asociado al prod)
-                    tributo = Tributo.objects.get(codigo=producto.tributo.codigo)
-                    precio_neto = (precio_neto * cantidad * Decimal(tributo.valor_tributo)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    precio_neto = (precio_incl * cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    total_iva_item = ( precio_neto * Decimal("0.13") ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    precio_inc_neto = precio_incl
+                if tipo_item_obj.codigo == COD_TIPO_ITEM_OTROS:
+                    precio_neto = (precio_neto * Decimal(tributo_valor)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                     
                 precio_neto = Decimal(precio_neto)          
                 iva_unitario = (precio_incl - precio_neto).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-                total_iva_item = ( ( precio_neto * cantidad) / Decimal("1.13") * Decimal("0.13") ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                #total_iva_item = ( ( precio_neto * cantidad) / Decimal("1.13") * Decimal("0.13") ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
                 #Campo descuento(montoDescu)
-                print("-porcentaje api view: ", porcentaje_descuento)
-                if porcentaje_descuento:
-                    porcentaje_descuento_item = Descuento.objects.get(id=porcentaje_descuento)
+                print("-porcentaje api view: ", porcentaje_descuento_producto)
+                if porcentaje_descuento_producto:
+                    porcentaje_descuento_item = Descuento.objects.get(porcentaje=porcentaje_descuento_producto)
                 else:
                     porcentaje_descuento_item = Descuento.objects.first()
                 
@@ -1144,26 +1179,55 @@ class GenerarDocumentoAjusteAPIView(APIView):
                 
                 # Totales por ítem
                 #Campo Ventas gravadas
-                total_neto = ((precio_neto * cantidad) - (porcentaje_descuento_item.porcentaje / Decimal("100"))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                print(f"Monto descuento: {monto_descuento}")
+                if monto_descuento:
+                    monto_descuento = (Decimal(monto_descuento) / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                else:
+                    monto_descuento = Decimal("0.00")
+                print(f"Precio neto = {precio_neto}, descuento grav = {descu_gravado}")
+                #Descuento a ventas gravadas
+                if descu_gravado is None or descu_gravado == "":
+                    descu_gravado = Decimal("0.00")
+                    
+                total_descuento_gravado = (precio_neto * porcentaje_descuento_item.porcentaje).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                #total_neto = ((precio_neto * cantidad) - (porcentaje_descuento_item.porcentaje / Decimal("100"))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                total_neto = (precio_neto - total_descuento_gravado).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                descuento_gravado = (total_neto * Decimal(descu_gravado) / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                print("descuento aplicado")
+                print("calcular descuento global: ", descuento_global)
+                sub_total_item = Decimal("0")
+                if descuento_global:
+                    porc_descuento_global = (total_neto * Decimal(descuento_global) / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    sub_total_item = (total_neto - descuento_gravado - porc_descuento_global).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                else:
+                    sub_total_item = (total_neto - descuento_gravado).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                print(f"-subTotal = {sub_total_item}, total neto = {total_neto}, porcentaje = {descu_gravado}, descuento global = {porc_descuento_global} ")
                 print(f"IVA Item = {total_iva_item}, iva unitario = {iva_unitario}, cantidad = {cantidad}, total neto = {total_neto} ")
-                #Sino se ha seleccionado ningun documento a relacionar enviar null los campos
-                if tipo_doc_relacionar is COD_DOCUMENTO_RELACIONADO_NO_SELEC:
-                    tipo_doc_relacionar = None
-                    documento_relacionado = None
+                #Campo codTributo
+                cuerpo_documento_tributos = []
+                tributo = None
+                if producto.tributo is None:
+                    seleccionarTributoMensaje = "Seleccionar tributo para el producto"
+                    return Response({"error": "Seleccionar tributo para el producto" })
                 
+                #Tributo sujeto iva (asociado al prod)
+                if tipo_item_obj.codigo == COD_TIPO_ITEM_OTROS:
+                    tributo = Tributo.objects.get(codigo=producto.tributo.codigo)
+                    precio_neto = (precio_neto * Decimal(tributo.valor_tributo)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    
                 print("-Crear detalle factura")
                 detalle = DetalleFactura.objects.create(
                     factura=factura,
                     producto=producto,
                     cantidad=cantidad,
                     unidad_medida=unidad_medida_obj,
-                    precio_unitario=precio_neto,  # Se almacena el precio bruto (con IVA)
+                    precio_unitario=precio_inc_neto * Decimal("-1"),  # Se almacena el precio bruto (con IVA)
                     descuento=porcentaje_descuento_item,
                     tiene_descuento = descuento_aplicado,
                     ventas_no_sujetas=Decimal("0.00"),
                     ventas_exentas=Decimal("0.00"),
-                    ventas_gravadas=total_neto,  # Total neto
-                    pre_sug_venta=precio_neto,
+                    ventas_gravadas=total_neto * Decimal("-1"),  # Total neto
+                    pre_sug_venta=precio_inc_neto * Decimal("-1"),
                     no_gravado=Decimal("0.00"),
                     saldo_favor=Decimal("0.00"),
                     tipo_documento_relacionar = tipo_doc_relacionar,
@@ -1171,20 +1235,27 @@ class GenerarDocumentoAjusteAPIView(APIView):
                 )
                 #resumen.totalGravado y subTotalVentas
                 total_gravada += total_neto
+                sub_total += sub_total_item
                 
                 #Calcular el valor del tributo
-                valorTributo = ( Decimal(total_gravada) * Decimal(tributo_valor) ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                if tributo_valor is not None:
+                    valorTributo = ( Decimal(total_gravada) * Decimal(tributo_valor) ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    total_operaciones = (sub_total + valorTributo + DecimalIvaPerci) - DecimalRetIva
+                else:
+                    total_operaciones = sub_total
+                
                 total_operaciones = (total_gravada + valorTributo + DecimalIvaPerci) - DecimalRetIva
-                total_con_iva = total_operaciones
+                total_con_iva = total_operaciones - DecimalIvaPerci - DecimalRetIva - DecimalRetRenta - total_no_gravado
                 
                 total_iva += total_iva_item
-                total_pagar += total_con_iva
+                #total_pagar += total_con_iva
+                total_pagar = total_con_iva
                 
                 # Actualizamos manualmente los campos calculados
-                detalle.total_sin_descuento = total_neto
-                detalle.iva = total_iva_item
-                detalle.total_con_iva = total_con_iva
-                detalle.iva_item = total_iva_item  # Guardamos el total IVA para este detalle
+                detalle.total_sin_descuento = total_neto * Decimal("-1")
+                detalle.iva = total_iva_item * Decimal("-1")
+                detalle.total_con_iva = total_con_iva * Decimal("-1")
+                detalle.iva_item = total_iva_item * Decimal("-1") # Guardamos el total IVA para este detalle
                 detalle.save()
                 
                 print("-Aplicar tributo sujeto iva")
@@ -1209,27 +1280,35 @@ class GenerarDocumentoAjusteAPIView(APIView):
             # Redondear totales globales
             total_iva = total_iva.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
             total_pagar = total_pagar.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            
+            #Sino se ha seleccionado ningun documento a relacionar enviar null los campos
+            if tipo_doc_relacionar is COD_DOCUMENTO_RELACIONADO_NO_SELEC:
+                tipo_doc_relacionar = None
+                documento_relacionado = None
+            print(f"Tipo de doc a relacionar: {tipo_doc_relacionar} numero de documento: {documento_relacionado}")
 
             # Actualizar totales en la factura
             factura.total_no_sujetas = Decimal("0.00")
             factura.total_exentas = Decimal("0.00")
-            factura.total_gravadas = total_gravada
-            factura.sub_total_ventas = total_gravada
+            factura.total_gravadas = Decimal(total_gravada) * Decimal("-1")
+            factura.sub_total_ventas = Decimal(total_gravada) * Decimal("-1")
             factura.descuen_no_sujeto = Decimal("0.00")
             factura.descuento_exento = Decimal("0.00")
-            factura.descuento_gravado = total_descuento_gravado
-            factura.por_descuento = descuento_global #Decimal("0.00")
-            factura.total_descuento = total_descuento_gravado
-            factura.sub_total = total_gravada
-            factura.iva_retenido = DecimalRetIva
+            factura.descuento_gravado = Decimal(descuento_gravado) * Decimal("-1")
+            factura.por_descuento = Decimal(porc_descuento_global) * Decimal("-1") #Decimal("0.00")
+            factura.total_descuento = Decimal(monto_descuento) * Decimal("-1")
+            factura.sub_total = Decimal(sub_total) * Decimal("-1")
+            factura.iva_retenido = Decimal(DecimalRetIva) * Decimal("-1")
             factura.retencion_renta = DecimalRetRenta
-            factura.total_operaciones = total_operaciones #total_gravada
+            factura.total_operaciones = Decimal(total_operaciones) * Decimal("-1") #total_gravada
             factura.total_no_gravado = Decimal("0.00")
-            factura.total_pagar = total_pagar
+            factura.total_pagar = Decimal(total_pagar) * Decimal("-1")
             factura.total_letras = num_to_letras(total_pagar)
-            factura.total_iva = total_iva
+            factura.total_iva = Decimal(total_iva) * Decimal("-1")
             factura.condicion_operacion = tipooperacion_obj
-            factura.iva_percibido = DecimalIvaPerci
+            factura.iva_percibido = Decimal(DecimalIvaPerci) * Decimal("-1")
+            factura.tipo_documento_relacionar = tipo_doc_relacionar
+            factura.documento_relacionado = documento_relacionado
             factura.save()
 
             # Construir el cuerpoDocumento para el JSON con desglose
@@ -1237,8 +1316,6 @@ class GenerarDocumentoAjusteAPIView(APIView):
             for idx, det in enumerate(factura.detalles.all(), start=1):
                         
                 print("-N° items: ", idx)
-                print("-Base imponible: ", base_imponible_checkbox)
-                
                 print("-Codigo generacion factura: ", det.factura.codigo_generacion)
                 #Items permitidos 2000
                 if idx > items_permitidos:
@@ -1268,16 +1345,14 @@ class GenerarDocumentoAjusteAPIView(APIView):
                                     "codTributo": codTributo,
                                     "uniMedida": int(det.unidad_medida.codigo),
                                     "descripcion": str(tributo.descripcion),
-                                    "precioUni": float(det.precio_unitario),
-                                    "montoDescu": float(det.descuento.porcentaje),
+                                    "precioUni": float(abs(det.precio_unitario)),
+                                    "montoDescu": float(abs(det.descuento.porcentaje)),
                                     "ventaNoSuj": float(0.0),
                                     "ventaExenta": float(0.0),
-                                    "ventaGravada": float(det.ventas_gravadas),
+                                    "ventaGravada": float(abs(det.ventas_gravadas)),
                                     "tributos": tributos
                                 })
-                        
-                    print(f"Item {idx}: IVA unitario = {iva_unitario}, Total IVA = {total_iva_item}, IVA almacenado = {det.iva_item}")
-                    
+
                     if contingencia:#Detalle contingencia
                         cuerpo_documento.append({
                             "noItem": idx,
@@ -1294,18 +1369,17 @@ class GenerarDocumentoAjusteAPIView(APIView):
                             "codTributo": codTributo,
                             "uniMedida": int(det.unidad_medida.codigo), 
                             "descripcion": str(det.producto.descripcion),
-                            "precioUni": float(det.precio_unitario),
-                            "montoDescu": float(det.descuento.porcentaje),
-                            "ventaNoSuj": float(det.ventas_no_sujetas),
-                            "ventaExenta": float(det.ventas_exentas),
-                            "ventaGravada": float(det.ventas_gravadas),
+                            "precioUni": float(abs(det.precio_unitario)),
+                            "montoDescu": float(abs(det.descuento.porcentaje)),
+                            "ventaNoSuj": float(abs(det.ventas_no_sujetas)),
+                            "ventaExenta": float(abs(det.ventas_exentas)),
+                            "ventaGravada": float(abs(det.ventas_gravadas)),
                             "tributos": tributos
                         })
                                         
                     if cuerpo_documento_tributos is None:
                         cuerpo_documento.append(cuerpo_documento_tributos)
                 print(f"Item {idx}: IVA unitario = {iva_unitario}, Total IVA = {total_iva_item}, IVA almacenado = {det.iva_item}")
-                
         
             docs_permitidos = 50
             #tipo_dte_ob = Tipo_dte.objects.get(codigo=tipo_dte)
@@ -1313,7 +1387,9 @@ class GenerarDocumentoAjusteAPIView(APIView):
             tipo_documento = None
             
             #Si supera el limite de documentos relacionados detener el proceso
+            print("-Inicio recorrer documentos relacionados: ", documentos_relacionados)
             if documentos_relacionados is not None and documentos_relacionados !=[]:
+                print("-Existen documentos relacionados")
                 for idx, docR in enumerate(documentos_relacionados, start=1):
                     if idx > docs_permitidos:
                         return Response({"error": "Limite de documentos relacionados: " }, {docs_permitidos})
@@ -1322,6 +1398,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
                     
                 print("Documentos relacionados agregados: ", idx)
             
+            print("-Tipo doc relacionado: ", tipo_doc_relacionar, "doc a relacionar: ", documento_relacionado)
             #Buscar documento relacionado
             if tipo_doc_relacionar:
                 if tipo_doc_relacionar == RELACIONAR_DOC_FISICO:
@@ -1332,6 +1409,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
                     #factura_relacionar = FacturaElectronica.objects.get( Q(codigo_generacion=numero_documento) & (Q(tipo_dte.codigo == "03") | Q(tipo_dte.codigo == "07")) )
                     factura_relacionar = FacturaElectronica.objects.get( codigo_generacion=documento_relacionado )
             
+            print("-Inicio json docs relacionados: ", factura_relacionar)
             #Si existe el documento generar estructura de documentos relacionados
             if factura_relacionar is not None and factura_relacionar.estado and factura_relacionar.sello_recepcion is not None and factura_relacionar.sello_recepcion !="":
                 tipo_documento = factura_relacionar.tipo_dte.codigo
@@ -1340,7 +1418,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
                 documento_relacionado_json  = {
                     "tipoDocumento": str(tipo_documento) if str(tipo_documento) else None,
                     "tipoGeneracion": int(tipo_doc_relacionar),
-                    "numeroDocumento": str(documento_relacionado),
+                    "numeroDocumento": str(documento_relacionado).upper(),
                     "fechaEmision": str(factura_relacionar.fecha_emision)
                 }
                 documentos_relacionados.append(documento_relacionado_json)
@@ -1671,6 +1749,7 @@ class FacturaPorCodigoGeneracionAPIView(APIView):
         productos_ids_r = []
 
         codigo_generacion = request.GET.get("codigo_generacion")
+        print("cod generacion relacionado: ", codigo_generacion)
         if not codigo_generacion:
             return Response({"error": "Código de generación no proporcionado"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1730,3 +1809,4 @@ class FacturaPorCodigoGeneracionAPIView(APIView):
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
+    
