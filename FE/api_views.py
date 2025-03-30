@@ -250,6 +250,11 @@ class EmisorCreateAPIView(generics.CreateAPIView):
 class TipoDocIDReceptorListAPIView(generics.ListAPIView):
     queryset = TiposDocIDReceptor.objects.all()
     serializer_class = TiposDocIDReceptorSerializer
+
+class TipoDocIDReceptorDetailAPIView(generics.RetrieveAPIView):
+    queryset = TiposDocIDReceptor.objects.all()
+    serializer_class = TiposDocIDReceptorSerializer
+    lookup_field = 'codigo'
     
 class AmbientesListAPIView(generics.ListAPIView):
     queryset = Ambiente.objects.all()
@@ -289,11 +294,21 @@ class tipoGeneracionDocumentoListAPIView(generics.ListAPIView):
 class TipoDTEListAPIView(generics.ListAPIView):
     queryset = Tipo_dte.objects.all()
     serializer_class = TipoDteSerializer
+
+class TipoDTEDetailAPIView(generics.RetrieveAPIView):
+    queryset = Tipo_dte.objects.all()
+    serializer_class = TipoDteSerializer
+    lookup_field = 'codigo'
     
 class CondicionDeOperacionListAPIView(generics.ListAPIView):
     queryset = CondicionOperacion.objects.all()
     serializer_class = CondicionOperacionSerializer
-    
+
+class CondicionDeOperacionDetailAPIView(generics.RetrieveAPIView):
+    queryset = CondicionOperacion.objects.all()
+    serializer_class = CondicionOperacionSerializer
+    lookup_field = 'codigo'
+
 class ModeloDeFacturacionListAPIView(generics.ListAPIView):
     queryset = Modelofacturacion.objects.all()
     serializer_class = ModelofacturacionSerializer
@@ -938,6 +953,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
         tipo_dte = request.query_params.get('tipo_dte', '05')
         nuevo_numero = NumeroControl.preview_numero_control(tipo_dte)
         global formas_pago
+        documentos_relacionados = []
         try:
             items_permitidos = 2000
             docsRelacionados = []#Acumular los documentos relacionados
@@ -946,7 +962,8 @@ class GenerarDocumentoAjusteAPIView(APIView):
             
             # Datos básicos
             numero_control = nuevo_numero
-            codigo_generacion = self.cod_generacion
+            #codigo_generacion = self.cod_generacion
+            codigo_generacion = str(uuid.uuid4()).upper()
             print(f"Numero de control: {numero_control} Codigo generacion: {codigo_generacion}")
             
             #Datos del receptor
@@ -1289,8 +1306,6 @@ class GenerarDocumentoAjusteAPIView(APIView):
                         cuerpo_documento.append(cuerpo_documento_tributos)
                 print(f"Item {idx}: IVA unitario = {iva_unitario}, Total IVA = {total_iva_item}, IVA almacenado = {det.iva_item}")
                 
-            #### Agregar validaciones en json de documentos relacionados
-            global documentos_relacionados
         
             docs_permitidos = 50
             #tipo_dte_ob = Tipo_dte.objects.get(codigo=tipo_dte)
@@ -1460,7 +1475,7 @@ class EnviarFacturaHaciendaAPIView(APIView):
             "User-Agent": "MiAplicacionDjango/1.0"
         }
         auth_data = {"user": nit_empresa, "pwd": pwd}
-
+        documentos_relacionados = []
         try:
             auth_response = requests.post(auth_url, data=auth_data, headers=auth_headers)
             try:
@@ -1644,3 +1659,74 @@ class InvalidarDteUnificadoAPIView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
+#Obtener factura por numero de correlativo
+class FacturaPorCodigoGeneracionAPIView(APIView):
+    """
+    Devuelve la factura por su código de generación, incluyendo receptor y productos.
+    """
+
+    def get(self, request):
+        global documento_relacionado, productos_ids_r
+        documento_relacionado = True
+        productos_ids_r = []
+
+        codigo_generacion = request.GET.get("codigo_generacion")
+        if not codigo_generacion:
+            return Response({"error": "Código de generación no proporcionado"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            factura = FacturaElectronica.objects.get(codigo_generacion=codigo_generacion)
+        except FacturaElectronica.DoesNotExist:
+            return Response({"error": "Factura no encontrada"}, status=status.HTTP_404_NOT_FOUND)
+
+        detalle_relacionado = DetalleFactura.objects.filter(documento_relacionado=codigo_generacion)
+        if detalle_relacionado.exists():
+            return Response({"error": "El documento ya tiene una relación con otro Documento Tributario Electrónico."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not (factura.estado and factura.sello_recepcion):
+            return Response({"error": "El DTE no está vigente o no tiene sello de recepción."}, status=status.HTTP_400_BAD_REQUEST)
+
+        receptor = factura.dtereceptor
+
+        productos = []
+        for detalle in factura.detalles.all():
+            neto_unitario = detalle.precio_unitario / Decimal('1.13')
+            iva_unitario = detalle.precio_unitario - neto_unitario
+            total_neto = neto_unitario * detalle.cantidad
+            total_iva = iva_unitario * detalle.cantidad
+            total_incl = detalle.precio_unitario * detalle.cantidad
+
+            productos.append({
+                "producto_id": detalle.producto.id,
+                "codigo": detalle.producto.codigo,
+                "descripcion": detalle.producto.descripcion,
+                "cantidad": detalle.cantidad,
+                "precio_unitario": str(detalle.precio_unitario),
+                "neto_unitario": str(round(neto_unitario, 2)),
+                "iva_unitario": str(round(iva_unitario, 2)),
+                "total_neto": str(round(total_neto, 2)),
+                "total_iva": str(round(total_iva, 2)),
+                "total_incl": str(round(total_incl, 2)),
+                "descuento": str(detalle.descuento.porcentaje) if detalle.descuento else "",
+            })
+            productos_ids_r.append(detalle.producto.id)
+
+        response_data = {
+            "codigo_generacion": str(factura.codigo_generacion),
+            "tipo_documento": factura.tipo_dte.descripcion if factura.tipo_dte else "",
+            "num_documento": factura.numero_control,
+            "fecha_emision": factura.fecha_emision.strftime("%Y-%m-%d"),
+            "fecha_vencimiento": factura.fecha_emision.strftime("%Y-%m-%d") if factura.fecha_emision else "",
+            "total": str(factura.total_pagar),
+            "receptor": {
+                "id": receptor.id,
+                "nombre": receptor.nombre,
+                "num_documento": receptor.num_documento,
+                "direccion": receptor.direccion,
+                "telefono": receptor.telefono,
+                "correo": receptor.correo,
+            },
+            "productos": productos
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)

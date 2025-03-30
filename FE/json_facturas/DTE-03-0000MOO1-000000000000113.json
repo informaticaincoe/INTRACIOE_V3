@@ -4,13 +4,13 @@
         "ambiente": "01",
         "tipoDte": "03",
         "numeroControl": "DTE-03-0000MOO1-000000000000113",
-        "codigoGeneracion": "EA388685-B2B6-46B6-AAFF-DAAE65E42FD9",
+        "codigoGeneracion": "8C511673-AFA2-4F9C-B1C9-097CBC325DB1",
         "tipoModelo": 1,
         "tipoOperacion": 1,
         "tipoContingencia": null,
         "motivoContin": null,
-        "fecEmi": "2025-03-26",
-        "horEmi": "13:07:10",
+        "fecEmi": "2025-03-28",
+        "horEmi": "09:01:31",
         "tipoMoneda": "USD"
     },
     "documentoRelacionado": null,
@@ -95,7 +95,7 @@
         "pagos": [
             {
                 "codigo": "01",
-                "montoPago": 1.0,
+                "montoPago": 1.42,
                 "referencia": null,
                 "plazo": null,
                 "periodo": null

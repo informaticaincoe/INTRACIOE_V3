@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { generarFacturaService } from "../../services/facturavisualizacionServices";
 import { InformacionEmisor } from "../../components/shared/header/InformacionEmisor";
-import { CuerpoDocumento, CuerpoDocumentoDefault, DatosFactura, DatosFacturaDefault, Emisor, EmisorDefault, Extension, ExtensionDefault, Receptor, ReceptorDefault, resumenTablaFE, resumenTablaFEDefault } from "../../interfaces/facturaPdfInterfaces";
+import { CuerpoDocumento, CuerpoDocumentoDefault, DatosFactura, DatosFacturaDefault, Emisor, EmisorDefault, Extension, ExtensionDefault, Receptor, ReceptorDefault, Resumen, resumenTablaFEDefault } from "../../interfaces/facturaPdfInterfaces";
 import { InformacionReceptor } from "../../components/shared/receptor/InformacionReceptor";
 import { TablaVentaTerceros } from "../../components/shared/ventaTerceros/tablaVentaTerceros";
 import { SeccionDocumentosRelacionados } from "../../components/shared/documentosRelacionados/seccionDocumentosRelacionados";
@@ -15,10 +15,19 @@ import { SeccionExtension } from "../../components/shared/extension/seccionExten
 import { Contactos } from "../../components/shared/footer/contactos";
 
 import { Title } from "../../../../../shared/text/title";
+import { FaFilePdf } from "react-icons/fa";
+import { RiFileUploadFill } from "react-icons/ri";
+import { FaCircleCheck } from "react-icons/fa6";
+import { IoMdCloseCircle } from "react-icons/io";
+
 
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { usePDF } from "react-to-pdf";
+import { EnviarHacienda } from "../../../generateDocuments/services/factura/facturaServices";
+import { Toast } from "primereact/toast";
+import CustomToast, { CustomToastRef, ToastSeverity } from "../../../../../shared/toast/customToast";
+import { getCondicionDeOperacionById } from "../../../generateDocuments/services/configuracionFactura/configuracionFacturaService";
 
 const exportToPDF = async () => {
     const element = document.getElementById('content-id');
@@ -60,24 +69,51 @@ export const FacturaVisualizacionPage = () => {
     const [receptor, setReceptor] = useState<Receptor>(ReceptorDefault)
     const [datosFactura, setDatosFactura] = useState<DatosFactura>(DatosFacturaDefault)
     const [productos, setProductos] = useState<CuerpoDocumento[]>(CuerpoDocumentoDefault)
-    const [resumen, setResumen] = useState<resumenTablaFE>(resumenTablaFEDefault)
+    const [resumen, setResumen] = useState<Resumen>(resumenTablaFEDefault)
     const [extension, setExtension] = useState<Extension>(ExtensionDefault)
     const [pagoEnLetras, setPagoEnLetras] = useState<string>("")
     const [condicionOperacion, setCondicionOperacion] = useState<number>(0)
     const navigate = useNavigate();
-
+    const [visible, setVisible] = useState(false);
+    const toastBC = useRef<Toast>(null);
     const { targetRef } = usePDF({ filename: 'page.pdf' });
+    const toastRef = useRef<CustomToastRef>(null);
+
+    const handleAccion = (severity: ToastSeverity, icon: any, summary: string) => {
+        toastRef.current?.show({
+            severity: severity,
+            summary: summary,
+            icon: icon,
+            life: 2000
+        });
+    };
 
     useEffect(() => {
         fetchDatosFactura()
     }, [])
 
+    const fetchCondicionOperacionDescripcion = async (id:number)=>{
+        const response = await getCondicionDeOperacionById(id) 
+        setCondicionOperacion(response.descripcion)
+    }
+
+    const enviarHacienda = async () => {
+        if (id) {
+            try {
+                const response = await EnviarHacienda(id);
+                handleAccion('success', <FaCircleCheck size={32} />, 'La factura fue publicada correctamente');
+                setInterval(() => navigate(0), 2000)
+            } catch (error) {
+                handleAccion('error', <IoMdCloseCircle size={38} />, 'Ha ocurrido un error al publicar la factura');
+            }
+        }
+    };
+
     const fetchDatosFactura = async () => {
         try {
             if (id) {
                 const response = await generarFacturaService(id)
-                console.log(response.emisor)
-                console.log(response.receptor)
+                console.log("response factura visualizacion", response)
                 setEmisor(response.emisor)
                 setDatosFactura(response.datosFactura)
                 setReceptor(response.receptor)
@@ -85,7 +121,7 @@ export const FacturaVisualizacionPage = () => {
                 setResumen(response.resumen)
                 setExtension(response.extension)
                 setPagoEnLetras(response.pagoEnLetras)
-                setCondicionOperacion(response.condicionOpeacion)
+                fetchCondicionOperacionDescripcion(response.condicionOpeacion)
             }
         }
         catch (error) {
@@ -98,10 +134,19 @@ export const FacturaVisualizacionPage = () => {
             <Title text="Factura generada con éxito" />
 
             <div className="flex justify-center gap-5">
-                <button onClick={exportToPDF} className="bg-primary-blue text-white rounded-md px-8 py-3 mb-7 mt-5">
-                    Descargar PDF
+                <button onClick={exportToPDF} className="bg-red-700 text-white rounded-md px-8 py-3 mb-7 mt-5">
+                    <span className="flex gap-2 items-center justify-center">
+                        <FaFilePdf size={24} />
+                        <p>Descargar PDF</p>
+                    </span>
                 </button>
-                <button onClick={()=> navigate("/generar-documentos")} className="border border-primary-blue text-primary-blue bg-white rounded-md px-8 py-3 mb-7 mt-5">
+                {datosFactura.selloRemision == null && <button onClick={enviarHacienda} className="bg-primary-blue text-white rounded-md px-8 py-3 mb-7 mt-5">
+                    <span className="flex gap-2 items-center justify-center">
+                        <RiFileUploadFill size={24} />
+                        <p>Publicar</p>
+                    </span>
+                </button>}
+                <button onClick={() => navigate("/generar-documentos")} className="border border-primary-blue text-primary-blue bg-white rounded-md px-8 py-3 mb-7 mt-5">
                     Realizar otra factura
                 </button>
             </div>
@@ -117,7 +162,7 @@ export const FacturaVisualizacionPage = () => {
                     <SeccionDocumentosRelacionados />
                     <SeccionOtrosDocumentosRelacionados />
                     <div className="flex flex-col">
-                        <TablaProductosFE productos={productos} />
+                        <TablaProductosFE productos={productos} tipo_dte={datosFactura.tipoDte} />
                         <div id='footer'>
                             <div className="grid grid-cols-2 pt-5 gap-x-5">
                                 <span className="flex flex-col gap-3">
@@ -140,6 +185,7 @@ export const FacturaVisualizacionPage = () => {
                     </div>
                 </div>
             </div>
+            <CustomToast ref={toastRef} />
         </>
     )
 }

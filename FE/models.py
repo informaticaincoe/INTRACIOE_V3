@@ -205,7 +205,7 @@ class Receptor_fe(models.Model):
     direccion = models.TextField(blank=True, null=True)
     telefono = models.CharField(max_length=30, blank=True, null=True)
     correo = models.EmailField(blank=True, null=True)
-    nombreComercial = models.CharField(max_length=150, null=True, verbose_name=None)
+    nombreComercial = models.CharField(max_length=150, null=True, verbose_name=None, blank=True)
 
     def __str__(self):
         return self.nombre
