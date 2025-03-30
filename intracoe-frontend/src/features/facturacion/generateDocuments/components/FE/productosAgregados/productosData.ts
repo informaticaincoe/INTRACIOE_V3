@@ -61,7 +61,6 @@ export const defaultProductosData = {
   cantidad: 0,
   no_grabado: false,
   descuento: null,
-  descuentoValor: "0.00",
   iva_unitario: 0,
   total_neto: 0,
   total_iva: 0,
