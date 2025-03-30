@@ -44,9 +44,10 @@ export const SelectCondicionOperacion: React.FC<SelectCondicionOperacionProps> =
         Condición de operación
       </label>
       <div className="flex flex-col gap-8">
-        <div className="flex gap-10">
+        <div className="flex gap-10" >
           {condicionOperacionApiList.map((item) => (
             <button
+              key={item.id}
               className={`${condicionDeOperacion === item.codigo ? 'bg-primary-blue text-white' : 'border-primary-blue text-primary-blue border bg-white'} h-14 w-50 rounded-md`} // Cambiar estilo según si está seleccionado
               onClick={() => setCondicionDeOperacion(item.codigo)} //TODO: Enviar id en lugar del nombre
             >

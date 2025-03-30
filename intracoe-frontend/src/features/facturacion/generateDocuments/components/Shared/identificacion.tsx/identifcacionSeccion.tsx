@@ -1,10 +1,16 @@
+import { useEffect } from "react";
+
 interface IdentifcacionSeccionProps {
-  codigoGeneracion:string,
-  numeroControl:string,
+  codigoGeneracion: string,
+  numeroControl: string,
 }
 
-export const IdentifcacionSeccion:React.FC<IdentifcacionSeccionProps> = ({ codigoGeneracion, numeroControl }) => {
+export const IdentifcacionSeccion: React.FC<IdentifcacionSeccionProps> = ({ codigoGeneracion, numeroControl }) => {
   var dateVariable = new Date();
+
+  useEffect(() => {
+    console.log("numeroControl", numeroControl)
+  }, [numeroControl])
   return (
     <>
       <div className="grid grid-cols-[auto_1fr] items-start justify-start gap-4 font-medium">

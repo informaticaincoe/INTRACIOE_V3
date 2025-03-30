@@ -254,9 +254,52 @@ export interface Almacen {
 
 export interface Descuento {
   id: number,
-  porcentaje: number,
+  porcentaje: string,
   descripcion: string,
   fecha_inicio: string,
   fecha_fin: string,
   estdo: boolean
+}
+
+
+export interface FacturaDetalleItem {
+  monto_a_aumentar: number;
+  cantidad_editada: number;
+  cantidad: number,
+  codigo: string,
+  descripcion: string,
+  descuento: string,
+  iva_unitario: string,
+  neto_unitario: string,
+  precio_unitario: string,
+  producto_id: number,
+  total_incl: string,
+  total_iva: string,
+  total_neto: string
+}
+
+export interface FacturaReceptor {
+  id: number;
+  nombre: string;
+  num_documento: string;
+  direccion: string;
+  telefono: string;
+  correo: string;
+}
+
+export interface FacturaPorCodigoGeneracionResponse {
+  codigo_generacion: string;
+  tipo_documento: string;
+  num_documento: string;
+  fecha_emision: string;         // ISO format: "YYYY-MM-DD"
+  fecha_vencimiento: string;     // Puede ser igual a fecha_emision
+  total: string;
+  receptor: FacturaReceptor;
+  productos: FacturaDetalleItem[];
+}
+
+
+export interface TipoGeneracionFactura {
+  name: string;
+  code: string;
 }

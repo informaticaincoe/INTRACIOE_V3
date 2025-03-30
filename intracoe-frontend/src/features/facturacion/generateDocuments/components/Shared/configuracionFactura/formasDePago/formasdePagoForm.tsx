@@ -37,11 +37,9 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({ formasPagoLi
   useEffect(() => {
     const aux = 
       infoPagoLista.map(pago => {
-        return {
-          codigo: pago.codigo,  // Solo incluimos el campo 'codigo'
-        };
+        return  pago.codigo  // Solo incluimos el campo 'codigo'
       });
-    console.log("aux", aux);
+    console.log("aux", infoPagoLista);
     setFormasPagoList(aux);  // Asignamos solo los objetos con 'codigo'
   }, [infoPagoLista]);
   
@@ -199,11 +197,10 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({ formasPagoLi
                   </span>
                 </div>
                 {infoPagoLista && infoPagoLista.length > 0 && (
-                  <div className="grid grid-cols-2 gap-5 auto-rows-min" key={new Date().getTime()}>
+                  <div className="grid grid-cols-2 gap-5 auto-rows-min">
                     {infoPagoLista.map((pago, index) => {
-                      <button ></button>
                       return (
-                        <div className='relative border border-border-color rounded-md'>
+                        <div className='relative border border-border-color rounded-md' key={index}>
                           <button className="absolute right-0 px-5 py-4 hover:text-gray hover:cursor-pointer" onClick={() => deleteFromList(pago)}><FaXmark className='text-border-color' /></button>
                           <div className=" flex text-center gap-2 py-4 flex-col items-center justify-center" key={index}>
                             <p className='opacity-70 '>{pago.descripcion}</p> {/* Asegúrate de usar el campo correcto */}
