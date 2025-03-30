@@ -56,7 +56,6 @@
             <div class="form-group">
               <label>Condición de Operación:</label>
               <select id="condicion_op" name="condicion_operacion" class="form-control">
-                <option value="">Seleccione Condición de Operación</option>
                 {% for tipo in tipooperaciones %}
                   <option value="{{ tipo.id }}">{{ tipo.descripcion }}</option>
                 {% endfor %}
@@ -196,7 +195,7 @@
             <button type="button" class="btn btn-secondary" id="btn_add_relacion" onclick="cargarFacturaRelacionada()">Agregar</button>
           </div>
           <div class="col-md-12 mt-2">
-            <p><strong>Total Pagar CCF:</strong> <span id="total_doc_relacionado"></span></p>
+            <p><strong>Total Pagar documento relacionado:</strong> <span id="total_doc_relacionado"></span>{{ total_pagar_doc_r }}</p>
           </div>
         </div>
       </div>
@@ -218,10 +217,11 @@
               <th>Precio Unitario (Neto)</th>
               <th>IVA Unitario</th>
               <th>Cantidad</th>
+              <th>Descuento por ítem</th>
               <th>Total Neto</th>
-              <th>Total IVA</th>
-              <th>Total con IVA</th>
-              <th>Descuento</th>
+              <th>IVA por ítem</th>
+              <th>Ventas Gravadas</th>
+              <th>Aplica IVA</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -243,28 +243,40 @@
       <div class="resumen">
         <h4>Resumen de Totales</h4>
         <div class="row">
-          <div class="col-md-3">
+          <div class="col-md-4">
             <p><strong>SubTotal Neto:</strong> $<span id="subtotal-neto">0.00</span></p>
           </div>
-          <div class="col-md-3">
+          <div class="col-md-4">
             <p><strong>Total IVA:</strong> $<span id="total-iva">0.00</span></p>
           </div>
-          <div class="col-md-3">
-            <p><strong>Total con IVA:</strong> $<span id="total-incl">0.00</span></p>
+          <div class="col-md-4">
+            <p><strong>Sumatoria de ventas:</strong> $<span id="total-incl">0.00</span></p>
           </div>
-          <div class="col-md-3">
+          <div class="col-md-6">
             <div class="form-group">
               <label>Descuento (%)</label>
               <input type="number" id="descuento-global" name="descuento_global_input" class="form-control" value="0" min="0" max="100" oninput="actualizarResumen()">
             </div>
           </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label>Descuento (Ventas g.)</label>
+              <input type="number" id="descuento_gravado" name="descuento_gravado_input" class="form-control" value="0" min="0" max="100" oninput="actualizarResumen()">
+            </div>
+          </div>
         </div>
         <div class="row">
           <div class="col-md-6">
-            <p><strong>Monto Descuento:</strong> $<span id="monto-descuento">0.00</span></p>
+            <p><strong>Monto Descuento:</strong> $<span id="monto_descuento" name="monto_descuento_input">0.00</span></p>
           </div>
           <div class="col-md-6">
             <strong>Saldo a Favor:</strong><input name="saldo_favor" id="saldo_favor_input" class="saldo-favor-input" value="0">
+          </div>
+          <div class="col-md-6">
+            <p><strong>Sub Total:</strong> $<span id="sub-total-resumen">0.00</span></p>
+          </div>
+          <div class="col-md-6">
+            <p><strong>Monto Total Op.:</strong> $<span id="total-operacion">0.00</span></p>
           </div>
           <div class="col-md-6">
             <p><strong>Total a Pagar:</strong> $<span id="total-pagar">0.00</span></p>
@@ -299,6 +311,7 @@
               <th>Cantidad</th>
               <th>Tipo de ítem</th>
               <th>Descuento</th>
+              <th>P. IVA</th>
             </tr>
           </thead>
           <tbody>
@@ -318,20 +331,20 @@
               </td>
               <td><input type="hidden" class="cantidad-input" min="1" style="width: 80px;"></td>
               <td>
-                <select name="descuento_seleccionado" class="form-control" id="descuento_select">
+                <select name="descuento_seleccionado" class="descuento-input" id="descuento_select" onchange="seleccionarDescuento(this)">
                   {% for descuento in descuentos %}
-                    <option  value="{{ descuento.id }}"> {{ descuento.porcentaje }}
-                    </option>
+                    <option class="descuento-item" data-descuento="{{descuento.porcentaje}}" value="{{ descuento.porcentaje }}"> {{ descuento.porcentaje }}</option>
                   {% endfor %}
                 </select>
               </td>
+              <td class="producto-con-iva" data-prod-iva="{{producto.precio_iva}}">{{ producto.precio_iva }}</td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-primary" onclick="cargarProductosModal(document.getElementById('descuento_select').value)">Cargar Productos</button>
+        <button type="button" class="btn btn-primary" onclick="cargarProductosModal()">Cargar Productos</button>
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
       </div>
     </div>
@@ -384,6 +397,9 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
+
+      <p><strong>Total a Pagar:</strong> $<span id="total-pagar-fp">0.00</span></p>
+      <p><strong>Recibido:</strong> $<span id="recibido">0.00</span></p>
 
       <div class="modal-body">
         <table id="tabla-formaspago-modal" class="table">
@@ -529,33 +545,31 @@
   });
 
   //Obtener seleccion del descuento
-  document.addEventListener('DOMContentLoaded', function () {
-    const descuSeleccionado = document.getElementById('descuento_select');
+  let descuento_sel_item = 0
+  function seleccionarDescuento(porcentajeSelect) {
+    let porcentaje = parseFloat(porcentajeSelect.value.replace(',', '.'));
+    descuento_sel_item = porcentaje;
+    console.log("Descuento seleccionado: ", porcentaje);
+  }
 
-    descuSeleccionado.addEventListener('change', function (){
-      const descuento_id = this.value;
-      fetch(`/fe/obtener-descuento/?descuento_id=${descuento_id}`)
-            .then(response => response.json())
-            .catch(error => console.error('Error:', error));
-    });
-    cargarProductosModal(descuento_id)
-  });
-
-    
-
+  let totalCompletado = false
   // Función para cargar formas depago desde el modal
   function cargarFormasPagoModal(fpId) {
     const checkboxs = document.querySelectorAll('.formapago-checkbox');
     const condicion_operacion = document.getElementById('condicion_op').value;
     const saldo_favor = document.getElementById('saldo_favor_input').value
-
+    const total_pagar = document.getElementById("total-pagar").textContent;
     var modalRows = document.querySelectorAll('#tabla-formaspago-modal tbody tr');
+    var recibido_fp = 0
 
       modalRows.forEach(function(row) {
           var checkbox = row.querySelector('.formapago-checkbox');
           if (checkbox.checked) {
               //var fpId = row.getAttribute('data-id');
               var fpDescripcion = row.cells[1].textContent.trim();
+              var monto = 0
+              var sumatoria_recibido_fp = 0
+              var total_pagar_resumen = 0
 
               //campos adicionales
               const fila = checkbox.closest('tr');  // Obtener la fila seleccionada
@@ -563,8 +577,42 @@
               const num_referencia_fp = fila.querySelector('.referencia-input').value;
               const monto_fp = fila.querySelector('.monto-input').value;
               const periodo_plazo = fila.querySelector('.periodo-input').value
+              monto = parseFloat(monto_fp)
 
-              fetch(`/fe/obtener-forma-pago/?fp_id=${fpId}&num_ref=${num_referencia_fp}&monto_fp=${monto_fp}&periodo=${periodo_plazo}&saldo_favor_r=${saldo_favor}&condicion_op=${condicion_operacion}`)
+              console.log("total completado = ", totalCompletado, "sumatoria_recibido = ", sumatoria_recibido_fp, "total pagar = ", total_pagar_resumen)
+              //Si el pago recibido coincide con el total a pagar no permitir agregar mas formas de pago
+              if (totalCompletado) {
+                checkbox.checked = false;  // Desmarcar el checkbox si ya se selecciono
+                return;
+              }
+              
+              if(totalCompletado==false && sumatoria_recibido_fp < total_pagar_resumen){
+                console.log("total no aplica = ", recibido_fp)
+                recibido_fp += monto
+                total_pagar_resumen = document.getElementById("total-pagar").textContent
+
+                sumatoria_recibido_fp = parseFloat(recibido_fp).toFixed(2)
+                document.getElementById("recibido").textContent = sumatoria_recibido_fp;
+                checkbox.checked = true;
+                checkbox.disabled = false; 
+                totalCompletado = false; 
+              }else if(sumatoria_recibido_fp > total_pagar_resumen){
+                console.log("total recibido mayor= ", recibido_fp)
+                if (checkbox.checked) {
+                  totalCompletado = true; 
+                  checkbox.disabled = true;
+                  monto_fp -= 0;
+                  document.getElementById("recibido").textContent = parseFloat(recibido_fp).toFixed(2);
+                  alert("El monto total ya ha sido alcanzado, no puedes seleccionar más.");
+                  return;
+                }
+              }else{
+                recibido_fp += monto
+                document.getElementById("recibido").textContent = parseFloat(recibido_fp).toFixed(2);
+              }
+              console.log("total recibido = ", recibido_fp)
+
+              fetch(`/fe/obtener-forma-pago/?fp_id=${fpId}&num_ref=${num_referencia_fp}&monto_fp=${monto_fp}&periodo=${periodo_plazo}&saldo_favor_r=${saldo_favor}&condicion_op=${condicion_operacion}&total_pagar=${total_pagar}`)
                   .then(response => {
                     if (!response.ok) {  // Verifica si la respuesta fue exitosa (200-299)
                         throw new Error('Network response was not ok');
@@ -578,8 +626,9 @@
   }
 
   // Función para cargar productos desde el modal
-  function cargarProductosModal(descuento) {
+  function cargarProductosModal() {
     const documentoRelacionado = document.getElementById('documento_relacionado_input').value;
+    const dte_seleccionado = document.getElementById('tipo_documento_select').value;
 
       var modalRows = document.querySelectorAll('#tabla-productos-modal tbody tr');
       modalRows.forEach(function(row) {
@@ -587,7 +636,10 @@
           if (checkbox.checked) {
               var productoId = row.getAttribute('data-id');
               var productoText = row.cells[1].textContent.trim();
-              var precio_incl = parseFloat(row.querySelector('.precio-unitario').getAttribute('data-precio'));
+              var precio_con_iva = row.querySelector('.producto-con-iva').getAttribute('data-prod-iva');
+
+              //PRECIO Unitario
+              var precio_incl = parseFloat(row.querySelector('.precio-unitario').getAttribute('data-precio').replace(',', '.')).toFixed(2);
               var precioStr = row.querySelector('.precio-unitario').getAttribute('data-precio');
               var precio = parseFloat(precioStr.replace(',', '.'));
               var cantidad = row.querySelector('.cantidad-input').value;
@@ -596,7 +648,7 @@
               console.log('doc relacionado:', numero_relacionado);
               //Obtener seleccion del descuento
               //var descuentoSeleccionado = document.getElementById('descuento_select'); //row.querySelector('.descuento_select');
-              agregarProductoFilaTabla(productoId, productoText, precio_incl, cantidad, descuento);
+              agregarProductoFilaTabla(productoId, productoText, precio_incl, cantidad, precio_con_iva);
           }
       });
       actualizarResumen();
@@ -604,14 +656,53 @@
   }
 
   // Función para agregar una fila a la tabla de productos
-  function agregarProductoFilaTabla(productoId, productoText, precio_incl, cantidad, descuentoSeleccionado) {
+  function agregarProductoFilaTabla(productoId, productoText, precio_incl, cantidad, aplica_iva) {
       // Calcular precio neto y IVA unitario
-      let neto_unitario = parseFloat((precio_incl / 1.13).toFixed(2));
-      let iva_unitario = parseFloat((precio_incl - neto_unitario).toFixed(2));
-      let qty = parseFloat(cantidad);
-      let total_neto = parseFloat((neto_unitario * qty).toFixed(2));
-      let total_iva = parseFloat((iva_unitario * qty).toFixed(2));
-      let total_incl = parseFloat((precio_incl * qty).toFixed(2));
+      const dte_seleccionado = document.getElementById('tipo_documento_select').value;
+      let neto_unitario = 0;
+      let iva_unitario = 0;
+      let qty = 0;
+      let total_neto = 0;
+      let total_iva = 0;
+      let total_incl = 0;
+      let monto_descuent = 0;
+      let porcentaje_descu = 0;
+      let total_precio_inc = 0;
+      porcentaje_descu = descuento_sel_item.toFixed(2)//parseFloat(descuento_item) || 0;
+
+      //Si es consumidor final ("01") el precio debe mostrarse con iva
+      qty = parseFloat(cantidad);
+      total_precio_inc = roundHalfUp( (precio_incl * qty) , 2);//parseFloat(precio_incl * qty);
+      if(dte_seleccionado == "01"){
+        //si el producto se registro con iva desde la tabla Producto mostrar el monto sino agregar iva
+        if(aplica_iva === true){
+          neto_unitario = roundHalfUp(total_precio_inc, 2);//parseFloat(total_precio_inc).toFixed(2);
+        }else{
+          neto_unitario = roundHalfUp( (total_precio_inc * 1.13) , 2);//parseFloat(total_precio_inc * 1.13).toFixed(2);
+        }
+        iva_unitario = roundHalfUp( (neto_unitario / 1.13) , 2);//parseFloat(( (neto_unitario / 1.13) * 0.13).toFixed(2));
+        //total_neto = parseFloat((neto_unitario * qty).toFixed(2));
+        total_neto = roundHalfUp(neto_unitario , 2);//parseFloat(neto_unitario);
+        monto_descuento = (total_neto * porcentaje_descu).toFixed(2);
+        //total_incl = parseFloat((neto_unitario * qty).toFixed(2));
+        total_incl = roundHalfUp( (total_neto - monto_descuento) , 2);//parseFloat( total_neto - monto_descuento).toFixed(2);
+      }else{
+        //si el producto se registro con iva desde la tabla Producto quitar iva sino mostrar el monto
+        if(aplica_iva === true){
+          neto_unitario = roundHalfUp( (total_precio_inc / 1.13) , 2);//parseFloat(total_precio_inc / 1.13).toFixed(2);
+        }else{
+          neto_unitario = roundHalfUp(total_precio_inc, 2);//parseFloat(total_precio_inc).toFixed(2);
+        }
+        //neto_unitario = parseFloat((precio_incl / 1.13).toFixed(2));
+        iva_unitario = parseFloat((neto_unitario * 0.13).toFixed(2));
+        qty = parseFloat(cantidad);
+        total_neto = parseFloat((neto_unitario).toFixed(2));
+        monto_descuento = (total_neto * porcentaje_descu).toFixed(2);
+        let pre_unitario_iva = parseFloat(total_precio_inc) + parseFloat(iva_unitario);
+        //total_incl = parseFloat(pre_unitario_iva * qty).toFixed(2) ;
+        total_incl = parseFloat( (pre_unitario_iva) - monto_descuento).toFixed(2) ;
+      }
+      total_iva = parseFloat((iva_unitario).toFixed(2));
 
       // Verificar si el producto ya está agregado (sumar cantidad si es el caso)
       var tableBody = document.querySelector('#tabla-productos tbody');
@@ -630,16 +721,25 @@
       row.setAttribute('data-id', productoId);
       row.innerHTML = `
           <td>${productoText}</td>
-          <td class="precio-neto">${neto_unitario.toFixed(2)}</td>
+          <td class="precio-neto">${neto_unitario}</td>
           <td class="iva-unitario">${iva_unitario.toFixed(2)}</td>
           <td><input type="number" class="cantidad-input" value="${qty}" min="1" oninput="actualizarFila(this)"></td>
+          <td class="descuento-item">${parseFloat(porcentaje_descu).toFixed(2)}</td>
           <td class="total-neto">${total_neto.toFixed(2)}</td>
           <td class="total-iva">${total_iva.toFixed(2)}</td>
-          <td class="total-incl">${total_incl.toFixed(2)}</td>
-          <td class="descuento_select">${descuentoSeleccionado}</td>
+          <td class="total-incl">${parseFloat(total_incl).toFixed(2)}</td>
+          <td class="aplica-iva">${aplica_iva}</td>
           <td><button type="button" class="btn btn-danger btn-sm" onclick="eliminarProductoFila(this)">Eliminar</button></td>
       `;
       tableBody.appendChild(row);
+  }
+
+  //redondeo hacia arriba ROUND_HALF_UP
+  function roundHalfUp(value, decimals) {
+    console.log("Inicio producto round = ", value)
+    var multiplier = Math.pow(10, decimals);
+    return Math.round(value * multiplier) / multiplier;
+    console.log("Producto round = ", Math.round(value * multiplier) / multiplier)
   }
 
   // Actualizar los valores de una fila cuando cambia la cantidad
@@ -648,10 +748,13 @@
       let precio_neto = parseFloat(row.querySelector('.precio-neto').textContent);
       let iva_unitario = parseFloat(row.querySelector('.iva-unitario').textContent);
       let cantidad = parseFloat(input.value) || 0;
-      let total_neto = (precio_neto * cantidad).toFixed(2);
+      let total_neto = (precio_neto * cantidad);
       let total_iva = (iva_unitario * cantidad).toFixed(2);
-      let total_incl = ( (precio_neto + iva_unitario) * cantidad ).toFixed(2);
-      row.querySelector('.total-neto').textContent = total_neto;
+      let descuento_item = parseFloat(row.querySelector('.descuento-item').textContent);
+      console.log("precio uni = ", precio_neto, "iva uni = ", iva_unitario, "cantidad = ", cantidad, "total neto = ", total_neto, "total iva = ", total_iva);
+      //Cuando es FE el precio unitario ya incluye iva por lo que al total con iva no debe sumarle el iva unitario
+      let total_incl = ( (precio_neto  * cantidad) -  descuento_item).toFixed(2);
+      row.querySelector('.total-neto').textContent = roundHalfUp(total_neto, 2);
       row.querySelector('.total-iva').textContent = total_iva;
       row.querySelector('.total-incl').textContent = total_incl;
       actualizarResumen();
@@ -667,7 +770,11 @@
 
   // Actualiza el resumen global sumando la tabla principal y todas las facturas relacionadas
   function actualizarResumen() {
-    let sumNeto = 0, sumIVA = 0, sumIncl = 0;
+    let sumNeto = 0, sumIVA = 0, sumIncl = 0, porcentajeDescu = 0, sumMontoDescu = 0;
+    let descu_gravado = 0, suma_descuentos = 0;
+
+    // Sumatoria descuento por item
+    porcentajeDescu = descuento_sel_item;
     
     // Sumar productos de la tabla principal
     const mainRows = document.querySelectorAll('#tabla-productos tbody tr:not([data-skip-sum])');
@@ -677,6 +784,7 @@
         sumNeto += parseFloat(netoCell.textContent) || 0;
         sumIVA += parseFloat(row.querySelector('.total-iva').textContent) || 0;
         sumIncl += parseFloat(row.querySelector('.total-incl').textContent) || 0;
+        sumMontoDescu += parseFloat(porcentajeDescu) || 0;
       }
     });
     
@@ -688,19 +796,34 @@
         sumNeto += parseFloat(netoCell.textContent) || 0;
         sumIVA += parseFloat(row.querySelector('.total-iva').textContent) || 0;
         sumIncl += parseFloat(row.querySelector('.total-incl').textContent) || 0;
+        sumMontoDescu += parseFloat(porcentajeDescu) || 0;
       }
     });
     
-    document.getElementById("subtotal-neto").textContent = sumNeto.toFixed(2);
+    document.getElementById("subtotal-neto").textContent = roundHalfUp(sumNeto, 2);
     document.getElementById("total-iva").textContent = sumIVA.toFixed(2);
     document.getElementById("total-incl").textContent = sumIncl.toFixed(2);
     
+    //Monto global y monto a ventas gravadas
+    descu_gravado = parseFloat(document.getElementById("descuento_gravado").value) || 0;
+    suma_descuentos = (parseFloat(sumMontoDescu * 100) || 0) + (parseFloat(descu_gravado) || 0);
     let descuentoPorc = parseFloat(document.getElementById("descuento-global").value) || 0;
     let montoDescuento = (sumIncl * descuentoPorc / 100).toFixed(2);
-    let totalPagar = (sumIncl - montoDescuento).toFixed(2);
+    //let totalPagar = (sumIncl - montoDescuento).toFixed(2);
+
+    //Descuento global de ventas gravadas
+    let descuentoPorcGravado = parseFloat(document.getElementById("descuento_gravado").value) || 0;
+    let montoDescuGravado = (sumIncl * descuentoPorcGravado / 100).toFixed(2);
+    let subTotal = (sumIncl - montoDescuGravado - montoDescuento).toFixed(2);
+    let montoTotalOperacion = parseFloat(subTotal).toFixed(2);
+    let totalPagar = montoTotalOperacion ;
     
-    document.getElementById("monto-descuento").textContent = montoDescuento;
+    // Es la sumatoria de descuentos por item, monto global de descuento a ventas no sujetas, exenta y gravadas
+    document.getElementById("monto_descuento").textContent = parseFloat(suma_descuentos);
     document.getElementById("total-pagar").textContent = totalPagar;
+    document.getElementById("total-pagar-fp").textContent = totalPagar;
+    document.getElementById("sub-total-resumen").textContent = parseFloat(subTotal).toFixed(2);
+    document.getElementById('total-operacion').textContent = parseFloat(subTotal).toFixed(2);
 
     let btnGenerar = document.getElementById("btnGenerar")
     let tipo_dte = document.getElementById('tipo_documento_select').value;
@@ -740,19 +863,20 @@
       jsonData["tipo_documento_select"] = document.querySelector('select[name="tipo_documento_seleccionado"]').value;
 
       // Agregar el valor del numero de documento a relacionar
-      jsonData["documento_relacionado_input"] = document.getElementById("documento_relacionado_input").value;
+      jsonData["documento_select"] = document.getElementById("documento_relacionado_input").value;
 
       jsonData["descuento_select"] = document.querySelector('select[name="descuento_seleccionado"]').value;
       // Agregar el valor del select "tipo_item"
       jsonData["tipo_item_select"] = document.querySelector('select[name="tipo_item_seleccionado"]').value;
+      jsonData["monto_descuento"] = document.getElementById("monto_descuento").textContent;
+      jsonData["descuento_gravado"] = parseFloat(document.getElementById("descuento_gravado").value) || 0;
       
       // Recopilar datos de productos
       let productos_ids = [];
       let cantidades = [];
       let totales_incl = [];
-
       document.querySelectorAll('#tabla-productos tbody tr').forEach(function(row) {
-          productos_ids.push(row.getAttribute('data-id'));
+          productos_ids.push(row.getAttribute('data-id')) || 0;
           cantidades.push(row.querySelector('.cantidad-input').value);
           totales_incl.push(row.querySelector('.total-incl').textContent);
       });
@@ -880,6 +1004,7 @@ function cargarFacturaRelacionada() {
   function agregarFacturaAccordion(factura) {
     const facturaId = factura.codigo_generacion;
     const accordion = document.getElementById('facturasAccordion');
+
     const accordionItem = document.createElement('div');
     accordionItem.classList.add('accordion-item');
     accordionItem.setAttribute('data-factura-id', facturaId);
@@ -908,14 +1033,16 @@ function cargarFacturaRelacionada() {
     facturasRelacionadas.push(factura);
   }
 
-
+let prod_id_relacionado = 0;
+let cantidad_prod_relacionado = 0;
  // Genera la tabla de detalles (productos) para una factura
  function crearTablaDetalles(detalles) {
   // Filtra detalles que no sean productos reales (si hay alguna línea TOTAL, por ejemplo)
   let detallesFiltrados = detalles.filter(item => !item.producto.toUpperCase().includes("TOTAL"));
-  
+  prod_id_relacionado = 0, cantidad_prod_relacionado = 0;
+
   let tablaHTML = `
-    <table class="table table-bordered">
+    <table class="table table-bordered" id="tabla-productos-relacionados">
       <thead>
         <tr>
           <th>Producto</th>
@@ -934,13 +1061,16 @@ function cargarFacturaRelacionada() {
   detallesFiltrados.forEach(function(prod) {
     // Suponemos que el precio_unitario incluye IVA a 13%
     let precioIncl = parseFloat(prod.precio_unitario);
-    let neto = precioIncl / 1.13;
-    let iva = precioIncl - neto;
+    let neto = precioIncl;
     let cantidad = parseFloat(prod.cantidad);
+    let iva = (precioIncl * 0.13);
     let totalNeto = neto * cantidad;
-    let totalIVA = iva * cantidad;
-    let totalIncl = precioIncl * cantidad;
-    let idProducto = prod.id
+    let totalIVA = roundHalfUp(iva * cantidad, 6);
+    let totalIncl = (neto + iva) * 2;
+    let idProducto = prod.id;
+    prod_id_relacionado = prod.id;
+    cantidad_prod_relacionado = prod.cantidad;
+    console.log("iva = ", iva, "cantidad = ", cantidad, "total iva = ", totalIVA)
 
     tablaHTML += `
       <tr data-id="${prod.id}">
@@ -960,11 +1090,12 @@ function cargarFacturaRelacionada() {
       </tr>
     `;
   });
-  
   tablaHTML += `
       </tbody>
     </table>
   `;
+  let tabla = document.getElementById('tabla-productos-relacionados');
+  console.log("tablaHtml: ", tabla)
   return tablaHTML;
   actualizarResumen();
 }
