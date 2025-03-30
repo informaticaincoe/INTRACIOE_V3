@@ -863,7 +863,8 @@
       jsonData["tipo_documento_select"] = document.querySelector('select[name="tipo_documento_seleccionado"]').value;
 
       // Agregar el valor del numero de documento a relacionar
-      jsonData["documento_select"] = document.getElementById("documento_relacionado_input").value;
+      jsonData["documento_select"] = document.getElementById("documento_seleccionado");
+      jsonData["documento_relacionado_input"] = document.getElementById("documento_relacionado");
 
       jsonData["descuento_select"] = document.querySelector('select[name="descuento_seleccionado"]').value;
       // Agregar el valor del select "tipo_item"

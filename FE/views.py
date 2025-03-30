@@ -703,7 +703,7 @@ def generar_factura_view(request):
                     #total_iva_item = ( ( precio_incl * cantidad) / Decimal("1.13") * Decimal("0.13") ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                     precio_inc_neto = precio_incl
                 if tipo_item_obj.codigo == COD_TIPO_ITEM_OTROS:
-                    precio_neto = precio_neto * Decimal(tributo_valor).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    precio_neto = (precio_neto * Decimal(tributo_valor)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                     
                 precio_neto = Decimal(precio_neto)          
                 iva_unitario = (precio_incl - precio_neto).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
@@ -741,7 +741,7 @@ def generar_factura_view(request):
                 #total_neto = (precio_neto - total_descuento_gravado).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 total_neto = (precio_neto - total_descuento_gravado).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 #Subtotal resumen = subTotalVentas - decuento global gravado
-                decuento_gravado = (total_neto * descu_gravado / 100).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                decuento_gravado = (total_neto * Decimal(descu_gravado) / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 
                 print("calcular descuento global: ", descuento_global)
                 #Si el producto tiene porcentaje gobal restarlo al subtotal
@@ -2815,7 +2815,7 @@ def generar_documento_ajuste_view(request):
                 #Si el producto tiene porcentaje gobal restarlo al subtotal
                 sub_total_item = Decimal("0")
                 if descuento_global:
-                    porc_descuento_global = (total_neto * Decimal(descuento_global) / 100).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    porc_descuento_global = (total_neto * Decimal(descuento_global) / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                     sub_total_item = (total_neto - descuento_gravado - porc_descuento_global).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 else:
                     sub_total_item = (total_neto - descuento_gravado).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
@@ -2849,7 +2849,7 @@ def generar_documento_ajuste_view(request):
                     no_gravado=Decimal("-0.00"),
                     saldo_favor=Decimal("-0.00"),
                     tipo_documento_relacionar = tipo_doc_relacionar,
-                    documento_relacionado = documento_relacionado.upper()
+                    documento_relacionado = documento_relacionado
                 )
                 #resumen.totalGravado y subTotalVentas
                 total_gravada += total_neto
@@ -2981,7 +2981,7 @@ def generar_documento_ajuste_view(request):
                         cuerpo_documento.append({
                             "numItem": idx,
                             "tipoItem": int(tipo_item_obj.codigo),
-                            "numeroDocumento": str(documento_relacionado.upper()),
+                            "numeroDocumento": str(det.documento_relacionado.upper()),
                             "cantidad": float(det.cantidad), 
                             "codigo": str(det.producto.codigo),
                             "codTributo": codTributo,
@@ -2998,9 +2998,6 @@ def generar_documento_ajuste_view(request):
                     if cuerpo_documento_tributos is None:
                         cuerpo_documento.append(cuerpo_documento_tributos)
                 print(f"Item {idx}: IVA unitario = {iva_unitario}, Total IVA = {total_iva_item}, IVA almacenado = {det.iva_item}")
-                
-            #### Agregar validaciones en json de documentos relacionados
-            global documentos_relacionados
         
             docs_permitidos = 50
             #tipo_dte_ob = Tipo_dte.objects.get(codigo=tipo_dte)
