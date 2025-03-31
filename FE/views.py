@@ -714,7 +714,10 @@ def generar_factura_view(request):
                 
                 ("-Descuento por item select = ", porcentaje_descuento_producto)
                 #PENDIENTE: enviar id de descuento desde el html para guardar el objeto en la tabla detalle
-                porcentaje_descuento_item = Descuento.objects.get(porcentaje=porcentaje_descuento_producto)
+                if porcentaje_descuento_producto:
+                    porcentaje_descuento_item = Descuento.objects.get(porcentaje=porcentaje_descuento_producto)
+                else:
+                    porcentaje_descuento_item = Descuento.objects.first()
                 
                 if porcentaje_descuento_item.porcentaje > Decimal("0.00"):
                     descuento_aplicado=True
@@ -741,16 +744,16 @@ def generar_factura_view(request):
                 #total_neto = (precio_neto - total_descuento_gravado).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 total_neto = (precio_neto - total_descuento_gravado).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 #Subtotal resumen = subTotalVentas - decuento global gravado
-                decuento_gravado = (total_neto * Decimal(descu_gravado) / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                descuento_gravado = (total_neto * Decimal(descu_gravado) / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 
                 print("calcular descuento global: ", descuento_global)
                 #Si el producto tiene porcentaje gobal restarlo al subtotal
                 sub_total_item = Decimal("0")
                 if descuento_global:
                     porc_descuento_global = (total_neto * Decimal(descuento_global) / 100).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-                    sub_total_item = (total_neto - decuento_gravado - porc_descuento_global).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    sub_total_item = (total_neto - descuento_gravado - porc_descuento_global).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 else:
-                    sub_total_item = (total_neto - decuento_gravado).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    sub_total_item = (total_neto - descuento_gravado).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 print(f"-subTotal = {sub_total_item}, total neto = {total_neto}, porcentaje = {descu_gravado}, descuento global = {porc_descuento_global} ")
                 
                 #total_iva_item = (iva_unitario * cantidad).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
@@ -857,8 +860,8 @@ def generar_factura_view(request):
             factura.sub_total_ventas = total_gravada
             factura.descuen_no_sujeto = Decimal("0.00")
             factura.descuento_exento = Decimal("0.00")
-            factura.descuento_gravado = float(decuento_gravado)
-            factura.por_descuento = porc_descuento_global #Decimal("0.00")
+            factura.descuento_gravado = float(descuento_gravado)
+            factura.por_descuento = descuento_global #Decimal("0.00")
             factura.total_descuento = float(monto_descuento)
             factura.sub_total = sub_total
             factura.iva_retenido = DecimalRetIva
@@ -1063,7 +1066,6 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
         }
         
         json_otros_documentos = None
-        print("-formas de pago json: ", formas_pago)
         pagos = formas_pago
         
         json_resumen = {
@@ -1131,7 +1133,6 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
                 #Remover el item
                 cuerpo_documento.pop(i)
                 gravado = Decimal(cuerpo["ventaGravada"])
-                print("-Calcular item json: ", gravado)
                 valor_iva_item = ( gravado / Decimal("1.13") * Decimal("0.13") ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 #Modificar campo
                 cuerpo["ivaItem"] = float(valor_iva_item)
@@ -1157,7 +1158,6 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
             json_resumen["condicionOperacion"] = int(CondicionOperacion.objects.get(codigo="1").codigo) #Al contado
             
         #Verificar que el monto consolidado de formas de pago aplique para el total a pagar
-        print("-Formas de pago: ", json_resumen["pagos"])
         f_pagos = json_resumen["pagos"]
         total_pagar_resumen = Decimal(json_resumen["totalPagar"])
         print("-Total pagar resumen: ", total_pagar_resumen)
@@ -1170,22 +1170,8 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
         if monto_total_fp.compare(Decimal("0.00")) > 0 and monto_total_fp.compare(total_pagar_resumen) < 0:
             print("-Monto fp menor al total a pagar")
             errorFormaPago = JsonResponse({"error": "El pago parcial es inferior al pago total", "Pago recibido": monto_total_fp})
-            print("-error fp: ", errorFormaPago)
             
-        if tipo_dte_obj.codigo == COD_NOTA_CREDITO or tipo_dte_obj.codigo == COD_NOTA_DEBITO:
-            json_completo = {
-                "identificacion": json_identificacion,
-                "documentoRelacionado": json_documento_relacionado,
-                "emisor": json_emisor,
-                "receptor": json_receptor,
-                "ventaTercero": None,
-                "cuerpoDocumento": cuerpo_documento,
-                "resumen": json_resumen,
-                "extension": json_extension,
-                "apendice": json_apendice
-            }
-        else:
-            json_completo = {
+        json_completo = {
                 "identificacion": json_identificacion,
                 "documentoRelacionado": json_documento_relacionado,
                 "emisor": json_emisor,
@@ -2324,7 +2310,6 @@ def agregar_formas_pago_ajax(request):
         tiene_saldoF = False
         
         monto = Decimal("0.00")
-        montoFp = Decimal("0.00")
         formaPago = None
         
         print("-correr formas de pago")
@@ -2442,8 +2427,8 @@ def agregar_formas_pago_api(request):
                     
                     formas_pago.append(formas_pago_json)
                     print("-Agregar forma pago: ", formas_pago)
+                    return formas_pago
                     
-                    return Response({"No Permitido": "El monto ingresado es mayor que el total a pagar" })
             print("-Formas de pago seleccionadas: ", formas_pago)
         
         return Response({'formasPago': formas_pago})
@@ -2900,7 +2885,7 @@ def generar_documento_ajuste_view(request):
             total_pagar = total_pagar.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
             
             #Sino se ha seleccionado ningun documento a relacionar enviar null los campos
-            if tipo_doc_relacionar is COD_DOCUMENTO_RELACIONADO_NO_SELEC:
+            if tipo_doc_relacionar == COD_DOCUMENTO_RELACIONADO_NO_SELEC:
                 tipo_doc_relacionar = None
                 documento_relacionado = None
             print(f"Tipo de doc a relacionar: {tipo_doc_relacionar} numero de documento: {documento_relacionado}")
