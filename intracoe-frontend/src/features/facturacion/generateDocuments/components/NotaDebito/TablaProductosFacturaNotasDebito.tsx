@@ -5,21 +5,36 @@ import { Checkbox } from 'primereact/checkbox';
 import { Accordion, AccordionTab } from 'primereact/accordion';
 import React, { useEffect, useState } from 'react';
 import { FacturaDetalleItem, FacturaPorCodigoGeneracionResponse } from '../../../../../shared/interfaces/interfaces';
+import { ProductosTabla } from '../FE/productosAgregados/productosData';
 
 interface TablaProductosFacturaNotasDebitoProps {
   facturasAjuste: FacturaPorCodigoGeneracionResponse[];
-  setFacturasAjuste: any
+  setFacturasAjuste: any,
+  setIdListProducts:any,
+  setCantidadListProducts:any,
+  setListProducts:any
 }
 
 export const TablaProductosFacturaNotasDebito: React.FC<TablaProductosFacturaNotasDebitoProps> = ({
   facturasAjuste,
   setFacturasAjuste,
+  setIdListProducts,
+  setCantidadListProducts,
+  setListProducts
 }) => {
   const [seleccionados, setSeleccionados] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
+    actualizarListasSeleccionadas(seleccionados);
+  }, [facturasAjuste, seleccionados]);
+
+  
+  useEffect(() => {
     console.log("facturasAjuste", facturasAjuste)
+    if(facturasAjuste) {
+    }
   }, [facturasAjuste])
+  
   const handleCantidadChange = (value: number | null, facturaCodigo: string, productoId: number) => {
     const nuevaLista = facturasAjuste.map(factura => {
       if (factura.codigo_generacion === facturaCodigo) {
@@ -34,9 +49,11 @@ export const TablaProductosFacturaNotasDebito: React.FC<TablaProductosFacturaNot
       }
       return factura;
     });
-
+  
     setFacturasAjuste(nuevaLista);
+    
   };
+
 
   const handleMontoAumentarChange = (value: number | null, facturaCodigo: string, productoId: number) => {
     const nuevaLista = facturasAjuste.map(factura => {
@@ -57,12 +74,58 @@ export const TablaProductosFacturaNotasDebito: React.FC<TablaProductosFacturaNot
   };
 
   const handleSelectChange = (checked: boolean, id: string) => {
-    setSeleccionados((prev) => ({
-      ...prev,
-      [id]: checked,
-    }));
+    setSeleccionados((prev) => {
+      const actualizados = {
+        ...prev,
+        [id]: checked,
+      };
+      actualizarListasSeleccionadas(actualizados);
+      return actualizados;
+    });
   };
+  
 
+  const actualizarListasSeleccionadas = (seleccionadosActuales: { [key: string]: boolean }) => {
+    const productosSeleccionados: string[] = [];
+    const cantidadesSeleccionadas: string[] = [];
+    const productosTabla: ProductosTabla[] = [];
+  
+    facturasAjuste.forEach((factura) => {
+      factura.productos.forEach((producto) => {
+        const idStr = producto.producto_id.toString();
+        if (seleccionadosActuales[idStr]) {
+          productosSeleccionados.push(idStr);
+          const cantidadFinal = producto.cantidad_editada ?? producto.cantidad;
+          cantidadesSeleccionadas.push(cantidadFinal.toString());
+  
+          // Armar objeto del tipo ProductosTabla
+          productosTabla.push({
+            id: producto.producto_id,
+            codigo: producto.codigo,
+            descripcion: producto.descripcion,
+            cantidad: cantidadFinal,
+            precio_unitario: parseFloat(producto.precio_unitario),
+            iva_unitario: parseFloat(producto.iva_unitario),
+            no_grabado: false,
+            descuento: null,
+            total_neto: 0,
+            total_iva: 0,
+            total_con_iva: 0,
+            iva_percibido: 0,
+            total_tributos: 0,
+            seleccionar: false
+          });
+        }
+      });
+    });
+  
+    setIdListProducts(productosSeleccionados);
+    setCantidadListProducts(cantidadesSeleccionadas);
+    setListProducts(productosTabla); // ← 🚀 Esta es la clave
+  };
+  
+
+  
   return (
     <>
       {facturasAjuste.length > 0 && (
@@ -100,6 +163,7 @@ export const TablaProductosFacturaNotasDebito: React.FC<TablaProductosFacturaNot
                         onChange={(e) =>
                           handleSelectChange(!!e.checked, rowData.producto_id.toString())
                         }
+                        
                       />
                     )}
                   />
@@ -125,6 +189,7 @@ export const TablaProductosFacturaNotasDebito: React.FC<TablaProductosFacturaNot
                         onValueChange={(e: InputNumberValueChangeEvent) =>
                           handleCantidadChange(e.value ?? null, factura.codigo_generacion, rowData.producto_id)
                         }
+                        disabled={!seleccionados[rowData.producto_id.toString()]} 
                       />
                     )}
                   />
@@ -136,7 +201,7 @@ export const TablaProductosFacturaNotasDebito: React.FC<TablaProductosFacturaNot
                         onValueChange={(e: InputNumberValueChangeEvent) =>
                           handleMontoAumentarChange(e.value ?? null, factura.codigo_generacion, rowData.producto_id)
                         }
-                        
+                        disabled={!seleccionados[rowData.producto_id.toString()]} 
                       />
                     )}
                   />

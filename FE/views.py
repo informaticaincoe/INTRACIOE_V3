@@ -2405,7 +2405,7 @@ def agregar_formas_pago_api(request):
             print("recorrer formas de pago seleccionadas")
             for fp in formas_pago_id:
                 try:
-                    formaPago = FormasPago.objects.get(codigo=fp)
+                    formaPago = FormasPago.objects.get(id=fp)
                     print("Saldo favor = ", saldo_favor)
                     if saldo_favor is not None and saldo_favor !="":
                         saldo = Decimal(saldo_favor)

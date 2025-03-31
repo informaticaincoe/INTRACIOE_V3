@@ -7,9 +7,11 @@ interface CheckBoxRetencionProps {
     tieneRetencionIva:boolean,
     setRetencionIva:any
     retencionIva:number,
+    setRetencionRenta:any,
+    retencionRenta:number
 
 }
-export const CheckBoxRetencion:React.FC<CheckBoxRetencionProps> = ({setTieneRetencionIva, tieneRetencionIva, setRetencionIva, retencionIva }) => {
+export const CheckBoxRetencion:React.FC<CheckBoxRetencionProps> = ({setTieneRetencionIva, tieneRetencionIva, setRetencionIva, retencionIva, setRetencionRenta, retencionRenta }) => {
     const [checkedRenta, setCheckedRenta] = useState<boolean>(false);
     const [renta, setRenta] = useState<number>(0);
 
@@ -55,9 +57,9 @@ export const CheckBoxRetencion:React.FC<CheckBoxRetencionProps> = ({setTieneRete
                 <InputNumber
                     prefix="%"
                     inputId="withoutgrouping"
-                    value={renta}
+                    value={retencionRenta}
                     onValueChange={(e: InputNumberValueChangeEvent) =>
-                        setRenta(e.value ?? 0)
+                        setRetencionRenta(e.value ?? 0)
                     }
                     className="w-full"
                 />

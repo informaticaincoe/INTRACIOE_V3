@@ -21,3 +21,21 @@ export interface EmisorJSON {
     codPuntoVenta: string
 
 }
+
+export interface FacturaListado {
+    count: number,
+    next: string,
+    previous: string | null
+    results: ListResult
+}
+
+export interface ListResult {
+    codigo_generacion: string,
+    fecha_emision: string,
+    firmado: boolean,
+    hora_emision: string,
+    id: number,
+    numero_control: string,
+    recibido_mh: boolean,
+    tipo_dte: number
+}

@@ -1,5 +1,6 @@
 import { WhiteSectionsPage } from "../../../../shared/containers/whiteSectionsPage"
 import { Title } from "../../../../shared/text/title"
+import { TableListadoFacturasContainer } from "../componentes/TableListadoFacturasContainer"
 
 export const ListadoFActuras = () => {
     return (
@@ -7,12 +8,7 @@ export const ListadoFActuras = () => {
             <Title text='Listado Facturas' />
             <WhiteSectionsPage>
                 <>
-                    <div>
-
-                    </div>
-                    <table>
-
-                    </table>
+                <TableListadoFacturasContainer />
                 </>
             </WhiteSectionsPage>
         </>
