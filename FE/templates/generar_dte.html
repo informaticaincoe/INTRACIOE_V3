@@ -66,7 +66,6 @@
           <div class="col-md-4">
             <div class="form-group">
               <label>Tipo de Documento:</label>
-              <select name="tipo_documento_seleccionado" class="form-control" id="tipo_documento_select">
               <select name="tipo_documento_seleccionado" class="form-control" id="tipo_documento_select" onchange="actualizarProductos()">
                 <!-- <option value="">Seleccione Tipo de Documento</option> -->
                 {% for dte in tipoDocumentos %}
