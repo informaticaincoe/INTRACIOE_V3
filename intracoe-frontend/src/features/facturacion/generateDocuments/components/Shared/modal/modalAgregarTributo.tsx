@@ -7,7 +7,10 @@ import {
   InputNumberValueChangeEvent,
 } from 'primereact/inputnumber';
 import React, { useEffect, useState } from 'react';
-import { getAllTipoTributos, getAllTributosByTipo } from '../../../services/tributos/tributos';
+import {
+  getAllTipoTributos,
+  getAllTributosByTipo,
+} from '../../../services/tributos/tributos';
 import { TipoTributos, Tributos } from '../../../interfaces/Tributos';
 import { MultiSelect } from 'primereact/multiselect';
 
@@ -23,44 +26,45 @@ export const ModalAgregarTributo: React.FC<ModalAgregarTibutoInterface> = ({
   setVisible,
 }) => {
   const [tipoTributo, setTipoTributo] = useState<TipoTributos[]>([]);
-  const [selectedTipoTributo, setSelectedTipoTributo] = useState<TipoTributos>();
+  const [selectedTipoTributo, setSelectedTipoTributo] =
+    useState<TipoTributos>();
 
-  const [tributos, setTributos] = useState<Tributos[]>([])
-  const [selectedTributos, setSelectedTributos] = useState<Tributos[]>([])
-
-
-  useEffect(() => {
-    fetchTipoTributos()
-  }, [])
-
+  const [tributos, setTributos] = useState<Tributos[]>([]);
+  const [selectedTributos, setSelectedTributos] = useState<Tributos[]>([]);
 
   useEffect(() => {
-    console.log(selectedTributos)
-  }, [selectedTributos])
+    fetchTipoTributos();
+  }, []);
 
   useEffect(() => {
-    fetchTributosSegunTipo()
-  }, [selectedTipoTributo])
+    console.log(selectedTributos);
+  }, [selectedTributos]);
+
+  useEffect(() => {
+    fetchTributosSegunTipo();
+  }, [selectedTipoTributo]);
 
   const fetchTipoTributos = async () => {
     try {
-      const tipoTributosData = await getAllTipoTributos()
-      setTipoTributo(tipoTributosData)
+      const tipoTributosData = await getAllTipoTributos();
+      setTipoTributo(tipoTributosData);
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
 
   const fetchTributosSegunTipo = async () => {
     if (selectedTipoTributo) {
       try {
-        const tipoTributosData = await getAllTributosByTipo(selectedTipoTributo.id)
-        setTributos(tipoTributosData)
+        const tipoTributosData = await getAllTributosByTipo(
+          selectedTipoTributo.id
+        );
+        setTributos(tipoTributosData);
       } catch (error) {
-        console.log(error)
+        console.log(error);
       }
     }
-  }
+  };
 
   return (
     <div className="justify-content-center flex">
@@ -87,9 +91,7 @@ export const ModalAgregarTributo: React.FC<ModalAgregarTibutoInterface> = ({
               />
             </>
             <>
-              <label htmlFor="porcentajeRetencion">
-                Tributo
-              </label>
+              <label htmlFor="porcentajeRetencion">Tributo</label>
               <MultiSelect
                 value={selectedTributos}
                 onChange={(e) => setSelectedTributos(e.value)}
@@ -104,15 +106,11 @@ export const ModalAgregarTributo: React.FC<ModalAgregarTibutoInterface> = ({
         <Divider />
 
         <div>
-          <h2 className='font-semibold text-lg'>Tributos aplicados</h2>
-          <ul className='list-disc list-inside px-4'>
-            {
-              selectedTributos.map((tributo) => (
-                <li>
-                  {tributo.descripcion}
-                </li>
-              ))
-            }
+          <h2 className="text-lg font-semibold">Tributos aplicados</h2>
+          <ul className="list-inside list-disc px-4">
+            {selectedTributos.map((tributo) => (
+              <li>{tributo.descripcion}</li>
+            ))}
           </ul>
         </div>
 

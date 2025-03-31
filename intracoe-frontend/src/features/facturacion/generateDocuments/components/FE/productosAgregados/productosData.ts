@@ -1,4 +1,4 @@
-import { Descuento } from "../../../../../../shared/interfaces/interfaces";
+import { Descuento } from '../../../../../../shared/interfaces/interfaces';
 
 export const productosData = [
   {
@@ -42,21 +42,20 @@ export interface ProductosTabla {
   precio_unitario: number;
   cantidad: number;
   no_grabado: boolean;
-  descuento: Descuento | null,
+  descuento: Descuento | null;
   iva_unitario: number;
   total_neto: number;
   total_iva: number;
   total_con_iva: number;
-  iva_percibido: number
+  iva_percibido: number;
   total_tributos: number;
   seleccionar: boolean;
 }
 
-
 export const defaultProductosData = {
   id: 0,
-  codigo: "",
-  descripcion: "",
+  codigo: '',
+  descripcion: '',
   precio_unitario: 0,
   cantidad: 0,
   no_grabado: false,
@@ -68,4 +67,4 @@ export const defaultProductosData = {
   iva_percibido: 0,
   total_tributos: 0,
   seleccionar: false,
-}
+};

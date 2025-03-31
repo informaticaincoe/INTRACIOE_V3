@@ -1,7 +1,5 @@
-import React from 'react'
+import React from 'react';
 
 export const TablaFacturas = () => {
-  return (
-    <div>TablaListadoFacturas</div>
-  )
-}
+  return <div>TablaListadoFacturas</div>;
+};

@@ -1,16 +1,16 @@
-import { WhiteSectionsPage } from "../../../../shared/containers/whiteSectionsPage"
-import { Title } from "../../../../shared/text/title"
-import { TableListadoFacturasContainer } from "../componentes/TableListadoFacturasContainer"
+import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPage';
+import { Title } from '../../../../shared/text/title';
+import { TableListadoFacturasContainer } from '../componentes/TableListadoFacturasContainer';
 
 export const ListadoFActuras = () => {
-    return (
+  return (
+    <>
+      <Title text="Listado Facturas" />
+      <WhiteSectionsPage>
         <>
-            <Title text='Listado Facturas' />
-            <WhiteSectionsPage>
-                <>
-                <TableListadoFacturasContainer />
-                </>
-            </WhiteSectionsPage>
+          <TableListadoFacturasContainer />
         </>
-    )
-}
+      </WhiteSectionsPage>
+    </>
+  );
+};

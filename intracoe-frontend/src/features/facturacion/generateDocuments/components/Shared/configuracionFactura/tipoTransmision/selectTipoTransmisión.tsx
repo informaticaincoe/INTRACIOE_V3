@@ -14,8 +14,9 @@ export const SelectTipoTransmisión = () => {
   }, []);
 
   const fetchTipoDte = async () => {
-    const response = await getAllTipoTransmision()
+    const response = await getAllTipoTransmision();
     setTipoTransmisionTempLista(response);
+    setSelectedTipoTransmision(response[0].codigo);
   };
 
   return (
