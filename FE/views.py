@@ -322,7 +322,6 @@ def obtener_numero_control_ajax(request):
     productos_inventario = Producto
     #productos_inventario = obtener_listado_productos_view()
     #obtener_listado_productos_view()
-    print("-Productos num control: ", productos_inventario)
     #iniciar_dte = request.GET.get('iniciar_dte', False)
     print(f"Inicializando DTE Vista: {tipo_dte}")
     nuevo_numero = NumeroControl.preview_numero_control(tipo_dte)
@@ -406,8 +405,10 @@ from django.core.handlers.wsgi import WSGIRequest
 from io import BytesIO
 
 
-def obtener_listado_productos_view():
+def obtener_listado_productos_view(request):
     global tipo_documento_dte
+    tipo_documento_dte = request.GET.get('tipo_documento_dte', '01')
+    print("tipo dte..", tipo_documento_dte)
     tipo_dte_obj = Tipo_dte.objects.get(codigo=tipo_documento_dte)
     productos = Producto.objects.all()
     
@@ -416,37 +417,27 @@ def obtener_listado_productos_view():
         for producto in productos:
             print("-Precio: ", producto.preunitario)
             if tipo_dte_obj.codigo == COD_CONSUMIDOR_FINAL:
-                producto.preunitario = producto.preunitario * Decimal("1.13")
-                print(f"-precio unitario: {producto.preunitario} ")
+                if producto.precio_iva:
+                    producto.preunitario = producto.preunitario
+                else:
+                    producto.preunitario = producto.preunitario * Decimal("1.13")
             else:
-                producto.preunitario = producto.preunitario / Decimal("1.13")
+                if producto.precio_iva:
+                    producto.preunitario = producto.preunitario / Decimal("1.13")
+                else:
+                    producto.preunitario = producto.preunitario
                 print(f"-ccf precio unitario: {producto.preunitario} ")
-    #return productos_modal
-    context = {
-            "productos": productos
-        }
-    print("-Context: ", context)
     
-    env = {
-        'REQUEST_METHOD': 'GET',
-        'PATH_INFO': '/fe/generar/',
-        'QUERY_STRING': 'tipo_dte=03',  # Aquí están los parámetros GET que quieres modificar
-        'wsgi.input': BytesIO(),  # Se necesita un flujo de entrada vacío
-        'CONTENT_TYPE': '',
-        'CONTENT_LENGTH': '',
-    }
-    
-    env['QUERY_STRING'] = ''  # Esto elimina todos los parámetros de la URL
-    
-    request = WSGIRequest(env)
+    # Comprobar si la solicitud es AJAX mediante el encabezado X-Requested-With
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render(request, 'generar_dte.html', {'productos': productos})
 
-    # Copiar los parámetros GET y limpiarlos
-    request.GET = request.GET.copy()  # Necesitamos copiar para poder modificarla
-    request.GET.clear()  # Limpiar todos los parámetros GET
-    
-    print("-requeste modificado:. ", request)
-    #return render(request, "generar_dte.html", context)
-    return productos
+    # Si no es una solicitud AJAX, se devuelve la página completa
+    context = {
+        'productos': productos
+    }
+    return render(request, 'generar_dte.html', context)
+    #return productos
     
 from decimal import Decimal, ROUND_DOWN
 
@@ -479,8 +470,8 @@ def generar_factura_view(request):
 
         print("-Modificar productos")
         receptores = list(Receptor_fe.objects.values("id", "num_documento", "nombre"))
-        productos = Producto.objects.all()
-        #productos = obtener_listado_productos_view()
+        #productos = Producto.objects.all()
+        productos = obtener_listado_productos_view(request)
         print("productos modificados: ", productos)
         tipooperaciones = CondicionOperacion.objects.all()
         tipoDocumentos = Tipo_dte.objects.exclude( Q(codigo=COD_NOTA_CREDITO) | Q(codigo=COD_NOTA_DEBITO) )

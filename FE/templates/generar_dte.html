@@ -67,9 +67,10 @@
             <div class="form-group">
               <label>Tipo de Documento:</label>
               <select name="tipo_documento_seleccionado" class="form-control" id="tipo_documento_select">
+              <select name="tipo_documento_seleccionado" class="form-control" id="tipo_documento_select" onchange="actualizarProductos()">
                 <!-- <option value="">Seleccione Tipo de Documento</option> -->
                 {% for dte in tipoDocumentos %}
-                  <option value="{{ dte.codigo }}">{{ dte.descripcion }}</option>
+                  <option value="{{ dte.codigo }}" {% if dte.codigo == documento_seleccionado %}selected{% endif %}>{{ dte.descripcion }}</option>
                 {% endfor %}
             </select>            
             </div>
@@ -660,10 +661,11 @@
       $('#productosModal').modal('hide');
   }
 
+  const dte_seleccionado = document.getElementById('tipo_documento_select').value;
   // Función para agregar una fila a la tabla de productos
   function agregarProductoFilaTabla(productoId, productoText, precio_incl, cantidad, aplica_iva) {
+    const tipo_dte = document.getElementById('tipo_documento_select').value;
       // Calcular precio neto y IVA unitario
-      const dte_seleccionado = document.getElementById('tipo_documento_select').value;
       let neto_unitario = 0;
       let iva_unitario = 0;
       let qty = 0;
@@ -673,41 +675,43 @@
       let monto_descuent = 0;
       let porcentaje_descu = 0;
       let total_precio_inc = 0;
-      porcentaje_descu = descuento_sel_item.toFixed(2)//parseFloat(descuento_item) || 0;
+
+      porcentaje_descu = descuento_sel_item.toFixed(2)
 
       //Si es consumidor final ("01") el precio debe mostrarse con iva
       qty = parseFloat(cantidad);
-      total_precio_inc = roundHalfUp( (precio_incl * qty) , 2);//parseFloat(precio_incl * qty);
-      if(dte_seleccionado == "01"){
+      total_precio_inc = roundHalfUp( (precio_incl * qty) , 2);
+      neto_unitario = roundHalfUp(precio_incl, 2);
+
+      console.log("DTE= ", tipo_dte)
+      if(tipo_dte == "01"){
         //si el producto se registro con iva desde la tabla Producto mostrar el monto sino agregar iva
-        if(aplica_iva === true){
-          neto_unitario = roundHalfUp(total_precio_inc, 2);//parseFloat(total_precio_inc).toFixed(2);
-        }else{
-          neto_unitario = roundHalfUp( (total_precio_inc * 1.13) , 2);//parseFloat(total_precio_inc * 1.13).toFixed(2);
-        }
-        iva_unitario = roundHalfUp( (neto_unitario / 1.13) , 2);//parseFloat(( (neto_unitario / 1.13) * 0.13).toFixed(2));
-        //total_neto = parseFloat((neto_unitario * qty).toFixed(2));
-        total_neto = roundHalfUp(neto_unitario , 2);//parseFloat(neto_unitario);
+        //if(aplica_iva === true){
+          //iva_unitario = roundHalfUp( (neto_unitario  * 0.13), 2);
+       // }else{
+        iva_unitario = roundHalfUp( ( (neto_unitario / 1.13) * 0.13) , 2);
+        //}
+        total_neto = roundHalfUp((neto_unitario * qty), 2);//parseFloat(neto_unitario);
         monto_descuento = (total_neto * porcentaje_descu).toFixed(2);
-        //total_incl = parseFloat((neto_unitario * qty).toFixed(2));
         total_incl = roundHalfUp( (total_neto - monto_descuento) , 2);//parseFloat( total_neto - monto_descuento).toFixed(2);
       }else{
         //si el producto se registro con iva desde la tabla Producto quitar iva sino mostrar el monto
-        if(aplica_iva === true){
-          neto_unitario = roundHalfUp( (total_precio_inc / 1.13) , 2);//parseFloat(total_precio_inc / 1.13).toFixed(2);
-        }else{
-          neto_unitario = roundHalfUp(total_precio_inc, 2);//parseFloat(total_precio_inc).toFixed(2);
-        }
+        //if(aplica_iva === true){
+          //neto_unitario = roundHalfUp(precio_incl / 1.13, 2);
+        //}else{
+          //neto_unitario = roundHalfUp(precio_incl, 2)
+        //}
         //neto_unitario = parseFloat((precio_incl / 1.13).toFixed(2));
         iva_unitario = parseFloat((neto_unitario * 0.13).toFixed(2));
-        qty = parseFloat(cantidad);
-        total_neto = parseFloat((neto_unitario).toFixed(2));
+        total_neto = parseFloat((neto_unitario * qty).toFixed(2));
         monto_descuento = (total_neto * porcentaje_descu).toFixed(2);
-        let pre_unitario_iva = parseFloat(total_precio_inc) + parseFloat(iva_unitario);
-        //total_incl = parseFloat(pre_unitario_iva * qty).toFixed(2) ;
-        total_incl = parseFloat( (pre_unitario_iva) - monto_descuento).toFixed(2) ;
+        let pre_unitario_iva = (parseFloat(total_neto) + parseFloat(iva_unitario * qty));
+        console.log("total iva= ", pre_unitario_iva, "iva unitario= ", iva_unitario * qty)
+        total_incl = parseFloat( pre_unitario_iva - monto_descuento).toFixed(2) ;
       }
-      total_iva = parseFloat((iva_unitario).toFixed(2));
+      total_iva = parseFloat((iva_unitario * qty).toFixed(2));
+
+      console.log("precio uni= ", neto_unitario)
 
       // Verificar si el producto ya está agregado (sumar cantidad si es el caso)
       var tableBody = document.querySelector('#tabla-productos tbody');
@@ -721,6 +725,7 @@
               existe = true;
           }
       });
+      
       if (existe) return;
       console.log("neto uni = ", neto_unitario)
       var row = document.createElement('tr');
@@ -744,14 +749,14 @@
 
   //redondeo hacia arriba ROUND_HALF_UP
   function roundHalfUp(value, decimals) {
-    console.log("Inicio producto round = ", value)
     var multiplier = Math.pow(10, decimals);
     return Math.round(value * multiplier) / multiplier;
-    console.log("Producto round = ", Math.round(value * multiplier) / multiplier)
   }
 
   // Actualizar los valores de una fila cuando cambia la cantidad
   function actualizarFila(input) {
+    const tipo_dte = document.getElementById('tipo_documento_select').value;
+
       let row = input.closest('tr');
       let precio_neto = parseFloat(row.querySelector('.precio-neto').textContent);
       let iva_unitario = parseFloat(row.querySelector('.iva-unitario').textContent);
@@ -762,7 +767,15 @@
       console.log("precio uni = ", precio_neto, "iva uni = ", iva_unitario, "cantidad = ", cantidad, "total neto = ", total_neto, "total iva = ", total_iva);
       //Cuando es FE el precio unitario ya incluye iva por lo que al total con iva no debe sumarle el iva unitario
       //let total_incl = ( (precio_neto + iva_unitario) * cantidad ).toFixed(2);
-      let total_incl = ( (precio_neto  * cantidad) -  descuento_item).toFixed(2);
+      let total_incl = 0;
+      if(tipo_dte == "01"){
+        total_incl = (parseFloat(total_neto) - descuento_item).toFixed(2);
+      }else{
+
+        total_incl = ( (parseFloat(total_neto) + parseFloat(total_iva)) -  descuento_item).toFixed(2);
+      }
+      
+      console.log("total neto= ", total_neto, "total iva= ", total_iva);
       row.querySelector('.total-neto').textContent = roundHalfUp(total_neto, 2);//total_neto;
       row.querySelector('.total-iva').textContent = total_iva;
       row.querySelector('.total-incl').textContent = total_incl;
@@ -811,7 +824,6 @@
     });
     
     document.getElementById("subtotal-neto").textContent = roundHalfUp(sumNeto, 2);//sumNeto.toFixed(2);
-    console.log("precio round = ", document.getElementById("subtotal-neto").textContent)
     document.getElementById("total-iva").textContent = sumIVA.toFixed(2);
     document.getElementById("total-incl").textContent = sumIncl.toFixed(2);
 
@@ -1186,7 +1198,34 @@ document.addEventListener('DOMContentLoaded', function () {
   facturasRelacionadas.push(doc);
 });
 
+async function actualizarProductos() {
+  // Obtener el valor del tipo de DTE seleccionado
+  //const tipoDTE = document.getElementById('tipo_documento_select').value || "01";
+  const tipo_dte = document.getElementById('tipo_documento_select').value;
+  console.log("dte actualizar prod: ", tipo_dte)
+  try {
+      const response = await fetch(`{% url 'obtener_listado_productos_view' %}?tipo_documento_dte=${tipo_dte}`, {
+          method: 'GET',  // Usamos GET ya que estamos obteniendo datos
+          headers: {
+              'X-Requested-With': 'XMLHttpRequest',  // Indicar que es una solicitud AJAX
+          }
+      });
+
+      if (response.ok) {
+          const html = await response.text();  // Obtener la respuesta como texto (HTML)
+
+          // Reemplazar el contenido de la tabla con los nuevos productos
+          document.querySelector('#tabla-productos-modal tbody').innerHTML = new DOMParser().parseFromString(html, 'text/html').querySelector('#tabla-productos-modal tbody').innerHTML;
+      } else {
+          console.error('Hubo un error al obtener los productos');
+      }
+  } catch (error) {
+      console.error('Error al realizar la solicitud:', error);
+  }
+}
+
 </script>
+
 {% endblock %}
 
 
