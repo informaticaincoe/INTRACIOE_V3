@@ -20,6 +20,7 @@ import { SendFormButton } from '../../../../shared/buttons/sendFormButton';
 import {
   defaulReceptorData,
   defaultEmisorData,
+  Descuentos,
   EmisorInterface,
   FacturaPorCodigoGeneracionResponse,
   ReceptorInterface,
@@ -64,7 +65,11 @@ export const GenerateDocuments = () => {
   const [retencionIva, setRetencionIva] = useState<number>(0);
   const [retencionRenta, setRetencionRenta] = useState<number>(0);
   const [tieneRetencionIva, setTieneRetencionIva] = useState<boolean>(false);
-  const [descuentoGeneral, setDescuentoGeneral] = useState<number>(0);
+  const [descuentos, setDescuentos] = useState<Descuentos>({
+    descuentoGeneral: 0,
+    descuentoGravado: 0,
+  });
+  
   const [totalAPagar, setTotalAPagar] = useState<number>(0);
   const [descuentoItem, setDescuentoItem] = useState<number>(0);
   const [facturasAjuste, setFacturasAjuste] = useState<FacturaPorCodigoGeneracionResponse[]>([]);
@@ -73,10 +78,12 @@ export const GenerateDocuments = () => {
   const navigate = useNavigate();
   const [errorReceptor, setErrorReceptor] = useState<boolean>(false);
   const [errorFormasPago, setErrorFormasPago] = useState<boolean>(false);
+  const [auxManejoPagos, setAuxManejoPagos] = useState<number>(totalAPagar);
 
   const [formData, setFormData] = useState({
     codigo: '',
   });
+  
   const toastRef = useRef<CustomToastRef>(null);
 
   const handleAccion = (
@@ -107,10 +114,10 @@ export const GenerateDocuments = () => {
   };
 
   const generarFactura = async () => {
-    let descuentos = null;
+    let descuentosItem = null;
     if (listProducts[0] && listProducts[0].descuento) {
       console.log("listProducts[0].descuento", listProducts[0].descuento)
-      descuentos = listProducts[0].descuento;
+      descuentosItem = listProducts[0].descuento;
     }
 
     const dataFECF = {
@@ -124,7 +131,7 @@ export const GenerateDocuments = () => {
       tipo_item_select: 1, //TODO: obtener segun la lista de productos de forma dinamica (bien o servicio)
       documento_seleccionado: tipoGeneracionFactura?.code ?? '', //TODO: tipo de documento relacionado
       documento_select: facturasAjuste[0]?.codigo_generacion ?? '', //TODO: id documento a relacionar
-      descuento_select: descuentos, //TODO: Descuento por item
+      descuento_select: descuentosItem, //TODO: Descuento por item
       tipo_documento_seleccionado: tipoDocumento?.code, //tipo DTE
       condicion_operacion: condicionDeOperacion, //contado, credito, otros
       observaciones: observaciones,
@@ -138,6 +145,10 @@ export const GenerateDocuments = () => {
       porcentaje_retencion_iva: (retencionIva / 100).toString(),
       fp_id: formasPagoList,
       saldo_favor_input: '0.00',
+      descuento_gravado: (descuentos.descuentoGravado/100).toString(),
+      descuento_global_input: (descuentos.descuentoGeneral/100).toString(),
+
+
     };
 
     const dataNCND = {
@@ -148,7 +159,6 @@ export const GenerateDocuments = () => {
       documento_seleccionado: tipoGeneracionFactura?.code ?? '', //TODO: tipo de documento relacionado
       documento_relacionado: facturasAjuste[0]?.codigo_generacion.toUpperCase() ?? '', //TODO: id documento a relacionar
       descuento_select: descuentos ?? '0.00', //TODO: Descuento por item
-      descuento_gravado: '0.00',
       condicion_operacion: condicionDeOperacion, //contado, credito, otros
       porcentaje_retencion_iva: (retencionIva / 100).toString(),
       retencion_iva: retencionIva.toString(),
@@ -156,33 +166,35 @@ export const GenerateDocuments = () => {
       porcentaje_retencion_renta: '0.00', //TODO: descuento por item
       retencion_renta: '0.0',
       productos_retencion_renta: '0.00', //TODO: descuento por item
-      descuento_global_input: '0.00',
       producto_id: idListProducts[0],
       num_ref: null,
       productos_ids: idListProducts,
       cantidades: cantidadListProducts, //cantidad de cada producto de la factura
+      descuento_gravado: descuentos.descuentoGravado.toString(),
+      descuento_global_input: descuentos.descuentoGeneral.toString(),
       // "retencion_renta": false,
       // "porcentaje_retencion_renta": 0.00,
     };
     console.log('dataFECF', dataFECF);
     console.log('dataNCND', dataNCND);
-    // try {
-    //   if (tipoDocumento.code == '05' || tipoDocumento.code == '06') {
-    //     const response = await generarNotaCreditoService(dataNCND)
-    //     console.log("05")
-    //     firmarFactura(response.factura_id)
-    //   }
-    //   else {
-    //     const response = await generarFacturaService(dataFECF)
-    //     console.log("otro") //TODO: nota d
 
-    //     firmarFactura(response.factura_id)
+    try {
+      if (tipoDocumento.code == '05' || tipoDocumento.code == '06') {
+        const response = await generarNotaCreditoService(dataNCND)
+        console.log("05")
+        firmarFactura(response.factura_id)
+      }
+      else {
+        const response = await generarFacturaService(dataFECF)
+        console.log("otro") //TODO: nota d
 
-    //   }
-    // }
-    // catch (error) {
-    //   console.log(error)
-    // }
+        firmarFactura(response.factura_id)
+
+      }
+    }
+    catch (error) {
+      console.log(error)
+    }
   };
 
   const firmarFactura = async (id: string) => {
@@ -199,13 +211,11 @@ export const GenerateDocuments = () => {
   const fetchFacturaARelacionar = async () => {
     try {
       const response = await getFacturaBycodigo(formData.codigo);
-
       // Verificar si ya existe
       const yaExiste = facturasAjuste.some(
         (f) => f.codigo_generacion === response.codigo_generacion
       );
       if (yaExiste) return;
-
       // Inyectar propiedades adicionales en los productos
       const facturaProcesada: FacturaPorCodigoGeneracionResponse = {
         ...response,
@@ -244,8 +254,9 @@ export const GenerateDocuments = () => {
   };
 
   const handleClickGenerarFactura = async () => {
-    if(totalAPagar != 0) {
-      setErrorFormasPago(!errorFormasPago)
+    if (auxManejoPagos != 0 ) {
+      console.log("totalAPagar", totalAPagar)
+      setErrorFormasPago(true)
       handleAccion(
         'error',
         <IoMdCloseCircle size={38} />,
@@ -255,7 +266,7 @@ export const GenerateDocuments = () => {
 
     if (receptor.id == "") {
       console.log("pago", formasPagoList)
-      setErrorReceptor(!errorReceptor)
+      setErrorReceptor(true)
       handleAccion(
         'error',
         <IoMdCloseCircle size={38} />,
@@ -271,7 +282,6 @@ export const GenerateDocuments = () => {
   return (
     <>
       <Title text="Generar documentos" />
-
       {/* Seccion datos del emisor */}
       <WhiteSectionsPage>
         <>
@@ -488,6 +498,8 @@ export const GenerateDocuments = () => {
               totalAPagar={totalAPagar}
               setErrorFormasPago={setErrorFormasPago}
               errorFormasPago={errorFormasPago}
+              setAuxManejoPagos={setAuxManejoPagos}
+              auxManejoPagos={auxManejoPagos}
             />
             <span className="flex flex-col items-start justify-start py-5 pt-10">
               <p className="opacity-70">Observaciones</p>
@@ -518,8 +530,8 @@ export const GenerateDocuments = () => {
             setTotalAPagar={setTotalAPagar}
             totalAPagar={totalAPagar}
             listProducts={listProducts}
-            setDescuentoGeneral={descuentoGeneral}
-            descuentoGeneral={descuentoGeneral}
+            descuentos={descuentos}
+            setDescuentos={setDescuentos}
           />
         </div>
       </WhiteSectionsPage>

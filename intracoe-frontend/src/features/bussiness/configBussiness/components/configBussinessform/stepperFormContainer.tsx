@@ -10,7 +10,16 @@ import {
   getAllEmpresas,
 } from '../../services/empresaServices';
 import { Toast } from 'primereact/toast';
-import { ActivitiesData, Ambiente, defaultEmisorData, Departamento, EmisorInterface, Municipio, TipoDocumento, TipoEstablecimiento } from '../../../../../shared/interfaces/interfaces';
+import {
+  ActivitiesData,
+  Ambiente,
+  defaultEmisorData,
+  Departamento,
+  EmisorInterface,
+  Municipio,
+  TipoDocumento,
+  TipoEstablecimiento,
+} from '../../../../../shared/interfaces/interfaces';
 import CustomStepper from './customStepper';
 
 interface CustomStepperProps extends StepperProps {
@@ -209,7 +218,7 @@ export const StepperContainer = () => {
   return (
     <WhiteSectionsPage className="mx-[20%]">
       <>
-        <CustomStepper  ref={stepperRef} >
+        <CustomStepper ref={stepperRef}>
           <StepperPanel header="Configurar factura">
             <StepperConfigBill
               formData={formData}

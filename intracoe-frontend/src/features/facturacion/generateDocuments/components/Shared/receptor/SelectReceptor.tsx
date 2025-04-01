@@ -22,15 +22,15 @@ import {
 interface StepperProps {
   receptor: ReceptorInterface;
   setReceptor: (receptor: ReceptorInterface) => void;
-  errorReceptor: boolean,
-  setErrorReceptor: any
+  errorReceptor: boolean;
+  setErrorReceptor: any;
 }
 
 export const SelectReceptor: React.FC<StepperProps> = ({
   receptor,
   setReceptor,
   errorReceptor,
-  setErrorReceptor
+  setErrorReceptor,
 }) => {
   const [receptoresList, setReceptoreLists] = useState<ReceptorInterface[]>([]);
   const [visibleModal, setVisibleModal] = useState(false);
@@ -77,11 +77,10 @@ export const SelectReceptor: React.FC<StepperProps> = ({
     setReceptor({ ...receptor, tipo_documento: value });
   };
 
-  const hadleChange = (value:any)=>{
-    setReceptor(value) 
-    if(errorReceptor)
-      setErrorReceptor(!errorReceptor)
-  }
+  const hadleChange = (value: any) => {
+    setReceptor(value);
+    if (errorReceptor) setErrorReceptor(!errorReceptor);
+  };
 
   return (
     <>
@@ -93,10 +92,9 @@ export const SelectReceptor: React.FC<StepperProps> = ({
           <Dropdown
             id={receptor.id}
             value={receptor}
-            onChange={(e: { value: any }) => { 
-              hadleChange(e.value)
+            onChange={(e: { value: any }) => {
+              hadleChange(e.value);
             }}
-            
             options={receptoresList}
             optionLabel="nombre"
             placeholder="Seleccione un receptor"
@@ -109,7 +107,9 @@ export const SelectReceptor: React.FC<StepperProps> = ({
             Añadir nuevo receptor
           </button>
         </div>
-        {errorReceptor && <p className='text-red'>Campo receptor no debe estar vacio</p>}
+        {errorReceptor && (
+          <p className="text-red">Campo receptor no debe estar vacio</p>
+        )}
       </div>
       <Dialog
         header={<p className="text-xl">Nuevo receptor</p>}

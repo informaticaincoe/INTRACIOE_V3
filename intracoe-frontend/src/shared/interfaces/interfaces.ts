@@ -296,3 +296,9 @@ export interface TipoGeneracionFactura {
   name: string;
   code: string;
 }
+
+
+export interface Descuentos {
+  descuentoGeneral: number;
+  descuentoGravado: number;
+}

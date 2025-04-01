@@ -12,21 +12,28 @@ import styles from './formasDePagoCustom.module.css';
 import { getAllMetodosDePago } from '../../../../services/configuracionFactura/configuracionFacturaService';
 import { InputText } from 'primereact/inputtext';
 import { FaXmark } from 'react-icons/fa6';
-import CustomToast, { CustomToastRef, ToastSeverity } from '../../../../../../../shared/toast/customToast';
+import CustomToast, {
+  CustomToastRef,
+  ToastSeverity,
+} from '../../../../../../../shared/toast/customToast';
 import { IoMdCloseCircle } from 'react-icons/io';
 
 interface FormasdePagoFormProps {
   setFormasPagoList: any;
   totalAPagar: number;
   setErrorFormasPago: any;
-  errorFormasPago: boolean
+  errorFormasPago: boolean;
+  setAuxManejoPagos:any;
+  auxManejoPagos:any
 }
 
 export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
   setFormasPagoList,
   totalAPagar,
   setErrorFormasPago,
-  errorFormasPago
+  errorFormasPago,
+  setAuxManejoPagos,
+  auxManejoPagos
 }) => {
   const [listFormasdePago, setListFormasdePago] = useState<
     PaymentMethodInteface[]
@@ -36,8 +43,7 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
   const [plazosList, setPlazosList] = useState<any[]>([]);
   const [selectedPlazosList, setSelectedPlazosList] = useState<number>(1);
   const [infoPagoLista, setInfoPagoLista] = useState<any[]>([]);
-  const [auxManejoPagos, setAuxManejoPagos] = useState<number>(totalAPagar)
-  const [erorReferencia, setErorReferencia] = useState<boolean>(false)
+  const [erorReferencia, setErorReferencia] = useState<boolean>(false);
   const [formData, setFormData] = useState({
     id: 0,
     idTipoPago: 0,
@@ -77,7 +83,6 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
     setAuxManejoPagos(totalAPagar);
   }, [totalAPagar]);
 
-
   const fetchFormasDePagoList = async () => {
     const response = await getAllMetodosDePago();
     setListFormasdePago(response);
@@ -98,17 +103,16 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
   const handleChange = (
     e: InputNumberValueChangeEvent | React.ChangeEvent<HTMLInputElement>
   ) => {
-    console.log("e", e)
+    console.log('e', e);
     const newValue = Number(e.target.value);
     setFormData({ ...formData, [e.target.name]: newValue });
   };
-
 
   const onClick = () => {
     if (paymentSelected) {
       // Verifica si requiere referencia y está vacía
       if (paymentSelected.codigo !== '01' && !formData.referecia) {
-        setErrorFormasPago(true)
+        setErrorFormasPago(true);
         setErorReferencia(true);
         return;
       }
@@ -125,7 +129,9 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
             id: new Date().getTime(),
           },
         ]);
-        setAuxManejoPagos(Math.round((auxManejoPagos - formData.montoPago) * 100) / 100);
+        setAuxManejoPagos(
+          Math.round((auxManejoPagos - formData.montoPago) * 100) / 100
+        );
         if (auxManejoPagos - formData.montoPago == 0 && errorFormasPago)
           setErrorFormasPago(false);
       } else {
@@ -149,14 +155,11 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
     }
   };
 
-
-
   const deleteFromList = (e: any) => {
     console.log(e);
-    setAuxManejoPagos(auxManejoPagos + e.montoPago)
+    setAuxManejoPagos(auxManejoPagos + e.montoPago);
     // Filtra la lista infoPagoLista para eliminar el item cuyo id coincide con e.id
     setInfoPagoLista(infoPagoLista.filter((pago) => pago.id !== e.id));
-
   };
 
   return (
@@ -176,8 +179,11 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
               className={`w-full text-start ${errorFormasPago ? 'p-invalid' : ''} `}
               filter
             />
-            {errorFormasPago && <p className='text-red text-start'>Campo formas de pago no debe estar vacio o incompleto</p>}
-
+            {errorFormasPago && (
+              <p className="text-red text-start">
+                Campo formas de pago no debe estar vacio o incompleto
+              </p>
+            )}
           </div>
 
           {/* Formulario pagos */}
@@ -223,7 +229,9 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
                         className={`${erorReferencia && 'p-invalid'}`}
                       />
                     </div>
-                    {erorReferencia && <p className='text-red text-start'>Campo obligatorio</p>}
+                    {erorReferencia && (
+                      <p className="text-red text-start">Campo obligatorio</p>
+                    )}
                   </span>
                 )}
                 <span className="flex flex-col pb-5">
@@ -255,11 +263,13 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
                         className={`md:w-14rem font-display flex w-full gap-2 bg-none text-start text-nowrap ${styles.inputWrapper}`}
                       />
                     </span>
-
                   </div>
                 </span>
                 <span className="flex justify-between gap-5">
-                  <button className="border-primary-blue text-primary-blue w-full rounded-md border py-2" onClick={handlePagoCompleto}>
+                  <button
+                    className="border-primary-blue text-primary-blue w-full rounded-md border py-2"
+                    onClick={handlePagoCompleto}
+                  >
                     Pago completo
                   </button>
                   <button
@@ -270,7 +280,9 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
                     Añadir
                   </button>
                 </span>
-                <p className='text-start pt-5'>Falta a pagar: $ {(Math.round(auxManejoPagos * 100) / 100)}</p>
+                <p className="pt-5 text-start">
+                  Falta a pagar: $ {Math.round(auxManejoPagos * 100) / 100}
+                </p>
               </div>
 
               {infoPagoLista && infoPagoLista.length > 0 && (
@@ -294,7 +306,7 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
                           <p className="opacity-70">{pago.descripcion}</p>{' '}
                           {/* Asegúrate de usar el campo correcto */}
                           <p className="text-2xl font-semibold">
-                            $ {pago.montoPago}
+                            $ {parseFloat(pago.montoPago)}
                           </p>{' '}
                           {/* Asegúrate de usar el campo correcto */}
                           <p className="opacity-70">{pago.referecia}</p>{' '}

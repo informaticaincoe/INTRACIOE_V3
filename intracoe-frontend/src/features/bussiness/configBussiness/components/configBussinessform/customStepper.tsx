@@ -6,7 +6,11 @@ interface CustomStepperProps extends StepperProps {
 }
 
 const CustomStepper = forwardRef<Stepper, CustomStepperProps>((props, ref) => {
-  return <Stepper ref={ref} {...props}>{props.children}</Stepper>;
+  return (
+    <Stepper ref={ref} {...props}>
+      {props.children}
+    </Stepper>
+  );
 });
 
 export default CustomStepper;

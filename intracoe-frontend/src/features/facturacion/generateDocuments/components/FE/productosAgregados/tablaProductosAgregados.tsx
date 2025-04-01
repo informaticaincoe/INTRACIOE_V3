@@ -12,6 +12,7 @@ import { ModalEliminarItemDeLista } from '../../Shared/modal/modalEliminarItemDe
 import { ModalAgregarTributo } from '../../Shared/modal/modalAgregarTributo';
 import { getAllDescuentos } from '../../../services/productos/productosServices';
 import { Dropdown } from 'primereact/dropdown';
+import { Descuento } from '../../../../../../shared/interfaces/interfaces';
 
 interface TablaProductosAgregadosProps {
   listProducts: ProductosTabla[];
@@ -30,7 +31,7 @@ export const TablaProductosAgregados: React.FC<
   listProducts,
   setCantidadListProducts,
   setIdListProducts,
-  tipoDte
+  tipoDte,
 }) => {
     const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
     const [rowClick] = useState<boolean>(true);
@@ -46,7 +47,6 @@ export const TablaProductosAgregados: React.FC<
     useEffect(() => {
       const auxId = listProducts.map((product) => product.id);
       const auxCantidad = listProducts.map((product) => product.cantidad);
-      console.log(tipoDte)
 
       setCantidadListProducts(auxCantidad);
       setIdListProducts(auxId);
@@ -79,7 +79,7 @@ export const TablaProductosAgregados: React.FC<
       setListProducts((prevProducts: any[]) =>
         prevProducts.map((product) =>
           product.id === productId
-            ? { ...product, descuento: value }  // Guardamos solo el porcentaje
+            ? { ...product, descuento: value }
             : product
         )
       );
@@ -100,8 +100,6 @@ export const TablaProductosAgregados: React.FC<
         // Verificar si el producto no está en selectedProducts
         return !selectedProducts.some((item) => product.id === item.id);
       });
-
-      console.log('filterList', filterList);
       setListProducts(filterList); // Actualizar la lista de productos
       setSelectedProducts([]); // Limpiar los productos seleccionados
       setVisibleDeleteModal(false);
@@ -112,13 +110,14 @@ export const TablaProductosAgregados: React.FC<
         const response = await getAllDescuentos();
         setDescuentosList(response);
 
-        // Aquí se asigna el descuento, si no tiene uno, se asigna el primer descuento o "0.00"
+        // Solo asignas si ya existían productos (evitar reescritura innecesaria)
         setListProducts((prevProducts: any[]) =>
           prevProducts.map((product) => ({
             ...product,
-            descuento: product.descuento ?? response[0]?.porcentaje ?? "0.00", // Asignar el primer porcentaje si no hay descuento
+            descuento: product.descuento ?? "0",
           }))
         );
+
       } catch (error) {
         console.log(error);
       }
@@ -181,23 +180,23 @@ export const TablaProductosAgregados: React.FC<
             field="descripcion"
             header={<p className="text-sm">PRODUCTO</p>}
           ></Column>
-          {tipoDte.code == '03' &&
-
+          {tipoDte.code == '03' && (
             <Column
-              body={(rowData: ProductosTabla) => <p>$ {rowData.precio_unitario}</p>}
+              body={(rowData: ProductosTabla) => (
+                <p>$ {rowData.precio_unitario}</p>
+              )}
               header={<p className="text-sm">PRECIO UNITARIO</p>}
             ></Column>
-          }
-          {tipoDte.code == '03' &&
-
+          )}
+          {tipoDte.code == '03' && (
             <Column
               body={(rowData: ProductosTabla) => (
                 <p>$ {rowData.iva_unitario.toFixed(2)}</p>
               )}
               header={<p className="text-sm">IVA UNITARIO</p>}
             ></Column>
-          }
-          {tipoDte.code == '01' &&
+          )}
+          {tipoDte.code == '01' && (
             <Column
               body={(rowData: ProductosTabla) => {
                 const precio = parseFloat(rowData.precio_unitario as any);
@@ -207,7 +206,7 @@ export const TablaProductosAgregados: React.FC<
               }}
               header={<p className="text-sm">PRECIO UNITARIO</p>}
             />
-          }
+          )}
           <Column
             header={<p className="text-sm">CANTIDAD</p>}
             body={(rowData: ProductosTabla) => (
@@ -224,14 +223,13 @@ export const TablaProductosAgregados: React.FC<
             header={<p className="text-sm">DESCUENTO</p>}
             body={(rowData: ProductosTabla) => (
               <Dropdown
-                value={rowData.descuento}  // El valor seleccionado del descuento, inicialmente puede ser "0.00" o el porcentaje
-                onChange={(e) => handleDescuentoChange(e.value, rowData.id)}  // Asigna el porcentaje seleccionado
-                options={descuentosList}  // Lista de descuentos disponibles
-                optionLabel="porcentaje"  // Mostrar el porcentaje en el dropdown
-                optionValue="porcentaje"  // El valor seleccionado será el porcentaje
+                value={rowData.descuento}
+                onChange={(e) => handleDescuentoChange(e.value, rowData.id)}
+                options={descuentosList.map((d) => d.porcentaje)} // sólo porcentajes
                 placeholder="Seleccione un descuento"
                 className="md:w-14rem w-full"
               />
+
             )}
           />
 
