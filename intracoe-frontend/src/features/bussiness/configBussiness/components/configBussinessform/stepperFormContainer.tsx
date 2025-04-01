@@ -213,18 +213,18 @@ export const StepperContainer = () => {
     }
   };
 
-  useEffect(()=>{
-    fetchInformacionEmpresa()
-  },[])
+  useEffect(() => {
+    fetchInformacionEmpresa();
+  }, []);
 
-  const fetchInformacionEmpresa = async() => {
+  const fetchInformacionEmpresa = async () => {
     try {
-      const response = await getAllEmpresas()
-      console.log("response", response)
+      const response = await getAllEmpresas();
+      console.log('response', response);
     } catch (error) {
-      console.log(error)
-    } 
-  }
+      console.log(error);
+    }
+  };
 
   return (
     <WhiteSectionsPage className="mx-[20%]">

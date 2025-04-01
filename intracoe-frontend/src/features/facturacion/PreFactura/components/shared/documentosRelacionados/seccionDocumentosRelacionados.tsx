@@ -1,18 +1,22 @@
 export const SeccionDocumentosRelacionados = () => {
-    return (
-        <>
-            <div className="py-5">
-                <h1 className="uppercase font-bold">Documentos relacionados</h1>
-                <table className="table-fixed border-2 w-full border-border-color text-start rounded-md">
-                    <thead className="rounded-md">
-                        <tr>
-                            <td className=" p-2 border-r-2 border-border-color">Tipo de documento:</td>
-                            <td className="p-2 border-r-2 border-border-color">N° documento:</td>
-                            <td className="p-2">Fecha del documento:</td>
-                        </tr>
-                    </thead>
-                </table>
-            </div>
-        </>
-    )
-}
+  return (
+    <>
+      <div className="py-5">
+        <h1 className="font-bold uppercase">Documentos relacionados</h1>
+        <table className="border-border-color w-full table-fixed rounded-md border-2 text-start">
+          <thead className="rounded-md">
+            <tr>
+              <td className="border-border-color border-r-2 p-2">
+                Tipo de documento:
+              </td>
+              <td className="border-border-color border-r-2 p-2">
+                N° documento:
+              </td>
+              <td className="p-2">Fecha del documento:</td>
+            </tr>
+          </thead>
+        </table>
+      </div>
+    </>
+  );
+};

@@ -28,7 +28,6 @@ function App() {
           <Route path="/empresa" element={<ConfigBussiness />} />
           <Route path="/uploadExcel" element={<UploadExcelPage />} />
         </Route>
-
       </Routes>
     </BrowserRouter>
   );

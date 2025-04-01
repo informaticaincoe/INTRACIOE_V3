@@ -11,15 +11,23 @@ import { RadioButton, RadioButtonChangeEvent } from 'primereact/radiobutton';
 import { SelectDepartmentComponent } from '../../../../../../shared/Select/selectDepartmentComponent';
 import { SelectMunicipios } from '../../../../../../shared/Select/selectMunicipios';
 import { getAllReceptor } from '../../../services/receptor/receptorServices';
-import { ActivitiesData, Departamento, Municipio, ReceptorInterface, TipoDocumento } from '../../../../../../shared/interfaces/interfaces';
-
+import {
+  ActivitiesData,
+  Departamento,
+  Municipio,
+  ReceptorInterface,
+  TipoDocumento,
+} from '../../../../../../shared/interfaces/interfaces';
 
 interface StepperProps {
-  receptor: ReceptorInterface,
-  setReceptor:(receptor:ReceptorInterface) => void
+  receptor: ReceptorInterface;
+  setReceptor: (receptor: ReceptorInterface) => void;
 }
 
-export const SelectReceptor:React.FC<StepperProps> = ({receptor, setReceptor}) => {
+export const SelectReceptor: React.FC<StepperProps> = ({
+  receptor,
+  setReceptor,
+}) => {
   const [receptoresList, setReceptoreLists] = useState<ReceptorInterface[]>([]);
   const [visibleModal, setVisibleModal] = useState(false);
   const [tipoIdDocumento, setTipoIdDocumento] = useState<{
@@ -30,17 +38,15 @@ export const SelectReceptor:React.FC<StepperProps> = ({receptor, setReceptor}) =
   const stepperRef = useRef<Stepper | null>(null); // TODO: Tipar correctamente el ref
 
   useEffect(() => {
-    fetchReceptores()
+    fetchReceptores();
   }, []);
-
 
   const fetchReceptores = async () => {
     try {
-      const response = await getAllReceptor()
+      const response = await getAllReceptor();
       setReceptoreLists(response);
-    }
-    catch (error) {
-      console.log(error)
+    } catch (error) {
+      console.log(error);
     }
   };
 

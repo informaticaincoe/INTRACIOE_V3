@@ -20,7 +20,7 @@ export const DropDownTipoDte: React.FC<
   const fetchTipoDte = async () => {
     try {
       const response = await getAllTipoDte();
-      console.log("response", response)
+      console.log('response', response);
       setTipoDteTempLista(
         response.map((documento: { descripcion: any; codigo: any }) => ({
           name: documento.descripcion, // Texto que se muestra en la lista
@@ -30,15 +30,13 @@ export const DropDownTipoDte: React.FC<
       setTipoDocumento({
         name: response[0].descripcion, // Texto que se muestra en la lista
         code: response[0].codigo, // Valor que se asigna al seleccionar una opción
-    });
-
+      });
     } catch (error) {
       console.log(error);
     }
   };
 
   return (
-
     <Dropdown
       value={tipoDocumento} // El valor seleccionado actualmente (ahora es el id del tipo de documento)
       onChange={(e: { value: any }) => setTipoDocumento(e.value)} // Actualiza el estado con el tipo de documento seleccionado

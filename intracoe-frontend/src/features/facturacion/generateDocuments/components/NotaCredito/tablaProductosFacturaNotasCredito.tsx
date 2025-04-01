@@ -16,7 +16,9 @@ interface ProductosAAnular {
 
 export const TablaProductosFacturaNotasCredito = ({}) => {
   const [products, setProducts] = useState<ProductosTabla[]>();
-  const [selectedProductos, setSelectedProductos] = useState<ProductosTabla[]>([]); // Productos seleccionados
+  const [selectedProductos, setSelectedProductos] = useState<ProductosTabla[]>(
+    []
+  ); // Productos seleccionados
   const [descripcionAnulacion, setDescripcionAnulacion] = useState<{
     [key: string]: string;
   }>({}); // Descripciones por producto

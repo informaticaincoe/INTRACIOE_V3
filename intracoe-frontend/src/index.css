@@ -6,7 +6,6 @@
   font-family: 'Inter', sans-serif;
 }
 
-
 @layer base {
   img {
     @apply inline-block;
@@ -69,7 +68,6 @@ input::file-selector-button {
   left: 0;
   width: 100%;
 }
-
 
 @theme {
   --color-primary-yellow: #fca94e;
