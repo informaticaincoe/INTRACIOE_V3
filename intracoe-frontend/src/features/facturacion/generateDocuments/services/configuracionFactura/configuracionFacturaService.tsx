@@ -5,7 +5,7 @@ const BASEURL = import.meta.env.VITE_URL_BASE;
 export const getAllTipoDte = async () => {
   try {
     const response = await axios.get(`${BASEURL}/tipo-dte/`);
-    console.log(response)
+    console.log(response);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -15,44 +15,44 @@ export const getAllTipoDte = async () => {
 export const getAllCondicionDeOperacion = async () => {
   try {
     const response = await axios.get(`${BASEURL}/condicion-operacion/`);
-    return response.data
+    return response.data;
   } catch (error) {
-    throw new Error()
+    throw new Error();
   }
-}
+};
 
-export const getCondicionDeOperacionById = async (id:number) =>{
+export const getCondicionDeOperacionById = async (id: number) => {
   try {
     const response = await axios.get(`${BASEURL}/condicion-operacion/${id}/`);
-    return response.data
+    return response.data;
   } catch (error) {
-    throw new Error()
+    throw new Error();
   }
-}
+};
 
 export const getAllModelosDeFacturacion = async () => {
   try {
     const response = await axios.get(`${BASEURL}/modelo-facturacion/`);
-    return response.data
+    return response.data;
   } catch (error) {
-    throw new Error()
+    throw new Error();
   }
-}
+};
 
 export const getAllTipoTransmision = async () => {
   try {
     const response = await axios.get(`${BASEURL}/tipo-transmision/`);
-    return response.data
+    return response.data;
   } catch (error) {
-    throw new Error()
+    throw new Error();
   }
-}
+};
 
-export const getAllMetodosDePago = async () =>{
+export const getAllMetodosDePago = async () => {
   try {
     const response = await axios.get(`${BASEURL}/formas-pago/`);
-    return response.data
+    return response.data;
   } catch (error) {
-    console.log(error)
+    console.log(error);
   }
-}
+};

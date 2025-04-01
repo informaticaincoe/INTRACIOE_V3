@@ -5,8 +5,10 @@ const BASEURL = import.meta.env.VITE_URL_BASE;
 
 export const generarFacturaService = async (id: string) => {
   try {
-    const response = await axios.get<FacturaResponse>(`${BASEURL}/factura_pdf/${id}/`);
-    console.log("response factura API", response)
+    const response = await axios.get<FacturaResponse>(
+      `${BASEURL}/factura_pdf/${id}/`
+    );
+    console.log('response factura API', response);
     return {
       emisor: response.data.json_original.emisor,
       receptor: response.data.json_original.receptor,
@@ -16,7 +18,7 @@ export const generarFacturaService = async (id: string) => {
         numeroControl: response.data.numero_control,
         fechaEmision: response.data.fecha_emision,
         horaEmision: response.data.hora_emision,
-        selloRemision: response.data.sello_recepcion
+        selloRemision: response.data.sello_recepcion,
       },
       productos: response.data.json_original.cuerpoDocumento,
       resumen: {
@@ -39,17 +41,17 @@ export const generarFacturaService = async (id: string) => {
         saldoFavor: response.data.saldo_favor,
         condicionOperacion: response.data.condicion_operacion,
         pagos: response.data.formas_Pago,
-        numPagoElectronico: response.data.json_original.resumen.numPagoElectronico,
+        numPagoElectronico:
+          response.data.json_original.resumen.numPagoElectronico,
         tributos: response.data.json_original.resumen.tributos,
-        totalLetras: response.data.total_letras
-
+        totalLetras: response.data.total_letras,
       },
       pagoEnLetras: response.data.total_letras,
       condicionOpeacion: response.data.condicion_operacion,
-      extension: response.data.json_original.extension
+      extension: response.data.json_original.extension,
     };
   } catch (error) {
-    console.log(error)
+    console.log(error);
     throw new Error();
   }
 };

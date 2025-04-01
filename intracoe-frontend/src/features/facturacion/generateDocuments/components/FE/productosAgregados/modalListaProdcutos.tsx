@@ -5,7 +5,10 @@ import { DataTable } from 'primereact/datatable';
 import { Dialog } from 'primereact/dialog';
 import { useEffect, useState } from 'react';
 import { defaultProductosData, ProductosTabla } from './productosData';
-import { InputNumber, InputNumberValueChangeEvent } from 'primereact/inputnumber';
+import {
+  InputNumber,
+  InputNumberValueChangeEvent,
+} from 'primereact/inputnumber';
 import { getAllProducts } from '../../../services/productos/productosServices';
 import { SendFormButton } from '../../../../../../shared/buttons/sendFormButton';
 
@@ -13,31 +16,33 @@ interface ModalListProductsInterface {
   visible: any;
   setVisible: any;
   setListProducts: any;
-
 }
 
 export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
   visible,
   setVisible,
-  setListProducts
+  setListProducts,
 }) => {
-  const [products, setProducts] = useState<ProductosTabla[]>([defaultProductosData]);
-  const [selectedProducts, setSelectedProducts] = useState<ProductosTabla[]>([]);
+  const [products, setProducts] = useState<ProductosTabla[]>([
+    defaultProductosData,
+  ]);
+  const [selectedProducts, setSelectedProducts] = useState<ProductosTabla[]>(
+    []
+  );
 
   useEffect(() => {
-    fetchProductos()
-  }, [])
-
+    fetchProductos();
+  }, []);
 
   const fetchProductos = async () => {
     try {
-      const response = await getAllProducts()
+      const response = await getAllProducts();
       const productos = response.map((product) => {
         const cantidadInicial = 1;
         const precioUnitario = product.preunitario;
         const ivaUnitario = precioUnitario * 0.13;
         const totalNeto = precioUnitario * cantidadInicial;
-        const totalIVA = (ivaUnitario) * cantidadInicial;
+        const totalIVA = ivaUnitario * cantidadInicial;
         const totalConIVA = totalNeto + totalIVA;
 
         return {
@@ -48,7 +53,7 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
           cantidad: cantidadInicial,
           no_grabado: false,
           descuento: null,
-          descuentoValor: "0.0",
+          descuentoValor: '0.0',
           iva_unitario: ivaUnitario,
           total_neto: totalNeto,
           total_iva: totalIVA,
@@ -59,15 +64,15 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
         };
       });
 
-      console.log("productos response", response)
+      console.log('productos response', response);
 
-      console.log("productos", productos)
+      console.log('productos', productos);
 
-      setProducts(productos)
+      setProducts(productos);
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
 
   // Función para manejar cambios en la cantidad
   const handleCantidadChange = (
@@ -83,7 +88,6 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
 
     setProducts(updatedProducts);
   };
-
 
   // Función para manejar la selección de productos
   const handleSelectChange = (
@@ -101,7 +105,7 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
 
   const guardarProductos = (selectedProducts: ProductosTabla[]) => {
     // Aquí aseguramos que cada producto tenga un valor de descuento predeterminado
-    const productosConDescuento = selectedProducts.map(product => ({
+    const productosConDescuento = selectedProducts.map((product) => ({
       ...product,
       descuento: product.descuento || 2, // Si no tiene descuento, se asigna 0 (o el valor que desees)
     }));
@@ -109,13 +113,19 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
     setListProducts(productosConDescuento);
   };
 
-
   const footerContent = (
     <div>
-      <SendFormButton onClick={() => guardarProductos(selectedProducts)} text='Agregar' className='bg-primary-blue text-white px-10' />
+      <SendFormButton
+        onClick={() => guardarProductos(selectedProducts)}
+        text="Agregar"
+        className="bg-primary-blue px-10 text-white"
+      />
 
-      <SendFormButton onClick={() => setVisible(false)} text='Cerrar' className='border border-primary-blue px-10' />
-
+      <SendFormButton
+        onClick={() => setVisible(false)}
+        text="Cerrar"
+        className="border-primary-blue border px-10"
+      />
     </div>
   );
 
@@ -164,7 +174,9 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
           body={(rowData: ProductosTabla, { rowIndex }: any) => (
             <InputNumber
               value={rowData.cantidad}
-              onValueChange={(e: InputNumberValueChangeEvent) => handleCantidadChange(e, rowIndex)}
+              onValueChange={(e: InputNumberValueChangeEvent) =>
+                handleCantidadChange(e, rowIndex)
+              }
               className="w-[5rem]"
               min={1}
             />

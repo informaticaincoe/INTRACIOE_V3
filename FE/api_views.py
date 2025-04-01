@@ -13,7 +13,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from FE.views import enviar_factura_invalidacion_hacienda_view, firmar_factura_anulacion_view, invalidacion_dte_view, generar_json, num_to_letras, agregar_formas_pago_api, generar_json_contingencia, generar_json_doc_ajuste
 
-from .serializers import ActividadEconomicaSerializer, AmbienteSerializer, CondicionOperacionSerializer, DepartamentoSerializer, DescuentoSerializer, FormasPagosSerializer, ModelofacturacionSerializer, MunicipioSerializer, ProductoSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, TipoDteSerializer, TipoTransmisionSerializer, TiposDocIDReceptorSerializer, TiposEstablecimientosSerializer, TiposGeneracionDocumentoSerializer, TiposTributosSerializer, TributosSerializer
+from .serializers import ActividadEconomicaSerializer, AmbienteSerializer, CondicionOperacionSerializer, DepartamentoSerializer, DescuentoSerializer, FacturaListSerializer, FormasPagosSerializer, ModelofacturacionSerializer, MunicipioSerializer, ProductoSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, TipoDteSerializer, TipoTransmisionSerializer, TiposDocIDReceptorSerializer, TiposEstablecimientosSerializer, TiposGeneracionDocumentoSerializer, TiposTributosSerializer, TributosSerializer
 from .models import (
     ActividadEconomica, Departamento, Emisor_fe, Municipio, Receptor_fe, FacturaElectronica, DetalleFactura,
     Ambiente, CondicionOperacion, Modelofacturacion, NumeroControl,
@@ -360,6 +360,11 @@ class FacturaDetailAPIView(generics.RetrieveAPIView):
     queryset = FacturaElectronica.objects.all()
     serializer_class = FacturaElectronicaSerializer
 
+# class FacturasAllListAPIView(generics.ListAPIView):
+#     queryset = FacturaElectronica.objects.all().order_by('-fecha_emision')
+#     serializer_class = FacturaListSerializer
+
+
 class FacturaListAPIView(APIView):
     """
     Vista API que devuelve un listado de FacturaElectronica con filtros y paginación.
@@ -437,7 +442,7 @@ class GenerarFacturaAPIView(APIView):
             nuevo_numero = NumeroControl.preview_numero_control(tipo_dte)
         else:
             nuevo_numero = ""
-
+        
         codigo_generacion = self.cod_generacion
         fecha_generacion = timezone.now().date()
         hora_generacion = timezone.now().strftime('%H:%M:%S')
@@ -494,6 +499,7 @@ class GenerarFacturaAPIView(APIView):
             numero_control = nuevo_numero
             # Generar UUID en cada solicitud POST
             codigo_generacion = str(uuid.uuid4()).upper()
+            
             print(f"Numero de control: {numero_control} Codigo generacion: {self.cod_generacion}")
             receptor_id = data.get('receptor_id', None)
             receptor = Receptor_fe.objects.get(id=receptor_id)

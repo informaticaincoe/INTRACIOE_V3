@@ -81,6 +81,20 @@ class DescuentoSerializer(serializers.ModelSerializer):
         model = Descuento
         fields = '__all__'
 
+class FacturaListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FacturaElectronica
+        fields = [
+            'id',
+            'tipo_dte',
+            'numero_control',
+            'codigo_generacion',
+            'fecha_emision',
+            'hora_emision',
+            'recibido_mh',
+            'firmado'
+        ]
+
 class FacturaElectronicaSerializer(serializers.ModelSerializer):
     # Si deseas incluir los detalles de factura, podrías anidar el serializer
     detalles = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
