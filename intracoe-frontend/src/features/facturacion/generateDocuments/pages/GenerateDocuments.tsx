@@ -1,7 +1,7 @@
 import { Divider } from 'primereact/divider';
 import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPage';
 import { Title } from '../../../../shared/text/title';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { DatosEmisorCard } from '../components/Shared/datosEmisor/datosEmisorCard';
 import { DropDownTipoDte } from '../components/Shared/configuracionFactura/tipoDocumento/DropdownTipoDte';
 import { SelectCondicionOperacion } from '../components/Shared/configuracionFactura/condicionOperacion/selectCondicionOperacion';
@@ -40,6 +40,8 @@ import { useNavigate } from 'react-router';
 import { Input } from '../../../../shared/forms/input';
 import { DropFownTipoDeDocumentoGeneracion } from '../components/NotaDebito/DropDownTipoDeDocumentoGeneracion';
 import { CheckboxBaseImponible } from '../components/Shared/configuracionFactura/baseImponible/checkboxBaseImponible';
+import CustomToast, { CustomToastRef, ToastSeverity } from '../../../../shared/toast/customToast';
+import { IoMdCloseCircle } from 'react-icons/io';
 
 export const GenerateDocuments = () => {
   const [showProductsModal, setShowProductsModal] = useState(false); //mostrar modal con lista de productos
@@ -69,10 +71,26 @@ export const GenerateDocuments = () => {
   const [tipoGeneracionFactura, setTipoGeneracionFactura] = useState<TipoGeneracionFactura | null>(null);
   const [baseImponible, setBaseImponible] = useState<boolean>(false);
   const navigate = useNavigate();
+  const [errorReceptor, setErrorReceptor] = useState<boolean>(false);
+  const [errorFormasPago, setErrorFormasPago] = useState<boolean>(false);
 
   const [formData, setFormData] = useState({
     codigo: '',
   });
+  const toastRef = useRef<CustomToastRef>(null);
+
+  const handleAccion = (
+    severity: ToastSeverity,
+    icon: any,
+    summary: string
+  ) => {
+    toastRef.current?.show({
+      severity: severity,
+      summary: summary,
+      icon: icon,
+      life: 2000,
+    });
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -148,24 +166,23 @@ export const GenerateDocuments = () => {
     };
     console.log('dataFECF', dataFECF);
     console.log('dataNCND', dataNCND);
+    // try {
+    //   if (tipoDocumento.code == '05' || tipoDocumento.code == '06') {
+    //     const response = await generarNotaCreditoService(dataNCND)
+    //     console.log("05")
+    //     firmarFactura(response.factura_id)
+    //   }
+    //   else {
+    //     const response = await generarFacturaService(dataFECF)
+    //     console.log("otro") //TODO: nota d
 
-    try {
-      if (tipoDocumento.code == '05' || tipoDocumento.code == '06') {
-        const response = await generarNotaCreditoService(dataNCND)
-        console.log("05")
-        firmarFactura(response.factura_id)
-      }
-      else {
-        const response = await generarFacturaService(dataFECF)
-        console.log("otro") //TODO: nota d
+    //     firmarFactura(response.factura_id)
 
-        firmarFactura(response.factura_id)
-
-      }
-    }
-    catch (error) {
-      console.log(error)
-    }
+    //   }
+    // }
+    // catch (error) {
+    //   console.log(error)
+    // }
   };
 
   const firmarFactura = async (id: string) => {
@@ -227,7 +244,27 @@ export const GenerateDocuments = () => {
   };
 
   const handleClickGenerarFactura = async () => {
-    generarFactura();
+    if(totalAPagar != 0) {
+      setErrorFormasPago(!errorFormasPago)
+      handleAccion(
+        'error',
+        <IoMdCloseCircle size={38} />,
+        'No se ha realizado el pago completo'
+      );
+    }
+
+    if (receptor.id == "") {
+      console.log("pago", formasPagoList)
+      setErrorReceptor(!errorReceptor)
+      handleAccion(
+        'error',
+        <IoMdCloseCircle size={38} />,
+        'Campo de receptor no debe estar vacio'
+      );
+    }
+    else {
+      generarFactura();
+    }
   };
 
   //************************************/
@@ -308,7 +345,7 @@ export const GenerateDocuments = () => {
             Seleccione el receptor
           </h1>
           <Divider className="m-0 p-0"></Divider>
-          <SelectReceptor receptor={receptor} setReceptor={setReceptor} />
+          <SelectReceptor receptor={receptor} setReceptor={setReceptor} errorReceptor={errorReceptor} setErrorReceptor={setErrorReceptor} />
         </div>
       </WhiteSectionsPage>
 
@@ -449,6 +486,8 @@ export const GenerateDocuments = () => {
             <FormasdePagoForm
               setFormasPagoList={setFormasPagoList}
               totalAPagar={totalAPagar}
+              setErrorFormasPago={setErrorFormasPago}
+              errorFormasPago={errorFormasPago}
             />
             <span className="flex flex-col items-start justify-start py-5 pt-10">
               <p className="opacity-70">Observaciones</p>
@@ -494,6 +533,7 @@ export const GenerateDocuments = () => {
           Generar factura
         </button>
       </div>
+      <CustomToast ref={toastRef} />
     </>
   );
 };

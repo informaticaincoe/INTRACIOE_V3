@@ -18,11 +18,15 @@ import { IoMdCloseCircle } from 'react-icons/io';
 interface FormasdePagoFormProps {
   setFormasPagoList: any;
   totalAPagar: number;
+  setErrorFormasPago: any;
+  errorFormasPago: boolean
 }
 
 export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
   setFormasPagoList,
-  totalAPagar
+  totalAPagar,
+  setErrorFormasPago,
+  errorFormasPago
 }) => {
   const [listFormasdePago, setListFormasdePago] = useState<
     PaymentMethodInteface[]
@@ -33,6 +37,7 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
   const [selectedPlazosList, setSelectedPlazosList] = useState<number>(1);
   const [infoPagoLista, setInfoPagoLista] = useState<any[]>([]);
   const [auxManejoPagos, setAuxManejoPagos] = useState<number>(totalAPagar)
+  const [erorReferencia, setErorReferencia] = useState<boolean>(false)
   const [formData, setFormData] = useState({
     id: 0,
     idTipoPago: 0,
@@ -42,8 +47,6 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
     plazo: {},
   });
   const toastRef = useRef<CustomToastRef>(null);
-
-
 
   const handleAccion = (
     severity: ToastSeverity,
@@ -62,7 +65,6 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
     const aux = infoPagoLista.map((pago) => {
       return pago.codigo; // Solo incluimos el campo 'codigo'
     });
-    console.log('aux', infoPagoLista);
     setFormasPagoList(aux); // Asignamos solo los objetos con 'codigo'
   }, [infoPagoLista]);
 
@@ -72,7 +74,6 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
   }, []);
 
   useEffect(() => {
-    // Cuando totalAPagar cambia, actualizamos auxManejoPagos
     setAuxManejoPagos(totalAPagar);
   }, [totalAPagar]);
 
@@ -97,6 +98,7 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
   const handleChange = (
     e: InputNumberValueChangeEvent | React.ChangeEvent<HTMLInputElement>
   ) => {
+    console.log("e", e)
     const newValue = Number(e.target.value);
     setFormData({ ...formData, [e.target.name]: newValue });
   };
@@ -104,6 +106,14 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
 
   const onClick = () => {
     if (paymentSelected) {
+      // Verifica si requiere referencia y está vacía
+      if (paymentSelected.codigo !== '01' && !formData.referecia) {
+        setErrorFormasPago(true)
+        setErorReferencia(true);
+        return;
+      }
+
+      // Verifica monto válido
       if (formData.montoPago <= auxManejoPagos) {
         setInfoPagoLista((prevState) => [
           ...prevState,
@@ -115,7 +125,9 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
             id: new Date().getTime(),
           },
         ]);
-        setAuxManejoPagos(auxManejoPagos - formData.montoPago);
+        setAuxManejoPagos(Math.round((auxManejoPagos - formData.montoPago) * 100) / 100);
+        if (auxManejoPagos - formData.montoPago == 0 && errorFormasPago)
+          setErrorFormasPago(false);
       } else {
         handleAccion(
           'error',
@@ -123,16 +135,20 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
           'El monto a pagar es mayor al total de la factura'
         );
       }
+
+      // Resetear el formulario
+      setFormData({
+        id: 0,
+        idTipoPago: 0,
+        montoPago: 0,
+        referecia: '',
+        periodo: 0,
+        plazo: {},
+      });
+      setErorReferencia(false); // resetea error de referencia
     }
-    setFormData({
-      id: 0,
-      idTipoPago: 0,
-      montoPago: 0,
-      referecia: '',
-      periodo: 0,
-      plazo: {},
-    });
   };
+
 
 
   const deleteFromList = (e: any) => {
@@ -157,9 +173,11 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
               options={listFormasdePago}
               optionLabel="descripcion"
               placeholder="Seleccionar metodo de pago"
-              className="w-full text-start"
+              className={`w-full text-start ${errorFormasPago ? 'p-invalid' : ''} `}
               filter
             />
+            {errorFormasPago && <p className='text-red text-start'>Campo formas de pago no debe estar vacio o incompleto</p>}
+
           </div>
 
           {/* Formulario pagos */}
@@ -202,8 +220,10 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           handleChange(e)
                         }
+                        className={`${erorReferencia && 'p-invalid'}`}
                       />
                     </div>
+                    {erorReferencia && <p className='text-red text-start'>Campo obligatorio</p>}
                   </span>
                 )}
                 <span className="flex flex-col pb-5">
@@ -235,6 +255,7 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
                         className={`md:w-14rem font-display flex w-full gap-2 bg-none text-start text-nowrap ${styles.inputWrapper}`}
                       />
                     </span>
+
                   </div>
                 </span>
                 <span className="flex justify-between gap-5">
@@ -249,7 +270,7 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
                     Añadir
                   </button>
                 </span>
-                <p className='text-start pt-5'>Falta a pagar: $ {(auxManejoPagos)}</p>
+                <p className='text-start pt-5'>Falta a pagar: $ {(Math.round(auxManejoPagos * 100) / 100)}</p>
               </div>
 
               {infoPagoLista && infoPagoLista.length > 0 && (
@@ -289,7 +310,6 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
         </div>
       </div>
       <CustomToast ref={toastRef} />
-
     </div>
   );
 };
