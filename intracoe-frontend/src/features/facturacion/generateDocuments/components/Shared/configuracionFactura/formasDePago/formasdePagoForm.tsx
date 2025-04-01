@@ -23,8 +23,8 @@ interface FormasdePagoFormProps {
   totalAPagar: number;
   setErrorFormasPago: any;
   errorFormasPago: boolean;
-  setAuxManejoPagos:any;
-  auxManejoPagos:any
+  setAuxManejoPagos: any;
+  auxManejoPagos: any;
 }
 
 export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
@@ -33,7 +33,7 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
   setErrorFormasPago,
   errorFormasPago,
   setAuxManejoPagos,
-  auxManejoPagos
+  auxManejoPagos,
 }) => {
   const [listFormasdePago, setListFormasdePago] = useState<
     PaymentMethodInteface[]

@@ -297,8 +297,22 @@ export interface TipoGeneracionFactura {
   code: string;
 }
 
-
 export interface Descuentos {
   descuentoGeneral: number;
   descuentoGravado: number;
 }
+
+export interface pagination {
+  has_next: boolean;
+  has_previous: boolean;
+  page: number;
+  pages: number;
+  total: number;
+}
+
+export interface TableListadoFacturasContainerProps {
+  data: any;
+  pagination: pagination;
+  onPageChange: (page: number, limit: number) => void;
+}
+

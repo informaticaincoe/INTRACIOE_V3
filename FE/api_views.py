@@ -22,7 +22,7 @@ from .models import (
 )
 from INVENTARIO.models import Producto, TipoItem, TipoTributo, Tributo
 from django.db.models import Q
-
+from django.core.paginator import Paginator  # esta sigue igual
 
 FIRMADOR_URL = "http://192.168.2.25:8113/firmardocumento/"
 DJANGO_SERVER_URL = "http://127.0.0.1:8000"
@@ -1830,4 +1830,43 @@ class FacturaPorCodigoGeneracionAPIView(APIView):
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
-    
+
+class FacturaListAPI(APIView):
+    def get(self, request):
+        queryset = FacturaElectronica.objects.all()
+
+        # Filtros
+        recibido = request.GET.get('recibido_mh')
+        codigo = request.GET.get('sello_recepcion')
+        has_codigo = request.GET.get('has_sello_recepcion')
+        tipo = request.GET.get('tipo_dte')
+        
+        if recibido in ['True', 'False']:
+            queryset = queryset.filter(recibido_mh=(recibido == 'True'))
+        if codigo:
+            queryset = queryset.filter(sello_recepcion__icontains=codigo)
+        if has_codigo == 'yes':
+            queryset = queryset.exclude(sello_recepcion__isnull=True)
+        elif has_codigo == 'no':
+            queryset = queryset.filter(sello_recepcion__isnull=True)
+        if tipo:
+            queryset = queryset.filter(tipo_dte__id=tipo)
+
+        # ✅ Paginación con nombre distinto para evitar conflicto
+        page_number = request.GET.get('page', 1)
+        paginador = Paginator(queryset, 20)
+        page_obj = paginador.get_page(page_number)
+
+        # Serialización
+        serializer = FacturaListSerializer(page_obj, many=True)
+
+        return Response({
+            "facturas": serializer.data,
+            "pagination": {
+                "page": page_obj.number,
+                "pages": paginador.num_pages,
+                "total": paginador.count,
+                "has_next": page_obj.has_next(),
+                "has_previous": page_obj.has_previous(),
+            }
+        }, status=status.HTTP_200_OK)

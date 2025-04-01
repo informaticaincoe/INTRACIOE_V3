@@ -12,7 +12,6 @@ import { ModalEliminarItemDeLista } from '../../Shared/modal/modalEliminarItemDe
 import { ModalAgregarTributo } from '../../Shared/modal/modalAgregarTributo';
 import { getAllDescuentos } from '../../../services/productos/productosServices';
 import { Dropdown } from 'primereact/dropdown';
-import { Descuento } from '../../../../../../shared/interfaces/interfaces';
 
 interface TablaProductosAgregadosProps {
   listProducts: ProductosTabla[];
@@ -33,229 +32,225 @@ export const TablaProductosAgregados: React.FC<
   setIdListProducts,
   tipoDte,
 }) => {
-    const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
-    const [rowClick] = useState<boolean>(true);
-    const [visibleDeleteModal, setVisibleDeleteModal] = useState<boolean>(false);
-    const [visibleTributoModal, setVisibleTributoModal] =
-      useState<boolean>(false);
-    const [descuentosList, setDescuentosList] = useState<any[]>([]); // variable para almacenar al lista de descuentos y mostrarla en un dropdown
+  const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
+  const [rowClick] = useState<boolean>(true);
+  const [visibleDeleteModal, setVisibleDeleteModal] = useState<boolean>(false);
+  const [visibleTributoModal, setVisibleTributoModal] =
+    useState<boolean>(false);
+  const [descuentosList, setDescuentosList] = useState<any[]>([]); // variable para almacenar al lista de descuentos y mostrarla en un dropdown
 
-    useEffect(() => {
-      fetchDescuento();
-    }, []);
+  useEffect(() => {
+    fetchDescuento();
+  }, []);
 
-    useEffect(() => {
-      const auxId = listProducts.map((product) => product.id);
-      const auxCantidad = listProducts.map((product) => product.cantidad);
+  useEffect(() => {
+    const auxId = listProducts.map((product) => product.id);
+    const auxCantidad = listProducts.map((product) => product.cantidad);
 
-      setCantidadListProducts(auxCantidad);
-      setIdListProducts(auxId);
-    }, [listProducts]);
+    setCantidadListProducts(auxCantidad);
+    setIdListProducts(auxId);
+  }, [listProducts]);
 
-    // Función para manejar cambios en la cantidad de un producto específico
-    const handleCantidadChange = (value: number | null, productId: number) => {
-      setListProducts((prevProducts: any[]) =>
-        prevProducts.map((product) => {
-          if (product.id === productId) {
-            const nuevaCantidad = value ?? 1;
-            const totalNeto = product.precio_unitario * nuevaCantidad;
-            const totalIVA = product.iva_unitario * nuevaCantidad;
-            const totalConIVA = totalNeto + totalIVA;
+  // Función para manejar cambios en la cantidad de un producto específico
+  const handleCantidadChange = (value: number | null, productId: number) => {
+    setListProducts((prevProducts: any[]) =>
+      prevProducts.map((product) => {
+        if (product.id === productId) {
+          const nuevaCantidad = value ?? 1;
+          const totalNeto = product.precio_unitario * nuevaCantidad;
+          const totalIVA = product.iva_unitario * nuevaCantidad;
+          const totalConIVA = totalNeto + totalIVA;
 
-            return {
-              ...product,
-              cantidad: nuevaCantidad,
-              total_neto: totalNeto,
-              total_iva: totalIVA,
-              total_con_iva: totalConIVA,
-            };
-          }
-          return product;
-        })
-      );
-    };
-
-    const handleDescuentoChange = (value: string, productId: number) => {
-      setListProducts((prevProducts: any[]) =>
-        prevProducts.map((product) =>
-          product.id === productId
-            ? { ...product, descuento: value }
-            : product
-        )
-      );
-    };
-
-    const handleDelete = () => {
-      console.log('selectedProducts', selectedProducts);
-      setVisibleDeleteModal(true);
-    };
-
-    const handleTributosModal = () => {
-      setVisibleTributoModal(true);
-    };
-
-    const handlerEliminarItem = () => {
-      // Filtrar los productos que NO están seleccionados
-      const filterList = listProducts.filter((product) => {
-        // Verificar si el producto no está en selectedProducts
-        return !selectedProducts.some((item) => product.id === item.id);
-      });
-      setListProducts(filterList); // Actualizar la lista de productos
-      setSelectedProducts([]); // Limpiar los productos seleccionados
-      setVisibleDeleteModal(false);
-    };
-
-    const fetchDescuento = async () => {
-      try {
-        const response = await getAllDescuentos();
-        setDescuentosList(response);
-
-        // Solo asignas si ya existían productos (evitar reescritura innecesaria)
-        setListProducts((prevProducts: any[]) =>
-          prevProducts.map((product) => ({
+          return {
             ...product,
-            descuento: product.descuento ?? "0",
-          }))
-        );
-
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-    return (
-      <>
-        {selectedProducts.length > 0 && ( // Verificar si hay productos seleccionados
-          <div className="my-5 flex justify-between rounded bg-blue-50 p-5">
-            <p className="text-blue flex items-center gap-2">
-              <FaCheckCircle className="" />
-              productos seleccionados {selectedProducts.length}
-            </p>
-            <span className="flex gap-2">
-              <button
-                className="border-red flex items-center gap-2 rounded-md border px-3 py-1 hover:cursor-pointer"
-                onClick={handleDelete}
-              >
-                <p className="text-red">Eliminar</p>
-              </button>
-              <span
-                className="border-blue flex items-center gap-2 rounded-md border px-3 py-1 hover:cursor-pointer"
-                onClick={handleTributosModal}
-              >
-                <p className="text-blue">Agregar tributo</p>
-              </span>
-            </span>
-          </div>
-        )}
-        <ModalEliminarItemDeLista
-          setVisible={setVisibleDeleteModal}
-          visible={visibleDeleteModal}
-          size={selectedProducts.length}
-          onClick={handlerEliminarItem}
-        />
-
-        <ModalAgregarTributo
-          setVisible={setVisibleTributoModal}
-          visible={visibleTributoModal}
-        />
-
-        <DataTable
-          key={tipoDte.code} // <-- esto hace que se "resetee" al cambiar tipoDte
-          value={listProducts}
-          tableStyle={{ minWidth: '50rem' }}
-          paginator
-          rows={5}
-          rowsPerPageOptions={[5, 10, 25, 50]}
-          selectionMode={rowClick ? null : 'multiple'}
-          selection={selectedProducts!}
-          onSelectionChange={(e: { value: React.SetStateAction<any[]> }) =>
-            setSelectedProducts(e.value)
-          }
-        >
-          <Column
-            selectionMode="multiple"
-            headerStyle={{ width: '3rem' }}
-          ></Column>
-          <Column
-            field="descripcion"
-            header={<p className="text-sm">PRODUCTO</p>}
-          ></Column>
-          {tipoDte.code == '03' && (
-            <Column
-              body={(rowData: ProductosTabla) => (
-                <p>$ {rowData.precio_unitario}</p>
-              )}
-              header={<p className="text-sm">PRECIO UNITARIO</p>}
-            ></Column>
-          )}
-          {tipoDte.code == '03' && (
-            <Column
-              body={(rowData: ProductosTabla) => (
-                <p>$ {rowData.iva_unitario.toFixed(2)}</p>
-              )}
-              header={<p className="text-sm">IVA UNITARIO</p>}
-            ></Column>
-          )}
-          {tipoDte.code == '01' && (
-            <Column
-              body={(rowData: ProductosTabla) => {
-                const precio = parseFloat(rowData.precio_unitario as any);
-                const iva = parseFloat(rowData.iva_unitario as any);
-                const total = (precio + iva).toFixed(2);
-                return <p>$ {total}</p>;
-              }}
-              header={<p className="text-sm">PRECIO UNITARIO</p>}
-            />
-          )}
-          <Column
-            header={<p className="text-sm">CANTIDAD</p>}
-            body={(rowData: ProductosTabla) => (
-              <InputNumber
-                inputId="withoutgrouping"
-                value={rowData.cantidad}
-                onValueChange={(e: InputNumberValueChangeEvent) =>
-                  handleCantidadChange(e.value ?? 0, rowData.id)
-                }
-              />
-            )}
-          />
-          <Column
-            header={<p className="text-sm">DESCUENTO</p>}
-            body={(rowData: ProductosTabla) => (
-              <Dropdown
-                value={rowData.descuento}
-                onChange={(e) => handleDescuentoChange(e.value, rowData.id)}
-                options={descuentosList.map((d) => d.porcentaje)} // sólo porcentajes
-                placeholder="Seleccione un descuento"
-                className="md:w-14rem w-full"
-              />
-
-            )}
-          />
-
-          <Column
-            body={(rowData: ProductosTabla) => <p>$ {rowData.total_tributos}</p>}
-            header={<p className="text-sm uppercase">TOTAL tributos</p>}
-          ></Column>
-          <Column
-            body={(rowData: ProductosTabla) => (
-              <p>$ {rowData.total_neto.toFixed(2)}</p>
-            )}
-            header={<p className="text-sm">TOTAL NETO</p>}
-          />
-          <Column
-            body={(rowData: ProductosTabla) => (
-              <p>$ {rowData.total_iva.toFixed(2)}</p>
-            )}
-            header={<p className="text-sm">TOTAL IVA</p>}
-          />
-          <Column
-            body={(rowData: ProductosTabla) => (
-              <p>$ {rowData.total_con_iva.toFixed(2)}</p>
-            )}
-            header={<p className="text-sm">TOTAL CON IVA</p>}
-          />
-        </DataTable>
-      </>
+            cantidad: nuevaCantidad,
+            total_neto: totalNeto,
+            total_iva: totalIVA,
+            total_con_iva: totalConIVA,
+          };
+        }
+        return product;
+      })
     );
   };
+
+  const handleDescuentoChange = (value: string, productId: number) => {
+    setListProducts((prevProducts: any[]) =>
+      prevProducts.map((product) =>
+        product.id === productId ? { ...product, descuento: value } : product
+      )
+    );
+  };
+
+  const handleDelete = () => {
+    console.log('selectedProducts', selectedProducts);
+    setVisibleDeleteModal(true);
+  };
+
+  const handleTributosModal = () => {
+    setVisibleTributoModal(true);
+  };
+
+  const handlerEliminarItem = () => {
+    // Filtrar los productos que NO están seleccionados
+    const filterList = listProducts.filter((product) => {
+      // Verificar si el producto no está en selectedProducts
+      return !selectedProducts.some((item) => product.id === item.id);
+    });
+    setListProducts(filterList); // Actualizar la lista de productos
+    setSelectedProducts([]); // Limpiar los productos seleccionados
+    setVisibleDeleteModal(false);
+  };
+
+  const fetchDescuento = async () => {
+    try {
+      const response = await getAllDescuentos();
+      setDescuentosList(response);
+
+      // Solo asignas si ya existían productos (evitar reescritura innecesaria)
+      setListProducts((prevProducts: any[]) =>
+        prevProducts.map((product) => ({
+          ...product,
+          descuento: product.descuento ?? '0',
+        }))
+      );
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  return (
+    <>
+      {selectedProducts.length > 0 && ( // Verificar si hay productos seleccionados
+        <div className="my-5 flex justify-between rounded bg-blue-50 p-5">
+          <p className="text-blue flex items-center gap-2">
+            <FaCheckCircle className="" />
+            productos seleccionados {selectedProducts.length}
+          </p>
+          <span className="flex gap-2">
+            <button
+              className="border-red flex items-center gap-2 rounded-md border px-3 py-1 hover:cursor-pointer"
+              onClick={handleDelete}
+            >
+              <p className="text-red">Eliminar</p>
+            </button>
+            <span
+              className="border-blue flex items-center gap-2 rounded-md border px-3 py-1 hover:cursor-pointer"
+              onClick={handleTributosModal}
+            >
+              <p className="text-blue">Agregar tributo</p>
+            </span>
+          </span>
+        </div>
+      )}
+      <ModalEliminarItemDeLista
+        setVisible={setVisibleDeleteModal}
+        visible={visibleDeleteModal}
+        size={selectedProducts.length}
+        onClick={handlerEliminarItem}
+      />
+
+      <ModalAgregarTributo
+        setVisible={setVisibleTributoModal}
+        visible={visibleTributoModal}
+      />
+
+      <DataTable
+        key={tipoDte.code} // <-- esto hace que se "resetee" al cambiar tipoDte
+        value={listProducts}
+        tableStyle={{ minWidth: '50rem' }}
+        paginator
+        rows={5}
+        rowsPerPageOptions={[5, 10, 25, 50]}
+        selectionMode={rowClick ? null : 'multiple'}
+        selection={selectedProducts!}
+        onSelectionChange={(e: { value: React.SetStateAction<any[]> }) =>
+          setSelectedProducts(e.value)
+        }
+      >
+        <Column
+          selectionMode="multiple"
+          headerStyle={{ width: '3rem' }}
+        ></Column>
+        <Column
+          field="descripcion"
+          header={<p className="text-sm">PRODUCTO</p>}
+        ></Column>
+        {tipoDte.code == '03' && (
+          <Column
+            body={(rowData: ProductosTabla) => (
+              <p>$ {rowData.precio_unitario}</p>
+            )}
+            header={<p className="text-sm">PRECIO UNITARIO</p>}
+          ></Column>
+        )}
+        {tipoDte.code == '03' && (
+          <Column
+            body={(rowData: ProductosTabla) => (
+              <p>$ {rowData.iva_unitario.toFixed(2)}</p>
+            )}
+            header={<p className="text-sm">IVA UNITARIO</p>}
+          ></Column>
+        )}
+        {tipoDte.code == '01' && (
+          <Column
+            body={(rowData: ProductosTabla) => {
+              const precio = parseFloat(rowData.precio_unitario as any);
+              const iva = parseFloat(rowData.iva_unitario as any);
+              const total = (precio + iva).toFixed(2);
+              return <p>$ {total}</p>;
+            }}
+            header={<p className="text-sm">PRECIO UNITARIO</p>}
+          />
+        )}
+        <Column
+          header={<p className="text-sm">CANTIDAD</p>}
+          body={(rowData: ProductosTabla) => (
+            <InputNumber
+              inputId="withoutgrouping"
+              value={rowData.cantidad}
+              onValueChange={(e: InputNumberValueChangeEvent) =>
+                handleCantidadChange(e.value ?? 0, rowData.id)
+              }
+            />
+          )}
+        />
+        <Column
+          header={<p className="text-sm">DESCUENTO</p>}
+          body={(rowData: ProductosTabla) => (
+            <Dropdown
+              value={rowData.descuento}
+              onChange={(e) => handleDescuentoChange(e.value, rowData.id)}
+              options={descuentosList.map((d) => d.porcentaje)} // sólo porcentajes
+              placeholder="Seleccione un descuento"
+              className="md:w-14rem w-full"
+            />
+          )}
+        />
+
+        <Column
+          body={(rowData: ProductosTabla) => <p>$ {rowData.total_tributos}</p>}
+          header={<p className="text-sm uppercase">TOTAL tributos</p>}
+        ></Column>
+        <Column
+          body={(rowData: ProductosTabla) => (
+            <p>$ {rowData.total_neto.toFixed(2)}</p>
+          )}
+          header={<p className="text-sm">TOTAL NETO</p>}
+        />
+        <Column
+          body={(rowData: ProductosTabla) => (
+            <p>$ {rowData.total_iva.toFixed(2)}</p>
+          )}
+          header={<p className="text-sm">TOTAL IVA</p>}
+        />
+        <Column
+          body={(rowData: ProductosTabla) => (
+            <p>$ {rowData.total_con_iva.toFixed(2)}</p>
+          )}
+          header={<p className="text-sm">TOTAL CON IVA</p>}
+        />
+      </DataTable>
+    </>
+  );
+};

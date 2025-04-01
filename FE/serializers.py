@@ -92,7 +92,8 @@ class FacturaListSerializer(serializers.ModelSerializer):
             'fecha_emision',
             'hora_emision',
             'recibido_mh',
-            'firmado'
+            'firmado',
+            'sello_recepcion'
         ]
 
 class FacturaElectronicaSerializer(serializers.ModelSerializer):
