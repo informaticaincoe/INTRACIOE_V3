@@ -339,7 +339,7 @@ class DetalleFactura(models.Model):
     cantidad = models.PositiveIntegerField(default=1,help_text="Cantidad del producto")
     unidad_medida = models.ForeignKey(TipoUnidadMedida, on_delete=models.CASCADE, null=True)
     iva_item = models.DecimalField(max_digits=10, decimal_places=2, null=True, default=Decimal('0.00'),)
-    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2,help_text="Precio unitario del producto")
+    precio_unitario = models.DecimalField(max_digits=10, decimal_places=6,help_text="Precio unitario del producto")
     #descuento = models.DecimalField(max_digits=5, decimal_places=2, default=0,help_text="Descuento aplicado (en monto) sobre el total sin IVA")
     ventas_no_sujetas = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     ventas_exentas = models.DecimalField(max_digits=10, decimal_places=2, null=True)

@@ -889,7 +889,6 @@ class GenerarFacturaAPIView(APIView):
             
             factura.json_original = factura_json
             json_prueba = json.dumps(factura_json)
-            print("-Json generado: ", json_prueba)
             if formas_pago is not None and formas_pago !=[]:
                 print("Guardar formas de pago: ", formas_pago)
                 factura.formas_Pago = formas_pago
