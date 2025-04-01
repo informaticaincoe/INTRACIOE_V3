@@ -4,11 +4,7 @@ import { SelectAmbienteComponent } from '../../../../../shared/Select/selectAmbi
 import { SelectActividadesEconomicas } from '../../../../../shared/Select/selectActividadesEconomicas';
 import { SelectTipoEstablecimiento } from '../../../../../shared/Select/selectTipoEstablecimiento';
 import { SelectTipoIdDocumento } from '../../../../../shared/Select/selectTipoIdDocumento';
-import {
-  Ambiente,
-  TipoDocumento,
-  TipoEstablecimiento,
-} from '../../interfaces/empresaInterfaces';
+import { Ambiente, TipoDocumento, TipoEstablecimiento } from '../../../../../shared/interfaces/interfaces';
 
 export const StepperConfigBill = ({
   formData,

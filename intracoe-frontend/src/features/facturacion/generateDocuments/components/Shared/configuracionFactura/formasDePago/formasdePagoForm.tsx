@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PaymentMethodInteface } from './formasdePagoData';
 import { Dropdown } from 'primereact/dropdown';
 import { FaRegCreditCard } from 'react-icons/fa6';
@@ -12,6 +12,8 @@ import styles from './formasDePagoCustom.module.css';
 import { getAllMetodosDePago } from '../../../../services/configuracionFactura/configuracionFacturaService';
 import { InputText } from 'primereact/inputtext';
 import { FaXmark } from 'react-icons/fa6';
+import CustomToast, { CustomToastRef, ToastSeverity } from '../../../../../../../shared/toast/customToast';
+import { IoMdCloseCircle } from 'react-icons/io';
 
 interface FormasdePagoFormProps {
   setFormasPagoList: any;
@@ -39,6 +41,22 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
     periodo: 0,
     plazo: {},
   });
+  const toastRef = useRef<CustomToastRef>(null);
+
+
+
+  const handleAccion = (
+    severity: ToastSeverity,
+    icon: any,
+    summary: string
+  ) => {
+    toastRef.current?.show({
+      severity: severity,
+      summary: summary,
+      icon: icon,
+      life: 2000,
+    });
+  };
 
   useEffect(() => {
     const aux = infoPagoLista.map((pago) => {
@@ -73,7 +91,7 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
   };
 
   const handlePagoCompleto = () => {
-    setFormData({ ...formData, montoPago: totalAPagar });
+    setFormData({ ...formData, montoPago: auxManejoPagos });
   };
 
   const handleChange = (
@@ -82,21 +100,29 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
     const newValue = Number(e.target.value);
     setFormData({ ...formData, [e.target.name]: newValue });
   };
-  
+
 
   const onClick = () => {
     if (paymentSelected) {
-      setInfoPagoLista((prevState) => [
-        ...prevState,
-        {
-          ...formData,
-          idTipoPago: paymentSelected.id,
-          codigo: paymentSelected.codigo,
-          descripcion: paymentSelected.descripcion,
-          id: new Date().getTime(),
-        },
-      ]);
-      setAuxManejoPagos(auxManejoPagos - formData.montoPago);
+      if (formData.montoPago <= auxManejoPagos) {
+        setInfoPagoLista((prevState) => [
+          ...prevState,
+          {
+            ...formData,
+            idTipoPago: paymentSelected.id,
+            codigo: paymentSelected.codigo,
+            descripcion: paymentSelected.descripcion,
+            id: new Date().getTime(),
+          },
+        ]);
+        setAuxManejoPagos(auxManejoPagos - formData.montoPago);
+      } else {
+        handleAccion(
+          'error',
+          <IoMdCloseCircle size={38} />,
+          'El monto a pagar es mayor al total de la factura'
+        );
+      }
     }
     setFormData({
       id: 0,
@@ -107,7 +133,7 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
       plazo: {},
     });
   };
-  
+
 
   const deleteFromList = (e: any) => {
     console.log(e);
@@ -262,6 +288,8 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
           )}
         </div>
       </div>
+      <CustomToast ref={toastRef} />
+
     </div>
   );
 };

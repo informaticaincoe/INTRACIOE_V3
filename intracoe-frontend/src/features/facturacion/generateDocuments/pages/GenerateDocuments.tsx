@@ -157,7 +157,7 @@ export const GenerateDocuments = () => {
       }
       else {
         const response = await generarFacturaService(dataFECF)
-        console.log("otro")
+        console.log("otro") //TODO: nota d
 
         firmarFactura(response.factura_id)
 
@@ -342,6 +342,7 @@ export const GenerateDocuments = () => {
               setIdListProducts={setIdListProducts}
               setDescuentoItem={setDescuentoItem}
               descuentoItem={descuentoItem}
+              tipoDte={tipoDocumento}
             />
             <ModalListaProdcutos
               visible={showProductsModal}

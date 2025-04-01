@@ -20,6 +20,7 @@ interface TablaProductosAgregadosProps {
   setIdListProducts: any;
   setDescuentoItem: any;
   descuentoItem: number;
+  tipoDte: any;
 }
 
 export const TablaProductosAgregados: React.FC<
@@ -29,6 +30,7 @@ export const TablaProductosAgregados: React.FC<
   listProducts,
   setCantidadListProducts,
   setIdListProducts,
+  tipoDte
 }) => {
     const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
     const [rowClick] = useState<boolean>(true);
@@ -44,6 +46,7 @@ export const TablaProductosAgregados: React.FC<
     useEffect(() => {
       const auxId = listProducts.map((product) => product.id);
       const auxCantidad = listProducts.map((product) => product.cantidad);
+      console.log(tipoDte)
 
       setCantidadListProducts(auxCantidad);
       setIdListProducts(auxId);
@@ -80,7 +83,7 @@ export const TablaProductosAgregados: React.FC<
             : product
         )
       );
-    };    
+    };
 
     const handleDelete = () => {
       console.log('selectedProducts', selectedProducts);
@@ -158,6 +161,7 @@ export const TablaProductosAgregados: React.FC<
         />
 
         <DataTable
+          key={tipoDte.code} // <-- esto hace que se "resetee" al cambiar tipoDte
           value={listProducts}
           tableStyle={{ minWidth: '50rem' }}
           paginator
@@ -177,16 +181,33 @@ export const TablaProductosAgregados: React.FC<
             field="descripcion"
             header={<p className="text-sm">PRODUCTO</p>}
           ></Column>
-          <Column
-            body={(rowData: ProductosTabla) => <p>$ {rowData.precio_unitario}</p>}
-            header={<p className="text-sm">PRECIO UNITARIO</p>}
-          ></Column>
-          <Column
-            body={(rowData: ProductosTabla) => (
-              <p>$ {rowData.iva_unitario.toFixed(2)}</p>
-            )}
-            header={<p className="text-sm">IVA UNITARIO</p>}
-          ></Column>
+          {tipoDte.code == '03' &&
+
+            <Column
+              body={(rowData: ProductosTabla) => <p>$ {rowData.precio_unitario}</p>}
+              header={<p className="text-sm">PRECIO UNITARIO</p>}
+            ></Column>
+          }
+          {tipoDte.code == '03' &&
+
+            <Column
+              body={(rowData: ProductosTabla) => (
+                <p>$ {rowData.iva_unitario.toFixed(2)}</p>
+              )}
+              header={<p className="text-sm">IVA UNITARIO</p>}
+            ></Column>
+          }
+          {tipoDte.code == '01' &&
+            <Column
+              body={(rowData: ProductosTabla) => {
+                const precio = parseFloat(rowData.precio_unitario as any);
+                const iva = parseFloat(rowData.iva_unitario as any);
+                const total = (precio + iva).toFixed(2);
+                return <p>$ {total}</p>;
+              }}
+              header={<p className="text-sm">PRECIO UNITARIO</p>}
+            />
+          }
           <Column
             header={<p className="text-sm">CANTIDAD</p>}
             body={(rowData: ProductosTabla) => (
