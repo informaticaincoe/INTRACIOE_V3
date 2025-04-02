@@ -2,56 +2,95 @@ import { useEffect, useState } from 'react';
 import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPage';
 import { Title } from '../../../../shared/text/title';
 import { TableListadoFacturasContainer } from '../componentes/TableListadoFacturasContainer';
-import { ListResult } from '../../../../shared/interfaces/interfaceFacturaJSON';
+import {
+  Filters,
+  ListResult,
+} from '../../../../shared/interfaces/interfaceFacturaJSON';
 import { getAllFacturas } from '../services/listadoFacturasServices';
-import { FilterContainer } from '../componentes/filter/filterContainer';
+import { OptionsContainer } from '../componentes/filter/optionsContainer';
 import { pagination } from '../../../../shared/interfaces/interfaces';
 
-export const ListadoFActuras = () => {
+export const ListadoFacturas = () => {
   const [data, setData] = useState<ListResult[]>([]);
   const [pagination, setPagination] = useState<pagination>({
-    has_next: false,
-    has_previous: false,
-    page: 0,
-    pages: 0,
-    total: 0,
+    current_page: 1,
+    page_size: 1,
+    total_pages: 1,
+    total_records: 1,
   });
 
-  const [rows, setRows] = useState<number>(20); // Django lo maneja en 20 por defecto
-  const [first, setFirst] = useState<number>(0);
+  const [filters, setFilters] = useState<Filters>({
+    recibido_mh: null,
+    sello_recepcion: null,
+    has_sello_recepcion: null,
+    estado:null,
+    tipo_dte: null,
+    estado_invalidacion:null
+  });
 
   useEffect(() => {
     fetchFacturas();
   }, []);
 
+  useEffect(() => {
+    console.log(filters)
+    // Reinicia a la página 1 cada vez que los filtros cambian
+    setPagination((prev) => ({ ...prev, current_page: 1 }));
+    // Se utiliza el page_size actual para la consulta
+    fetchFacturas(1, pagination.page_size);
+  }, [filters]);
+  
+
   const fetchFacturas = async (page = 1, limit = 20) => {
     try {
-      const response = await getAllFacturas({ page, limit }); // ← importante: acepta parámetros
-      setData(response.facturas);
-      setPagination(response.pagination);
+      const response = await getAllFacturas({ page, limit, filters });
+      if (response) {
+        setData(response.results || []);
+        setPagination({
+          current_page: response.current_page || 1,
+          page_size: response.page_size || limit,
+          total_pages: response.total_pages || 1,
+          total_records: response.total_records || 0,
+        });
+        console.log(response);
+      } else {
+        // En caso de response null, asigna valores por defecto o maneja el error
+        setData([]);
+        setPagination({
+          current_page: 1,
+          page_size: limit,
+          total_pages: 1,
+          total_records: 0,
+        });
+      }
     } catch (error) {
       console.log(error);
     }
   };
+  
 
-  const handlePageChange = (page: number, limit: number) => {
+  const onPageChange = (event: any) => {
+    // event.page suele ser el índice de la página (0 basado)
+    const page = event.page + 1;
+    const limit = event.rows;
     fetchFacturas(page, limit);
   };
-
 
   return (
     <>
       <Title text="Listado Facturas" />
       <WhiteSectionsPage className="px-20 py-10">
         <>
-          <FilterContainer total={pagination.total ?? 0} />
+          <OptionsContainer
+            total={pagination.total_records ?? 0}
+            setFilters={setFilters}
+            filters={filters}
+          />
           <TableListadoFacturasContainer
             data={data}
             pagination={pagination}
-            onPageChange={handlePageChange}
+            onPageChange={onPageChange}
           />
-
-
         </>
       </WhiteSectionsPage>
     </>

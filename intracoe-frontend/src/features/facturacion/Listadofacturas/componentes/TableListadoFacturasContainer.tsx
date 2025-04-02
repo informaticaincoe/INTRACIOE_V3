@@ -1,27 +1,80 @@
+import { Column } from 'primereact/column';
+import { DataTable } from 'primereact/datatable';
+import { FcCancel } from 'react-icons/fc';
+import { TableListadoFacturasContainerProps } from '../../../../shared/interfaces/interfaces';
+import { useEffect } from 'react';
+import { Paginator } from 'primereact/paginator';
 
-import { Column } from "primereact/column";
-import { DataTable } from "primereact/datatable";
-import { FcCancel } from "react-icons/fc";
-import { TableListadoFacturasContainerProps } from "../../../../shared/interfaces/interfaces";
-import { useEffect } from "react";
+import { FaCheck } from 'react-icons/fa6';
+import { BsHourglassSplit } from "react-icons/bs";
+import { AiFillSignature } from "react-icons/ai";
+import { invalidarDte } from '../services/listadoFacturasServices';
+import { generarFacturaService } from '../../PreFactura/services/facturavisualizacionServices';
+import { useNavigate } from 'react-router';
 
-export const TableListadoFacturasContainer: React.FC<TableListadoFacturasContainerProps> = ({ data, pagination }) => {
-  useEffect(()=>{
-    console.log(pagination)
-  },[])
+export const TableListadoFacturasContainer: React.FC<
+  TableListadoFacturasContainerProps
+> = ({ data, pagination, onPageChange }) => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    console.log(pagination);
+    console.log("DATA", data);
+  }, [data]);
+
+  const visualizarFactura = async (id:number) => {
+    try {
+      navigate(`/factura/${id}`);
+    }
+    catch (error) {
+      console.log(error)
+    }
+  }
+
+  const invalidarFactura = async (id:number) => {
+    try {
+      const response = await invalidarDte(id)
+      console.log(response)
+    }
+    catch (error) {
+      console.log(error)
+    }
+  }
 
   return (
     <div>
-      <DataTable value={data} showGridlines tableStyle={{ minWidth: '50rem' }}>
-        <Column header="Estado"
+      <DataTable value={data} showGridlines tableStyle={{ minWidth: '50rem' }} emptyMessage="0 facturas">
+        <Column
+          header="Estado"
           body={(rowData: any) => (
             <>
-              {rowData.recibido_mh == false && (
-                <div className="flex gap-2 items-center">
-                  <FcCancel />
-                  <p className="text-red">Anulado</p>
-                </div>
-              )}
+              <div className="flex items-center justify-start gap-1">
+                {(rowData.estado_invalidacion == "Viva" && rowData.recibido_mh == true) && //Sin invalidacion y recibida en hacienda esta enviado correctamente
+                  <>
+                    <FaCheck className="text-green" />
+                    <p className="text-green">Enviado</p>
+                  </>
+                }
+                {(rowData.estado_invalidacion == "Viva" && !rowData.recibido_mh) && //Sin invalidacion y sin recibirse en hacienda (falta publicar)
+                  <>
+                    <AiFillSignature size={24} className="text-gray" />
+                    <p className="text-gray">Envio pendiente</p>
+                  </>
+                }
+                {rowData.estado_invalidacion == "Invalidada" && //estado invalidado (invalidado)
+                  <>
+                    <FcCancel />
+                    <p className="text-red">Anulado</p>
+                  </>
+                }
+                {rowData.estado_invalidacion == "En proceso de invalidación" && //estado en proceso de invalidacion (en proceso)
+                  <>
+                    <BsHourglassSplit className="text-primary-yellow" size={24} />
+                    <p className="text-primary-yellow">En proceso</p>
+                  </>
+                }
+                {/* !estado && !sello no enviado */}
+              </div>
             </>
           )}
         />
@@ -29,15 +82,19 @@ export const TableListadoFacturasContainer: React.FC<TableListadoFacturasContain
         <Column field="codigo_generacion" header="Código generación" />
         <Column field="fecha_emision" header="fecha emision" />
         <Column field="sello_recepcion" header="sello recepcion" />
-        <Column header="Acciones"
+        <Column
+          header="Acciones"
           body={(rowData: any) => (
             <>
-              <span className="flex flex-col gap-2 items-center">
-                {/* { rowData.recibido_mh == true &&
-                  <button className="border border-red-500 text-red-500 w-full rounded-md py-2">Anular</button>
-                } */}
-                <button className="border border-red-500 text-red-500 w-full rounded-md py-2">Anular</button>
-                <button className="border border-gray-700 text-gray-700 w-full px-4 rounded-md py-2">Visualizar</button>
+              <span className="flex flex-col items-center gap-2">
+                {rowData.estado_invalidacion == 'Viva' && (
+                  <button className="w-full rounded-md border border-red-500 py-2 text-red-500" onClick={() => invalidarFactura(rowData.id)}>
+                    Anular
+                  </button>
+                )}
+                <button className="w-full rounded-md border border-gray-700 px-4 py-2 text-gray-700" onClick={() => visualizarFactura(rowData.id)}>
+                  Visualizar
+                </button>
               </span>
             </>
           )}
@@ -45,9 +102,14 @@ export const TableListadoFacturasContainer: React.FC<TableListadoFacturasContain
       </DataTable>
 
       <div className="pt-5">
-        {/* <Paginator first={first} rows={rows} totalRecords={pagination.total} rowsPerPageOptions={[10, 20, 30]} onPageChange={onPageChange} /> */}
+        <Paginator
+          first={(pagination.current_page - 1) * pagination.page_size}
+          rows={pagination.page_size}
+          totalRecords={pagination.total_records}
+          rowsPerPageOptions={[10, 25, 50]}
+          onPageChange={onPageChange}
+        />
       </div>
-
     </div>
   );
 };

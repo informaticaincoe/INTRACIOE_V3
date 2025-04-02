@@ -1831,42 +1831,60 @@ class FacturaPorCodigoGeneracionAPIView(APIView):
 
         return Response(response_data, status=status.HTTP_200_OK)
 
-class FacturaListAPI(APIView):
-    def get(self, request):
+from rest_framework.pagination import PageNumberPagination
+class FacturaPagination(PageNumberPagination):
+    page_size = 10  # Valor por defecto
+    page_size_query_param = 'page_size'  # Permite al cliente especificar el tamaño de página
+    max_page_size = 50  # Máximo de registros por página permitido
+    
+    def get_paginated_response(self, data):
+        return Response({
+            'current_page': self.page.number,
+            'page_size': self.get_page_size(self.request),
+            'total_pages': self.page.paginator.num_pages,
+            'total_records': self.page.paginator.count,
+            'results': data,
+        })
+
+# Crear la vista API usando ListAPIView de DRF
+class FacturaListAPIView(generics.ListAPIView):
+    serializer_class = FacturaListSerializer
+    pagination_class = FacturaPagination
+
+    def get_queryset(self):
         queryset = FacturaElectronica.objects.all()
 
-        # Filtros
-        recibido = request.GET.get('recibido_mh')
-        codigo = request.GET.get('sello_recepcion')
-        has_codigo = request.GET.get('has_sello_recepcion')
-        tipo = request.GET.get('tipo_dte')
-        
-        if recibido in ['True', 'False']:
-            queryset = queryset.filter(recibido_mh=(recibido == 'True'))
+        recibido = self.request.GET.get('recibido_mh')
+        codigo = self.request.GET.get('sello_recepcion')
+        has_codigo = self.request.GET.get('has_sello_recepcion')
+        tipo_dte = self.request.GET.get('tipo_dte')
+        estado = self.request.GET.get('estado')  # Estado normal, por ejemplo "true" o "false"
+        estado_invalidacion = self.request.GET.get('estado_invalidacion')  # Para filtrar el estado de invalidación
+
+        if recibido and recibido.lower() in ['true', 'false']:
+            queryset = queryset.filter(recibido_mh=(recibido.lower() == 'true'))
         if codigo:
             queryset = queryset.filter(sello_recepcion__icontains=codigo)
-        if has_codigo == 'yes':
-            queryset = queryset.exclude(sello_recepcion__isnull=True)
-        elif has_codigo == 'no':
-            queryset = queryset.filter(sello_recepcion__isnull=True)
-        if tipo:
-            queryset = queryset.filter(tipo_dte__id=tipo)
+        if has_codigo and has_codigo.lower() in ['true', 'false']:
+            if has_codigo.lower() == 'true':
+                queryset = queryset.exclude(sello_recepcion__isnull=True)
+            else:
+                queryset = queryset.filter(sello_recepcion__isnull=True)
+        if tipo_dte:
+            queryset = queryset.filter(tipo_dte__id=tipo_dte)
+        if estado and estado.lower() in ['true', 'false']:
+            queryset = queryset.filter(estado=(estado.lower() == 'true'))
+        if estado_invalidacion:
+            estado_inv_lower = estado_invalidacion.lower()
+            if estado_inv_lower == "invalidada":
+                queryset = queryset.filter(dte_invalidacion__estado=True)
+            elif estado_inv_lower == "firmar":
+                # Filtra facturas sin evento de invalidación y con recibido_mh == False (Firma pendiente).
+                queryset = queryset.filter(dte_invalidacion__isnull=True, recibido_mh=False)
+            elif estado_inv_lower == "enproceso":
+                queryset = queryset.filter(dte_invalidacion__estado=False)
+            elif estado_inv_lower == "viva":
+                queryset = queryset.filter(dte_invalidacion__isnull=True)
+                
 
-        # ✅ Paginación con nombre distinto para evitar conflicto
-        page_number = request.GET.get('page', 1)
-        paginador = Paginator(queryset, 20)
-        page_obj = paginador.get_page(page_number)
-
-        # Serialización
-        serializer = FacturaListSerializer(page_obj, many=True)
-
-        return Response({
-            "facturas": serializer.data,
-            "pagination": {
-                "page": page_obj.number,
-                "pages": paginador.num_pages,
-                "total": paginador.count,
-                "has_next": page_obj.has_next(),
-                "has_previous": page_obj.has_previous(),
-            }
-        }, status=status.HTTP_200_OK)
+        return queryset

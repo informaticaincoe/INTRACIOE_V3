@@ -1,3 +1,5 @@
+import { PaginatorPageChangeEvent } from 'primereact/paginator';
+
 export interface ActivitiesData {
   id: number;
   codigo: string;
@@ -303,16 +305,14 @@ export interface Descuentos {
 }
 
 export interface pagination {
-  has_next: boolean;
-  has_previous: boolean;
-  page: number;
-  pages: number;
-  total: number;
+  current_page: number;
+  page_size: number;
+  total_pages: number;
+  total_records: number;
 }
 
 export interface TableListadoFacturasContainerProps {
   data: any;
   pagination: pagination;
-  onPageChange: (page: number, limit: number) => void;
+  onPageChange: (event: any) => void;
 }
-
