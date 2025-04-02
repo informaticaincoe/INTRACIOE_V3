@@ -255,7 +255,7 @@
           <div class="col-md-6">
             <div class="form-group">
               <label>Descuento (%)</label>
-              <input type="number" id="descuento-global" name="descuento_global_input" class="form-control" value="0" min="0" max="100" oninput="actualizarResumen()">
+              <input type="number" id="descuento_global" name="descuento_global_input" class="form-control" value="0" min="0" max="100" oninput="actualizarResumen()">
             </div>
           </div>
           <div class="col-md-6">
@@ -332,6 +332,7 @@
               <td><input type="hidden" class="cantidad-input" min="1" style="width: 80px;"></td>
               <td>
                 <select name="descuento_seleccionado" class="descuento-input" id="descuento_select" onchange="seleccionarDescuento(this)">
+                  <option value="0">Sin descuento</option>
                   {% for descuento in descuentos %}
                     <option class="descuento-item" data-descuento="{{descuento.porcentaje}}" value="{{ descuento.porcentaje }}"> {{ descuento.porcentaje }}</option>
                   {% endfor %}
@@ -777,7 +778,8 @@
         sumNeto += parseFloat(netoCell.textContent) || 0;
         sumIVA += parseFloat(row.querySelector('.total-iva').textContent) || 0;
         sumIncl += parseFloat(row.querySelector('.total-incl').textContent) || 0;
-        sumMontoDescu += parseFloat(porcentajeDescu) || 0;
+        sumMontoDescu += roundHalfUp(row.querySelector('.total-descuento-item').textContent, 2) || 0;
+        console.log("descuento item: ", sumMontoDescu, "suma inc= ", sumIncl);
       }
     });
     
@@ -788,7 +790,7 @@
     //Monto global y monto a ventas gravadas
     descu_gravado = parseFloat(document.getElementById("descuento_gravado").value) || 0;
     suma_descuentos = (parseFloat(sumMontoDescu * 100) || 0) + (parseFloat(descu_gravado) || 0);
-    let descuentoPorc = parseFloat(document.getElementById("descuento-global").value) || 0;
+    let descuentoPorc = parseFloat(document.getElementById("descuento_global").value) || 0;
     let montoDescuento = (sumIncl * descuentoPorc / 100).toFixed(2);
     //let totalPagar = (sumIncl - montoDescuento).toFixed(2);
 
@@ -816,7 +818,7 @@
       btnGenerar.disabled  = true;
       return;
     }if (document.getElementById("total-pagar").textContent < total_ccf && tipo_dte=="06") {
-      alert("La nota de crédito no debe superar el saldo adeudado del crédito fiscal. tipo_dte: ", tipo_dte)
+      alert("La nota de débito no debe ser menor del saldo adeudado en el crédito fiscal. tipo_dte: ", tipo_dte)
       btnGenerar.disabled  = true;
       return;
     }else{
@@ -1010,7 +1012,9 @@ function cargarFacturaRelacionada() {
         </div>
       </div>
     `;
-
+    document.getElementById("descuento_gravado").value = factura.descuento_gravado * 100;
+    document.getElementById("descuento_global").value = factura.descuento_global;
+    document.getElementById("monto_descuento").value = parseFloat(factura.total_descuento * 100);
     accordion.appendChild(accordionItem);
     actualizarResumen();
     // Agregamos la factura al arreglo global
@@ -1052,7 +1056,8 @@ function crearTablaDetalles(detalles) {
     let totalNeto = neto * cantidad;
     let totalIVA = roundHalfUp(iva * cantidad, 6);
     //let totalIncl = (neto + iva) * 2;
-    let totalIncl = (totalNeto + totalIVA);
+    let montoDescu = (totalNeto * prod.descuento).toFixed(6);
+    let totalIncl = ((totalNeto + totalIVA) - montoDescu);
     let idProducto = prod.id;
     prod_id_relacionado = prod.id;
     cantidad_prod_relacionado = prod.cantidad;
@@ -1069,7 +1074,7 @@ function crearTablaDetalles(detalles) {
         <td class="total-neto">${totalNeto.toFixed(2)}</td>
         <td class="total-iva">${totalIVA.toFixed(2)}</td>
         <td class="total-incl">${parseFloat(totalIncl).toFixed(2)}</td>
-        <td>${prod.descuento || ''}</td>
+        <td class="total-descuento-item">${prod.descuento || ''}</td>
         <td>
           <button type="button" class="btn btn-danger btn-sm" onclick="eliminarProductoInvoice(this)">Eliminar</button>
         </td>
