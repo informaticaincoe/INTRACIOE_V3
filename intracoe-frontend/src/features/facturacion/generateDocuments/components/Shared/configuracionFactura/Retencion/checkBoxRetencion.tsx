@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Checkbox } from 'primereact/checkbox';
 import {
   InputNumber,
@@ -10,44 +10,42 @@ interface CheckBoxRetencionProps {
   tieneRetencionIva: boolean;
   setRetencionIva: any;
   retencionIva: number;
-  setRetencionRenta: any;
+  setTieneRetencionRenta: any;
+  tieneRetencionRenta: boolean;
   retencionRenta: number;
+  setRetencionRenta: any;
 }
 export const CheckBoxRetencion: React.FC<CheckBoxRetencionProps> = ({
   setTieneRetencionIva,
   tieneRetencionIva,
   setRetencionIva,
   retencionIva,
-  setRetencionRenta,
+  setTieneRetencionRenta,
+  tieneRetencionRenta,
   retencionRenta,
+  setRetencionRenta,
 }) => {
-  const [checkedRenta, setCheckedRenta] = useState<boolean>(false);
-  const [renta, setRenta] = useState<number>(0);
-
-  const [visibleRetencion, setVisibleRetencion] = useState<boolean>(false);
-  const [visibleIVA, setVisibleIVA] = useState<boolean>(false);
-
   let total = 0;
 
   useEffect(() => {
     calcularTotalRetencion();
-  }, [tieneRetencionIva, checkedRenta]);
+  }, [tieneRetencionIva, tieneRetencionRenta]);
 
   const calcularTotalRetencion = () => {
     if (tieneRetencionIva) total = total + retencionIva;
-    if (checkedRenta) total = total + renta;
+    if (tieneRetencionRenta) total = total + retencionRenta;
 
     return total;
   };
 
   const handleRetencionRenta = (e: boolean) => {
-    setCheckedRenta(e);
-    setVisibleRetencion(true);
+    setTieneRetencionRenta(e);
+    setTieneRetencionRenta(true);
   };
 
   const handleRetencionIVA = (e: boolean) => {
     setTieneRetencionIva(e);
-    setVisibleIVA(true);
+    setTieneRetencionIva(true);
   };
 
   return (
@@ -56,13 +54,13 @@ export const CheckBoxRetencion: React.FC<CheckBoxRetencionProps> = ({
         <Checkbox
           inputId="renta"
           onChange={(e) => handleRetencionRenta(e.checked ?? false)}
-          checked={checkedRenta}
+          checked={tieneRetencionRenta}
         ></Checkbox>
         <label htmlFor="renta" className="opacity-70">
           Retención de renta
         </label>
       </div>
-      {checkedRenta && (
+      {tieneRetencionRenta && (
         <InputNumber
           prefix="%"
           inputId="withoutgrouping"
@@ -94,7 +92,7 @@ export const CheckBoxRetencion: React.FC<CheckBoxRetencionProps> = ({
           className="w-full"
         />
       )}
-      {(tieneRetencionIva === true || checkedRenta === true) && (
+      {(tieneRetencionIva === true || tieneRetencionRenta === true) && (
         <p className="text-start">
           Total retencion: ${calcularTotalRetencion()}
         </p>

@@ -1,36 +1,115 @@
-import React, { useEffect, useState } from 'react';
-import { getAllFacturas } from '../services/listadoFacturasServices';
-import {
-  FacturaListado,
-  ListResult,
-} from '../../../../shared/interfaces/interfaceFacturaJSON';
+import { Column } from 'primereact/column';
+import { DataTable } from 'primereact/datatable';
+import { FcCancel } from 'react-icons/fc';
+import { TableListadoFacturasContainerProps } from '../../../../shared/interfaces/interfaces';
+import { useEffect } from 'react';
+import { Paginator } from 'primereact/paginator';
 
-export const TableListadoFacturasContainer = () => {
-  const [data, setData] = useState<ListResult[]>([]);
+import { FaCheck } from 'react-icons/fa6';
+import { BsHourglassSplit } from "react-icons/bs";
+import { AiFillSignature } from "react-icons/ai";
+import { invalidarDte } from '../services/listadoFacturasServices';
+import { generarFacturaService } from '../../PreFactura/services/facturavisualizacionServices';
+import { useNavigate } from 'react-router';
+
+export const TableListadoFacturasContainer: React.FC<
+  TableListadoFacturasContainerProps
+> = ({ data, pagination, onPageChange }) => {
+  const navigate = useNavigate();
 
   useEffect(() => {
-    fetchFacturas();
-  }, []);
+    console.log(pagination);
+    console.log("DATA", data);
+  }, [data]);
 
-  const fetchFacturas = async () => {
+  const visualizarFactura = async (id:number) => {
     try {
-      const response = await getAllFacturas();
-      setData(response.results);
-      console.log('response.results', response.results);
-    } catch (error) {
-      console.log(error);
+      navigate(`/factura/${id}`);
     }
-  };
+    catch (error) {
+      console.log(error)
+    }
+  }
+
+  const invalidarFactura = async (id:number) => {
+    try {
+      const response = await invalidarDte(id)
+      console.log(response)
+    }
+    catch (error) {
+      console.log(error)
+    }
+  }
 
   return (
     <div>
-      {
-        // Map through the data to render the list of elements
-        data &&
-          data.map((element) => (
-            <p key={element.id}>{element.id}</p> // Render each element with its id
-          ))
-      }
+      <DataTable value={data} showGridlines tableStyle={{ minWidth: '50rem' }} emptyMessage="0 facturas">
+        <Column
+          header="Estado"
+          body={(rowData: any) => (
+            <>
+              <div className="flex items-center justify-start gap-1">
+                {(rowData.estado_invalidacion == "Viva" && rowData.recibido_mh == true) && //Sin invalidacion y recibida en hacienda esta enviado correctamente
+                  <>
+                    <FaCheck className="text-green" />
+                    <p className="text-green">Enviado</p>
+                  </>
+                }
+                {(rowData.estado_invalidacion == "Viva" && !rowData.recibido_mh) && //Sin invalidacion y sin recibirse en hacienda (falta publicar)
+                  <>
+                    <AiFillSignature size={24} className="text-gray" />
+                    <p className="text-gray">Envio pendiente</p>
+                  </>
+                }
+                {rowData.estado_invalidacion == "Invalidada" && //estado invalidado (invalidado)
+                  <>
+                    <FcCancel />
+                    <p className="text-red">Anulado</p>
+                  </>
+                }
+                {rowData.estado_invalidacion == "En proceso de invalidación" && //estado en proceso de invalidacion (en proceso)
+                  <>
+                    <BsHourglassSplit className="text-primary-yellow" size={24} />
+                    <p className="text-primary-yellow">En proceso</p>
+                  </>
+                }
+                {/* !estado && !sello no enviado */}
+              </div>
+            </>
+          )}
+        />
+        <Column field="numero_control" header="Numero de control" />
+        <Column field="codigo_generacion" header="Código generación" />
+        <Column field="fecha_emision" header="fecha emision" />
+        <Column field="sello_recepcion" header="sello recepcion" />
+        <Column
+          header="Acciones"
+          body={(rowData: any) => (
+            <>
+              <span className="flex flex-col items-center gap-2">
+                {rowData.estado_invalidacion == 'Viva' && (
+                  <button className="w-full rounded-md border border-red-500 py-2 text-red-500" onClick={() => invalidarFactura(rowData.id)}>
+                    Anular
+                  </button>
+                )}
+                <button className="w-full rounded-md border border-gray-700 px-4 py-2 text-gray-700" onClick={() => visualizarFactura(rowData.id)}>
+                  Visualizar
+                </button>
+              </span>
+            </>
+          )}
+        />
+      </DataTable>
+
+      <div className="pt-5">
+        <Paginator
+          first={(pagination.current_page - 1) * pagination.page_size}
+          rows={pagination.page_size}
+          totalRecords={pagination.total_records}
+          rowsPerPageOptions={[10, 25, 50]}
+          onPageChange={onPageChange}
+        />
+      </div>
     </div>
   );
 };
