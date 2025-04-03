@@ -1,28 +1,25 @@
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
-import { FcCancel } from 'react-icons/fc';
 import { TableListadoFacturasContainerProps } from '../../../../shared/interfaces/interfaces';
 import { useEffect } from 'react';
 import { Paginator } from 'primereact/paginator';
 
+import { RiBillLine } from "react-icons/ri";
 import { FaCheck } from 'react-icons/fa6';
 import { BsHourglassSplit } from "react-icons/bs";
 import { AiFillSignature } from "react-icons/ai";
+import { FcCancel } from "react-icons/fc";
+
 import { invalidarDte } from '../services/listadoFacturasServices';
-import { generarFacturaService } from '../../PreFactura/services/facturavisualizacionServices';
 import { useNavigate } from 'react-router';
+import { Tooltip } from 'antd';
 
 export const TableListadoFacturasContainer: React.FC<
   TableListadoFacturasContainerProps
 > = ({ data, pagination, onPageChange }) => {
   const navigate = useNavigate();
 
-  useEffect(() => {
-    console.log(pagination);
-    console.log("DATA", data);
-  }, [data]);
-
-  const visualizarFactura = async (id:number) => {
+  const visualizarFactura = async (id: number) => {
     try {
       navigate(`/factura/${id}`);
     }
@@ -31,10 +28,9 @@ export const TableListadoFacturasContainer: React.FC<
     }
   }
 
-  const invalidarFactura = async (id:number) => {
+  const invalidarFactura = async (id: number) => {
     try {
       const response = await invalidarDte(id)
-      console.log(response)
     }
     catch (error) {
       console.log(error)
@@ -70,7 +66,7 @@ export const TableListadoFacturasContainer: React.FC<
                 {rowData.estado_invalidacion == "En proceso de invalidación" && //estado en proceso de invalidacion (en proceso)
                   <>
                     <BsHourglassSplit className="text-primary-yellow" size={24} />
-                    <p className="text-primary-yellow">En proceso</p>
+                    <p className="text-primary-yellow">Invalidando</p>
                   </>
                 }
                 {/* !estado && !sello no enviado */}
@@ -81,20 +77,32 @@ export const TableListadoFacturasContainer: React.FC<
         <Column field="numero_control" header="Numero de control" />
         <Column field="codigo_generacion" header="Código generación" />
         <Column field="fecha_emision" header="fecha emision" />
-        <Column field="sello_recepcion" header="sello recepcion" />
+        <Column
+          header="Sello recepcion" style={{ width: '15vw', wordWrap: 'break-word' }}
+          body={(rowData: any) => (
+            <p className='w-[15vw] text-wrap'>{rowData.sello_recepcion}</p>
+
+          )}
+        />
         <Column
           header="Acciones"
           body={(rowData: any) => (
             <>
-              <span className="flex flex-col items-center gap-2">
+              <span className="flex items-center gap-2">
                 {rowData.estado_invalidacion == 'Viva' && (
-                  <button className="w-full rounded-md border border-red-500 py-2 text-red-500" onClick={() => invalidarFactura(rowData.id)}>
-                    Anular
-                  </button>
+                 <>
+                  <Tooltip  title="Anular">
+                     <button className="w-full cursor-pointer flex items-center gap-1 text-red-500" onClick={() => invalidarFactura(rowData.id)}>
+                       <FcCancel size={22} />
+                     </button>
+                  </Tooltip>
+                 </>
                 )}
-                <button className="w-full rounded-md border border-gray-700 px-4 py-2 text-gray-700" onClick={() => visualizarFactura(rowData.id)}>
-                  Visualizar
-                </button>
+               <Tooltip className='visualizar'>
+                 <button className="cursor-pointer w-full flex gap-1 items-center rounded-md  text-gray-700" onClick={() => visualizarFactura(rowData.id)}>
+                   <RiBillLine size={22} />
+                 </button>
+               </Tooltip >
               </span>
             </>
           )}

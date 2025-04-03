@@ -22,7 +22,7 @@ export const OptionsContainer: React.FC<FilterContainerProps> = ({
       <div className="flex items-center justify-between">
         <p>{total} resultados</p>
         <button
-          className="flex gap-2 rounded-full px-4 py-2 hover:cursor-pointer"
+          className={`flex gap-2 rounded-full px-4 py-2 hover:cursor-pointer ${showFilters ? 'bg-border-color': 'bg-white'} `}
           onClick={() => setShowFilters(!showFilters)}
         >
           <GoFilter size={24} />

@@ -8,7 +8,6 @@ export const generarFacturaService = async (id: string) => {
     const response = await axios.get<FacturaResponse>(
       `${BASEURL}/factura_pdf/${id}/`
     );
-    console.log('response factura API', response);
     return {
       emisor: response.data.json_original.emisor,
       receptor: response.data.json_original.receptor,

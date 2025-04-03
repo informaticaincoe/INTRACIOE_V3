@@ -33,7 +33,6 @@ export const ListadoFacturas = () => {
   }, []);
 
   useEffect(() => {
-    console.log(filters)
     // Reinicia a la página 1 cada vez que los filtros cambian
     setPagination((prev) => ({ ...prev, current_page: 1 }));
     // Se utiliza el page_size actual para la consulta
@@ -52,7 +51,6 @@ export const ListadoFacturas = () => {
           total_pages: response.total_pages || 1,
           total_records: response.total_records || 0,
         });
-        console.log(response);
       } else {
         // En caso de response null, asigna valores por defecto o maneja el error
         setData([]);

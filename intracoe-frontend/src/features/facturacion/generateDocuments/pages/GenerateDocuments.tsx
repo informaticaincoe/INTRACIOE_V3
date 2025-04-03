@@ -123,7 +123,6 @@ export const GenerateDocuments = () => {
     let aux = 0;
     listProducts.map((pago) => {
       aux = aux + pago.total_con_iva;
-      console.log('aux', aux);
     });
 
     return aux.toFixed(2);
@@ -132,7 +131,6 @@ export const GenerateDocuments = () => {
   const generarFactura = async () => {
     let descuentosItem = null;
     if (listProducts[0] && listProducts[0].descuento) {
-      console.log('listProducts[0].descuento', listProducts[0].descuento);
       descuentosItem = listProducts[0].descuento;
     }
 
@@ -248,9 +246,6 @@ export const GenerateDocuments = () => {
   // OBTENCION DE DATOS
   //************************************/
   useEffect(() => {
-    console.log('tipoDocumento', tipoDocumento);
-    console.log('tipoDocumento', numeroControl);
-
     fetchIdentificacionData();
   }, [tipoDocumento]);
 
@@ -266,7 +261,6 @@ export const GenerateDocuments = () => {
 
   const handleClickGenerarFactura = async () => {
     if (auxManejoPagos != 0) {
-      console.log('totalAPagar', totalAPagar);
       setErrorFormasPago(true);
       handleAccion(
         'error',
@@ -276,7 +270,6 @@ export const GenerateDocuments = () => {
     }
 
     if (receptor.id == '') {
-      console.log('pago', formasPagoList);
       setErrorReceptor(true);
       handleAccion(
         'error',

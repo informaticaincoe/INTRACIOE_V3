@@ -1,18 +1,13 @@
-import { Checkbox } from 'primereact/checkbox';
 import { Dialog } from 'primereact/dialog';
 import { Divider } from 'primereact/divider';
 import { Dropdown } from 'primereact/dropdown';
-import {
-  InputNumber,
-  InputNumberValueChangeEvent,
-} from 'primereact/inputnumber';
 import React, { useEffect, useState } from 'react';
 import {
   getAllTipoTributos,
   getAllTributosByTipo,
-} from '../../../services/tributos/tributos';
-import { TipoTributos, Tributos } from '../../../interfaces/Tributos';
+} from '../../../../../../shared/services/tributos/tributos';
 import { MultiSelect } from 'primereact/multiselect';
+import { TipoTributos, Tributos } from '../../../../../../shared/interfaces/interfaces';
 
 interface ModalAgregarTibutoInterface {
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
@@ -35,10 +30,6 @@ export const ModalAgregarTributo: React.FC<ModalAgregarTibutoInterface> = ({
   useEffect(() => {
     fetchTipoTributos();
   }, []);
-
-  useEffect(() => {
-    console.log(selectedTributos);
-  }, [selectedTributos]);
 
   useEffect(() => {
     fetchTributosSegunTipo();

@@ -11,9 +11,6 @@ export const IdentifcacionSeccion: React.FC<IdentifcacionSeccionProps> = ({
 }) => {
   var dateVariable = new Date();
 
-  useEffect(() => {
-    console.log('numeroControl', numeroControl);
-  }, [numeroControl]);
   return (
     <>
       <div className="grid grid-cols-[auto_1fr] items-start justify-start gap-4 font-medium">

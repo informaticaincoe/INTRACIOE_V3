@@ -4,10 +4,8 @@ import { FacturaPorCodigoGeneracionResponse } from '../../../../../shared/interf
 const BASEURL = import.meta.env.VITE_URL_BASE;
 
 export const generarFacturaService = async (data: any) => {
-  console.log('data', data);
   try {
     const response = await axios.post(`${BASEURL}/factura/generar/`, data);
-    console.log('response generar', response.data);
     return response.data;
   } catch (error) {
     console.log(error);
@@ -16,13 +14,11 @@ export const generarFacturaService = async (data: any) => {
 };
 
 export const generarNotaCreditoService = async (data: any) => {
-  console.log('data', data);
   try {
     const response = await axios.post(
       `${BASEURL}/factura_ajuste/generar/`,
       data
     );
-    console.log('response generar', response.data);
     return response.data;
   } catch (error) {
     console.log(error);
@@ -37,7 +33,6 @@ export const getFacturaCodigos = async (tipo_dte: string) => {
         tipo_dte,
       },
     });
-    console.log('response get codigos', response.data);
     return response.data;
   } catch (error) {
     console.log(error);
@@ -48,7 +43,6 @@ export const getFacturaCodigos = async (tipo_dte: string) => {
 export const FirmarFactura = async (id: string) => {
   try {
     const response = await axios.post(`${BASEURL}/factura/firmar/${id}/`);
-    console.log('response firmar factura', response.data);
   } catch (error) {
     console.log(error);
   }
@@ -59,7 +53,6 @@ export const EnviarHacienda = async (id: string) => {
     const response = await axios.post(
       `${BASEURL}/factura/enviar_hacienda/${id}/`
     );
-    console.log(response);
     return response; // Devuelve si todo bien
   } catch (error) {
     console.error('Error desde EnviarHacienda:', error);

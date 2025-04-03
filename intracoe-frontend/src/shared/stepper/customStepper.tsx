@@ -5,12 +5,14 @@ interface CustomStepperProps extends StepperProps {
   children: ReactNode;
 }
 
-const CustomStepper = forwardRef<Stepper, CustomStepperProps>((props, ref) => {
+const CustomStepper = forwardRef<Stepper, CustomStepperProps>(({ children, ...rest }, ref) => {
   return (
-    <Stepper ref={ref} {...props}>
-      {props.children}
-    </Stepper>
+    <>
+      <Stepper ref={ref} {...rest} />
+      {children}
+    </>
   );
 });
+
 
 export default CustomStepper;

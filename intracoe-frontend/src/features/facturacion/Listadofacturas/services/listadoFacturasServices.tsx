@@ -15,7 +15,6 @@ export const getAllFacturas = async ({ page, limit, filters }: FacturaParams) =>
     queryParams.append("page", String(page));
     queryParams.append("page_size", String(limit));
 
-    console.log("filters", filters)
     // Agregar los filtros si existen
     if (filters.recibido_mh !== null) {
       queryParams.append("recibido_mh", String(filters.recibido_mh));
@@ -37,7 +36,6 @@ export const getAllFacturas = async ({ page, limit, filters }: FacturaParams) =>
     }
 
     const response = await axios.get(`${BASEURL}/facturas/?${queryParams.toString()}`);
-    console.log(response);
     return response.data || {
       results: [],
       current_page: 1,
@@ -54,7 +52,6 @@ export const getAllFacturas = async ({ page, limit, filters }: FacturaParams) =>
 export const invalidarDte = async (factura_id: number) => {
   try {
     const response = await axios.post(`${BASEURL}/invalidar_dte/${factura_id}/`);
-    console.log(response.data);
     return response.data;
   } catch (error) {
     console.log(error);

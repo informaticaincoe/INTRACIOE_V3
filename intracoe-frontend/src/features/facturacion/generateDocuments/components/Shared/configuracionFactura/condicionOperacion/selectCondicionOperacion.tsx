@@ -25,7 +25,6 @@ export const SelectCondicionOperacion: React.FC<
   const fetchCondicionDeOperaciones = async () => {
     try {
       const condicionOperaciones = await getAllCondicionDeOperacion();
-      console.log('condicionOperaciones', condicionOperaciones);
       setCondicionOperacionApiList(condicionOperaciones);
       setCondicionDeOperacion(condicionOperaciones[0].codigo);
     } catch (error) {

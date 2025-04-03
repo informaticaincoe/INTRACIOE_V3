@@ -6,11 +6,12 @@ import { Dashboard } from './features/dashboard/pages/dashboard';
 import { ActivitiesPage } from './features/facturacion/activities/pages/activitiesPage';
 import { GenerateDocuments } from './features/facturacion/generateDocuments/pages/GenerateDocuments';
 import { ProductsPage } from './features/bussiness/products/pages/productsPage';
-import { ServicesPage } from './features/bussiness/services/pages/ServicesPage';
 import { UploadExcelPage } from './features/facturacion/activities/pages/uploadExcelPage';
 import { ConfigBussiness } from './features/bussiness/configBussiness/pages/ConfigBussiness';
 import { FacturaVisualizacionPage } from './features/facturacion/PreFactura/pages/FE/facturaVisualizacionPage';
 import { ListadoFacturas } from './features/facturacion/Listadofacturas/pages/listadoFacturas';
+import { ServicioPage } from './features/bussiness/services/pages/servicioPage';
+import { NuevoProductoPage } from './features/bussiness/products/pages/nuevoProductoPage';
 
 function App() {
   return (
@@ -23,8 +24,9 @@ function App() {
           <Route path="/generar-documentos" element={<GenerateDocuments />} />
           <Route path="/factura/:id" element={<FacturaVisualizacionPage />} />
           <Route path="/productos" element={<ProductsPage />} />
+          <Route path="/productos/nuevo" element={<NuevoProductoPage />} />
           <Route path="/listado-facturas" element={<ListadoFacturas />} />
-          <Route path="/servicios" element={<ServicesPage />} />
+          <Route path="/servicios" element={<ServicioPage />} />
           <Route path="/empresa" element={<ConfigBussiness />} />
           <Route path="/uploadExcel" element={<UploadExcelPage />} />
         </Route>

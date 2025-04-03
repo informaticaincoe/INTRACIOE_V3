@@ -143,7 +143,6 @@ export const FacturaVisualizacionPage = () => {
     try {
       if (id) {
         const response = await generarFacturaService(id);
-        console.log('response factura visualizacion', response);
         setEmisor(response.emisor);
         setDatosFactura(response.datosFactura);
         setReceptor(response.receptor);
