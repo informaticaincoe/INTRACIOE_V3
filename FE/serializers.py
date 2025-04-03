@@ -82,18 +82,30 @@ class DescuentoSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class FacturaListSerializer(serializers.ModelSerializer):
+    estado_invalidacion = serializers.SerializerMethodField()
+
     class Meta:
         model = FacturaElectronica
         fields = [
             'id',
             'tipo_dte',
             'numero_control',
+            'estado',  # Campo que ya existe en el modelo, p.ej. para indicar si está activa o inactiva.
             'codigo_generacion',
+            'sello_recepcion',
             'fecha_emision',
-            'hora_emision',
+            'total_pagar',
+            'total_iva',
             'recibido_mh',
-            'firmado'
+            'estado_invalidacion',  # Campo calculado a partir de dte_invalidacion.
         ]
+
+    def get_estado_invalidacion(self, obj):
+        evento = obj.dte_invalidacion.first()
+        if evento:
+            return "Invalidada" if evento.estado else "En proceso de invalidación"
+        return "Viva"
+
 
 class FacturaElectronicaSerializer(serializers.ModelSerializer):
     # Si deseas incluir los detalles de factura, podrías anidar el serializer

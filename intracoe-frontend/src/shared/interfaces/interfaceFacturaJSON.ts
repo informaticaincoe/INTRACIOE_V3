@@ -38,3 +38,12 @@ export interface ListResult {
   recibido_mh: boolean;
   tipo_dte: number;
 }
+
+export interface Filters {
+  recibido_mh: boolean | null;
+  sello_recepcion: string | null;
+  has_sello_recepcion: boolean | null;
+  tipo_dte: any | null;
+  estado:any | null;
+  estado_invalidacion:any | null;
+}

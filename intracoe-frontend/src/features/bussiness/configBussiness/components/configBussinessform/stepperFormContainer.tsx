@@ -1,7 +1,7 @@
-import { Stepper } from 'primereact/stepper';
+import { Stepper, StepperProps } from 'primereact/stepper';
 import { StepperPanel } from 'primereact/stepperpanel';
 import { Button } from 'primereact/button';
-import { useEffect, useRef, useState } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 import { WhiteSectionsPage } from '../../../../../shared/containers/whiteSectionsPage';
 import { StepperConfigBill } from './stepperConfigBill';
 import StepperContactinfo from './stepperContactinfo';
@@ -9,39 +9,28 @@ import {
   createEmpresaById,
   getAllEmpresas,
 } from '../../services/empresaServices';
+import { Toast } from 'primereact/toast';
 import {
+  ActivitiesData,
   Ambiente,
+  defaultEmisorData,
   Departamento,
   EmisorInterface,
   Municipio,
   TipoDocumento,
   TipoEstablecimiento,
-} from '../../interfaces/empresaInterfaces';
-import { ActivitiesData } from '../../../../facturacion/activities/interfaces/activitiesData';
-import { Toast } from 'primereact/toast';
+} from '../../../../../shared/interfaces/interfaces';
+import CustomStepper from './customStepper';
+
+interface CustomStepperProps extends StepperProps {
+  children: ReactNode;
+}
 
 export const StepperContainer = () => {
   const toast = useRef<Toast>(null);
   const stepperRef = useRef<Stepper | null>(null);
 
-  const [formData, setFormData] = useState<EmisorInterface>({
-    tipo_documento: { id: '', descripcion: '', code: '' },
-    nit: '',
-    nrc: '',
-    nombre_establecimiento: '',
-    nombre_comercial: '',
-    nombre_razon_social: '',
-    ambiente: { id: '', descripcion: '', code: '' },
-    codigo_punto_venta: '',
-    codigo_establecimiento: '',
-    actividades_economicas: [],
-    tipoestablecimiento: { id: '', descripcion: '', code: '' },
-    departamento: { id: '', descripcion: '', code: '' },
-    municipio: { id: '', descripcion: '', code: '' },
-    direccion_comercial: '',
-    telefono: '',
-    email: '',
-  });
+  const [formData, setFormData] = useState<EmisorInterface>(defaultEmisorData);
 
   const [error, setError] = useState({
     tipo_documento: '',
@@ -229,7 +218,7 @@ export const StepperContainer = () => {
   return (
     <WhiteSectionsPage className="mx-[20%]">
       <>
-        <Stepper ref={stepperRef} style={{ flexBasis: '50rem' }}>
+        <CustomStepper ref={stepperRef}>
           <StepperPanel header="Configurar factura">
             <StepperConfigBill
               formData={formData}
@@ -278,7 +267,7 @@ export const StepperContainer = () => {
               />
             </div>
           </StepperPanel>
-        </Stepper>
+        </CustomStepper>
         <Toast ref={toast} />
       </>
     </WhiteSectionsPage>

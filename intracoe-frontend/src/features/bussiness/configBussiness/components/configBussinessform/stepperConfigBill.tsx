@@ -8,7 +8,7 @@ import {
   Ambiente,
   TipoDocumento,
   TipoEstablecimiento,
-} from '../../interfaces/empresaInterfaces';
+} from '../../../../../shared/interfaces/interfaces';
 
 export const StepperConfigBill = ({
   formData,

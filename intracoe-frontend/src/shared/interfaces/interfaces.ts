@@ -1,3 +1,5 @@
+import { PaginatorPageChangeEvent } from 'primereact/paginator';
+
 export interface ActivitiesData {
   id: number;
   codigo: string;
@@ -46,7 +48,6 @@ export const defaultEmisorData: EmisorInterface = {
     code: '',
   },
   actividades_economicas: [],
-  tipo_establecimiento_codigo: '',
 };
 
 export interface EmisorInterface {
@@ -61,7 +62,6 @@ export interface EmisorInterface {
   codigo_punto_venta: string;
   nombre_establecimiento: string | null;
   tipoestablecimiento: TipoEstablecimiento;
-  tipo_establecimiento_codigo: string;
   departamento: Departamento;
   municipio: Municipio;
   ambiente: Ambiente;
@@ -297,4 +297,22 @@ export interface FacturaPorCodigoGeneracionResponse {
 export interface TipoGeneracionFactura {
   name: string;
   code: string;
+}
+
+export interface Descuentos {
+  descuentoGeneral: number;
+  descuentoGravado: number;
+}
+
+export interface pagination {
+  current_page: number;
+  page_size: number;
+  total_pages: number;
+  total_records: number;
+}
+
+export interface TableListadoFacturasContainerProps {
+  data: any;
+  pagination: pagination;
+  onPageChange: (event: any) => void;
 }
