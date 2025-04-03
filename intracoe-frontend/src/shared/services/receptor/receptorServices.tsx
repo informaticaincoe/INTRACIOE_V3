@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ReceptorInterface } from '../../../../../shared/interfaces/interfaces';
+import { ReceptorInterface } from '../../interfaces/interfaces';
 
 const BASEURL = import.meta.env.VITE_URL_BASE;
 
@@ -24,12 +24,10 @@ export const getReceptorById = async (id: number) => {
 };
 
 export const tipoIdReceptor = async (id_tipoId: string) => {
-  console.log('id_tipoId', id_tipoId);
   try {
     const response = await axios.get(
       `${BASEURL}/tipo-id-receptor/${id_tipoId}/`
     );
-    console.log('RETURN', response.data);
 
     return response.data;
   } catch (error) {

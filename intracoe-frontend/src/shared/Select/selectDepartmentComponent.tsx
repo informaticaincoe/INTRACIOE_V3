@@ -19,8 +19,6 @@ export const SelectDepartmentComponent: React.FC<SelectDeparmentInterface> = ({
   const fetchDepartaments = async () => {
     try {
       const response = await getAllDepartamentos();
-
-      console.log(response);
       const departmentFetch = response.map(
         (element: { id: string; descripcion: any; codigo: any }) => ({
           id: element.id,
@@ -28,7 +26,6 @@ export const SelectDepartmentComponent: React.FC<SelectDeparmentInterface> = ({
           code: element.codigo,
         })
       );
-      console.log('departmentFetch', departmentFetch);
       setDepartmentList(departmentFetch);
     } catch (error) {
       console.log(error);

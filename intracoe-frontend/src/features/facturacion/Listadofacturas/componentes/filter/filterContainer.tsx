@@ -49,7 +49,7 @@ export const FilterContainer: React.FC<FilterContainerProps> = ({ filters, setFi
         { name: "Todos", code: null },
         { name: "Enviados", code: "viva" },
         { name: "Invalidados", code: "invalidada" },
-        { name: "En proceso", code: "enproceso" },
+        { name: "En proceso invalidacion", code: "enproceso" },
         { name: "Firma pendiente", code: "firmar" },
     ];
 
@@ -101,7 +101,8 @@ export const FilterContainer: React.FC<FilterContainerProps> = ({ filters, setFi
                     optionLabel="name"
                     optionValue="code"
                     placeholder=""
-                    className="w-full text-start"
+                    style={{width:'10vw'}}
+                    className="w-8rem text-start"
                     onChange={(e: DropdownChangeEvent) =>
                         setFilters({
                             ...filters,
@@ -120,7 +121,7 @@ export const FilterContainer: React.FC<FilterContainerProps> = ({ filters, setFi
                     optionLabel="name"
                     optionValue="code"
                     placeholder=""
-                    className="w-full text-start"
+                    className="w-5rem text-start"
                     onChange={(e: DropdownChangeEvent) =>
                         setFilters({
                             ...filters,

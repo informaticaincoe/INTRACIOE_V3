@@ -1,8 +1,7 @@
 import { HTMLProps, useEffect, useState } from 'react';
-import './selectCustomStyle.css';
-import { getAllActivities } from '../../features/facturacion/activities/services/activitiesServices';
-import { ActivitiesData } from '../../features/facturacion/activities/interfaces/activitiesData';
 import { MultiSelect, MultiSelectChangeEvent } from 'primereact/multiselect';
+import { ActivitiesData } from '../interfaces/interfaces';
+import { getAllActivities } from '../../features/facturacion/activities/services/activitiesServices';
 
 interface selectActividadesEconomicasInterface {
   actividades: ActivitiesData[]; // Asegúrate de que actividades sea un array de objetos ActivitiesData
@@ -20,6 +19,7 @@ export const SelectActividadesEconomicas: React.FC<
   useEffect(() => {
     fetchActividadesList();
   }, []);
+  
 
   const fetchActividadesList = async () => {
     try {

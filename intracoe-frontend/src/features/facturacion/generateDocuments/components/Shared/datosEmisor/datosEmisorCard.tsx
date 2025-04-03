@@ -19,7 +19,6 @@ export const DatosEmisorCard: React.FC<DatosEmisorData> = ({
     try {
       const response = await getAllEmpresas();
       setEmisorData(response[0]);
-      console.log(emisorData);
     } catch (error) {
       console.log(error);
     }

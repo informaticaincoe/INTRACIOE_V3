@@ -6,7 +6,7 @@ from . import views
 
 #renombrar el archivo
 urlpatterns = [
-    # -------------------------------FacturaDetailAPIView
+    # -------------------------------
     # Endpoints API REST
     # -------------------------------
 
@@ -17,8 +17,6 @@ urlpatterns = [
     path('api/autenticacion/', autenticacion, name='autenticacion'),
 
     #-----------FACTURA -----------#
-    #obtener factura por codigo de generacion
-    # path("api/facturas/", FacturasAllListAPIView.as_view(), name="facturas"),
     path('api/facturas/', FacturaListAPIView.as_view(), name='api_factura_list'),
 
     path("api/factura-por-codigo/", FacturaPorCodigoGeneracionAPIView.as_view(), name="factura_por_codigo"),

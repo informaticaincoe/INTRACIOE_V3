@@ -1,37 +1,18 @@
-import { Stepper, StepperProps } from 'primereact/stepper';
-import { StepperPanel } from 'primereact/stepperpanel';
-import { Button } from 'primereact/button';
-import { ReactNode, useEffect, useRef, useState } from 'react';
-import { WhiteSectionsPage } from '../../../../../shared/containers/whiteSectionsPage';
+
+import React, { useState, useEffect } from 'react';
+import { Steps, message } from 'antd';
+import { ActivitiesData, Ambiente, defaultEmisorData, Departamento, EmisorInterface, Municipio, TipoDocumento, TipoEstablecimiento } from '../../../../../shared/interfaces/interfaces';
+import { createEmpresaById, getAllEmpresas } from '../../services/empresaServices';
 import { StepperConfigBill } from './stepperConfigBill';
 import StepperContactinfo from './stepperContactinfo';
-import {
-  createEmpresaById,
-  getAllEmpresas,
-} from '../../services/empresaServices';
-import { Toast } from 'primereact/toast';
-import {
-  ActivitiesData,
-  Ambiente,
-  defaultEmisorData,
-  Departamento,
-  EmisorInterface,
-  Municipio,
-  TipoDocumento,
-  TipoEstablecimiento,
-} from '../../../../../shared/interfaces/interfaces';
-import CustomStepper from './customStepper';
-
-interface CustomStepperProps extends StepperProps {
-  children: ReactNode;
-}
+import { WhiteSectionsPage } from '../../../../../shared/containers/whiteSectionsPage';
 
 export const StepperContainer = () => {
-  const toast = useRef<Toast>(null);
-  const stepperRef = useRef<Stepper | null>(null);
+  // Estado para controlar el paso actual
+  const [current, setCurrent] = useState(0);
 
+  // Estado del formulario y errores
   const [formData, setFormData] = useState<EmisorInterface>(defaultEmisorData);
-
   const [error, setError] = useState({
     tipo_documento: '',
     nit: '',
@@ -42,22 +23,16 @@ export const StepperContainer = () => {
     direccion_comercial: '',
   });
 
-  const handleNext = () => {
-    if (stepperRef.current) {
-      stepperRef.current.nextCallback();
-    }
+  // Ejemplo de Toast con message de Ant Design
+  const showSuccess = () => {
+    message.success('Configuración guardada con éxito', 3);
   };
 
-  const handlePrev = () => {
-    if (stepperRef.current) {
-      stepperRef.current.prevCallback();
-    }
+  const showError = (msg: string) => {
+    message.error(msg, 3);
   };
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    formType: string
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>, formType: string) => {
     if (formType === 'formData') {
       setFormData({ ...formData, [e.target.name]: e.target.value });
     }
@@ -66,8 +41,7 @@ export const StepperContainer = () => {
   const handleSendForm = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('formData', formData);
-    console.log('formDataAct', formData.actividades_economicas);
-
+    // Validaciones...
     let newErrors = {
       tipo_documento: '',
       nit: '',
@@ -81,31 +55,24 @@ export const StepperContainer = () => {
     if (formData.direccion_comercial === '') {
       newErrors.direccion_comercial = 'Campo obligatorio';
     }
-
     if (formData.nit === '') {
       newErrors.nit = 'Campo obligatorio';
     }
-
     if (formData.tipo_documento == null) {
       newErrors.tipo_documento = 'Campo obligatorio';
     }
-
     if (formData.nrc === '') {
       newErrors.nrc = 'Campo obligatorio';
     }
-
     if (formData.nombre_razon_social === '') {
       newErrors.nombre_razon_social = 'Campo obligatorio';
     }
-
-    if (formData.ambiente.descripcion == '') {
+    if (formData.ambiente.descripcion === '') {
       newErrors.ambiente = 'Campo obligatorio';
     }
-
-    if (formData.actividades_economicas.length == 0) {
+    if (formData.actividades_economicas.length === 0) {
       newErrors.actividades_economicas = 'Campo obligatorio';
     }
-
     setError(newErrors);
 
     if (
@@ -129,7 +96,7 @@ export const StepperContainer = () => {
         codigo_establecimiento: formData.codigo_establecimiento,
         actividades_economicas: formData.actividades_economicas.map(
           (actividad) => actividad.id
-        ), // Solo enviamos los IDs
+        ),
         tipoestablecimiento: formData.tipoestablecimiento.id,
         departamento: formData.departamento.id,
         municipio: formData.municipio.id,
@@ -142,6 +109,7 @@ export const StepperContainer = () => {
 
       try {
         const response = await createEmpresaById(body);
+        console.log(response)
         showSuccess();
       } catch (error) {
         showError('Ya existe un emisor con este NIT');
@@ -152,6 +120,7 @@ export const StepperContainer = () => {
     }
   };
 
+  // Métodos para actualizar formData desde los componentes hijos
   const handleSelectAmbiente = (value: Ambiente) => {
     setFormData({ ...formData, ambiente: value });
   };
@@ -168,7 +137,6 @@ export const StepperContainer = () => {
 
   const handleDepartamento = (value: Departamento) => {
     console.log(value);
-
     setFormData({ ...formData, departamento: value });
   };
 
@@ -180,96 +148,73 @@ export const StepperContainer = () => {
     setFormData({ ...formData, tipo_documento: value });
   };
 
-  const showSuccess = () => {
-    if (toast.current) {
-      toast.current.show({
-        severity: 'success',
-        summary: 'Guardado',
-        detail: 'Configuración guardada con exito',
-        life: 3000,
-      });
-    }
-  };
-
-  const showError = (message: string) => {
-    if (toast.current) {
-      toast.current.show({
-        severity: 'error',
-        summary: 'Error',
-        detail: message,
-        life: 3000,
-      });
-    }
-  };
-
   useEffect(() => {
+    const fetchInformacionEmpresa = async () => {
+      try {
+        const response = await getAllEmpresas();
+        console.log('response', response);
+      } catch (error) {
+        console.log(error);
+      }
+    };
     fetchInformacionEmpresa();
   }, []);
 
-  const fetchInformacionEmpresa = async () => {
-    try {
-      const response = await getAllEmpresas();
-      console.log('response', response);
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  // Definimos los pasos para el Stepper de Ant Design
+  const steps = [
+    {
+      title: 'Configurar factura',
+      content: (
+        <>
+          <StepperConfigBill
+            formData={formData}
+            handleChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange(e, 'formData')}
+            handleSelectAmbiente={handleSelectAmbiente}
+            handleSelectActividadesEconomicas={handleSelectActividadesEconomicas}
+            handleTipoEstablecimiento={handleTipoEstablecimiento}
+            handleTipoDocId={handleTipoDocId}
+            errores={error}
+          />
+          <div className="justify-content-end flex pt-4">
+            <button onClick={() => setCurrent(current + 1)}>
+              Siguiente
+            </button>
+          </div>
+        </>
+      ),
+    },
+    {
+      title: 'Información de contacto',
+      content: (
+        <>
+          <StepperContactinfo
+            formData={formData}
+            handleChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange(e, 'formData')}
+            handleDepartamento={handleDepartamento}
+            handleMunicipio={handleMunicipio}
+            errores={error}
+          />
+          <div className="flex w-full justify-between pt-4">
+            <button onClick={() => setCurrent(current - 1)}>Atras</button>
+            <button  onClick={handleSendForm}>
+              Guardar
+            </button>
+          </div>
+        </>
+      ),
+    },
+  ];
 
   return (
     <WhiteSectionsPage className="mx-[20%]">
-      <>
-        <CustomStepper ref={stepperRef}>
-          <StepperPanel header="Configurar factura">
-            <StepperConfigBill
-              formData={formData}
-              handleChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                handleChange(e, 'formData')
-              }
-              handleSelectAmbiente={handleSelectAmbiente} // Pasar el manejador de select como prop
-              handleSelectActividadesEconomicas={
-                handleSelectActividadesEconomicas
-              }
-              handleTipoEstablecimiento={handleTipoEstablecimiento}
-              handleTipoDocId={handleTipoDocId}
-              errores={error}
-            />
-            <div className="justify-content-end flex pt-4">
-              <Button
-                label="Siguiente"
-                icon="pi pi-arrow-right"
-                iconPos="right"
-                onClick={handleNext}
-              />
-            </div>
-          </StepperPanel>
-          <StepperPanel header="Información de contacto">
-            <StepperContactinfo
-              formData={formData}
-              handleChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                handleChange(e, 'formData')
-              }
-              handleDepartamento={handleDepartamento}
-              handleMunicipio={handleMunicipio}
-              errores={error}
-            />
-            <div className="flex w-full justify-between pt-4">
-              <Button
-                label="Atras"
-                severity="secondary"
-                icon="pi pi-arrow-left"
-                onClick={handlePrev}
-              />
-              <Button
-                label="Guardar"
-                icon="pi pi-arrow-right"
-                iconPos="right"
-                onClick={handleSendForm}
-              />
-            </div>
-          </StepperPanel>
-        </CustomStepper>
-        <Toast ref={toast} />
-      </>
+     <>
+       <Steps current={current} items={steps.map((item) => ({ key: item.title, title: item.title }))} />
+       <div style={{ marginTop: 24 }}>
+         {steps[current].content}
+       </div>
+     </>
     </WhiteSectionsPage>
   );
 };
+
+export default StepperContainer;

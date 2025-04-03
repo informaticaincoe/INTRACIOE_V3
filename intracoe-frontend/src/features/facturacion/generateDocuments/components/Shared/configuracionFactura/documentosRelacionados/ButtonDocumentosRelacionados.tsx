@@ -27,25 +27,15 @@ export const ButtonDocumentosRelacionados: React.FC<
     numDocRelacionado: 0,
   });
 
-  useEffect(() => {
-    console.log('#');
-    console.log(checked);
-  }, [checked]);
 
-  useEffect(() => {
-    console.log(tipoGeneracionDTE);
-  }, [tipoGeneracionDTE]);
 
   const handleChange = (e: InputNumberValueChangeEvent) => {
-    console.log(e.target.name, e.target.value);
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const onClick = () => {
     formData.tipoDocRelacionado = tipoDTERelacionado.name;
     formData.TipoGeneracionDocumento = tipoGeneracionDTE;
-
-    console.log(formData);
 
     setGuardarListAux((prevState) => [...prevState, { ...formData }]);
     // limpiar formulario

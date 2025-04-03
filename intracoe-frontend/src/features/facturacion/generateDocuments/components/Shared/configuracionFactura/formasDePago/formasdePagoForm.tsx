@@ -103,7 +103,6 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
   const handleChange = (
     e: InputNumberValueChangeEvent | React.ChangeEvent<HTMLInputElement>
   ) => {
-    console.log('e', e);
     const newValue = Number(e.target.value);
     setFormData({ ...formData, [e.target.name]: newValue });
   };
@@ -156,7 +155,6 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
   };
 
   const deleteFromList = (e: any) => {
-    console.log(e);
     setAuxManejoPagos(auxManejoPagos + e.montoPago);
     // Filtra la lista infoPagoLista para eliminar el item cuyo id coincide con e.id
     setInfoPagoLista(infoPagoLista.filter((pago) => pago.id !== e.id));
