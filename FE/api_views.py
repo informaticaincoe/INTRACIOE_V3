@@ -12,8 +12,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from FE.views import enviar_factura_invalidacion_hacienda_view, firmar_factura_anulacion_view, invalidacion_dte_view, generar_json, num_to_letras, agregar_formas_pago_api, generar_json_contingencia, generar_json_doc_ajuste
+from INVENTARIO.serializers import DescuentoSerializer
 
-from .serializers import ActividadEconomicaSerializer, AmbienteSerializer, CondicionOperacionSerializer, DepartamentoSerializer, DescuentoSerializer, FacturaListSerializer, FormasPagosSerializer, ModelofacturacionSerializer, MunicipioSerializer, ProductoSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, TipoDteSerializer, TipoItemSerializer, TipoTransmisionSerializer, TipoUnidadMedidaSerializer, TiposDocIDReceptorSerializer, TiposEstablecimientosSerializer, TiposGeneracionDocumentoSerializer, TiposTributosSerializer, TributosSerializer
+from .serializers import ActividadEconomicaSerializer, AmbienteSerializer, CondicionOperacionSerializer, DepartamentoSerializer, FacturaListSerializer, FormasPagosSerializer, ModelofacturacionSerializer, MunicipioSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, TipoDteSerializer, TipoTransmisionSerializer, TiposDocIDReceptorSerializer, TiposEstablecimientosSerializer, TiposGeneracionDocumentoSerializer 
 from .models import (
     ActividadEconomica, Departamento, Emisor_fe, Municipio, Receptor_fe, FacturaElectronica, DetalleFactura,
     Ambiente, CondicionOperacion, Modelofacturacion, NumeroControl,
@@ -326,38 +327,6 @@ class DescuentosAPIView(generics.ListAPIView):
     queryset = Descuento.objects.all()
     serializer_class = DescuentoSerializer
      
-######################################################
-# PRODUCTOS Y SERVICIOS
-######################################################
-
-class productosListAPIView(generics.ListAPIView):
-    queryset = Producto.objects.all()
-    serializer_class = ProductoSerializer
-
-class UnidadDeMedidaListApiView(generics.ListAPIView):
-    queryset = TipoUnidadMedida.objects.all()
-    serializer_class = TipoUnidadMedidaSerializer
-
-class TipoItemListApiView(generics.ListAPIView):
-    queryset = TipoItem.objects.all()
-    serializer_class = TipoItemSerializer
-
-class TiposTributosListAPIView(generics.ListAPIView):
-    queryset = TipoTributo.objects.all()
-    serializer_class = TiposTributosSerializer
-    
-class TributoByTipoListAPIView(generics.ListAPIView):
-    serializer_class = TributosSerializer
-    
-    def get_queryset(self):
-        # Obtener el id del departamento de la URL
-        tipo_tributo_id = self.kwargs['tipo_valor']
-        # Filtrar los municipios por el departamento
-        return Tributo.objects.filter(tipo_valor=tipo_tributo_id)
-
-class TributoDetailsAPIView(generics.RetrieveAPIView):
-    queryset = Tributo.objects.all()
-    serializer_class = TributosSerializer
 
 ######################################################
 # GENERACION DE DOCUMENTOS ELECTRONICOS

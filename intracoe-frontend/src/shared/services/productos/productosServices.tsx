@@ -2,7 +2,7 @@ import axios from 'axios';
 import { Descuento, ProductoResponse } from '../../interfaces/interfaces';
 import { getTributoById } from '../tributos/tributos';
 
-const BASEURL = import.meta.env.VITE_URL_BASE;
+const BASEURL = import.meta.env.VITE_URL_BASE_INVENT;
 
 export const getAllProducts = async () => {
   try {
