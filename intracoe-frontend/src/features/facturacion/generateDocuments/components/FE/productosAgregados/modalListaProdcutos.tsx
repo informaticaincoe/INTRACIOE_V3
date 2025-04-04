@@ -9,7 +9,7 @@ import {
   InputNumber,
   InputNumberValueChangeEvent,
 } from 'primereact/inputnumber';
-import { getAllProducts } from '../../../services/productos/productosServices';
+import { getAllProducts } from '../../../../../../shared/services/productos/productosServices';
 import { SendFormButton } from '../../../../../../shared/buttons/sendFormButton';
 
 interface ModalListProductsInterface {

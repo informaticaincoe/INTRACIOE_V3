@@ -3,7 +3,7 @@ import {
   Receptor,
   TipoIdentificacion,
 } from '../../../interfaces/facturaPdfInterfaces';
-import { tipoIdReceptor } from '../../../../generateDocuments/services/receptor/receptorServices';
+import { tipoIdReceptor } from '../../../../../../shared/services/receptor/receptorServices';
 
 interface InformacionReceptorProps {
   receptor: Receptor;

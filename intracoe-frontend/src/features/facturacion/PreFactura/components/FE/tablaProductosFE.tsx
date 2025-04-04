@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { CuerpoDocumento } from '../../interfaces/facturaPdfInterfaces';
 
 interface TablaProductosFEInterface {
@@ -10,11 +9,6 @@ export const TablaProductosFE: React.FC<TablaProductosFEInterface> = ({
   productos,
   tipo_dte,
 }) => {
-  useEffect(() => {
-    console.log('PRODUCTOS', productos);
-    console.log(typeof productos);
-  }, [productos]);
-
   return (
     <>
       <table className="border-border-color w-full table-auto rounded-md border-2 text-start">

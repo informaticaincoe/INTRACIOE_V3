@@ -9,52 +9,65 @@ interface FacturaParams {
   filters: Filters;
 }
 
-export const getAllFacturas = async ({ page, limit, filters }: FacturaParams) => {
+export const getAllFacturas = async ({
+  page,
+  limit,
+  filters,
+}: FacturaParams) => {
   try {
     const queryParams = new URLSearchParams();
-    queryParams.append("page", String(page));
-    queryParams.append("page_size", String(limit));
+    queryParams.append('page', String(page));
+    queryParams.append('page_size', String(limit));
 
-    console.log("filters", filters)
     // Agregar los filtros si existen
     if (filters.recibido_mh !== null) {
-      queryParams.append("recibido_mh", String(filters.recibido_mh));
+      queryParams.append('recibido_mh', String(filters.recibido_mh));
     }
     if (filters.sello_recepcion) {
-      queryParams.append("sello_recepcion", filters.sello_recepcion);
+      queryParams.append('sello_recepcion', filters.sello_recepcion);
     }
     if (filters.has_sello_recepcion !== null) {
-      queryParams.append("has_sello_recepcion", String(filters.has_sello_recepcion));
+      queryParams.append(
+        'has_sello_recepcion',
+        String(filters.has_sello_recepcion)
+      );
     }
     if (filters.estado !== null) {
-      queryParams.append("estado", String(filters.estado));
+      queryParams.append('estado', String(filters.estado));
     }
     if (filters.estado_invalidacion !== null) {
-      queryParams.append("estado_invalidacion", String(filters.estado_invalidacion));
-    }    
+      queryParams.append(
+        'estado_invalidacion',
+        String(filters.estado_invalidacion)
+      );
+    }
     if (filters.tipo_dte) {
-      queryParams.append("tipo_dte", filters.tipo_dte);
+      queryParams.append('tipo_dte', filters.tipo_dte);
     }
 
-    const response = await axios.get(`${BASEURL}/facturas/?${queryParams.toString()}`);
-    console.log(response);
-    return response.data || {
-      results: [],
-      current_page: 1,
-      page_size: limit,
-      total_pages: 1,
-      total_records: 0,
-    };
+    const response = await axios.get(
+      `${BASEURL}/facturas/?${queryParams.toString()}`
+    );
+    return (
+      response.data || {
+        results: [],
+        current_page: 1,
+        page_size: limit,
+        total_pages: 1,
+        total_records: 0,
+      }
+    );
   } catch (error) {
-    console.log("Error en la solicitud:", error);
+    console.log('Error en la solicitud:', error);
     throw error;
   }
 };
 
 export const invalidarDte = async (factura_id: number) => {
   try {
-    const response = await axios.post(`${BASEURL}/invalidar_dte/${factura_id}/`);
-    console.log(response.data);
+    const response = await axios.post(
+      `${BASEURL}/invalidar_dte/${factura_id}/`
+    );
     return response.data;
   } catch (error) {
     console.log(error);

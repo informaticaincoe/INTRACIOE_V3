@@ -11,10 +11,6 @@ export const SelectModeloFactura = () => {
     fetchTipoDte();
   }, []);
 
-  useEffect(() => {
-    console.log('selectedModeloFacturacion', selectedModeloFacturacion);
-  }, [selectedModeloFacturacion]);
-
   const fetchTipoDte = async () => {
     const response = await getAllModelosDeFacturacion();
     setTipoModeloFacturacion(response);

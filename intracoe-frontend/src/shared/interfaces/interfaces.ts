@@ -159,6 +159,91 @@ export interface Product {
   seleccionar: boolean;
 }
 
+export interface Categoria {
+  id: number;
+  // Otros campos relevantes
+  nombre: string;
+}
+
+export interface TipoUnidadMedida {
+  id: number;
+  codigo: string;
+  descripcion: string;
+}
+
+export interface Impuesto {
+  id: number;
+  // Otros campos relevantes
+  nombre: string;
+  tasa: number;
+}
+
+export interface TipoItem {
+  id: number;
+  // Otros campos relevantes
+  nombre: string;
+}
+
+export interface Tributo {
+  id: number;
+  // Otros campos relevantes
+  nombre: string;
+}
+
+export interface Almacen {
+  id: number;
+  // Otros campos relevantes
+  nombre: string;
+}
+
+export interface ProductoRequest {
+  codigo: string;
+  descripcion: string;
+  // categoria?: Categoria | null;
+  unidad_medida?: number | null;
+  preunitario: number;
+  precio_compra: number;
+  precio_venta: number;
+  stock: number;
+  stock_minimo: number;
+  stock_maximo: number;
+  impuestos: Impuesto[];
+  tipo_item?: number | null;
+  referencia_interna?: string | null;
+  tributo: number;
+  precio_iva: boolean;
+  maneja_lotes: boolean;
+  fecha_vencimiento?: string | null;
+  almacenes: string[];
+  imagen?: string | null;
+  creado: string;
+  actualizado: string;
+}
+
+export const productoInicial: ProductoRequest = {
+  codigo: '',
+  descripcion: '',
+  // categoria: null,
+  unidad_medida: null,
+  preunitario: 0,
+  precio_compra: 0,
+  precio_venta: 0,
+  stock: 0,
+  stock_minimo: 0,
+  stock_maximo: 0,
+  impuestos: [],
+  tipo_item: null,
+  referencia_interna: null,
+  tributo: 0,
+  precio_iva: false,
+  maneja_lotes: false,
+  fecha_vencimiento: null,
+  almacenes: [],
+  imagen: null,
+  creado: '', 
+  actualizado: '',
+};
+
 export interface TipoGeneracionDocumentoInterface {
   id: number;
   codigo: string;

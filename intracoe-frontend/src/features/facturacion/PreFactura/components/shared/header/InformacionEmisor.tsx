@@ -18,7 +18,6 @@ export const InformacionEmisor: React.FC<InformacionEmisorProps> = ({
 
   const fetchTipoDTE = async () => {
     const response = await DTEByCode(datosFactura.tipoDte);
-    console.log('NOMBRE DTE', response);
     setNombreDte(response.descripcion);
   };
 

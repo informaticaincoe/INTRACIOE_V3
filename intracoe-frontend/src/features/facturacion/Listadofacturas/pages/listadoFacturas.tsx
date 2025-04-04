@@ -23,9 +23,9 @@ export const ListadoFacturas = () => {
     recibido_mh: null,
     sello_recepcion: null,
     has_sello_recepcion: null,
-    estado:null,
+    estado: null,
     tipo_dte: null,
-    estado_invalidacion:null
+    estado_invalidacion: null,
   });
 
   useEffect(() => {
@@ -33,13 +33,11 @@ export const ListadoFacturas = () => {
   }, []);
 
   useEffect(() => {
-    console.log(filters)
     // Reinicia a la página 1 cada vez que los filtros cambian
     setPagination((prev) => ({ ...prev, current_page: 1 }));
     // Se utiliza el page_size actual para la consulta
     fetchFacturas(1, pagination.page_size);
   }, [filters]);
-  
 
   const fetchFacturas = async (page = 1, limit = 20) => {
     try {
@@ -52,7 +50,6 @@ export const ListadoFacturas = () => {
           total_pages: response.total_pages || 1,
           total_records: response.total_records || 0,
         });
-        console.log(response);
       } else {
         // En caso de response null, asigna valores por defecto o maneja el error
         setData([]);
@@ -67,7 +64,6 @@ export const ListadoFacturas = () => {
       console.log(error);
     }
   };
-  
 
   const onPageChange = (event: any) => {
     // event.page suele ser el índice de la página (0 basado)

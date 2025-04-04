@@ -44,6 +44,6 @@ export interface Filters {
   sello_recepcion: string | null;
   has_sello_recepcion: boolean | null;
   tipo_dte: any | null;
-  estado:any | null;
-  estado_invalidacion:any | null;
+  estado: any | null;
+  estado_invalidacion: any | null;
 }

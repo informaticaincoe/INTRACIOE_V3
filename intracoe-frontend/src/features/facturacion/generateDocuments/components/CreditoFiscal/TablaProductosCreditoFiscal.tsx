@@ -8,7 +8,7 @@ import {
 // import './InputNumberCustom.css';
 import { FaCheckCircle } from 'react-icons/fa';
 import { Dropdown } from 'primereact/dropdown';
-import { getAllDescuentos } from '../../services/productos/productosServices';
+import { getAllDescuentos } from '../../../../../shared/services/productos/productosServices';
 import { ModalEliminarItemDeLista } from '../Shared/modal/modalEliminarItemDeLista';
 import { ModalAgregarTributo } from '../Shared/modal/modalAgregarTributo';
 import { ProductosTabla } from '../FE/productosAgregados/productosData';

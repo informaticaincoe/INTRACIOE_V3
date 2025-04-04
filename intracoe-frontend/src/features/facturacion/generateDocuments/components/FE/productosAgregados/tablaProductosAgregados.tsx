@@ -10,7 +10,7 @@ import './InputNumberCustom.css';
 import { FaCheckCircle } from 'react-icons/fa';
 import { ModalEliminarItemDeLista } from '../../Shared/modal/modalEliminarItemDeLista';
 import { ModalAgregarTributo } from '../../Shared/modal/modalAgregarTributo';
-import { getAllDescuentos } from '../../../services/productos/productosServices';
+import { getAllDescuentos } from '../../../../../../shared/services/productos/productosServices';
 import { Dropdown } from 'primereact/dropdown';
 
 interface TablaProductosAgregadosProps {

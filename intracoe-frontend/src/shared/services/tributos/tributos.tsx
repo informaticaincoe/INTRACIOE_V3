@@ -5,7 +5,6 @@ const BASEURL = import.meta.env.VITE_URL_BASE;
 export const getAllTipoTributos = async () => {
   try {
     const response = await axios.get(`${BASEURL}/tipo-tributos/`);
-    console.log(response);
     return response.data;
   } catch (error) {
     console.log(error);
@@ -16,7 +15,6 @@ export const getAllTipoTributos = async () => {
 export const getAllTributosByTipo = async (id: number) => {
   try {
     const response = await axios.get(`${BASEURL}/tributos/tipo/${id}/`);
-    console.log(response);
     return response.data;
   } catch (error) {
     console.log(error);
