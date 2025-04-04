@@ -4,13 +4,13 @@
         "ambiente": "01",
         "tipoDte": "01",
         "numeroControl": "DTE-01-0000MOO1-000000000000555",
-        "codigoGeneracion": "A613008B-C261-424B-AB19-58F67CA3881A",
+        "codigoGeneracion": "1E6A80DC-197A-4D40-AB33-1D36C810EE9B",
         "tipoModelo": 1,
         "tipoOperacion": 1,
         "tipoContingencia": null,
         "motivoContin": null,
-        "fecEmi": "2025-03-29",
-        "horEmi": "10:32:32",
+        "fecEmi": "2025-04-01",
+        "horEmi": "15:46:04",
         "tipoMoneda": "USD"
     },
     "documentoRelacionado": null,
@@ -35,19 +35,19 @@
         "codPuntoVenta": "0001"
     },
     "receptor": {
-        "nombre": "Francisco Antonio Flores",
+        "nombre": "Dominick Norberto Hernandez Alfaro",
         "codActividad": "47816",
         "descActividad": "Venta al por menor de bebidas",
         "direccion": {
             "departamento": "05",
             "municipio": "25",
-            "complemento": "Carretera a Sonsonate, km 27 ½ Zona Industrial Lourdes, Calle Antigua Hda, La Libertad, El Salvador C.A"
+            "complemento": "final 2 calle pte p´sj 4 block o urb el sauce"
         },
-        "telefono": "604477435",
-        "correo": "juniorfran@hotmail.es",
-        "nrc": null,
+        "telefono": "60447435",
+        "correo": "informatica@grupoincoe.com",
+        "nrc": "3228055",
         "tipoDocumento": "36",
-        "numDocumento": "06142802961066"
+        "numDocumento": "062280967"
     },
     "otrosDocumentos": null,
     "ventaTercero": null,
@@ -59,42 +59,42 @@
             "codigo": "PCH456",
             "codTributo": null,
             "descripcion": "Leche entera de 250g",
-            "cantidad": 2.0,
+            "cantidad": 1.0,
             "uniMedida": 59,
-            "precioUni": 2.82,
+            "precioUni": 1.41,
             "montoDescu": 0.0,
             "ventaNoSuj": 0.0,
             "ventaExenta": 0.0,
-            "ventaGravada": 2.82,
+            "ventaGravada": 1.41,
             "tributos": null,
-            "psv": 2.82,
+            "psv": 1.41,
             "noGravado": 0.0,
-            "ivaItem": 2.5
+            "ivaItem": 0.16
         }
     ],
     "resumen": {
         "totalNoSuj": 0.0,
         "totalExenta": 0.0,
-        "totalGravada": 2.82,
-        "subTotalVentas": 2.82,
+        "totalGravada": 1.41,
+        "subTotalVentas": 1.41,
         "descuNoSuj": 0.0,
         "descuExenta": 0.0,
         "descuGravada": 0.0,
         "porcentajeDescuento": 0.0,
         "totalDescu": 0.0,
-        "subTotal": 2.82,
+        "subTotal": 1.41,
         "ivaRete1": 0.0,
         "reteRenta": 0.0,
-        "montoTotalOperacion": 2.82,
+        "montoTotalOperacion": 1.41,
         "totalNoGravado": 0.0,
-        "totalPagar": 2.82,
-        "totalLetras": "Dos con 82/100 USD",
+        "totalPagar": 1.41,
+        "totalLetras": "Uno con 41/100 USD",
         "saldoFavor": 0.0,
         "condicionOperacion": 1,
         "pagos": [
             {
                 "codigo": "01",
-                "montoPago": 2.82,
+                "montoPago": 1.41,
                 "referencia": null,
                 "plazo": null,
                 "periodo": null
@@ -102,7 +102,7 @@
         ],
         "numPagoElectronico": null,
         "tributos": null,
-        "totalIva": 2.5
+        "totalIva": 0.16
     },
     "extension": {
         "nombEntrega": null,

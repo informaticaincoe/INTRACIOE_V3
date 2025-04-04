@@ -1,3 +1,5 @@
+import { PaginatorPageChangeEvent } from 'primereact/paginator';
+
 export interface ActivitiesData {
   id: number;
   codigo: string;
@@ -21,34 +23,32 @@ export const defaultEmisorData: EmisorInterface = {
   codigo_establecimiento: '',
   nombre_establecimiento: null,
   tipoestablecimiento: {
-    id: "",
-    descripcion: "",
-    code: "",
+    id: '',
+    descripcion: '',
+    code: '',
   },
   departamento: {
-    id: "",
-    descripcion: "",
-    code: "",
+    id: '',
+    descripcion: '',
+    code: '',
   },
   municipio: {
-    id: "",
-    descripcion: "",
-    code: "",
+    id: '',
+    descripcion: '',
+    code: '',
   },
   ambiente: {
-    id: "",
-    descripcion: "",
-    code: "",
+    id: '',
+    descripcion: '',
+    code: '',
   },
   tipo_documento: {
-    id: "",
-    descripcion: "",
-    code: "",
+    id: '',
+    descripcion: '',
+    code: '',
   },
   actividades_economicas: [],
-  tipo_establecimiento_codigo: ""
 };
-
 
 export interface EmisorInterface {
   nit: string;
@@ -62,7 +62,6 @@ export interface EmisorInterface {
   codigo_punto_venta: string;
   nombre_establecimiento: string | null;
   tipoestablecimiento: TipoEstablecimiento;
-  tipo_establecimiento_codigo: string
   departamento: Departamento;
   municipio: Municipio;
   ambiente: Ambiente;
@@ -81,20 +80,20 @@ export const defaulReceptorData: ReceptorInterface = {
   direccion: '',
   telefono: '',
   correo: '',
-  nombre_comercial: ""
-}
+  nombre_comercial: '',
+};
 export interface ReceptorInterface {
   id: string;
-  tipo_documento: TipoDocumento,
-  num_documento: string,
-  nrc: string,
-  nombre: string,
-  actividades_economicas: ActivitiesData[]
-  municipio: { id: string, descripcion: string, code: string },
-  direccion: string,
-  telefono: string,
-  correo: string,
-  nombre_comercial: string
+  tipo_documento: TipoDocumento;
+  num_documento: string;
+  nrc: string;
+  nombre: string;
+  actividades_economicas: ActivitiesData[];
+  municipio: { id: string; descripcion: string; code: string };
+  direccion: string;
+  telefono: string;
+  correo: string;
+  nombre_comercial: string;
 }
 
 export interface TipoDocumento {
@@ -160,11 +159,95 @@ export interface Product {
   seleccionar: boolean;
 }
 
+export interface Categoria {
+  id: number;
+  // Otros campos relevantes
+  nombre: string;
+}
+
+export interface TipoUnidadMedida {
+  id: number;
+  codigo: string;
+  descripcion: string;
+}
+
+export interface Impuesto {
+  id: number;
+  // Otros campos relevantes
+  nombre: string;
+  tasa: number;
+}
+
+export interface TipoItem {
+  id: number;
+  // Otros campos relevantes
+  nombre: string;
+}
+
+export interface Tributo {
+  id: number;
+  // Otros campos relevantes
+  nombre: string;
+}
+
+export interface Almacen {
+  id: number;
+  // Otros campos relevantes
+  nombre: string;
+}
+
+export interface ProductoRequest {
+  codigo: string;
+  descripcion: string;
+  // categoria?: Categoria | null;
+  unidad_medida?: number | null;
+  preunitario: number;
+  precio_compra: number;
+  precio_venta: number;
+  stock: number;
+  stock_minimo: number;
+  stock_maximo: number;
+  impuestos: Impuesto[];
+  tipo_item?: number | null;
+  referencia_interna?: string | null;
+  tributo: number;
+  precio_iva: boolean;
+  maneja_lotes: boolean;
+  fecha_vencimiento?: string | null;
+  almacenes: string[];
+  imagen?: string | null;
+  creado: string;
+  actualizado: string;
+}
+
+export const productoInicial: ProductoRequest = {
+  codigo: '',
+  descripcion: '',
+  // categoria: null,
+  unidad_medida: null,
+  preunitario: 0,
+  precio_compra: 0,
+  precio_venta: 0,
+  stock: 0,
+  stock_minimo: 0,
+  stock_maximo: 0,
+  impuestos: [],
+  tipo_item: null,
+  referencia_interna: null,
+  tributo: 0,
+  precio_iva: false,
+  maneja_lotes: false,
+  fecha_vencimiento: null,
+  almacenes: [],
+  imagen: null,
+  creado: '', 
+  actualizado: '',
+};
 
 export interface TipoGeneracionDocumentoInterface {
-  id: number,
-  codigo: string,
-  descripcion: string
+  id: number;
+  codigo: string;
+  descripcion: string;
 }
 
 export interface TipoDTE {
@@ -175,25 +258,24 @@ export interface TipoDTE {
 }
 
 export interface TipoTributos {
-  id: number,
-  codigo: string,
-  descripcion: string
+  id: number;
+  codigo: string;
+  descripcion: string;
 }
 
-
 export interface Tributos {
-  id: number,
-  codigo: string,
-  descripcion: string,
-  valor_tributo: string,
-  tipo_tributo: number,
-  tipo_valor: number
+  id: number;
+  codigo: string;
+  descripcion: string;
+  valor_tributo: string;
+  tipo_tributo: number;
+  tipo_valor: number;
 }
 
 export interface ConfiguracionFacturaInterface {
-  id: number,
-  codigo: string,
-  descripcion: string
+  id: number;
+  codigo: string;
+  descripcion: string;
 }
 
 export interface ProductoResponse {
@@ -253,29 +335,28 @@ export interface Almacen {
 }
 
 export interface Descuento {
-  id: number,
-  porcentaje: string,
-  descripcion: string,
-  fecha_inicio: string,
-  fecha_fin: string,
-  estdo: boolean
+  id: number;
+  porcentaje: string;
+  descripcion: string;
+  fecha_inicio: string;
+  fecha_fin: string;
+  estdo: boolean;
 }
-
 
 export interface FacturaDetalleItem {
   monto_a_aumentar: number;
   cantidad_editada: number;
-  cantidad: number,
-  codigo: string,
-  descripcion: string,
-  descuento: string,
-  iva_unitario: string,
-  neto_unitario: string,
-  precio_unitario: string,
-  producto_id: number,
-  total_incl: string,
-  total_iva: string,
-  total_neto: string
+  cantidad: number;
+  codigo: string;
+  descripcion: string;
+  descuento: string;
+  iva_unitario: string;
+  neto_unitario: string;
+  precio_unitario: string;
+  producto_id: number;
+  total_incl: string;
+  total_iva: string;
+  total_neto: string;
 }
 
 export interface FacturaReceptor {
@@ -291,15 +372,32 @@ export interface FacturaPorCodigoGeneracionResponse {
   codigo_generacion: string;
   tipo_documento: string;
   num_documento: string;
-  fecha_emision: string;         // ISO format: "YYYY-MM-DD"
-  fecha_vencimiento: string;     // Puede ser igual a fecha_emision
+  fecha_emision: string; // ISO format: "YYYY-MM-DD"
+  fecha_vencimiento: string; // Puede ser igual a fecha_emision
   total: string;
   receptor: FacturaReceptor;
   productos: FacturaDetalleItem[];
 }
 
-
 export interface TipoGeneracionFactura {
   name: string;
   code: string;
+}
+
+export interface Descuentos {
+  descuentoGeneral: number;
+  descuentoGravado: number;
+}
+
+export interface pagination {
+  current_page: number;
+  page_size: number;
+  total_pages: number;
+  total_records: number;
+}
+
+export interface TableListadoFacturasContainerProps {
+  data: any;
+  pagination: pagination;
+  onPageChange: (event: any) => void;
 }

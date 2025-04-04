@@ -16,7 +16,7 @@ export const getAllActivities = async () => {
 };
 
 export const createActivity = async (activity: ActivitiesDataNew) => {
-  console.log("activity", activity)
+  console.log('activity', activity);
   try {
     const response = await axios.post(`${BASEURL}/actividad/crear/`, activity, {
       headers: {

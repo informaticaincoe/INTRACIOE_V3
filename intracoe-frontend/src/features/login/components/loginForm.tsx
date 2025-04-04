@@ -35,7 +35,6 @@ export const LoginForm = () => {
     setErrors(newErrors);
 
     if (!newErrors.username && !newErrors.password) {
-      console.log(formData.username, formData.password);
       navigate('/');
     }
   };

@@ -10,37 +10,45 @@ import './InputNumberCustom.css';
 import { FaCheckCircle } from 'react-icons/fa';
 import { ModalEliminarItemDeLista } from '../../Shared/modal/modalEliminarItemDeLista';
 import { ModalAgregarTributo } from '../../Shared/modal/modalAgregarTributo';
-import { getAllDescuentos } from '../../../services/productos/productosServices';
+import { getAllDescuentos } from '../../../../../../shared/services/productos/productosServices';
 import { Dropdown } from 'primereact/dropdown';
 
 interface TablaProductosAgregadosProps {
-  listProducts: ProductosTabla[],
-  setListProducts: any,
-  setCantidadListProducts: any,
-  setIdListProducts: any,
-  setDescuentoItem: any,
-  descuentoItem: number
+  listProducts: ProductosTabla[];
+  setListProducts: any;
+  setCantidadListProducts: any;
+  setIdListProducts: any;
+  setDescuentoItem: any;
+  descuentoItem: number;
+  tipoDte: any;
 }
 
-export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = ({ setListProducts, listProducts, setCantidadListProducts, setIdListProducts }) => {
+export const TablaProductosAgregados: React.FC<
+  TablaProductosAgregadosProps
+> = ({
+  setListProducts,
+  listProducts,
+  setCantidadListProducts,
+  setIdListProducts,
+  tipoDte,
+}) => {
   const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
   const [rowClick] = useState<boolean>(true);
   const [visibleDeleteModal, setVisibleDeleteModal] = useState<boolean>(false);
-  const [visibleTributoModal, setVisibleTributoModal] = useState<boolean>(false);
-  const [descuentosList, setDescuentosList] = useState<any[]>([]) // variable para almacenar al lista de descuentos y mostrarla en un dropdown
+  const [visibleTributoModal, setVisibleTributoModal] =
+    useState<boolean>(false);
+  const [descuentosList, setDescuentosList] = useState<any[]>([]); // variable para almacenar al lista de descuentos y mostrarla en un dropdown
 
   useEffect(() => {
-    fetchDescuento()
-    console.log(listProducts)
-  }, [])
+    fetchDescuento();
+  }, []);
 
   useEffect(() => {
-    const auxId = listProducts.map((product) => product.id)
-    const auxCantidad = listProducts.map((product) => product.cantidad)
+    const auxId = listProducts.map((product) => product.id);
+    const auxCantidad = listProducts.map((product) => product.cantidad);
 
-    setCantidadListProducts(auxCantidad)
-    setIdListProducts(auxId)
-
+    setCantidadListProducts(auxCantidad);
+    setIdListProducts(auxId);
   }, [listProducts]);
 
   // Función para manejar cambios en la cantidad de un producto específico
@@ -66,50 +74,44 @@ export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = (
     );
   };
 
-  // Función para manejar cambios en el descuento de un producto específico
-  const handleDescuentoChange = (value: number | null, productId: number) => {
+  const handleDescuentoChange = (value: string, productId: number) => {
     setListProducts((prevProducts: any[]) =>
-      prevProducts.map((product: { id: number; }) =>
-        product.id === productId
-          ? { ...product, descuento: value ?? 0 }
-          : product
+      prevProducts.map((product) =>
+        product.id === productId ? { ...product, descuento: value } : product
       )
     );
-
   };
 
   const handleDelete = () => {
-    console.log("selectedProducts", selectedProducts);
+    console.log('selectedProducts', selectedProducts);
     setVisibleDeleteModal(true);
   };
 
   const handleTributosModal = () => {
-    setVisibleTributoModal(true)
-  }
+    setVisibleTributoModal(true);
+  };
 
   const handlerEliminarItem = () => {
     // Filtrar los productos que NO están seleccionados
-    const filterList = listProducts.filter(product => {
+    const filterList = listProducts.filter((product) => {
       // Verificar si el producto no está en selectedProducts
-      return !selectedProducts.some(item => product.id === item.id);
+      return !selectedProducts.some((item) => product.id === item.id);
     });
-
-    console.log("filterList", filterList);
     setListProducts(filterList); // Actualizar la lista de productos
     setSelectedProducts([]); // Limpiar los productos seleccionados
     setVisibleDeleteModal(false);
-  }
+  };
 
   const fetchDescuento = async () => {
     try {
       const response = await getAllDescuentos();
       setDescuentosList(response);
 
-      // Aquí se establece el primer descuento de cada producto si no tiene descuento asignado
+      // Solo asignas si ya existían productos (evitar reescritura innecesaria)
       setListProducts((prevProducts: any[]) =>
         prevProducts.map((product) => ({
           ...product,
-          descuento: product.descuento || response[0]?.id, // Si no tiene descuento, se asigna el primer descuento
+          descuento: product.descuento ?? '0',
         }))
       );
     } catch (error) {
@@ -146,7 +148,6 @@ export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = (
         visible={visibleDeleteModal}
         size={selectedProducts.length}
         onClick={handlerEliminarItem}
-
       />
 
       <ModalAgregarTributo
@@ -155,6 +156,7 @@ export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = (
       />
 
       <DataTable
+        key={tipoDte.code} // <-- esto hace que se "resetee" al cambiar tipoDte
         value={listProducts}
         tableStyle={{ minWidth: '50rem' }}
         paginator
@@ -174,14 +176,33 @@ export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = (
           field="descripcion"
           header={<p className="text-sm">PRODUCTO</p>}
         ></Column>
-        <Column
-          body={(rowData: ProductosTabla) => <p>$ {rowData.precio_unitario}</p>}
-          header={<p className="text-sm">PRECIO UNITARIO</p>}
-        ></Column>
-        <Column
-          body={(rowData: ProductosTabla) => <p>$ {(rowData.iva_unitario).toFixed(2)}</p>}
-          header={<p className="text-sm">IVA UNITARIO</p>}
-        ></Column>
+        {tipoDte.code == '03' && (
+          <Column
+            body={(rowData: ProductosTabla) => (
+              <p>$ {rowData.precio_unitario}</p>
+            )}
+            header={<p className="text-sm">PRECIO UNITARIO</p>}
+          ></Column>
+        )}
+        {tipoDte.code == '03' && (
+          <Column
+            body={(rowData: ProductosTabla) => (
+              <p>$ {rowData.iva_unitario.toFixed(2)}</p>
+            )}
+            header={<p className="text-sm">IVA UNITARIO</p>}
+          ></Column>
+        )}
+        {tipoDte.code == '01' && (
+          <Column
+            body={(rowData: ProductosTabla) => {
+              const precio = parseFloat(rowData.precio_unitario as any);
+              const iva = parseFloat(rowData.iva_unitario as any);
+              const total = (precio + iva).toFixed(2);
+              return <p>$ {total}</p>;
+            }}
+            header={<p className="text-sm">PRECIO UNITARIO</p>}
+          />
+        )}
         <Column
           header={<p className="text-sm">CANTIDAD</p>}
           body={(rowData: ProductosTabla) => (
@@ -200,25 +221,33 @@ export const TablaProductosAgregados: React.FC<TablaProductosAgregadosProps> = (
             <Dropdown
               value={rowData.descuento}
               onChange={(e) => handleDescuentoChange(e.value, rowData.id)}
-              options={descuentosList}
-              optionLabel="porcentaje"
-              className="w-full md:w-14rem" />
+              options={descuentosList.map((d) => d.porcentaje)} // sólo porcentajes
+              placeholder="Seleccione un descuento"
+              className="md:w-14rem w-full"
+            />
           )}
         />
+
         <Column
           body={(rowData: ProductosTabla) => <p>$ {rowData.total_tributos}</p>}
           header={<p className="text-sm uppercase">TOTAL tributos</p>}
         ></Column>
         <Column
-          body={(rowData: ProductosTabla) => <p>$ {rowData.total_neto.toFixed(2)}</p>}
+          body={(rowData: ProductosTabla) => (
+            <p>$ {rowData.total_neto.toFixed(2)}</p>
+          )}
           header={<p className="text-sm">TOTAL NETO</p>}
         />
         <Column
-          body={(rowData: ProductosTabla) => <p>$ {rowData.total_iva.toFixed(2)}</p>}
+          body={(rowData: ProductosTabla) => (
+            <p>$ {rowData.total_iva.toFixed(2)}</p>
+          )}
           header={<p className="text-sm">TOTAL IVA</p>}
         />
         <Column
-          body={(rowData: ProductosTabla) => <p>$ {rowData.total_con_iva.toFixed(2)}</p>}
+          body={(rowData: ProductosTabla) => (
+            <p>$ {rowData.total_con_iva.toFixed(2)}</p>
+          )}
           header={<p className="text-sm">TOTAL CON IVA</p>}
         />
       </DataTable>

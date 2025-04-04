@@ -2,7 +2,10 @@ import React from 'react';
 import { Input } from '../../../../../shared/forms/input';
 import { SelectDepartmentComponent } from '../../../../../shared/Select/selectDepartmentComponent';
 import { SelectMunicipios } from '../../../../../shared/Select/selectMunicipios';
-import { Departamento, Municipio } from '../../interfaces/empresaInterfaces';
+import {
+  Departamento,
+  Municipio,
+} from '../../../../../shared/interfaces/interfaces';
 
 const StepperContactinfo = ({
   formData,
