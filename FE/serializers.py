@@ -1,6 +1,5 @@
 from rest_framework import serializers
 
-from rest_framework import serializers
 from .models import (
     Departamento,
     Descuento,
@@ -66,20 +65,6 @@ class ReceptorSerializer(serializers.ModelSerializer):
         model = Receptor_fe
         fields = '__all__'
 
-class ProductoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Producto
-        fields = '__all__'
-
-class TipoItemSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TipoItem
-        fields = '__all__'
-
-class DescuentoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Descuento
-        fields = '__all__'
 
 class FacturaListSerializer(serializers.ModelSerializer):
     estado_invalidacion = serializers.SerializerMethodField()
@@ -198,19 +183,6 @@ class TiposEstablecimientosSerializer(serializers.ModelSerializer):
 class TiposGeneracionDocumentoSerializer(serializers.ModelSerializer):
     class Meta:
         model = TipoGeneracionDocumento
-        fields = '__all__'
-
-
-class TiposTributosSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TipoTributo
-        fields = '__all__'
-
-
-
-class TributosSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Tributo
         fields = '__all__'
 
 
