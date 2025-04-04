@@ -1,8 +1,19 @@
-
 import React, { useState, useEffect } from 'react';
 import { Steps, message } from 'antd';
-import { ActivitiesData, Ambiente, defaultEmisorData, Departamento, EmisorInterface, Municipio, TipoDocumento, TipoEstablecimiento } from '../../../../../shared/interfaces/interfaces';
-import { createEmpresaById, getAllEmpresas } from '../../services/empresaServices';
+import {
+  ActivitiesData,
+  Ambiente,
+  defaultEmisorData,
+  Departamento,
+  EmisorInterface,
+  Municipio,
+  TipoDocumento,
+  TipoEstablecimiento,
+} from '../../../../../shared/interfaces/interfaces';
+import {
+  createEmpresaById,
+  getAllEmpresas,
+} from '../../services/empresaServices';
 import { StepperConfigBill } from './stepperConfigBill';
 import StepperContactinfo from './stepperContactinfo';
 import { WhiteSectionsPage } from '../../../../../shared/containers/whiteSectionsPage';
@@ -32,7 +43,10 @@ export const StepperContainer = () => {
     message.error(msg, 3);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>, formType: string) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    formType: string
+  ) => {
     if (formType === 'formData') {
       setFormData({ ...formData, [e.target.name]: e.target.value });
     }
@@ -109,7 +123,7 @@ export const StepperContainer = () => {
 
       try {
         const response = await createEmpresaById(body);
-        console.log(response)
+        console.log(response);
         showSuccess();
       } catch (error) {
         showError('Ya existe un emisor con este NIT');
@@ -168,17 +182,19 @@ export const StepperContainer = () => {
         <>
           <StepperConfigBill
             formData={formData}
-            handleChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange(e, 'formData')}
+            handleChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              handleChange(e, 'formData')
+            }
             handleSelectAmbiente={handleSelectAmbiente}
-            handleSelectActividadesEconomicas={handleSelectActividadesEconomicas}
+            handleSelectActividadesEconomicas={
+              handleSelectActividadesEconomicas
+            }
             handleTipoEstablecimiento={handleTipoEstablecimiento}
             handleTipoDocId={handleTipoDocId}
             errores={error}
           />
           <div className="justify-content-end flex pt-4">
-            <button onClick={() => setCurrent(current + 1)}>
-              Siguiente
-            </button>
+            <button onClick={() => setCurrent(current + 1)}>Siguiente</button>
           </div>
         </>
       ),
@@ -189,16 +205,16 @@ export const StepperContainer = () => {
         <>
           <StepperContactinfo
             formData={formData}
-            handleChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange(e, 'formData')}
+            handleChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              handleChange(e, 'formData')
+            }
             handleDepartamento={handleDepartamento}
             handleMunicipio={handleMunicipio}
             errores={error}
           />
           <div className="flex w-full justify-between pt-4">
             <button onClick={() => setCurrent(current - 1)}>Atras</button>
-            <button  onClick={handleSendForm}>
-              Guardar
-            </button>
+            <button onClick={handleSendForm}>Guardar</button>
           </div>
         </>
       ),
@@ -207,12 +223,13 @@ export const StepperContainer = () => {
 
   return (
     <WhiteSectionsPage className="mx-[20%]">
-     <>
-       <Steps current={current} items={steps.map((item) => ({ key: item.title, title: item.title }))} />
-       <div style={{ marginTop: 24 }}>
-         {steps[current].content}
-       </div>
-     </>
+      <>
+        <Steps
+          current={current}
+          items={steps.map((item) => ({ key: item.title, title: item.title }))}
+        />
+        <div style={{ marginTop: 24 }}>{steps[current].content}</div>
+      </>
     </WhiteSectionsPage>
   );
 };

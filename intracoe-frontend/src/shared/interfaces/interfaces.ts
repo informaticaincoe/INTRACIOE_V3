@@ -167,7 +167,7 @@ export interface Categoria {
 
 export interface TipoUnidadMedida {
   id: number;
-  // Otros campos relevantes
+  codigo: string;
   descripcion: string;
 }
 
@@ -200,7 +200,7 @@ export interface ProductoRequest {
   codigo: string;
   descripcion: string;
   // categoria?: Categoria | null;
-  unidad_medida?: TipoUnidadMedida | null;
+  unidad_medida?: number | null;
   preunitario: number;
   precio_compra: number;
   precio_venta: number;
@@ -208,22 +208,21 @@ export interface ProductoRequest {
   stock_minimo: number;
   stock_maximo: number;
   impuestos: Impuesto[];
-  tipo_item?: TipoItem | null;
+  tipo_item?: number | null;
   referencia_interna?: string | null;
-  tributo: Tributo;
+  tributo: number;
   precio_iva: boolean;
   maneja_lotes: boolean;
   fecha_vencimiento?: string | null;
-  almacenes: Almacen[];
+  almacenes: string[];
   imagen?: string | null;
-  creado: string; 
-  actualizado: string; 
+  creado: string;
+  actualizado: string;
 }
 
-
 export const productoInicial: ProductoRequest = {
-  codigo: "",
-  descripcion: "",
+  codigo: '',
+  descripcion: '',
   // categoria: null,
   unidad_medida: null,
   preunitario: 0,
@@ -235,14 +234,14 @@ export const productoInicial: ProductoRequest = {
   impuestos: [],
   tipo_item: null,
   referencia_interna: null,
-  tributo: { id: 0, nombre: "" },
+  tributo: 0,
   precio_iva: false,
   maneja_lotes: false,
-  fecha_vencimiento: null, // Representada como string ISO o null
+  fecha_vencimiento: null,
   almacenes: [],
-  imagen: null, // URL de la imagen o null si no hay
-  creado: "",   // Estas fechas pueden actualizarse al momento de crear el registro
-  actualizado: ""
+  imagen: null,
+  creado: '', 
+  actualizado: '',
 };
 
 export interface TipoGeneracionDocumentoInterface {

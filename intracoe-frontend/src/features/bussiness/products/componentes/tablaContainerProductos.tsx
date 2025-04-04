@@ -1,26 +1,23 @@
-import { useEffect, useState } from 'react'
-import { getAllProducts } from '../../../../shared/services/productos/productosServices'
-import { ProductoResponse } from '../../../../shared/interfaces/interfaces'
-import { TablaProductos } from './tablaProductos'
+import { useEffect, useState } from 'react';
+import { getAllProducts } from '../../../../shared/services/productos/productosServices';
+import { ProductoResponse } from '../../../../shared/interfaces/interfaces';
+import { TablaProductos } from './tablaProductos';
 
 export const TablaContainerProductos = () => {
-    const [productos, setProductos] = useState<ProductoResponse[]>([])
+  const [productos, setProductos] = useState<ProductoResponse[]>([]);
 
-    useEffect(()=>{
-        fetchProductos()
-    },[])
+  useEffect(() => {
+    fetchProductos();
+  }, []);
 
-    const fetchProductos = async () => {
-        try {
-            const response = await getAllProducts()
-            console.log("response", response)
-            setProductos(response)
-        } catch (error) {
-            console.log(error)
-        }
+  const fetchProductos = async () => {
+    try {
+      const response = await getAllProducts();
+      setProductos(response);
+    } catch (error) {
+      console.log(error);
     }
+  };
 
-    return (
-        <TablaProductos productos={productos} />
-    )
-}
+  return <TablaProductos productos={productos} />;
+};

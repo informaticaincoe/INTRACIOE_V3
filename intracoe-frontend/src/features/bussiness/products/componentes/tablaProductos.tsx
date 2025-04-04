@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { ProductoResponse } from '../../../../shared/interfaces/interfaces'
+import React, { useState } from 'react';
+import { ProductoResponse } from '../../../../shared/interfaces/interfaces';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Image } from 'primereact/image';
@@ -7,20 +7,18 @@ import { Image } from 'primereact/image';
 import { FaCheckCircle } from 'react-icons/fa';
 
 export interface TablaProductosProps {
-  productos: ProductoResponse[]
+  productos: ProductoResponse[];
 }
 
-export const TablaProductos: React.FC<TablaProductosProps> = ({ productos }) => {
+export const TablaProductos: React.FC<TablaProductosProps> = ({
+  productos,
+}) => {
   const [rowClick] = useState<boolean>(true);
   const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
 
-  const handleDelete = () => {
+  const handleDelete = () => {};
 
-  }
-
-  const editHandler = () => {
-
-  }
+  const editHandler = () => {};
 
   return (
     <div>
@@ -31,14 +29,14 @@ export const TablaProductos: React.FC<TablaProductosProps> = ({ productos }) => 
             productos seleccionados {selectedProducts.length}
           </p>
           <span className="flex gap-2">
-            {selectedProducts.length === 1 &&
+            {selectedProducts.length === 1 && (
               <span
                 className="border-blue flex items-center gap-2 rounded-md border px-3 py-1 hover:cursor-pointer"
                 onClick={editHandler}
               >
                 <p className="text-blue">Editar producto</p>
               </span>
-            }
+            )}
             {
               <button
                 className="border-red flex items-center gap-2 rounded-md border px-3 py-1 hover:cursor-pointer"
@@ -50,8 +48,9 @@ export const TablaProductos: React.FC<TablaProductosProps> = ({ productos }) => 
           </span>
         </div>
       )}
-      <DataTable value={productos} tableStyle={{ minWidth: '50rem' }}
-
+      <DataTable
+        value={productos}
+        tableStyle={{ minWidth: '50rem' }}
         selectionMode={rowClick ? null : 'multiple'}
         selection={selectedProducts!}
         onSelectionChange={(e: { value: React.SetStateAction<any[]> }) =>
@@ -63,10 +62,16 @@ export const TablaProductos: React.FC<TablaProductosProps> = ({ productos }) => 
           headerStyle={{ width: '3rem' }}
         ></Column>
         <Column field="codigo" header="Código" />
-        <Column header="Producto"
+        <Column
+          header="Producto"
           body={(rowData: any) => (
-            <div className='flex items-center gap-4'>
-              <Image src='https://static.wixstatic.com/media/8c690e_55a384dd4ad142f185b68a029e397ca6~mv2.png/v1/fill/w_570,h_570,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/8c690e_55a384dd4ad142f185b68a029e397ca6~mv2.png' alt="Image" width="75" preview />
+            <div className="flex items-center gap-4">
+              <Image
+                src="https://static.wixstatic.com/media/8c690e_55a384dd4ad142f185b68a029e397ca6~mv2.png/v1/fill/w_570,h_570,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/8c690e_55a384dd4ad142f185b68a029e397ca6~mv2.png"
+                alt="Image"
+                width="75"
+                preview
+              />
 
               <p>{rowData.descripcion}</p>
             </div>

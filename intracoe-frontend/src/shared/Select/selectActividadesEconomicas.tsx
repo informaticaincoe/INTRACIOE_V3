@@ -19,7 +19,6 @@ export const SelectActividadesEconomicas: React.FC<
   useEffect(() => {
     fetchActividadesList();
   }, []);
-  
 
   const fetchActividadesList = async () => {
     try {
