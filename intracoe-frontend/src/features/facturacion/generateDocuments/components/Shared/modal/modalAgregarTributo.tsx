@@ -7,7 +7,10 @@ import {
   getAllTributosByTipo,
 } from '../../../../../../shared/services/tributos/tributos';
 import { MultiSelect } from 'primereact/multiselect';
-import { TipoTributos, Tributos } from '../../../../../../shared/interfaces/interfaces';
+import {
+  TipoTributos,
+  Tributos,
+} from '../../../../../../shared/interfaces/interfaces';
 
 interface ModalAgregarTibutoInterface {
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;

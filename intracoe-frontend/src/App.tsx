@@ -10,8 +10,8 @@ import { UploadExcelPage } from './features/facturacion/activities/pages/uploadE
 import { ConfigBussiness } from './features/bussiness/configBussiness/pages/ConfigBussiness';
 import { FacturaVisualizacionPage } from './features/facturacion/PreFactura/pages/FE/facturaVisualizacionPage';
 import { ListadoFacturas } from './features/facturacion/Listadofacturas/pages/listadoFacturas';
-import { ServicioPage } from './features/bussiness/services/pages/servicioPage';
 import { NuevoProductoPage } from './features/bussiness/products/pages/nuevoProductoPage';
+import { ServicioPage } from './features/bussiness/servicios/pages/servicioPage';
 
 function App() {
   return (

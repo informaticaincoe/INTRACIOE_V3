@@ -166,6 +166,11 @@ class TipoUnidadMedidaSerializer(serializers.ModelSerializer):
         model = TipoUnidadMedida
         fields = '__all__'
 
+class TipoItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoItem
+        fields = '__all__'
+
 class TiposDocIDReceptorSerializer(serializers.ModelSerializer):
     class Meta:
         model = TiposDocIDReceptor

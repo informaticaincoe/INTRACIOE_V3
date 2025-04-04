@@ -9,7 +9,6 @@ export const TablaProductosFE: React.FC<TablaProductosFEInterface> = ({
   productos,
   tipo_dte,
 }) => {
-
   return (
     <>
       <table className="border-border-color w-full table-auto rounded-md border-2 text-start">

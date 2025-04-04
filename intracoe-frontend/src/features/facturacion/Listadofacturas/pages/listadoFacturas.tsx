@@ -23,9 +23,9 @@ export const ListadoFacturas = () => {
     recibido_mh: null,
     sello_recepcion: null,
     has_sello_recepcion: null,
-    estado:null,
+    estado: null,
     tipo_dte: null,
-    estado_invalidacion:null
+    estado_invalidacion: null,
   });
 
   useEffect(() => {
@@ -38,7 +38,6 @@ export const ListadoFacturas = () => {
     // Se utiliza el page_size actual para la consulta
     fetchFacturas(1, pagination.page_size);
   }, [filters]);
-  
 
   const fetchFacturas = async (page = 1, limit = 20) => {
     try {
@@ -65,7 +64,6 @@ export const ListadoFacturas = () => {
       console.log(error);
     }
   };
-  
 
   const onPageChange = (event: any) => {
     // event.page suele ser el índice de la página (0 basado)

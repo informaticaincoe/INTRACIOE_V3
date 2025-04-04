@@ -2,9 +2,7 @@ import { Dropdown } from 'primereact/dropdown';
 import React, { useEffect, useState } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { getAllReceptor } from '../../../../../../shared/services/receptor/receptorServices';
-import {
-  ReceptorInterface,
-} from '../../../../../../shared/interfaces/interfaces';
+import { ReceptorInterface } from '../../../../../../shared/interfaces/interfaces';
 import { ModalReceptor } from './modalReceptor';
 
 interface StepperProps {
@@ -22,7 +20,7 @@ export const SelectReceptor: React.FC<StepperProps> = ({
 }) => {
   const [receptoresList, setReceptoreLists] = useState<ReceptorInterface[]>([]);
   const [visibleModal, setVisibleModal] = useState(false);
-  
+
   useEffect(() => {
     fetchReceptores();
   }, []);
@@ -35,7 +33,7 @@ export const SelectReceptor: React.FC<StepperProps> = ({
       console.log(error);
     }
   };
-  
+
   const hadleChange = (value: any) => {
     setReceptor(value);
     if (errorReceptor) setErrorReceptor(!errorReceptor);
@@ -80,7 +78,10 @@ export const SelectReceptor: React.FC<StepperProps> = ({
           setVisibleModal(false);
         }}
       >
-        <ModalReceptor setReceptoreLists={setReceptoreLists} receptoresList={receptoresList}/>
+        <ModalReceptor
+          setReceptoreLists={setReceptoreLists}
+          receptoresList={receptoresList}
+        />
       </Dialog>
     </>
   );

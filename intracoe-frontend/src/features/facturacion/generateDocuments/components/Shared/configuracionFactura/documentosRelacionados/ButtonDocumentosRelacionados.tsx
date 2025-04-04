@@ -27,8 +27,6 @@ export const ButtonDocumentosRelacionados: React.FC<
     numDocRelacionado: 0,
   });
 
-
-
   const handleChange = (e: InputNumberValueChangeEvent) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
