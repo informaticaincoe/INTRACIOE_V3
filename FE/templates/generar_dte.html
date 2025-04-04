@@ -560,7 +560,6 @@
     //let porcentaje = parseFloat(porcentajeSelect.value.replace(',', '.'));
     let porcentaje = parseFloat(porcentajeSelect.value);
     descuento_sel_item = porcentaje;
-    console.log("Descuento seleccionado: ", porcentaje);
   }
 
   let totalCompletado = false
@@ -683,7 +682,7 @@
       let total_precio_inc = 0;
 
       porcentaje_descu = descuento_sel_item.toFixed(2);
-      porcentaje_descu = roundHalfUp( (porcentaje_descu / 100), 6)
+      porcentaje_descu = roundHalfUp( (porcentaje_descu / 100), 6);
 
       //Si es consumidor final ("01") el precio debe mostrarse con iva
       qty = parseFloat(cantidad);
@@ -738,7 +737,6 @@
       tableBody.appendChild(row);
       descuento_sel_item = 0;
       porcentaje_descu = 0;
-      console.log("1. porcentaje descu: ", parseFloat(porcentaje_descu * 100))
   }
 
   //redondeo hacia arriba ROUND_HALF_UP
@@ -782,7 +780,7 @@
     const tipo_dte = document.getElementById('tipo_documento_select').value;
 
     let sumNeto = 0, sumIVA = 0, sumIncl = 0, porcentajeDescu = 0, sumMontoDescu = 0;
-    let descu_gravado = 0, suma_descuentos = 0, montoNeto = 0;
+    let descu_gravado = 0, suma_descuentos = 0, montoNeto = 0, montoDescu = 0;
     let valorTributo = 0, montoTotalOperacion = 0;
 
     // Sumatoria descuento por item
@@ -799,7 +797,8 @@
 
         montoNeto = parseFloat(netoCell.textContent) || 0;
         porcentajeDescu = ( (parseFloat(row.querySelector('.descuento-item').textContent) || 0) / 100);
-        sumMontoDescu += roundHalfUp( (montoNeto * porcentajeDescu), 6);
+        montoDescu = roundHalfUp( (montoNeto * porcentajeDescu), 6);
+        sumMontoDescu += roundHalfUp( montoDescu, 2);
       }
     });
     
@@ -814,7 +813,8 @@
 
         montoNeto = parseFloat(netoCell.textContent) || 0;
         porcentajeDescu = ( (parseFloat(row.querySelector('.descuento-item').textContent) || 0) / 100);
-        sumMontoDescu += roundHalfUp( (montoNeto * porcentajeDescu), 6);
+        montoDescu = roundHalfUp( (montoNeto * porcentajeDescu), 6);
+        sumMontoDescu += roundHalfUp( montoDescu, 2);
       }
     });
     
@@ -823,8 +823,11 @@
     document.getElementById("total-incl").textContent = sumIncl.toFixed(2);
 
     //Monto global y monto a ventas gravadas
-    descu_gravado = parseFloat(document.getElementById("descuento_gravado").value / 100) || 0;
-    suma_descuentos = (parseFloat(sumMontoDescu) || 0) + (parseFloat(descu_gravado) || 0);
+    //descu_gravado = parseFloat(document.getElementById("descuento_gravado").value / 100) || 0;
+    monto_porc_gravado = parseFloat(document.getElementById("descuento_gravado").value / 100) || 0;
+    descu_gravado = roundHalfUp( (sumIncl * monto_porc_gravado), 6);
+    suma_descuentos = roundHalfUp( (sumMontoDescu + descu_gravado), 6);
+    console.log("suminc= ", sumIncl, "porc gravado= ", monto_porc_gravado, "monto descu gravado= ", descu_gravado, "suma descuentos= ", suma_descuentos)
     let descuentoPorc = parseFloat(document.getElementById("descuento-global").value) || 0;
     let montoDescuento = (sumIncl * descuentoPorc / 100).toFixed(2);
     //let totalPagar = (sumIncl - montoDescuento).toFixed(2);
