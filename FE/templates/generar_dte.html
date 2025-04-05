@@ -290,11 +290,11 @@
         <h4>Extensión</h4>
         <div class="form-group">
           <label>Nombre responsable:</label>
-          <input type="text" id="nombre_responsable" class="form-control" placeholder="Nombre del Responsable">
+          <input type="text" id="nombre_responsable" name="resp_nombre_input" class="form-control" placeholder="Nombre del Responsable">
         </div>
         <div class="form-group">
           <label>Número de documento del responsable:</label>
-          <input type="text" id="documento_responsable" class="form-control" placeholder="Número de Identificación">
+          <input type="text" id="documento_responsable" name="resp_documento_input" class="form-control" placeholder="Número de Identificación">
         </div>
       </div>
 
@@ -905,6 +905,9 @@
       jsonData["tipo_item_select"] = document.querySelector('select[name="tipo_item_seleccionado"]').value;
       jsonData["monto_descuento"] = document.getElementById("monto_descuento").textContent;
       jsonData["descuento_gravado"] = parseFloat(document.getElementById("descuento_gravado").value) || 0;
+
+      jsonData["nombre_responsable"] = document.getElementById("nombre_responsable").value;
+      jsonData["documento_responsable"] = document.getElementById("documento_responsable").value;
       
       // Recopilar datos de productos
       let productos_ids = [];
@@ -1256,6 +1259,7 @@ async function actualizarProductos() {
 }
 
 function validacionesFormulario(event) {
+  const tipo_dte = document.getElementById('tipo_documento_select').value;
   const receptor = document.getElementById('receptor-select').value;
   const total_pagar = parseFloat(document.getElementById('total-pagar').textContent.trim());
   const fp_recibida = parseFloat(document.getElementById('recibido').textContent.trim());
@@ -1275,7 +1279,7 @@ function validacionesFormulario(event) {
     console.log("Forma de pago no seleccionada: ", fp_recibida)
     event.preventDefault();
     alert('Agregar pago.');
-  }else if (total_pagar > 1 && !nombre_responsable && !documento_responsable){
+  }else if (tipo_dte == "03" && total_pagar >= 11428.57 && !nombre_responsable && !documento_responsable){
     console.log("Requerido enviar informacion del responsable: ", nombre_responsable, documento_responsable)
     event.preventDefault();
     alert('Agregar responsable de los documentos electrónicos.');

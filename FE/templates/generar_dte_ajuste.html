@@ -285,6 +285,18 @@
             <p><strong>Total a Pagar:</strong> $<span id="total-pagar">0.00</span></p>
           </div>
       </div>
+
+      <div class="extension">
+        <h4>Extensión</h4>
+        <div class="form-group">
+          <label>Nombre responsable:</label>
+          <input type="text" id="nombre_responsable" name="resp_nombre_input" class="form-control" placeholder="Nombre del Responsable">
+        </div>
+        <div class="form-group">
+          <label>Número de documento del responsable:</label>
+          <input type="text" id="documento_responsable" name="resp_documento_input" class="form-control" placeholder="Número de Identificación">
+        </div>
+      </div>
       
       <!-- Botón de Envío -->
       <button type="submit" id="btnGenerar" class="btn btn-primary mt-3">Generar Factura</button>
@@ -880,6 +892,9 @@
       jsonData["tipo_item_select"] = document.querySelector('select[name="tipo_item_seleccionado"]').value;
       jsonData["monto_descuento"] = document.getElementById("monto_descuento").textContent;
       jsonData["descuento_gravado"] = parseFloat(document.getElementById("descuento_gravado").value) || 0;
+
+      jsonData["nombre_responsable"] = document.getElementById("nombre_responsable").value;
+      jsonData["documento_responsable"] = document.getElementById("documento_responsable").value;
       
       // Recopilar datos de productos
       let productos_ids = [];
@@ -1255,6 +1270,7 @@ async function actualizarProductos() {
 }
 
 function validacionesFormulario(event) {
+  const tipo_dte = document.getElementById('tipo_documento_select').value;
   const receptor = document.getElementById('receptor-select').value;
   const total_pagar = parseFloat(document.getElementById('total-pagar').textContent.trim());
   const fp_recibida = parseFloat(document.getElementById('recibido').textContent.trim());
@@ -1268,6 +1284,10 @@ function validacionesFormulario(event) {
     console.log("Total a pagar no definido: ", total_pagar)
     event.preventDefault();
     alert('Total a pagar debe ser mayor a 0.');
+  }else if (tipo_dte == "03" && total_pagar >= 11428.57 && !nombre_responsable && !documento_responsable){
+    console.log("Requerido enviar informacion del responsable: ", nombre_responsable, documento_responsable)
+    event.preventDefault();
+    alert('Agregar responsable de los documentos electrónicos.');
   }else{
     console.log("Informacion completa")
     enviarFormulario(event)
