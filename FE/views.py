@@ -583,6 +583,9 @@ def generar_factura_view(request):
             descuentos_aplicados = data.get("descuento_select", [])
             # En este caso, se asume que el descuento por producto es 0 (se aplica globalmente)
             
+            nombre_responsable = data.get("nombre_responsable", None)
+            documento_responsable = data.get("documento_responsable", None)
+            
             if numero_control:
                 numero_control = NumeroControl.obtener_numero_control(tipo_dte)
                 print(numero_control)
@@ -956,7 +959,7 @@ def generar_factura_view(request):
             factura_json = generar_json(
                 ambiente_obj, tipo_dte_obj, factura, emisor, receptor,
                 cuerpo_documento, observaciones, Decimal(str(total_iva_item)), base_imponible_checkbox, saldo_favor, documentos_relacionados, contingencia, 
-                total_gravada
+                total_gravada, nombre_responsable, documento_responsable
             )
             
             factura.json_original = factura_json
@@ -983,11 +986,13 @@ def generar_factura_view(request):
     return JsonResponse({"error": "Método no permitido"}, status=405)
 
 #BC 05/03/2025:
-def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_documento, observaciones, iva_item_total, base_imponible_checkbox, saldo_favor, documentos_relacionados, contingencia, total_gravada):
+def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_documento, observaciones, iva_item_total, base_imponible_checkbox, saldo_favor, documentos_relacionados, contingencia, total_gravada, nombre_responsable, doc_responsable):
     print("-Inicio llenar json")
     try:
         if saldo_favor is None or saldo_favor == "":
             saldo_favor = Decimal("0.00")
+        
+        montoExtension = Decimal("11428.57")
         
         #Resumen tributos
         tributo = Tributo.objects.get(codigo="20")
@@ -1132,6 +1137,11 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
             
             if base_imponible_checkbox == True:
                 json_resumen["tributos"] = None
+                
+            if Decimal(json_resumen["montoTotalOperacion"]) >= montoExtension:
+                json_extension["nombEntrega"] = str(nombre_responsable)
+                json_extension["docuEntrega"] = str(doc_responsable)
+                #PENDIENTE: agregar el nombre y documento del responsable de la operacion por parte del receptor 
                 
         if json_resumen["saldoFavor"] is not None and json_resumen["saldoFavor"] !="" and Decimal(json_resumen["saldoFavor"]).compare(Decimal("0.00")) > 0:
             json_resumen["condicionOperacion"] = int(CondicionOperacion.objects.get(codigo="1").codigo) #Al contado
@@ -1297,72 +1307,102 @@ def firmar_factura_view(request, factura_id):
     Firma la factura y, si ya está firmada, la envía a Hacienda.
     """
     print("-Inicio firma DTE")
-    factura = get_object_or_404(FacturaElectronica, id=factura_id)
-
-    token_data = Token_data.objects.filter(activado=True).first()
-    if not token_data:
-        return JsonResponse({"error": "No hay token activo registrado en la base de datos."}, status=401)
-
-    if not os.path.exists(CERT_PATH):
-        return JsonResponse({"error": "No se encontró el certificado en la ruta especificada."}, status=400)
     
-    # Verificar y formatear el JSON original de la factura
-    try:
-        if isinstance(factura.json_original, dict):
-            dte_json_str = json.dumps(factura.json_original, separators=(',', ':'))
-        else:
-            json_obj = json.loads(factura.json_original)
-            dte_json_str = json.dumps(json_obj, separators=(',', ':'))
-    except Exception as e:
-        return JsonResponse({
-            "error": "El JSON original de la factura no es válido",
-            "detalle": str(e)
-        }, status=400)
+    #Intentos para envio del dte a MH
+    intentos_max = 3
+    intento = 1 #Iniciamos el primer envio a MH
+    time.sleep(5) # El tiempo de espera para el envio de los dte es de 5 segundos
+    
+    #while intento <= intentos_max:
+    for intento in range(1, intentos_max + 1):  # Esto asegura que solo se realicen max_intentos veces
+        print(f"Intento {intento} de {intentos_max}")
+        factura = get_object_or_404(FacturaElectronica, id=factura_id)
 
-    # Construir el payload con los parámetros requeridos
-    payload = {
-        "nit": "06142811001040",   # Nit del contribuyente
-        "activo": True,            # Indicador activo
-        "passwordPri": "3nCr!pT@d0Pr1v@d@",   # Contraseña de la llave privada
-        "dteJson": factura.json_original    # JSON del DTE como cadena
-    }
+        token_data = Token_data.objects.filter(activado=True).first()
+        if not token_data:
+            return JsonResponse({"error": "No hay token activo registrado en la base de datos."}, status=401)
 
-    headers = {"Content-Type": "application/json"}
-
-    try:
-        response = requests.post(FIRMADOR_URL, json=payload, headers=headers)
+        if not os.path.exists(CERT_PATH):
+            return JsonResponse({"error": "No se encontró el certificado en la ruta especificada."}, status=400)
         
-        # Capturamos la respuesta completa
+        # Verificar y formatear el JSON original de la factura
         try:
-            response_data = response.json()
+            if isinstance(factura.json_original, dict):
+                dte_json_str = json.dumps(factura.json_original, separators=(',', ':'))
+            else:
+                json_obj = json.loads(factura.json_original)
+                dte_json_str = json.dumps(json_obj, separators=(',', ':'))
         except Exception as e:
-            # En caso de error al parsear el JSON, se guarda el texto crudo
-            response_data = {"error": "No se pudo parsear JSON", "detalle": response.text}
-        
-        # Guardar toda la respuesta en la factura para depuración (incluso si hubo error)
-        factura.json_firmado = response_data
-        factura.firmado = True
-        factura.save()
+            return JsonResponse({
+                "error": "El JSON original de la factura no es válido",
+                "detalle": str(e)
+            }, status=400)
 
-        # Verificar si la firma fue exitosa
-        if response.status_code == 200 and response_data.get("status") == "OK":
-            # (Opcional) Guardar el JSON firmado en un archivo
-            json_signed_path = f"FE/json_facturas_firmadas/{factura.codigo_generacion}.json"
-            os.makedirs(os.path.dirname(json_signed_path), exist_ok=True)
-            with open(json_signed_path, "w", encoding="utf-8") as json_file:
-                json.dump(response_data, json_file, indent=4, ensure_ascii=False)
+        # Construir el payload con los parámetros requeridos
+        payload = {
+            "nit": "06142811001040",   # Nit del contribuyente
+            "activo": True,            # Indicador activo
+            "passwordPri": "3nCr!pT@d0Pr1v@d@",   # Contraseña de la llave privada
+            "dteJson": factura.json_original    # JSON del DTE como cadena
+        }
 
-            return redirect(reverse('detalle_factura', args=[factura_id]))
-        else:
-            # Se devuelve el error completo recibido
-            return JsonResponse({"error": "Error al firmar la factura", "detalle": response_data}, status=400)
-    except requests.exceptions.RequestException as e:
-        return JsonResponse({"error": "Error de conexión con el firmador", "detalle": str(e)}, status=500)
+        headers = {"Content-Type": "application/json"}
+
+        try:
+            print("Inicio firmar dte: ")
+            response = requests.post(FIRMADOR_URL, json=payload, headers=headers)
+            print("Dte firmado: ")
+            # Capturamos la respuesta completa
+            try:
+                response_data = response.json()
+            except Exception as e:
+                # En caso de error al parsear el JSON, se guarda el texto crudo
+                response_data = {"error": "No se pudo parsear JSON", "detalle": response.text}
+            
+            # Guardar toda la respuesta en la factura para depuración (incluso si hubo error)
+            factura.json_firmado = response_data
+            factura.firmado = True
+            factura.save()
+
+            # Verificar si la firma fue exitosa
+            if response.status_code == 200 and response_data.get("status") == "OK":
+                # (Opcional) Guardar el JSON firmado en un archivo
+                json_signed_path = f"FE/json_facturas_firmadas/{factura.codigo_generacion}.json"
+                os.makedirs(os.path.dirname(json_signed_path), exist_ok=True)
+                with open(json_signed_path, "w", encoding="utf-8") as json_file:
+                    json.dump(response_data, json_file, indent=4, ensure_ascii=False)
+
+                return redirect(reverse('detalle_factura', args=[factura_id]))
+            else:
+                factura.firmado = True
+                factura.contingencia = True
+                factura.save()
+            
+                intento += 1
+                time.sleep(5) #esperar 5 segundos antes de reintentar
+                print("Error en la firma de la factura: # intento de envio a MH: ", intento)
+                # Se devuelve el error completo recibido
+                #return JsonResponse({"error": "Error al firmar la factura", "detalle": response_data}, status=400)
+        except requests.exceptions.RequestException as e:
+            factura.firmado = True
+            factura.contingencia = True
+            factura.save()
+            print("Error en la firma de la factura: # intentos de envio a MH: ", intento)
+            intento += 1
+            time.sleep(5) #esperar 5 segundos antes de reintentar
+            #return JsonResponse({"error": "Error de conexión con el firmador", "detalle": str(e)}, status=500)
+    return JsonResponse({
+            "error": "Error de conexión con el firmador",
+            "intentos de firma": intento
+        }, status=500)
 
 
 @csrf_exempt
 @require_POST
 def enviar_factura_hacienda_view(request, factura_id):
+    print("Inicio enviar factura a MH")
+    #Intentos para envio del dte a MH
+    intentos_max = 3
 
     # Paso 1: Autenticación contra el servicio de Hacienda
     nit_empresa = "06142811001040"
@@ -1375,15 +1415,18 @@ def enviar_factura_hacienda_view(request, factura_id):
     auth_data = {"user": nit_empresa, "pwd": pwd}
 
     try:
+        print("Inicio autenticacion MH")
         auth_response = requests.post(auth_url, data=auth_data, headers=auth_headers)
         try:
             auth_response_data = auth_response.json()
         except ValueError:
+            print("Fallo autenticacion MH")
             return JsonResponse({
                 "error": "Error al decodificar la respuesta de autenticación",
                 "detalle": auth_response.text
             }, status=500)
-
+            
+        print("estado autenticacion: ", auth_response.status_code)
         if auth_response.status_code == 200:
             token_body = auth_response_data.get("body", {})
             token = token_body.get("token")
@@ -1469,11 +1512,13 @@ def enviar_factura_hacienda_view(request, factura_id):
     }
 
     try:
+        print("Inicio envio response: ")
         envio_response = requests.post(
             "https://api.dtes.mh.gob.sv/fesv/recepciondte",
             json=envio_json,
             headers=envio_headers
         )
+        print("Response enviado: ")
 
         print("Envio response status code:", envio_response.status_code)
         print("Envio response headers:", envio_response.headers)
@@ -1485,36 +1530,48 @@ def enviar_factura_hacienda_view(request, factura_id):
             response_data = {"raw": envio_response.text or "No content"}
             print("Error al decodificar JSON en envío:", e)
 
-        if envio_response.status_code == 200:
-            factura.sello_recepcion = response_data.get("selloRecibido", "")
-            factura.recibido_mh=True
-            #Guardar respuesta de MH en json_original
-            json_response_data = {
-                "jsonRespuestaMh": response_data
-            }
-            json_original = factura.json_original
-            
-            #Combinar jsons
-            json_nuevo = json_original | json_response_data
-            #Convertir diccionario en json
-            json_respuesta_mh = json.dumps(json_nuevo)
-            #Al convertir un diccionario en json se guarda como un string, por lo que se debe convertir a json (loads)
-            json_original_campo = json.loads(json_respuesta_mh)
-            factura.json_original = json_original_campo
-            factura.estado=True
+        intento = 1 #Iniciamos el primer envio a MH
+        while intento <= intentos_max:
+            print("Inicio de intento de envio a MH: ", intento)
+            if envio_response.status_code == 200:
+                factura.sello_recepcion = response_data.get("selloRecibido", "")
+                factura.recibido_mh=True
+                #Guardar respuesta de MH en json_original
+                json_response_data = {
+                    "jsonRespuestaMh": response_data
+                }
+                json_original = factura.json_original
+                
+                #Combinar jsons
+                json_nuevo = json_original | json_response_data
+                #Convertir diccionario en json
+                json_respuesta_mh = json.dumps(json_nuevo)
+                #Al convertir un diccionario en json se guarda como un string, por lo que se debe convertir a json (loads)
+                json_original_campo = json.loads(json_respuesta_mh)
+                factura.json_original = json_original_campo
+                factura.estado=True
+                factura.save()
+                return JsonResponse({
+                    "mensaje": "Factura enviada con éxito",
+                    "respuesta": response_data
+                })
+            else:
+                factura.estado=False
+                factura.save()
+                
+                intento += 1
+                time.sleep(5) #esperar 5 segundos antes de reintentar
+                print("Error en el envio de la factura: # intento de envio: ", intento)
+        #Si los 3 intentos fallan guardar la factura como contingencia
+        if intento == 3:
+            factura.contingencia=True
             factura.save()
-            return JsonResponse({
-                "mensaje": "Factura enviada con éxito",
-                "respuesta": response_data
-            })
-        else:
-            factura.estado=False
-            factura.save()
-            return JsonResponse({
-                "error": "Error al enviar la factura",
-                "status": envio_response.status_code,
-                "detalle": response_data
-            }, status=envio_response.status_code)
+        
+        return JsonResponse({
+            "error": "Error al enviar la factura",
+            "status": envio_response.status_code,
+            "detalle": response_data
+        }, status=envio_response.status_code)
 
     except requests.exceptions.RequestException as e:
         return JsonResponse({
