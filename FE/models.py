@@ -320,6 +320,7 @@ class FacturaElectronica(models.Model):
     sello_recepcion = models.CharField(max_length=255, blank=True, null=True)
     recibido_mh = models.BooleanField(default=False)
     estado = models.BooleanField(default=False)
+    contingencia = models.BooleanField(default=False)
     #tipo_documento_relacionar = models.CharField(max_length=50, null=True, blank=True)#Identificar si el documento es Fisico(F) o Electronico(E)
     #documento_relacionado = models.CharField(max_length=100, null=True, blank=True)#Agregar el documento relacionado
     base_imponible = models.BooleanField(default=False)
@@ -433,9 +434,16 @@ class Token_data(models.Model):
         verbose_name_plural = "Token Data"
         
 
-    class EventoContingencia(models.Model):
-        #Identificacion
-        codigo_generacion = models.UUIDField(default=uuid.uuid4, unique=True)
-        fecha_transmicion = models.DateField(auto_now_add=True, null=True)
-        hora_transmision = models.TimeField(auto_now_add=True, null=True)
+class EventoContingencia(models.Model):
+    #Identificacion
+    codigo_generacion = models.UUIDField(default=uuid.uuid4, unique=True)
+    sello_recepcion = models.CharField(max_length=255, blank=True, null=True)
+    fecha_transmicion = models.DateField(auto_now_add=True, null=True)
+    hora_transmision = models.TimeField(auto_now_add=True, null=True)
+    estado = models.BooleanField(default=False)
+    factura = models.ForeignKey(FacturaElectronica, on_delete=models.CASCADE, related_name='detalles_dte', null=True, blank=True)
+    tipo_contingencia = models.ForeignKey(TipoContingencia, on_delete=models.CASCADE, null=True)
+    #En el campo motivo_contingencia contribuyente podra definir la razon de la contingencia, si el tipo de contingencia es 5, este campo sera obligatorio
+    motivo_contingencia = models.CharField(max_length=500, blank=True, null=True)
+    
 
