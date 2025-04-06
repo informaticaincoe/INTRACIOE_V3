@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASEURL = import.meta.env.VITE_URL_BASE;
+const BASEURL = import.meta.env.VITE_URL_BASE_INVENT;
 
 export const getAllTipoTributos = async () => {
   try {

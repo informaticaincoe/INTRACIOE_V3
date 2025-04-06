@@ -1,4 +1,4 @@
-import { PaginatorPageChangeEvent } from 'primereact/paginator';
+import { Nullable } from "primereact/ts-helpers";
 
 export interface ActivitiesData {
   id: number;
@@ -207,13 +207,13 @@ export interface ProductoRequest {
   stock: number;
   stock_minimo: number;
   stock_maximo: number;
-  impuestos: Impuesto[];
+  impuestos: number[];
   tipo_item?: number | null;
   referencia_interna?: string | null;
   tributo: number;
   precio_iva: boolean;
   maneja_lotes: boolean;
-  fecha_vencimiento?: string | null;
+  fecha_vencimiento?: Nullable<Date> | null;
   almacenes: string[];
   imagen?: string | null;
   creado: string;
@@ -336,7 +336,7 @@ export interface Almacen {
 
 export interface Descuento {
   id: number;
-  porcentaje: string;
+  porcentaje: number;
   descripcion: string;
   fecha_inicio: string;
   fecha_fin: string;
