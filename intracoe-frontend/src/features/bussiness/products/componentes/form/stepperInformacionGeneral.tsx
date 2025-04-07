@@ -1,25 +1,33 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Input } from '../../../../../shared/forms/input';
 import { ProductoRequest } from '../../../../../shared/interfaces/interfaces';
 import { getAllTipoItem, getAllUnidadesDeMedida } from '../../services/productsServices';
 import { Dropdown } from 'primereact/dropdown';
-import { FileUpload, FileUploadHeaderTemplateOptions } from 'primereact/fileupload';
+import { FileUpload, FileUploadHeaderTemplateOptions, FileUploadSelectEvent, FileUploadUploadEvent, ItemTemplateOptions } from 'primereact/fileupload';
 
 import { GrAdd } from "react-icons/gr";
 import { LuUpload } from "react-icons/lu";
 import { IoMdClose } from "react-icons/io";
+import { Tooltip } from 'primereact/tooltip';
+import { Toast } from 'primereact/toast';
+import { ProgressBar } from 'primereact/progressbar';
+import { Button } from 'primereact/button'
+import { IoClose } from "react-icons/io5";
 
 interface StepperInformacionGeneralProps {
   formData: ProductoRequest;
-  setFormData: any;
   handleChange: any;
 }
 
 export const StepperInformacionGeneral: React.FC<
   StepperInformacionGeneralProps
-> = ({ formData, setFormData, handleChange }) => {
+> = ({ formData, handleChange }) => {
   const [unidadDeMedida, setUnidadDeMedida] = useState();
   const [tipoItem, setTipoItem] = useState();
+
+  const toast = useRef<Toast>(null);
+  const [totalSize, setTotalSize] = useState(0);
+  const fileUploadRef = useRef<FileUpload>(null);
 
   useEffect(() => {
     fetchUnidadesDeMedida();
@@ -44,60 +52,123 @@ export const StepperInformacionGeneral: React.FC<
     }
   };
 
+  const onTemplateSelect = (e: FileUploadSelectEvent) => {
+    let _totalSize = totalSize;
+    let files = e.files;
+
+    for (let i = 0; i < files.length; i++) {
+      _totalSize += files[i].size || 0;
+    }
+
+    setTotalSize(_totalSize);
+  };
+
+  const onTemplateUpload = (e: FileUploadUploadEvent) => {
+    let _totalSize = 0;
+
+    e.files.forEach((file) => {
+      _totalSize += file.size || 0;
+    });
+
+    setTotalSize(_totalSize);
+    toast.current?.show({ severity: 'info', summary: 'Success', detail: 'File Uploaded' });
+  };
+
+  const onTemplateRemove = (file: File, callback: Function) => {
+    setTotalSize(totalSize - file.size);
+    callback();
+  };
+
+  const onTemplateClear = () => {
+    setTotalSize(0);
+  };
+
   const headerTemplate = (options: FileUploadHeaderTemplateOptions) => {
     const { className, chooseButton, uploadButton, cancelButton } = options;
+    const value = totalSize / 10000;
+    const formatedValue = fileUploadRef && fileUploadRef.current ? fileUploadRef.current.formatSize(totalSize) : '0 B';
 
     return (
       <div className={className} style={{ backgroundColor: 'transparent', display: 'flex', alignItems: 'center' }}>
         {chooseButton}
         {uploadButton}
         {cancelButton}
+        <div className="flex align-items-center gap-3 ml-auto">
+          <span>{formatedValue} / 1 MB</span>
+          <ProgressBar value={value} showValue={false} style={{ width: '10rem', height: '12px' }}></ProgressBar>
+        </div>
       </div>
     );
   };
 
+  const itemTemplate = (inFile: object, props: ItemTemplateOptions) => {
+    const file = inFile as File;
+    return (
+      <div className="flex align-items-center flex-wrap">
+        <div className="flex align-items-center" style={{ width: '40%' }}>
+          <img alt={file.name} role="presentation" src={URL.createObjectURL(file)} width={100} />
+
+          <span className="flex flex-column text-left ml-3">
+            {file.name}
+          </span>
+        </div>
+        <Button type="button" icon={<IoClose />} className="p-button-outlined p-button-rounded p-button-danger ml-auto" onClick={() => onTemplateRemove(file, props.onRemove)} />
+      </div>
+    );
+  };
+
+  const emptyTemplate = () => {
+    return (
+      <div className="flex align-items-center flex-column">
+        <i className="pi pi-image mt-3 p-5" style={{ fontSize: '5em', borderRadius: '50%', backgroundColor: 'var(--surface-b)', color: 'var(--surface-d)' }}></i>
+        <span style={{ fontSize: '1.2em', color: 'var(--text-color-secondary)' }} className="my-5">
+          Drag and Drop Image Here
+        </span>
+      </div>
+    );
+  };
+
+
   const chooseOptions = {
     icon:
-      <span className='pr-2'>
+      <span>
         <GrAdd size={20} />
       </span>,
-    iconOnly: false,
+    iconOnly: true,
+    className: 'custom-choose-btn p-button-rounded p-button-outlined'
   };
   const uploadOptions = {
     icon:
-      <span className='pr-2'>
+      <span >
         <LuUpload size={20} />
       </span>,
-    iconOnly: false,
+    iconOnly: true,
+    className: 'custom-upload-btn p-button-rounded p-button-success p-button-outlined'
   };
   const cancelOptions = {
     icon:
-      <span className='pr-2'>
+      <span>
         <IoMdClose size={22} />
       </span>,
-    iconOnly: false,
+    iconOnly: true,
+    className: 'custom-cancel-btn p-button-rounded p-button-danger p-button-outlined'
   };
 
   return (
-    <div className='flex flex-col gap-5'>
+    <div className='flex flex-col gap-8'>
       <span>
         <label htmlFor="tipo_documento" className="flex">
           <span className="text-red pr-1">*</span> Imagen
         </label>
-        <FileUpload
-          chooseOptions={chooseOptions}
-          uploadOptions={uploadOptions}
-          cancelOptions={cancelOptions}
-          headerTemplate={headerTemplate}
-          name="demo[]"
-          url={'/api/upload'}
-          accept="image/*"
-          maxFileSize={1000000}
-          emptyTemplate={<p className="m-0">Arrastre y suelte archivos aquí para cargarlos.</p>}
-          chooseLabel="Seleccionar"
-          uploadLabel='Subir'
-          cancelLabel='cancelar'
-        />
+        <Toast ref={toast}></Toast>
+
+        <Tooltip target=".custom-choose-btn" content="Escoger imagen" position="bottom" />
+        <Tooltip target=".custom-upload-btn" content="Subir imagen" position="bottom" />
+        <Tooltip target=".custom-cancel-btn" content="Limpiar" position="bottom" />
+        <FileUpload ref={fileUploadRef} name="demo[]" url="/api/upload" multiple accept="image/*" maxFileSize={1000000}
+          onUpload={onTemplateUpload} onSelect={onTemplateSelect} onError={onTemplateClear} onClear={onTemplateClear}
+          headerTemplate={headerTemplate} itemTemplate={itemTemplate} emptyTemplate={emptyTemplate}
+          chooseOptions={chooseOptions} uploadOptions={uploadOptions} cancelOptions={cancelOptions} />
       </span>
       <span>
         <label htmlFor="tipo_documento" className="flex">
@@ -150,8 +221,8 @@ export const StepperInformacionGeneral: React.FC<
           </label>
           <Input
             type="number"
-            name="descripcion"
-            value={formData.descripcion}
+            name="preunitario"
+            value={formData.preunitario.toString()}
             onChange={handleChange}
           />
         </span>
@@ -161,8 +232,8 @@ export const StepperInformacionGeneral: React.FC<
           </label>
           <Input
             type="number"
-            name="descripcion"
-            value={formData.descripcion}
+            name="precio_compra"
+            value={formData.precio_compra.toString()}
             onChange={handleChange}
           />
         </span>
@@ -172,8 +243,8 @@ export const StepperInformacionGeneral: React.FC<
           </label>
           <Input
             type="number"
-            name="descripcion"
-            value={formData.descripcion}
+            name="precio_venta"
+            value={formData.precio_venta.toString()}
             onChange={handleChange}
           />
         </span>

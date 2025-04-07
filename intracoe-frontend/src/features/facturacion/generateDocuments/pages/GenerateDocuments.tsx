@@ -9,7 +9,6 @@ import { SelectTipoTransmisión } from '../components/Shared/configuracionFactur
 import { CheckBoxVentaTerceros } from '../components/Shared/configuracionFactura/ventaTerceros/checkboxVentaTerceros';
 import { IdentifcacionSeccion } from '../components/Shared/identificacion.tsx/identifcacionSeccion';
 import { SelectReceptor } from '../components/Shared/receptor/SelectReceptor';
-import { TablaProductosAgregados } from '../components/FE/productosAgregados/tablaProductosAgregados';
 import { ModalListaProdcutos } from '../components/FE/productosAgregados/modalListaProdcutos';
 import { FormasdePagoForm } from '../components/Shared/configuracionFactura/formasDePago/formasdePagoForm';
 import { ModalListaFacturas } from '../components/Shared/tablaFacturasSeleccionar/modalListaFacturas';
@@ -18,6 +17,7 @@ import { ButtonDocumentosRelacionados } from '../components/Shared/configuracion
 import { SelectModeloFactura } from '../components/Shared/configuracionFactura/modeloDeFacturacion/selectModeloFactura';
 import { SendFormButton } from '../../../../shared/buttons/sendFormButton';
 import {
+  ConfiguracionFacturaInterface,
   defaulReceptorData,
   defaultEmisorData,
   Descuentos,
@@ -30,8 +30,6 @@ import { ProductosTabla } from '../components/FE/productosAgregados/productosDat
 import { ResumenTotalesCard } from '../components/Shared/resumenTotales/resumenTotalesCard';
 import {
   FirmarFactura,
-  generarFacturaService,
-  generarNotaCreditoService,
   getFacturaBycodigo,
   getFacturaCodigos,
 } from '../services/factura/facturaServices';
@@ -46,60 +44,58 @@ import CustomToast, {
   ToastSeverity,
 } from '../../../../shared/toast/customToast';
 import { IoMdCloseCircle } from 'react-icons/io';
+import { TablaProductosAgregados } from '../components/FE/productosAgregados/tablaProductosAgregados';
 
 export const GenerateDocuments = () => {
-  const [showProductsModal, setShowProductsModal] = useState(false); //mostrar modal con lista de productos
-  const [showfacturasModal, setShowfacturasModal] = useState(false); //mostrar modal con lista de facturas a relacionar
-  const [
-    visibleDocumentoRelacionadomodal,
-    setVisibleDocumentoRelacionadomodal,
-  ] = useState(false); //
-  const [condicionDeOperacion, setCondicionDeOperacion] =
-    useState<string>('01'); //id de la condicion de operacion (01 por defecto)
-  const [receptor, setReceptor] =
-    useState<ReceptorInterface>(defaulReceptorData); // almacenar informacion del receptor
-  const [emisorData, setEmisorData] =
-    useState<EmisorInterface>(defaultEmisorData); // almcenar informacion del emisor
+  //lista de datos obtenidas de la api
+  const [condicionesOperacionList, setCondicionesOperacionList] = useState<ConfiguracionFacturaInterface>();
+  const [receptor, setReceptor] = useState<ReceptorInterface>(defaulReceptorData); // almacenar informacion del receptor
+  const [emisorData, setEmisorData] = useState<EmisorInterface>(defaultEmisorData); // almcenar informacion del emisor
   const [tipoDocumento, setTipoDocumento] = useState<{
     name: string;
     code: string;
   }>({ name: 'Factura', code: '01' }); // almcenar tipo de dte
-  const [listProducts, setListProducts] = useState<ProductosTabla[]>([]); //lista de productos que tendra la factura
-  const [idListProducts, setIdListProducts] = useState<string[]>([]); // lista con solo los id de los productos que tendra la factura
-  const [cantidadListProducts, setCantidadListProducts] = useState<string[]>(
-    []
-  );
-  const [formasPagoList, setFormasPagoList] = useState<any[]>([]);
-  const [numeroControl, setNumeroControl] = useState('');
-  const [codigoGeneracion, setCodigoGeneracion] = useState('');
-  const [observaciones, setObservaciones] = useState<string>('');
-  const [retencionIva, setRetencionIva] = useState<number>(0);
-  const [retencionRenta, setRetencionRenta] = useState<number>(0);
-  const [tieneRetencionIva, setTieneRetencionIva] = useState<boolean>(false);
-  const [tieneRetencionRenta, setTieneRetencionRenta] =
-    useState<boolean>(false);
   const [descuentos, setDescuentos] = useState<Descuentos>({
     descuentoGeneral: 0,
     descuentoGravado: 0,
   });
+  const [listProducts, setListProducts] = useState<ProductosTabla[]>([]) //lista que almacena todos los productos
+  const [formasPagoList, setFormasPagoList] = useState<any[]>([]);
+  const [numeroControl, setNumeroControl] = useState('');
+  const [codigoGeneracion, setCodigoGeneracion] = useState('');
+  const [tipoGeneracionFactura, setTipoGeneracionFactura] = useState<TipoGeneracionFactura | null>(null);
+  const [descuentosList, setDescuentosList] = useState()
 
+  //variables para mostrar modales
+  const [showProductsModal, setShowProductsModal] = useState(false); //mostrar modal con lista de productos
+  const [showfacturasModal, setShowfacturasModal] = useState(false); //mostrar modal con lista de facturas a relacionar
+  const [visibleDocumentoRelacionadomodal, setVisibleDocumentoRelacionadomodal] = useState(false); //
+
+  //datos seleccionados para realizar la factura
+  const [selectedCondicionDeOperacion, setSelectedCondicionDeOperacion] = useState<string>('1'); //id de la condicion de operacion (01 por defecto)
+  const [selectedProducts, setSelectedProducts] = useState<ProductosTabla[]>([]); //lista de productos que tendra la factura
+  const [idListProducts, setIdListProducts] = useState<string[]>([]); // lista con solo los id de los productos que tendra la factura
+  const [cantidadListProducts, setCantidadListProducts] = useState<string[]>([]);
+  const [observaciones, setObservaciones] = useState<string>('');
+  const [retencionIva, setRetencionIva] = useState<number>(0);
+  const [retencionRenta, setRetencionRenta] = useState<number>(0);
+  const [tieneRetencionIva, setTieneRetencionIva] = useState<boolean>(false);
+  const [tieneRetencionRenta, setTieneRetencionRenta] = useState<boolean>(false);
+
+  //calculos
   const [totalAPagar, setTotalAPagar] = useState<number>(0);
+  const [auxManejoPagos, setAuxManejoPagos] = useState<number>(totalAPagar);
   const [descuentoItem, setDescuentoItem] = useState<number>(0);
-  const [facturasAjuste, setFacturasAjuste] = useState<
-    FacturaPorCodigoGeneracionResponse[]
-  >([]);
-  const [tipoGeneracionFactura, setTipoGeneracionFactura] =
-    useState<TipoGeneracionFactura | null>(null);
+  const [facturasAjuste, setFacturasAjuste] = useState<FacturaPorCodigoGeneracionResponse[]>([]);
   const [baseImponible, setBaseImponible] = useState<boolean>(false);
-  const navigate = useNavigate();
   const [errorReceptor, setErrorReceptor] = useState<boolean>(false);
   const [errorFormasPago, setErrorFormasPago] = useState<boolean>(false);
-  const [auxManejoPagos, setAuxManejoPagos] = useState<number>(totalAPagar);
 
   const [formData, setFormData] = useState({
     codigo: '',
   });
 
+  const navigate = useNavigate();
   const toastRef = useRef<CustomToastRef>(null);
 
   const handleAccion = (
@@ -115,6 +111,7 @@ export const GenerateDocuments = () => {
     });
   };
 
+  //Guardar datos en formData
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -129,10 +126,6 @@ export const GenerateDocuments = () => {
   };
 
   const generarFactura = async () => {
-    let descuentosItem = null;
-    if (listProducts[0] && listProducts[0].descuento) {
-      descuentosItem = listProducts[0].descuento;
-    }
 
     const dataFECF = {
       numero_control: numeroControl,
@@ -145,9 +138,9 @@ export const GenerateDocuments = () => {
       tipo_item_select: 1, //TODO: obtener segun la lista de productos de forma dinamica (bien o servicio)
       documento_seleccionado: tipoGeneracionFactura?.code ?? '', //TODO: tipo de documento relacionado
       documento_select: facturasAjuste[0]?.codigo_generacion ?? '', //TODO: id documento a relacionar
-      descuento_select: descuentosItem, //TODO: Descuento por item
+      descuento_select: descuentoItem, //TODO: Descuento por item
       tipo_documento_seleccionado: tipoDocumento?.code, //tipo DTE
-      condicion_operacion: condicionDeOperacion, //contado, credito, otros
+      condicion_operacion: selectedCondicionDeOperacion, //contado, credito, otros
       observaciones: observaciones,
       productos_ids: idListProducts,
       cantidades: cantidadListProducts, //cantidad de cada producto de la factura
@@ -174,7 +167,7 @@ export const GenerateDocuments = () => {
       documento_relacionado:
         facturasAjuste[0]?.codigo_generacion.toUpperCase() ?? '', //TODO: id documento a relacionar
       descuento_select: descuentos ?? '0.00', //TODO: Descuento por item
-      condicion_operacion: condicionDeOperacion, //contado, credito, otros
+      condicion_operacion: selectedCondicionDeOperacion, //contado, credito, otros
       porcentaje_retencion_iva: (retencionIva / 100).toString(),
       retencion_iva: retencionIva.toString(),
       productos_retencion_iva: '0.00',
@@ -193,17 +186,17 @@ export const GenerateDocuments = () => {
     console.log('dataFECF', dataFECF);
     console.log('dataNCND', dataNCND);
 
-    try {
-      if (tipoDocumento.code == '05' || tipoDocumento.code == '06') {
-        const response = await generarNotaCreditoService(dataNCND);
-        firmarFactura(response.factura_id);
-      } else {
-        const response = await generarFacturaService(dataFECF);
-        firmarFactura(response.factura_id);
-      }
-    } catch (error) {
-      console.log(error);
-    }
+    // try {
+    //   if (tipoDocumento.code == '05' || tipoDocumento.code == '06') {
+    //     const response = await generarNotaCreditoService(dataNCND);
+    //     firmarFactura(response.factura_id);
+    //   } else {
+    //     const response = await generarFacturaService(dataFECF);
+    //     firmarFactura(response.factura_id);
+    //   }
+    // } catch (error) {
+    //   console.log(error);
+    // }
   };
 
   const firmarFactura = async (id: string) => {
@@ -242,18 +235,24 @@ export const GenerateDocuments = () => {
     }
   };
 
-  //************************************/
-  // OBTENCION DE DATOS
-  //************************************/
+  /************************************/
+  /* OBTENCION DE DATOS              
+  /************************************/
   useEffect(() => {
-    fetchIdentificacionData();
+    fetchfacturaData();
   }, [tipoDocumento]);
 
-  const fetchIdentificacionData = async () => {
+  const fetchfacturaData = async () => {
     try {
       const response = await getFacturaCodigos(tipoDocumento.code);
       setCodigoGeneracion(response.codigo_generacion);
       setNumeroControl(response.numero_control);
+      setEmisorData(response.emisor)
+      setCondicionesOperacionList(response.tipooperaciones)
+      setSelectedCondicionDeOperacion(response.tipooperaciones[0].codigo)
+      setDescuentosList(response.descuentos)
+      console.log(response.productos)
+      setListProducts(response.producto)
     } catch (error) {
       console.log(error);
     }
@@ -293,7 +292,6 @@ export const GenerateDocuments = () => {
             <Divider className="m-0 p-0"></Divider>
             <DatosEmisorCard
               emisorData={emisorData}
-              setEmisorData={setEmisorData}
             />
           </div>
         </>
@@ -316,8 +314,9 @@ export const GenerateDocuments = () => {
                 />
               </div>
               <SelectCondicionOperacion
-                condicionDeOperacion={condicionDeOperacion}
-                setCondicionDeOperacion={setCondicionDeOperacion}
+                condicionesOperacionList={condicionesOperacionList}
+                selectedCondicionDeOperacion={selectedCondicionDeOperacion}
+                setSelectedCondicionDeOperacion={setSelectedCondicionDeOperacion}
               />
               <SelectModeloFactura />
               <SelectTipoTransmisión />
@@ -393,18 +392,22 @@ export const GenerateDocuments = () => {
 
             <Divider />
             <TablaProductosAgregados
-              listProducts={listProducts}
-              setListProducts={setListProducts}
+              // setSelectedProducts={setSelectedProducts}
+              setListProducts={setSelectedProducts}
+              listProducts={selectedProducts}
               setCantidadListProducts={setCantidadListProducts}
               setIdListProducts={setIdListProducts}
               setDescuentoItem={setDescuentoItem}
               descuentoItem={descuentoItem}
+              descuentosList={descuentosList}
               tipoDte={tipoDocumento}
-            />
+            /> 
             <ModalListaProdcutos
               visible={showProductsModal}
               setVisible={setShowProductsModal}
-              setListProducts={setListProducts}
+              listProducts={listProducts}
+              setSelectedProducts={setSelectedProducts}
+              selectedProducts={selectedProducts}
             />
           </div>
         </WhiteSectionsPage>
@@ -538,7 +541,7 @@ export const GenerateDocuments = () => {
           <ResumenTotalesCard
             setTotalAPagar={setTotalAPagar}
             totalAPagar={totalAPagar}
-            listProducts={listProducts}
+            listProducts={selectedProducts}
             descuentos={descuentos}
             setDescuentos={setDescuentos}
           />

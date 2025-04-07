@@ -31,13 +31,14 @@ export const ResumenTotalesCard: React.FC<ResumenTotalesCardProps> = ({
     let descuento = 0;
 
     listProducts.forEach((item) => {
-      neto += item.cantidad * item.precio_unitario;
+      neto += item.cantidad * item.preunitario;
       iva += item.cantidad * item.iva_unitario;
-      if (item.descuento && typeof item.descuento.porcentaje === 'number') {
+      if (item.descuento) {
         descuento +=
-          item.cantidad * item.precio_unitario * item.descuento.porcentaje;
+          item.cantidad * item.preunitario * item.descuento.porcentaje;
       }
     });
+    console.log("NETO", neto)
 
     setSubtotalNeto(neto.toFixed(2));
     setTotalIVA(iva.toFixed(2));
