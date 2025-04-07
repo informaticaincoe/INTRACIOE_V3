@@ -30,6 +30,8 @@ import { ProductosTabla } from '../components/FE/productosAgregados/productosDat
 import { ResumenTotalesCard } from '../components/Shared/resumenTotales/resumenTotalesCard';
 import {
   FirmarFactura,
+  generarFacturaService,
+  generarNotaCreditoService,
   getFacturaBycodigo,
   getFacturaCodigos,
 } from '../services/factura/facturaServices';
@@ -126,7 +128,7 @@ export const GenerateDocuments = () => {
   };
 
   const generarFactura = async () => {
-
+console.log(descuentoItem)
     const dataFECF = {
       numero_control: numeroControl,
       receptor_id: receptor.id,
@@ -138,25 +140,26 @@ export const GenerateDocuments = () => {
       tipo_item_select: 1, //TODO: obtener segun la lista de productos de forma dinamica (bien o servicio)
       documento_seleccionado: tipoGeneracionFactura?.code ?? '', //TODO: tipo de documento relacionado
       documento_select: facturasAjuste[0]?.codigo_generacion ?? '', //TODO: id documento a relacionar
-      descuento_select: descuentoItem, //TODO: Descuento por item
+      descuento_select: '0.00', //TODO: Descuento por item
       tipo_documento_seleccionado: tipoDocumento?.code, //tipo DTE
       condicion_operacion: selectedCondicionDeOperacion, //contado, credito, otros
       observaciones: observaciones,
       productos_ids: idListProducts,
       cantidades: cantidadListProducts, //cantidad de cada producto de la factura
-      producto_id: idListProducts[0],
       monto_fp: handleMontoPagar(),
       num_ref: null,
       no_gravado: baseImponible,
       retencion_iva: tieneRetencionIva,
       porcentaje_retencion_iva: (retencionIva / 100).toString(),
-      fp_id: formasPagoList,
+      formas_pago_id: formasPagoList,
       saldo_favor_input: '0.00',
       descuento_gravado: (descuentos.descuentoGravado / 100).toString(),
       descuento_global_input: (descuentos.descuentoGeneral / 100).toString(),
       porcentaje_retencion_renta: (retencionRenta / 100).toString(),
       retencion_renta: tieneRetencionRenta,
     };
+
+
 
     const dataNCND = {
       receptor_id: receptor.id,
@@ -166,7 +169,7 @@ export const GenerateDocuments = () => {
       documento_seleccionado: tipoGeneracionFactura?.code ?? '', //TODO: tipo de documento relacionado
       documento_relacionado:
         facturasAjuste[0]?.codigo_generacion.toUpperCase() ?? '', //TODO: id documento a relacionar
-      descuento_select: descuentos ?? '0.00', //TODO: Descuento por item
+      descuento_select: descuentos, //TODO: Descuento por item
       condicion_operacion: selectedCondicionDeOperacion, //contado, credito, otros
       porcentaje_retencion_iva: (retencionIva / 100).toString(),
       retencion_iva: retencionIva.toString(),
@@ -186,17 +189,17 @@ export const GenerateDocuments = () => {
     console.log('dataFECF', dataFECF);
     console.log('dataNCND', dataNCND);
 
-    // try {
-    //   if (tipoDocumento.code == '05' || tipoDocumento.code == '06') {
-    //     const response = await generarNotaCreditoService(dataNCND);
-    //     firmarFactura(response.factura_id);
-    //   } else {
-    //     const response = await generarFacturaService(dataFECF);
-    //     firmarFactura(response.factura_id);
-    //   }
-    // } catch (error) {
-    //   console.log(error);
-    // }
+    try {
+      if (tipoDocumento.code == '05' || tipoDocumento.code == '06') {
+        const response = await generarNotaCreditoService(dataNCND);
+        firmarFactura(response.factura_id);
+      } else {
+        const response = await generarFacturaService(dataFECF);
+        firmarFactura(response.factura_id);
+      }
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const firmarFactura = async (id: string) => {
@@ -401,7 +404,7 @@ export const GenerateDocuments = () => {
               descuentoItem={descuentoItem}
               descuentosList={descuentosList}
               tipoDte={tipoDocumento}
-            /> 
+            />
             <ModalListaProdcutos
               visible={showProductsModal}
               setVisible={setShowProductsModal}

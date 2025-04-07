@@ -16,22 +16,22 @@ body {
   background-color: var(--color-body-bg);
 }
 
-.p-multiselect-panel {
+/* .p-multiselect-panel {
   width: 40vw !important;
-}
+} */
 
 .p-multiselect-item {
   text-wrap: wrap;
 }
 
-.p-multiselect-label {
+/* .p-multiselect-label {
   overflow: hidden !important;
   width: 100% !important;
 }
 
 .p-multiselect {
   width: 40vw !important;
-}
+} */
 
 .p-checkbox,
 .p-checkbox-box {

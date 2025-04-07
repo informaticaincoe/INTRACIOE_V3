@@ -1,7 +1,12 @@
 // import { useState } from "react";
-import { ProductoRequest } from "../../../../../shared/interfaces/interfaces";
+import { Impuesto, ProductoRequest, Tributos } from "../../../../../shared/interfaces/interfaces";
 import { Input } from "../../../../../shared/forms/input";
 import { Checkbox } from "primereact/checkbox";
+import { useEffect, useState } from "react";
+import { getAllTributos } from "../../../../../shared/services/tributos/tributos";
+import { Dropdown } from "primereact/dropdown";
+import { getAllImpuestos } from "../../../../../shared/services/productos/productosServices";
+import { MultiSelect } from "primereact/multiselect";
 
 interface StepperInformacionGeneralProps {
     formData: ProductoRequest;
@@ -11,7 +16,31 @@ interface StepperInformacionGeneralProps {
 export const StepperFormImpuestoStock: React.FC<
     StepperInformacionGeneralProps
 > = ({ formData, handleChange }) => {
-    // const [tributo, setTributo] = useState()
+    const [tributo, setTributo] = useState<Tributos[]>([])
+    const [impuestos, setImpuestos] = useState<Impuesto[]>([])
+
+    useEffect(() => {
+        fetchTributos()
+        fetchImpuestos()
+    }, [])
+
+    const fetchTributos = async () => {
+        try {
+            const response = await getAllTributos()
+            setTributo(response)
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    const fetchImpuestos = async () => {
+        try {
+            const response = await getAllImpuestos()
+            setImpuestos(response)
+        } catch (error) {
+            console.log(error)
+        }
+    }
 
     return (
         <>
@@ -55,11 +84,28 @@ export const StepperFormImpuestoStock: React.FC<
                     <label htmlFor="tipo_documento" className="flex">
                         <span className="text-red pr-1">*</span> Impuestos
                     </label>
-                    <Input
-                        type="number"
-                        name="impuesto"
-                        value={formData.impuestos[0]?.toString()}
-                        onChange={handleChange}
+                    <MultiSelect
+                        name="impuestos"
+                        value={formData.impuestos}
+                        onChange={(e) =>
+                            handleChange({ target: { name: 'impuestos', value: e.value } })
+                        }
+                        options={impuestos}
+                        itemTemplate={(option) => (<p>{option.nombre} - {option.porcentaje}</p>)}
+
+                        optionValue="id"
+                        selectedItemTemplate={(id: number) => {
+                            // lookup the full object by id
+                            const opt = impuestos.find(i => i.id === id);
+                            return opt ? (
+                              <div className="flex items-center gap-1">
+                                <span>{opt.nombre}</span>
+                                <span>– {opt.porcentaje}</span>
+                              </div>
+                            ) : null;
+                          }}
+                        placeholder="Seleccionar el tipo de item"
+                        className="w-full text-start border flex justify-between rounded-md"
                     />
                 </span>
                 <span className='w-full'>
@@ -67,7 +113,7 @@ export const StepperFormImpuestoStock: React.FC<
                         <span className="text-red pr-1">*</span> Referencia interna
                     </label>
                     <Input
-                        type="number"
+                        type="text"
                         name="referencia_interna"
                         value={formData.referencia_interna ?? ""}
                         onChange={handleChange}
@@ -77,11 +123,17 @@ export const StepperFormImpuestoStock: React.FC<
                     <label htmlFor="tipo_documento" className="flex">
                         <span className="text-red pr-1">*</span> Tributo
                     </label>
-                    <Input
-                        type="number"
+                    <Dropdown
                         name="tributo"
-                        value={formData.tributo.toString()}
-                        onChange={handleChange}
+                        value={formData.tributo}
+                        onChange={(e) =>
+                            handleChange({ target: { name: 'tributo', value: e.value } })
+                        }
+                        options={tributo}
+                        optionLabel="descripcion"
+                        optionValue="id"
+                        placeholder="Seleccionar el tipo de item"
+                        className="md:w-14rem w-full text-start"
                     />
                 </span>
                 <span className='w-full flex'>

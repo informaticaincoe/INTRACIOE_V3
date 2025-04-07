@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Input } from '../../../../../shared/forms/input';
 import { ProductoRequest } from '../../../../../shared/interfaces/interfaces';
-import { getAllTipoItem, getAllUnidadesDeMedida } from '../../services/productsServices';
 import { Dropdown } from 'primereact/dropdown';
 import { FileUpload, FileUploadHeaderTemplateOptions, FileUploadSelectEvent, FileUploadUploadEvent, ItemTemplateOptions } from 'primereact/fileupload';
 
@@ -13,6 +12,7 @@ import { Toast } from 'primereact/toast';
 import { ProgressBar } from 'primereact/progressbar';
 import { Button } from 'primereact/button'
 import { IoClose } from "react-icons/io5";
+import { getAllTipoItem, getAllUnidadesDeMedida } from '../../../../../shared/services/productos/productosServices';
 
 interface StepperInformacionGeneralProps {
   formData: ProductoRequest;
@@ -28,6 +28,13 @@ export const StepperInformacionGeneral: React.FC<
   const toast = useRef<Toast>(null);
   const [totalSize, setTotalSize] = useState(0);
   const fileUploadRef = useRef<FileUpload>(null);
+
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+    const onImageSelect = (e: FileUploadSelectEvent) => {
+      const file = e.files[0] as File;
+      handleChange({ target: { name: 'imagen', value: file } });
+    };
 
   useEffect(() => {
     fetchUnidadesDeMedida();
@@ -87,6 +94,8 @@ export const StepperInformacionGeneral: React.FC<
     const { className, chooseButton, uploadButton, cancelButton } = options;
     const value = totalSize / 10000;
     const formatedValue = fileUploadRef && fileUploadRef.current ? fileUploadRef.current.formatSize(totalSize) : '0 B';
+    
+
 
     return (
       <div className={className} style={{ backgroundColor: 'transparent', display: 'flex', alignItems: 'center' }}>
@@ -154,8 +163,19 @@ export const StepperInformacionGeneral: React.FC<
     className: 'custom-cancel-btn p-button-rounded p-button-danger p-button-outlined'
   };
 
+
   return (
     <div className='flex flex-col gap-8'>
+      <span>
+        <label htmlFor="tipo_documento" className="flex">
+          <span className="text-red pr-1">*</span> Codigo
+        </label>
+        <Input
+          name="codigo"
+          value={formData.codigo}
+          onChange={handleChange}
+        />
+      </span>
       <span>
         <label htmlFor="tipo_documento" className="flex">
           <span className="text-red pr-1">*</span> Imagen
@@ -165,10 +185,22 @@ export const StepperInformacionGeneral: React.FC<
         <Tooltip target=".custom-choose-btn" content="Escoger imagen" position="bottom" />
         <Tooltip target=".custom-upload-btn" content="Subir imagen" position="bottom" />
         <Tooltip target=".custom-cancel-btn" content="Limpiar" position="bottom" />
-        <FileUpload ref={fileUploadRef} name="demo[]" url="/api/upload" multiple accept="image/*" maxFileSize={1000000}
-          onUpload={onTemplateUpload} onSelect={onTemplateSelect} onError={onTemplateClear} onClear={onTemplateClear}
-          headerTemplate={headerTemplate} itemTemplate={itemTemplate} emptyTemplate={emptyTemplate}
-          chooseOptions={chooseOptions} uploadOptions={uploadOptions} cancelOptions={cancelOptions} />
+        <FileUpload
+          ref={fileUploadRef}
+          name="demo[]"
+          customUpload      // para que no intente enviarla solo
+          onSelect={onImageSelect}
+          accept="image/*"
+          maxFileSize={1000000}
+          onUpload={onTemplateUpload}
+          onError={onTemplateClear}
+          onClear={onTemplateClear}
+          headerTemplate={headerTemplate}
+          itemTemplate={itemTemplate}
+          emptyTemplate={emptyTemplate}
+          chooseOptions={chooseOptions}
+          uploadOptions={uploadOptions}
+          cancelOptions={cancelOptions} />
       </span>
       <span>
         <label htmlFor="tipo_documento" className="flex">
