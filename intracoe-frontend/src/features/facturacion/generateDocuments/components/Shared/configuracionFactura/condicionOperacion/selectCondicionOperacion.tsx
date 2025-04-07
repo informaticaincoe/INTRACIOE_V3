@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { getAllCondicionDeOperacion } from '../../../../services/configuracionFactura/configuracionFacturaService';
 
 interface Item {
   name: string;
@@ -7,31 +6,14 @@ interface Item {
 }
 
 interface SelectCondicionOperacionProps {
-  condicionDeOperacion: any;
-  setCondicionDeOperacion: any;
+  selectedCondicionDeOperacion: any;
+  setSelectedCondicionDeOperacion: any;
+  condicionesOperacionList:any
 }
 
 export const SelectCondicionOperacion: React.FC<
   SelectCondicionOperacionProps
-> = ({ condicionDeOperacion, setCondicionDeOperacion }) => {
-  const [condicionOperacionApiList, setCondicionOperacionApiList] = useState<
-    any[]
-  >([]);
-
-  useEffect(() => {
-    fetchCondicionDeOperaciones();
-  }, []);
-
-  const fetchCondicionDeOperaciones = async () => {
-    try {
-      const condicionOperaciones = await getAllCondicionDeOperacion();
-      setCondicionOperacionApiList(condicionOperaciones);
-      setCondicionDeOperacion(condicionOperaciones[0].codigo);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
+> = ({ selectedCondicionDeOperacion, setSelectedCondicionDeOperacion, condicionesOperacionList }) => {
   const [formData, setFormData] = useState({
     otraOperacion: '',
   });
@@ -40,6 +22,10 @@ export const SelectCondicionOperacion: React.FC<
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  useEffect(()=>{
+    console.log(".....................", selectedCondicionDeOperacion)
+  },[selectedCondicionDeOperacion])
+
   return (
     <div className="flex flex-col gap-1">
       <label htmlFor="condicion" className="text-start opacity-70">
@@ -47,11 +33,11 @@ export const SelectCondicionOperacion: React.FC<
       </label>
       <div className="flex flex-col gap-8">
         <div className="flex gap-10">
-          {condicionOperacionApiList.map((item) => (
+          {condicionesOperacionList && condicionesOperacionList.map((item:any) => (
             <button
               key={item.id}
-              className={`${condicionDeOperacion === item.codigo ? 'bg-primary-blue text-white' : 'border-primary-blue text-primary-blue border bg-white'} h-14 w-50 rounded-md`} // Cambiar estilo según si está seleccionado
-              onClick={() => setCondicionDeOperacion(item.codigo)} //TODO: Enviar id en lugar del nombre
+              className={`${selectedCondicionDeOperacion === item.codigo ? 'bg-primary-blue text-white' : 'border-primary-blue text-primary-blue border bg-white'} h-14 w-50 rounded-md`} // Cambiar estilo según si está seleccionado
+              onClick={() => setSelectedCondicionDeOperacion(item.codigo)} //TODO: Enviar id en lugar del nombre
             >
               {item.descripcion}
             </button>

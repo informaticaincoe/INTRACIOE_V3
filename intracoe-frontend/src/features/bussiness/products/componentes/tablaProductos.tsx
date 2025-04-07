@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ProductoResponse } from '../../../../shared/interfaces/interfaces';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
@@ -13,12 +13,15 @@ export interface TablaProductosProps {
 export const TablaProductos: React.FC<TablaProductosProps> = ({
   productos,
 }) => {
+  useEffect(() => {
+    console.log(productos)
+  }, [productos])
   const [rowClick] = useState<boolean>(true);
   const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
 
-  const handleDelete = () => {};
+  const handleDelete = () => { };
 
-  const editHandler = () => {};
+  const editHandler = () => { };
 
   return (
     <div>

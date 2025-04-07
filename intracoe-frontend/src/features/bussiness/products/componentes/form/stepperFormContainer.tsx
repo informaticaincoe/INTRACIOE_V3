@@ -7,6 +7,7 @@ import {
 } from '../../../../../shared/interfaces/interfaces';
 import { StepperInformacionGeneral } from './stepperInformacionGeneral';
 import { StepperFormImpuestoStock } from './stepperFormImpuestoStock';
+import { StepperFormLotesYVencimiento } from './stepperFormLotesYVencimiento';
 
 export const StepperForm = () => {
   // Estado para controlar el paso actual
@@ -19,6 +20,7 @@ export const StepperForm = () => {
 
   const handleSendForm = async (e: React.FormEvent) => {
     console.log(e);
+    console.log(formData.tipo_item?.toString())
   };
 
   const steps = [
@@ -29,7 +31,6 @@ export const StepperForm = () => {
           <div>
             <StepperInformacionGeneral
               formData={formData}
-              setFormData={setFormData}
               handleChange={handleChange}
             />
           </div>
@@ -76,7 +77,10 @@ export const StepperForm = () => {
       content: (
         <>
           <>
-            <p>Paso 32</p>
+            <StepperFormLotesYVencimiento
+              formData={formData}
+              handleChange={handleChange}
+            />
           </>
           <div className="flex w-full justify-between pt-4">
             <button
@@ -98,11 +102,12 @@ export const StepperForm = () => {
   ];
 
   return (
-    <WhiteSectionsPage className="mx-[20%]">
+    <WhiteSectionsPage className="mx-[10%] px-[5%] py-[3%]">
       <>
         <Steps
           current={current}
           items={steps.map((item) => ({ key: item.title, title: item.title }))}
+          style={{marginBottom:'5%'}}
         />
         <div style={{ marginTop: 24 }}>{steps[current].content}</div>
       </>

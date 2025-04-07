@@ -1,5 +1,10 @@
 import React from 'react';
+import { Title } from '../../../../shared/text/title';
 
 export const ServicioPage = () => {
-  return <div>ServicioPage</div>;
+return (
+        <>
+            <Title text="Nuevo producto" />
+        </>
+    );
 };
