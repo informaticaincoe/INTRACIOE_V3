@@ -67,4 +67,6 @@ urlpatterns = [
     
     #LISTADO DE PRODUCTOS
     path('obtener-listado-productos/', views.obtener_listado_productos_view, name='obtener_listado_productos_view'),
+    
+    path('listar_contingencias/', views.contingencia_list, name='listar_contingencias'),
 ]
