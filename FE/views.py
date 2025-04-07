@@ -27,7 +27,7 @@ from django.views.decorators.http import require_POST
 from decimal import ROUND_HALF_UP, ConversionSyntax, Decimal
 from intracoe import settings
 from .models import Token_data, Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica,  Receptor_fe, Tipo_dte, TipoMoneda, TipoUnidadMedida, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos, Descuento, FormasPago, Plazo, TipoGeneracionDocumento
-from INVENTARIO.models import Producto, TipoItem, Tributo
+from INVENTARIO.models import Almacen, MovimientoInventario, Producto, TipoItem, Tributo
 from .forms import ExcelUploadForm
 from django.db import transaction
 from django.utils import timezone
@@ -1371,7 +1371,7 @@ def firmar_factura_view(request, factura_id):
                 os.makedirs(os.path.dirname(json_signed_path), exist_ok=True)
                 with open(json_signed_path, "w", encoding="utf-8") as json_file:
                     json.dump(response_data, json_file, indent=4, ensure_ascii=False)
-
+                    
                 return redirect(reverse('detalle_factura', args=[factura_id]))
             else:
                 factura.firmado = True
@@ -1551,6 +1551,30 @@ def enviar_factura_hacienda_view(request, factura_id):
                 factura.json_original = json_original_campo
                 factura.estado=True
                 factura.save()
+
+                 #crear el movimeinto de inventario
+                #Se asume que la factura tiene una relación a sus detalles, donde se encuentran los productos y cantidades
+
+                for detalle in factura.detalles.all():
+
+                    if detalle.producto.almacenes.exists():
+                        almacen = detalle.producto.almacenes.first()
+                    else:
+                        almacen = Almacen.objects.first()
+
+                    MovimientoInventario.objects.create(
+                        producto = detalle.producto,
+                        almacen = almacen,
+                        tipo='Salida',
+                        cantidad = detalle.cantidad,
+                        rferencia=f"Factura {factura.codigo_generacion}",
+                    )
+
+                    #actualizar el stock del producto (desconteo)
+                    producto = detalle.producto
+                    producto.stock = max(producto.stock - detalle.cantidad, 0) #evitamos calores negativos
+                    producto.save()
+                    
                 return JsonResponse({
                     "mensaje": "Factura enviada con éxito",
                     "respuesta": response_data
