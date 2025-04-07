@@ -74,8 +74,6 @@ export const SideMenu = () => {
   const navigate = useNavigate(); // Hook para navegar en React Router
 
   const onClick: MenuProps['onClick'] = (e) => {
-    console.log('click ', e);
-
     switch (e.key) {
       case 'dashboard':
         navigate('/');

@@ -44,9 +44,9 @@ export interface FacturaResponse {
 }
 
 export interface TipoIdentificacion {
-  id: number,
-  codigo: string,
-  descripcion:string
+  id: number;
+  codigo: string;
+  descripcion: string;
 }
 export interface JsonOriginal {
   identificacion: Identificacion;
@@ -93,43 +93,42 @@ export interface Emisor {
   codPuntoVenta: string;
 }
 
-
 export const EmisorDefault = {
   nit: '',
-  nrc: "",
-  nombre: "",
-  codActividad: "",
-  descActividad: "",
-  nombreComercial: "",
-  tipoEstablecimiento: "",
+  nrc: '',
+  nombre: '',
+  codActividad: '',
+  descActividad: '',
+  nombreComercial: '',
+  tipoEstablecimiento: '',
   direccion: {
-    departamento: "",
-    municipio: "",
-    complemento: "",
+    departamento: '',
+    municipio: '',
+    complemento: '',
   },
-  telefono: "",
-  correo: "",
-  codEstableMH: "",
-  codEstable: "",
-  codPuntoVentaMH: "",
-  codPuntoVenta: "",
-}
+  telefono: '',
+  correo: '',
+  codEstableMH: '',
+  codEstable: '',
+  codPuntoVentaMH: '',
+  codPuntoVenta: '',
+};
 
 export const ReceptorDefault = {
-  nombre: "",
-  codActividad: "",
-  descActividad: "",
+  nombre: '',
+  codActividad: '',
+  descActividad: '',
   direccion: {
-    departamento: "",
-    municipio: "",
-    complemento: "",
+    departamento: '',
+    municipio: '',
+    complemento: '',
   },
-  telefono: "",
-  correo: "",
+  telefono: '',
+  correo: '',
   nrc: null,
-  tipoDocumento: "",
-  numDocumento: "",
-}
+  tipoDocumento: '',
+  numDocumento: '',
+};
 export interface Receptor {
   nombre: string;
   codActividad: string;
@@ -140,7 +139,7 @@ export interface Receptor {
   nrc: string | null;
   tipoDocumento?: string;
   numDocumento?: string;
-  nit?: string
+  nit?: string;
 }
 
 export interface Direccion {
@@ -149,25 +148,27 @@ export interface Direccion {
   complemento: string;
 }
 
-export const CuerpoDocumentoDefault = [{
-  numItem: 0,
-  tipoItem: 0,
-  numeroDocumento: "",
-  codigo: "",
-  codTributo: "",
-  descripcion: "",
-  cantidad: 0,
-  uniMedida: 0,
-  precioUni: 0,
-  montoDescu: 0,
-  ventaNoSuj: 0,
-  ventaExenta: 0,
-  ventaGravada: 0,
-  tributos: "",
-  psv: 0,
-  noGravado: 0,
-  ivaItem: 0,
-}]
+export const CuerpoDocumentoDefault = [
+  {
+    numItem: 0,
+    tipoItem: 0,
+    numeroDocumento: '',
+    codigo: '',
+    codTributo: '',
+    descripcion: '',
+    cantidad: 0,
+    uniMedida: 0,
+    precioUni: 0,
+    montoDescu: 0,
+    ventaNoSuj: 0,
+    ventaExenta: 0,
+    ventaGravada: 0,
+    tributos: '',
+    psv: 0,
+    noGravado: 0,
+    ivaItem: 0,
+  },
+];
 export interface CuerpoDocumento {
   numItem: number;
   tipoItem: number;
@@ -204,39 +205,39 @@ export const ResumenDefalt = {
   montoTotalOperacion: 0,
   totalNoGravado: 0,
   totalPagar: 0,
-  totalLetras: "",
+  totalLetras: '',
   saldoFavor: 0,
-  condicionOperacion: "",
+  condicionOperacion: '',
   pagos: [],
-  numPagoElectronico: "",
-  tributos: "",
+  numPagoElectronico: '',
+  tributos: '',
   totalIva: 0,
-}
+};
 
 export const resumenTablaFEDefault = {
-  totalNoSuj: "",
-  totalExenta: "",
-  totalGravada: "",
-  subTotalVentas: "",
-  descuNoSuj: "",
-  descuExenta: "",
-  descuGravada: "",
-  porcentajeDescuento: "",
-  totalDescu: "",
-  subTotal: "",
-  ivaRete: "",
-  reteRenta: "",
-  montoTotalOperacion: "",
-  totalNoGravado: "",
-  totalPagar: "",
-  totalLetras: "",
-  saldoFavor: "",
+  totalNoSuj: '',
+  totalExenta: '',
+  totalGravada: '',
+  subTotalVentas: '',
+  descuNoSuj: '',
+  descuExenta: '',
+  descuGravada: '',
+  porcentajeDescuento: '',
+  totalDescu: '',
+  subTotal: '',
+  ivaRete: '',
+  reteRenta: '',
+  montoTotalOperacion: '',
+  totalNoGravado: '',
+  totalPagar: '',
+  totalLetras: '',
+  saldoFavor: '',
   condicionOperacion: 0,
   pagos: [],
-  numPagoElectronico: "",
-  tributos: "",
-  totalIva: "",
-}
+  numPagoElectronico: '',
+  tributos: '',
+  totalIva: '',
+};
 export interface Resumen {
   totalNoSuj: string;
   totalExenta: string;
@@ -262,14 +263,14 @@ export interface Resumen {
   totalIva: string;
 }
 
-export const ExtensionDefault ={
-  nombEntrega: "",
-  docuEntrega: "",
-  nombRecibe: "",
-  docuRecibe: "",
-  observaciones: "",
-  placaVehiculo: "",
-}
+export const ExtensionDefault = {
+  nombEntrega: '',
+  docuEntrega: '',
+  nombRecibe: '',
+  docuRecibe: '',
+  observaciones: '',
+  placaVehiculo: '',
+};
 
 export interface Extension {
   nombEntrega: string | null;
@@ -281,19 +282,18 @@ export interface Extension {
 }
 
 export const DatosFacturaDefault = {
-  tipoDte: "",
-  codigoGeneracion: "",
-  numeroControl: "",
-  fechaEmision: "",
-  horaEmision: "",
-  selloRemision:"",
-
-}
+  tipoDte: '',
+  codigoGeneracion: '',
+  numeroControl: '',
+  fechaEmision: '',
+  horaEmision: '',
+  selloRemision: '',
+};
 export interface DatosFactura {
-  tipoDte:string
-  codigoGeneracion: string,
-  numeroControl: string,
-  fechaEmision: string,
-  horaEmision: string,
-  selloRemision:string
+  tipoDte: string;
+  codigoGeneracion: string;
+  numeroControl: string;
+  fechaEmision: string;
+  horaEmision: string;
+  selloRemision: string;
 }

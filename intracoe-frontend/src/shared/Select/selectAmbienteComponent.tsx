@@ -1,7 +1,6 @@
 import { Dropdown } from 'primereact/dropdown';
-import './selectCustomStyle.css';
 import { useEffect, useState } from 'react';
-import { getAllAmbientes } from '../../features/bussiness/configBussiness/services/ambienteService';
+import { getAllAmbientes } from '../services/ambienteService';
 
 interface SelectAmbienteProps {
   ambiente: any;

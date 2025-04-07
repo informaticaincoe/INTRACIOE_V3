@@ -4,13 +4,12 @@ interface SendFormButtonProps {
   text: string;
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
   className?: HTMLProps<HTMLElement>['className'];
-  
 }
 
 export const SendFormButton: React.FC<SendFormButtonProps> = ({
   text,
   onClick,
-  className
+  className,
 }) => {
   return (
     <button

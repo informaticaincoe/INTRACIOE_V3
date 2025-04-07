@@ -70,7 +70,6 @@ export const DeleteModal: React.FC<DeleteModalProps> = ({
   }, [activity]);
 
   const handleDeleteActivity = async () => {
-    
     const response = await deleteActivity(activity.id);
     onDelete();
     onClose();

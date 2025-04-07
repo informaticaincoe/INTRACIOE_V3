@@ -1,7 +1,32 @@
 from django.urls import path
+
+from .api_views import ProductoCreateAPIView, ProductoDestroyAPIView, ProductoListAPIView, ProductoUpdateAPIView, TiposTributosListAPIView, TributoByTipoListAPIView, TributoDetailsAPIView
 from . import views
 
 urlpatterns = [
+
+
+    # -------------------------------
+    # Endpoints API REST
+    # -------------------------------
+
+
+    #---------- URLS TRIBUTOS ----------#
+    path('api/tipo-tributos/', TiposTributosListAPIView.as_view(), name='tipo_tributos_api'),
+    path('api/tributos/tipo/<int:tipo_valor>/', TributoByTipoListAPIView.as_view(), name='tributos_api'),
+    path('api/tributo/<int:pk>/', TributoDetailsAPIView.as_view(), name='tributo_api'), 
+
+
+    #----------- PRODUCTOS -----------#
+    #URL PRODUCTOS
+    path('api/productos/', ProductoListAPIView.as_view(), name='api_productos_list'),
+    path('api/productos/crear/', ProductoCreateAPIView.as_view(), name='api_productos_create'),
+    path('api/productos/<int:pk>/editar/', ProductoUpdateAPIView.as_view(), name='api_productos_update'),
+    path('api/productos/<int:pk>/eliminar/', ProductoDestroyAPIView.as_view(), name='api_productos_destroy'), 
+
+    # Endpoints API REST
+    # -------------------------------
+
     # Productos
     path('productos/', views.listar_productos, name='productos-lista'),
     path('productos/crear/', views.crear_producto, name='crear-producto'),

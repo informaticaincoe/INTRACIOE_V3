@@ -12,17 +12,18 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from FE.views import enviar_factura_invalidacion_hacienda_view, firmar_factura_anulacion_view, invalidacion_dte_view, generar_json, num_to_letras, agregar_formas_pago_api, generar_json_contingencia, generar_json_doc_ajuste
+from INVENTARIO.serializers import DescuentoSerializer
 
-from .serializers import ActividadEconomicaSerializer, AmbienteSerializer, CondicionOperacionSerializer, DepartamentoSerializer, DescuentoSerializer, FormasPagosSerializer, ModelofacturacionSerializer, MunicipioSerializer, ProductoSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, TipoDteSerializer, TipoTransmisionSerializer, TiposDocIDReceptorSerializer, TiposEstablecimientosSerializer, TiposGeneracionDocumentoSerializer, TiposTributosSerializer, TributosSerializer
+from .serializers import ActividadEconomicaSerializer, AmbienteSerializer, CondicionOperacionSerializer, DepartamentoSerializer, FacturaListSerializer, FormasPagosSerializer, ModelofacturacionSerializer, MunicipioSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, TipoDteSerializer, TipoTransmisionSerializer, TiposDocIDReceptorSerializer, TiposEstablecimientosSerializer, TiposGeneracionDocumentoSerializer 
 from .models import (
     ActividadEconomica, Departamento, Emisor_fe, Municipio, Receptor_fe, FacturaElectronica, DetalleFactura,
     Ambiente, CondicionOperacion, Modelofacturacion, NumeroControl,
     Tipo_dte, TipoGeneracionDocumento, TipoMoneda, TipoTransmision, TipoUnidadMedida, TiposDocIDReceptor, EventoInvalidacion, 
     Receptor_fe, TipoInvalidacion, TiposEstablecimientos, Token_data, Descuento, FormasPago, TipoGeneracionDocumento, Plazo
 )
-from INVENTARIO.models import Producto, TipoItem, TipoTributo, Tributo
+from INVENTARIO.models import Producto, TipoItem, TipoTributo, Tributo, UnidadMedida
 from django.db.models import Q
-
+from django.core.paginator import Paginator  # esta sigue igual
 
 FIRMADOR_URL = "http://192.168.2.25:8113/firmardocumento/"
 DJANGO_SERVER_URL = "http://127.0.0.1:8000"
@@ -265,7 +266,6 @@ class AmbientesListAPIView(generics.ListAPIView):
 class TiposEstablecimientosListAPIView(generics.ListAPIView):
     queryset = TiposEstablecimientos.objects.all()
     serializer_class = TiposEstablecimientosSerializer
-
     
 class DepartamentosListAPIView(generics.ListAPIView):
     queryset = Departamento.objects.all()
@@ -327,30 +327,6 @@ class DescuentosAPIView(generics.ListAPIView):
     queryset = Descuento.objects.all()
     serializer_class = DescuentoSerializer
      
-######################################################
-# PRODUCTOS Y SERVICIOS
-######################################################
-
-class productosListAPIView(generics.ListAPIView):
-    queryset = Producto.objects.all()
-    serializer_class = ProductoSerializer
-
-class TiposTributosListAPIView(generics.ListAPIView):
-    queryset = TipoTributo.objects.all()
-    serializer_class = TiposTributosSerializer
-    
-class TributoByTipoListAPIView(generics.ListAPIView):
-    serializer_class = TributosSerializer
-    
-    def get_queryset(self):
-        # Obtener el id del departamento de la URL
-        tipo_tributo_id = self.kwargs['tipo_valor']
-        # Filtrar los municipios por el departamento
-        return Tributo.objects.filter(tipo_valor=tipo_tributo_id)
-
-class TributoDetailsAPIView(generics.RetrieveAPIView):
-    queryset = Tributo.objects.all()
-    serializer_class = TributosSerializer
 
 ######################################################
 # GENERACION DE DOCUMENTOS ELECTRONICOS
@@ -359,6 +335,11 @@ class TributoDetailsAPIView(generics.RetrieveAPIView):
 class FacturaDetailAPIView(generics.RetrieveAPIView):
     queryset = FacturaElectronica.objects.all()
     serializer_class = FacturaElectronicaSerializer
+
+# class FacturasAllListAPIView(generics.ListAPIView):
+#     queryset = FacturaElectronica.objects.all().order_by('-fecha_emision')
+#     serializer_class = FacturaListSerializer
+
 
 class FacturaListAPIView(APIView):
     """
@@ -437,7 +418,7 @@ class GenerarFacturaAPIView(APIView):
             nuevo_numero = NumeroControl.preview_numero_control(tipo_dte)
         else:
             nuevo_numero = ""
-
+        
         codigo_generacion = self.cod_generacion
         fecha_generacion = timezone.now().date()
         hora_generacion = timezone.now().strftime('%H:%M:%S')
@@ -494,6 +475,7 @@ class GenerarFacturaAPIView(APIView):
             numero_control = nuevo_numero
             # Generar UUID en cada solicitud POST
             codigo_generacion = str(uuid.uuid4()).upper()
+            
             print(f"Numero de control: {numero_control} Codigo generacion: {self.cod_generacion}")
             receptor_id = data.get('receptor_id', None)
             receptor = Receptor_fe.objects.get(id=receptor_id)
@@ -1823,4 +1805,61 @@ class FacturaPorCodigoGeneracionAPIView(APIView):
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
+
+from rest_framework.pagination import PageNumberPagination
+class FacturaPagination(PageNumberPagination):
+    page_size = 10  # Valor por defecto
+    page_size_query_param = 'page_size'  # Permite al cliente especificar el tamaño de página
+    max_page_size = 50  # Máximo de registros por página permitido
     
+    def get_paginated_response(self, data):
+        return Response({
+            'current_page': self.page.number,
+            'page_size': self.get_page_size(self.request),
+            'total_pages': self.page.paginator.num_pages,
+            'total_records': self.page.paginator.count,
+            'results': data,
+        })
+
+# Crear la vista API usando ListAPIView de DRF
+class FacturaListAPIView(generics.ListAPIView):
+    serializer_class = FacturaListSerializer
+    pagination_class = FacturaPagination
+
+    def get_queryset(self):
+        queryset = FacturaElectronica.objects.all()
+
+        recibido = self.request.GET.get('recibido_mh')
+        codigo = self.request.GET.get('sello_recepcion')
+        has_codigo = self.request.GET.get('has_sello_recepcion')
+        tipo_dte = self.request.GET.get('tipo_dte')
+        estado = self.request.GET.get('estado')  # Estado normal, por ejemplo "true" o "false"
+        estado_invalidacion = self.request.GET.get('estado_invalidacion')  # Para filtrar el estado de invalidación
+
+        if recibido and recibido.lower() in ['true', 'false']:
+            queryset = queryset.filter(recibido_mh=(recibido.lower() == 'true'))
+        if codigo:
+            queryset = queryset.filter(sello_recepcion__icontains=codigo)
+        if has_codigo and has_codigo.lower() in ['true', 'false']:
+            if has_codigo.lower() == 'true':
+                queryset = queryset.exclude(sello_recepcion__isnull=True)
+            else:
+                queryset = queryset.filter(sello_recepcion__isnull=True)
+        if tipo_dte:
+            queryset = queryset.filter(tipo_dte__id=tipo_dte)
+        if estado and estado.lower() in ['true', 'false']:
+            queryset = queryset.filter(estado=(estado.lower() == 'true'))
+        if estado_invalidacion:
+            estado_inv_lower = estado_invalidacion.lower()
+            if estado_inv_lower == "invalidada":
+                queryset = queryset.filter(dte_invalidacion__estado=True)
+            elif estado_inv_lower == "firmar":
+                # Filtra facturas sin evento de invalidación y con recibido_mh == False (Firma pendiente).
+                queryset = queryset.filter(dte_invalidacion__isnull=True, recibido_mh=False)
+            elif estado_inv_lower == "enproceso":
+                queryset = queryset.filter(dte_invalidacion__estado=False)
+            elif estado_inv_lower == "viva":
+                queryset = queryset.filter(dte_invalidacion__isnull=True)
+                
+
+        return queryset

@@ -1,6 +1,5 @@
 from rest_framework import serializers
 
-from rest_framework import serializers
 from .models import (
     Departamento,
     Descuento,
@@ -66,20 +65,32 @@ class ReceptorSerializer(serializers.ModelSerializer):
         model = Receptor_fe
         fields = '__all__'
 
-class ProductoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Producto
-        fields = '__all__'
 
-class TipoItemSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TipoItem
-        fields = '__all__'
+class FacturaListSerializer(serializers.ModelSerializer):
+    estado_invalidacion = serializers.SerializerMethodField()
 
-class DescuentoSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Descuento
-        fields = '__all__'
+        model = FacturaElectronica
+        fields = [
+            'id',
+            'tipo_dte',
+            'numero_control',
+            'estado',  # Campo que ya existe en el modelo, p.ej. para indicar si está activa o inactiva.
+            'codigo_generacion',
+            'sello_recepcion',
+            'fecha_emision',
+            'total_pagar',
+            'total_iva',
+            'recibido_mh',
+            'estado_invalidacion',  # Campo calculado a partir de dte_invalidacion.
+        ]
+
+    def get_estado_invalidacion(self, obj):
+        evento = obj.dte_invalidacion.first()
+        if evento:
+            return "Invalidada" if evento.estado else "En proceso de invalidación"
+        return "Viva"
+
 
 class FacturaElectronicaSerializer(serializers.ModelSerializer):
     # Si deseas incluir los detalles de factura, podrías anidar el serializer
@@ -140,6 +151,11 @@ class TipoUnidadMedidaSerializer(serializers.ModelSerializer):
         model = TipoUnidadMedida
         fields = '__all__'
 
+class TipoItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoItem
+        fields = '__all__'
+
 class TiposDocIDReceptorSerializer(serializers.ModelSerializer):
     class Meta:
         model = TiposDocIDReceptor
@@ -167,19 +183,6 @@ class TiposEstablecimientosSerializer(serializers.ModelSerializer):
 class TiposGeneracionDocumentoSerializer(serializers.ModelSerializer):
     class Meta:
         model = TipoGeneracionDocumento
-        fields = '__all__'
-
-
-class TiposTributosSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TipoTributo
-        fields = '__all__'
-
-
-
-class TributosSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Tributo
         fields = '__all__'
 
 
