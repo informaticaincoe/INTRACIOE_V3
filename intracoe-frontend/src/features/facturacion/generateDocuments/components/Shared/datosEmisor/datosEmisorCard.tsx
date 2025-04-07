@@ -1,28 +1,12 @@
-import { useEffect } from 'react';
 import { EmisorInterface } from '../../../../../../shared/interfaces/interfaces';
-import { getAllEmpresas } from '../../../../../bussiness/configBussiness/services/empresaServices';
 
 interface DatosEmisorData {
   emisorData: EmisorInterface;
-  setEmisorData: any;
 }
 
 export const DatosEmisorCard: React.FC<DatosEmisorData> = ({
   emisorData,
-  setEmisorData,
 }) => {
-  useEffect(() => {
-    fetchEmisorInfo();
-  }, []);
-
-  const fetchEmisorInfo = async () => {
-    try {
-      const response = await getAllEmpresas();
-      setEmisorData(response[0]);
-    } catch (error) {
-      console.log(error);
-    }
-  };
 
   return (
     <>
@@ -31,7 +15,7 @@ export const DatosEmisorCard: React.FC<DatosEmisorData> = ({
           <span className="text-start text-black opacity-50">NIT:</span>
           <span className="text-start">{emisorData.nit}</span>
           <span className="text-start text-black opacity-50">Nombre:</span>
-          <span className="text-start">{emisorData.nombre_comercial}</span>
+          <span className="text-start">{emisorData.nombre_razon_social}</span>
           <span className="text-start text-black opacity-50">Teléfono:</span>
           <span className="text-start">{emisorData.telefono}</span>
           <span className="text-start text-black opacity-50">Correo:</span>
