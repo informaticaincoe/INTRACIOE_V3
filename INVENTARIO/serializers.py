@@ -8,10 +8,6 @@ class ProductoSerializer(serializers.ModelSerializer):
         model = Producto
         fields = '__all__'
 
-class ProductoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Producto
-        fields = '__all__'
 
 class TipoItemSerializer(serializers.ModelSerializer):
     class Meta:

@@ -1,6 +1,6 @@
 from django.urls import path
 
-from INVENTARIO.api_views import TiposTributosListAPIView, TributoByTipoListAPIView, TributoDetailsAPIView, productosListAPIView
+from .api_views import ProductoCreateAPIView, ProductoDestroyAPIView, ProductoListAPIView, ProductoUpdateAPIView, TiposTributosListAPIView, TributoByTipoListAPIView, TributoDetailsAPIView
 from . import views
 
 urlpatterns = [
@@ -19,7 +19,10 @@ urlpatterns = [
 
     #----------- PRODUCTOS -----------#
     #URL PRODUCTOS
-    path('api/productos/', productosListAPIView.as_view(), name='tipo_dte_api'), 
+    path('api/productos/', ProductoListAPIView.as_view(), name='api_productos_list'),
+    path('api/productos/crear/', ProductoCreateAPIView.as_view(), name='api_productos_create'),
+    path('api/productos/<int:pk>/editar/', ProductoUpdateAPIView.as_view(), name='api_productos_update'),
+    path('api/productos/<int:pk>/eliminar/', ProductoDestroyAPIView.as_view(), name='api_productos_destroy'), 
 
     # Endpoints API REST
     # -------------------------------
