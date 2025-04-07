@@ -47,6 +47,7 @@ import CustomToast, {
 } from '../../../../shared/toast/customToast';
 import { IoMdCloseCircle } from 'react-icons/io';
 import { TablaProductosAgregados } from '../components/FE/productosAgregados/tablaProductosAgregados';
+import { ExtensionCard } from '../components/Shared/entension/extensionCard';
 
 export const GenerateDocuments = () => {
   //lista de datos obtenidas de la api
@@ -92,6 +93,9 @@ export const GenerateDocuments = () => {
   const [baseImponible, setBaseImponible] = useState<boolean>(false);
   const [errorReceptor, setErrorReceptor] = useState<boolean>(false);
   const [errorFormasPago, setErrorFormasPago] = useState<boolean>(false);
+  const [nombreResponsable, setNombreResponsable] = useState<string>("")
+  const [docResponsable, setDocResponsable] = useState<string>("")
+
 
   const [formData, setFormData] = useState({
     codigo: '',
@@ -120,15 +124,17 @@ export const GenerateDocuments = () => {
 
   const handleMontoPagar = () => {
     let aux = 0;
-    listProducts.map((pago) => {
-      aux = aux + pago.total_con_iva;
+    selectedProducts.map((pago) => {
+      aux = aux + (pago.total_con_iva) ;
+      console.log(pago)
     });
 
+    console.log("aux", aux)
     return aux.toFixed(2);
   };
 
   const generarFactura = async () => {
-console.log(descuentoItem)
+    console.log(descuentoItem)
     const dataFECF = {
       numero_control: numeroControl,
       receptor_id: receptor.id,
@@ -151,15 +157,15 @@ console.log(descuentoItem)
       no_gravado: baseImponible,
       retencion_iva: tieneRetencionIva,
       porcentaje_retencion_iva: (retencionIva / 100).toString(),
-      formas_pago_id: formasPagoList,
+      fp_id: formasPagoList,
       saldo_favor_input: '0.00',
       descuento_gravado: (descuentos.descuentoGravado / 100).toString(),
       descuento_global_input: (descuentos.descuentoGeneral / 100).toString(),
       porcentaje_retencion_renta: (retencionRenta / 100).toString(),
       retencion_renta: tieneRetencionRenta,
+      nombre_responsable: nombreResponsable || null,
+      doc_responsable: docResponsable || null,
     };
-
-
 
     const dataNCND = {
       receptor_id: receptor.id,
@@ -254,7 +260,6 @@ console.log(descuentoItem)
       setCondicionesOperacionList(response.tipooperaciones)
       setSelectedCondicionDeOperacion(response.tipooperaciones[0].codigo)
       setDescuentosList(response.descuentos)
-      console.log(response.productos)
       setListProducts(response.producto)
     } catch (error) {
       console.log(error);
@@ -550,6 +555,24 @@ console.log(descuentoItem)
           />
         </div>
       </WhiteSectionsPage>
+
+      { totalAPagar > 25000 &&
+        <WhiteSectionsPage>
+          <div className="pt-2 pb-5">
+            <div className="flex justify-between">
+              <h1 className="text-start text-xl font-bold">Extensión</h1>
+            </div>
+            <Divider className="m-0 p-0"></Divider>
+            <p className='text-start text-red pb-10'>* Campos obligatorios debido al monto de la factura</p>
+            <ExtensionCard
+              setNombreResponsable={setNombreResponsable}
+              nombreResponsable={nombreResponsable}
+              setDocResponsable={setDocResponsable}
+              docResponsable={docResponsable}
+            />
+          </div>
+        </WhiteSectionsPage>
+      }
 
       <div className="mx-14 flex">
         <button
