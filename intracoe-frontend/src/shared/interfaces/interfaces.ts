@@ -175,7 +175,7 @@ export interface Impuesto {
   id: number;
   // Otros campos relevantes
   nombre: string;
-  tasa: number;
+  porcentaje: number;
 }
 
 export interface TipoItem {
@@ -194,12 +194,14 @@ export interface Almacen {
   id: number;
   // Otros campos relevantes
   nombre: string;
+  ubicacion: string;
+  resposable: string;
 }
 
 export interface ProductoRequest {
   codigo: string;
   descripcion: string;
-  // categoria?: Categoria | null;
+  categoria?: Categoria | null;
   unidad_medida?: number | null;
   preunitario: number;
   precio_compra: number;
@@ -207,17 +209,15 @@ export interface ProductoRequest {
   stock: number;
   stock_minimo: number;
   stock_maximo: number;
-  impuestos: number[];
+  impuestos: number[] | null;
   tipo_item?: number | null;
   referencia_interna?: string | null;
   tributo: number;
   precio_iva: boolean;
   maneja_lotes: boolean;
-  fecha_vencimiento?: Nullable<Date> | null;
-  almacenes: string[];
-  imagen?: string | null;
-  creado: string;
-  actualizado: string;
+  fecha_vencimiento?: Nullable<Date> | string;
+  almacenes: number[];
+  imagen?: File | null;
 }
 
 export const productoInicial: ProductoRequest = {
@@ -240,8 +240,6 @@ export const productoInicial: ProductoRequest = {
   fecha_vencimiento: null,
   almacenes: [],
   imagen: null,
-  creado: '', 
-  actualizado: '',
 };
 
 export interface TipoGeneracionDocumentoInterface {

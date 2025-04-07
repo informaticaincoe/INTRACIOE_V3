@@ -50,8 +50,8 @@ export const TablaProductosAgregados: React.FC<
       console.log("Xxxxxxxxxxxxxxxxxxxxxx", listProducts)
       const auxId = listProducts.map((product) => product.id);
       const auxCantidad = listProducts.map((product) => product.cantidad);
-      const auxDescuento = listProducts.map((product) => product.descuento);
-
+      const auxDescuento = listProducts.map((product) => product.descuento?.porcentaje);
+      console.log(auxDescuento)
 
       console.log(auxCantidad)
 
@@ -62,10 +62,10 @@ export const TablaProductosAgregados: React.FC<
 
     const calcularTotales = (prod: ProductosTabla): ProductosTabla => {
       const IVA_RATE = 0.13;
-      const qty       = prod.cantidad;
+      const qty = prod.cantidad;
       const salePrice = prod.precio_venta;   // ahora tomamos el precio real
-      const hasIva    = prod.precio_iva;     // booleano
-    
+      const hasIva = prod.precio_iva;     // booleano
+
       // 1) Obtener el porcentaje de descuento
       let descPct = 0;
       if (prod.descuento) {
@@ -75,45 +75,45 @@ export const TablaProductosAgregados: React.FC<
           descPct = Number(prod.descuento) || 0;
         }
       }
-    
+
       // 2) Extraer el precio base sin IVA si el precio de venta ya lo incluye
       const baseUnit = hasIva
         ? salePrice / (1 + IVA_RATE)
         : salePrice;
-    
+
       // 3) Subtotal sin IVA
-      const subTotal       = baseUnit * qty;
+      const subTotal = baseUnit * qty;
       // 4) Descuento sobre ese subtotal
       const discountAmount = subTotal * descPct;
-      const netAfterDisc   = subTotal - discountAmount;
-    
+      const netAfterDisc = subTotal - discountAmount;
+
       // 5) IVA sobre el neto con descuento
-      const ivaAmount    = netAfterDisc * IVA_RATE;
+      const ivaAmount = netAfterDisc * IVA_RATE;
       // 6) Total con IVA
       const totalWithIva = netAfterDisc + ivaAmount;
 
       console.log(totalWithIva)
 
-    
+
       if (tipoDte.code === '01') {
         // Consumidor final: consideramos "neto" = total con IVA
         return {
           ...prod,
-          total_neto:    totalWithIva,
-          total_iva:     ivaAmount,
+          total_neto: totalWithIva,
+          total_iva: ivaAmount,
           total_con_iva: totalWithIva,
         };
       } else {
         // Crédito fiscal: neto sin IVA, IVA por separado
         return {
           ...prod,
-          total_neto:    netAfterDisc,
-          total_iva:     ivaAmount,
+          total_neto: netAfterDisc,
+          total_iva: ivaAmount,
           total_con_iva: totalWithIva,
         };
       }
     };
-    
+
 
     // Función para manejar cambios en la cantidad de un producto específico
     const handleCantidadChange = (value: number | null, productId: number) => {

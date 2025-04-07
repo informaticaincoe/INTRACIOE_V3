@@ -35,6 +35,8 @@ class TipoTransmision(models.Model):
 class TipoContingencia(models.Model):
     codigo = models.CharField(max_length=50)
     descripcion = models.CharField(max_length=50)
+    #En el campo motivo_contingencia el contribuyente podra definir la razon de la contingencia, si el tipo de contingencia es 5, este campo sera obligatorio
+    motivo_contingencia = models.CharField(max_length=500, blank=True, null=True)
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
 
@@ -227,6 +229,8 @@ class Emisor_fe(models.Model):
     nombre_establecimiento = models.CharField(max_length=255, null=True, blank=True, verbose_name="Nombre Establecimiento")
     tipo_documento = models.ForeignKey(TiposDocIDReceptor, on_delete=models.CASCADE, null=True)
     logo = models.ImageField(upload_to='media/productos/', null=True, blank=True) #logo empresa
+    clave_privada = models.CharField(max_length=255, null=True, blank=True)
+    clave_publica = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return f"{self.nombre_razon_social} ({self.nit})"
@@ -440,10 +444,15 @@ class EventoContingencia(models.Model):
     sello_recepcion = models.CharField(max_length=255, blank=True, null=True)
     fecha_transmicion = models.DateField(auto_now_add=True, null=True)
     hora_transmision = models.TimeField(auto_now_add=True, null=True)
+    fecha_modificacion = models.DateField(auto_now_add=True, null=True)
+    hora_modificacion = models.TimeField(auto_now_add=True, null=True)
     estado = models.BooleanField(default=False)
     factura = models.ForeignKey(FacturaElectronica, on_delete=models.CASCADE, related_name='detalles_dte', null=True, blank=True)
     tipo_contingencia = models.ForeignKey(TipoContingencia, on_delete=models.CASCADE, null=True)
-    #En el campo motivo_contingencia contribuyente podra definir la razon de la contingencia, si el tipo de contingencia es 5, este campo sera obligatorio
-    motivo_contingencia = models.CharField(max_length=500, blank=True, null=True)
+    #En el campo motivo_contingencia el contribuyente podra definir la razon de la contingencia, si el tipo de contingencia es 5, este campo sera obligatorio
+    #motivo_contingencia = models.CharField(max_length=500, blank=True, null=True)# agregarlo en tabla cat-005
+    firmado = models.BooleanField(default=False)
+    json_original = models.JSONField(blank=True, null=True)
+    json_firmado = models.JSONField(blank=True, null=True)
+    #Agregar campos de fecha y hora que proporcionara hacienda
     
-

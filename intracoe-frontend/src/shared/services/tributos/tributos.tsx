@@ -31,3 +31,24 @@ export const getTributoById = async (id: number) => {
     throw new Error();
   }
 };
+
+export const getAllTributos = async () => {
+  try {
+    const response = await axios.get(`${BASEURL}/tributos/`);
+    return response.data;
+  } catch (error) {
+    console.log(error);
+    throw new Error();
+  }
+}
+
+export const getAllAlmacenes = async () => {
+  try {
+    const response = await axios.get(`${BASEURL}/almacenes/`);
+    console.log(response.data)
+    return response.data;
+  } catch (error) {
+    console.log(error);
+    throw new Error();
+  }
+}
