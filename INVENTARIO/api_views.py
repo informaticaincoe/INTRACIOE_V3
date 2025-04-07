@@ -22,6 +22,11 @@ class ProductoListAPIView(generics.ListAPIView):
         if query:
             queryset = queryset.filter(Q(codigo__icontains=query) | Q(descripcion__icontains=query))
         return queryset
+    
+class ProductoDetailAPIView(generics.RetrieveAPIView):
+    serializer_class = ProductoSerializer
+    queryset = Producto.objects.all()
+
 
 # Crear un nuevo producto
 class ProductoCreateAPIView(generics.CreateAPIView):

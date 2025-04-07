@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .api_views import AlmacenesListAPIView, ImpuestosListAPIView, ProductoCreateAPIView, ProductoDestroyAPIView, ProductoListAPIView, ProductoUpdateAPIView, TipoItemListAPIView, TiposTributosListAPIView, TributoByTipoListAPIView, TributoDetailsAPIView, TributosListAPIView, UnidadMedidaListAPIView
+from .api_views import AlmacenesListAPIView, ImpuestosListAPIView, ProductoCreateAPIView, ProductoDestroyAPIView, ProductoDetailAPIView, ProductoListAPIView, ProductoUpdateAPIView, TipoItemListAPIView, TiposTributosListAPIView, TributoByTipoListAPIView, TributoDetailsAPIView, TributosListAPIView, UnidadMedidaListAPIView
 from . import views
 
 urlpatterns = [
@@ -20,7 +20,9 @@ urlpatterns = [
 
     #----------- PRODUCTOS -----------#
     #URL PRODUCTOS
+    
     path('api/productos/', ProductoListAPIView.as_view(), name='api_productos_list'),
+    path('api/producto/<int:pk>/', ProductoDetailAPIView.as_view(), name='api_productos_list'),
     path('api/productos/crear/', ProductoCreateAPIView.as_view(), name='api_productos_create'),
     path('api/productos/<int:pk>/editar/', ProductoUpdateAPIView.as_view(), name='api_productos_update'),
     path('api/productos/<int:pk>/eliminar/', ProductoDestroyAPIView.as_view(), name='api_productos_destroy'), 

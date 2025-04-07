@@ -29,8 +29,6 @@ export const StepperInformacionGeneral: React.FC<
   const [totalSize, setTotalSize] = useState(0);
   const fileUploadRef = useRef<FileUpload>(null);
 
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-
     const onImageSelect = (e: FileUploadSelectEvent) => {
       const file = e.files[0] as File;
       handleChange({ target: { name: 'imagen', value: file } });
@@ -59,17 +57,6 @@ export const StepperInformacionGeneral: React.FC<
     }
   };
 
-  const onTemplateSelect = (e: FileUploadSelectEvent) => {
-    let _totalSize = totalSize;
-    let files = e.files;
-
-    for (let i = 0; i < files.length; i++) {
-      _totalSize += files[i].size || 0;
-    }
-
-    setTotalSize(_totalSize);
-  };
-
   const onTemplateUpload = (e: FileUploadUploadEvent) => {
     let _totalSize = 0;
 
@@ -95,8 +82,6 @@ export const StepperInformacionGeneral: React.FC<
     const value = totalSize / 10000;
     const formatedValue = fileUploadRef && fileUploadRef.current ? fileUploadRef.current.formatSize(totalSize) : '0 B';
     
-
-
     return (
       <div className={className} style={{ backgroundColor: 'transparent', display: 'flex', alignItems: 'center' }}>
         {chooseButton}

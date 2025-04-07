@@ -25,6 +25,7 @@ function App() {
           <Route path="/factura/:id" element={<FacturaVisualizacionPage />} />
           <Route path="/productos" element={<ProductsPage />} />
           <Route path="/productos/nuevo" element={<NuevoProductoPage />} />
+          <Route path="/producto/:id" element={<NuevoProductoPage />} />
           <Route path="/listado-facturas" element={<ListadoFacturas />} />
           <Route path="/servicios" element={<ServicioPage />} />
           <Route path="/empresa" element={<ConfigBussiness />} />

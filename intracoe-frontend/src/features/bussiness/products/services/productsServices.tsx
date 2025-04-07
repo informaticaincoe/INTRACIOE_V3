@@ -1,11 +1,8 @@
 import axios from 'axios';
-import { ProductoRequest } from '../../../../shared/interfaces/interfaces';
 
 const BASEURL = import.meta.env.VITE_URL_BASE_INVENT;
 
-
 export const createProductService = async (data: any) => {
-    
     console.log("data", data)
     try {
       const response = await axios.post(`${BASEURL}/productos/crear/`, data); // Usar POST para enviar los datos
@@ -15,3 +12,34 @@ export const createProductService = async (data: any) => {
       throw new Error('Error al crear el producto');
     }
   };
+
+  export const deleteProduct = async (id: any) => {
+    try {
+      const response = await axios.delete(`${BASEURL}/productos/${id}/eliminar/`); // Usar POST para enviar los datos
+      return response.data;
+    } catch (error) {
+      console.log(error);
+      throw new Error('Error al crear el producto');
+    }
+  };
+
+  export const EditProductService = async (id:string, data: any) => {
+    console.log("data", data)
+    try {
+      const response = await axios.put(`${BASEURL}/productos/${id}/editar/`, data); // Usar POST para enviar los datos
+      return response.data;
+    } catch (error) {
+      console.log(error);
+      throw new Error('Error al crear el producto');
+    }
+  };
+
+  export const getProductById = async (id:string) => {
+    try {
+      const response = await axios.get(`${BASEURL}/producto/${id}/`); // Usar POST para enviar los datos
+      return response.data;
+    } catch (error) {
+      console.log(error);
+      throw new Error('Error al crear el producto');
+    }
+  }
