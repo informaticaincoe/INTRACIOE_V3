@@ -68,6 +68,10 @@ const items: MenuItem[] = [
             key: 'configuracion',
             label: <p className="text-start">Configurar empresa</p>,
           },
+          {
+            key: 'receptores',
+            label: <p className="text-start">Receptores</p>,
+          },
         ],
       },
     ],
@@ -99,6 +103,9 @@ export const SideMenu = () => {
         break;
       case 'configuracion':
         navigate('/empresa');
+        break;
+      case 'receptores':
+        navigate('/receptores');
         break;
       case 'listado-facturas':
         navigate('/listado-facturas');

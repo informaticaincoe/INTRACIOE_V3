@@ -6,6 +6,7 @@ from rest_framework import status
 
 from .serializers import AlmacenSerializer, ImpuestoSerializer, ProductoSerializer, TipoItemSerializer, TipoUnidadMedidaSerializer, TiposTributosSerializer, TributosSerializer
 from .models import Almacen, Impuesto, Producto, TipoItem, TipoTributo, TipoUnidadMedida, Tributo
+from django.db.models import Q
 
      
 ######################################################
@@ -17,11 +18,24 @@ class ProductoListAPIView(generics.ListAPIView):
     serializer_class = ProductoSerializer
 
     def get_queryset(self):
-        query = self.request.query_params.get('q', '')
-        queryset = Producto.objects.all()
-        if query:
-            queryset = queryset.filter(Q(codigo__icontains=query) | Q(descripcion__icontains=query))
-        return queryset
+        qs = Producto.objects.all()
+
+        # 1) Filtrar por tipo de ítem (por su código)
+        tipo = self.request.query_params.get('tipo', None)
+        if tipo:
+            qs = qs.filter(tipo_item__codigo=tipo)
+            # si prefieres filtrar por ID en lugar de código:
+            # qs = qs.filter(tipo_item_id=tipo)
+
+        # 2) Filtrar por búsqueda de texto en código o descripción
+        q = self.request.query_params.get('q', None)
+        if q:
+            qs = qs.filter(
+                Q(codigo__icontains=q) |
+                Q(descripcion__icontains=q)
+            )
+
+        return qs
     
 class ProductoDetailAPIView(generics.RetrieveAPIView):
     serializer_class = ProductoSerializer
