@@ -102,6 +102,11 @@ export interface TipoDocumento {
   code: string;
 }
 
+export interface TipoDocumentoDropDown {
+  name: string;
+  code: string;
+};
+
 export interface Ambiente {
   id: string;
   descripcion: string;

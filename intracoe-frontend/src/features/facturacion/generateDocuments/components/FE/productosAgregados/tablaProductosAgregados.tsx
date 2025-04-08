@@ -32,7 +32,6 @@ export const TablaProductosAgregados: React.FC<
   setCantidadListProducts,
   setIdListProducts,
   setDescuentoItem,
-  descuentoItem,
   tipoDte,
   descuentosList
 }) => {
@@ -47,7 +46,6 @@ export const TablaProductosAgregados: React.FC<
     }, []);
 
     useEffect(() => {
-      console.log("Xxxxxxxxxxxxxxxxxxxxxx", listProducts)
       const auxId = listProducts.map((product) => product.id);
       const auxCantidad = listProducts.map((product) => product.cantidad);
       const auxDescuento = listProducts.map((product) => product.descuento?.porcentaje);
@@ -95,7 +93,7 @@ export const TablaProductosAgregados: React.FC<
       console.log(totalWithIva)
 
 
-      if (tipoDte.code === '01') {
+      if (tipoDte === '01') {
         // Consumidor final: consideramos "neto" = total con IVA
         return {
           ...prod,
@@ -212,7 +210,7 @@ export const TablaProductosAgregados: React.FC<
         />
 
         <DataTable
-          key={tipoDte.code}
+          key={tipoDte}
           value={listProducts}
           tableStyle={{ minWidth: '50rem' }}
           paginator
@@ -232,7 +230,7 @@ export const TablaProductosAgregados: React.FC<
             field="descripcion"
             header={<p className="text-sm">PRODUCTO</p>}
           ></Column>
-          {tipoDte.code == '03' && (
+          {tipoDte == '03' && (
             <Column
               body={(rowData: ProductosTabla) => (
                 <p>$ {rowData.preunitario}</p>
@@ -240,7 +238,7 @@ export const TablaProductosAgregados: React.FC<
               header={<p className="text-sm">PRECIO UNITARIO</p>}
             ></Column>
           )}
-          {tipoDte.code == '03' && (
+          {tipoDte == '03' && (
             <Column
               body={(rowData: ProductosTabla) => {
                 if (rowData.precio_iva)
@@ -251,7 +249,7 @@ export const TablaProductosAgregados: React.FC<
               header={<p className="text-sm">IVA UNITARIO</p>}
             ></Column>
           )}
-          {tipoDte.code == '01' && (
+          {tipoDte == '01' && (
             <Column
               header={<p className="text-sm">PRECIO UNITARIO</p>}
               body={(rowData: ProductosTabla) => {
@@ -290,14 +288,14 @@ export const TablaProductosAgregados: React.FC<
             header={<p className="text-sm uppercase">TOTAL tributos</p>}
           ></Column>
 
-          {tipoDte.code == '01' &&
+          {tipoDte == '01' &&
             <Column
               header="TOTAL"
               body={(rowData) => {
                 return <p>$ {(rowData.total_con_iva).toFixed(2)}</p>;
               }}
             />}
-          {tipoDte.code == '03' &&
+          {tipoDte == '03' &&
             <Column
               header="TOTAL NETO"
               body={(rowData) => {
@@ -305,7 +303,7 @@ export const TablaProductosAgregados: React.FC<
                 return <span>$ {rowData.total_neto.toFixed(2)}</span>;
               }}
             />}
-          {tipoDte.code == '03' &&
+          {tipoDte == '03' &&
             <Column
               header="TOTAL IVA"
               body={(rowData) => {
@@ -314,7 +312,7 @@ export const TablaProductosAgregados: React.FC<
               }}
             />}
 
-          {tipoDte.code == '03' &&
+          {tipoDte == '03' &&
             <Column
               header="TOTAL CON IVA"
               body={(row) => {

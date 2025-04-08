@@ -14,6 +14,17 @@ export const generarFacturaService = async (data: any) => {
   }
 };
 
+export const generarAjusteService = async () => {
+  try {
+    const response = await axios.get(`${BASEURL}/factura_ajuste/generar/`);
+    console.log(response.data)
+    return response.data;
+  } catch (error) {
+    console.log(error);
+    throw new Error();
+  }
+};
+
 export const generarNotaCreditoService = async (data: any) => {
   try {
     const response = await axios.post(

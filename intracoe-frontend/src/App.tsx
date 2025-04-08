@@ -12,6 +12,7 @@ import { FacturaVisualizacionPage } from './features/facturacion/PreFactura/page
 import { ListadoFacturas } from './features/facturacion/Listadofacturas/pages/listadoFacturas';
 import { NuevoProductoPage } from './features/bussiness/products/pages/nuevoProductoPage';
 import { ServicioPage } from './features/bussiness/servicios/pages/servicioPage';
+import { GenerarDocumentosAjuste } from './features/facturacion/generateDocuments/pages/generarDocumentosAjuste';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/actividades-economicas" element={<ActivitiesPage />} />
           <Route path="/generar-documentos" element={<GenerateDocuments />} />
+          <Route path="/generar-documentos-ajuste" element={<GenerarDocumentosAjuste />} />
           <Route path="/factura/:id" element={<FacturaVisualizacionPage />} />
           <Route path="/productos" element={<ProductsPage />} />
           <Route path="/productos/nuevo" element={<NuevoProductoPage />} />

@@ -24,6 +24,7 @@ import {
   EmisorInterface,
   FacturaPorCodigoGeneracionResponse,
   ReceptorInterface,
+  TipoDocumento,
   TipoGeneracionFactura,
 } from '../../../../shared/interfaces/interfaces';
 import { ProductosTabla } from '../components/FE/productosAgregados/productosData';
@@ -54,10 +55,9 @@ export const GenerateDocuments = () => {
   const [condicionesOperacionList, setCondicionesOperacionList] = useState<ConfiguracionFacturaInterface>();
   const [receptor, setReceptor] = useState<ReceptorInterface>(defaulReceptorData); // almacenar informacion del receptor
   const [emisorData, setEmisorData] = useState<EmisorInterface>(defaultEmisorData); // almcenar informacion del emisor
-  const [tipoDocumento, setTipoDocumento] = useState<{
-    name: string;
-    code: string;
-  }>({ name: 'Factura', code: '01' }); // almcenar tipo de dte
+  const [tipoDocumento, setTipoDocumento] = useState<TipoDocumento[]>([]); // almcenar tipo de dte
+  const [tipoDocumentoSelected, setTipoDocumentoSelected] = useState<string>("01"); // almcenar tipo de dte
+
   const [descuentos, setDescuentos] = useState<Descuentos>({
     descuentoGeneral: 0,
     descuentoGravado: 0,
@@ -96,7 +96,6 @@ export const GenerateDocuments = () => {
   const [nombreResponsable, setNombreResponsable] = useState<string>("")
   const [docResponsable, setDocResponsable] = useState<string>("")
 
-
   const [formData, setFormData] = useState({
     codigo: '',
   });
@@ -125,7 +124,7 @@ export const GenerateDocuments = () => {
   const handleMontoPagar = () => {
     let aux = 0;
     selectedProducts.map((pago) => {
-      aux = aux + (pago.total_con_iva) ;
+      aux = aux + (pago.total_con_iva);
       console.log(pago)
     });
 
@@ -147,7 +146,7 @@ export const GenerateDocuments = () => {
       documento_seleccionado: tipoGeneracionFactura?.code ?? '', //TODO: tipo de documento relacionado
       documento_select: facturasAjuste[0]?.codigo_generacion ?? '', //TODO: id documento a relacionar
       descuento_select: '0.00', //TODO: Descuento por item
-      tipo_documento_seleccionado: tipoDocumento?.code, //tipo DTE
+      tipo_documento_seleccionado: tipoDocumentoSelected, //tipo DTE
       condicion_operacion: selectedCondicionDeOperacion, //contado, credito, otros
       observaciones: observaciones,
       productos_ids: idListProducts,
@@ -167,42 +166,15 @@ export const GenerateDocuments = () => {
       doc_responsable: docResponsable || null,
     };
 
-    const dataNCND = {
-      receptor_id: receptor.id,
-      observaciones: observaciones,
-      tipo_documento_seleccionado: tipoDocumento?.code, //tipo DTE
-      tipo_item_select: 1, //TODO: obtener segun la lista de productos de forma dinamica (bien o servicio)
-      documento_seleccionado: tipoGeneracionFactura?.code ?? '', //TODO: tipo de documento relacionado
-      documento_relacionado:
-        facturasAjuste[0]?.codigo_generacion.toUpperCase() ?? '', //TODO: id documento a relacionar
-      descuento_select: descuentos, //TODO: Descuento por item
-      condicion_operacion: selectedCondicionDeOperacion, //contado, credito, otros
-      porcentaje_retencion_iva: (retencionIva / 100).toString(),
-      retencion_iva: retencionIva.toString(),
-      productos_retencion_iva: '0.00',
-      porcentaje_retencion_renta: '0.00', //TODO: descuento por item
-      retencion_renta: '0.0',
-      productos_retencion_renta: '0.00', //TODO: descuento por item
-      producto_id: idListProducts[0],
-      num_ref: null,
-      productos_ids: idListProducts,
-      cantidades: cantidadListProducts, //cantidad de cada producto de la factura
-      descuento_gravado: descuentos.descuentoGravado.toString(),
-      descuento_global_input: descuentos.descuentoGeneral.toString(),
-      // "retencion_renta": false,
-      // "porcentaje_retencion_renta": 0.00,
-    };
+
     console.log('dataFECF', dataFECF);
-    console.log('dataNCND', dataNCND);
+
 
     try {
-      if (tipoDocumento.code == '05' || tipoDocumento.code == '06') {
-        const response = await generarNotaCreditoService(dataNCND);
-        firmarFactura(response.factura_id);
-      } else {
-        const response = await generarFacturaService(dataFECF);
-        firmarFactura(response.factura_id);
-      }
+
+      const response = await generarFacturaService(dataFECF);
+      firmarFactura(response.factura_id);
+
     } catch (error) {
       console.log(error);
     }
@@ -249,11 +221,11 @@ export const GenerateDocuments = () => {
   /************************************/
   useEffect(() => {
     fetchfacturaData();
-  }, [tipoDocumento]);
+  }, [tipoDocumentoSelected]);
 
   const fetchfacturaData = async () => {
     try {
-      const response = await getFacturaCodigos(tipoDocumento.code);
+      const response = await getFacturaCodigos(tipoDocumentoSelected);
       setCodigoGeneracion(response.codigo_generacion);
       setNumeroControl(response.numero_control);
       setEmisorData(response.emisor)
@@ -261,6 +233,7 @@ export const GenerateDocuments = () => {
       setSelectedCondicionDeOperacion(response.tipooperaciones[0].codigo)
       setDescuentosList(response.descuentos)
       setListProducts(response.producto)
+      setTipoDocumento(response.tipoDocumentos)
     } catch (error) {
       console.log(error);
     }
@@ -319,6 +292,8 @@ export const GenerateDocuments = () => {
                 <DropDownTipoDte
                   tipoDocumento={tipoDocumento}
                   setTipoDocumento={setTipoDocumento}
+                  setTipoDocumentoSelected={setTipoDocumentoSelected}
+                  tipoDocumentoSelected={tipoDocumentoSelected}
                 />
               </div>
               <SelectCondicionOperacion
@@ -378,7 +353,6 @@ export const GenerateDocuments = () => {
 
       {/********* Seccion productos *********/}
       {/* Tipo de documento: FE y Credito fiscal */}
-      {(tipoDocumento?.code === '01' || tipoDocumento?.code === '03') && (
         <WhiteSectionsPage>
           <div className="pt-2 pb-5">
             <div className="flex items-center justify-between">
@@ -408,7 +382,7 @@ export const GenerateDocuments = () => {
               setDescuentoItem={setDescuentoItem}
               descuentoItem={descuentoItem}
               descuentosList={descuentosList}
-              tipoDte={tipoDocumento}
+              tipoDte={tipoDocumentoSelected}
             />
             <ModalListaProdcutos
               visible={showProductsModal}
@@ -419,95 +393,7 @@ export const GenerateDocuments = () => {
             />
           </div>
         </WhiteSectionsPage>
-      )}
 
-      {/* Tipo de documento: Nota de Credito */}
-      {(tipoDocumento?.code === '05' || tipoDocumento?.code === '06') && (
-        <WhiteSectionsPage>
-          <div className="pt-2 pb-5">
-            <div className="flex justify-between">
-              <h1 className="text-start text-xl font-bold text-nowrap">
-                Ajustar factura
-              </h1>
-            </div>
-            <Divider className="m-0 p-0" />
-            <div className="flex items-center pb-5">
-              <label htmlFor="tipoDocumentoGeneracion" className="text-nowrap">
-                Tipo documento de generación:
-              </label>
-              <DropFownTipoDeDocumentoGeneracion
-                tipoGeneracionFactura={tipoGeneracionFactura}
-                setTipoGeneracionFactura={setTipoGeneracionFactura}
-              />
-              <label htmlFor="codigo" className="text-nowrap">
-                Codigo de generacion:
-              </label>
-              <Input
-                name="codigo"
-                placeholder="codigo"
-                type="text"
-                className="mr-10 ml-3"
-                value={formData.codigo}
-                onChange={handleChange}
-              />
-              <button
-                className="bg-primary-blue rounded-md px-5 py-3 text-nowrap text-white hover:cursor-pointer"
-                onClick={() => fetchFacturaARelacionar()}
-              >
-                seleccionar factura
-              </button>
-            </div>
-            {facturasAjuste && (
-              <TablaProductosFacturaNotasDebito
-                setCantidadListProducts={setCantidadListProducts}
-                facturasAjuste={facturasAjuste}
-                setFacturasAjuste={setFacturasAjuste}
-                setIdListProducts={setIdListProducts}
-                setListProducts={setListProducts}
-              />
-            )}
-          </div>
-        </WhiteSectionsPage>
-      )}
-
-      {/* Tipo de documento: Nota de Debito */}
-      {tipoDocumento?.code === '04' && (
-        <WhiteSectionsPage>
-          <div className="pt-2 pb-5">
-            <div className="flex justify-between">
-              <h1 className="text-start text-xl font-bold">
-                Factura seleccionada
-              </h1>
-              <button
-                className="bg-primary-blue rounded-md px-5 py-3 text-white hover:cursor-pointer"
-                onClick={() => setShowfacturasModal(true)}
-              >
-                seleccionar factura
-              </button>
-            </div>
-            <Divider className="m-0 p-0"></Divider>
-            {facturasAjuste ? (
-              <TablaProductosFacturaNotasDebito
-                setCantidadListProducts={setCantidadListProducts}
-                facturasAjuste={facturasAjuste}
-                setFacturasAjuste={setFacturasAjuste}
-                setIdListProducts={setIdListProducts}
-                setListProducts={setListProducts}
-              />
-            ) : (
-              <p>Cargando factura...</p>
-            )}
-
-            <ModalListaFacturas
-              visible={showfacturasModal}
-              setVisible={setShowfacturasModal}
-            />
-          </div>
-        </WhiteSectionsPage>
-      )}
-
-      {/*Seccion formas de pago*/}
-      {(tipoDocumento?.code === '01' || tipoDocumento?.code === '03') && (
         <WhiteSectionsPage>
           <>
             <h1 className="text-start text-xl font-bold text-nowrap">
@@ -538,7 +424,7 @@ export const GenerateDocuments = () => {
             </span>
           </>
         </WhiteSectionsPage>
-      )}
+    
       {/*Seccion totales resumen*/}
       <WhiteSectionsPage>
         <div className="pt-2 pb-5">
@@ -556,7 +442,7 @@ export const GenerateDocuments = () => {
         </div>
       </WhiteSectionsPage>
 
-      { totalAPagar > 25000 &&
+      {totalAPagar > 25000 &&
         <WhiteSectionsPage>
           <div className="pt-2 pb-5">
             <div className="flex justify-between">
