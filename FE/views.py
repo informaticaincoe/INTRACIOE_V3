@@ -1176,7 +1176,7 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
             return JsonResponse({"error": str(e)}, status=400)
 
         
-def generar_json_doc_ajuste(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_documento, observaciones, base_imponible_checkbox, saldo_favor, documentos_relacionados, contingencia, total_gravada):
+def generar_json_doc_ajuste(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_documento, observaciones, documentos_relacionados, contingencia, total_gravada):
     print("-Inicio llenar json")
     try:
         
@@ -1561,7 +1561,7 @@ def enviar_factura_hacienda_view(request, factura_id):
                     #crear el movimeinto de inventario
                     #Se asume que la factura tiene una relación a sus detalles, donde se encuentran los productos y cantidades
 
-                    for detalle in factura.detalles.all():
+                    """for detalle in factura.detalles.all():
 
                         if detalle.producto.almacenes.exists():
                             almacen = detalle.producto.almacenes.first()
@@ -1584,7 +1584,7 @@ def enviar_factura_hacienda_view(request, factura_id):
                         factura.contingencia = False
                         factura.save()
                         contingencia = False
-                        #break
+                        #break"""
                     return JsonResponse({
                         "mensaje": "Factura enviada con éxito",
                         "respuesta": response_data
