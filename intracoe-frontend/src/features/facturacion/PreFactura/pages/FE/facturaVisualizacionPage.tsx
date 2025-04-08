@@ -37,7 +37,6 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { usePDF } from 'react-to-pdf';
 import { EnviarHacienda } from '../../../generateDocuments/services/factura/facturaServices';
-import { Toast } from 'primereact/toast';
 import CustomToast, {
   CustomToastRef,
   ToastSeverity,
@@ -92,8 +91,6 @@ export const FacturaVisualizacionPage = () => {
   const [pagoEnLetras, setPagoEnLetras] = useState<string>('');
   const [condicionOperacion, setCondicionOperacion] = useState<number>(0);
   const navigate = useNavigate();
-  const [visible, setVisible] = useState(false);
-  const toastBC = useRef<Toast>(null);
   const { targetRef } = usePDF({ filename: 'page.pdf' });
   const toastRef = useRef<CustomToastRef>(null);
 

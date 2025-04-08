@@ -40,7 +40,11 @@ const items: MenuItem[] = [
           },
           {
             key: 'documentos',
-            label: <p className="text-start">Generar documentos</p>,
+            label: <p className="text-start">Generar facturas</p>,
+          },
+          {
+            key: 'correcciones',
+            label: <p className="text-start">Generar corecciones</p>,
           },
           {
             key: 'listado-facturas',
@@ -64,6 +68,10 @@ const items: MenuItem[] = [
             key: 'configuracion',
             label: <p className="text-start">Configurar empresa</p>,
           },
+          {
+            key: 'receptores',
+            label: <p className="text-start">Receptores</p>,
+          },
         ],
       },
     ],
@@ -84,6 +92,9 @@ export const SideMenu = () => {
       case 'documentos':
         navigate('/generar-documentos');
         break;
+      case 'correcciones':
+        navigate('/generar-documentos-ajuste')
+        break;
       case 'producto':
         navigate('/productos');
         break;
@@ -92,6 +103,9 @@ export const SideMenu = () => {
         break;
       case 'configuracion':
         navigate('/empresa');
+        break;
+      case 'receptores':
+        navigate('/receptores');
         break;
       case 'listado-facturas':
         navigate('/listado-facturas');
