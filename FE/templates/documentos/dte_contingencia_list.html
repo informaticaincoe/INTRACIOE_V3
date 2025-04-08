@@ -69,14 +69,14 @@
         </tr>
     </thead>
     <tbody>
-        {% for factura in dtelist %}
+        {% for contingencia in dtelist %}
         <tr>
         <td>
-            <input type="checkbox" name="factura_ids" value="{{ factura.id }}">
+            <input type="checkbox" name="contingencia_ids" value="{{ contingencia.id }}">
         </td>
         <td>
-            {% if factura.dte_invalidacion.all|length > 0 %}
-            {% with evento=factura.dte_invalidacion.all.0 %}
+            {% if contingencia.all|length > 0 %}
+            {% with evento=contingencia.all.0 %}
                 {% if evento.estado %}
                 <i class="fa fa-ban text-danger" title="Anulada"></i>
                 {% else %}
@@ -87,24 +87,24 @@
             <i class="fa fa-check text-success" title="Viva"></i>
             {% endif %}
         </td>
-        <td>{{ factura.numero_control }}</td>
+        <td>{{ contingencia.factura.numero_control }}</td>
         <td>
-            {% if factura.tipo_dte.codigo == "03" %}
+            {% if contingencia.factura.tipo_dte.codigo == "03" %}
             CCF
-            {% elif factura.tipo_dte.codigo == "01" %}
+            {% elif contingencia.factura.tipo_dte.codigo == "01" %}
             FE
             {% else %}
-            {{ factura.tipo_dte.codigo }}
+            {{ contingencia.factura.tipo_dte.codigo }}
             {% endif %}
         </td>
-        <td>{{ factura.sello_recepcion }}</td>
-        <td>{{ factura.fecha_emision }}</td>
-        <td>{{ factura.total_pagar }}</td>
-        <td>{{ factura.total_iva }}</td>
-        <td>{% if factura.recibido_mh %}Sí{% else %}No{% endif %}</td>
+        <td>{{ contingencia.sello_recepcion }}</td>
+        <td>{{ contingencia.fecha_emision }}</td>
+        <td>{{ contingencia.factura.total_pagar }}</td>
+        <td>{{ contingencia.factura.total_iva }}</td>
+        <td>{% if contingencia.recibido_mh %}Sí{% else %}No{% endif %}</td>
         <td>
             <!-- Acción individual (opcional) -->
-            <a href="{% url 'invalidar_dte_unificado' factura.id %}" class="btn btn-sm btn-secondary btn-invalidar" data-factura-id="{{ factura.id }}">Anular</a>
+            <a href="{% url 'invalidar_dte_unificado' contingencia.id %}" class="btn btn-sm btn-secondary btn-invalidar" data-factura-id="{{ contingencia.id }}">Enviar Contingencia</a>
         </td>
         </tr>
         {% empty %}
