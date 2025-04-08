@@ -4,11 +4,23 @@ import { getTributoById } from '../tributos/tributos';
 
 const BASEURL = import.meta.env.VITE_URL_BASE_INVENT;
 
-export const getAllProducts = async () => {
+export const getAllProducts = async ({
+  filter,
+  tipo
+}: {
+  filter?: string;
+  tipo?: string | number;
+} = {}) => {// Si no se pasa argumento, se usa un objeto vacío
   try {
+    const params: Record<string, any> = {}; // Construimos el objeto `params` sólo con los filtros proporcionados
+    if (filter) params.q    = filter;
+    if (tipo)   params.tipo = tipo;
+
     const response = await axios.get<ProductoResponse[]>(
-      `${BASEURL}/productos/`
+      `${BASEURL}/productos/`,
+      { params }
     );
+
     await Promise.all(
       response.data.map(async (data) => {
         data.tributo = await getTributoById(data.tributo);
@@ -16,9 +28,10 @@ export const getAllProducts = async () => {
     );
     return response.data;
   } catch (error) {
-    throw new Error();
+    throw new Error('Error fetching products');
   }
 };
+
 
 export const getAllDescuentos = async () => {
   try {

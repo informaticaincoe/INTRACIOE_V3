@@ -7,21 +7,21 @@ import { Image } from 'primereact/image';
 import { FaCheckCircle } from 'react-icons/fa';
 import { IoMdCloseCircle } from 'react-icons/io';
 
-import { deleteProduct } from '../services/productsServices';
 import CustomToast, { CustomToastRef, ToastSeverity } from '../../../../shared/toast/customToast';
 import { useNavigate } from 'react-router';
+import { deleteProduct } from '../../products/services/productsServices';
 
-export interface TablaProductosProps {
-  productos: ProductoResponse[];
+export interface TablaServiciosProps {
+  servicios: ProductoResponse[];
   refreshProducts: () => void;
 }
 
-export const TablaProductos: React.FC<TablaProductosProps> = ({
-  productos,refreshProducts
+export const TablaServicios: React.FC<TablaServiciosProps> = ({
+  servicios,refreshProducts
 }) => {
   useEffect(() => {
-    console.log(productos)
-  }, [productos])
+    console.log(servicios)
+  }, [servicios])
 
   const [rowClick] = useState<boolean>(true);
   const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
@@ -42,7 +42,7 @@ export const TablaProductos: React.FC<TablaProductosProps> = ({
   };
 
   const handleDelete = async () => {
-    // Se itera sobre los productos seleccionados y se elimina uno por uno
+    // Se itera sobre los servicios seleccionados y se elimina uno por uno
     for (const product of selectedProducts) {
       try {
         await deleteProduct(product.id);
@@ -52,7 +52,7 @@ export const TablaProductos: React.FC<TablaProductosProps> = ({
         handleAccion('error', <IoMdCloseCircle size={38} />, 'Error al eliminar el producto');
       }
     }
-    // Después de eliminar, se limpia la selección y se actualiza la lista de productos
+    // Después de eliminar, se limpia la selección y se actualiza la lista de servicios
     setSelectedProducts([]);
     refreshProducts();
   };
@@ -62,11 +62,11 @@ export const TablaProductos: React.FC<TablaProductosProps> = ({
   };
   return (
     <div>
-      {selectedProducts.length > 0 && ( // Verificar si hay productos seleccionados
+      {selectedProducts.length > 0 && ( // Verificar si hay servicios seleccionados
         <div className="my-5 flex justify-between rounded bg-blue-50 p-5">
           <p className="text-blue flex items-center gap-2">
             <FaCheckCircle className="" />
-            productos seleccionados {selectedProducts.length}
+            servicios seleccionados {selectedProducts.length}
           </p>
           <span className="flex gap-2">
             {selectedProducts.length === 1 && (
@@ -89,7 +89,7 @@ export const TablaProductos: React.FC<TablaProductosProps> = ({
         </div>
       )}
       <DataTable
-        value={productos}
+        value={servicios}
         tableStyle={{ minWidth: '50rem' }}
         selectionMode={rowClick ? null : 'multiple'}
         selection={selectedProducts!}
@@ -102,23 +102,8 @@ export const TablaProductos: React.FC<TablaProductosProps> = ({
           headerStyle={{ width: '3rem' }}
         ></Column>
         <Column field="codigo" header="Código" />
-        <Column
-          header="Producto"
-          body={(rowData: any) => (
-            <div className="flex items-center gap-4">
-              <Image
-                src="https://static.wixstatic.com/media/8c690e_55a384dd4ad142f185b68a029e397ca6~mv2.png/v1/fill/w_570,h_570,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/8c690e_55a384dd4ad142f185b68a029e397ca6~mv2.png"
-                alt="Image"
-                width="75"
-                preview
-              />
-
-              <p>{rowData.descripcion}</p>
-            </div>
-          )}
-        />
-        <Column field="preunitario" header="Precio unitario" />
-        <Column field="stock" header="Stock" />
+        <Column field="descripcion" header="Descripcion servicio" />
+        <Column field="preunitario" header="Precio por servicio" />
         <Column field="fecha_vencimiento" header="Fecha vencimiento" />
       </DataTable>
       <CustomToast ref={toastRef} />

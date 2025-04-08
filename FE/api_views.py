@@ -1433,9 +1433,19 @@ class GenerarDocumentoAjusteAPIView(APIView):
                 generar_json_contingencia(emisor, cuerpo_documento)
             else:
                 factura_json = generar_json_doc_ajuste(
-                    ambiente_obj, tipo_dte_obj, factura, emisor, receptor,
-                    cuerpo_documento, observaciones, documentos_relacionados, contingencia
+                    ambiente_obj,           # 1
+                    tipo_dte_obj,           # 2
+                    factura,                # 3
+                    emisor,                 # 4
+                    receptor,               # 5
+                    cuerpo_documento,       # 6
+                    observaciones,          # 7
+                    documentos_relacionados,# 8
+                    contingencia,           # 9
+                    total_gravada, # 10
+                    documento_relacionado   # 11
                 )
+
             
             factura.json_original = factura_json
             factura.save()
