@@ -122,7 +122,7 @@
 <div class="modal-dialog">
     <div class="modal-content">
     <div class="modal-header">
-        <h5 class="modal-title" id="respuestaModalLabel">Resultado de la Invalidación</h5>
+        <h5 class="modal-title" id="respuestaModalLabel">Resultado de Contingencia</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
     </div>
     <div class="modal-body">
@@ -181,7 +181,7 @@ document.addEventListener('DOMContentLoaded', function(){
   // Seleccionar/des-seleccionar todos los checkboxes
   const seleccionarTodo = document.getElementById('seleccionarTodo');
   seleccionarTodo.addEventListener('change', function(){
-    const checkboxes = document.querySelectorAll('input[name="factura_ids"]');
+    const checkboxes = document.querySelectorAll('input[name="contingencia_ids"]');
     checkboxes.forEach(chk => chk.checked = seleccionarTodo.checked);
   });
 
@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function(){
        let htmlResultado = '';
        if (data.results && data.results.length) {
          data.results.forEach(result => {
-           htmlResultado += `<p><strong>Factura ${result.factura_id}:</strong> ${result.mensaje}<br><small>${JSON.stringify(result.detalle)}</small></p>`;
+           htmlResultado += `<p><strong>Factura ${result.contingencia_id}:</strong> ${result.mensaje}<br><small>${JSON.stringify(result.detalle)}</small></p>`;
          });
        } else {
          htmlResultado = "<p>No se recibió respuesta.</p>";
