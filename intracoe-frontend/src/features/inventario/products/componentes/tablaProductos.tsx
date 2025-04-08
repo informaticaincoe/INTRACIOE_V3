@@ -7,21 +7,21 @@ import { Image } from 'primereact/image';
 import { FaCheckCircle } from 'react-icons/fa';
 import { IoMdCloseCircle } from 'react-icons/io';
 
+import { deleteProduct } from '../services/productsServices';
 import CustomToast, { CustomToastRef, ToastSeverity } from '../../../../shared/toast/customToast';
 import { useNavigate } from 'react-router';
-import { deleteProduct } from '../../products/services/productsServices';
 
-export interface TablaServiciosProps {
-  servicios: ProductoResponse[];
+export interface TablaProductosProps {
+  productos: ProductoResponse[];
   refreshProducts: () => void;
 }
 
-export const TablaServicios: React.FC<TablaServiciosProps> = ({
-  servicios,refreshProducts
+export const TablaProductos: React.FC<TablaProductosProps> = ({
+  productos,refreshProducts
 }) => {
   useEffect(() => {
-    console.log(servicios)
-  }, [servicios])
+    console.log(productos)
+  }, [productos])
 
   const [rowClick] = useState<boolean>(true);
   const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
@@ -42,7 +42,7 @@ export const TablaServicios: React.FC<TablaServiciosProps> = ({
   };
 
   const handleDelete = async () => {
-    // Se itera sobre los servicios seleccionados y se elimina uno por uno
+    // Se itera sobre los productos seleccionados y se elimina uno por uno
     for (const product of selectedProducts) {
       try {
         await deleteProduct(product.id);
@@ -52,7 +52,7 @@ export const TablaServicios: React.FC<TablaServiciosProps> = ({
         handleAccion('error', <IoMdCloseCircle size={38} />, 'Error al eliminar el producto');
       }
     }
-    // Después de eliminar, se limpia la selección y se actualiza la lista de servicios
+    // Después de eliminar, se limpia la selección y se actualiza la lista de productos
     setSelectedProducts([]);
     refreshProducts();
   };
@@ -62,11 +62,11 @@ export const TablaServicios: React.FC<TablaServiciosProps> = ({
   };
   return (
     <div>
-      {selectedProducts.length > 0 && ( // Verificar si hay servicios seleccionados
+      {selectedProducts.length > 0 && ( // Verificar si hay productos seleccionados
         <div className="my-5 flex justify-between rounded bg-blue-50 p-5">
           <p className="text-blue flex items-center gap-2">
             <FaCheckCircle className="" />
-            servicios seleccionados {selectedProducts.length}
+            productos seleccionados {selectedProducts.length}
           </p>
           <span className="flex gap-2">
             {selectedProducts.length === 1 && (
@@ -89,7 +89,7 @@ export const TablaServicios: React.FC<TablaServiciosProps> = ({
         </div>
       )}
       <DataTable
-        value={servicios}
+        value={productos}
         tableStyle={{ minWidth: '50rem' }}
         selectionMode={rowClick ? null : 'multiple'}
         selection={selectedProducts!}
@@ -102,8 +102,25 @@ export const TablaServicios: React.FC<TablaServiciosProps> = ({
           headerStyle={{ width: '3rem' }}
         ></Column>
         <Column field="codigo" header="Código" />
-        <Column field="descripcion" header="Descripcion servicio" />
-        <Column field="preunitario" header="Precio por servicio" />
+        <Column
+          header="Producto"
+          body={(rowData: any) => (
+            <div className="flex items-center gap-4">
+              <Image
+                src="https://static.wixstatic.com/media/8c690e_55a384dd4ad142f185b68a029e397ca6~mv2.png/v1/fill/w_570,h_570,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/8c690e_55a384dd4ad142f185b68a029e397ca6~mv2.png"
+                alt="Image"
+                width="75"
+                preview
+              />
+
+              <p>{rowData.descripcion}</p>
+            </div>
+          )}
+        />
+        <Column field="referencia_interna" header="PReferencia interna" />
+        <Column field="preunitario" header="Precio unitario" />
+        <Column field="precio_venta" header="Precio venta" />
+        <Column field="stock" header="Stock" />
         <Column field="fecha_vencimiento" header="Fecha vencimiento" />
       </DataTable>
       <CustomToast ref={toastRef} />

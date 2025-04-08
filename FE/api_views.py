@@ -281,8 +281,11 @@ class MunicipioListAPIView(generics.ListAPIView):
         # Filtrar los municipios por el departamento
         return Municipio.objects.filter(departamento_id=departamento_id)
     
-class recptorListAPIView(generics.ListAPIView):
+class receptorListAPIView(generics.ListAPIView):
     queryset = Receptor_fe.objects.all()
+    serializer_class = ReceptorSerializer
+
+class receptorCreateAPIView(generics.CreateAPIView):
     serializer_class = ReceptorSerializer
     
 class tipoGeneracionDocumentoListAPIView(generics.ListAPIView):

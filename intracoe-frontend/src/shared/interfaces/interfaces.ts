@@ -69,23 +69,62 @@ export interface EmisorInterface {
   actividades_economicas: ActivitiesData[]; // Array de IDs de actividades económicas
 }
 
-export const defaulReceptorData: ReceptorInterface = {
-  id: '',
-  tipo_documento: { id: '', descripcion: '', code: '' },
-  num_documento: '',
-  nrc: '',
-  nombre: '',
+export const ReceptorDefault: ReceptorInterface = {
+  id: "",
+  tipo_documento: {
+    id: "",
+    descripcion: "",
+    code: "",
+  },
+  num_documento: "",
+  nrc: "",
+  nombre: "",
   actividades_economicas: [],
-  municipio: { id: '', descripcion: '', code: '' },
-  direccion: '',
-  telefono: '',
-  correo: '',
-  nombre_comercial: '',
-};
+  municipio: { id: "", descripcion: "", code: "", },
+  direccion: "",
+  telefono: "",
+  correo: "",
+  nombre_comercial: "",
+}
+
+export const ReceptorRequestDefault: ReceptorRequestInterface = {
+  id: "",
+  tipo_documento_id: {
+    id: "",
+    descripcion: "",
+    code: ""
+  },
+  num_documento: "",
+  nrc: "",
+  nombre: "",
+  actividades_economicas: [],
+  municipio: { id: "", descripcion: "", code: "", },
+  direccion: "",
+  telefono: "",
+  correo: "",
+  nombre_comercial: "",
+  tipo_receptor: ""
+}
+
 export interface ReceptorInterface {
   id: string;
   tipo_documento: TipoDocumento;
   num_documento: string;
+  nrc: string;
+  nombre: string;
+  actividades_economicas: ActivitiesData[];
+  municipio: { id: string; descripcion: string; code: string };
+  direccion: string;
+  telefono: string;
+  correo: string;
+  nombre_comercial: string;
+}
+
+export interface ReceptorRequestInterface {
+  id: string;
+  tipo_documento_id: TipoDocumento;
+  num_documento: string;
+  tipo_receptor: string;
   nrc: string;
   nombre: string;
   actividades_economicas: ActivitiesData[];

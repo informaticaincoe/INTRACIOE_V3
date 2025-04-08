@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPage'
 import { Title } from '../../../../shared/text/title'
 import { Divider } from 'primereact/divider'

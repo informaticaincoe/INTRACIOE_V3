@@ -2,29 +2,28 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ProductoResponse } from '../../../../shared/interfaces/interfaces';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
-import { Image } from 'primereact/image';
 
 import { FaCheckCircle } from 'react-icons/fa';
 import { IoMdCloseCircle } from 'react-icons/io';
 
-import { deleteProduct } from '../services/productsServices';
 import CustomToast, { CustomToastRef, ToastSeverity } from '../../../../shared/toast/customToast';
 import { useNavigate } from 'react-router';
+import { deleteProduct } from '../../products/services/productsServices';
 
-export interface TablaProductosProps {
-  productos: ProductoResponse[];
-  refreshProducts: () => void;
+export interface TablaServiciosProps {
+  servicios: ProductoResponse[];
+  refreshServicios: () => void;
 }
 
-export const TablaProductos: React.FC<TablaProductosProps> = ({
-  productos,refreshProducts
+export const TablaServicios: React.FC<TablaServiciosProps> = ({
+  servicios,refreshServicios
 }) => {
   useEffect(() => {
-    console.log(productos)
-  }, [productos])
+    console.log(servicios)
+  }, [servicios])
 
   const [rowClick] = useState<boolean>(true);
-  const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
+  const [selectedServices, setSelectedServices] = useState<any[]>([]);
   const toastRef = useRef<CustomToastRef>(null);
   const navigate = useNavigate()
 
@@ -42,34 +41,34 @@ export const TablaProductos: React.FC<TablaProductosProps> = ({
   };
 
   const handleDelete = async () => {
-    // Se itera sobre los productos seleccionados y se elimina uno por uno
-    for (const product of selectedProducts) {
+    // Se itera sobre los servicios seleccionados y se elimina uno por uno
+    for (const servicio of selectedServices) {
       try {
-        await deleteProduct(product.id);
-        handleAccion('success', <FaCheckCircle size={38} />, 'Producto eliminado con éxito');
+        await deleteProduct(servicio.id);
+        handleAccion('success', <FaCheckCircle size={38} />, 'Servicio eliminado con éxito');
       } catch (error) {
         console.error(error);
-        handleAccion('error', <IoMdCloseCircle size={38} />, 'Error al eliminar el producto');
+        handleAccion('error', <IoMdCloseCircle size={38} />, 'Error al eliminar el Servicio');
       }
     }
-    // Después de eliminar, se limpia la selección y se actualiza la lista de productos
-    setSelectedProducts([]);
-    refreshProducts();
+    // Después de eliminar, se limpia la selección y se actualiza la lista de servicios
+    setSelectedServices([]);
+    refreshServicios();
   };
 
   const editHandler = () => {
-    navigate("/producto/" + selectedProducts[0].id)
+    navigate("/servicio/" + selectedServices[0].id)
   };
   return (
     <div>
-      {selectedProducts.length > 0 && ( // Verificar si hay productos seleccionados
+      {selectedServices.length > 0 && ( // Verificar si hay servicios seleccionados
         <div className="my-5 flex justify-between rounded bg-blue-50 p-5">
           <p className="text-blue flex items-center gap-2">
             <FaCheckCircle className="" />
-            productos seleccionados {selectedProducts.length}
+            servicios seleccionados {selectedServices.length}
           </p>
           <span className="flex gap-2">
-            {selectedProducts.length === 1 && (
+            {selectedServices.length === 1 && (
               <span
                 className="border-blue flex items-center gap-2 rounded-md border px-3 py-1 hover:cursor-pointer"
                 onClick={editHandler}
@@ -89,12 +88,12 @@ export const TablaProductos: React.FC<TablaProductosProps> = ({
         </div>
       )}
       <DataTable
-        value={productos}
+        value={servicios}
         tableStyle={{ minWidth: '50rem' }}
         selectionMode={rowClick ? null : 'multiple'}
-        selection={selectedProducts!}
+        selection={selectedServices!}
         onSelectionChange={(e: { value: React.SetStateAction<any[]> }) =>
-          setSelectedProducts(e.value)
+          setSelectedServices(e.value)
         }
       >
         <Column
@@ -102,24 +101,10 @@ export const TablaProductos: React.FC<TablaProductosProps> = ({
           headerStyle={{ width: '3rem' }}
         ></Column>
         <Column field="codigo" header="Código" />
-        <Column
-          header="Producto"
-          body={(rowData: any) => (
-            <div className="flex items-center gap-4">
-              <Image
-                src="https://static.wixstatic.com/media/8c690e_55a384dd4ad142f185b68a029e397ca6~mv2.png/v1/fill/w_570,h_570,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/8c690e_55a384dd4ad142f185b68a029e397ca6~mv2.png"
-                alt="Image"
-                width="75"
-                preview
-              />
-
-              <p>{rowData.descripcion}</p>
-            </div>
-          )}
-        />
-        <Column field="preunitario" header="Precio unitario" />
-        <Column field="stock" header="Stock" />
-        <Column field="fecha_vencimiento" header="Fecha vencimiento" />
+        <Column field="descripcion" header="Descripcion servicio" />
+        <Column field="preunitario" header="Precio unitario servicio" />
+        <Column field="precio_venta" header="Precio venta servicio" />
+        <Column field="preunitario" header="Precio por servicio" />
       </DataTable>
       <CustomToast ref={toastRef} />
     </div>

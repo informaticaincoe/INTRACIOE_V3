@@ -18,9 +18,8 @@ export const ServicioPage = () => {
 
     const fetchServicios = async () => {
         try {
-            // Pasamos tipo=2 (servicios) y, si hay código, también filter
             const response = await getAllProducts({
-                tipo: 2,
+                tipo: 2, // id servicio
                 filter: codigoFiltro || undefined
             });
             setServicios(response);
@@ -41,7 +40,7 @@ export const ServicioPage = () => {
                 <div>
                     <TablaServiciosHeader codigo={codigoFiltro} onSearch={handleSearch} />
                     <Divider />
-                    <TablaContainerServicios servicios={servicios} refreshProducts={fetchServicios} />
+                    <TablaContainerServicios servicios={servicios} refreshServicios={fetchServicios} />
                 </div>
             </WhiteSectionsPage>
         </>

@@ -3,13 +3,14 @@ import { useEffect, useState } from 'react';
 import { getAllTipoIdReceptor } from '../../features/bussiness/configBussiness/services/tipoIdReceptor';
 
 interface SelectedTipoIdDocumentoInterface {
-  setTipoIdDocumento: any;
-  tipoIdDocumento: any;
+  onChange: any;
+  value: any;
+  name:any;
 }
 
 export const SelectTipoIdDocumento: React.FC<
   SelectedTipoIdDocumentoInterface
-> = ({ setTipoIdDocumento, tipoIdDocumento }) => {
+> = ({ onChange, value, name }) => {
   const [tipoDocId, setTipoDocId] = useState<any[]>([]);
 
   useEffect(() => {
@@ -19,19 +20,9 @@ export const SelectTipoIdDocumento: React.FC<
   const fetchTipoDocId = async () => {
     try {
       const response = await getAllTipoIdReceptor();
+      console.log("response, response")
+      setTipoDocId(response);
 
-      const data = response.map(
-        (doc: { id: string; descripcion: any; codigo: any }) => ({
-          id: doc.id,
-          name: doc.descripcion, // Asignar 'descripcion' a 'label'
-          code: doc.codigo, // Asignar 'codigo' a 'value'
-        })
-      );
-
-      if (data.length > 0) {
-        setTipoDocId(data);
-        setTipoIdDocumento(data[0]); // Establecer el valor del primer elemento como seleccionado
-      }
     } catch (error) {
       console.log(error);
     }
@@ -40,10 +31,12 @@ export const SelectTipoIdDocumento: React.FC<
   return (
     <div className="justify-content-center flex">
       <Dropdown
-        value={tipoIdDocumento}
-        onChange={(e) => setTipoIdDocumento(e.value)}
+        value={value}
+        onChange={(e) =>
+          onChange({ target: { name: name, value: e.value }})
+        }
         options={tipoDocId}
-        optionLabel="name"
+        optionLabel="descripcion"
         placeholder="Seleccionar tipo de establecimiento"
         className="md:w-14rem font-display w-full"
       />

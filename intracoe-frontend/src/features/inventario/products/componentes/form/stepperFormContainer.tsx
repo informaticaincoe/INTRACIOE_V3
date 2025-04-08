@@ -14,7 +14,7 @@ import { IoMdCloseCircle } from 'react-icons/io';
 import { FaCheckCircle } from "react-icons/fa";
 import { useNavigate, useParams } from 'react-router';
 
-export const StepperForm = () => {
+export const StepperFormContainer = () => {
   let params = useParams()
 
   // Estado para controlar el paso actual

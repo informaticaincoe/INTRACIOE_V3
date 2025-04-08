@@ -21,10 +21,9 @@ export const TablaProductosHeader: React.FC<TablaProductosHeaderProps> = ({ codi
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
+    console.log(e.target)
     // Si el usuario pulsa Enter, ejecuta la búsqueda
-    if (e.key === 'Enter') {
       onSearch(input);
-    }
   };
 
   const handleClickSearch = () => {
@@ -41,22 +40,17 @@ export const TablaProductosHeader: React.FC<TablaProductosHeaderProps> = ({ codi
       <h1 className="text-lg font-bold">Lista productos</h1>
       <div className="flex gap-5">
         <span className="border-border-color flex w-[30vw] items-center rounded-md border">
-          <span className="pl-4">
+          <span className="pl-4 flex">
             <LuSearch />
           </span>
-          <Input
+          <input
             placeholder={'Buscar producto por codigo'}
             name="codigo"
             value={input}
             onChange={handleChange}
-            className="focus:border-ring-0 border-0 focus:border-none focus:ring-0 focus:outline-none active:border-0"
+            onKeyDown={handleKeyPress}
+            className="focus:border-ring-0 border-0 focus:border-none focus:ring-0 focus:outline-none active:border-0 pl-3"
           />
-          <button
-            onClick={handleClickSearch}
-            className="px-3 py-1"
-          >
-            Buscar
-          </button>
         </span>
         <button
           onClick={agregarProducto}

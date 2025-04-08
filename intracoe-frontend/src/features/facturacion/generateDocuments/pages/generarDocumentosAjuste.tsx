@@ -9,22 +9,17 @@ import { SelectTipoTransmisión } from '../components/Shared/configuracionFactur
 import { CheckBoxVentaTerceros } from '../components/Shared/configuracionFactura/ventaTerceros/checkboxVentaTerceros';
 import { IdentifcacionSeccion } from '../components/Shared/identificacion.tsx/identifcacionSeccion';
 import { SelectReceptor } from '../components/Shared/receptor/SelectReceptor';
-import { ModalListaProdcutos } from '../components/FE/productosAgregados/modalListaProdcutos';
-import { ModalListaFacturas } from '../components/Shared/tablaFacturasSeleccionar/modalListaFacturas';
 import { TablaProductosFacturaNotasDebito } from '../components/NotaDebito/TablaProductosFacturaNotasDebito';
-import { ButtonDocumentosRelacionados } from '../components/Shared/configuracionFactura/documentosRelacionados/ButtonDocumentosRelacionados';
 import { SelectModeloFactura } from '../components/Shared/configuracionFactura/modeloDeFacturacion/selectModeloFactura';
-import { SendFormButton } from '../../../../shared/buttons/sendFormButton';
 import {
     ConfiguracionFacturaInterface,
-    defaulReceptorData,
+    ReceptorDefault,
     defaultEmisorData,
     Descuentos,
     EmisorInterface,
     FacturaPorCodigoGeneracionResponse,
     ReceptorInterface,
     TipoDocumento,
-    TipoDocumentoDropDown,
     TipoGeneracionFactura,
 } from '../../../../shared/interfaces/interfaces';
 import { ProductosTabla } from '../components/FE/productosAgregados/productosData';
@@ -34,7 +29,6 @@ import {
     generarAjusteService,
     generarNotaCreditoService,
     getFacturaBycodigo,
-    getFacturaCodigos,
 } from '../services/factura/facturaServices';
 import { CheckBoxRetencion } from '../components/Shared/configuracionFactura/Retencion/checkBoxRetencion';
 import { useNavigate } from 'react-router';
@@ -46,13 +40,13 @@ import CustomToast, {
     ToastSeverity,
 } from '../../../../shared/toast/customToast';
 import { IoMdCloseCircle } from 'react-icons/io';
-import { TablaProductosAgregados } from '../components/FE/productosAgregados/tablaProductosAgregados';
 import { ExtensionCard } from '../components/Shared/entension/extensionCard';
+
 
 export const GenerarDocumentosAjuste = () => {
     //lista de datos obtenidas de la api
     const [condicionesOperacionList, setCondicionesOperacionList] = useState<ConfiguracionFacturaInterface>();
-    const [receptor, setReceptor] = useState<ReceptorInterface>(defaulReceptorData); // almacenar informacion del receptor
+    const [receptor, setReceptor] = useState<ReceptorInterface>(ReceptorDefault); // almacenar informacion del receptor
     const [emisorData, setEmisorData] = useState<EmisorInterface>(defaultEmisorData); // almcenar informacion del emisor
     const [tipoDocumento, setTipoDocumento] = useState<TipoDocumento[]>([]); // almcenar tipo de dte
     const [tipoDocumentoSelected, setTipoDocumentoSelected] = useState<string>("05"); // almcenar tipo de dte
@@ -154,6 +148,7 @@ export const GenerarDocumentosAjuste = () => {
             cantidades: cantidadListProducts, //cantidad de cada producto de la factura
             descuento_gravado: descuentos.descuentoGravado.toString(),
             descuento_global_input: descuentos.descuentoGeneral.toString(),
+            contingencia: false
             // "retencion_renta": false,
             // "porcentaje_retencion_renta": 0.00,
         };

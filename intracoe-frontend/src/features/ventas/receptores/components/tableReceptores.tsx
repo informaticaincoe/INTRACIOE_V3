@@ -82,7 +82,7 @@ export const TableReceptores: React.FC<TableReceptoresProps> = ({ receptores, re
                 ></Column>
                 <Column field="nombre" header="Nombre" />
                 
-                <Column field="correo" header="Correo" />[]]
+                <Column field="correo" header="Correo" />
                 <Column field="num_documento" header="Documento de identificacion" />
             </DataTable>
             <CustomToast ref={toastRef} />

@@ -1,65 +1,64 @@
-import { HTMLProps, useEffect, useState } from 'react';
+import React, { HTMLProps, useEffect, useState } from 'react';
 import { MultiSelect, MultiSelectChangeEvent } from 'primereact/multiselect';
 import { ActivitiesData } from '../interfaces/interfaces';
 import { getAllActivities } from '../../features/facturacion/activities/services/activitiesServices';
+import { EmisorInterface } from '../interfaces/interfaces';
 
-interface selectActividadesEconomicasInterface {
-  actividades: ActivitiesData[]; // Asegúrate de que actividades sea un array de objetos ActivitiesData
-  setActividades: (value: ActivitiesData[]) => void;
+interface SelectActividadesEconomicasProps {
+  value: any;
+  onChange: any;
   className?: HTMLProps<HTMLElement>['className'];
+  name:string
 }
 
-export const SelectActividadesEconomicas: React.FC<
-  selectActividadesEconomicasInterface
-> = ({ actividades, setActividades, className }) => {
-  const [listActividades, setListSetActividades] = useState<ActivitiesData[]>(
-    []
-  );
+export const SelectActividadesEconomicas: React.FC<SelectActividadesEconomicasProps> = ({
+  value,
+  onChange,
+  className,
+  name
+}) => {
+  const [listActividades, setListActividades] = useState<ActivitiesData[]>([]);
 
   useEffect(() => {
-    fetchActividadesList();
+    (async () => {
+      try {
+        const response = await getAllActivities();
+        setListActividades(response);
+      } catch (err) {
+        console.error(err);
+      }
+    })();
   }, []);
-
-  const fetchActividadesList = async () => {
-    try {
-      const response = await getAllActivities();
-
-      const data = response.map(
-        (doc: { id: string; descripcion: any; codigo: any }) => ({
-          id: doc.id,
-          descripcion: doc.descripcion,
-          code: doc.codigo,
-        })
-      );
-      setListSetActividades(data);
-    } catch (error) {
-      console.log(error);
-    }
-  };
 
   return (
     <div>
-      <div>
-        <MultiSelect
-          value={actividades}
-          onChange={(e: MultiSelectChangeEvent) => setActividades(e.value)}
-          options={listActividades}
-          optionLabel="descripcion"
-          placeholder="Seleccionar actividad economica"
-          className={`${className} w-contain`}
-          filter
-        />
-      </div>
-      {actividades.length > 0 && (
+      <MultiSelect
+        value={value}
+        options={listActividades}
+        optionLabel="descripcion"
+        placeholder="Seleccionar actividad económica"
+        className={`${className} w-contain`}
+        filter
+        onChange={(e: MultiSelectChangeEvent) =>
+          onChange({
+            target: {
+              name: name,
+              value: e.value
+            }
+          })
+        }
+      />
+
+      {value.length > 0 && (
         <div className="py-5">
           <strong>Actividades seleccionadas:</strong>
           <ul>
-            {actividades.map((actividad) => (
+            {value.actividades_economicas.map((act: { codigo: React.Key | null | undefined; descripcion: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; }) => (
               <li
-                key={actividad.codigo} // Usamos el código para que sea único
+                key={act.codigo}
                 className="list-inside list-disc px-5 text-black"
               >
-                {actividad.descripcion}{' '}
+                {act.descripcion}
               </li>
             ))}
           </ul>

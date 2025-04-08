@@ -11,18 +11,16 @@ import { IdentifcacionSeccion } from '../components/Shared/identificacion.tsx/id
 import { SelectReceptor } from '../components/Shared/receptor/SelectReceptor';
 import { ModalListaProdcutos } from '../components/FE/productosAgregados/modalListaProdcutos';
 import { FormasdePagoForm } from '../components/Shared/configuracionFactura/formasDePago/formasdePagoForm';
-import { ModalListaFacturas } from '../components/Shared/tablaFacturasSeleccionar/modalListaFacturas';
-import { TablaProductosFacturaNotasDebito } from '../components/NotaDebito/TablaProductosFacturaNotasDebito';
 import { ButtonDocumentosRelacionados } from '../components/Shared/configuracionFactura/documentosRelacionados/ButtonDocumentosRelacionados';
 import { SelectModeloFactura } from '../components/Shared/configuracionFactura/modeloDeFacturacion/selectModeloFactura';
 import { SendFormButton } from '../../../../shared/buttons/sendFormButton';
 import {
   ConfiguracionFacturaInterface,
-  defaulReceptorData,
   defaultEmisorData,
   Descuentos,
   EmisorInterface,
   FacturaPorCodigoGeneracionResponse,
+  ReceptorDefault,
   ReceptorInterface,
   TipoDocumento,
   TipoGeneracionFactura,
@@ -32,15 +30,12 @@ import { ResumenTotalesCard } from '../components/Shared/resumenTotales/resumenT
 import {
   FirmarFactura,
   generarFacturaService,
-  generarNotaCreditoService,
   getFacturaBycodigo,
   getFacturaCodigos,
 } from '../services/factura/facturaServices';
 import { CheckBoxRetencion } from '../components/Shared/configuracionFactura/Retencion/checkBoxRetencion';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { useNavigate } from 'react-router';
-import { Input } from '../../../../shared/forms/input';
-import { DropFownTipoDeDocumentoGeneracion } from '../components/NotaDebito/DropDownTipoDeDocumentoGeneracion';
 import { CheckboxBaseImponible } from '../components/Shared/configuracionFactura/baseImponible/checkboxBaseImponible';
 import CustomToast, {
   CustomToastRef,
@@ -53,7 +48,7 @@ import { ExtensionCard } from '../components/Shared/entension/extensionCard';
 export const GenerateDocuments = () => {
   //lista de datos obtenidas de la api
   const [condicionesOperacionList, setCondicionesOperacionList] = useState<ConfiguracionFacturaInterface>();
-  const [receptor, setReceptor] = useState<ReceptorInterface>(defaulReceptorData); // almacenar informacion del receptor
+  const [receptor, setReceptor] = useState<ReceptorInterface>(ReceptorDefault); // almacenar informacion del receptor
   const [emisorData, setEmisorData] = useState<EmisorInterface>(defaultEmisorData); // almcenar informacion del emisor
   const [tipoDocumento, setTipoDocumento] = useState<TipoDocumento[]>([]); // almcenar tipo de dte
   const [tipoDocumentoSelected, setTipoDocumentoSelected] = useState<string>("01"); // almcenar tipo de dte
@@ -71,7 +66,6 @@ export const GenerateDocuments = () => {
 
   //variables para mostrar modales
   const [showProductsModal, setShowProductsModal] = useState(false); //mostrar modal con lista de productos
-  const [showfacturasModal, setShowfacturasModal] = useState(false); //mostrar modal con lista de facturas a relacionar
   const [visibleDocumentoRelacionadomodal, setVisibleDocumentoRelacionadomodal] = useState(false); //
 
   //datos seleccionados para realizar la factura

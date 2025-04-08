@@ -32,7 +32,7 @@ export const TablaServiciosHeader: React.FC<TablaServiciosHeaderProps> = ({ codi
   };
 
   const agregarProducto = () => {
-    navigate('/productos/nuevo');
+    navigate('/servicio/nuevo');
   };
 
   return (
