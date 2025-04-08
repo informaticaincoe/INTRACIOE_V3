@@ -6,13 +6,13 @@ import { FaPlus } from 'react-icons/fa';
 import { Input } from '../../../../shared/forms/input';
 import { useNavigate } from 'react-router';
 
-interface TablaProductosHeaderProps {
+interface TablaServiciosHeaderProps {
   codigo: string;
   onSearch: (codigo: string) => void;
 }
 
 
-export const TablaProductosHeader: React.FC<TablaProductosHeaderProps> = ({ codigo, onSearch }) => {
+export const TablaServiciosHeader: React.FC<TablaServiciosHeaderProps> = ({ codigo, onSearch }) => {
   const [input, setInput] = useState<string>(codigo);
   const navigate = useNavigate();
 
@@ -35,21 +35,20 @@ export const TablaProductosHeader: React.FC<TablaProductosHeaderProps> = ({ codi
     navigate('/productos/nuevo');
   };
 
-
   return (
     <span className="flex items-center justify-between">
-      <h1 className="text-lg font-bold">Lista productos</h1>
+      <h1 className="text-lg font-bold">Lista Servicios</h1>
       <div className="flex gap-5">
         <span className="border-border-color flex w-[30vw] items-center rounded-md border">
           <span className="pl-4">
             <LuSearch />
           </span>
           <Input
-            placeholder={'Buscar producto por codigo'}
+            placeholder="Buscar servicio por código"
             name="codigo"
             value={input}
             onChange={handleChange}
-            className="focus:border-ring-0 border-0 focus:border-none focus:ring-0 focus:outline-none active:border-0"
+            className="flex-1 border-0 focus:ring-0"
           />
           <button
             onClick={handleClickSearch}
@@ -63,7 +62,7 @@ export const TablaProductosHeader: React.FC<TablaProductosHeaderProps> = ({ codi
           className="bg-primary-blue flex items-center gap-2 rounded-md px-7 py-3 text-white hover:cursor-pointer"
         >
           <FaPlus size={14} />
-          <span>Agregar producto</span>
+          <span>Agregar Servicio</span>
         </button>
       </div>
     </span>

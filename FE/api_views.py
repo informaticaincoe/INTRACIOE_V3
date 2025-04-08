@@ -1436,6 +1436,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
                     ambiente_obj, tipo_dte_obj, factura, emisor, receptor,
                     cuerpo_documento, observaciones, documentos_relacionados, contingencia, total_gravada
                 )
+
             
             factura.json_original = factura_json
             factura.save()
