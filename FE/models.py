@@ -454,5 +454,6 @@ class EventoContingencia(models.Model):
     firmado = models.BooleanField(default=False)
     json_original = models.JSONField(blank=True, null=True)
     json_firmado = models.JSONField(blank=True, null=True)
+    recibido_mh = models.BooleanField(default=False)
     #Agregar campos de fecha y hora que proporcionara hacienda
     
