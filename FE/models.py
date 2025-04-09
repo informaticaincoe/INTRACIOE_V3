@@ -328,6 +328,7 @@ class FacturaElectronica(models.Model):
     #tipo_documento_relacionar = models.CharField(max_length=50, null=True, blank=True)#Identificar si el documento es Fisico(F) o Electronico(E)
     #documento_relacionado = models.CharField(max_length=100, null=True, blank=True)#Agregar el documento relacionado
     base_imponible = models.BooleanField(default=False)
+    tipotransmision = models.ForeignKey(TipoTransmision, on_delete=models.CASCADE, null=True, blank=True)
     
     def save(self, *args, **kwargs):
         if not self.numero_control:
@@ -442,11 +443,11 @@ class EventoContingencia(models.Model):
     #Identificacion
     codigo_generacion = models.UUIDField(default=uuid.uuid4, unique=True)
     sello_recepcion = models.CharField(max_length=255, blank=True, null=True)
-    fecha_transmicion = models.DateField(auto_now_add=True, null=True)
+    fecha_transmicion = models.DateField(auto_now_add=True, null=True) #fInicio
     hora_transmision = models.TimeField(auto_now_add=True, null=True)
     fecha_modificacion = models.DateField(auto_now_add=True, null=True)
     hora_modificacion = models.TimeField(auto_now_add=True, null=True)
-    estado = models.BooleanField(default=False)
+    estado = models.BooleanField(default=False) #manejar estado de envio de contingencia a MH
     factura = models.ForeignKey(FacturaElectronica, on_delete=models.CASCADE, related_name='detalles_dte', null=True, blank=True)
     tipo_contingencia = models.ForeignKey(TipoContingencia, on_delete=models.CASCADE, null=True)
     #En el campo motivo_contingencia el contribuyente podra definir la razon de la contingencia, si el tipo de contingencia es 5, este campo sera obligatorio
@@ -456,4 +457,10 @@ class EventoContingencia(models.Model):
     json_firmado = models.JSONField(blank=True, null=True)
     recibido_mh = models.BooleanField(default=False)
     #Agregar campos de fecha y hora que proporcionara hacienda
+    f_fin = models.DateField(auto_now_add=True, null=True)
+    h_inicio = models.TimeField(auto_now_add=True, null=True)
+    h_fin = models.TimeField(auto_now_add=True, null=True)
+    
+    def __str__(self):
+        return f"Contingencia {self.codigo_generacion} - {self.fecha_transmicion} - {self.hora_transmision}"
     

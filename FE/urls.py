@@ -28,7 +28,6 @@ urlpatterns = [
 
     #path('detalle/<int:factura_id>/', views.detalle_factura_view, name='detalle_factura'),
     path('listar_facturas/', views.factura_list, name='listar_facturas'),
-    path('listar_contingencias/', views.contingencia_list, name='listar_contingencias'),
 
     path('firmar/<int:factura_id>/', firmar_factura_view, name='firmar_factura'),
     path('enviar/<int:factura_id>/', enviar_factura_hacienda_view, name='enviar_factura_hacienda'),
@@ -69,4 +68,8 @@ urlpatterns = [
     #LISTADO DE PRODUCTOS
     path('obtener-listado-productos/', views.obtener_listado_productos_view, name='obtener_listado_productos_view'),
     
+    #Contingencia
+    path('listar_contingencias/', views.contingencia_list, name='listar_contingencias'),
+    path('contingencia-dte/<int:contingencia_id>/', views.contingencia_dte_unificado_view, name='contingencia_dte_unificado'),
+    path('enviar-lote-contingencias-dte/', views.lote_contingencias_dte_view, name='lote_contingencias_dte'),
 ]
