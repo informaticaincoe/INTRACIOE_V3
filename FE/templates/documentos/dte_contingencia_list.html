@@ -41,10 +41,13 @@
     </div>
 </form>
 
-<!-- Botón para invalidar las facturas seleccionadas -->
+<!-- Botón para enviar contingencias seleccionadas -->
 <button id="btnContingenciaSeleccionadas" class="btn btn-danger mb-3">Enviar Contingencias seleccionadas</button>
 
-<!-- Tabla de Facturas -->
+<!-- Botón para enviar lotes de contingencia -->
+<button id="btnLoteContingencia" class="btn btn-danger mb-3">Generar Lotes</button>
+
+<!-- Tabla de Contingencias -->
 <form id="formContingenciaFacturas">
 <div class="table-responsive">
     <table class="table table-striped">
@@ -55,7 +58,7 @@
             <input type="checkbox" id="seleccionarTodo">
         </th>
         <th>Estado</th>
-        <th>Número de Control</th>
+        <th>Codigo de Generacion</th>
         <th>Tipo de Factura</th>
         <th>Sello Recepcion</th>
         <th>Fecha de Emisión</th>
@@ -69,18 +72,18 @@
         {% for contingencia in dtelist %}
         <tr>
         <td>
-            {% if contingencia.estado is False %}
+            {% if contingencia.sello_recepcion is null %}
                 <input type="checkbox" name="contingencia_ids" value="{{ contingencia.id }}">
             {% endif %}
         </td>
         <td>
-            {% if contingencia.estado %}
+            {% if contingencia.sello_recepcion is not null %}
                 <i class="fa fa-check text-success" title="Procesada"></i>
             {% else %}
                 <i class="fa fa-ban text-danger" title="Contingencia"></i>
             {% endif %}
         </td>
-        <td>{{ contingencia.factura.numero_control }}</td>
+        <td>{{ contingencia.codigo_generacion }}</td>
         <td>
             {% if contingencia.factura.tipo_dte.codigo == "03" %}
             CCF
@@ -97,7 +100,7 @@
         <td>{% if contingencia.recibido_mh %}Sí{% else %}No{% endif %}</td>
         <td>
             <!-- Acción individual (opcional) -->
-            {% if contingencia.estado == False %}
+            {% if contingencia_recibida_mh == False %}
                 <a href="{% url 'contingencia_dte_unificado' contingencia.id %}" class="btn btn-sm btn-secondary btn-invalidar" data-contingencia-id="{{ contingencia.id }}">Enviar Contingencia</a>
             {% endif %}
         </td>
@@ -110,6 +113,69 @@
     </tbody>
     </table>
 </div>
+</form>
+
+<!-- Tabla de Lotes -->
+<form id="formContingenciaLotes">
+    <div class="table-responsive">
+        <table class="table table-striped">
+        <thead class="table-dark">
+            <tr>
+            <th>
+                <!-- Checkbox para seleccionar/des-seleccionar todas -->
+                <input type="checkbox" id="seleccionarTodosLote">
+            </th>
+            <th>Estado</th>
+            <th>Lotes</th>
+            <th>Recibido por Hacienda</th>
+            <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for contingencia in dtelist %}
+            <tr>
+            <td>
+                {% if contingencia.sello_recepcion is null %}
+                    <input type="checkbox" name="contingencia_ids" value="{{ contingencia.id }}">
+                {% endif %}
+            </td>
+            <td>
+                {% if contingencia.sello_recepcion is not null %}
+                    <i class="fa fa-check text-success" title="Procesada"></i>
+                {% else %}
+                    <i class="fa fa-ban text-danger" title="Contingencia"></i>
+                {% endif %}
+            </td>
+            <td>{{ contingencia.codigo_generacion }}</td>
+            <td>
+                {% if contingencia.factura.tipo_dte.codigo == "03" %}
+                CCF
+                {% elif contingencia.factura.tipo_dte.codigo == "01" %}
+                FE
+                {% else %}
+                {{ contingencia.factura.tipo_dte.codigo }}
+                {% endif %}
+            </td>
+            <td>{{ contingencia.sello_recepcion }}</td>
+            <td>{{ contingencia.fecha_transmicion }}</td>
+            <td>{{ contingencia.factura.total_pagar }}</td>
+            <td>{{ contingencia.factura.total_iva }}</td>
+            <td>{% if contingencia.recibido_mh %}Sí{% else %}No{% endif %}</td>
+            <td>
+                <!-- Acción individual (opcional) -->
+                {% if contingencia_recibida_mh == False %}
+                    <a href="{% url 'contingencia_dte_unificado' contingencia.id %}" class="btn btn-sm btn-secondary btn-invalidar" data-contingencia-id="{{ contingencia.id }}">Enviar Contingencia</a>
+                {% endif %}
+            </td>
+            </tr>
+            {% empty %}
+            <tr>
+            <td colspan="10" class="text-center">No se encontraron facturas.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        </table>
+    </div>
 </form>
 
 <!-- Modal para mostrar respuesta -->
