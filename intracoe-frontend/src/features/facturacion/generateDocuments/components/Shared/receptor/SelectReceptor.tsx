@@ -56,6 +56,7 @@ export const SelectReceptor: React.FC<StepperProps> = ({
             optionLabel="nombre"
             placeholder="Seleccione un receptor"
             className={`font-display w-full text-start ${errorReceptor ? 'p-invalid' : ''} `}
+            filter 
           />
           <button
             className="bg-primary-blue rounded-md px-5 py-2 text-nowrap text-white hover:cursor-pointer"

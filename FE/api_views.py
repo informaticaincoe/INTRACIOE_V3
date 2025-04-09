@@ -243,6 +243,10 @@ class EmisorListAPIView(generics.ListAPIView):
     queryset = Emisor_fe.objects.all()
     serializer_class = EmisorSerializer
 
+class EmisorUpdateAPIView(generics.UpdateAPIView):
+    queryset = Emisor_fe.objects.all()
+    serializer_class = EmisorSerializer
+
 class EmisorCreateAPIView(generics.CreateAPIView):
     queryset = Emisor_fe.objects.all()
     serializer_class = EmisorSerializer  
@@ -281,7 +285,36 @@ class MunicipioListAPIView(generics.ListAPIView):
         # Filtrar los municipios por el departamento
         return Municipio.objects.filter(departamento_id=departamento_id)
     
-class recptorListAPIView(generics.ListAPIView):
+
+class MunicipioDetailAPIView(generics.RetrieveAPIView):
+    queryset = Municipio.objects.all()
+    serializer_class = MunicipioSerializer
+    
+class receptorListAPIView(generics.ListAPIView):
+    serializer_class = ReceptorSerializer
+
+    def get_queryset(self):
+        qs = Receptor_fe.objects.all()
+        nombre = self.request.query_params.get('filtro') #filtrar receptores por nombre, nombre comercial y número de documento
+        if nombre:
+            qs = qs.filter(
+                Q(nombre__icontains=nombre) |
+                Q(nombreComercial__icontains=nombre) |
+                Q(num_documento__icontains=nombre)
+            )
+        return qs
+
+class receptorDetailAPIView(generics.RetrieveAPIView):
+    queryset = Receptor_fe.objects.all()
+    serializer_class = ReceptorSerializer
+
+class receptorCreateAPIView(generics.CreateAPIView):
+    serializer_class = ReceptorSerializer
+    
+class receptorUpdateAPIView(generics.UpdateAPIView):
+    queryset = Receptor_fe.objects.all()
+    serializer_class = ReceptorSerializer
+class receptorDeleteAPIView(generics.DestroyAPIView):
     queryset = Receptor_fe.objects.all()
     serializer_class = ReceptorSerializer
     
