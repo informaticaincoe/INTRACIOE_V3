@@ -3,32 +3,27 @@ import { Dropdown } from 'primereact/dropdown';
 import { getAllDepartamentos } from '../../features/bussiness/configBussiness/services/ubicacionService';
 
 interface SelectDeparmentInterface {
-  onChange: any;
-  value: any;
-  name: string
+  setDepartamentoSelect:any
+  departamentoSelect: any;
 }
 export const SelectDepartmentComponent: React.FC<SelectDeparmentInterface> = ({
-  onChange,
-  value,
-  name
+  setDepartamentoSelect,
+  departamentoSelect,
 }) => {
   const [departmentList, setDepartmentList] = useState<any[]>([]);
 
   useEffect(() => {
     fetchDepartaments();
   }, []);
+  
+  useEffect(() => {
+   console.log(departamentoSelect)
+  }, [departamentoSelect]);
 
   const fetchDepartaments = async () => {
     try {
       const response = await getAllDepartamentos();
-      const departmentFetch = response.map(
-        (element: { id: string; descripcion: any; codigo: any }) => ({
-          id: element.id,
-          name: element.descripcion,
-          code: element.codigo,
-        })
-      );
-      setDepartmentList(departmentFetch);
+      setDepartmentList(response);
     } catch (error) {
       console.log(error);
     }
@@ -37,10 +32,11 @@ export const SelectDepartmentComponent: React.FC<SelectDeparmentInterface> = ({
   return (
     <div className="justify-content-center flex">
       <Dropdown
-        value={value}
-        onChange={(e)=> onChange({ target: { name: name, value: e.value }})}
+        value={departamentoSelect}
+        onChange={(e)=> setDepartamentoSelect(e.value)}
         options={departmentList}
-        optionLabel="name"
+        optionLabel="descripcion"
+        optionValue='id'
         placeholder="Seleccionar departamento"
         className="md:w-14rem font-display w-full"
         filter

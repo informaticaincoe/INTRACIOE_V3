@@ -31,7 +31,6 @@ const items: MenuItem[] = [
         label: <p className="text-start">Proveedores</p>,
       },
     ]
-
   },
   {
     key: 'conta',

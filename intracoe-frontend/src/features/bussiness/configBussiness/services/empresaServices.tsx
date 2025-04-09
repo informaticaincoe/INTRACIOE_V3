@@ -20,9 +20,24 @@ export const getEmpresaById = (id: number) => {
   console.log(id);
 };
 
-export const createEmpresaById = async (data: any) => {
+export const createEmpresa = async (data: any) => {
   try {
     const response = await axios.post(`${BASEURL}/emisor/crear/`, data, {
+      headers: {
+        'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
+      },
+    });
+    console.log(response);
+    return response;
+  } catch (error) {
+    console.log(error);
+    throw new Error();
+  }
+};
+
+export const editReceptor = async (id:string, data: any) => {
+  try {
+    const response = await axios.put(`${BASEURL}/emisor/editar/${id}/`, data, {
       headers: {
         'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
       },

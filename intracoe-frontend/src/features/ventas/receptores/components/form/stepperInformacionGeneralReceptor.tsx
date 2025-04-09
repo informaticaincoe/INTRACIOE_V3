@@ -1,9 +1,9 @@
-import React, { useState } from 'react'
-import { ProductoRequest, ReceptorRequestInterface } from '../../../../../shared/interfaces/interfaces';
+import React from 'react'
+import { ReceptorRequestInterface } from '../../../../../shared/interfaces/interfaces';
 import { SelectTipoIdDocumento } from '../../../../../shared/Select/selectTipoIdDocumento';
 import { Input } from '../../../../../shared/forms/input';
 import { SelectActividadesEconomicas } from '../../../../../shared/Select/selectActividadesEconomicas';
-import { RadioButton, RadioButtonChangeEvent } from 'primereact/radiobutton';
+import { RadioButton } from 'primereact/radiobutton';
 
 interface StepperInformacionGeneralProps {
     formData: ReceptorRequestInterface;
@@ -11,21 +11,24 @@ interface StepperInformacionGeneralProps {
 }
 
 export const StepperInformacionGeneralReceptor: React.FC<StepperInformacionGeneralProps> = ({ formData, handleChange }) => {
-    const [tipoReceptor, setTipoReceptor] = useState<string>('');
+
 
     return (
-        <div>
+        <div className='flex flex-col gap-10 text-start'>
             <span>
-                <label htmlFor="tipo_documento_id"> Tipo de documento de identificación</label>
-                <SelectTipoIdDocumento onChange={handleChange} value={formData.tipo_documento_id} name={"tipo_documento_id"} />
+                <label htmlFor="nombre">Nombre</label>
+                <Input onChange={handleChange} value={formData.nombre} name={"nombre"} />
             </span>
             <span>
-                <label htmlFor="num_documento"> Numero de documento de identificación ({formData.tipo_documento_id.descripcion})</label>
+                <label htmlFor="tipo_documento"> Tipo de documento de identificación</label>
+                <SelectTipoIdDocumento onChange={handleChange} value={formData.tipo_documento} name={"tipo_documento"} />
+            </span>
+            <span>
+                <label htmlFor="num_documento"> Numero de documento de identificación </label>
                 <Input onChange={handleChange} value={formData.num_documento} name={"num_documento"} />
             </span>
             <span>
                 <label htmlFor="tipó_documento_id"> Actividad economica </label>
-
                 <SelectActividadesEconomicas onChange={handleChange} value={formData.actividades_economicas} name={"actividades_economicas"} />
             </span>
             <span>

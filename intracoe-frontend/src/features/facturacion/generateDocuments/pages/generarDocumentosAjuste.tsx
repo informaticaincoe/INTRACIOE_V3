@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { DatosEmisorCard } from '../components/Shared/datosEmisor/datosEmisorCard';
 import { DropDownTipoDte } from '../components/Shared/configuracionFactura/tipoDocumento/DropdownTipoDte';
 import { SelectCondicionOperacion } from '../components/Shared/configuracionFactura/condicionOperacion/selectCondicionOperacion';
-import { SelectTipoTransmisión } from '../components/Shared/configuracionFactura/tipoTransmision/selectTipoTransmisión';
+import { SelectTipoTransmision } from '../components/Shared/configuracionFactura/tipoTransmision/selectTipoTransmisión';
 import { CheckBoxVentaTerceros } from '../components/Shared/configuracionFactura/ventaTerceros/checkboxVentaTerceros';
 import { IdentifcacionSeccion } from '../components/Shared/identificacion.tsx/identifcacionSeccion';
 import { SelectReceptor } from '../components/Shared/receptor/SelectReceptor';
@@ -61,11 +61,6 @@ export const GenerarDocumentosAjuste = () => {
     const [tipoGeneracionFactura, setTipoGeneracionFactura] = useState<TipoGeneracionFactura | null>(null);
     const [descuentosList, setDescuentosList] = useState()
 
-    //variables para mostrar modales
-    const [showProductsModal, setShowProductsModal] = useState(false); //mostrar modal con lista de productos
-    const [showfacturasModal, setShowfacturasModal] = useState(false); //mostrar modal con lista de facturas a relacionar
-    const [visibleDocumentoRelacionadomodal, setVisibleDocumentoRelacionadomodal] = useState(false); //
-
     //datos seleccionados para realizar la factura
     const [selectedCondicionDeOperacion, setSelectedCondicionDeOperacion] = useState<string>('1'); //id de la condicion de operacion (01 por defecto)
     const [selectedProducts, setSelectedProducts] = useState<ProductosTabla[]>([]); //lista de productos que tendra la factura
@@ -80,13 +75,13 @@ export const GenerarDocumentosAjuste = () => {
     //calculos
     const [totalAPagar, setTotalAPagar] = useState<number>(0);
     const [auxManejoPagos, setAuxManejoPagos] = useState<number>(totalAPagar);
-    const [descuentoItem, setDescuentoItem] = useState<number>(0);
     const [facturasAjuste, setFacturasAjuste] = useState<FacturaPorCodigoGeneracionResponse[]>([]);
     const [baseImponible, setBaseImponible] = useState<boolean>(false);
     const [errorReceptor, setErrorReceptor] = useState<boolean>(false);
     const [errorFormasPago, setErrorFormasPago] = useState<boolean>(false);
     const [nombreResponsable, setNombreResponsable] = useState<string>("")
     const [docResponsable, setDocResponsable] = useState<string>("")
+    const [tipoTransmision, setTipoTransmision] = useState<string>("")
 
     const [formData, setFormData] = useState({
         codigo: '',
@@ -131,9 +126,8 @@ export const GenerarDocumentosAjuste = () => {
             observaciones: observaciones,
             tipo_documento_seleccionado: tipoDocumentoSelected, //tipo DTE
             tipo_item_select: 1, //TODO: obtener segun la lista de productos de forma dinamica (bien o servicio)
-            documento_seleccionado: tipoGeneracionFactura?.code ?? '', //TODO: tipo de documento relacionado
-            documento_relacionado:
-                facturasAjuste[0]?.codigo_generacion.toUpperCase() ?? '', //TODO: id documento a relacionar
+            documento_seleccionado: tipoGeneracionFactura?.code ?? '', 
+            documento_relacionado: facturasAjuste[0]?.codigo_generacion.toUpperCase() ?? '',
             // descuento_select: descuentos, //TODO: Descuento por item
             condicion_operacion: selectedCondicionDeOperacion, //contado, credito, otros
             porcentaje_retencion_iva: (retencionIva / 100).toString(),
@@ -148,7 +142,8 @@ export const GenerarDocumentosAjuste = () => {
             cantidades: cantidadListProducts, //cantidad de cada producto de la factura
             descuento_gravado: descuentos.descuentoGravado.toString(),
             descuento_global_input: descuentos.descuentoGeneral.toString(),
-            contingencia: false
+            contingencia: false,
+            tipotransmision: tipoTransmision
             // "retencion_renta": false,
             // "porcentaje_retencion_renta": 0.00,
         };
@@ -285,7 +280,7 @@ export const GenerarDocumentosAjuste = () => {
                                 setSelectedCondicionDeOperacion={setSelectedCondicionDeOperacion}
                             />
                             <SelectModeloFactura />
-                            <SelectTipoTransmisión />
+                            <SelectTipoTransmision setTipoTransmision={setTipoTransmision} tipoTransmision={tipoTransmision} />
                             <CheckBoxVentaTerceros />
                             <CheckBoxRetencion
                                 setTieneRetencionIva={setTieneRetencionIva}

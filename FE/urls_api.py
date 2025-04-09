@@ -1,6 +1,6 @@
 
 from django.urls import path
-from FE.api_views import ActividadEconomicaCreateAPIView, ActividadEconomicaDeleteAPIView, ActividadEconomicaDetailAPIView, ActividadEconomicaListAPIView, ActividadEconomicaUpdateAPIView, AmbientesListAPIView, CondicionDeOperacionDetailAPIView, CondicionDeOperacionListAPIView, DepartamentosListAPIView, DescuentosAPIView, EmisorCreateAPIView, EnviarFacturaHaciendaAPIView, FacturaDetailAPIView, FacturaListAPIView, FacturaPorCodigoGeneracionAPIView, FirmarFacturaAPIView, FormasPagosListAPIView, GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, ModeloDeFacturacionListAPIView, MunicipioListAPIView, ObtenerReceptorAPIView, TipoDTEDetailAPIView, TipoDTEListAPIView, TipoDocIDReceptorDetailAPIView, TipoDocIDReceptorListAPIView, TipoTransmisionListAPIView, TiposEstablecimientosListAPIView, autenticacion, EmisorListAPIView, receptorCreateAPIView, receptorListAPIView, tipoGeneracionDocumentoListAPIView, GenerarDocumentoAjusteAPIView
+from FE.api_views import ActividadEconomicaCreateAPIView, ActividadEconomicaDeleteAPIView, ActividadEconomicaDetailAPIView, ActividadEconomicaListAPIView, ActividadEconomicaUpdateAPIView, AmbientesListAPIView, CondicionDeOperacionDetailAPIView, CondicionDeOperacionListAPIView, DepartamentosListAPIView, DescuentosAPIView, EmisorCreateAPIView, EmisorUpdateAPIView, EnviarFacturaHaciendaAPIView, FacturaDetailAPIView, FacturaListAPIView, FacturaPorCodigoGeneracionAPIView, FirmarFacturaAPIView, FormasPagosListAPIView, GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, ModeloDeFacturacionListAPIView, MunicipioDetailAPIView, MunicipioListAPIView, ObtenerReceptorAPIView, TipoDTEDetailAPIView, TipoDTEListAPIView, TipoDocIDReceptorDetailAPIView, TipoDocIDReceptorListAPIView, TipoTransmisionListAPIView, TiposEstablecimientosListAPIView, autenticacion, EmisorListAPIView, receptorCreateAPIView, receptorDeleteAPIView, receptorDetailAPIView, receptorListAPIView, receptorUpdateAPIView, tipoGeneracionDocumentoListAPIView, GenerarDocumentoAjusteAPIView
 from . import views
 
 #renombrar el archivo
@@ -36,11 +36,16 @@ urlpatterns = [
     
     #----------- EMISOR / RECEPTOR -----------#
     path('api/emisor/', EmisorListAPIView.as_view(), name='emisor_list_api'),
+    path('api/emisor/editar/<int:pk>/', EmisorUpdateAPIView.as_view(), name='emisor_list_api'),
     path('api/emisor/crear/', EmisorCreateAPIView.as_view(), name='emisor_create_api'),
 
     #Obtener todos los receptores
     path('api/receptor/', receptorListAPIView.as_view(), name='receptor_list_api'), 
+    path('api/receptor/<int:pk>/', receptorDetailAPIView.as_view(), name='receptor_detail_api'), 
     path('api/receptor/crear/', receptorCreateAPIView.as_view(), name='receptor_list_api'), 
+    path('api/receptor/actualizar/<int:pk>/', receptorUpdateAPIView.as_view(), name='receptor_list_api'), 
+    path('api/receptor/eliminar/<int:pk>/', receptorDeleteAPIView.as_view(), name='receptor_list_api'), 
+
 
     #tipo de documento de identificacion
     path('api/tipo-id-receptor/', TipoDocIDReceptorListAPIView.as_view(), name='tipo_doc_id_receptor_list_api'),
@@ -49,7 +54,7 @@ urlpatterns = [
     path('api/tipo-establecimiento/', TiposEstablecimientosListAPIView.as_view(), name='establecimientos_list_api'),
     path('api/departamentos/', DepartamentosListAPIView.as_view(), name='departamentos_list_api'),
     path('api/municipio/<int:pk>/', MunicipioListAPIView.as_view(), name='municipio_list_api'),
-    
+    path('api/municipio-by-id/<int:pk>/', MunicipioDetailAPIView.as_view(), name='municipio_detail_api'),
 
     path('api/descuentos/', DescuentosAPIView.as_view(), name='descuentos_api'),
     

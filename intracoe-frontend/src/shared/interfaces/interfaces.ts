@@ -89,7 +89,7 @@ export const ReceptorDefault: ReceptorInterface = {
 
 export const ReceptorRequestDefault: ReceptorRequestInterface = {
   id: "",
-  tipo_documento_id: {
+  tipo_documento: {
     id: "",
     descripcion: "",
     code: ""
@@ -98,7 +98,7 @@ export const ReceptorRequestDefault: ReceptorRequestInterface = {
   nrc: "",
   nombre: "",
   actividades_economicas: [],
-  municipio: { id: "", descripcion: "", code: "", },
+  municipio: "",
   direccion: "",
   telefono: "",
   correo: "",
@@ -122,13 +122,13 @@ export interface ReceptorInterface {
 
 export interface ReceptorRequestInterface {
   id: string;
-  tipo_documento_id: TipoDocumento;
+  tipo_documento: TipoDocumento;
   num_documento: string;
   tipo_receptor: string;
   nrc: string;
   nombre: string;
   actividades_economicas: ActivitiesData[];
-  municipio: { id: string; descripcion: string; code: string };
+  municipio: string;
   direccion: string;
   telefono: string;
   correo: string;
@@ -168,6 +168,27 @@ export interface Municipio {
   code: string;
 }
 
+export const RequestEmpresaDefault = {
+  nit: "",
+  nrc: "",
+  nombre_razon_social: "",
+  nombre_comercial: "",
+  direccion_comercial: "",
+  telefono: "",
+  email: "",
+  codigo_establecimiento: "",
+  codigo_punto_venta: "",
+  nombre_establecimiento: "",
+  tipoestablecimiento: "",
+  departamento: "",
+  municipio: "",
+  ambiente: "",
+  tipo_documento: "",
+  actividades_economicas: [],
+  clave_privada:"",
+  clave_publica:""
+}
+
 export interface RequestEmpresa {
   nit: string;
   nrc: string;
@@ -178,13 +199,15 @@ export interface RequestEmpresa {
   email: string;
   codigo_establecimiento: string;
   codigo_punto_venta: string;
-  nombre_establecimiento: string | null;
+  nombre_establecimiento: string;
   tipoestablecimiento: string;
   departamento: string;
   municipio: string;
   ambiente: string;
   tipo_documento: string;
   actividades_economicas: string[]; // Array de IDs de actividades económicas
+  clave_privada: string;
+  clave_publica: string;
 }
 
 export interface Product {

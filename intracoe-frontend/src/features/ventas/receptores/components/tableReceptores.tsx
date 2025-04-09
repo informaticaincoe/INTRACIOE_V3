@@ -9,12 +9,14 @@ import { Column } from 'primereact/column';
 
 interface TableReceptoresProps {
     receptores: any
-    refreshReceptores: any
+    setSelectedReceptores:any;
+    selectedReceptores:any;
+    onDelete: () => void;
+    onEdit:() => void;
 }
 
-export const TableReceptores: React.FC<TableReceptoresProps> = ({ receptores, refreshReceptores }) => {
+export const TableReceptores: React.FC<TableReceptoresProps> = ({ receptores, onDelete, selectedReceptores, setSelectedReceptores, onEdit }) => {
     const [rowClick] = useState<boolean>(true);
-    const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
     const toastRef = useRef<CustomToastRef>(null);
     const navigate = useNavigate()
 
@@ -31,27 +33,19 @@ export const TableReceptores: React.FC<TableReceptoresProps> = ({ receptores, re
         });
     };
 
-    const handleDelete = async () => {
-        
-    };
-
-    const editHandler = () => {
-
-    };
-
     return (
         <div>
-            {selectedProducts.length > 0 && ( // Verificar si hay productos seleccionados
+            {selectedReceptores.length > 0 && ( // Verificar si hay productos seleccionados
                 <div className="my-5 flex justify-between rounded bg-blue-50 p-5">
                     <p className="text-blue flex items-center gap-2">
                         <FaCheckCircle className="" />
-                        receptores seleccionados {selectedProducts.length}
+                        receptores seleccionados {selectedReceptores.length}
                     </p>
                     <span className="flex gap-2">
-                        {selectedProducts.length === 1 && (
+                        {selectedReceptores.length === 1 && (
                             <span
                                 className="border-blue flex items-center gap-2 rounded-md border px-3 py-1 hover:cursor-pointer"
-                                onClick={editHandler}
+                                onClick={onEdit}
                             >
                                 <p className="text-blue">Editar producto</p>
                             </span>
@@ -59,7 +53,7 @@ export const TableReceptores: React.FC<TableReceptoresProps> = ({ receptores, re
                         {
                             <button
                                 className="border-red flex items-center gap-2 rounded-md border px-3 py-1 hover:cursor-pointer"
-                                onClick={handleDelete}
+                                onClick={onDelete}
                             >
                                 <p className="text-red">Eliminar</p>
                             </button>
@@ -71,9 +65,9 @@ export const TableReceptores: React.FC<TableReceptoresProps> = ({ receptores, re
                 value={receptores}
                 tableStyle={{ minWidth: '50rem' }}
                 selectionMode={rowClick ? null : 'multiple'}
-                selection={selectedProducts!}
+                selection={selectedReceptores!}
                 onSelectionChange={(e: { value: React.SetStateAction<any[]> }) =>
-                    setSelectedProducts(e.value)
+                    setSelectedReceptores(e.value)
                 }
             >
                 <Column
@@ -81,7 +75,7 @@ export const TableReceptores: React.FC<TableReceptoresProps> = ({ receptores, re
                     headerStyle={{ width: '3rem' }}
                 ></Column>
                 <Column field="nombre" header="Nombre" />
-                
+
                 <Column field="correo" header="Correo" />
                 <Column field="num_documento" header="Documento de identificacion" />
             </DataTable>

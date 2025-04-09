@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { LuSearch } from 'react-icons/lu';
 import { FaPlus } from 'react-icons/fa';
 
-import { Input } from '../../../../shared/forms/input';
 import { useNavigate } from 'react-router';
 
 interface TablaProductosHeaderProps {
@@ -24,10 +23,6 @@ export const TablaProductosHeader: React.FC<TablaProductosHeaderProps> = ({ codi
     console.log(e.target)
     // Si el usuario pulsa Enter, ejecuta la búsqueda
       onSearch(input);
-  };
-
-  const handleClickSearch = () => {
-    onSearch(input);
   };
 
   const agregarProducto = () => {

@@ -22,7 +22,6 @@ export const NuevoReceptorPage = () => {
 
     return (
         <div>
-          <h1>rrrrrrrrrrrrrrr</h1>
             <FormReceptoresContainer/>
         </div>
     )

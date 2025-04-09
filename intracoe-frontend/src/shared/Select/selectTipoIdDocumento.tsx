@@ -37,6 +37,7 @@ export const SelectTipoIdDocumento: React.FC<
         }
         options={tipoDocId}
         optionLabel="descripcion"
+        optionValue="id"
         placeholder="Seleccionar tipo de establecimiento"
         className="md:w-14rem font-display w-full"
       />

@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 import { LuSearch } from 'react-icons/lu';
 import { FaPlus } from 'react-icons/fa';
 
-import { Input } from '../../../../shared/forms/input';
 import { useNavigate } from 'react-router';
 
 interface HeaderReceptoresOptionsProps {
@@ -18,16 +17,17 @@ interface HeaderReceptoresOptionsProps {
       setInput(e.target.value);
     };
   
+      const handleKeyPress = (e: React.KeyboardEvent) => {
+        console.log(e.target)
+        // Si el usuario pulsa Enter, ejecuta la búsqueda
+          onSearch(input);
+      };
     // const handleKeyPress = (e: React.KeyboardEvent) => {
     //   // Si el usuario pulsa Enter, ejecuta la búsqueda
     //   if (e.key === 'Enter') {
     //     onSearch(input);
     //   }
     // };
-  
-    const handleClickSearch = () => {
-      onSearch(input);
-    };
   
     const agregarProducto = () => {
       navigate('/receptor/nuevo');
@@ -37,23 +37,18 @@ interface HeaderReceptoresOptionsProps {
       <span className="flex items-center justify-between">
         <h1 className="text-lg font-bold">Lista receptores</h1>
         <div className="flex gap-5">
-          <span className="border-border-color flex w-[30vw] items-center rounded-md border">
-            <span className="pl-4">
+          <span className="border-border-color flex w-[30vw] items-center rounded-md border gap-2">
+            <span className="pl-5">
               <LuSearch />
             </span>
-            <Input
-              placeholder={'Buscar producto por codigo'}
-              name="codigo"
+            <input
+              placeholder={'Buscar producto por nombre o numero de identificacion'}
+              name="filtro"
               value={input}
               onChange={handleChange}
-              className="focus:border-ring-0 border-0 focus:border-none focus:ring-0 focus:outline-none active:border-0"
+              onKeyDown={handleKeyPress}
+              className="w-full focus:border-ring-0 border-0 focus:border-none focus:ring-0 focus:outline-none active:border-0"
             />
-            <button
-              onClick={handleClickSearch}
-              className="px-3 py-1"
-            >
-              Buscar
-            </button>
           </span>
           <button
             onClick={agregarProducto}
