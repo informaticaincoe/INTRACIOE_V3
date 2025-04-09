@@ -1,66 +1,72 @@
-import { HTMLProps, useEffect, useState } from 'react';
+import React, { useEffect, useState, HTMLProps } from 'react';
 import { MultiSelect, MultiSelectChangeEvent } from 'primereact/multiselect';
 import { ActivitiesData } from '../interfaces/interfaces';
 import { getAllActivities } from '../../features/facturacion/activities/services/activitiesServices';
 
-interface selectActividadesEconomicasInterface {
-  actividades: ActivitiesData[]; // Asegúrate de que actividades sea un array de objetos ActivitiesData
-  setActividades: (value: ActivitiesData[]) => void;
+interface SelectActividadesEconomicasProps {
+  value: any[];
+  onChange: (e: { target: { name: string; value: (string | number)[] } }) => void;
   className?: HTMLProps<HTMLElement>['className'];
+  name: string;
 }
 
-export const SelectActividadesEconomicas: React.FC<
-  selectActividadesEconomicasInterface
-> = ({ actividades, setActividades, className }) => {
-  const [listActividades, setListSetActividades] = useState<ActivitiesData[]>(
-    []
-  );
+export const SelectActividadesEconomicas: React.FC<SelectActividadesEconomicasProps> = ({
+  value,
+  onChange,
+  className,
+  name
+}) => {
+  const [listActividades, setListActividades] = useState<ActivitiesData[]>([]);
 
+  // 1) Carga las actividades desde la API
   useEffect(() => {
-    fetchActividadesList();
+    (async () => {
+      try {
+        const response = await getAllActivities();
+        setListActividades(response);
+      } catch (err) {
+        console.error(err);
+      }
+    })();
   }, []);
 
-  const fetchActividadesList = async () => {
-    try {
-      const response = await getAllActivities();
+  useEffect(()=> {
+    console.log("", value)
+  },[value])
 
-      const data = response.map(
-        (doc: { id: string; descripcion: any; codigo: any }) => ({
-          id: doc.id,
-          descripcion: doc.descripcion,
-          code: doc.codigo,
-        })
-      );
-      setListSetActividades(data);
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  // 2) Deriva el array de objetos seleccionados, filtrando por código
+  const selectedActivities = listActividades.filter(act =>
+    value.includes(act.id)
+  );
 
   return (
     <div>
-      <div>
-        <MultiSelect
-          value={actividades}
-          onChange={(e: MultiSelectChangeEvent) => setActividades(e.value)}
-          options={listActividades}
-          optionLabel="descripcion"
-          placeholder="Seleccionar actividad economica"
-          className={`${className} w-contain`}
-          filter
-        />
-      </div>
-      {actividades.length > 0 && (
-        <div className="py-5">
+      <MultiSelect
+        value={value}
+        options={listActividades}
+        optionLabel="descripcion"   // muestra la descripción en la lista y en los chips
+        optionValue="id"        // almacena sólo el código en `value`
+        placeholder="Seleccionar actividad económica"
+        className={`${className} w-full`}
+        filter
+        maxSelectedLabels={1}       // opcional: "+N más"
+        panelStyle={{ overflowY: 'auto' }}
+        onChange={(e: MultiSelectChangeEvent) => {
+          onChange({
+            target: {
+              name,
+              value: e.value
+            }
+          });
+        }}
+      />
+
+      {selectedActivities.length > 0 && (
+        <div className="py-5 max-h-40 overflow-auto">
           <strong>Actividades seleccionadas:</strong>
-          <ul>
-            {actividades.map((actividad) => (
-              <li
-                key={actividad.codigo} // Usamos el código para que sea único
-                className="list-inside list-disc px-5 text-black"
-              >
-                {actividad.descripcion}{' '}
-              </li>
+          <ul className="list-inside list-disc px-5 text-black">
+            {selectedActivities.map(act => (
+              <li key={act.codigo}>{act.descripcion}</li>
             ))}
           </ul>
         </div>

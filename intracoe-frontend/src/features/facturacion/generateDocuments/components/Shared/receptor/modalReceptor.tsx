@@ -12,7 +12,6 @@ import { SelectActividadesEconomicas } from '../../../../../../shared/Select/sel
 import { RadioButton, RadioButtonChangeEvent } from 'primereact/radiobutton';
 import { Button } from 'primereact/button';
 import { SelectMunicipios } from '../../../../../../shared/Select/selectMunicipios';
-import CustomStepper from '../../../../../../shared/stepper/customStepper';
 
 interface ModalReceptorinterfaceProp {
   setReceptoreLists: any;
@@ -55,7 +54,6 @@ export const ModalReceptor: React.FC<ModalReceptorinterfaceProp> = ({
 
   return (
     <div className="card justify-content-center flex">
-      <CustomStepper ref={stepperRef}>
         <StepperPanel header="información general">
           <div className="flex flex-col gap-8">
             <span>
@@ -198,7 +196,6 @@ export const ModalReceptor: React.FC<ModalReceptorinterfaceProp> = ({
             </div>
           </div>
         </StepperPanel>
-      </CustomStepper>
     </div>
   );
 };

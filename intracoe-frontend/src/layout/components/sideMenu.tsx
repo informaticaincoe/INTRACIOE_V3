@@ -1,7 +1,10 @@
 import { MdDashboard } from 'react-icons/md';
 import { IoMdPerson } from 'react-icons/io';
+import { BsBuildingFill } from "react-icons/bs";
+import { FaCalculator } from "react-icons/fa";
 import { HiCurrencyDollar } from 'react-icons/hi2';
 import { RiFilePaperFill } from 'react-icons/ri';
+import { FaTruckRampBox } from "react-icons/fa6";
 import type { MenuProps } from 'antd';
 import { Menu } from 'antd';
 import { useNavigate } from 'react-router';
@@ -15,14 +18,38 @@ const items: MenuItem[] = [
     label: <p className="text-start">Dashboard</p>,
   },
   {
-    key: 'rrhh',
-    icon: <IoMdPerson size={24} />,
-    label: <p className="text-start">RRHH</p>,
+    key: 'ventas',
+    icon: <HiCurrencyDollar size={24} />,
+    label: <p className="text-start">Ventas</p>,
+    children: [
+      {
+        key: 'receptores',
+        label: <p className="text-start">clientes</p>,
+      },
+      {
+        key: 'proveedor',
+        label: <p className="text-start">Proveedores</p>,
+      },
+    ]
   },
   {
     key: 'conta',
-    icon: <HiCurrencyDollar size={24} />,
+    icon: <FaCalculator size={24} />,
     label: <p className="text-start">Contabilidad</p>,
+    children: [
+      {
+        key: 'anexo',
+        label: <p className="text-start">Anexos</p>,
+      },
+      {
+        key: 'reportes',
+        label: <p className="text-start">Reportes</p>,
+      },
+      {
+        key: 'catalogo',
+        label: <p className="text-start">Catalogo</p>,
+      },
+    ]
   },
   {
     key: 'fact',
@@ -31,51 +58,53 @@ const items: MenuItem[] = [
 
     children: [
       {
-        key: 'fe',
-        label: <p className="text-start">Facturación electronica</p>,
-        children: [
-          {
-            key: 'act',
-            label: <p className="text-start">Actividades economicas </p>,
-          },
-          {
-            key: 'documentos',
-            label: <p className="text-start">Generar facturas</p>,
-          },
-          {
-            key: 'correcciones',
-            label: <p className="text-start">Generar corecciones</p>,
-          },
-          {
-            key: 'listado-facturas',
-            label: <p className="text-start">Listado Facturas</p>,
-          },
-        ],
+        key: 'act',
+        label: <p className="text-start">Actividades economicas </p>,
       },
       {
-        key: 'empresa',
-        label: <p className="text-start">Empresa</p>,
-        children: [
-          {
-            key: 'producto',
-            label: <p className="text-start">Producto</p>,
-          },
-          {
-            key: 'servicios',
-            label: <p className="text-start">Servicios</p>,
-          },
-          {
-            key: 'configuracion',
-            label: <p className="text-start">Configurar empresa</p>,
-          },
-          {
-            key: 'receptores',
-            label: <p className="text-start">Receptores</p>,
-          },
-        ],
+        key: 'documentos',
+        label: <p className="text-start">Generar facturas</p>,
+      },
+      {
+        key: 'correcciones',
+        label: <p className="text-start">Generar corecciones</p>,
+      },
+      {
+        key: 'listado-facturas',
+        label: <p className="text-start">Listado Facturas</p>,
       },
     ],
   },
+  {
+    key: 'inventario',
+    icon: <FaTruckRampBox size={24} />,
+    label: <p className="text-start">Inventario</p>,
+    children: [
+      {
+        key: 'producto',
+        label: <p className="text-start">Productos</p>,
+      },
+      {
+        key: 'servicios',
+        label: <p className="text-start">Servicios </p>,
+      },
+    ],
+  },
+  {
+    key: 'empresa',
+    icon: <BsBuildingFill size={24} />,
+    label: <p className="text-start">Empresa</p>,
+    children: [
+      {
+        key: 'configuracion',
+        label: <p className="text-start">Configurar empresa</p>,
+      },
+      {
+        key: 'server',
+        label: <p className="text-start">Configurar servidor</p>,
+      },
+    ],
+  }
 ];
 
 export const SideMenu = () => {
@@ -109,6 +138,9 @@ export const SideMenu = () => {
         break;
       case 'listado-facturas':
         navigate('/listado-facturas');
+        break;
+      case 'proveedor':
+        navigate('/proveedor');
         break;
       default:
         break;
