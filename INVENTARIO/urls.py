@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .api_views import ProductoCreateAPIView, ProductoDestroyAPIView, ProductoListAPIView, ProductoUpdateAPIView, TiposTributosListAPIView, TributoByTipoListAPIView, TributoDetailsAPIView
+from .api_views import AlmacenesListAPIView, ImpuestosListAPIView, ProductoCreateAPIView, ProductoDestroyAPIView, ProductoDetailAPIView, ProductoListAPIView, ProductoUpdateAPIView, TipoItemListAPIView, TiposTributosListAPIView, TributoByTipoListAPIView, TributoDetailsAPIView, TributosListAPIView, UnidadMedidaListAPIView
 from . import views
 
 urlpatterns = [
@@ -15,14 +15,24 @@ urlpatterns = [
     path('api/tipo-tributos/', TiposTributosListAPIView.as_view(), name='tipo_tributos_api'),
     path('api/tributos/tipo/<int:tipo_valor>/', TributoByTipoListAPIView.as_view(), name='tributos_api'),
     path('api/tributo/<int:pk>/', TributoDetailsAPIView.as_view(), name='tributo_api'), 
+    path('api/tributos/', TributosListAPIView.as_view(), name='tributo_api'), 
 
 
     #----------- PRODUCTOS -----------#
     #URL PRODUCTOS
+    
     path('api/productos/', ProductoListAPIView.as_view(), name='api_productos_list'),
+    path('api/producto/<int:pk>/', ProductoDetailAPIView.as_view(), name='api_productos_list'),
     path('api/productos/crear/', ProductoCreateAPIView.as_view(), name='api_productos_create'),
     path('api/productos/<int:pk>/editar/', ProductoUpdateAPIView.as_view(), name='api_productos_update'),
     path('api/productos/<int:pk>/eliminar/', ProductoDestroyAPIView.as_view(), name='api_productos_destroy'), 
+    path('api/unidad-medida/', UnidadMedidaListAPIView.as_view(), name='unidad_medida_api'), 
+    path('api/tipo-item/', TipoItemListAPIView.as_view(), name='tipo_item_api'),
+    path('api/almacenes/', AlmacenesListAPIView.as_view(), name='almacenes_api'), 
+
+
+    #----------- INPUESTOS -----------#
+    path('api/impuestos/', ImpuestosListAPIView.as_view(), name='impuestos_api'), 
 
     # Endpoints API REST
     # -------------------------------

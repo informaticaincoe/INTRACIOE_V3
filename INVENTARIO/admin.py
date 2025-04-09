@@ -1,14 +1,23 @@
 from django.contrib import admin
 from .models import Producto
 from .models import TipoItem
-from .models import TipoValor, Tributo, TipoTributo
+from .models import TipoValor, Tributo, TipoTributo, Impuesto, Almacen
 # Register your models here.
 
+@admin.register(Almacen)
+class AllmacenAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'ubicacion', 'responsable')
+    search_fields = ('nombre', 'ubicacion', 'responsable')
 
 @admin.register(Producto)
 class ProductoAdmin(admin.ModelAdmin):
     list_display = ('codigo', 'descripcion')
     search_fields = ('codigo', 'descripcion')
+
+@admin.register(Impuesto)
+class ImpuestoAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'porcentaje')
+    search_fields = ('nombre', 'porcentaje')
     
 @admin.register(TipoItem)
 class TipoItemAdmin(admin.ModelAdmin):

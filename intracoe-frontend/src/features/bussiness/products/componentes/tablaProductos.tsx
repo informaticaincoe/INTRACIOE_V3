@@ -1,28 +1,65 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ProductoResponse } from '../../../../shared/interfaces/interfaces';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Image } from 'primereact/image';
 
 import { FaCheckCircle } from 'react-icons/fa';
+import { IoMdCloseCircle } from 'react-icons/io';
+
+import { deleteProduct } from '../services/productsServices';
+import CustomToast, { CustomToastRef, ToastSeverity } from '../../../../shared/toast/customToast';
+import { useNavigate } from 'react-router';
 
 export interface TablaProductosProps {
   productos: ProductoResponse[];
+  refreshProducts: () => void;
 }
 
 export const TablaProductos: React.FC<TablaProductosProps> = ({
-  productos,
+  productos,refreshProducts
 }) => {
   useEffect(() => {
     console.log(productos)
   }, [productos])
+
   const [rowClick] = useState<boolean>(true);
   const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
+  const toastRef = useRef<CustomToastRef>(null);
+  const navigate = useNavigate()
 
-  const handleDelete = () => { };
+  const handleAccion = (
+    severity: ToastSeverity,
+    icon: any,
+    summary: string
+  ) => {
+    toastRef.current?.show({
+      severity: severity,
+      summary: summary,
+      icon: icon,
+      life: 2000,
+    });
+  };
 
-  const editHandler = () => { };
+  const handleDelete = async () => {
+    // Se itera sobre los productos seleccionados y se elimina uno por uno
+    for (const product of selectedProducts) {
+      try {
+        await deleteProduct(product.id);
+        handleAccion('success', <FaCheckCircle size={38} />, 'Producto eliminado con éxito');
+      } catch (error) {
+        console.error(error);
+        handleAccion('error', <IoMdCloseCircle size={38} />, 'Error al eliminar el producto');
+      }
+    }
+    // Después de eliminar, se limpia la selección y se actualiza la lista de productos
+    setSelectedProducts([]);
+    refreshProducts();
+  };
 
+  const editHandler = () => {
+    navigate("/producto/" + selectedProducts[0].id)
+  };
   return (
     <div>
       {selectedProducts.length > 0 && ( // Verificar si hay productos seleccionados
@@ -84,6 +121,7 @@ export const TablaProductos: React.FC<TablaProductosProps> = ({
         <Column field="stock" header="Stock" />
         <Column field="fecha_vencimiento" header="Fecha vencimiento" />
       </DataTable>
+      <CustomToast ref={toastRef} />
     </div>
   );
 };

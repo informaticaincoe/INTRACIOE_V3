@@ -32,7 +32,6 @@ export const TablaProductosAgregados: React.FC<
   setCantidadListProducts,
   setIdListProducts,
   setDescuentoItem,
-  descuentoItem,
   tipoDte,
   descuentosList
 }) => {
@@ -47,11 +46,10 @@ export const TablaProductosAgregados: React.FC<
     }, []);
 
     useEffect(() => {
-      console.log("Xxxxxxxxxxxxxxxxxxxxxx", listProducts)
       const auxId = listProducts.map((product) => product.id);
       const auxCantidad = listProducts.map((product) => product.cantidad);
-      const auxDescuento = listProducts.map((product) => product.descuento);
-
+      const auxDescuento = listProducts.map((product) => product.descuento?.porcentaje);
+      console.log(auxDescuento)
 
       console.log(auxCantidad)
 
@@ -62,10 +60,10 @@ export const TablaProductosAgregados: React.FC<
 
     const calcularTotales = (prod: ProductosTabla): ProductosTabla => {
       const IVA_RATE = 0.13;
-      const qty       = prod.cantidad;
+      const qty = prod.cantidad;
       const salePrice = prod.precio_venta;   // ahora tomamos el precio real
-      const hasIva    = prod.precio_iva;     // booleano
-    
+      const hasIva = prod.precio_iva;     // booleano
+
       // 1) Obtener el porcentaje de descuento
       let descPct = 0;
       if (prod.descuento) {
@@ -75,45 +73,45 @@ export const TablaProductosAgregados: React.FC<
           descPct = Number(prod.descuento) || 0;
         }
       }
-    
+
       // 2) Extraer el precio base sin IVA si el precio de venta ya lo incluye
       const baseUnit = hasIva
         ? salePrice / (1 + IVA_RATE)
         : salePrice;
-    
+
       // 3) Subtotal sin IVA
-      const subTotal       = baseUnit * qty;
+      const subTotal = baseUnit * qty;
       // 4) Descuento sobre ese subtotal
       const discountAmount = subTotal * descPct;
-      const netAfterDisc   = subTotal - discountAmount;
-    
+      const netAfterDisc = subTotal - discountAmount;
+
       // 5) IVA sobre el neto con descuento
-      const ivaAmount    = netAfterDisc * IVA_RATE;
+      const ivaAmount = netAfterDisc * IVA_RATE;
       // 6) Total con IVA
       const totalWithIva = netAfterDisc + ivaAmount;
 
       console.log(totalWithIva)
 
-    
-      if (tipoDte.code === '01') {
+
+      if (tipoDte === '01') {
         // Consumidor final: consideramos "neto" = total con IVA
         return {
           ...prod,
-          total_neto:    totalWithIva,
-          total_iva:     ivaAmount,
+          total_neto: totalWithIva,
+          total_iva: ivaAmount,
           total_con_iva: totalWithIva,
         };
       } else {
         // Crédito fiscal: neto sin IVA, IVA por separado
         return {
           ...prod,
-          total_neto:    netAfterDisc,
-          total_iva:     ivaAmount,
+          total_neto: netAfterDisc,
+          total_iva: ivaAmount,
           total_con_iva: totalWithIva,
         };
       }
     };
-    
+
 
     // Función para manejar cambios en la cantidad de un producto específico
     const handleCantidadChange = (value: number | null, productId: number) => {
@@ -212,7 +210,7 @@ export const TablaProductosAgregados: React.FC<
         />
 
         <DataTable
-          key={tipoDte.code}
+          key={tipoDte}
           value={listProducts}
           tableStyle={{ minWidth: '50rem' }}
           paginator
@@ -232,7 +230,7 @@ export const TablaProductosAgregados: React.FC<
             field="descripcion"
             header={<p className="text-sm">PRODUCTO</p>}
           ></Column>
-          {tipoDte.code == '03' && (
+          {tipoDte == '03' && (
             <Column
               body={(rowData: ProductosTabla) => (
                 <p>$ {rowData.preunitario}</p>
@@ -240,7 +238,7 @@ export const TablaProductosAgregados: React.FC<
               header={<p className="text-sm">PRECIO UNITARIO</p>}
             ></Column>
           )}
-          {tipoDte.code == '03' && (
+          {tipoDte == '03' && (
             <Column
               body={(rowData: ProductosTabla) => {
                 if (rowData.precio_iva)
@@ -251,7 +249,7 @@ export const TablaProductosAgregados: React.FC<
               header={<p className="text-sm">IVA UNITARIO</p>}
             ></Column>
           )}
-          {tipoDte.code == '01' && (
+          {tipoDte == '01' && (
             <Column
               header={<p className="text-sm">PRECIO UNITARIO</p>}
               body={(rowData: ProductosTabla) => {
@@ -290,14 +288,14 @@ export const TablaProductosAgregados: React.FC<
             header={<p className="text-sm uppercase">TOTAL tributos</p>}
           ></Column>
 
-          {tipoDte.code == '01' &&
+          {tipoDte == '01' &&
             <Column
               header="TOTAL"
               body={(rowData) => {
                 return <p>$ {(rowData.total_con_iva).toFixed(2)}</p>;
               }}
             />}
-          {tipoDte.code == '03' &&
+          {tipoDte == '03' &&
             <Column
               header="TOTAL NETO"
               body={(rowData) => {
@@ -305,7 +303,7 @@ export const TablaProductosAgregados: React.FC<
                 return <span>$ {rowData.total_neto.toFixed(2)}</span>;
               }}
             />}
-          {tipoDte.code == '03' &&
+          {tipoDte == '03' &&
             <Column
               header="TOTAL IVA"
               body={(rowData) => {
@@ -314,7 +312,7 @@ export const TablaProductosAgregados: React.FC<
               }}
             />}
 
-          {tipoDte.code == '03' &&
+          {tipoDte == '03' &&
             <Column
               header="TOTAL CON IVA"
               body={(row) => {

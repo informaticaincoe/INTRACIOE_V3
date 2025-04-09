@@ -530,6 +530,9 @@ class GenerarFacturaAPIView(APIView):
             # Datos de productos
             productos_ids = data.get('productos_ids', [])
             cantidades = data.get('cantidades', [])
+            
+            nombre_responsable = data.get("nombre_responsable", None)
+            documento_responsable = data.get("documento_responsable", None)
 
             if numero_control:
                 print("-Asignar numero control")
@@ -866,7 +869,8 @@ class GenerarFacturaAPIView(APIView):
             # Generar el JSON final de la factura
             factura_json = generar_json(
                 ambiente_obj, tipo_dte_obj, factura, emisor, receptor,
-                cuerpo_documento, observaciones, Decimal(str(total_iva_item)), base_imponible_checkbox, saldo_favor, documentos_relacionados, contingencia
+                cuerpo_documento, observaciones, Decimal(str(total_iva_item)), base_imponible_checkbox, saldo_favor, documentos_relacionados, contingencia,
+                total_gravada, nombre_responsable, documento_responsable
             )
             
             factura.json_original = factura_json
@@ -1430,8 +1434,9 @@ class GenerarDocumentoAjusteAPIView(APIView):
             else:
                 factura_json = generar_json_doc_ajuste(
                     ambiente_obj, tipo_dte_obj, factura, emisor, receptor,
-                    cuerpo_documento, observaciones, documentos_relacionados, contingencia
+                    cuerpo_documento, observaciones, documentos_relacionados, contingencia, total_gravada
                 )
+
             
             factura.json_original = factura_json
             factura.save()

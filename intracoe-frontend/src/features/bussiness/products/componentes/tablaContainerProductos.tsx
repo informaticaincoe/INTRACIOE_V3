@@ -3,21 +3,13 @@ import { getAllProducts } from '../../../../shared/services/productos/productosS
 import { ProductoResponse } from '../../../../shared/interfaces/interfaces';
 import { TablaProductos } from './tablaProductos';
 
-export const TablaContainerProductos = () => {
-  const [productos, setProductos] = useState<ProductoResponse[]>([]);
 
-  useEffect(() => {
-    fetchProductos();
-  }, []);
+interface TablaContainerServiciosProps{
+  productos: ProductoResponse[];
+  refreshProducts: () => void;
+}
 
-  const fetchProductos = async () => {
-    try {
-      const response = await getAllProducts();
-      setProductos(response);
-    } catch (error) {
-      console.log(error);
-    }
-  };
+export const TablaContainerProductos:React.FC<TablaContainerServiciosProps> = ({productos, refreshProducts}) => {
 
-  return <TablaProductos productos={productos} />;
+  return <TablaProductos productos={productos} refreshProducts={refreshProducts} />;
 };

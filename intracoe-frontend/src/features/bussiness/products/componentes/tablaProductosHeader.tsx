@@ -6,19 +6,35 @@ import { FaPlus } from 'react-icons/fa';
 import { Input } from '../../../../shared/forms/input';
 import { useNavigate } from 'react-router';
 
-export const TablaProductosHeader = () => {
-  const [formData, setFormData] = useState({
-    codigo: '',
-  });
+interface TablaProductosHeaderProps {
+  codigo: string;
+  onSearch: (codigo: string) => void;
+}
+
+
+export const TablaProductosHeader: React.FC<TablaProductosHeaderProps> = ({ codigo, onSearch }) => {
+  const [input, setInput] = useState<string>(codigo);
   const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setInput(e.target.value);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    // Si el usuario pulsa Enter, ejecuta la búsqueda
+    if (e.key === 'Enter') {
+      onSearch(input);
+    }
+  };
+
+  const handleClickSearch = () => {
+    onSearch(input);
   };
 
   const agregarProducto = () => {
     navigate('/productos/nuevo');
   };
+
 
   return (
     <span className="flex items-center justify-between">
@@ -30,11 +46,17 @@ export const TablaProductosHeader = () => {
           </span>
           <Input
             placeholder={'Buscar producto por codigo'}
-            name={'codigo'}
-            value={formData.codigo}
+            name="codigo"
+            value={input}
             onChange={handleChange}
             className="focus:border-ring-0 border-0 focus:border-none focus:ring-0 focus:outline-none active:border-0"
           />
+          <button
+            onClick={handleClickSearch}
+            className="px-3 py-1"
+          >
+            Buscar
+          </button>
         </span>
         <button
           onClick={agregarProducto}
