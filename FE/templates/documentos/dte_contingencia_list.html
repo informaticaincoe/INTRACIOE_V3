@@ -42,13 +42,10 @@
 </form>
 
 <!-- Botón para invalidar las facturas seleccionadas -->
-<button id="btnInvalidarSeleccionadas" class="btn btn-danger mb-3">Anular seleccionadas</button>
-
-<!-- Botón para invalidar las facturas seleccionadas -->
-<a href="{% url 'exportar_facturas_excel' %}" class="btn btn-danger">facturas sin anular xlsx</a>
+<button id="btnContingenciaSeleccionadas" class="btn btn-danger mb-3">Enviar Contingencias seleccionadas</button>
 
 <!-- Tabla de Facturas -->
-<form id="formInvalidarFacturas">
+<form id="formContingenciaFacturas">
 <div class="table-responsive">
     <table class="table table-striped">
     <thead class="table-dark">
@@ -72,19 +69,15 @@
         {% for contingencia in dtelist %}
         <tr>
         <td>
-            <input type="checkbox" name="contingencia_ids" value="{{ contingencia.id }}">
+            {% if contingencia.estado is False %}
+                <input type="checkbox" name="contingencia_ids" value="{{ contingencia.id }}">
+            {% endif %}
         </td>
         <td>
-            {% if contingencia.all|length > 0 %}
-            {% with evento=contingencia.all.0 %}
-                {% if evento.estado %}
-                <i class="fa fa-ban text-danger" title="Anulada"></i>
-                {% else %}
-                <i class="fa fa-hourglass-half text-warning" title="En proceso de anulación"></i>
-                {% endif %}
-            {% endwith %}
+            {% if contingencia.estado %}
+                <i class="fa fa-check text-success" title="Procesada"></i>
             {% else %}
-            <i class="fa fa-check text-success" title="Viva"></i>
+                <i class="fa fa-ban text-danger" title="Contingencia"></i>
             {% endif %}
         </td>
         <td>{{ contingencia.factura.numero_control }}</td>
@@ -98,13 +91,15 @@
             {% endif %}
         </td>
         <td>{{ contingencia.sello_recepcion }}</td>
-        <td>{{ contingencia.fecha_emision }}</td>
+        <td>{{ contingencia.fecha_transmicion }}</td>
         <td>{{ contingencia.factura.total_pagar }}</td>
         <td>{{ contingencia.factura.total_iva }}</td>
         <td>{% if contingencia.recibido_mh %}Sí{% else %}No{% endif %}</td>
         <td>
             <!-- Acción individual (opcional) -->
-            <a href="{% url 'invalidar_dte_unificado' contingencia.id %}" class="btn btn-sm btn-secondary btn-invalidar" data-factura-id="{{ contingencia.id }}">Enviar Contingencia</a>
+            {% if contingencia.estado == False %}
+                <a href="{% url 'contingencia_dte_unificado' contingencia.id %}" class="btn btn-sm btn-secondary btn-invalidar" data-contingencia-id="{{ contingencia.id }}">Enviar Contingencia</a>
+            {% endif %}
         </td>
         </tr>
         {% empty %}
@@ -126,7 +121,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
     </div>
     <div class="modal-body">
-        <div id="resultadoInvalidacion"></div>
+        <div id="resultadoContingencia"></div>
     </div>
     <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
@@ -186,13 +181,13 @@ document.addEventListener('DOMContentLoaded', function(){
   });
 
   // Manejar el click en el botón "Anular seleccionadas"
-  const btnInvalidarSeleccionadas = document.getElementById('btnInvalidarSeleccionadas');
-  btnInvalidarSeleccionadas.addEventListener('click', function(e){
+  const btnContingenciaSeleccionadas = document.getElementById('btnContingenciaSeleccionadas');
+  btnContingenciaSeleccionadas.addEventListener('click', function(e){
     e.preventDefault();
-    const form = document.getElementById('formInvalidarFacturas');
+    const form = document.getElementById('formContingenciaFacturas');
     const formData = new FormData(form);
 
-    fetch("{% url 'invalidar_varias_dte' %}", {
+    fetch("{% url 'lote_contingencias_dte' %}", {
       method: 'POST',
       body: formData,
       headers: {
@@ -207,12 +202,12 @@ document.addEventListener('DOMContentLoaded', function(){
        let htmlResultado = '';
        if (data.results && data.results.length) {
          data.results.forEach(result => {
-           htmlResultado += `<p><strong>Factura ${result.contingencia_id}:</strong> ${result.mensaje}<br><small>${JSON.stringify(result.detalle)}</small></p>`;
+           htmlResultado += `<p><strong>Contingencia ${result.contingencia_id}:</strong> ${result.mensaje}<br><small>${JSON.stringify(result.detalle)}</small></p>`;
          });
        } else {
          htmlResultado = "<p>No se recibió respuesta.</p>";
        }
-       document.getElementById('resultadoInvalidacion').innerHTML = htmlResultado;
+       document.getElementById('resultadoContingencia').innerHTML = htmlResultado;
        const myModal = new bootstrap.Modal(document.getElementById('respuestaModal'));
        myModal.show();
     })
