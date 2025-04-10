@@ -56,6 +56,7 @@ export const GenerateDocuments = () => {
   });
   const [listProducts, setListProducts] = useState<ProductosTabla[]>([]) //lista que almacena todos los productos
   const [formasPagoList, setFormasPagoList] = useState<any[]>([]);
+
   const [numeroControl, setNumeroControl] = useState('');
   const [codigoGeneracion, setCodigoGeneracion] = useState('');
   const [descuentosList, setDescuentosList] = useState()
@@ -85,7 +86,7 @@ export const GenerateDocuments = () => {
   const [nombreResponsable, setNombreResponsable] = useState<string>("")
   const [docResponsable, setDocResponsable] = useState<string>("")
   const [tipoTransmision, setTipoTransmision] = useState<string>("")
-
+  const [descuentosProducto, setDescuentosProducto] = useState<string[]>([]);
   const navigate = useNavigate();
   const toastRef = useRef<CustomToastRef>(null);
 
@@ -102,16 +103,29 @@ export const GenerateDocuments = () => {
     });
   };
 
+  useEffect(() => {
+    handleMontoPagar()
+  }, [listProducts, idListProducts])
+
   const handleMontoPagar = () => {
     let aux = 0;
     selectedProducts.map((pago) => {
       aux = aux + (pago.total_con_iva);
-      console.log(pago)
     });
-
-    console.log("aux", aux)
-    return aux.toFixed(2);
+    setTotalAPagar(aux)
   };
+
+  useEffect(() => {
+    const descuentosAux: string[] = selectedProducts.map(producto => {
+      // Si no tiene descuento, usamos 0
+      const porcentaje: number = producto.descuento?.porcentaje ?? 0;
+      // toFixed(2) devuelve un string con dos decimales
+      return porcentaje.toFixed(2).replace(".", ",");
+    });
+  
+    setDescuentosProducto(descuentosAux);
+  }, [selectedProducts]);
+  
 
   const generarFactura = async () => {
     console.log(descuentoItem)
@@ -124,13 +138,14 @@ export const GenerateDocuments = () => {
       telefono_receptor: receptor.telefono,
       correo_receptor: receptor.correo,
       tipo_item_select: 1, //TODO: obtener segun la lista de productos de forma dinamica (bien o servicio)
-      descuento_select: '0.00', //TODO: Descuento por item
+      // descuento_select: descuentosProducto, //TODO: Implementar con cambios pendiente de la api
+      descuento_select: "0.00",
       tipo_documento_seleccionado: tipoDocumentoSelected, //tipo DTE
       condicion_operacion: selectedCondicionDeOperacion, //contado, credito, otros
       observaciones: observaciones,
       productos_ids: idListProducts,
       cantidades: cantidadListProducts, //cantidad de cada producto de la factura
-      monto_fp: handleMontoPagar(),
+      monto_fp: totalAPagar.toFixed(2),
       num_ref: null,
       no_gravado: baseImponible,
       retencion_iva: tieneRetencionIva,
@@ -143,18 +158,14 @@ export const GenerateDocuments = () => {
       retencion_renta: tieneRetencionRenta,
       nombre_responsable: nombreResponsable || null,
       doc_responsable: docResponsable || null,
-      tipotransmision: tipoTransmision
+      tipotransmision: tipoTransmision,
     };
-
 
     console.log('dataFECF', dataFECF);
 
-
     try {
-
       const response = await generarFacturaService(dataFECF);
       firmarFactura(response.factura_id);
-
     } catch (error) {
       console.log(error);
     }
@@ -188,7 +199,11 @@ export const GenerateDocuments = () => {
       setSelectedCondicionDeOperacion(response.tipooperaciones[0].codigo)
       setDescuentosList(response.descuentos)
       setListProducts(response.producto)
-      setTipoDocumento(response.tipoDocumentos)
+      setTipoDocumento(
+        response.tipoDocumentos.filter(
+          (doc: { codigo: string; }) => doc.codigo === '01' || doc.codigo === '03'
+        )
+      );
     } catch (error) {
       console.log(error);
     }
@@ -222,56 +237,56 @@ export const GenerateDocuments = () => {
       <Title text="Generar documentos" />
       {/* Seccion datos del emisor */}
       <WhiteSectionsPage>
-          <div className="pt2 pb-5">
-            <h1 className="text-start text-xl font-bold">Datos del emisor</h1>
-            <Divider className="m-0 p-0"></Divider>
-            <DatosEmisorCard
-              emisorData={emisorData}
-            />
-          </div>
+        <div className="pt2 pb-5">
+          <h1 className="text-start text-xl font-bold">Datos del emisor</h1>
+          <Divider className="m-0 p-0"></Divider>
+          <DatosEmisorCard
+            emisorData={emisorData}
+          />
+        </div>
       </WhiteSectionsPage>
 
       {/*Seccion configuración de factura*/}
       <WhiteSectionsPage>
-          <div className="pt2 pb-5">
-            <h1 className="text-start text-xl font-bold">
-              Configuración factura
-            </h1>
-            <Divider className="m-0 p-0"></Divider>
-            <div className="flex flex-col gap-8">
-              <div className="flex flex-col items-start gap-1">
-                <label className="opacity-70">Tipo de documento</label>
-                <DropDownTipoDte
-                  tipoDocumento={tipoDocumento}
-                  setTipoDocumento={setTipoDocumento}
-                  setTipoDocumentoSelected={setTipoDocumentoSelected}
-                  tipoDocumentoSelected={tipoDocumentoSelected}
-                />
-              </div>
-              <SelectCondicionOperacion
-                condicionesOperacionList={condicionesOperacionList}
-                selectedCondicionDeOperacion={selectedCondicionDeOperacion}
-                setSelectedCondicionDeOperacion={setSelectedCondicionDeOperacion}
-              />
-              <SelectModeloFactura />
-              <SelectTipoTransmision setTipoTransmision={setTipoTransmision} tipoTransmision={tipoTransmision} />
-              <CheckBoxVentaTerceros />
-              <CheckBoxRetencion
-                setTieneRetencionIva={setTieneRetencionIva}
-                tieneRetencionIva={tieneRetencionIva}
-                setRetencionIva={setRetencionIva}
-                retencionIva={retencionIva}
-                setTieneRetencionRenta={setTieneRetencionRenta}
-                tieneRetencionRenta={tieneRetencionRenta}
-                retencionRenta={retencionRenta}
-                setRetencionRenta={setRetencionRenta}
-              />
-              <CheckboxBaseImponible
-                baseImponible={baseImponible}
-                setBaseImponible={setBaseImponible}
+        <div className="pt2 pb-5">
+          <h1 className="text-start text-xl font-bold">
+            Configuración factura
+          </h1>
+          <Divider className="m-0 p-0"></Divider>
+          <div className="flex flex-col gap-8">
+            <div className="flex flex-col items-start gap-1">
+              <label className="opacity-70">Tipo de documento</label>
+              <DropDownTipoDte
+                tipoDocumento={tipoDocumento}
+                setTipoDocumento={setTipoDocumento}
+                setTipoDocumentoSelected={setTipoDocumentoSelected}
+                tipoDocumentoSelected={tipoDocumentoSelected}
               />
             </div>
+            <SelectCondicionOperacion
+              condicionesOperacionList={condicionesOperacionList}
+              selectedCondicionDeOperacion={selectedCondicionDeOperacion}
+              setSelectedCondicionDeOperacion={setSelectedCondicionDeOperacion}
+            />
+            <SelectModeloFactura />
+            <SelectTipoTransmision setTipoTransmision={setTipoTransmision} tipoTransmision={tipoTransmision} />
+            <CheckBoxVentaTerceros />
+            <CheckBoxRetencion
+              setTieneRetencionIva={setTieneRetencionIva}
+              tieneRetencionIva={tieneRetencionIva}
+              setRetencionIva={setRetencionIva}
+              retencionIva={retencionIva}
+              setTieneRetencionRenta={setTieneRetencionRenta}
+              tieneRetencionRenta={tieneRetencionRenta}
+              retencionRenta={retencionRenta}
+              setRetencionRenta={setRetencionRenta}
+            />
+            <CheckboxBaseImponible
+              baseImponible={baseImponible}
+              setBaseImponible={setBaseImponible}
+            />
           </div>
+        </div>
       </WhiteSectionsPage>
 
       {/*Seccion identificación*/}
@@ -385,6 +400,7 @@ export const GenerateDocuments = () => {
           </div>
           <Divider className="m-0 p-0"></Divider>
           <ResumenTotalesCard
+            tipoDocumento={tipoDocumentoSelected}
             setTotalAPagar={setTotalAPagar}
             totalAPagar={totalAPagar}
             listProducts={selectedProducts}

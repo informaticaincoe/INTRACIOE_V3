@@ -38,14 +38,12 @@ export const CheckBoxRetencion: React.FC<CheckBoxRetencionProps> = ({
     return total;
   };
 
-  const handleRetencionRenta = (e: boolean) => {
-    setTieneRetencionRenta(e);
-    setTieneRetencionRenta(true);
+  const handleRetencionRenta = (value: boolean) => {
+    setTieneRetencionRenta(value);
   };
 
-  const handleRetencionIVA = (e: boolean) => {
-    setTieneRetencionIva(e);
-    setTieneRetencionIva(true);
+  const handleRetencionIVA = (value: boolean) => {
+    setTieneRetencionIva(value);
   };
 
   return (

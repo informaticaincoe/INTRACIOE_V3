@@ -197,8 +197,18 @@ def autenticacion(request):
 
 # Vista para obtener el detalle de una Actividad Económica
 class ActividadEconomicaListAPIView(generics.ListAPIView):
-    queryset = ActividadEconomica.objects.all()
     serializer_class = ActividadEconomicaSerializer
+
+    def get_queryset(self):
+        queryset = ActividadEconomica.objects.all()
+        filtro = self.request.query_params.get('filtro')
+
+        if filtro:
+            queryset = queryset.filter(
+                Q(codigo__icontains=filtro) |
+                Q(descripcion__icontains=filtro)
+            )
+        return queryset
     
 class ActividadEconomicaDetailAPIView(generics.RetrieveAPIView):
     queryset = ActividadEconomica.objects.all()

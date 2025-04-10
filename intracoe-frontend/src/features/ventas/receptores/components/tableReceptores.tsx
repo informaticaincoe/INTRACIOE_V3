@@ -20,19 +20,6 @@ export const TableReceptores: React.FC<TableReceptoresProps> = ({ receptores, on
     const toastRef = useRef<CustomToastRef>(null);
     const navigate = useNavigate()
 
-    const handleAccion = (
-        severity: ToastSeverity,
-        icon: any,
-        summary: string
-    ) => {
-        toastRef.current?.show({
-            severity: severity,
-            summary: summary,
-            icon: icon,
-            life: 2000,
-        });
-    };
-
     return (
         <div>
             {selectedReceptores.length > 0 && ( // Verificar si hay productos seleccionados
@@ -69,13 +56,13 @@ export const TableReceptores: React.FC<TableReceptoresProps> = ({ receptores, on
                 onSelectionChange={(e: { value: React.SetStateAction<any[]> }) =>
                     setSelectedReceptores(e.value)
                 }
+                paginator rows={5} rowsPerPageOptions={[5, 10, 25, 50]} 
             >
                 <Column
                     selectionMode="multiple"
                     headerStyle={{ width: '3rem' }}
                 ></Column>
                 <Column field="nombre" header="Nombre" />
-
                 <Column field="correo" header="Correo" />
                 <Column field="num_documento" header="Documento de identificacion" />
             </DataTable>

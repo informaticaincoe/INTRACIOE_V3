@@ -58,11 +58,11 @@ export const TablaProductosAgregados: React.FC<
       setDescuentoItem(auxDescuento)
     }, [listProducts]);
 
-    const calcularTotales = (prod: ProductosTabla): ProductosTabla => {
+    const calcularTotalesPorItem = (prod: ProductosTabla): ProductosTabla => {
       const IVA_RATE = 0.13;
-      const qty = prod.cantidad;
-      const salePrice = prod.precio_venta;   // ahora tomamos el precio real
-      const hasIva = prod.precio_iva;     // booleano
+      const cantidad = prod.cantidad;
+      const preUnitario = prod.precio_venta;   // ahora tomamos el precio real
+      const tieneIva = prod.precio_iva;     // booleano
 
       // 1) Obtener el porcentaje de descuento
       let descPct = 0;
@@ -75,15 +75,15 @@ export const TablaProductosAgregados: React.FC<
       }
 
       // 2) Extraer el precio base sin IVA si el precio de venta ya lo incluye
-      const baseUnit = hasIva
-        ? salePrice / (1 + IVA_RATE)
-        : salePrice;
+      const baseUnit = tieneIva
+        ? preUnitario / (1 + IVA_RATE)
+        : preUnitario;
 
-      // 3) Subtotal sin IVA
-      const subTotal = baseUnit * qty;
-      // 4) Descuento sobre ese subtotal
-      const discountAmount = subTotal * descPct;
-      const netAfterDisc = subTotal - discountAmount;
+      // 3) SubtotalNeto sin IVA
+      const subTotalNeto = baseUnit * cantidad;
+      // 4) Descuento sobre ese subtotalNeto
+      const discountAmount = subTotalNeto * descPct;
+      const netAfterDisc = subTotalNeto - discountAmount;
 
       // 5) IVA sobre el neto con descuento
       const ivaAmount = netAfterDisc * IVA_RATE;
@@ -94,10 +94,10 @@ export const TablaProductosAgregados: React.FC<
 
 
       if (tipoDte === '01') {
-        // Consumidor final: consideramos "neto" = total con IVA
+        // Consumidor final: "neto" = total con IVA
         return {
           ...prod,
-          total_neto: totalWithIva,
+          total_neto: subTotalNeto,
           total_iva: ivaAmount,
           total_con_iva: totalWithIva,
         };
@@ -119,7 +119,7 @@ export const TablaProductosAgregados: React.FC<
       setListProducts((prev: any[]) =>
         prev.map(p =>
           p.id === productId
-            ? calcularTotales({ ...p, cantidad: nuevaCantidad })
+            ? calcularTotalesPorItem({ ...p, cantidad: nuevaCantidad })
             : p
         )
       );
@@ -129,12 +129,11 @@ export const TablaProductosAgregados: React.FC<
       setListProducts((prev: any[]) =>
         prev.map(p =>
           p.id === productId
-            ? calcularTotales({ ...p, descuento: value })
+            ? calcularTotalesPorItem({ ...p, descuento: value })
             : p
         )
       );
     };
-
 
     const handleDelete = () => {
       console.log('auxSelectedProducts', auxSelectedProducts);
@@ -251,7 +250,7 @@ export const TablaProductosAgregados: React.FC<
           )}
           {tipoDte == '01' && (
             <Column
-              header={<p className="text-sm">PRECIO UNITARIO</p>}
+              header={<p className="text-sm">PRECIO UNITARIO (IVA INCLUIDO)</p>}
               body={(rowData: ProductosTabla) => {
                 return <p>$ {(rowData.preunitario * 1.13).toFixed(2)}</p>; // incluir e iva en el precio si es consumidor final
               }}
