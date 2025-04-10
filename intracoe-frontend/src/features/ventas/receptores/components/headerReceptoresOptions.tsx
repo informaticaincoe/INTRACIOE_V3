@@ -22,12 +22,6 @@ interface HeaderReceptoresOptionsProps {
         // Si el usuario pulsa Enter, ejecuta la búsqueda
           onSearch(input);
       };
-    // const handleKeyPress = (e: React.KeyboardEvent) => {
-    //   // Si el usuario pulsa Enter, ejecuta la búsqueda
-    //   if (e.key === 'Enter') {
-    //     onSearch(input);
-    //   }
-    // };
   
     const agregarProducto = () => {
       navigate('/receptor/nuevo');

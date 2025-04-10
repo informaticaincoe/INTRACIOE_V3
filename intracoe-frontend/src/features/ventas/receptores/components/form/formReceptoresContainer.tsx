@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { HTMLProps, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router';
 import { ReceptorRequestDefault, ReceptorRequestInterface } from '../../../../../shared/interfaces/interfaces';
 import CustomToast, { CustomToastRef, ToastSeverity } from '../../../../../shared/toast/customToast';
@@ -8,8 +8,15 @@ import { StepperInformacionGeneralReceptor } from './stepperInformacionGeneralRe
 import { StepperFormInfoContactoReceptor } from './stepperFormInfoContactoReceptor';
 import { Title } from '../../../../../shared/text/title';
 import { createReceptor, editReceptor, getReceptorById } from '../../../../../shared/services/receptor/receptorServices';
+import { IoMdCloseCircle } from 'react-icons/io';
+import { FaCheckCircle } from "react-icons/fa";
 
-export const FormReceptoresContainer = () => {
+interface FormReceptoresContainerProps {
+    className?: HTMLProps<HTMLElement>['className'] //cambiar estilo en modal de factural
+    onSuccess?: any //actualizar lista de receptores cuando se agregen en el apartado de facturas
+}
+
+export const FormReceptoresContainer: React.FC<FormReceptoresContainerProps> = ({ className, onSuccess }) => {
     let params = useParams()
 
     // Estado para controlar el paso actual
@@ -17,7 +24,6 @@ export const FormReceptoresContainer = () => {
     const [formData, setFormData] = useState<ReceptorRequestInterface>(ReceptorRequestDefault);
     const toastRef = useRef<CustomToastRef>(null);
     const navigate = useNavigate()
-
     useEffect(() => {
         if (params.id)
             fetchReceptorEdit()
@@ -60,16 +66,33 @@ export const FormReceptoresContainer = () => {
             try {
                 const response = await editReceptor(params.id, formData);
                 console.log(response);
+                handleAccion(
+                    'success',
+                    <FaCheckCircle size={38} />,
+                    'Receptor guardado con exito'
+                );
             } catch (error) {
-                console.log(error);
+                handleAccion(
+                    'error',
+                    <FaCheckCircle size={38} />,
+                    'Error al guardar configuracion'
+                );
             }
         }
         else {
             try {
                 const response = await createReceptor(formData);
-                console.log(response);
+                handleAccion(
+                    'success',
+                    <FaCheckCircle size={38} />,
+                    'configuracion creada con exito'
+                );
             } catch (error) {
-                console.log(error);
+                handleAccion(
+                    'error',
+                    <FaCheckCircle size={38} />,
+                    'Error al crear configuracion'
+                );
             }
         }
     };
@@ -125,8 +148,8 @@ export const FormReceptoresContainer = () => {
 
     return (
         <>
-            <Title text="Nuevo receptor" />
-            <WhiteSectionsPage className="mx-[10%] px-[5%] py-[3%]">
+            <Title text="Nuevo receptor" className='text-center' />
+            <WhiteSectionsPage className={`mx-[10%] px-[5%] py-[3%] ${className}`}>
                 <>
                     <Steps
                         current={current}

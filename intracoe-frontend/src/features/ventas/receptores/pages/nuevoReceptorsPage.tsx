@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { ModalReceptor } from '../../../facturacion/generateDocuments/components/Shared/receptor/modalReceptor'
 import { ReceptorInterface } from '../../../../shared/interfaces/interfaces';
 import { getAllReceptor } from '../../../../shared/services/receptor/receptorServices';
 import { FormReceptoresContainer } from '../components/form/formReceptoresContainer';

@@ -19,18 +19,9 @@ export const StepperFormLotesYVencimiento: React.FC<StepperInformacionGeneralPro
   const [date, setDate] = useState<Nullable<Date>>(null);
   const [almacenes, setAlmacenes] = useState<Almacen[]>([])
 
-  // Al montar o cuando cambie formData.fecha_vencimiento, parseamos el string
   useEffect(() => {
-    const fv = formData.fecha_vencimiento;
-    if (typeof fv === 'string' && fv.includes('/')) {
-      const [dd, mm, yyyy] = fv.split('/');
-      setDate(new Date(+yyyy, +mm - 1, +dd));
-    }
-  }, [formData.fecha_vencimiento]);
-
-  useEffect(()=> {
     fetchAlmacenes()
-  },[])
+  }, [])
 
   const fetchAlmacenes = async () => {
     try {
@@ -41,23 +32,45 @@ export const StepperFormLotesYVencimiento: React.FC<StepperInformacionGeneralPro
     }
   }
 
-  const formatDate = (d: Date) => {
-    const dd = String(d.getDate()).padStart(2, '0');
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const yyyy = d.getFullYear();
-    return `${yyyy}-${mm}-${dd}`;
-  };
+  useEffect(() => {
+    const fv = formData.fecha_vencimiento;
 
-  // Firma correcta para CalendarChangeParams
+    if (typeof fv === 'string' && fv) {
+      // Si viene como string "yyyy-mm-dd"
+      const [yyyy, mm, dd] = fv.split('-').map(Number);
+      setDate(new Date(yyyy, mm - 1, dd));
+    }
+    else if (fv instanceof Date) {
+      // Si ya es un Date
+      setDate(fv);
+    }
+    else {
+      // Si no hay valor
+      setDate(null);
+    }
+  }, [formData.fecha_vencimiento]);
+
+
+  // Forma correcta para CalendarChangeParams
   const onDateChange = (e: any) => {
-    const d = e.value as Date;
-    setDate(d);
-    handleChange({
-      target: {
-        name: 'fecha_vencimiento',
-        value: d ? formatDate(d) : ''
-      }
-    });
+    const selected: Date = e.value;
+    setDate(selected);
+
+    if (selected) {
+      const yyyy = selected.getFullYear();
+      const mm = String(selected.getMonth() + 1).padStart(2, '0');
+      const dd = String(selected.getDate()).padStart(2, '0');
+      handleChange({
+        target: {
+          name: 'fecha_vencimiento',
+          value: `${yyyy}-${mm}-${dd}`
+        }
+      });
+    } else {
+      handleChange({
+        target: { name: 'fecha_vencimiento', value: '' }
+      });
+    }
   };
 
   return (
