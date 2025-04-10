@@ -56,7 +56,7 @@ export const GenerateDocuments = () => {
   });
   const [listProducts, setListProducts] = useState<ProductosTabla[]>([]) //lista que almacena todos los productos
   const [formasPagoList, setFormasPagoList] = useState<any[]>([]);
-  
+
   const [numeroControl, setNumeroControl] = useState('');
   const [codigoGeneracion, setCodigoGeneracion] = useState('');
   const [descuentosList, setDescuentosList] = useState()
@@ -103,16 +103,22 @@ export const GenerateDocuments = () => {
     });
   };
 
+  useEffect(()=>{
+    handleMontoPagar()
+  },[listProducts, idListProducts])
+
   const handleMontoPagar = () => {
     let aux = 0;
     selectedProducts.map((pago) => {
+      console.log("**************",pago.total_con_iva)
       aux = aux + (pago.total_con_iva);
-      console.log(pago)
     });
-
-    console.log("aux", aux)
-    return aux.toFixed(2);
+    setTotalAPagar(aux)
   };
+
+  useEffect(()=>{
+    console.log("PPPPPPPPPPPPPPPPP",selectedProducts)
+  },[selectedProducts])
 
   const generarFactura = async () => {
     console.log(descuentoItem)
@@ -151,13 +157,13 @@ export const GenerateDocuments = () => {
     console.log('dataFECF', dataFECF);
 
 
-    try {
-      const response = await generarFacturaService(dataFECF);
-      firmarFactura(response.factura_id);
+    // try {
+    //   const response = await generarFacturaService(dataFECF);
+    //   firmarFactura(response.factura_id);
 
-    } catch (error) {
-      console.log(error);
-    }
+    // } catch (error) {
+    //   console.log(error);
+    // }
   };
 
   const firmarFactura = async (id: string) => {
@@ -389,6 +395,7 @@ export const GenerateDocuments = () => {
           </div>
           <Divider className="m-0 p-0"></Divider>
           <ResumenTotalesCard
+            tipoDocumento={tipoDocumentoSelected}
             setTotalAPagar={setTotalAPagar}
             totalAPagar={totalAPagar}
             listProducts={selectedProducts}
