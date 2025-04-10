@@ -62,6 +62,15 @@ export const StepperFormContainer = () => {
     console.log("data-----", formData.imagen)
     console.log("datatypeof-----", typeof (formData.imagen))
 
+    if (formData.stock > formData.stock_maximo) {
+      console.log("")
+      handleAccion(
+        'error',
+        <IoMdCloseCircle size={38} />,
+        'Stock actual es mayor al stock maximo'
+      );
+      return
+    }
     try {
       // 3) Envío con axios (o tu fetch), sin especificar Content-Type
       if (params.id) {

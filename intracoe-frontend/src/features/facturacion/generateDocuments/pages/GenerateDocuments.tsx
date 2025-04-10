@@ -56,6 +56,7 @@ export const GenerateDocuments = () => {
   });
   const [listProducts, setListProducts] = useState<ProductosTabla[]>([]) //lista que almacena todos los productos
   const [formasPagoList, setFormasPagoList] = useState<any[]>([]);
+  
   const [numeroControl, setNumeroControl] = useState('');
   const [codigoGeneracion, setCodigoGeneracion] = useState('');
   const [descuentosList, setDescuentosList] = useState()
@@ -151,7 +152,6 @@ export const GenerateDocuments = () => {
 
 
     try {
-
       const response = await generarFacturaService(dataFECF);
       firmarFactura(response.factura_id);
 
@@ -164,7 +164,7 @@ export const GenerateDocuments = () => {
     try {
       if (id) {
         await FirmarFactura(id);
-        navigate(`/factura/${id}`);
+        // navigate(`/factura/${id}`);
       }
     } catch (error) {
       console.log(error);
@@ -188,7 +188,11 @@ export const GenerateDocuments = () => {
       setSelectedCondicionDeOperacion(response.tipooperaciones[0].codigo)
       setDescuentosList(response.descuentos)
       setListProducts(response.producto)
-      setTipoDocumento(response.tipoDocumentos)
+      setTipoDocumento(
+        response.tipoDocumentos.filter(
+          (doc: { codigo: string; }) => doc.codigo === '01' || doc.codigo === '03'
+        )
+      );
     } catch (error) {
       console.log(error);
     }
@@ -222,56 +226,56 @@ export const GenerateDocuments = () => {
       <Title text="Generar documentos" />
       {/* Seccion datos del emisor */}
       <WhiteSectionsPage>
-          <div className="pt2 pb-5">
-            <h1 className="text-start text-xl font-bold">Datos del emisor</h1>
-            <Divider className="m-0 p-0"></Divider>
-            <DatosEmisorCard
-              emisorData={emisorData}
-            />
-          </div>
+        <div className="pt2 pb-5">
+          <h1 className="text-start text-xl font-bold">Datos del emisor</h1>
+          <Divider className="m-0 p-0"></Divider>
+          <DatosEmisorCard
+            emisorData={emisorData}
+          />
+        </div>
       </WhiteSectionsPage>
 
       {/*Seccion configuración de factura*/}
       <WhiteSectionsPage>
-          <div className="pt2 pb-5">
-            <h1 className="text-start text-xl font-bold">
-              Configuración factura
-            </h1>
-            <Divider className="m-0 p-0"></Divider>
-            <div className="flex flex-col gap-8">
-              <div className="flex flex-col items-start gap-1">
-                <label className="opacity-70">Tipo de documento</label>
-                <DropDownTipoDte
-                  tipoDocumento={tipoDocumento}
-                  setTipoDocumento={setTipoDocumento}
-                  setTipoDocumentoSelected={setTipoDocumentoSelected}
-                  tipoDocumentoSelected={tipoDocumentoSelected}
-                />
-              </div>
-              <SelectCondicionOperacion
-                condicionesOperacionList={condicionesOperacionList}
-                selectedCondicionDeOperacion={selectedCondicionDeOperacion}
-                setSelectedCondicionDeOperacion={setSelectedCondicionDeOperacion}
-              />
-              <SelectModeloFactura />
-              <SelectTipoTransmision setTipoTransmision={setTipoTransmision} tipoTransmision={tipoTransmision} />
-              <CheckBoxVentaTerceros />
-              <CheckBoxRetencion
-                setTieneRetencionIva={setTieneRetencionIva}
-                tieneRetencionIva={tieneRetencionIva}
-                setRetencionIva={setRetencionIva}
-                retencionIva={retencionIva}
-                setTieneRetencionRenta={setTieneRetencionRenta}
-                tieneRetencionRenta={tieneRetencionRenta}
-                retencionRenta={retencionRenta}
-                setRetencionRenta={setRetencionRenta}
-              />
-              <CheckboxBaseImponible
-                baseImponible={baseImponible}
-                setBaseImponible={setBaseImponible}
+        <div className="pt2 pb-5">
+          <h1 className="text-start text-xl font-bold">
+            Configuración factura
+          </h1>
+          <Divider className="m-0 p-0"></Divider>
+          <div className="flex flex-col gap-8">
+            <div className="flex flex-col items-start gap-1">
+              <label className="opacity-70">Tipo de documento</label>
+              <DropDownTipoDte
+                tipoDocumento={tipoDocumento}
+                setTipoDocumento={setTipoDocumento}
+                setTipoDocumentoSelected={setTipoDocumentoSelected}
+                tipoDocumentoSelected={tipoDocumentoSelected}
               />
             </div>
+            <SelectCondicionOperacion
+              condicionesOperacionList={condicionesOperacionList}
+              selectedCondicionDeOperacion={selectedCondicionDeOperacion}
+              setSelectedCondicionDeOperacion={setSelectedCondicionDeOperacion}
+            />
+            <SelectModeloFactura />
+            <SelectTipoTransmision setTipoTransmision={setTipoTransmision} tipoTransmision={tipoTransmision} />
+            <CheckBoxVentaTerceros />
+            <CheckBoxRetencion
+              setTieneRetencionIva={setTieneRetencionIva}
+              tieneRetencionIva={tieneRetencionIva}
+              setRetencionIva={setRetencionIva}
+              retencionIva={retencionIva}
+              setTieneRetencionRenta={setTieneRetencionRenta}
+              tieneRetencionRenta={tieneRetencionRenta}
+              retencionRenta={retencionRenta}
+              setRetencionRenta={setRetencionRenta}
+            />
+            <CheckboxBaseImponible
+              baseImponible={baseImponible}
+              setBaseImponible={setBaseImponible}
+            />
           </div>
+        </div>
       </WhiteSectionsPage>
 
       {/*Seccion identificación*/}

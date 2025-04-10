@@ -2,14 +2,13 @@ import React, { useEffect, useRef, useState } from 'react'
 import { WhiteSectionsPage } from '../../../../../shared/containers/whiteSectionsPage';
 import { Steps } from 'antd';
 import CustomToast, { CustomToastRef, ToastSeverity } from '../../../../../shared/toast/customToast';
-import { useParams } from 'react-router';
 import { RequestEmpresa, RequestEmpresaDefault } from '../../../../../shared/interfaces/interfaces';
 import { StepperConfiguracionFacturacion } from './stepperConfiguracionFacturacion';
 import { StepperContactBussiness } from './stepperContactBussiness';
 import { createEmpresa, editReceptor, getAllEmpresas } from '../../services/empresaServices';
+import { FaCheckCircle } from 'react-icons/fa';
 
 export const FormConfigBussinessContainer = () => {
-  let params = useParams()
 
   // Estado para controlar el paso actual
   const [current, setCurrent] = useState(0);
@@ -40,30 +39,18 @@ export const FormConfigBussinessContainer = () => {
     }
   }
 
-  // const fetchReceptorEdit = async () => {
-  //     try {
-  //         if (params.id) {
-  //             const data = await getReceptorById(params.id)
-  //             console.log(data)
-  //             setFormData(data)
-  //         }
-  //     } catch (error) {
-  //         console.log(error)
-  //     }
-  // }
-
-  // const handleAccion = (
-  //     severity: ToastSeverity,
-  //     icon: any,
-  //     summary: string
-  // ) => {
-  //     toastRef.current?.show({
-  //         severity: severity,
-  //         summary: summary,
-  //         icon: icon,
-  //         life: 2000,
-  //     });
-  // };
+  const handleAccion = (
+    severity: ToastSeverity,
+    icon: any,
+    summary: string
+  ) => {
+    toastRef.current?.show({
+      severity: severity,
+      summary: summary,
+      icon: icon,
+      life: 2000,
+    });
+  };
 
   const handleSendForm = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,18 +64,34 @@ export const FormConfigBussinessContainer = () => {
     console.log(formData)
     if (empresaId) {
       try {
-          const response = await editReceptor(empresaId, formData);
-          console.log(response);
+        const response = await editReceptor(empresaId, formData);
+        handleAccion(
+          'success',
+          <FaCheckCircle size={38} />,
+          'Configuracion guardado con exito'
+        );
       } catch (error) {
-          console.log(error);
+        handleAccion(
+          'error',
+          <FaCheckCircle size={38} />,
+          'Ocurrio un error al guardar configuracion'
+        );
       }
     }
     else {
       try {
         const response = await createEmpresa(formData);
-        console.log(response);
+        handleAccion(
+          'success',
+          <FaCheckCircle size={38} />,
+          'Configuracion creada con exito'
+        );
       } catch (error) {
-        console.log(error);
+        handleAccion(
+          'error',
+          <FaCheckCircle size={38} />,
+          'Ocurrio un error al crear configuracion'
+        );
       }
     }
   };

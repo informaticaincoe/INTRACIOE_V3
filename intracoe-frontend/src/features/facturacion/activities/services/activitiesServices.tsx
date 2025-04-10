@@ -3,11 +3,14 @@ import { ActivitiesDataNew } from '../../../../shared/interfaces/interfaces';
 
 const BASEURL = import.meta.env.VITE_URL_BASE;
 
-export const getAllActivities = async () => {
+export const getAllActivities = async (filtro?: string) => {
   try {
     // Asegúrate de que el endpoint sea el correcto
     const response = await axios.get(
-      'http://127.0.0.1:8000/api/api/actividad/'
+      `${BASEURL}/actividad/`,
+      {
+        params: filtro ? { filtro } : {},
+      }
     );
     return response.data;
   } catch (error) {
