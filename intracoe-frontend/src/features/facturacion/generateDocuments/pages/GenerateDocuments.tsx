@@ -86,7 +86,7 @@ export const GenerateDocuments = () => {
   const [nombreResponsable, setNombreResponsable] = useState<string>("")
   const [docResponsable, setDocResponsable] = useState<string>("")
   const [tipoTransmision, setTipoTransmision] = useState<string>("")
-
+  const [descuentosProducto, setDescuentosProducto] = useState<string[]>([]);
   const navigate = useNavigate();
   const toastRef = useRef<CustomToastRef>(null);
 
@@ -103,22 +103,29 @@ export const GenerateDocuments = () => {
     });
   };
 
-  useEffect(()=>{
+  useEffect(() => {
     handleMontoPagar()
-  },[listProducts, idListProducts])
+  }, [listProducts, idListProducts])
 
   const handleMontoPagar = () => {
     let aux = 0;
     selectedProducts.map((pago) => {
-      console.log("**************",pago.total_con_iva)
       aux = aux + (pago.total_con_iva);
     });
     setTotalAPagar(aux)
   };
 
-  useEffect(()=>{
-    console.log("PPPPPPPPPPPPPPPPP",selectedProducts)
-  },[selectedProducts])
+  useEffect(() => {
+    const descuentosAux: string[] = selectedProducts.map(producto => {
+      // Si no tiene descuento, usamos 0
+      const porcentaje: number = producto.descuento?.porcentaje ?? 0;
+      // toFixed(2) devuelve un string con dos decimales
+      return porcentaje.toFixed(2).replace(".", ",");
+    });
+  
+    setDescuentosProducto(descuentosAux);
+  }, [selectedProducts]);
+  
 
   const generarFactura = async () => {
     console.log(descuentoItem)
@@ -131,13 +138,14 @@ export const GenerateDocuments = () => {
       telefono_receptor: receptor.telefono,
       correo_receptor: receptor.correo,
       tipo_item_select: 1, //TODO: obtener segun la lista de productos de forma dinamica (bien o servicio)
-      descuento_select: '0.00', //TODO: Descuento por item
+      // descuento_select: descuentosProducto, //TODO: Implementar con cambios pendiente de la api
+      descuento_select: "0.00",
       tipo_documento_seleccionado: tipoDocumentoSelected, //tipo DTE
       condicion_operacion: selectedCondicionDeOperacion, //contado, credito, otros
       observaciones: observaciones,
       productos_ids: idListProducts,
       cantidades: cantidadListProducts, //cantidad de cada producto de la factura
-      monto_fp: handleMontoPagar(),
+      monto_fp: totalAPagar.toFixed(2),
       num_ref: null,
       no_gravado: baseImponible,
       retencion_iva: tieneRetencionIva,
@@ -150,27 +158,24 @@ export const GenerateDocuments = () => {
       retencion_renta: tieneRetencionRenta,
       nombre_responsable: nombreResponsable || null,
       doc_responsable: docResponsable || null,
-      tipotransmision: tipoTransmision
+      tipotransmision: tipoTransmision,
     };
-
 
     console.log('dataFECF', dataFECF);
 
-
-    // try {
-    //   const response = await generarFacturaService(dataFECF);
-    //   firmarFactura(response.factura_id);
-
-    // } catch (error) {
-    //   console.log(error);
-    // }
+    try {
+      const response = await generarFacturaService(dataFECF);
+      firmarFactura(response.factura_id);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const firmarFactura = async (id: string) => {
     try {
       if (id) {
         await FirmarFactura(id);
-        // navigate(`/factura/${id}`);
+        navigate(`/factura/${id}`);
       }
     } catch (error) {
       console.log(error);
