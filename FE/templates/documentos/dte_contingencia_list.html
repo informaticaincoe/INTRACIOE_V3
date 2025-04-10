@@ -45,137 +45,123 @@
 <button id="btnContingenciaSeleccionadas" class="btn btn-danger mb-3">Enviar Contingencias seleccionadas</button>
 
 <!-- Botón para enviar lotes de contingencia -->
-<button id="btnLoteContingencia" class="btn btn-danger mb-3">Generar Lotes</button>
+<button id="btnLoteContingencia" class="btn btn-danger mb-3">Enviar Lotes</button>
 
 <!-- Tabla de Contingencias -->
 <form id="formContingenciaFacturas">
-<div class="table-responsive">
+  <div class="table-responsive">
     <table class="table table-striped">
-    <thead class="table-dark">
+      <thead class="table-dark">
         <tr>
-        <th>
-            <!-- Checkbox para seleccionar/des-seleccionar todas -->
-            <input type="checkbox" id="seleccionarTodo">
-        </th>
-        <th>Estado</th>
-        <th>Codigo de Generacion</th>
-        <th>Tipo de Factura</th>
-        <th>Sello Recepcion</th>
-        <th>Fecha de Emisión</th>
-        <th>Total Factura</th>
-        <th>IVA</th>
-        <th>Recibido por Hacienda</th>
-        <th>Acciones</th>
+          <th colspan="12" style="text-align: center;">Contingencias</th>
         </tr>
-    </thead>
-    <tbody>
-        {% for contingencia in dtelist %}
         <tr>
-        <td>
-            {% if contingencia.sello_recepcion is null %}
-                <input type="checkbox" name="contingencia_ids" value="{{ contingencia.id }}">
-            {% endif %}
-        </td>
-        <td>
-            {% if contingencia.sello_recepcion is not null %}
-                <i class="fa fa-check text-success" title="Procesada"></i>
+          <th><input type="checkbox" id="seleccionarTodo"></th>
+          <th>Estado</th>
+          <th></th>
+          <th>Codigo de Generacion</th>
+          <th>Sello Recibido</th>
+          <th>Total Facturas</th>
+          <th>Generar Lote</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for grupo in dtelist %}
+        <tr>
+          <td><input type="checkbox" name="contingencia_ids" value="{{ grupo.id }}"></td>
+          <td>
+            {% if grupo.estado and grupo.sello_recepcion is not null %}
+              <i class="fa fa-check text-success"></i>
             {% else %}
-                <i class="fa fa-ban text-danger" title="Contingencia"></i>
+              <i class="fa fa-ban text-danger"></i>
             {% endif %}
-        </td>
-        <td>{{ contingencia.codigo_generacion }}</td>
-        <td>
-            {% if contingencia.factura.tipo_dte.codigo == "03" %}
-            CCF
-            {% elif contingencia.factura.tipo_dte.codigo == "01" %}
-            FE
-            {% else %}
-            {{ contingencia.factura.tipo_dte.codigo }}
+          </td>
+          <td>
+            {% if grupo.eventos_contingencia.count > 0 %}
+              <button class="btn btn-sm btn-link toggle-accordion" type="button" data-target="#accordion-{{ forloop.counter }}">
+                ➕
+              </button>
             {% endif %}
-        </td>
-        <td>{{ contingencia.sello_recepcion }}</td>
-        <td>{{ contingencia.fecha_transmicion }}</td>
-        <td>{{ contingencia.factura.total_pagar }}</td>
-        <td>{{ contingencia.factura.total_iva }}</td>
-        <td>{% if contingencia.recibido_mh %}Sí{% else %}No{% endif %}</td>
-        <td>
-            <!-- Acción individual (opcional) -->
-            {% if contingencia_recibida_mh == False %}
-                <a href="{% url 'contingencia_dte_unificado' contingencia.id %}" class="btn btn-sm btn-secondary btn-invalidar" data-contingencia-id="{{ contingencia.id }}">Enviar Contingencia</a>
+          </td>
+          <td>{{ grupo.codigo_generacion }}</td>
+          <td>{{ grupo.sello_recepcion }}</td>
+          <td>{{ grupo.factura.count }}</td>
+          <td>
+            {% if grupo.sello_recepcion is not None %}
+              <a href="{% url 'lote_contingencia_dte' grupo.id %}" class="btn btn-sm btn-secondary">Generar</a>
             {% endif %}
-        </td>
+          </td>
         </tr>
-        {% empty %}
-        <tr>
-        <td colspan="10" class="text-center">No se encontraron facturas.</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-    </table>
-</div>
-</form>
 
-<!-- Tabla de Lotes -->
-<form id="formContingenciaLotes">
-    <div class="table-responsive">
-        <table class="table table-striped">
-        <thead class="table-dark">
-            <tr>
-            <th>
-                <!-- Checkbox para seleccionar/des-seleccionar todas -->
-                <input type="checkbox" id="seleccionarTodosLote">
-            </th>
-            <th>Estado</th>
-            <th>Lotes</th>
-            <th>Recibido por Hacienda</th>
-            <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for contingencia in dtelist %}
-            <tr>
-            <td>
-                {% if contingencia.sello_recepcion is null %}
-                    <input type="checkbox" name="contingencia_ids" value="{{ contingencia.id }}">
-                {% endif %}
+        <!-- Fila oculta que se expande -->
+        {% if grupo.factura.count > 0 %}
+          <tr class="accordion-row" id="accordion-{{ forloop.counter }}" style="display: none;">
+            <td colspan="12">
+
+              {% for lote in grupo.eventos_contingencia.all %}
+              <table class="table table-bordered mb-4">
+                <thead>
+                  <tr>
+                    <th colspan="12" class="text-center">ID: {{ lote.id }} | Cantidad Facturas: {{ lote.cantidad_lote }}</th>
+                  </tr>
+                  <tr>
+                    <th><input type="checkbox" id="seleccionarLoteTodo"></th>
+                    <th>Estado</th>
+                    <th>Tipo DTE</th>
+                    <th>Total</th>
+                    <th>Fecha</th>
+                    <th>Codigo Generación</th>
+                    <th>Sello</th>
+                    <th>Enviar Lote MH</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for evento in lote.eventocontingencia.all %}
+                    {% for factura in grupo.eventos_contingencia.all  %}
+                    <tr>
+                      <td><input type="checkbox" name="factura_ids" value="{{ factura.id }}"></td>
+                      <td>
+                        {% if factura.estado and factura.sello_recepcion %}
+                          <i class="fa fa-check text-success"></i>
+                        {% else %}
+                          <i class="fa fa-ban text-danger"></i>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if factura.tipo_dte.codigo == "03" %} CCF
+                        {% elif factura.tipo_dte.codigo == "01" %} FE
+                        {% else %} {{ factura.tipo_dte.codigo }}
+                        {% endif %}
+                      </td>
+                      <td>{{ factura.total_pagar }}</td>
+                      <td>{{ evento.fecha_transmicion }}</td>
+                      <td>{{ factura.codigo_generacion }}</td>
+                      <td>{{ factura.sello_recepcion }}</td>
+                      <td>
+                        {% if not factura.recibido_mh and not factura.sello_recepcion %}
+                          <form method="POST" action="{% url 'envio_dte_unificado' factura.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-secondary">Enviar</button>
+                          </form>
+                        {% endif %}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  {% endfor %}
+                </tbody>
+              </table>
+              {% empty %}
+              <p class="text-muted">Este evento aún no tiene lotes asignados.</p>
+              {% endfor %}
             </td>
-            <td>
-                {% if contingencia.sello_recepcion is not null %}
-                    <i class="fa fa-check text-success" title="Procesada"></i>
-                {% else %}
-                    <i class="fa fa-ban text-danger" title="Contingencia"></i>
-                {% endif %}
-            </td>
-            <td>{{ contingencia.codigo_generacion }}</td>
-            <td>
-                {% if contingencia.factura.tipo_dte.codigo == "03" %}
-                CCF
-                {% elif contingencia.factura.tipo_dte.codigo == "01" %}
-                FE
-                {% else %}
-                {{ contingencia.factura.tipo_dte.codigo }}
-                {% endif %}
-            </td>
-            <td>{{ contingencia.sello_recepcion }}</td>
-            <td>{{ contingencia.fecha_transmicion }}</td>
-            <td>{{ contingencia.factura.total_pagar }}</td>
-            <td>{{ contingencia.factura.total_iva }}</td>
-            <td>{% if contingencia.recibido_mh %}Sí{% else %}No{% endif %}</td>
-            <td>
-                <!-- Acción individual (opcional) -->
-                {% if contingencia_recibida_mh == False %}
-                    <a href="{% url 'contingencia_dte_unificado' contingencia.id %}" class="btn btn-sm btn-secondary btn-invalidar" data-contingencia-id="{{ contingencia.id }}">Enviar Contingencia</a>
-                {% endif %}
-            </td>
-            </tr>
-            {% empty %}
-            <tr>
-            <td colspan="10" class="text-center">No se encontraron facturas.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-        </table>
-    </div>
+          </tr>
+          {% endif %}
+
+
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </form>
 
 <!-- Modal para mostrar respuesta -->
@@ -253,7 +239,7 @@ document.addEventListener('DOMContentLoaded', function(){
     const form = document.getElementById('formContingenciaFacturas');
     const formData = new FormData(form);
 
-    fetch("{% url 'lote_contingencias_dte' %}", {
+    fetch("{% url 'contingencias_dte' %}", {
       method: 'POST',
       body: formData,
       headers: {
@@ -264,24 +250,87 @@ document.addEventListener('DOMContentLoaded', function(){
     })
     .then(response => response.json())
     .then(data => {
-       console.log("Respuesta:", data);
-       let htmlResultado = '';
-       if (data.results && data.results.length) {
-         data.results.forEach(result => {
-           htmlResultado += `<p><strong>Contingencia ${result.contingencia_id}:</strong> ${result.mensaje}<br><small>${JSON.stringify(result.detalle)}</small></p>`;
-         });
-       } else {
-         htmlResultado = "<p>No se recibió respuesta.</p>";
-       }
-       document.getElementById('resultadoContingencia').innerHTML = htmlResultado;
-       const myModal = new bootstrap.Modal(document.getElementById('respuestaModal'));
-       myModal.show();
+      console.log("Respuesta:", data);
+      let htmlResultado = '';
+      if (data.results && data.results.length) {
+        data.results.forEach(result => {
+          htmlResultado += `<p><strong>Contingencia ${result.contingencia_id}:</strong> ${result.mensaje}<br><small>${JSON.stringify(result.detalle)}</small></p>`;
+        });
+      } else {
+        htmlResultado = "<p>No se recibió respuesta.</p>";
+      }
+      document.getElementById('resultadoContingencia').innerHTML = htmlResultado;
+      const myModal = new bootstrap.Modal(document.getElementById('respuestaModal'));
+      myModal.show();
     })
     .catch(error => {
-       console.error('Error:', error);
+      console.error('Error:', error);
+    });
+  });
+});
+
+//Enviar lotes
+document.addEventListener('DOMContentLoaded', function(){
+  // Seleccionar/des-seleccionar todos los checkboxes
+  const seleccionarLoteTodo = document.getElementById('seleccionarLoteTodo');
+  seleccionarLoteTodo.addEventListener('change', function(){
+    const checkboxes = document.querySelectorAll('input[name="factura_ids"]');
+    checkboxes.forEach(chk => chk.checked = seleccionarLoteTodo.checked);
+  });
+
+  // Manejar el click en el botón "Anular seleccionadas"
+  const btnLoteContingencia = document.getElementById('btnLoteContingencia');
+  console.log("Lotes: ", btnLoteContingencia)
+  btnLoteContingencia.addEventListener('click', function(e){
+    e.preventDefault();
+    const form = document.getElementById('formContingenciaFacturas');
+    const formData = new FormData(form);
+    console.log("Form: ", formData)
+    fetch("{% url 'lotes_dte' %}", {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        // Si usas CSRF token, inclúyelo; por ejemplo:
+        'X-CSRFToken': '{{ csrf_token }}'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log("Respuesta:", data);
+      let htmlResultado = '';
+      if (data.results && data.results.length) {
+        data.results.forEach(result => {
+          htmlResultado += `<p><strong>Factura ${result.factura_id}:</strong> ${result.mensaje}<br><small>${JSON.stringify(result.detalle)}</small></p>`;
+        });
+      } else {
+        htmlResultado = "<p>No se recibió respuesta.</p>";
+      }
+      document.getElementById('resultadoContingencia').innerHTML = htmlResultado;
+      const myModal = new bootstrap.Modal(document.getElementById('respuestaModal'));
+      myModal.show();
+    })
+    .catch(error => {
+      console.error('Error:', error);
     });
   });
 });
 </script>
+
+<script>
+    document.querySelectorAll('.toggle-accordion').forEach(button => {
+      button.addEventListener('click', () => {
+        const targetId = button.getAttribute('data-target');
+        const row = document.querySelector(targetId);
+        if (row.style.display === 'none') {
+          row.style.display = 'table-row';
+          button.textContent = '➖';
+        } else {
+          row.style.display = 'none';
+          button.textContent = '➕';
+        }
+      });
+    });
+  </script>
 
 {% endblock %}
