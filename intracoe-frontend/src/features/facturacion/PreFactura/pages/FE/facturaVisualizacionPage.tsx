@@ -93,6 +93,7 @@ export const FacturaVisualizacionPage = () => {
   const navigate = useNavigate();
   const { targetRef } = usePDF({ filename: 'page.pdf' });
   const toastRef = useRef<CustomToastRef>(null);
+  const [qrCode, setQrCode] = useState<string>("")
 
   const handleAccion = (
     severity: ToastSeverity,
@@ -148,6 +149,7 @@ export const FacturaVisualizacionPage = () => {
         setExtension(response.extension);
         setPagoEnLetras(response.pagoEnLetras);
         fetchCondicionOperacionDescripcion(response.condicionOpeacion);
+        setQrCode(`https://admin.factura.gob.sv/consultaPublica?ambiente=${response.ambiente}&codGen=${response.datosFactura.codigoGeneracion.toUpperCase()}&fechaEmi=${response.datosFactura.fechaEmision}`)
       }
     } catch (error) {
       console.log(error);
@@ -197,7 +199,7 @@ export const FacturaVisualizacionPage = () => {
           className="my-2 flex flex-col gap-5 bg-white px-10 py-8"
           ref={targetRef}
         >
-          <InformacionEmisor emisor={emisor} datosFactura={datosFactura} />
+          <InformacionEmisor qrCode={qrCode} emisor={emisor} datosFactura={datosFactura} />
           <InformacionReceptor receptor={receptor} />
           <TablaVentaTerceros />
           <SeccionDocumentosRelacionados />
