@@ -469,7 +469,14 @@ class EventoContingencia(models.Model):
         return f"Contingencia {self.codigo_generacion} - {self.fecha_transmicion} - {self.hora_transmision}"
 
 class LoteContingencia(models.Model):
-    eventocontingencia = models.ForeignKey(EventoContingencia, on_delete=models.CASCADE, null=True, unique=True)
+    eventocontingencia = models.ManyToManyField(EventoContingencia, related_name='eventos_contingencia', blank=True)
     recibido_mh = models.BooleanField(default=False)
     estado = models.BooleanField(default=False)
-    lote = models.IntegerField(null=True, verbose_name=None)
+    cantidad_lote = models.IntegerField(null=True, verbose_name=None)
+    #factura_lotes = models.ManyToManyField(FacturaElectronica, related_name='lotes_contingencia', blank=True)
+    
+    #Auditoria
+    fecha_transmicion = models.DateField(auto_now_add=True, null=True) #fInicio
+    hora_transmision = models.TimeField(auto_now_add=True, null=True)
+    fecha_modificacion = models.DateField(auto_now_add=True, null=True)
+    hora_modificacion = models.TimeField(auto_now_add=True, null=True)

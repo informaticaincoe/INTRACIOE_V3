@@ -71,5 +71,10 @@ urlpatterns = [
     #Contingencia
     path('listar_contingencias/', views.contingencia_list, name='listar_contingencias'),
     path('contingencia-dte/<int:contingencia_id>/', views.contingencia_dte_unificado_view, name='contingencia_dte_unificado'),
-    path('enviar-lote-contingencias-dte/', views.lote_contingencias_dte_view, name='lote_contingencias_dte'),
+    path('enviar-contingencias-dte/', views.contingencias_dte_view, name='contingencias_dte'),
+    
+    #Lotes
+    path('lote-contingencia-dte/<int:contingencia_id>/', views.lote_contingencia_dte_view, name='lote_contingencia_dte'),
+    path('enviar-lote-unificado/<int:factura_id>/', views.envio_dte_unificado_view, name='envio_dte_unificado'),
+    path('enviar-lotes/', views.lotes_dte_view, name='lotes_dte'),
 ]
