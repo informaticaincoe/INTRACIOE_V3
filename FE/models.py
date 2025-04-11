@@ -451,7 +451,7 @@ class EventoContingencia(models.Model):
     fecha_modificacion = models.DateField(auto_now_add=True, null=True)
     hora_modificacion = models.TimeField(auto_now_add=True, null=True)
     estado = models.BooleanField(default=False) #manejar estado de envio de contingencia a MH
-    factura = models.ManyToManyField(FacturaElectronica, related_name='detalles_dte', blank=True)
+    factura = models.ManyToManyField(FacturaElectronica, related_name='eventos', blank=True)
     tipo_contingencia = models.ForeignKey(TipoContingencia, on_delete=models.CASCADE, null=True)
     #En el campo motivo_contingencia el contribuyente podra definir la razon de la contingencia, si el tipo de contingencia es 5, este campo sera obligatorio
     #motivo_contingencia = models.CharField(max_length=500, blank=True, null=True)# agregarlo en tabla cat-005
@@ -469,7 +469,7 @@ class EventoContingencia(models.Model):
         return f"Contingencia {self.codigo_generacion} - {self.fecha_transmicion} - {self.hora_transmision}"
 
 class LoteContingencia(models.Model):
-    eventocontingencia = models.ManyToManyField(EventoContingencia, related_name='eventos_contingencia', blank=True)
+    eventocontingencia = models.ManyToManyField(EventoContingencia, related_name='lotes', blank=True)
     recibido_mh = models.BooleanField(default=False)
     estado = models.BooleanField(default=False)
     cantidad_lote = models.IntegerField(null=True, verbose_name=None)
