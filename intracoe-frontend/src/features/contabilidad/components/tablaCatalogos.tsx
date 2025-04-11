@@ -12,6 +12,7 @@ export const TablaCatalogos: React.FC<TablaCatalogosProp> = ({ setActivities, fi
         <>
             <div>TablaCatalogos</div>
             <HeaderTable
+                setActivities={setActivities}
                 filterTerm={filterTerm}
                 setFilterTerm={setFilterTerm}
             />
