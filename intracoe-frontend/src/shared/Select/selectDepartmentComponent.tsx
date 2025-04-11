@@ -3,30 +3,27 @@ import { Dropdown } from 'primereact/dropdown';
 import { getAllDepartamentos } from '../../features/bussiness/configBussiness/services/ubicacionService';
 
 interface SelectDeparmentInterface {
-  department: any;
-  setDepartment: any;
+  setDepartamentoSelect:any
+  departamentoSelect: any;
 }
 export const SelectDepartmentComponent: React.FC<SelectDeparmentInterface> = ({
-  department,
-  setDepartment,
+  setDepartamentoSelect,
+  departamentoSelect,
 }) => {
   const [departmentList, setDepartmentList] = useState<any[]>([]);
 
   useEffect(() => {
     fetchDepartaments();
   }, []);
+  
+  useEffect(() => {
+   console.log(departamentoSelect)
+  }, [departamentoSelect]);
 
   const fetchDepartaments = async () => {
     try {
       const response = await getAllDepartamentos();
-      const departmentFetch = response.map(
-        (element: { id: string; descripcion: any; codigo: any }) => ({
-          id: element.id,
-          name: element.descripcion,
-          code: element.codigo,
-        })
-      );
-      setDepartmentList(departmentFetch);
+      setDepartmentList(response);
     } catch (error) {
       console.log(error);
     }
@@ -35,11 +32,12 @@ export const SelectDepartmentComponent: React.FC<SelectDeparmentInterface> = ({
   return (
     <div className="justify-content-center flex">
       <Dropdown
-        value={department}
-        onChange={(e) => setDepartment(e.value)}
+        value={departamentoSelect}
+        onChange={(e)=> setDepartamentoSelect(e.value)}
         options={departmentList}
-        optionLabel="name"
-        placeholder="Seleccionar tipo de establecimiento"
+        optionLabel="descripcion"
+        optionValue='id'
+        placeholder="Seleccionar departamento"
         className="md:w-14rem font-display w-full"
         filter
       />

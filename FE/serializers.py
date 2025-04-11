@@ -1,10 +1,22 @@
 from rest_framework import serializers
 
 from .models import (
+    INCOTERMS,
     Departamento,
     Descuento,
     FormasPago,
+    OtrosDicumentosAsociado,
+    Pais,
+    Plazo,
+    TipoContingencia,
+    TipoDocContingencia,
+    TipoDomicilioFiscal,
+    TipoDonacion,
+    TipoPersona,
+    TipoRetencionIVAMH,
     TipoTransmision,
+    TipoTransporte,
+    TiposServicio_Medico,
     Token_data,
     Ambiente,
     CondicionOperacion,
@@ -38,13 +50,6 @@ class AuthResponseSerializer(serializers.Serializer):
     roles = serializers.ListField(
         child=serializers.CharField(), required=False, allow_empty=True
     )
-
-# Serializers basados en ModelSerializer para cada modelo
-
-class ActividadEconomicaSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ActividadEconomica
-        fields = ['id', 'codigo', 'descripcion']
 
 # Serializador para Emisor_fe
 class EmisorSerializer(serializers.ModelSerializer):
@@ -114,36 +119,14 @@ class EventoInvalidacionSerializer(serializers.ModelSerializer):
         model = EventoInvalidacion
         fields = '__all__'
 
-# Serializers adicionales para otros modelos
 
-class AmbienteSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Ambiente
-        fields = '__all__'
-
-class CondicionOperacionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CondicionOperacion
-        fields = '__all__'
-
-class ModelofacturacionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Modelofacturacion
-        fields = '__all__'
+##############################################################################
+# SERIALIZER PARA CATALOGOS 
+##############################################################################
 
 class NumeroControlSerializer(serializers.ModelSerializer):
     class Meta:
         model = NumeroControl
-        fields = '__all__'
-
-class TipoDteSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Tipo_dte
-        fields = '__all__'
-
-class TipoMonedaSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TipoMoneda
         fields = '__all__'
 
 class TipoUnidadMedidaSerializer(serializers.ModelSerializer):
@@ -156,28 +139,39 @@ class TipoItemSerializer(serializers.ModelSerializer):
         model = TipoItem
         fields = '__all__'
 
-class TiposDocIDReceptorSerializer(serializers.ModelSerializer):
+class TipoDteSerializer(serializers.ModelSerializer):
     class Meta:
-        model = TiposDocIDReceptor
-        fields = '__all__'
-        
-class DepartamentoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Departamento
-        fields = '__all__'
-class MunicipioSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Municipio
+        model = Tipo_dte
         fields = '__all__'
 
-class TipoInvalidacionSerializer(serializers.ModelSerializer):
+class ActividadEconomicaSerializer(serializers.ModelSerializer):
     class Meta:
-        model = TipoInvalidacion
+        model = ActividadEconomica
         fields = '__all__'
 
-class TiposEstablecimientosSerializer(serializers.ModelSerializer):
+class AmbienteSerializer(serializers.ModelSerializer):
     class Meta:
-        model = TiposEstablecimientos
+        model = Ambiente
+        fields = '__all__'
+
+class ModelofacturacionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Modelofacturacion
+        fields = '__all__'
+
+class TipoTransmisionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoTransmision
+        fields = '__all__'
+
+class TipoContingenciaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoContingencia
+        fields = '__all__'
+
+class TipoRetencionIVAMHSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoRetencionIVAMH
         fields = '__all__'
 
 class TiposGeneracionDocumentoSerializer(serializers.ModelSerializer):
@@ -185,13 +179,97 @@ class TiposGeneracionDocumentoSerializer(serializers.ModelSerializer):
         model = TipoGeneracionDocumento
         fields = '__all__'
 
-
-class TipoTransmisionSerializer(serializers.ModelSerializer):
+class TiposEstablecimientosSerializer(serializers.ModelSerializer):
     class Meta:
-        model = TipoTransmision
+        model = TiposEstablecimientos
         fields = '__all__'
-        
+
+class TiposServicio_MedicoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TiposServicio_Medico
+        fields = '__all__'
+
+class OtrosDicumentosAsociadoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OtrosDicumentosAsociado
+        fields = '__all__'
+
+class TiposDocIDReceptorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TiposDocIDReceptor
+        fields = '__all__'
+
+class PaisSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Pais
+        fields = '__all__'
+
+class DepartamentoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Departamento
+        fields = '__all__'
+
+class MunicipioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Municipio
+        fields = '__all__'
+
+class CondicionOperacionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CondicionOperacion
+        fields = '__all__'
+
 class FormasPagosSerializer(serializers.ModelSerializer):
     class Meta:
         model = FormasPago
+        fields = '__all__'
+
+class PlazoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Plazo
+        fields = '__all__'
+
+class TipoDocContingenciaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoDocContingencia
+        fields = '__all__'
+
+class TipoInvalidacionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoInvalidacion
+        fields = '__all__'
+
+class TipoDonacionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoDonacion
+        fields = '__all__'
+
+class TipoPersonaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoPersona
+        fields = '__all__'
+
+class TipoTransporteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoTransporte
+        fields = '__all__'
+
+class INCOTERMS_Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = INCOTERMS
+        fields = '__all__'
+
+class TipoDomicilioFiscalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoDomicilioFiscal
+        fields = '__all__'
+
+class TipoMonedaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoMoneda
+        fields = '__all__'
+
+class DescuentoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Descuento
         fields = '__all__'

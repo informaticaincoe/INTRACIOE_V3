@@ -189,8 +189,6 @@ class AjusteInventario(models.Model):
 
     def __str__(self):
         return f"Ajuste {self.cantidad_ajustada} {self.producto.descripcion} ({self.almacen.nombre})"
-    
-from django.db import models
 
 # MODELO PARA DEVOLUCIONES DE CLIENTES (POST-VENTA)
 class DevolucionVenta(models.Model):

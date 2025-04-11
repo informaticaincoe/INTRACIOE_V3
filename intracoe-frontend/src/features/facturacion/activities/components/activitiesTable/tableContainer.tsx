@@ -10,14 +10,15 @@ import { ActivitiesData } from '../../../../../shared/interfaces/interfaces';
 
 export const TableContainer = () => {
   const [activities, setActivities] = useState<ActivitiesData[]>([]);
+  const [filterTerm, setFilterTerm] = useState<string>('');
 
-  //consumo de api
   useEffect(() => {
-    fetchActivities();
-  }, [setActivities]);
+    fetchActivities(filterTerm);
+  }, [filterTerm]);
 
-  const fetchActivities = async () => {
-    const data = await getAllActivities();
+
+  const fetchActivities = async (filtro = '') => {
+    const data = await getAllActivities(filtro);
     setActivities(data);
   };
 
@@ -28,7 +29,11 @@ export const TableContainer = () => {
   return (
     <WhiteSectionsPage>
       <>
-        <HeaderTable setActivities={setActivities} />
+        <HeaderTable
+          setActivities={setActivities}
+          filterTerm={filterTerm}
+          setFilterTerm={setFilterTerm}
+        />
         <>
           <DataTable
             value={activities}

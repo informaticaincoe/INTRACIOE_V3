@@ -1,11 +1,11 @@
 import { Title } from '../../../../shared/text/title';
-import { StepperContainer } from '../components/configBussinessform/stepperFormContainer';
+import { FormConfigBussinessContainer } from '../components/configBussinessform/formConfigBussinessContainer';
 
 export const ConfigBussiness = () => {
   return (
     <>
       <Title text="Configurar empresa" />
-      <StepperContainer />
+      <FormConfigBussinessContainer />
     </>
   );
 };
