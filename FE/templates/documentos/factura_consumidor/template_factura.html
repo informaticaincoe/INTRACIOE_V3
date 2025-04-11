@@ -126,6 +126,9 @@
             <p class="mb-1"><strong>Sello de Recepción:</strong> {{ factura.sello_recepcion }}</p>
             <p class="mb-1"><strong>Modelo de Facturación:</strong> {{ factura.tipomodelo.nombre|default:"Previo" }}</p>
             <p class="mb-1"><strong>Tipo de Transmisión:</strong> {{ factura.json_original.identificacion.tipoTransmision }}</p>
+            {% if factura.contingencia %}
+                <p class="mb-1"><strong>Estado:</strong> Contingencia</p>
+            {% endif %}
         </div>
     </div>
 
