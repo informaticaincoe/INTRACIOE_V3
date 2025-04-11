@@ -34,7 +34,7 @@ class TipoTransmision(models.Model):
 
 class TipoContingencia(models.Model):
     codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=150)
     #En el campo motivo_contingencia el contribuyente podra definir la razon de la contingencia, si el tipo de contingencia es 5, este campo sera obligatorio
     motivo_contingencia = models.CharField(max_length=500, blank=True, null=True)
     def __str__(self):
@@ -294,6 +294,9 @@ class FacturaElectronica(models.Model):
     #RECEPTOR
     dtereceptor = models.ForeignKey(Receptor_fe, on_delete=models.CASCADE, related_name='facturas_receptor_FE')
     
+    #CONTINGENCIA
+    #dtecontingencia = models.ForeignKey(EventoContingencia, on_delete=models.CASCADE, related_name='contingencia_dte', null=True, blank=True)
+    
     #RESUMEN
     total_no_sujetas = models.DecimalField(max_digits=15, decimal_places=2, null=True)
     total_exentas = models.DecimalField(max_digits=15, decimal_places=2, null=True)
@@ -325,6 +328,7 @@ class FacturaElectronica(models.Model):
     recibido_mh = models.BooleanField(default=False)
     estado = models.BooleanField(default=False)
     contingencia = models.BooleanField(default=False)
+    contingencia_recibida_mh = models.BooleanField(default=False)
     #tipo_documento_relacionar = models.CharField(max_length=50, null=True, blank=True)#Identificar si el documento es Fisico(F) o Electronico(E)
     #documento_relacionado = models.CharField(max_length=100, null=True, blank=True)#Agregar el documento relacionado
     base_imponible = models.BooleanField(default=False)
@@ -438,7 +442,6 @@ class Token_data(models.Model):
         verbose_name = "Token Data"
         verbose_name_plural = "Token Data"
         
-
 class EventoContingencia(models.Model):
     #Identificacion
     codigo_generacion = models.UUIDField(default=uuid.uuid4, unique=True)
@@ -448,7 +451,7 @@ class EventoContingencia(models.Model):
     fecha_modificacion = models.DateField(auto_now_add=True, null=True)
     hora_modificacion = models.TimeField(auto_now_add=True, null=True)
     estado = models.BooleanField(default=False) #manejar estado de envio de contingencia a MH
-    factura = models.ForeignKey(FacturaElectronica, on_delete=models.CASCADE, related_name='detalles_dte', null=True, blank=True)
+    factura = models.ManyToManyField(FacturaElectronica, related_name='detalles_dte', blank=True)
     tipo_contingencia = models.ForeignKey(TipoContingencia, on_delete=models.CASCADE, null=True)
     #En el campo motivo_contingencia el contribuyente podra definir la razon de la contingencia, si el tipo de contingencia es 5, este campo sera obligatorio
     #motivo_contingencia = models.CharField(max_length=500, blank=True, null=True)# agregarlo en tabla cat-005
@@ -460,7 +463,20 @@ class EventoContingencia(models.Model):
     f_fin = models.DateField(auto_now_add=True, null=True)
     h_inicio = models.TimeField(auto_now_add=True, null=True)
     h_fin = models.TimeField(auto_now_add=True, null=True)
+    finalizado = models.BooleanField(default=False)
     
     def __str__(self):
         return f"Contingencia {self.codigo_generacion} - {self.fecha_transmicion} - {self.hora_transmision}"
+
+class LoteContingencia(models.Model):
+    eventocontingencia = models.ManyToManyField(EventoContingencia, related_name='eventos_contingencia', blank=True)
+    recibido_mh = models.BooleanField(default=False)
+    estado = models.BooleanField(default=False)
+    cantidad_lote = models.IntegerField(null=True, verbose_name=None)
+    #factura_lotes = models.ManyToManyField(FacturaElectronica, related_name='lotes_contingencia', blank=True)
     
+    #Auditoria
+    fecha_transmicion = models.DateField(auto_now_add=True, null=True) #fInicio
+    hora_transmision = models.TimeField(auto_now_add=True, null=True)
+    fecha_modificacion = models.DateField(auto_now_add=True, null=True)
+    hora_modificacion = models.TimeField(auto_now_add=True, null=True)

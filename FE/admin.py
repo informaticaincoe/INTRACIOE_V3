@@ -12,7 +12,7 @@ from .models import (INCOTERMS, ActividadEconomica, NumeroControl, FacturaElectr
                            TipoInvalidacion, TipoPersona, TipoTransmision, TipoContingencia, TipoRetencionIVAMH, 
                            TipoGeneracionDocumento, TipoTransporte, TiposDocIDReceptor, TiposEstablecimientos, 
                            TiposServicio_Medico, CondicionOperacion, FormasPago, Plazo,
-                            Descuento, DetalleFactura, TipoMoneda, TipoUnidadMedida, EventoInvalidacion, EventoContingencia)
+                            Descuento, DetalleFactura, TipoMoneda, TipoUnidadMedida, EventoInvalidacion, EventoContingencia, LoteContingencia)
 
 
 # Lista de todos los modelos a registrar
@@ -22,10 +22,14 @@ models = [
     TipoMoneda, TipoUnidadMedida,
 ]
 
+@admin.register(LoteContingencia)
+class LoteContingencia(admin.ModelAdmin):
+    list_display = ('id', 'recibido_mh', 'estado')
+    
 @admin.register(EventoContingencia)
 class EventoContingencia(admin.ModelAdmin):
-    list_display = ('id', 'factura', 'codigo_generacion', 'fecha_modificacion', 'hora_modificacion')
-    search_fields = ('codigo_generacion',)
+    list_display = ('id', 'codigo_generacion', 'sello_recepcion', 'finalizado', 'estado', 'fecha_modificacion', 'hora_modificacion')
+    search_fields = ('codigo_generacion', 'sello_recepcion')
 
 @admin.register(EventoInvalidacion)
 class EventoInvalidacion(admin.ModelAdmin):
