@@ -2636,6 +2636,7 @@ def agregar_docs_relacionados_ajax(request):
 ######################################################
 # GENERACION DE NOTA DE CREDITO Y DEBITO
 ######################################################
+from math import ceil
 @csrf_exempt
 @transaction.atomic
 def generar_documento_ajuste_view(request):
@@ -3229,12 +3230,57 @@ def contingencia_list(request):
     page_number = request.GET.get('page')
     dtelist = paginator.get_page(page_number)
     
+    lotes = LoteContingencia.objects.prefetch_related('eventocontingencia__factura').order_by('id')
     # Obtener todos los tipos de factura para el select del filtro
-    tipos_dte = Tipo_dte.objects.filter(codigo__in=DTE_APLICA_CONTINGENCIA)
+    lotes_por_evento = {}
+    facturas = None
+    for evento in dtelist:
+        print("Evento: ", evento)
+        facturas_repartidas = []
+        
+        lotes = LoteContingencia.objects.prefetch_related('eventocontingencia__factura').order_by('id')
+        
+        # Asociar las facturas del evento
+        evento.lotes.set(lotes) 
+        evento.facturas = facturas
+        facturas = evento.factura.all()
+        
+        for lote in evento.lotes.all():
+            
+            facturas = list(evento.factura.all())
+            if evento.id not in lotes_por_evento:
+                lotes_por_evento[evento.id] = []
+            
+            lotes_por_evento[evento.id].append({
+                'lote': lote,
+                'facturas': facturas
+            })
+            
+            for evento in lote.eventocontingencia.all():
+                facturas = list(evento.factura.all()) #Facturas asociadas al evento
+                total_lotes = evento.lotes.count()  # cuántos lotes están usando este evento
+                index = list(evento.lotes.order_by('id')).index(lote)  # posición de este lote en la lista
+                
+                # Dividimos las facturas en partes iguales entre los lotes
+                chunk_size = ceil(len(facturas) / total_lotes)
+                start = index * chunk_size
+                end = start + chunk_size
+                
+                facturas_repartidas = facturas[start:end]
+                
+                if evento.id not in lotes_por_evento:
+                    lotes_por_evento[evento.id] = []
+                    
+                lotes_por_evento[evento.id].append({
+                    'lote': lote.id,
+                    'facturas': facturas_repartidas
+                })
     
+    tipos_dte = Tipo_dte.objects.filter(codigo__in=DTE_APLICA_CONTINGENCIA)
     context = {
         'dtelist': dtelist,
-        'tipos_dte': tipos_dte
+        'tipos_dte': tipos_dte,
+        'lotes_por_evento': lotes_por_evento
     }
     return render(request, 'documentos/dte_contingencia_list.html', context)
 
