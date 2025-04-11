@@ -8,23 +8,17 @@ import Actions from './actionsTable';
 import 'primereact/resources/themes/lara-light-blue/theme.css';
 import { ActivitiesData } from '../../../../../shared/interfaces/interfaces';
 
-export const TableContainer = () => {
+interface TableContainerProp{
+  data:any
+}
+
+export const TableContainer:React.FC<TableContainerProp> = ({data}) => {
   const [activities, setActivities] = useState<ActivitiesData[]>([]);
   const [filterTerm, setFilterTerm] = useState<string>('');
 
-  useEffect(() => {
-    fetchActivities(filterTerm);
-  }, [filterTerm]);
-
-
-  const fetchActivities = async (filtro = '') => {
-    const data = await getAllActivities(filtro);
-    setActivities(data);
-  };
-
-  const onDelete = () => {
-    fetchActivities();
-  };
+  // const onDelete = () => {
+  //   fetchActivities();
+  // };
 
   return (
     <div className='px-10 py-5'>
@@ -36,7 +30,7 @@ export const TableContainer = () => {
         />
         <>
           <DataTable
-            value={activities}
+            value={data}
             paginator
             rows={5}
             rowsPerPageOptions={[5, 10, 25, 50]}
@@ -49,12 +43,12 @@ export const TableContainer = () => {
               field="descripcion"
               header={<p className="text-black">DESCRIPCIÓN</p>}
             />
-            <Column
+            {/* <Column
               header="ACCIONES"
               body={(activity: ActivitiesData) => (
                 <Actions activity={activity} onDelete={onDelete} />
               )}
-            />
+            /> */}
           </DataTable>
         </>
       </>
