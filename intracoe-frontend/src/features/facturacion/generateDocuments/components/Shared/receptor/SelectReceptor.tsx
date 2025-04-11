@@ -1,9 +1,11 @@
 import { Dropdown } from 'primereact/dropdown';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { getAllReceptor } from '../../../../../../shared/services/receptor/receptorServices';
 import { ReceptorInterface } from '../../../../../../shared/interfaces/interfaces';
 import { ModalReceptor } from './modalReceptor';
+import { FormReceptoresContainer } from '../../../../../ventas/receptores/components/form/formReceptoresContainer';
+import { Toast } from 'primereact/toast';
 
 interface StepperProps {
   receptor: ReceptorInterface;
@@ -20,10 +22,29 @@ export const SelectReceptor: React.FC<StepperProps> = ({
 }) => {
   const [receptoresList, setReceptoreLists] = useState<ReceptorInterface[]>([]);
   const [visibleModal, setVisibleModal] = useState(false);
+  const [updateReceptores, setUpdateReceptores] = useState(false)
+  const toast = useRef<Toast>(null);
 
   useEffect(() => {
     fetchReceptores();
   }, []);
+
+  const handleModalSuccess = () => {
+    toast.current?.show({ 
+      severity: 'success', 
+      summary: 'Receptor creado', 
+      detail: 'Se ha guardado correctamente', 
+      life: 3000 
+    });
+    setVisibleModal(false);
+    setUpdateReceptores(prev => !prev);
+  };
+
+  useEffect(() => {
+    fetchReceptores();
+    setVisibleModal(false)
+    console.log("dentro", visibleModal)
+  }, [updateReceptores]);
 
   const fetchReceptores = async () => {
     try {
@@ -56,6 +77,7 @@ export const SelectReceptor: React.FC<StepperProps> = ({
             optionLabel="nombre"
             placeholder="Seleccione un receptor"
             className={`font-display w-full text-start ${errorReceptor ? 'p-invalid' : ''} `}
+            filter 
           />
           <button
             className="bg-primary-blue rounded-md px-5 py-2 text-nowrap text-white hover:cursor-pointer"
@@ -68,20 +90,18 @@ export const SelectReceptor: React.FC<StepperProps> = ({
           <p className="text-red">Campo receptor no debe estar vacio</p>
         )}
       </div>
+      
+      <Toast ref={toast} />
       <Dialog
-        header={<p className="text-xl">Nuevo receptor</p>}
         visible={visibleModal}
         modal
-        style={{ width: 'auto' }}
+        style={{ width: '60vw', margin:0, padding:0 }}
         onHide={() => {
           if (!visibleModal) return;
           setVisibleModal(false);
         }}
       >
-        <ModalReceptor
-          setReceptoreLists={setReceptoreLists}
-          receptoresList={receptoresList}
-        />
+        <FormReceptoresContainer className='mr-0 ml-0 mt-0 mb-0' onSuccess={handleModalSuccess}/>
       </Dialog>
     </>
   );

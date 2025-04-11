@@ -5,15 +5,18 @@ import { Layout } from './layout/layout';
 import { Dashboard } from './features/dashboard/pages/dashboard';
 import { ActivitiesPage } from './features/facturacion/activities/pages/activitiesPage';
 import { GenerateDocuments } from './features/facturacion/generateDocuments/pages/GenerateDocuments';
-import { ProductsPage } from './features/bussiness/products/pages/productsPage';
 import { UploadExcelPage } from './features/facturacion/activities/pages/uploadExcelPage';
 import { ConfigBussiness } from './features/bussiness/configBussiness/pages/ConfigBussiness';
 import { FacturaVisualizacionPage } from './features/facturacion/PreFactura/pages/FE/facturaVisualizacionPage';
 import { ListadoFacturas } from './features/facturacion/Listadofacturas/pages/listadoFacturas';
-import { NuevoProductoPage } from './features/bussiness/products/pages/nuevoProductoPage';
-import { ServicioPage } from './features/bussiness/servicios/pages/servicioPage';
 import { GenerarDocumentosAjuste } from './features/facturacion/generateDocuments/pages/generarDocumentosAjuste';
-import { ReceptoresPage } from './features/bussiness/receptores/pages/receptoresPage';
+import { ProductsPage } from './features/inventario/products/pages/productsPage';
+import { NuevoProductoPage } from './features/inventario/products/pages/nuevoProductoPage';
+import { ServicioPage } from './features/inventario/servicios/pages/servicioPage';
+import { ReceptoresPage } from './features/ventas/receptores/pages/receptoresPage';
+import { NuevoServiciopage } from './features/inventario/servicios/pages/nuevoServiciopage';
+import { NuevoReceptorPage } from './features/ventas/receptores/pages/nuevoReceptorsPage';
+import { CatalogosPage } from './features/contabilidad/pages/catalogosPage';
 
 function App() {
   return (
@@ -29,11 +32,15 @@ function App() {
           <Route path="/productos" element={<ProductsPage />} />
           <Route path="/productos/nuevo" element={<NuevoProductoPage />} />
           <Route path="/producto/:id" element={<NuevoProductoPage />} />
-          <Route path="/servicios" element={<ServicioPage />} />
           <Route path="/listado-facturas" element={<ListadoFacturas />} />
           <Route path="/servicios" element={<ServicioPage />} />
+          <Route path="/servicio/nuevo" element={<NuevoServiciopage />} />
+          <Route path="/servicio/:id" element={<NuevoServiciopage />} />
           <Route path="/empresa" element={<ConfigBussiness />} />
           <Route path="/receptores" element={<ReceptoresPage />}/>
+          <Route path="/catalogos" element={<CatalogosPage />}/>
+          <Route path="/receptor/nuevo" element={<NuevoReceptorPage />} />
+          <Route path="/receptor/:id" element={<NuevoReceptorPage />} />
           <Route path="/uploadExcel" element={<UploadExcelPage />} />
         </Route>
       </Routes>

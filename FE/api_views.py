@@ -14,12 +14,26 @@ from rest_framework import status
 from FE.views import enviar_factura_invalidacion_hacienda_view, firmar_factura_anulacion_view, invalidacion_dte_view, generar_json, num_to_letras, agregar_formas_pago_api, generar_json_contingencia, generar_json_doc_ajuste
 from INVENTARIO.serializers import DescuentoSerializer
 
-from .serializers import ActividadEconomicaSerializer, AmbienteSerializer, CondicionOperacionSerializer, DepartamentoSerializer, FacturaListSerializer, FormasPagosSerializer, ModelofacturacionSerializer, MunicipioSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, TipoDteSerializer, TipoTransmisionSerializer, TiposDocIDReceptorSerializer, TiposEstablecimientosSerializer, TiposGeneracionDocumentoSerializer 
+from .serializers import (
+    AmbienteSerializer, FacturaListSerializer, 
+    FormasPagosSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, 
+    TipoDteSerializer, TiposGeneracionDocumentoSerializer,
+
+    ActividadEconomicaSerializer, ModelofacturacionSerializer,
+    TipoTransmisionSerializer, TipoContingenciaSerializer, TipoRetencionIVAMHSerializer,
+    TiposEstablecimientosSerializer, TiposServicio_MedicoSerializer,
+    OtrosDicumentosAsociadoSerializer, TiposDocIDReceptorSerializer,
+    PaisSerializer, DepartamentoSerializer, MunicipioSerializer, CondicionOperacionSerializer,                                                                                                                                                                                             
+    PlazoSerializer, TipoDocContingenciaSerializer, TipoInvalidacionSerializer,
+    TipoDonacionSerializer, TipoPersonaSerializer, TipoTransporteSerializer, INCOTERMS_Serializer,
+    TipoDomicilioFiscalSerializer, TipoMonedaSerializer, DescuentoSerializer
+
+    )
 from .models import (
-    ActividadEconomica, Departamento, Emisor_fe, Municipio, Receptor_fe, FacturaElectronica, DetalleFactura,
+    INCOTERMS, ActividadEconomica, Departamento, Emisor_fe, Municipio, OtrosDicumentosAsociado, Pais, Receptor_fe, FacturaElectronica, DetalleFactura,
     Ambiente, CondicionOperacion, Modelofacturacion, NumeroControl,
-    Tipo_dte, TipoGeneracionDocumento, TipoMoneda, TipoTransmision, TipoUnidadMedida, TiposDocIDReceptor, EventoInvalidacion, 
-    Receptor_fe, TipoInvalidacion, TiposEstablecimientos, Token_data, Descuento, FormasPago, TipoGeneracionDocumento, Plazo
+    Tipo_dte, TipoContingencia, TipoDocContingencia, TipoDomicilioFiscal, TipoDonacion, TipoGeneracionDocumento, TipoMoneda, TipoPersona, TipoRetencionIVAMH, TipoTransmision, TipoTransporte, TipoUnidadMedida, TiposDocIDReceptor, EventoInvalidacion, 
+    Receptor_fe, TipoInvalidacion, TiposEstablecimientos, TiposServicio_Medico, Token_data, Descuento, FormasPago, TipoGeneracionDocumento, Plazo
 )
 from INVENTARIO.models import Producto, TipoItem, TipoTributo, Tributo, UnidadMedida
 from django.db.models import Q
@@ -63,7 +77,7 @@ productos_ids_r = []
 cantidades_prod_r = []
 
 ######################################################
-# AUTENTICACION
+# AUTENTICACION CON MH
 ######################################################
 
 class AutenticacionAPIView(APIView):
@@ -192,35 +206,601 @@ def autenticacion(request):
     return render(request, "autenticacion.html", {'tokens':tokens_saves})
 
 ######################################################
-# ACTIVIDADES ECONOMICAS
+######################################################
+# CATALOGO:
+######################################################
 ######################################################
 
-# Vista para obtener el detalle de una Actividad Económica
+
+# ========= ACTIVIDAD ECONOMICA =========
 class ActividadEconomicaListAPIView(generics.ListAPIView):
-    queryset = ActividadEconomica.objects.all()
-    serializer_class = ActividadEconomicaSerializer
+
+    def get_queryset(self):
+        queryset = ActividadEconomica.objects.all()
+        filtro = self.request.query_params.get('filtro')
+
+        if filtro:
+            queryset = queryset.filter(
+                Q(codigo__icontains=filtro) |
+                Q(descripcion__icontains=filtro)
+            )
+        return queryset
     
-class ActividadEconomicaDetailAPIView(generics.RetrieveAPIView):
-    queryset = ActividadEconomica.objects.all()
     serializer_class = ActividadEconomicaSerializer
 
-# Vista para crear una nueva Actividad Económica
 class ActividadEconomicaCreateAPIView(generics.CreateAPIView):
     queryset = ActividadEconomica.objects.all()
     serializer_class = ActividadEconomicaSerializer
 
-# Vista para actualizar una Actividad Económica existente
+class ActividadEconomicaRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = ActividadEconomica.objects.all()
+    serializer_class = ActividadEconomicaSerializer
+
 class ActividadEconomicaUpdateAPIView(generics.UpdateAPIView):
     queryset = ActividadEconomica.objects.all()
     serializer_class = ActividadEconomicaSerializer
 
-# Vista para eliminar una Actividad Económica
-class ActividadEconomicaDeleteAPIView(generics.DestroyAPIView):
+class ActividadEconomicaDestroyAPIView(generics.DestroyAPIView):
     queryset = ActividadEconomica.objects.all()
     serializer_class = ActividadEconomicaSerializer
 
+# ========= AMBIENTE =========
+class AmbienteListAPIView(generics.ListAPIView):
+    queryset = Ambiente.objects.all()
+    serializer_class = AmbienteSerializer
+
+class AmbienteCreateAPIView(generics.CreateAPIView):
+    queryset = Ambiente.objects.all()
+    serializer_class = AmbienteSerializer
+
+class AmbienteRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = Ambiente.objects.all()
+    serializer_class = AmbienteSerializer
+
+class AmbienteUpdateAPIView(generics.UpdateAPIView):
+    queryset = Ambiente.objects.all()
+    serializer_class = AmbienteSerializer
+
+class AmbienteDestroyAPIView(generics.DestroyAPIView):
+    queryset = Ambiente.objects.all()
+    serializer_class = AmbienteSerializer
+
+# ========= MODELO FACTURACION =========
+class ModelofacturacionListAPIView(generics.ListAPIView):
+    queryset = Modelofacturacion.objects.all()
+    serializer_class = ModelofacturacionSerializer
+
+class ModelofacturacionCreateAPIView(generics.CreateAPIView):
+    queryset = Modelofacturacion.objects.all()
+    serializer_class = ModelofacturacionSerializer
+
+class ModelofacturacionRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = Modelofacturacion.objects.all()
+    serializer_class = ModelofacturacionSerializer
+
+class ModelofacturacionUpdateAPIView(generics.UpdateAPIView):
+    queryset = Modelofacturacion.objects.all()
+    serializer_class = ModelofacturacionSerializer
+
+class ModelofacturacionDestroyAPIView(generics.DestroyAPIView):
+    queryset = Modelofacturacion.objects.all()
+    serializer_class = ModelofacturacionSerializer
+
+# ========= TIPO TRANSMISION =========
+class TipoTransmisionListAPIView(generics.ListAPIView):
+    queryset = TipoTransmision.objects.all()
+    serializer_class = TipoTransmisionSerializer
+
+class TipoTransmisionCreateAPIView(generics.CreateAPIView):
+    queryset = TipoTransmision.objects.all()
+    serializer_class = TipoTransmisionSerializer
+
+class TipoTransmisionRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = TipoTransmision.objects.all()
+    serializer_class = TipoTransmisionSerializer
+
+class TipoTransmisionUpdateAPIView(generics.UpdateAPIView):
+    queryset = TipoTransmision.objects.all()
+    serializer_class = TipoTransmisionSerializer
+
+class TipoTransmisionDestroyAPIView(generics.DestroyAPIView):
+    queryset = TipoTransmision.objects.all()
+    serializer_class = TipoTransmisionSerializer
+
+# ========= TIPO CONTINGENCIA =========
+class TipoContingenciaListAPIView(generics.ListAPIView):
+    queryset = TipoContingencia.objects.all()
+    serializer_class = TipoContingenciaSerializer
+
+class TipoContingenciaCreateAPIView(generics.CreateAPIView):
+    queryset = TipoContingencia.objects.all()
+    serializer_class = TipoContingenciaSerializer
+
+class TipoContingenciaRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = TipoContingencia.objects.all()
+    serializer_class = TipoContingenciaSerializer
+
+class TipoContingenciaUpdateAPIView(generics.UpdateAPIView):
+    queryset = TipoContingencia.objects.all()
+    serializer_class = TipoContingenciaSerializer
+
+class TipoContingenciaDestroyAPIView(generics.DestroyAPIView):
+    queryset = TipoContingencia.objects.all()
+    serializer_class = TipoContingenciaSerializer
+
+# ========= TIPO RETENCION IVA MH =========
+class TipoRetencionIVAMHListAPIView(generics.ListAPIView):
+    queryset = TipoRetencionIVAMH.objects.all()
+    serializer_class = TipoRetencionIVAMHSerializer
+
+class TipoRetencionIVAMHCreateAPIView(generics.CreateAPIView):
+    queryset = TipoRetencionIVAMH.objects.all()
+    serializer_class = TipoRetencionIVAMHSerializer
+
+class TipoRetencionIVAMHRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = TipoRetencionIVAMH.objects.all()
+    serializer_class = TipoRetencionIVAMHSerializer
+
+class TipoRetencionIVAMHUpdateAPIView(generics.UpdateAPIView):
+    queryset = TipoRetencionIVAMH.objects.all()
+    serializer_class = TipoRetencionIVAMHSerializer
+
+class TipoRetencionIVAMHDestroyAPIView(generics.DestroyAPIView):
+    queryset = TipoRetencionIVAMH.objects.all()
+    serializer_class = TipoRetencionIVAMHSerializer
+
+# ========= TIPO GENERACION DOCUMENTO =========
+class TipoGeneracionDocumentoListAPIView(generics.ListAPIView):
+    queryset = TipoGeneracionDocumento.objects.all()
+    serializer_class = TiposGeneracionDocumentoSerializer
+
+class TipoGeneracionDocumentoCreateAPIView(generics.CreateAPIView):
+    queryset = TipoGeneracionDocumento.objects.all()
+    serializer_class = TiposGeneracionDocumentoSerializer
+
+class TipoGeneracionDocumentoRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = TipoGeneracionDocumento.objects.all()
+    serializer_class = TiposGeneracionDocumentoSerializer
+
+class TipoGeneracionDocumentoUpdateAPIView(generics.UpdateAPIView):
+    queryset = TipoGeneracionDocumento.objects.all()
+    serializer_class = TiposGeneracionDocumentoSerializer
+
+class TipoGeneracionDocumentoDestroyAPIView(generics.DestroyAPIView):
+    queryset = TipoGeneracionDocumento.objects.all()
+    serializer_class = TiposGeneracionDocumentoSerializer
+
+# ========= TIPOS ESTABLECIMIENTOS =========
+class TiposEstablecimientosListAPIView(generics.ListAPIView):
+    queryset = TiposEstablecimientos.objects.all()
+    serializer_class = TiposEstablecimientosSerializer
+
+class TiposEstablecimientosCreateAPIView(generics.CreateAPIView):
+    queryset = TiposEstablecimientos.objects.all()
+    serializer_class = TiposEstablecimientosSerializer
+
+class TiposEstablecimientosRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = TiposEstablecimientos.objects.all()
+    serializer_class = TiposEstablecimientosSerializer
+
+class TiposEstablecimientosUpdateAPIView(generics.UpdateAPIView):
+    queryset = TiposEstablecimientos.objects.all()
+    serializer_class = TiposEstablecimientosSerializer
+
+class TiposEstablecimientosDestroyAPIView(generics.DestroyAPIView):
+    queryset = TiposEstablecimientos.objects.all()
+    serializer_class = TiposEstablecimientosSerializer
+
+# ========= TIPOS SERVICIO MEDICO =========
+class TiposServicio_MedicoListAPIView(generics.ListAPIView):
+    queryset = TiposServicio_Medico.objects.all()
+    serializer_class = TiposServicio_MedicoSerializer
+
+class TiposServicio_MedicoCreateAPIView(generics.CreateAPIView):
+    queryset = TiposServicio_Medico.objects.all()
+    serializer_class = TiposServicio_MedicoSerializer
+
+class TiposServicio_MedicoRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = TiposServicio_Medico.objects.all()
+    serializer_class = TiposServicio_MedicoSerializer
+
+class TiposServicio_MedicoUpdateAPIView(generics.UpdateAPIView):
+    queryset = TiposServicio_Medico.objects.all()
+    serializer_class = TiposServicio_MedicoSerializer
+
+class TiposServicio_MedicoDestroyAPIView(generics.DestroyAPIView):
+    queryset = TiposServicio_Medico.objects.all()
+    serializer_class = TiposServicio_MedicoSerializer
+
+# ========= TIPO_DTE =========
+class Tipo_dteListAPIView(generics.ListAPIView):
+    queryset = Tipo_dte.objects.all()
+    serializer_class = TipoDteSerializer
+
+class Tipo_dteCreateAPIView(generics.CreateAPIView):
+    queryset = Tipo_dte.objects.all()
+    serializer_class = TipoDteSerializer
+
+class Tipo_dteRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = Tipo_dte.objects.all()
+    serializer_class = TipoDteSerializer
+
+class Tipo_dteUpdateAPIView(generics.UpdateAPIView):
+    queryset = Tipo_dte.objects.all()
+    serializer_class = TipoDteSerializer
+
+class Tipo_dteDestroyAPIView(generics.DestroyAPIView):
+    queryset = Tipo_dte.objects.all()
+    serializer_class = TipoDteSerializer
+
+# ========= OTROS DOCUMENTOS ASOCIADO =========
+class OtrosDicumentosAsociadoListAPIView(generics.ListAPIView):
+    queryset = OtrosDicumentosAsociado.objects.all()
+    serializer_class = OtrosDicumentosAsociadoSerializer
+
+class OtrosDicumentosAsociadoCreateAPIView(generics.CreateAPIView):
+    queryset = OtrosDicumentosAsociado.objects.all()
+    serializer_class = OtrosDicumentosAsociadoSerializer
+
+class OtrosDicumentosAsociadoRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = OtrosDicumentosAsociado.objects.all()
+    serializer_class = OtrosDicumentosAsociadoSerializer
+
+class OtrosDicumentosAsociadoUpdateAPIView(generics.UpdateAPIView):
+    queryset = OtrosDicumentosAsociado.objects.all()
+    serializer_class = OtrosDicumentosAsociadoSerializer
+
+class OtrosDicumentosAsociadoDestroyAPIView(generics.DestroyAPIView):
+    queryset = OtrosDicumentosAsociado.objects.all()
+    serializer_class = OtrosDicumentosAsociadoSerializer
+
+# ========= TIPOS DOC ID RECEPTOR =========
+class TiposDocIDReceptorListAPIView(generics.ListAPIView):
+    queryset = TiposDocIDReceptor.objects.all()
+    serializer_class = TiposDocIDReceptorSerializer
+
+class TiposDocIDReceptorCreateAPIView(generics.CreateAPIView):
+    queryset = TiposDocIDReceptor.objects.all()
+    serializer_class = TiposDocIDReceptorSerializer
+
+class TiposDocIDReceptorRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = TiposDocIDReceptor.objects.all()
+    serializer_class = TiposDocIDReceptorSerializer
+
+class TiposDocIDReceptorUpdateAPIView(generics.UpdateAPIView):
+    queryset = TiposDocIDReceptor.objects.all()
+    serializer_class = TiposDocIDReceptorSerializer
+
+class TiposDocIDReceptorDestroyAPIView(generics.DestroyAPIView):
+    queryset = TiposDocIDReceptor.objects.all()
+    serializer_class = TiposDocIDReceptorSerializer
+
+# ========= PAIS =========
+class PaisListAPIView(generics.ListAPIView):
+    queryset = Pais.objects.all()
+    serializer_class = PaisSerializer
+
+class PaisCreateAPIView(generics.CreateAPIView):
+    queryset = Pais.objects.all()
+    serializer_class = PaisSerializer
+
+class PaisRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = Pais.objects.all()
+    serializer_class = PaisSerializer
+
+class PaisUpdateAPIView(generics.UpdateAPIView):
+    queryset = Pais.objects.all()
+    serializer_class = PaisSerializer
+
+class PaisDestroyAPIView(generics.DestroyAPIView):
+    queryset = Pais.objects.all()
+    serializer_class = PaisSerializer
+
+# ========= DEPARTAMENTO =========
+class DepartamentoListAPIView(generics.ListAPIView):
+    queryset = Departamento.objects.all()
+    serializer_class = DepartamentoSerializer
+
+class DepartamentoCreateAPIView(generics.CreateAPIView):
+    queryset = Departamento.objects.all()
+    serializer_class = DepartamentoSerializer
+
+class DepartamentoRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = Departamento.objects.all()
+    serializer_class = DepartamentoSerializer
+
+class DepartamentoUpdateAPIView(generics.UpdateAPIView):
+    queryset = Departamento.objects.all()
+    serializer_class = DepartamentoSerializer
+
+class DepartamentoDestroyAPIView(generics.DestroyAPIView):
+    queryset = Departamento.objects.all()
+    serializer_class = DepartamentoSerializer
+
+# ========= MUNICIPIO =========
+class MunicipioListAPIView(generics.ListAPIView):
+    queryset = Municipio.objects.all()
+    serializer_class = MunicipioSerializer
+
+class MunicipioCreateAPIView(generics.CreateAPIView):
+    queryset = Municipio.objects.all()
+    serializer_class = MunicipioSerializer
+
+class MunicipioRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = Municipio.objects.all()
+    serializer_class = MunicipioSerializer
+
+class MunicipioUpdateAPIView(generics.UpdateAPIView):
+    queryset = Municipio.objects.all()
+    serializer_class = MunicipioSerializer
+
+class MunicipioDestroyAPIView(generics.DestroyAPIView):
+    queryset = Municipio.objects.all()
+    serializer_class = MunicipioSerializer
+
+# ========= CONDICION OPERACION =========
+class CondicionOperacionListAPIView(generics.ListAPIView):
+    queryset = CondicionOperacion.objects.all()
+    serializer_class = CondicionOperacionSerializer
+
+class CondicionOperacionCreateAPIView(generics.CreateAPIView):
+    queryset = CondicionOperacion.objects.all()
+    serializer_class = CondicionOperacionSerializer
+
+class CondicionOperacionRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = CondicionOperacion.objects.all()
+    serializer_class = CondicionOperacionSerializer
+
+class CondicionOperacionUpdateAPIView(generics.UpdateAPIView):
+    queryset = CondicionOperacion.objects.all()
+    serializer_class = CondicionOperacionSerializer
+
+class CondicionOperacionDestroyAPIView(generics.DestroyAPIView):
+    queryset = CondicionOperacion.objects.all()
+    serializer_class = CondicionOperacionSerializer
+
+# ========= FORMAS PAGO =========
+class FormasPagoListAPIView(generics.ListAPIView):
+    queryset = FormasPago.objects.all()
+    serializer_class = FormasPagosSerializer
+
+class FormasPagoCreateAPIView(generics.CreateAPIView):
+    queryset = FormasPago.objects.all()
+    serializer_class = FormasPagosSerializer
+
+class FormasPagoRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = FormasPago.objects.all()
+    serializer_class = FormasPagosSerializer
+
+class FormasPagoUpdateAPIView(generics.UpdateAPIView):
+    queryset = FormasPago.objects.all()
+    serializer_class = FormasPagosSerializer
+
+class FormasPagoDestroyAPIView(generics.DestroyAPIView):
+    queryset = FormasPago.objects.all()
+    serializer_class = FormasPagosSerializer
+
+# ========= PLAZO =========
+class PlazoListAPIView(generics.ListAPIView):
+    queryset = Plazo.objects.all()
+    serializer_class = PlazoSerializer
+
+class PlazoCreateAPIView(generics.CreateAPIView):
+    queryset = Plazo.objects.all()
+    serializer_class = PlazoSerializer
+
+class PlazoRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = Plazo.objects.all()
+    serializer_class = PlazoSerializer
+
+class PlazoUpdateAPIView(generics.UpdateAPIView):
+    queryset = Plazo.objects.all()
+    serializer_class = PlazoSerializer
+
+class PlazoDestroyAPIView(generics.DestroyAPIView):
+    queryset = Plazo.objects.all()
+    serializer_class = PlazoSerializer
+
+# ========= TIPO DOC CONTINGENCIA =========
+class TipoDocContingenciaListAPIView(generics.ListAPIView):
+    queryset = TipoDocContingencia.objects.all()
+    serializer_class = TipoDocContingenciaSerializer
+
+class TipoDocContingenciaCreateAPIView(generics.CreateAPIView):
+    queryset = TipoDocContingencia.objects.all()
+    serializer_class = TipoDocContingenciaSerializer
+
+class TipoDocContingenciaRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = TipoDocContingencia.objects.all()
+    serializer_class = TipoDocContingenciaSerializer
+
+class TipoDocContingenciaUpdateAPIView(generics.UpdateAPIView):
+    queryset = TipoDocContingencia.objects.all()
+    serializer_class = TipoDocContingenciaSerializer
+
+class TipoDocContingenciaDestroyAPIView(generics.DestroyAPIView):
+    queryset = TipoDocContingencia.objects.all()
+    serializer_class = TipoDocContingenciaSerializer
+
+# ========= TIPO INVALIDACION =========
+class TipoInvalidacionListAPIView(generics.ListAPIView):
+    queryset = TipoInvalidacion.objects.all()
+    serializer_class = TipoInvalidacionSerializer
+
+class TipoInvalidacionCreateAPIView(generics.CreateAPIView):
+    queryset = TipoInvalidacion.objects.all()
+    serializer_class = TipoInvalidacionSerializer
+
+class TipoInvalidacionRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = TipoInvalidacion.objects.all()
+    serializer_class = TipoInvalidacionSerializer
+
+class TipoInvalidacionUpdateAPIView(generics.UpdateAPIView):
+    queryset = TipoInvalidacion.objects.all()
+    serializer_class = TipoInvalidacionSerializer
+
+class TipoInvalidacionDestroyAPIView(generics.DestroyAPIView):
+    queryset = TipoInvalidacion.objects.all()
+    serializer_class = TipoInvalidacionSerializer
+
+# ========= TIPO DONACION =========
+class TipoDonacionListAPIView(generics.ListAPIView):
+    queryset = TipoDonacion.objects.all()
+    serializer_class = TipoDonacionSerializer
+
+class TipoDonacionCreateAPIView(generics.CreateAPIView):
+    queryset = TipoDonacion.objects.all()
+    serializer_class = TipoDonacionSerializer
+
+class TipoDonacionRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = TipoDonacion.objects.all()
+    serializer_class = TipoDonacionSerializer
+
+class TipoDonacionUpdateAPIView(generics.UpdateAPIView):
+    queryset = TipoDonacion.objects.all()
+    serializer_class = TipoDonacionSerializer
+
+class TipoDonacionDestroyAPIView(generics.DestroyAPIView):
+    queryset = TipoDonacion.objects.all()
+    serializer_class = TipoDonacionSerializer
+
+# ========= TIPO PERSONA =========
+class TipoPersonaListAPIView(generics.ListAPIView):
+    queryset = TipoPersona.objects.all()
+    serializer_class = TipoPersonaSerializer
+
+class TipoPersonaCreateAPIView(generics.CreateAPIView):
+    queryset = TipoPersona.objects.all()
+    serializer_class = TipoPersonaSerializer
+
+class TipoPersonaRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = TipoPersona.objects.all()
+    serializer_class = TipoPersonaSerializer
+
+class TipoPersonaUpdateAPIView(generics.UpdateAPIView):
+    queryset = TipoPersona.objects.all()
+    serializer_class = TipoPersonaSerializer
+
+class TipoPersonaDestroyAPIView(generics.DestroyAPIView):
+    queryset = TipoPersona.objects.all()
+    serializer_class = TipoPersonaSerializer
+
+# ========= TIPO TRANSPORTE =========
+class TipoTransporteListAPIView(generics.ListAPIView):
+    queryset = TipoTransporte.objects.all()
+    serializer_class = TipoTransporteSerializer
+
+class TipoTransporteCreateAPIView(generics.CreateAPIView):
+    queryset = TipoTransporte.objects.all()
+    serializer_class = TipoTransporteSerializer
+
+class TipoTransporteRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = TipoTransporte.objects.all()
+    serializer_class = TipoTransporteSerializer
+
+class TipoTransporteUpdateAPIView(generics.UpdateAPIView):
+    queryset = TipoTransporte.objects.all()
+    serializer_class = TipoTransporteSerializer
+
+class TipoTransporteDestroyAPIView(generics.DestroyAPIView):
+    queryset = TipoTransporte.objects.all()
+    serializer_class = TipoTransporteSerializer
+
+# ========= INCOTERMS =========
+class INCOTERMSListAPIView(generics.ListAPIView):
+    queryset = INCOTERMS.objects.all()
+    serializer_class = INCOTERMS_Serializer
+
+class INCOTERMSCreateAPIView(generics.CreateAPIView):
+    queryset = INCOTERMS.objects.all()
+    serializer_class = INCOTERMS_Serializer
+
+class INCOTERMSRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = INCOTERMS.objects.all()
+    serializer_class = INCOTERMS_Serializer
+
+class INCOTERMSUpdateAPIView(generics.UpdateAPIView):
+    queryset = INCOTERMS.objects.all()
+    serializer_class = INCOTERMS_Serializer
+
+class INCOTERMSDestroyAPIView(generics.DestroyAPIView):
+    queryset = INCOTERMS.objects.all()
+    serializer_class = INCOTERMS_Serializer
+
+# ========= TIPO DOMICILIO FISCAL =========
+class TipoDomicilioFiscalListAPIView(generics.ListAPIView):
+    queryset = TipoDomicilioFiscal.objects.all()
+    serializer_class = TipoDomicilioFiscalSerializer
+
+class TipoDomicilioFiscalCreateAPIView(generics.CreateAPIView):
+    queryset = TipoDomicilioFiscal.objects.all()
+    serializer_class = TipoDomicilioFiscalSerializer
+
+class TipoDomicilioFiscalRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = TipoDomicilioFiscal.objects.all()
+    serializer_class = TipoDomicilioFiscalSerializer
+
+class TipoDomicilioFiscalUpdateAPIView(generics.UpdateAPIView):
+    queryset = TipoDomicilioFiscal.objects.all()
+    serializer_class = TipoDomicilioFiscalSerializer
+
+class TipoDomicilioFiscalDestroyAPIView(generics.DestroyAPIView):
+    queryset = TipoDomicilioFiscal.objects.all()
+    serializer_class = TipoDomicilioFiscalSerializer
+
+# ========= TIPO MONEDA =========
+class TipoMonedaListAPIView(generics.ListAPIView):
+    queryset = TipoMoneda.objects.all()
+    serializer_class = TipoMonedaSerializer
+
+class TipoMonedaCreateAPIView(generics.CreateAPIView):
+    queryset = TipoMoneda.objects.all()
+    serializer_class = TipoMonedaSerializer
+
+class TipoMonedaRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = TipoMoneda.objects.all()
+    serializer_class = TipoMonedaSerializer
+
+class TipoMonedaUpdateAPIView(generics.UpdateAPIView):
+    queryset = TipoMoneda.objects.all()
+    serializer_class = TipoMonedaSerializer
+
+class TipoMonedaDestroyAPIView(generics.DestroyAPIView):
+    queryset = TipoMoneda.objects.all()
+    serializer_class = TipoMonedaSerializer
+
+# ========= DESCUENTO =========
+class DescuentoListAPIView(generics.ListAPIView):
+    queryset = Descuento.objects.all()
+    serializer_class = DescuentoSerializer
+
+class DescuentoCreateAPIView(generics.CreateAPIView):
+    queryset = Descuento.objects.all()
+    serializer_class = DescuentoSerializer
+
+class DescuentoRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = Descuento.objects.all()
+    serializer_class = DescuentoSerializer
+
+class DescuentoUpdateAPIView(generics.UpdateAPIView):
+    queryset = Descuento.objects.all()
+    serializer_class = DescuentoSerializer
+
+class DescuentoDestroyAPIView(generics.DestroyAPIView):
+    queryset = Descuento.objects.all()
+    serializer_class = DescuentoSerializer
+
+
 ######################################################
-# RECEPTOR
+######################################################
+# FIN CATALOGO
+######################################################
+######################################################
+
+
+
+######################################################
+# RECEPTOR O CLIENTE
 ######################################################
 
 class ObtenerReceptorAPIView(APIView):
@@ -235,99 +815,51 @@ class ObtenerReceptorAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Receptor_fe.DoesNotExist:
             return Response({"error": "Receptor no encontrado"}, status=status.HTTP_404_NOT_FOUND)
+        
+class receptorListAPIView(generics.ListAPIView):
+    serializer_class = ReceptorSerializer
+
+    def get_queryset(self):
+        qs = Receptor_fe.objects.all()
+        nombre = self.request.query_params.get('filtro') #filtrar receptores por nombre, nombre comercial y número de documento
+        if nombre:
+            qs = qs.filter(
+                Q(nombre__icontains=nombre) |
+                Q(nombreComercial__icontains=nombre) |
+                Q(num_documento__icontains=nombre)
+            )
+        return qs
+
+class receptorDetailAPIView(generics.RetrieveAPIView):
+    queryset = Receptor_fe.objects.all()
+    serializer_class = ReceptorSerializer
+
+class receptorCreateAPIView(generics.CreateAPIView):
+    serializer_class = ReceptorSerializer
+    
+class receptorUpdateAPIView(generics.UpdateAPIView):
+    queryset = Receptor_fe.objects.all()
+    serializer_class = ReceptorSerializer
+
+class receptorDeleteAPIView(generics.DestroyAPIView):
+    queryset = Receptor_fe.objects.all()
+    serializer_class = ReceptorSerializer
 
 ######################################################
-# EMISOR
+# EMISOR O EMPRESA
 ######################################################
 class EmisorListAPIView(generics.ListAPIView):
     queryset = Emisor_fe.objects.all()
     serializer_class = EmisorSerializer
 
+class EmisorUpdateAPIView(generics.UpdateAPIView):
+    queryset = Emisor_fe.objects.all()
+    serializer_class = EmisorSerializer
+
 class EmisorCreateAPIView(generics.CreateAPIView):
     queryset = Emisor_fe.objects.all()
-    serializer_class = EmisorSerializer  
-    
-######################################################
-# Configuracion de empresa
-######################################################
-class TipoDocIDReceptorListAPIView(generics.ListAPIView):
-    queryset = TiposDocIDReceptor.objects.all()
-    serializer_class = TiposDocIDReceptorSerializer
-
-class TipoDocIDReceptorDetailAPIView(generics.RetrieveAPIView):
-    queryset = TiposDocIDReceptor.objects.all()
-    serializer_class = TiposDocIDReceptorSerializer
-    lookup_field = 'codigo'
-    
-class AmbientesListAPIView(generics.ListAPIView):
-    queryset = Ambiente.objects.all()
-    serializer_class = AmbienteSerializer
-    
-class TiposEstablecimientosListAPIView(generics.ListAPIView):
-    queryset = TiposEstablecimientos.objects.all()
-    serializer_class = TiposEstablecimientosSerializer
-    
-class DepartamentosListAPIView(generics.ListAPIView):
-    queryset = Departamento.objects.all()
-    serializer_class = DepartamentoSerializer
-    
-class MunicipioListAPIView(generics.ListAPIView):
-
-    serializer_class = MunicipioSerializer
-    
-    def get_queryset(self):
-        # Obtener el id del departamento de la URL
-        departamento_id = self.kwargs['pk']
-        # Filtrar los municipios por el departamento
-        return Municipio.objects.filter(departamento_id=departamento_id)
-    
-class recptorListAPIView(generics.ListAPIView):
-    queryset = Receptor_fe.objects.all()
-    serializer_class = ReceptorSerializer
-    
-class tipoGeneracionDocumentoListAPIView(generics.ListAPIView):
-    queryset = TipoGeneracionDocumento.objects.all()
-    serializer_class = TiposGeneracionDocumentoSerializer
-
-######################################################
-# Configuracion de factura
-######################################################
-
-class TipoDTEListAPIView(generics.ListAPIView):
-    queryset = Tipo_dte.objects.all()
-    serializer_class = TipoDteSerializer
-
-class TipoDTEDetailAPIView(generics.RetrieveAPIView):
-    queryset = Tipo_dte.objects.all()
-    serializer_class = TipoDteSerializer
-    lookup_field = 'codigo'
-    
-class CondicionDeOperacionListAPIView(generics.ListAPIView):
-    queryset = CondicionOperacion.objects.all()
-    serializer_class = CondicionOperacionSerializer
-
-class CondicionDeOperacionDetailAPIView(generics.RetrieveAPIView):
-    queryset = CondicionOperacion.objects.all()
-    serializer_class = CondicionOperacionSerializer
-    lookup_field = 'codigo'
-
-class ModeloDeFacturacionListAPIView(generics.ListAPIView):
-    queryset = Modelofacturacion.objects.all()
-    serializer_class = ModelofacturacionSerializer
-    
-class TipoTransmisionListAPIView(generics.ListAPIView):
-    queryset = TipoTransmision.objects.all()
-    serializer_class = TipoTransmisionSerializer
-
-class FormasPagosListAPIView(generics.ListAPIView):
-    queryset = FormasPago.objects.all()
-    serializer_class = FormasPagosSerializer
+    serializer_class = EmisorSerializer     
      
-class DescuentosAPIView(generics.ListAPIView):
-    queryset = Descuento.objects.all()
-    serializer_class = DescuentoSerializer
-     
-
 ######################################################
 # GENERACION DE DOCUMENTOS ELECTRONICOS
 ######################################################
@@ -335,11 +867,6 @@ class DescuentosAPIView(generics.ListAPIView):
 class FacturaDetailAPIView(generics.RetrieveAPIView):
     queryset = FacturaElectronica.objects.all()
     serializer_class = FacturaElectronicaSerializer
-
-# class FacturasAllListAPIView(generics.ListAPIView):
-#     queryset = FacturaElectronica.objects.all().order_by('-fecha_emision')
-#     serializer_class = FacturaListSerializer
-
 
 class FacturaListAPIView(APIView):
     """
@@ -1456,7 +1983,6 @@ class GenerarDocumentoAjusteAPIView(APIView):
         except Exception as e:
             print(f"Error al generar la factura: {e}")
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
 
 class FirmarFacturaAPIView(APIView):
     """

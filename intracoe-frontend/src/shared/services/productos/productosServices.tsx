@@ -2,7 +2,9 @@ import axios from 'axios';
 import { Descuento, Impuesto, ProductoResponse } from '../../interfaces/interfaces';
 import { getTributoById } from '../tributos/tributos';
 
-const BASEURL = import.meta.env.VITE_URL_BASE_INVENT;
+const BASEURLINVENT = import.meta.env.VITE_URL_BASE_INVENT;
+const BASEURL = import.meta.env.VITE_URL_BASE;
+
 
 export const getAllProducts = async ({
   filter,
@@ -17,7 +19,7 @@ export const getAllProducts = async ({
     if (tipo)   params.tipo = tipo;
 
     const response = await axios.get<ProductoResponse[]>(
-      `${BASEURL}/productos/`,
+      `${BASEURLINVENT}/productos/`,
       { params }
     );
 
@@ -35,7 +37,7 @@ export const getAllProducts = async ({
 
 export const getAllDescuentos = async () => {
   try {
-    const response = await axios.get<Descuento[]>(`${BASEURL}/descuentos/`);
+    const response = await axios.get<Descuento[]>(`${BASEURLINVENT}/descuentos/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -53,7 +55,7 @@ export const getAllImpuestos = async () => {
 
 export const getAllUnidadesDeMedida = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/unidad-medida/`);
+    const response = await axios.get(`${BASEURLINVENT}/unidad-medida/`);
     return response.data;
   } catch (error) {
     console.log(error);
@@ -63,7 +65,7 @@ export const getAllUnidadesDeMedida = async () => {
 
 export const getAllTipoItem = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/tipo-item/`);
+    const response = await axios.get(`${BASEURLINVENT}/tipo-item/`);
     return response.data;
   } catch (error) {
     console.log(error);

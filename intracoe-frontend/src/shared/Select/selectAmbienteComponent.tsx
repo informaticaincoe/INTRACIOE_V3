@@ -1,17 +1,21 @@
 import { Dropdown } from 'primereact/dropdown';
-import { useEffect, useState } from 'react';
+import { HTMLProps, useEffect, useState } from 'react';
 import { getAllAmbientes } from '../services/ambienteService';
 
 interface SelectAmbienteProps {
-  ambiente: any;
-  setSelectAmbiente: any;
+  value: any;
+  onChange: (e: { target: { name: string; value: (string | number)[] } }) => void;
+  className?: HTMLProps<HTMLElement>['className'];
+  name: string;
 }
 
 export const SelectAmbienteComponent: React.FC<SelectAmbienteProps> = ({
-  ambiente,
-  setSelectAmbiente,
+  value,
+  onChange,
+  className,
+  name
 }) => {
-  const [selectedAmbiente, setSelectedAmbiente] = useState<[]>([]);
+  const [ambiente, setAmbiente] = useState<[]>([]);
 
   useEffect(() => {
     fetchListaAmbiente();
@@ -20,16 +24,8 @@ export const SelectAmbienteComponent: React.FC<SelectAmbienteProps> = ({
   const fetchListaAmbiente = async () => {
     try {
       const response = await getAllAmbientes();
-
-      const data = response.map(
-        (doc: { id: string; descripcion: any; codigo: any }) => ({
-          id: doc.id,
-          name: doc.descripcion,
-          code: doc.codigo,
-        })
-      );
-
-      setSelectedAmbiente(data);
+      console.log(response)
+      setAmbiente(response);
     } catch (error) {
       console.log(error);
     }
@@ -38,10 +34,16 @@ export const SelectAmbienteComponent: React.FC<SelectAmbienteProps> = ({
   return (
     <div className="justify-content-center flex">
       <Dropdown
-        value={ambiente}
-        onChange={(e) => setSelectAmbiente(e.value)}
-        options={selectedAmbiente}
-        optionLabel="name"
+        value={value}
+        onChange={(e) => onChange({
+          target: {
+            name,
+            value: e.value
+          }
+        })}
+        options={ambiente}
+        optionLabel="descripcion"
+        optionValue="id"
         placeholder="Seleccionar ambiente"
         className="md:w-14rem font-display w-full"
       />
