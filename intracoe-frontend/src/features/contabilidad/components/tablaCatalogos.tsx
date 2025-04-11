@@ -5,17 +5,17 @@ import { HeaderTable } from '../../facturacion/activities/components/headerTable
 interface TablaCatalogosProp {
     setActivities: any,
     filterTerm: string,
-    setFilterTerm:any
+    setFilterTerm: any
 }
-export const TablaCatalogos:React.FC<TablaCatalogosProp> = ({setActivities, filterTerm, setFilterTerm}) => {
-  return (
-    <>
-        <div>TablaCatalogos</div>
-        <HeaderTable
-                  setActivities={setActivities}
-                  filterTerm={filterTerm}
-                  setFilterTerm={setFilterTerm}
-                />
-    </>
-  )
+export const TablaCatalogos: React.FC<TablaCatalogosProp> = ({ setActivities, filterTerm, setFilterTerm }) => {
+    return (
+        <>
+            <div>TablaCatalogos</div>
+            <HeaderTable
+                filterTerm={filterTerm}
+                setFilterTerm={setFilterTerm}
+            />
+            
+        </>
+    )
 }
