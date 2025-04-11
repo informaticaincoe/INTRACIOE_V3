@@ -2318,6 +2318,26 @@ def invalidar_varias_dte_view(request):
                 if evento:
                     if evento.estado:
                         mensaje = "Factura invalidada con éxito"
+                        # al invalidad se procede a reintegrar el inventario
+                        factura = FacturaElectronica.objects.get(id=factura_id)
+                        for detalle in factura.detalles.all():
+                            #se selecciona el primer almacen asociado al producto
+                            if detalle.producto.almacenes.exists():
+                                almacen = detalle.producto.almacenes.first()
+                            else:
+                                almacen = Almacen.objects.first()
+
+                            #crear el movimiento de inventario de tipo "Entrada"
+                            MovimientoInventario.objects.create(
+                                producto=detalle.producto,
+                                cantidad=detalle.cantidad,
+                                almacen=almacen,
+                                tipo='Entrada',
+                                referencia=f"Reingreso por invalidación de factura {factura.numero_control}"
+                            )
+                            #Actualizar el stock dl producto, smando la cantidad reingreso
+                            detalle.producto.stock += detalle.cantidad
+                            detalle.producto.save()
                     else:
                         mensaje = "No se pudo invalidar la factura"
                 else:
