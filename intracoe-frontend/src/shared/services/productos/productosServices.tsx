@@ -37,7 +37,7 @@ export const getAllProducts = async ({
 
 export const getAllDescuentos = async () => {
   try {
-    const response = await axios.get<Descuento[]>(`${BASEURLINVENT}/descuentos/`);
+    const response = await axios.get<Descuento[]>(`${BASEURL}/descuento/`);
     return response.data;
   } catch (error) {
     throw new Error();
