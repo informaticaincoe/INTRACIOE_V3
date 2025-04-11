@@ -6,7 +6,7 @@ interface WhiteCardprops {
 
 export const WhiteCard:React.FC<WhiteCardprops> = ({children}) => {
   return (
-    <div className='bg-white rounded-md py-8 w-full px-10'>
+    <div className='bg-white rounded-md py-6 w-full px-8'>
         {children}
     </div>
   )
