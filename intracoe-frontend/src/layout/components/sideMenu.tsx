@@ -124,6 +124,9 @@ export const SideMenu = () => {
       case 'correcciones':
         navigate('/generar-documentos-ajuste')
         break;
+      case 'catalogo':
+        navigate('/catalogos')
+        break;
       case 'producto':
         navigate('/productos');
         break;
@@ -152,7 +155,7 @@ export const SideMenu = () => {
       <Menu
         onClick={onClick}
         style={{
-          width: 300,
+          width: 250,
           opacity: '75%',
           fontFamily: 'Inter',
           position: 'sticky',

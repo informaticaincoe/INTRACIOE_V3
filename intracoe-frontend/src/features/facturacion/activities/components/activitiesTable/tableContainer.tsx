@@ -27,7 +27,7 @@ export const TableContainer = () => {
   };
 
   return (
-    <WhiteSectionsPage>
+    <div className='px-10 py-5'>
       <>
         <HeaderTable
           setActivities={setActivities}
@@ -58,6 +58,6 @@ export const TableContainer = () => {
           </DataTable>
         </>
       </>
-    </WhiteSectionsPage>
+    </div>
   );
 };

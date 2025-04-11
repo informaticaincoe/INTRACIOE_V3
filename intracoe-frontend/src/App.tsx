@@ -16,6 +16,7 @@ import { ServicioPage } from './features/inventario/servicios/pages/servicioPage
 import { ReceptoresPage } from './features/ventas/receptores/pages/receptoresPage';
 import { NuevoServiciopage } from './features/inventario/servicios/pages/nuevoServiciopage';
 import { NuevoReceptorPage } from './features/ventas/receptores/pages/nuevoReceptorsPage';
+import { CatalogosPage } from './features/contabilidad/pages/catalogosPage';
 
 function App() {
   return (
@@ -37,6 +38,7 @@ function App() {
           <Route path="/servicio/:id" element={<NuevoServiciopage />} />
           <Route path="/empresa" element={<ConfigBussiness />} />
           <Route path="/receptores" element={<ReceptoresPage />}/>
+          <Route path="/catalogos" element={<CatalogosPage />}/>
           <Route path="/receptor/nuevo" element={<NuevoReceptorPage />} />
           <Route path="/receptor/:id" element={<NuevoReceptorPage />} />
           <Route path="/uploadExcel" element={<UploadExcelPage />} />
