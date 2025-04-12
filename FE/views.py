@@ -43,6 +43,7 @@ from datetime import datetime, date, timedelta
 from dateutil.relativedelta import relativedelta
 from django.db.models import Q
 from num2words import num2words
+import pytz
 
 FIRMADOR_URL = "http://192.168.2.25:8113/firmardocumento/"
 DJANGO_SERVER_URL = "http://127.0.0.1:8000"
@@ -1384,6 +1385,7 @@ def enviar_factura_hacienda_view(request, factura_id):
     intento = 1
     intentos_max = 3 #Intentos para envio del dte a MH
     tipo_contiengencia_obj = None
+    mensaje = None
     
     factura = get_object_or_404(FacturaElectronica, id=factura_id)
 
@@ -1409,6 +1411,7 @@ def enviar_factura_hacienda_view(request, factura_id):
             tipo_contiengencia_obj = TipoContingencia.objects.get(codigo="3")
             time.sleep(8)
             intento += 1
+            mensaje = ("Error de conexión con el servicio de autenticación: " + e.errno)
             print("Error de conexión con el servicio de autenticación: ", e.errno)
         
         if auth_response:  
@@ -1416,10 +1419,9 @@ def enviar_factura_hacienda_view(request, factura_id):
                 auth_response_data = auth_response.json()
             except ValueError:
                 print("Error al decodificar respuesta")
-                return JsonResponse({
-                    "error": "Error al decodificar la respuesta de autenticación",
-                    "detalle": auth_response.text
-                }, status=500)
+                mensaje = "Error al decodificar la respuesta de autenticación"
+                auth_response.status_code = 500
+                print("Codigo error al decodificar la respuesta de autenticación: ", auth_response.status_code)
             
             print("autenticacion: ", auth_response)
             if auth_response.status_code == 200:
@@ -1465,10 +1467,11 @@ def enviar_factura_hacienda_view(request, factura_id):
                 print(f"Error {auth_response.status_code} en el envio de la factura: # intento de envio: {intento}")
                 intento += 1
             else:
-                return JsonResponse({
-                    "error": "Error en la autenticación",
-                    "detalle": auth_response_data.get("message", "Error no especificado")
-                }, status=auth_response.status_code)
+                mensaje = ("Error en la autenticación: " + auth_response.status_code)
+                #return JsonResponse({
+                    #"error": "Error en la autenticación",
+                    #"detalle": auth_response_data.get("message", "Error no especificado")
+                #}, status=auth_response.status_code)
             print(f"error: {auth_response.status_code}, tipo contingencia: {tipo_contiengencia_obj}")
     
         """if intento >= intentos_max and contingencia:
@@ -1573,7 +1576,32 @@ def enviar_factura_hacienda_view(request, factura_id):
                 factura.estado=True
                 factura.save()
                 contingencia = False
-
+                
+                #Si el dte obtuvo respuesta verificar si existe un evento en contingencia de las ultimas 24 horas
+                
+                #Fecha y hora actual
+                el_salvador_tz = pytz.timezone('America/El_Salvador')
+                hora_actual = timezone.now().astimezone(el_salvador_tz)
+                
+                #Obtener la fecha de hace 24 horas
+                plazo_transmitir_contingencia = (hora_actual - timezone.timedelta(hours=24)).replace(second=0, microsecond=0)
+                print(f"hora actual: {hora_actual}, plazo contingencia: {plazo_transmitir_contingencia}")
+                
+                contingencia_registrada = EventoContingencia.objects.filter(hora_transmision=plazo_transmitir_contingencia, finalizado=False)
+                print("contingencias registradas en las ultimas 24 horas: ", contingencia_registrada)
+                
+                if contingencia_registrada and contingencia_registrada.count()>1:
+                    for contingencia_activa in contingencia_registrada:
+                        if contingencia_activa.finalizado == False:
+                            contingencia_activa.finalizado=True
+                            contingencia_activa.save()
+                elif contingencia_registrada:
+                    if contingencia_registrada.finalizado == False:
+                            contingencia_activa.finalizado=True
+                            contingencia_activa.save()
+                else:
+                    mensaje = "Contingencias no encontradas"
+                
                 #crear el movimeinto de inventario
                 #Se asume que la factura tiene una relación a sus detalles, donde se encuentran los productos y cantidades
 
@@ -1648,13 +1676,14 @@ def enviar_factura_hacienda_view(request, factura_id):
                 factura.save()
                 print("Error en el envio de la factura: # intento de envio: ", intento)
             print(f"error: {envio_response.status_code}, tipo contingencia: {tipo_contiengencia_obj}")
-            return JsonResponse({
+            """return JsonResponse({
                 "error": "Error al enviar la factura",
                 "status": envio_response.status_code,
                 "detalle": response_data
-            }, status=envio_response.status_code)
+            }, status=envio_response.status_code)"""
 
         except requests.exceptions.RequestException as e:
+            tipo_contiengencia_obj = TipoContingencia.objects.get(codigo="1")
             factura.estado=False
             factura.contingencia = True
             factura.save()
@@ -1704,16 +1733,15 @@ def enviar_factura_hacienda_view(request, factura_id):
                     )
                     evento_contingencia.factura.add(factura)
                     evento_contingencia.save()
-                return JsonResponse({
-                    "mensaje": "DTE generado como Contingencia"
-                })
+                print("Factura: ", factura, "factura id: ", factura.id)
+                return render(request, "documentos/factura_consumidor/template_factura.html", {"factura": factura})
             else:
                 codigo_generacion_contingencia = str(uuid.uuid4()).upper()
                 return JsonResponse({
                     "error": "Error de conexión con Hacienda"
                 }, status=500)
         except Exception as e:
-            print(f"Error al generar el evento de invalidación: {e}")
+            print(f"Error al generar el dte: {e}")
             return JsonResponse({"error": str(e)}, status=400)
 
         """if request.method != 'POST':
@@ -2636,6 +2664,7 @@ def agregar_docs_relacionados_ajax(request):
 ######################################################
 # GENERACION DE NOTA DE CREDITO Y DEBITO
 ######################################################
+from math import ceil
 @csrf_exempt
 @transaction.atomic
 def generar_documento_ajuste_view(request):
@@ -3229,12 +3258,57 @@ def contingencia_list(request):
     page_number = request.GET.get('page')
     dtelist = paginator.get_page(page_number)
     
+    lotes = LoteContingencia.objects.prefetch_related('eventocontingencia__factura').order_by('id')
     # Obtener todos los tipos de factura para el select del filtro
-    tipos_dte = Tipo_dte.objects.filter(codigo__in=DTE_APLICA_CONTINGENCIA)
+    lotes_por_evento = {}
+    facturas = None
+    for evento in dtelist:
+        print("Evento: ", evento)
+        facturas_repartidas = []
+        
+        lotes = LoteContingencia.objects.prefetch_related('eventocontingencia__factura').order_by('id')
+        
+        # Asociar las facturas del evento
+        evento.lotes.set(lotes) 
+        evento.facturas = facturas
+        facturas = evento.factura.all()
+        
+        for lote in evento.lotes.all():
+            
+            facturas = list(evento.factura.all())
+            if evento.id not in lotes_por_evento:
+                lotes_por_evento[evento.id] = []
+            
+            lotes_por_evento[evento.id].append({
+                'lote': lote,
+                'facturas': facturas
+            })
+            
+            for evento in lote.eventocontingencia.all():
+                facturas = list(evento.factura.all()) #Facturas asociadas al evento
+                total_lotes = evento.lotes.count()  # cuántos lotes están usando este evento
+                index = list(evento.lotes.order_by('id')).index(lote)  # posición de este lote en la lista
+                
+                # Dividimos las facturas en partes iguales entre los lotes
+                chunk_size = ceil(len(facturas) / total_lotes)
+                start = index * chunk_size
+                end = start + chunk_size
+                
+                facturas_repartidas = facturas[start:end]
+                
+                if evento.id not in lotes_por_evento:
+                    lotes_por_evento[evento.id] = []
+                    
+                lotes_por_evento[evento.id].append({
+                    'lote': lote.id,
+                    'facturas': facturas_repartidas
+                })
     
+    tipos_dte = Tipo_dte.objects.filter(codigo__in=DTE_APLICA_CONTINGENCIA)
     context = {
         'dtelist': dtelist,
-        'tipos_dte': tipos_dte
+        'tipos_dte': tipos_dte,
+        'lotes_por_evento': lotes_por_evento
     }
     return render(request, 'documentos/dte_contingencia_list.html', context)
 
@@ -3247,7 +3321,7 @@ def generar_json_contingencia(evento_contingencia_id, emisor, detalles):
             "version": 3,
             "ambiente":  str(AMBIENTE.codigo),
             "codigoGeneracion": str(evento_contingencia.codigo_generacion).upper(),
-            "fTransmision": str(evento_contingencia.fecha_transmicion),
+            "fTransmision": str(evento_contingencia.fecha_transmision),
             "hTransmision": evento_contingencia.hora_transmision.strftime('%H:%M:%S')
         }
         
@@ -3265,8 +3339,8 @@ def generar_json_contingencia(evento_contingencia_id, emisor, detalles):
         }
         
         json_motivo = {
-            "fInicio": str(evento_contingencia.fecha_transmicion), #date.today().strftime('%H:%M:%S'),
-            "fFin":  str(evento_contingencia.fecha_transmicion), #date.today().strftime('%H:%M:%S'),
+            "fInicio": str(evento_contingencia.fecha_transmision), #date.today().strftime('%H:%M:%S'),
+            "fFin":  str(evento_contingencia.fecha_transmision), #date.today().strftime('%H:%M:%S'),
             "hInicio": datetime.now().strftime('%H:%M:%S'), #La estructura de la hora de entrada en contingencia será definida por la Administración Tributaria
             "hFin": datetime.now().strftime('%H:%M:%S'), #La estructura de la hora de salida en contingencia será definida por la Administración Tributaria
             "tipoContingencia": int(evento_contingencia.tipo_contingencia.codigo), #CAT-005 Tipo de Contingencia 
@@ -3429,7 +3503,7 @@ def contingencia_dte_view(request, contingencia_id):
                     "version": 3,
                     "ambiente":  str(AMBIENTE.codigo),
                     "codigoGeneracion": str(evento_contingencia.codigo_generacion).upper(),
-                    "fTransmision": str(evento_contingencia.fecha_transmicion),
+                    "fTransmision": str(evento_contingencia.fecha_transmision),
                     "hTransmision": evento_contingencia.hora_transmision.strftime('%H:%M:%S')
                 }
                 
@@ -3447,8 +3521,8 @@ def contingencia_dte_view(request, contingencia_id):
                 }
                 
                 json_motivo = {
-                    "fInicio": str(evento_contingencia.fecha_transmicion), #date.today().strftime('%H:%M:%S'),
-                    "fFin":  str(evento_contingencia.fecha_transmicion), #date.today().strftime('%H:%M:%S'),
+                    "fInicio": str(evento_contingencia.fecha_transmision), #date.today().strftime('%H:%M:%S'),
+                    "fFin":  str(evento_contingencia.fecha_transmision), #date.today().strftime('%H:%M:%S'),
                     "hInicio": datetime.now().strftime('%H:%M:%S'), #La estructura de la hora de entrada en contingencia será definida por la Administración Tributaria
                     "hFin": datetime.now().strftime('%H:%M:%S'), #La estructura de la hora de salida en contingencia será definida por la Administración Tributaria
                     "tipoContingencia": int(evento_contingencia.tipo_contingencia.codigo), #CAT-005 Tipo de Contingencia 
