@@ -6,11 +6,10 @@ import { FaRegCreditCard } from 'react-icons/fa6';
 import { FaXmark } from 'react-icons/fa6';
 import { IoMdCloseCircle } from 'react-icons/io';
 import CustomToast, { CustomToastRef, ToastSeverity } from '../../../../../../../shared/toast/customToast';
-import { getAllMetodosDePago } from '../../../../services/configuracionFactura/configuracionFacturaService';
-import { plazosListTemp } from '../plazos';
 import styles from './formasDePagoCustom.module.css';
 import { MultiSelectChangeEvent } from 'primereact/multiselect';
 import { PaymentMethodInteface } from './formasdePagoData';
+import { getAllMetodosDePago, getAllPlazos } from '../../../../../../../shared/catalogos/services/catalogosServices';
 
 interface FormasdePagoFormProps {
   setFormasPagoList: (codes: string[]) => void;
@@ -49,8 +48,7 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
   // 1) Carga métodos y plazos al montar
   useEffect(() => {
     getAllMetodosDePago().then(setListFormasdePago);
-    setPlazosList(plazosListTemp);
-    if (plazosListTemp.length) setSelectedPlazosList(plazosListTemp[0].codigo);
+    getAllPlazos().then(setPlazosList);
   }, []);
 
   // 2) Cada vez que cambie la lista de pagos o el total, recalcula remaining

@@ -71,8 +71,9 @@ export const ButtonDocumentosRelacionados: React.FC<
               </label>
               <DropDownTipoDte
                 tipoDocumento={tipoDTERelacionado}
-                setTipoDocumento={setTipoDTERelacionado}
-              />
+                setTipoDocumento={setTipoDTERelacionado} 
+                setTipoDocumentoSelected={undefined} 
+                tipoDocumentoSelected={undefined}              />
             </span>
             <span className="flex w-full flex-col gap-1">
               <label htmlFor="montoPagar" className="text-start opacity-70">

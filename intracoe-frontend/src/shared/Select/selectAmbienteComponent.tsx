@@ -1,6 +1,6 @@
 import { Dropdown } from 'primereact/dropdown';
 import { HTMLProps, useEffect, useState } from 'react';
-import { getAllAmbientes } from '../services/ambienteService';
+import { getAllAmbientes } from '../catalogos/services/catalogosServices';
 
 interface SelectAmbienteProps {
   value: any;

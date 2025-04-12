@@ -1,10 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { HeaderTable } from '../headerTable/headerTable';
-import { WhiteSectionsPage } from '../../../../../shared/containers/whiteSectionsPage';
-import { getAllActivities } from '../../services/activitiesServices';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
-import Actions from './actionsTable';
 import 'primereact/resources/themes/lara-light-blue/theme.css';
 import { ActivitiesData } from '../../../../../shared/interfaces/interfaces';
 
@@ -46,7 +43,7 @@ export const TableContainer:React.FC<TableContainerProp> = ({data}) => {
             {/* <Column
               header="ACCIONES"
               body={(activity: ActivitiesData) => (
-                <Actions activity={activity} onDelete={onDelete} />
+                <Actionsz activity={activity} onDelete={onDelete} />
               )}
             /> */}
           </DataTable>

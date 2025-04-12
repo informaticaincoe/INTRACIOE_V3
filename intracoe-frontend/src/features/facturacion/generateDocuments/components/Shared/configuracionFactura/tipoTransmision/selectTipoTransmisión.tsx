@@ -1,6 +1,6 @@
 import { Dropdown } from 'primereact/dropdown';
 import { useEffect, useState } from 'react';
-import { getAllTipoTransmision } from '../../../../services/configuracionFactura/configuracionFacturaService';
+import { getAllTipoTransmision } from '../../../../../../../shared/catalogos/services/catalogosServices';
 
 interface SelectTipoTransmisionProp{
   setTipoTransmision: (value:any)=> void;

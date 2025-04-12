@@ -22,10 +22,6 @@ export const SelectCondicionOperacion: React.FC<
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  useEffect(()=>{
-    console.log(".....................", selectedCondicionDeOperacion)
-  },[selectedCondicionDeOperacion])
-
   return (
     <div className="flex flex-col gap-1">
       <label htmlFor="condicion" className="text-start opacity-70">

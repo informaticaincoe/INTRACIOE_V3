@@ -1,6 +1,6 @@
 import { Dropdown } from 'primereact/dropdown';
-import { getAllTiposEstablecimientos } from '../../features/bussiness/configBussiness/services/tiposEstablecimientosService';
 import { useEffect, useState } from 'react';
+import { getAllTiposEstablecimientos } from '../catalogos/services/catalogosServices';
 
 interface SelectedTipoEstablecimientoInterface {
   value: any;

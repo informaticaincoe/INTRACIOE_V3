@@ -1,6 +1,6 @@
 import { Dropdown } from 'primereact/dropdown';
 import { useEffect, useState } from 'react';
-import { getAllModelosDeFacturacion } from '../../../../services/configuracionFactura/configuracionFacturaService';
+import { getAllModelosDeFacturacion } from '../../../../../../../shared/catalogos/services/catalogosServices';
 
 export const SelectModeloFactura = () => {
   const [selectedModeloFacturacion, setSelectedModeloFacturacion] =
