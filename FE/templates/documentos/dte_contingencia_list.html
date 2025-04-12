@@ -77,7 +77,7 @@
             {% endif %}
           </td>
           <td>
-            {% if grupo.eventos_contingencia.count > 0 %}
+            {% if grupo.factura.count > 0 %}
               <button class="btn btn-sm btn-link toggle-accordion" type="button" data-target="#accordion-{{ forloop.counter }}">
                 ➕
               </button>
@@ -95,74 +95,85 @@
 
         <!-- Fila oculta que se expande -->
         {% if grupo.factura.count > 0 %}
-          <tr class="accordion-row" id="accordion-{{ forloop.counter }}" style="display: none;">
-            <td colspan="12">
-
-              {% for lote in grupo.eventos_contingencia.all %}
-              <table class="table table-bordered mb-4">
-                <thead>
-                  <tr>
-                    <th colspan="12" class="text-center">ID: {{ lote.id }} | Cantidad Facturas: {{ lote.cantidad_lote }}</th>
-                  </tr>
-                  <tr>
-                    <th><input type="checkbox" id="seleccionarLoteTodo"></th>
-                    <th>Estado</th>
-                    <th>Tipo DTE</th>
-                    <th>Total</th>
-                    <th>Fecha</th>
-                    <th>Codigo Generación</th>
-                    <th>Sello</th>
-                    <th>Enviar Lote MH</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for evento in lote.eventocontingencia.all %}
-                    {% for factura in grupo.eventos_contingencia.all  %}
-                    <tr>
-                      <td><input type="checkbox" name="factura_ids" value="{{ factura.id }}"></td>
-                      <td>
-                        {% if factura.estado and factura.sello_recepcion %}
-                          <i class="fa fa-check text-success"></i>
-                        {% else %}
-                          <i class="fa fa-ban text-danger"></i>
-                        {% endif %}
-                      </td>
-                      <td>
-                        {% if factura.tipo_dte.codigo == "03" %} CCF
-                        {% elif factura.tipo_dte.codigo == "01" %} FE
-                        {% else %} {{ factura.tipo_dte.codigo }}
-                        {% endif %}
-                      </td>
-                      <td>{{ factura.total_pagar }}</td>
-                      <td>{{ evento.fecha_transmicion }}</td>
-                      <td>{{ factura.codigo_generacion }}</td>
-                      <td>{{ factura.sello_recepcion }}</td>
-                      <td>
-                        {% if not factura.recibido_mh and not factura.sello_recepcion %}
-                          <form method="POST" action="{% url 'envio_dte_unificado' factura.id %}">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-sm btn-secondary">Enviar</button>
-                          </form>
-                        {% endif %}
-                      </td>
-                    </tr>
-                    {% endfor %}
-                  {% endfor %}
-                </tbody>
-              </table>
-              {% empty %}
-              <p class="text-muted">Este evento aún no tiene lotes asignados.</p>
-              {% endfor %}
-            </td>
-          </tr>
-          {% endif %}
-
-
+        <tr class="accordion-row" id="accordion-{{ forloop.counter }}" style="display: none;">
+          <td colspan="12">
+            {% for lotes, facturas in grupo.facturas_por_lote %}
+                ID: {{ item }}, Cantidad Facturas: {{ item.facturas|length }}
+                    <table class="table table-bordered mb-4">
+                      <thead>
+                        <tr>
+                          <th colspan="12" class="text-center">
+                            ID: {{ item.lote }}, Cantidad Facturas: {{ item.facturas|length }}
+                          </th>
+                        </tr>
+                        <tr>
+                          <th><input type="checkbox" id="seleccionarLoteTodo"></th>
+                          <th>Estado</th>
+                          <th>Tipo DTE</th>
+                          <th>Total</th>
+                          <th>Fecha</th>
+                          <th>Codigo Generación</th>
+                          <th>Sello</th>
+                          <th>Enviar Lote MH</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for factura in facturas %}
+                          <tr>
+                            <td><input type="checkbox" name="factura_ids" value="{{ factura.id }}"></td>
+                            <td>
+                              {% if factura.estado and factura.sello_recepcion %}
+                                <i class="fa fa-check text-success"></i>
+                              {% else %}
+                                <i class="fa fa-ban text-danger"></i>
+                              {% endif %}
+                            </td>
+                            <td>{{ factura.tipo_dte.codigo }}</td>
+                            <td>{{ factura.total_pagar }}</td>
+                            <td>{{ factura.fecha_transmicion }}</td>
+                            <td>{{ factura.codigo_generacion }}</td>
+                            <td>{{ factura.sello_recepcion }}</td>
+                            <td>
+                              {% if not factura.recibido_mh and not factura.sello_recepcion %}
+                                <form method="POST" action="{% url 'envio_dte_unificado' factura.id %}">
+                                  {% csrf_token %}
+                                  <button type="submit" class="btn btn-sm btn-secondary">Enviar</button>
+                                </form>
+                              {% endif %}
+                            </td>
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                {% endfor %}
+            
+          </td>
+        </tr>
+        {% endif %}
         {% endfor %}
       </tbody>
     </table>
   </div>
 </form>
+
+  <!-- Paginación -->
+  {% if page_obj %}
+    <div class="pagination d-flex justify-content-center mt-4">
+      {% if page_obj.has_previous %}
+        <a class="btn btn-outline-secondary me-2" href="?page={{ page_obj.previous_page_number }}">← Anterior</a>
+      {% endif %}
+
+      <span class="btn btn-light disabled">
+        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+      </span>
+
+      {% if page_obj.has_next %}
+        <a class="btn btn-outline-secondary ms-2" href="?page={{ page_obj.next_page_number }}">Siguiente →</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</form>
+
 
 <!-- Modal para mostrar respuesta -->
 <div class="modal fade" id="respuestaModal" tabindex="-1" aria-labelledby="respuestaModalLabel" aria-hidden="true">

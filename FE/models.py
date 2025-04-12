@@ -446,12 +446,12 @@ class EventoContingencia(models.Model):
     #Identificacion
     codigo_generacion = models.UUIDField(default=uuid.uuid4, unique=True)
     sello_recepcion = models.CharField(max_length=255, blank=True, null=True)
-    fecha_transmicion = models.DateField(auto_now_add=True, null=True) #fInicio
+    fecha_transmision = models.DateField(auto_now_add=True, null=True) #fInicio
     hora_transmision = models.TimeField(auto_now_add=True, null=True)
     fecha_modificacion = models.DateField(auto_now_add=True, null=True)
     hora_modificacion = models.TimeField(auto_now_add=True, null=True)
     estado = models.BooleanField(default=False) #manejar estado de envio de contingencia a MH
-    factura = models.ManyToManyField(FacturaElectronica, related_name='detalles_dte', blank=True)
+    factura = models.ManyToManyField(FacturaElectronica, related_name='eventos', blank=True)
     tipo_contingencia = models.ForeignKey(TipoContingencia, on_delete=models.CASCADE, null=True)
     #En el campo motivo_contingencia el contribuyente podra definir la razon de la contingencia, si el tipo de contingencia es 5, este campo sera obligatorio
     #motivo_contingencia = models.CharField(max_length=500, blank=True, null=True)# agregarlo en tabla cat-005
@@ -466,14 +466,14 @@ class EventoContingencia(models.Model):
     finalizado = models.BooleanField(default=False)
     
     def __str__(self):
-        return f"Contingencia {self.codigo_generacion} - {self.fecha_transmicion} - {self.hora_transmision}"
+        return f"Contingencia {self.codigo_generacion} - {self.fecha_transmision} - {self.hora_transmision}"
 
 class LoteContingencia(models.Model):
-    eventocontingencia = models.ManyToManyField(EventoContingencia, related_name='eventos_contingencia', blank=True)
+    #eventocontingencia = models.ForeignKey(EventoContingencia, on_delete=models.CASCADE, null=True, blank=True)
     recibido_mh = models.BooleanField(default=False)
     estado = models.BooleanField(default=False)
     cantidad_lote = models.IntegerField(null=True, verbose_name=None)
-    #factura_lotes = models.ManyToManyField(FacturaElectronica, related_name='lotes_contingencia', blank=True)
+    factura = models.ManyToManyField(FacturaElectronica, related_name='facturas_lote', blank=True)
     
     #Auditoria
     fecha_transmicion = models.DateField(auto_now_add=True, null=True) #fInicio
