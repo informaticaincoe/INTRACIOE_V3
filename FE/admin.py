@@ -24,7 +24,7 @@ models = [
 
 @admin.register(LoteContingencia)
 class LoteContingencia(admin.ModelAdmin):
-    list_display = ('id', 'recibido_mh', 'estado')
+    list_display = ('id', 'recibido_mh')
     
 @admin.register(EventoContingencia)
 class EventoContingencia(admin.ModelAdmin):
