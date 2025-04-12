@@ -1,7 +1,7 @@
 import React, { useEffect, useState, HTMLProps } from 'react';
 import { MultiSelect, MultiSelectChangeEvent } from 'primereact/multiselect';
 import { ActivitiesData } from '../interfaces/interfaces';
-import { getAllActivities } from '../../features/facturacion/activities/services/activitiesServices';
+import { getAllActivities } from '../catalogos/services/catalogosServices';
 
 interface SelectActividadesEconomicasProps {
   value: any[];

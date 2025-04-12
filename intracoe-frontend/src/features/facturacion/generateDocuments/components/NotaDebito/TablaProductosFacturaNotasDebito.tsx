@@ -11,7 +11,6 @@ import {
   FacturaDetalleItem,
   FacturaPorCodigoGeneracionResponse,
 } from '../../../../../shared/interfaces/interfaces';
-import { ProductosTabla } from '../FE/productosAgregados/productosData';
 
 interface TablaProductosFacturaNotasDebitoProps {
   facturasAjuste: FacturaPorCodigoGeneracionResponse[];

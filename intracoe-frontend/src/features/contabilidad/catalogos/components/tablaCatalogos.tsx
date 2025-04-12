@@ -1,5 +1,5 @@
 import React from 'react'
-import { HeaderTable } from '../../facturacion/activities/components/headerTable/headerTable'
+import { HeaderTable } from '../../../facturacion/activities/components/headerTable/headerTable'
 
 
 interface TablaCatalogosProp {
