@@ -1575,7 +1575,7 @@ def enviar_factura_hacienda_view(request, factura_id):
                 #crear el movimeinto de inventario
                 #Se asume que la factura tiene una relación a sus detalles, donde se encuentran los productos y cantidades
 
-                for detalle in factura.detalles.all():
+                """for detalle in factura.detalles.all():
 
                     if detalle.producto.almacenes.exists():
                         almacen = detalle.producto.almacenes.first()
@@ -1600,7 +1600,7 @@ def enviar_factura_hacienda_view(request, factura_id):
                     contingencia = False
                     #Si la factura fue recibida por mh detener los eventos en contingencia activos
                     finalizar_contigencia()
-                    #break
+                    #break"""
                 return JsonResponse({
                     "mensaje": "Factura enviada con éxito",
                     "respuesta": response_data
@@ -1679,15 +1679,14 @@ def enviar_factura_hacienda_view(request, factura_id):
                 factura.tipotransmision = TipoTransmision.objects.get(codigo="2") #Cuando es un evento en contingencia guardar tipo de transmision "2-Transmision por Contingencia"
                 factura.save()
                 
-                #---Crear evento de contingencia
-                #Si el documento se guardo en contingencia crear lote
-                lote_contingencia = lote_contingencia_dte_view(request, factura_id)
+                #Verificar si existen contingencias activas
+                finalizar_contigencia()
+                #Crear evento y lote de contingencia
+                lote_contingencia = lote_contingencia_dte_view(request, factura_id, tipo_contiengencia_obj)
                 
-                #Verificar si existe contingencia activa
-                evento_contingencia = EventoContingencia.objects.filter(finalizado=False).first()
                 #si existe evento_contingencia, es decir, no ha finalizado la contingencia y ademas el evento en contingencia no ha sido recibido por MH(no contiene sello),
                 #seguir agregando dtes en contingencia
-                if evento_contingencia:
+                """if evento_contingencia:
                     print("Contingencia existe: ", evento_contingencia)
                     evento_contingencia.lotecontingencia = lote_contingencia
                     evento_contingencia.save()
@@ -1700,7 +1699,7 @@ def enviar_factura_hacienda_view(request, factura_id):
                         estado = False,
                         tipo_contingencia = tipo_contiengencia_obj,
                         lotecontingencia = lote_contingencia
-                    )
+                    )"""
                 print(f"Factura: , {factura}, factura id: {factura.id}, tipo modelo: {factura.tipomodelo.descripcion}")
                 return render(request, "documentos/factura_consumidor/template_factura.html", {"factura": factura})
             else:
@@ -3200,9 +3199,8 @@ def generar_documento_ajuste_view(request):
 # EVENTOS DE CONTINGENCIA DE DTE
 #########################################################################################################
 def contingencia_list(request):
-    # Obtener el queryset base
-    #queryset = EventoContingencia.objects.prefetch_related('factura', 'factura__tipo_dte').order_by('id')
-    queryset = FacturaElectronica.objects.filter(contingencia=True).order_by('id')
+    # Obtener listado de la base
+    queryset = EventoContingencia.objects.prefetch_related('lotes_evento__factura').distinct().all().order_by('id')
     
     # Aplicar filtros según los parámetros GET
     recibido = request.GET.get('recibido_mh')
@@ -3219,64 +3217,41 @@ def contingencia_list(request):
     elif has_codigo == 'no':
         queryset = queryset.filter(sello_recepcion__isnull=True)
     if tipo:
-        queryset = queryset.filter(factura__tipo_dte__id=tipo)
+        queryset = queryset.filter(lotes_evento__factura__tipo_dte__id=tipo)
     
     # Configurar la paginación: 20 registros por página
     paginator = Paginator(queryset, 20)
     page_number = request.GET.get('page')
     dtelist = paginator.get_page(page_number)
-    
-    lotes = LoteContingencia.objects.prefetch_related('eventocontingencia__factura').order_by('id')
-    # Obtener todos los tipos de factura para el select del filtro
-    lotes_por_evento = {}
-    facturas = None
-    """for evento in dtelist:
-        print("Evento: ", evento)
-        facturas_repartidas = []
         
-        lotes = LoteContingencia.objects.prefetch_related('eventocontingencia__factura').order_by('id')
-        
-        # Asociar las facturas del evento
-        evento.lotes.set(lotes) 
-        evento.facturas = facturas
-        facturas = evento.factura.all()
-        
-        for lote in evento.lotes.all():
-            
-            facturas = list(evento.factura.all())
-            if evento.id not in lotes_por_evento:
-                lotes_por_evento[evento.id] = []
-            
-            lotes_por_evento[evento.id].append({
-                'lote': lote,
-                'facturas': facturas
-            })
-            
-            for evento in lote.eventocontingencia.all():
-                facturas = list(evento.factura.all()) #Facturas asociadas al evento
-                total_lotes = evento.lotes.count()  # cuántos lotes están usando este evento
-                index = list(evento.lotes.order_by('id')).index(lote)  # posición de este lote en la lista
-                
-                # Dividimos las facturas en partes iguales entre los lotes
-                chunk_size = ceil(len(facturas) / total_lotes)
-                start = index * chunk_size
-                end = start + chunk_size
-                
-                facturas_repartidas = facturas[start:end]
-                
-                if evento.id not in lotes_por_evento:
-                    lotes_por_evento[evento.id] = []
-                    
-                lotes_por_evento[evento.id].append({
-                    'lote': lote.id,
-                    'facturas': facturas_repartidas
-                })"""
-    
     tipos_dte = Tipo_dte.objects.filter(codigo__in=DTE_APLICA_CONTINGENCIA)
+    
+    # Crear una lista para almacenar los eventos con lotes y facturas agrupadas
+    eventos_con_lotes = []
+
+    for evento in dtelist:
+        # Obtener todas las facturas relacionadas con los lotes del evento
+        facturas = []
+        for lote in evento.lotes_evento.all():
+            facturas.append(lote.factura)
+
+        # Dividir las facturas en grupos de 100
+        facturas_en_grupos = [facturas[i:i + 2] for i in range(0, len(facturas), 2)]
+        
+        # Contar cuántos grupos de existen (lotes por evento)
+        total_lotes_evento = len(facturas_en_grupos)
+
+        # Agregar el evento con lotes y facturas agrupadas
+        eventos_con_lotes.append({
+            'evento': evento,
+            'facturas_en_grupos': facturas_en_grupos,
+            'total_lotes_evento': total_lotes_evento
+        })
+        
     context = {
         'dtelist': dtelist,
         'tipos_dte': tipos_dte,
-        'lotes_por_evento': lotes_por_evento
+        'eventos_con_lotes': eventos_con_lotes
     }
     return render(request, 'documentos/dte_contingencia_list.html', context)
 
@@ -3390,7 +3365,7 @@ def contingencias_dte_view(request):
         for contingencia_id in contingencia_ids:
             print("Enviar contingencia idd: ", contingencia_id)
             try:
-                # Llamar a la función de invalidación del DTE
+                # Llamar a la función de generacion del evento en contingencia
                 response_evento_contingencia = contingencia_dte_view(request, contingencia_id)
                 if response_evento_contingencia.status_code != 302:
                     results.append({
@@ -3455,67 +3430,76 @@ def contingencia_dte_view(request, contingencia_id):
     try: 
         if evento_contingencia is not None:
             detalles_dte = []
-            #for idx, det in enumerate(evento_contingencia, start=1):
-            for idx, fe in enumerate(evento_contingencia.factura.all(), start=1):
-                print("Factura en contingencia: ", fe.tipo_dte)
-                detalles_dte.append({
-                    "noItem": idx,
-                    "tipoDoc": str(fe.tipo_dte.codigo),
-                    "codigoGeneracion": str(fe.codigo_generacion).upper()
-                })
+            facturas = []
             
-            #Generar json contingencia
-            print("Generar json contingencia: ", evento_contingencia)
-            try:
-                json_identificacion = {
-                    "version": 3,
-                    "ambiente":  str(AMBIENTE.codigo),
-                    "codigoGeneracion": str(evento_contingencia.codigo_generacion).upper(),
-                    "fTransmision": str(evento_contingencia.fecha_transmision),
-                    "hTransmision": evento_contingencia.hora_transmision.strftime('%H:%M:%S')
-                }
+            for lote in evento_contingencia.lotes_evento.all():
+                facturas.append(lote.factura)
+                print("Facturas lote: ", facturas)
                 
-                json_emisor = {
-                    "nit": str(emisor_fe.nit),
-                    "nombre": str(emisor_fe.nombre_razon_social),
-                    "nombreResponsable": str(emisor_fe.nombre_razon_social), #CORREGIR
-                    "tipoDocResponsable": str(emisor_fe.tipo_documento.codigo), #CORREGIR
-                    "numeroDocResponsable": str(emisor_fe.nit), #CORREGIR
-                    "tipoEstablecimiento": str(emisor_fe.tipoestablecimiento.codigo) if emisor_fe.tipoestablecimiento else "",
-                    "codEstableMH": str(emisor_fe.codigo_establecimiento),
-                    "codPuntoVenta": str(emisor_fe.codigo_punto_venta), #"0001",
-                    "telefono": str(emisor_fe.telefono),
-                    "correo": str(emisor_fe.email)
-                }
-                
-                json_motivo = {
-                    "fInicio": str(evento_contingencia.fecha_transmision), #date.today().strftime('%H:%M:%S'),
-                    "fFin":  str(evento_contingencia.fecha_transmision), #date.today().strftime('%H:%M:%S'),
-                    "hInicio": datetime.now().strftime('%H:%M:%S'), #La estructura de la hora de entrada en contingencia será definida por la Administración Tributaria
-                    "hFin": datetime.now().strftime('%H:%M:%S'), #La estructura de la hora de salida en contingencia será definida por la Administración Tributaria
-                    "tipoContingencia": int(evento_contingencia.tipo_contingencia.codigo), #CAT-005 Tipo de Contingencia 
-                }
-                
-                #Especifiar motivo de contingencia
-                if evento_contingencia.tipo_contingencia and evento_contingencia.tipo_contingencia.codigo == COD_TIPO_CONTINGENCIA:
-                    json_motivo["motivoContingencia"] = evento_contingencia.tipo_contingencia.descripcion #Explicar motivo contingencia
-                else:
-                    json_motivo["motivoContingencia"] = None
-                
-                json_completo = {
-                    "identificacion": json_identificacion,
-                    "emisor": json_emisor,
-                    "detalleDTE": detalles_dte,
-                    "motivo": json_motivo
-                }
-                
-                evento_contingencia.json_original = json_completo
-                evento_contingencia.fecha_modificacion = timezone.now().date()
-                evento_contingencia.hora_modificacion = timezone.now().strftime('%H:%M:%S')
-                evento_contingencia.save()
-                return redirect(reverse('listar_contingencias'))
-            except Exception as e:
-                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            if facturas:
+                for idx, fe in enumerate(facturas, start=1):
+                    detalles_dte.append({
+                        "noItem": idx,
+                        "tipoDoc": str(fe.tipo_dte.codigo),
+                        "codigoGeneracion": str(fe.codigo_generacion).upper()
+                    })
+                    
+                    #Generar json contingencia
+                    print("Generar json contingencia: ", evento_contingencia)
+                    try:
+                        #Obtener fecha actual y aplicar formato YYYY-MM-DD
+                        fecha_actual = datetime.now()
+                        fecha_transmision = fecha_actual.strftime('%Y-%m-%d')
+                        
+                        json_identificacion = {
+                            "version": 3,
+                            "ambiente":  str(AMBIENTE.codigo),
+                            "codigoGeneracion": str(evento_contingencia.codigo_generacion).upper(),
+                            "fTransmision": str(fecha_transmision),
+                            "hTransmision": str(datetime.now().strftime('%H:%M:%S')),
+                        }
+                        
+                        json_emisor = {
+                            "nit": str(emisor_fe.nit),
+                            "nombre": str(emisor_fe.nombre_razon_social),
+                            "nombreResponsable": str(emisor_fe.nombre_razon_social), #CORREGIR
+                            "tipoDocResponsable": str(emisor_fe.tipo_documento.codigo), #CORREGIR
+                            "numeroDocResponsable": str(emisor_fe.nit), #CORREGIR
+                            "tipoEstablecimiento": str(emisor_fe.tipoestablecimiento.codigo) if emisor_fe.tipoestablecimiento else "",
+                            "codEstableMH": str(emisor_fe.codigo_establecimiento),
+                            "codPuntoVenta": str(emisor_fe.codigo_punto_venta), #"0001",
+                            "telefono": str(emisor_fe.telefono),
+                            "correo": str(emisor_fe.email)
+                        }
+                        
+                        json_motivo = {
+                            "fInicio": str(evento_contingencia.fecha_transmision), #date.today().strftime('%H:%M:%S'),
+                            "fFin":  str(evento_contingencia.fecha_transmision), #date.today().strftime('%H:%M:%S'),
+                            "hInicio": str(evento_contingencia.hora_transmision.strftime('%H:%M:%S')), #La estructura de la hora de entrada en contingencia será definida por la Administración Tributaria
+                            "hFin": str(datetime.now().strftime('%H:%M:%S')), #La estructura de la hora de salida en contingencia será definida por la Administración Tributaria
+                            "tipoContingencia": int(evento_contingencia.tipo_contingencia.codigo), #CAT-005 Tipo de Contingencia 
+                        }
+                        
+                        #Especifiar motivo de contingencia
+                        if evento_contingencia.tipo_contingencia and evento_contingencia.tipo_contingencia.codigo == COD_TIPO_CONTINGENCIA:
+                            json_motivo["motivoContingencia"] = evento_contingencia.tipo_contingencia.descripcion #Explicar motivo contingencia
+                        else:
+                            json_motivo["motivoContingencia"] = None
+                        
+                        json_completo = {
+                            "identificacion": json_identificacion,
+                            "emisor": json_emisor,
+                            "detalleDTE": detalles_dte,
+                            "motivo": json_motivo
+                        }
+                        
+                        evento_contingencia.json_original = json_completo
+                        evento_contingencia.fecha_modificacion = timezone.now().date()
+                        evento_contingencia.hora_modificacion = datetime.now().strftime('%H:%M:%S')
+                        evento_contingencia.save()
+                        return redirect(reverse('listar_contingencias'))
+                    except Exception as e:
+                        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return JsonResponse({
                 "error": "Error DTE a invalidar no encontrado",
@@ -3772,31 +3756,46 @@ def enviar_contingencia_hacienda_view(request, contingencia_id):
 # ENVIO DE LOTES EN CONTINGENCIA
 #########################################################################################################
 @csrf_exempt
-def lote_contingencia_dte_view(request, factura_id):
+def lote_contingencia_dte_view(request, factura_id, tipo_contiengencia_obj):
     print("Crear lote de los dte generados en contingencia: ", factura_id)
     lote_contingencia = None
     try:
+        #Paso 1: Buscar factura guardada en contingencia
         documento_contingencia = FacturaElectronica.objects.filter(id=factura_id).order_by('id').first()
         print("Dte contingencia: ", documento_contingencia)
         
-        if documento_contingencia:
-            if documento_contingencia.contingencia == True:
-                # Crear nuevo lote
+        if documento_contingencia and documento_contingencia.contingencia == True:
+            #Paso 2: Verificar si existe un evento de contingencia activo, sino existe crear el evento
+            evento_contingencia = EventoContingencia.objects.filter(finalizado=False, recibido_mh=False).first()
+            
+            if evento_contingencia is None:
+                print("Crear contingencia")
+                codigo_generacion_contingencia = str(uuid.uuid4()).upper()
+                evento_contingencia = EventoContingencia.objects.create(
+                    codigo_generacion = codigo_generacion_contingencia,
+                    estado = False,
+                    tipo_contingencia = tipo_contiengencia_obj
+                )
+                
+            #Crear lotes
+            if evento_contingencia:
+                print("Creacion de lotes")
                 lote_contingencia = LoteContingencia.objects.create(
-                    factura = documento_contingencia
+                    factura = documento_contingencia, 
+                    evento = evento_contingencia
                 )
                 mensaje = f"Lote creado correctamente: {lote_contingencia.id}"
                 return lote_contingencia
             else:
-                mensaje = "El documento electrónico no se registro como contingencia"
+                mensaje = "Hubo un fallo en el evento de contingencia"
+            
+            return JsonResponse({
+                #"factura_id": factura_id,
+                #"mensaje": mensaje,
+                "lote": lote_contingencia
+            })
         else:
             mensaje = "El documento electrónico no está disponible"
-        
-        return JsonResponse({
-            #"factura_id": factura_id,
-            #"mensaje": mensaje,
-            "lote": lote_contingencia
-        })
     except Exception as e:
         return JsonResponse({
             "mensaje": "Error en la creación de lotes",
@@ -3917,7 +3916,6 @@ def enviar_lotes_hacienda_view(request, factura_id):
     tipo_contiengencia_obj = None
     
     factura = get_object_or_404(FacturaElectronica, id=factura_id)
-
     # Paso 1: Autenticación contra el servicio de Hacienda
     global emisor_fe
     nit_empresa = str(emisor_fe.nit) 
@@ -4060,7 +4058,7 @@ def enviar_lotes_hacienda_view(request, factura_id):
             "detalle": str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-#Invalidacion de eventos en contingencia(hacerlo automatico)     
+#Finalizacion de eventos en contingencia(hacerlo automatico)     
 @csrf_exempt
 def finalizar_contigencia():
     try:
@@ -4074,7 +4072,7 @@ def finalizar_contigencia():
         plazo_transmitir_contingencia = (hora_actual - timezone.timedelta(hours=24)).replace(second=0, microsecond=0)
         print(f"hora actual: {hora_actual}, plazo contingencia: {plazo_transmitir_contingencia}")
         
-        contingencia_registrada = EventoContingencia.objects.filter(hora_transmision__gte=plazo_transmitir_contingencia, finalizado=False)
+        contingencia_registrada = EventoContingencia.objects.filter(hora_transmision__lte=plazo_transmitir_contingencia, finalizado=False)
         print("contingencias registradas en las ultimas 24 horas: ", contingencia_registrada)
         
         if contingencia_registrada:
