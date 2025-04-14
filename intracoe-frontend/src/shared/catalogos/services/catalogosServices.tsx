@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const BASEURL = import.meta.env.VITE_URL_BASE;
 
-export const getAllActivities = async (filtro?: string) => {
+export const getAllActivities = async (page?: number, limit?: number, filtro?: string) => {
   try {
     const response = await axios.get(
       `${BASEURL}/actividad/`,
@@ -129,6 +129,7 @@ export const getAllTipoIdReceptor = async () => {
 export const getAllPaises = async () => {
   try {
     const response = await axios.get(`${BASEURL}/pais/`);
+    console.log(response.data)
     return response.data;
   } catch (error) {
     throw new Error()
@@ -138,7 +139,21 @@ export const getAllPaises = async () => {
 export const getAllDepartamentos = async () => {
   try {
     const response = await axios.get(`${BASEURL}/departamentos/`);
+    await Promise.all(
+      response.data.map(async (data: any) => {
+        data.pais = await getPaisById(data.pais);
+      })
+    );
     return response.data;
+  } catch (error) {
+    throw new Error()
+  }
+}
+
+export const getPaisById = async (idPais: any) => {
+  try {
+    const response = await axios.get(`${BASEURL}/pais/${idPais}/`);
+    return response.data.descripcion;
   } catch (error) {
     throw new Error()
   }

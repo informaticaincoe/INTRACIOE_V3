@@ -27,7 +27,7 @@ export const IconButton: React.FC<IconButton> = ({
       }}
       onClick={onClick}
     >
-      <p className="text-sm">{text}</p>
+      <p className="text-sm pr-3">{text}</p>
     </Button>
   );
 };

@@ -50,7 +50,7 @@ export const HeaderTable: React.FC<HeaderTableProps> = ({
 
                     <article className="flex gap-2">
                         <IconButton
-                            text="Nueva actividad"
+                            text="Añadir"
                             icon={<IoIosAdd size={20} />}
                             className="bg-primary-blue hover:bg-primary-blue-hover"
                             onClick={handleNewActivity}

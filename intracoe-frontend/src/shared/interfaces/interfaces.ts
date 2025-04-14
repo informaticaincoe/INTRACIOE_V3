@@ -6,6 +6,20 @@ export interface ActivitiesData {
   descripcion: string;
 }
 
+export interface contingenciaData {
+  id: number;
+  codigo: string;
+  descripcion: string;
+  motivo_contingencia:string
+}
+
+export interface tipoDocTributarioData {
+  id: number;
+  codigo: string;
+  descripcion: string;
+  version:string
+}
+
 export interface ActivitiesDataNew {
   codigo: string;
   descripcion: string;
@@ -160,6 +174,19 @@ export interface Departamento {
   id: string;
   descripcion: string;
   code: string;
+}
+
+export interface DepartamentoCatalogo {
+  id: string;
+  descripcion: string;
+  codigo: string;
+  pais:number;
+}
+
+export interface PaisCatalogo {
+  id: string;
+  descripcion: string;
+  codigo: string;
 }
 
 export interface Municipio {
