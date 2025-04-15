@@ -5,11 +5,6 @@
 <div class="container my-4">
     <h1 class="mb-4">Listado de Facturas en Contiengencia</h1>
 
-  <!-- Boton de formulario de los dte generados en conringencia -->
-  <div class="col-15">
-    <button type="submit" class="btn btn-primary">Generar lotes</button>
-  </div>
-
 <!-- Formulario de filtrado -->
 <form method="get" class="row g-3 mb-4">
     <div class="col-md-3">
@@ -52,6 +47,9 @@
 <!-- Botón para enviar lotes de contingencia -->
 <button id="btnLoteContingenciaSeleccionadas" class="btn btn-danger mb-3">Enviar Lotes</button>
 
+<!-- Botón para enviar lotes de contingencia -->
+<button id="btnFinalizarContingencias" class="btn btn-danger mb-3">Finalizar contingencias fuera de plazo</button>
+
 <!-- Tabla de Contingencias -->
 <form id="formContingenciaFacturas">
   <div class="table-responsive">
@@ -67,19 +65,21 @@
           <th>Codigo de Generacion</th>
           <th>Sello Recibido</th>
           <th>Cantidad Lotes</th>
+          <th>Motivo contingencia</th>
           <th>Enviar Contingencia</th>
+          <th>Nota</th>
         </tr>
       </thead>
       <tbody>
         {% for grupo in eventos_con_lotes %}
         <tr>
           <td>
-            {% if grupo.evento.estado == False and grupo.evento.sello_recepcion is None%}
+            {% if grupo.evento.recibido_mh == False and grupo.evento.sello_recepcion is None%}
               <input type="checkbox" name="contingencia_ids" value="{{ grupo.evento.id }}">
             {% endif %}
           </td>
           <td>
-            {% if grupo.evento.estado and grupo.evento.sello_recepcion %}
+            {% if grupo.evento.recibido_mh and grupo.evento.sello_recepcion %}
               <i class="fa fa-check text-success"></i>
             {% else %}
               <i class="fa fa-ban text-danger"></i>
@@ -94,10 +94,19 @@
           </td>
           <td>{{ grupo.evento.codigo_generacion }}</td>
           <td>{{ grupo.evento.sello_recepcion }}</td>
-          <td>{{ grupo.total_lotes_evento }}</td> <!-- Aquí se muestra el total de grupos de 2 -->
+          <td>{{ grupo.total_lotes_evento }}</td> 
           <td>
-            {% if grupo.evento.sello_recepcion is None %}
-              <a href="{% url 'contingencia_dte_unificado' grupo.evento.id %}" class="btn btn-sm btn-secondary">Enviar</a>
+            {% if grupo.evento.tipo_contingencia.codigo == "5"%}
+              <input type="text" name="motivo_contingencia" data-id="{{ grupo.evento.motivo_contingencia }}" class="form-control" id="motivo_contingencia_input"></td> 
+            {% endif %}
+          <td>
+            {% if grupo.evento.sello_recepcion is None and grupo.evento.finalizado == False %}
+              <a id="contingencia_unificado" data-id="{{ grupo.evento.id}}" data-requiere-motivo="{{grupo.evento.tipo_contingencia.codigo}}" class="btn btn-sm btn-secondary">Enviar</a>
+            {% endif %}
+          </td>
+          <td>
+            {% if grupo.evento.sello_recepcion is None and grupo.evento.finalizado == True %}
+              Documento fuera de plazo
             {% endif %}
           </td>
         </tr>
@@ -145,10 +154,12 @@
                       <td>{{ factura.codigo_generacion }}</td>
                       <td>{{ factura.sello_recepcion }}</td>
                       <td>
-                        <form method="POST" action="{% url 'envio_dte_unificado' factura.id %}">
-                          {% csrf_token %}
-                          <button type="submit" class="btn btn-sm btn-secondary">Enviar</button>
-                        </form>
+                        {% if grupo.evento.sello_recepcion is not None %}
+                          <form method="POST" action="{% url 'envio_dte_unificado' factura.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-secondary">Enviar</button>
+                          </form>
+                        {% endif %}
                       </td>
                     </tr>
                   {% endfor %}
@@ -238,6 +249,24 @@
     </div>
     </div>
 </div>
+</div>
+
+<!-- Modal para mostrar respuesta del envio de lotes -->
+<div class="modal fade" id="respuestaLoteModal" tabindex="-1" aria-labelledby="respuestaLoteModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+      <div class="modal-content">
+      <div class="modal-header">
+          <h5 class="modal-title" id="respuestaLoteModalLabel">Resultado de Facturas</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+          <div id="resultadoLote"></div>
+      </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+      </div>
+  </div>
 </div>
 
 <!-- Paginación -->
@@ -356,13 +385,62 @@ document.addEventListener('DOMContentLoaded', function(){
     })
     .then(response => response.json())
     .then(data => {
-      console.log("Respuesta para facturas:", data);
-      // Manejo de la respuesta aquí (como mostrar un modal, etc.)
+      console.log("Respuesta:", data);
+      let htmlResultado = '';
+      if (data.results && data.results.length) {
+        data.results.forEach(result => {
+          htmlResultado += `<p><strong>Factura ${result.factura_id}:</strong> ${result.mensaje}<br><small>${JSON.stringify(result.detalle)}</small></p>`;
+        });
+      } else {
+        htmlResultado = "<p>No se recibió respuesta.</p>";
+      }
+      document.getElementById('resultadoLote').innerHTML = htmlResultado;
+      const myModal = new bootstrap.Modal(document.getElementById('respuestaLoteModal'));
+      myModal.show();
     })
     .catch(error => {
       console.error('Error:', error);
     });
   });
+
+  //5.Fainalizar todas las contingencias activas
+  const btnFinalizarContingencias = document.getElementById('btnFinalizarContingencias');
+  btnFinalizarContingencias.addEventListener('click', function(e) {
+    e.preventDefault();
+    
+    // Creamos el objeto FormData con los valores del formulario
+    const form = document.getElementById('formContingenciaFacturas');
+    const formData = new FormData(form); 
+
+    // Enviar la solicitud Fetch con los datos para facturas
+    fetch("{% url 'finalizar_contigencia' %}", {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest', // Para indicar que es una petición Ajax
+        'X-CSRFToken': '{{ csrf_token }}'  // Token CSRF para protección en Django
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log("Respuesta:", data);
+      let htmlResultado = '';
+      if (data.results && data.results.length) {
+        data.results.forEach(result => {
+          htmlResultado += `<p><strong>Contingencia ${result.contingencia}:</strong> ${result.mensaje}<br></p>`;
+        });
+      } else {
+        htmlResultado = "<p>No se recibió respuesta.</p>";
+      }
+      document.getElementById('resultadoContingencia').innerHTML = htmlResultado;
+      const myModal = new bootstrap.Modal(document.getElementById('respuestaModal'));
+      myModal.show();
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    });
+  });
+
 });
 </script>
 
@@ -381,5 +459,39 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   });
 </script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('#contingencia_unificado').forEach(function (enlace) {
+      enlace.addEventListener('click', function (e) {
+        e.preventDefault();
+
+        const contingencia_id = this.dataset.id; //id del evento
+
+        //Buscar input de motivo contingencia en la misma fila
+        const fila = this.closest('tr');
+        const input = fila.querySelector('.motivo_contingencia_input');
+        const motivo_contingencia = input ? input.value.trim() : '';
+
+        const codigoMotivo = this.dataset.requiereMotivo; //obtener codigo del tipo de contingencia
+        if (codigoMotivo === "5" && !motivo_contingencia) {
+          alert("Ingrese el motivo de contingencia");
+          return;
+        }
+
+        const encodedMotivo = encodeURIComponent(motivo_contingencia);
+
+        fetch(`/fe/contingencia-dte/?contingencia_id=${contingencia_id}&motivo_contingencia=${motivo_contingencia}`)
+          .then(response => {
+            if (!response.ok) {  // Verifica si la respuesta fue exitosa (200-299)
+                throw new Error('Network response was not ok');
+            }
+            return response.json();  // Intenta convertir la respuesta a JSON
+          })
+          .catch(error => console.error('Error:', error));
+      });
+    });
+  });
+  </script>
 
 {% endblock %}

@@ -44,7 +44,7 @@ class DetalleFacturaAdmin(admin.ModelAdmin):
 
 @admin.register(NumeroControl)
 class NumeroControlAdmin(admin.ModelAdmin):
-    list_display = ('anio', 'secuencia')
+    list_display = ('anio', 'secuencia', 'tipo_dte')
     ordering = ('-anio',)
     search_fields = ('anio',)
 
