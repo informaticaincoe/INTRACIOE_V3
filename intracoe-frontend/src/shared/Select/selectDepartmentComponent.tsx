@@ -3,7 +3,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { getAllDepartamentos } from '../../features/bussiness/configBussiness/services/ubicacionService';
 
 interface SelectDeparmentInterface {
-  setDepartamentoSelect:any
+  setDepartamentoSelect: any;
   departamentoSelect: any;
 }
 export const SelectDepartmentComponent: React.FC<SelectDeparmentInterface> = ({
@@ -15,9 +15,9 @@ export const SelectDepartmentComponent: React.FC<SelectDeparmentInterface> = ({
   useEffect(() => {
     fetchDepartaments();
   }, []);
-  
+
   useEffect(() => {
-   console.log(departamentoSelect)
+    console.log(departamentoSelect);
   }, [departamentoSelect]);
 
   const fetchDepartaments = async () => {
@@ -33,10 +33,10 @@ export const SelectDepartmentComponent: React.FC<SelectDeparmentInterface> = ({
     <div className="justify-content-center flex">
       <Dropdown
         value={departamentoSelect}
-        onChange={(e)=> setDepartamentoSelect(e.value)}
+        onChange={(e) => setDepartamentoSelect(e.value)}
         options={departmentList}
         optionLabel="descripcion"
-        optionValue='id'
+        optionValue="id"
         placeholder="Seleccionar departamento"
         className="md:w-14rem font-display w-full"
         filter

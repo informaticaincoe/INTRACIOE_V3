@@ -2,12 +2,15 @@ import { Dropdown } from 'primereact/dropdown';
 import { useEffect, useState } from 'react';
 import { getAllTipoTransmision } from '../../../../../../../shared/catalogos/services/catalogosServices';
 
-interface SelectTipoTransmisionProp{
-  setTipoTransmision: (value:any)=> void;
-  tipoTransmision: string
+interface SelectTipoTransmisionProp {
+  setTipoTransmision: (value: any) => void;
+  tipoTransmision: string;
 }
 
-export const SelectTipoTransmision:React.FC<SelectTipoTransmisionProp> = ({setTipoTransmision, tipoTransmision}) => {
+export const SelectTipoTransmision: React.FC<SelectTipoTransmisionProp> = ({
+  setTipoTransmision,
+  tipoTransmision,
+}) => {
   const [tipoTransmisionTempLista, setTipoTransmisionTempLista] = useState<
     any[]
   >([]); // Lista de tipos de documentos
@@ -19,7 +22,7 @@ export const SelectTipoTransmision:React.FC<SelectTipoTransmisionProp> = ({setTi
   const fetchTipoDte = async () => {
     const response = await getAllTipoTransmision();
     setTipoTransmisionTempLista(response);
-    setTipoTransmision(response[0].id)
+    setTipoTransmision(response[0].id);
   };
 
   return (

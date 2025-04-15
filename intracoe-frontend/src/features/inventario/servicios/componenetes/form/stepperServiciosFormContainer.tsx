@@ -7,38 +7,44 @@ import {
 } from '../../../../../shared/interfaces/interfaces';
 import { StepperInformacionGeneral } from './stepperServiciosInformacionGeneral';
 import { StepperFormImpuestoStock } from './stepperServiciosFormImpuestoStock';
-import CustomToast, { CustomToastRef, ToastSeverity } from '../../../../../shared/toast/customToast';
+import CustomToast, {
+  CustomToastRef,
+  ToastSeverity,
+} from '../../../../../shared/toast/customToast';
 import { IoMdCloseCircle } from 'react-icons/io';
-import { FaCheckCircle } from "react-icons/fa";
+import { FaCheckCircle } from 'react-icons/fa';
 import { useNavigate, useParams } from 'react-router';
-import { createProductService, EditProductService, getProductById } from '../../../products/services/productsServices';
+import {
+  createProductService,
+  EditProductService,
+  getProductById,
+} from '../../../products/services/productsServices';
 
 export const StepperServiciosFormContainer = () => {
-  let params = useParams()
+  let params = useParams();
 
   // Estado para controlar el paso actual
   const [current, setCurrent] = useState(0);
   const [formData, setFormData] = useState<ProductoRequest>(productoInicial);
   const toastRef = useRef<CustomToastRef>(null);
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (params.id) {
-      fetchServiciosDataEdit()
+      fetchServiciosDataEdit();
     }
-  }, [])
-
+  }, []);
 
   const fetchServiciosDataEdit = async () => {
     try {
       if (params.id) {
-        const data = await getProductById(params.id)
-        setFormData(data)
+        const data = await getProductById(params.id);
+        setFormData(data);
       }
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
 
   const handleAccion = (
     severity: ToastSeverity,
@@ -79,7 +85,7 @@ export const StepperServiciosFormContainer = () => {
     }
 
     // Arrays: impuestos y almacenes
-    formData.impuestos?.forEach(id => {
+    formData.impuestos?.forEach((id) => {
       payload.append('impuestos', id.toString());
     });
 
@@ -88,16 +94,12 @@ export const StepperServiciosFormContainer = () => {
       payload.append('imagen', formData.imagen, formData.imagen.name);
     }
 
-
     try {
       // 3) Envío con axios (o tu fetch), sin especificar Content-Type
       if (params.id) {
         const response = await EditProductService(params.id, payload);
-
-      }
-      else {
+      } else {
         const response = await createProductService(payload);
-
       }
       handleAccion(
         'success',
@@ -106,10 +108,8 @@ export const StepperServiciosFormContainer = () => {
       );
 
       setTimeout(() => {
-        navigate('/servicios/')
-      }, 2000)
-
-
+        navigate('/servicios/');
+      }, 2000);
     } catch (err) {
       handleAccion(
         'error',
@@ -118,7 +118,6 @@ export const StepperServiciosFormContainer = () => {
       );
     }
   };
-
 
   const steps = [
     {
@@ -169,7 +168,6 @@ export const StepperServiciosFormContainer = () => {
         </>
       ),
     },
-
   ];
 
   return (

@@ -6,18 +6,18 @@ import { QRCode } from 'antd';
 interface InformacionEmisorProps {
   emisor: Emisor;
   datosFactura: DatosFactura;
-  qrCode:string
+  qrCode: string;
 }
 
 export const InformacionEmisor: React.FC<InformacionEmisorProps> = ({
   emisor,
   datosFactura,
-  qrCode
+  qrCode,
 }) => {
   const [nombreDte, setNombreDte] = useState<string>('');
   useEffect(() => {
     if (datosFactura.tipoDte) fetchTipoDTE();
-    console.log(qrCode)
+    console.log(qrCode);
   }, [datosFactura.tipoDte]);
 
   const fetchTipoDTE = async () => {
@@ -46,7 +46,10 @@ export const InformacionEmisor: React.FC<InformacionEmisorProps> = ({
           alt="qr"
         /> */}
         <div style={{ width: '7vw', height: '7vw', margin: '0' }}>
-          <QRCode value={qrCode || '-'}  style={{ width: '100%', height: '100%', margin: '0' }}/>
+          <QRCode
+            value={qrCode || '-'}
+            style={{ width: '100%', height: '100%', margin: '0' }}
+          />
         </div>
         <p>Generado: {datosFactura.fechaEmision}</p>
         <p>{datosFactura.horaEmision}</p>

@@ -3,38 +3,47 @@ import { Steps } from 'antd';
 import { StepperInformacionGeneral } from './stepperReceptorInformacionGeneral';
 import { StepperFormImpuestoStock } from './stepperServiciosFormImpuestoStock';
 import { IoMdCloseCircle } from 'react-icons/io';
-import { FaCheckCircle } from "react-icons/fa";
+import { FaCheckCircle } from 'react-icons/fa';
 import { useNavigate, useParams } from 'react-router';
-import { ReceptorDefault, ReceptorRequestDefault, ReceptorRequestInterface } from '../../../../../../../shared/interfaces/interfaces';
-import CustomToast, { CustomToastRef, ToastSeverity } from '../../../../../../../shared/toast/customToast';
+import {
+  ReceptorDefault,
+  ReceptorRequestDefault,
+  ReceptorRequestInterface,
+} from '../../../../../../../shared/interfaces/interfaces';
+import CustomToast, {
+  CustomToastRef,
+  ToastSeverity,
+} from '../../../../../../../shared/toast/customToast';
 import { getProductById } from '../../../../../../inventario/products/services/productsServices';
 import { WhiteSectionsPage } from '../../../../../../../shared/containers/whiteSectionsPage';
 
 export const StepperReceptorFormContainer = () => {
-  let params = useParams()
+  let params = useParams();
 
   // Estado para controlar el paso actual
   const [current, setCurrent] = useState(0);
-  const [formData, setFormData] = useState<ReceptorRequestInterface>(ReceptorRequestDefault);
+  const [formData, setFormData] = useState<ReceptorRequestInterface>(
+    ReceptorRequestDefault
+  );
   const toastRef = useRef<CustomToastRef>(null);
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (params.id) {
-      fetchServiciosDataEdit()
+      fetchServiciosDataEdit();
     }
-  }, [])
+  }, []);
 
   const fetchServiciosDataEdit = async () => {
     try {
       if (params.id) {
-        const data = await getProductById(params.id)
-        setFormData(data)
+        const data = await getProductById(params.id);
+        setFormData(data);
       }
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
 
   const handleAccion = (
     severity: ToastSeverity,
@@ -55,8 +64,7 @@ export const StepperReceptorFormContainer = () => {
 
   const handleSendForm = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(formData.tipo_documento_id)
-
+    console.log(formData.tipo_documento_id);
   };
 
   const steps = [
@@ -108,7 +116,6 @@ export const StepperReceptorFormContainer = () => {
         </>
       ),
     },
-
   ];
 
   return (
