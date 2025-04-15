@@ -35,7 +35,7 @@ export const createEmpresa = async (data: any) => {
   }
 };
 
-export const editReceptor = async (id:string, data: any) => {
+export const editReceptor = async (id: string, data: any) => {
   try {
     const response = await axios.put(`${BASEURL}/emisor/editar/${id}/`, data, {
       headers: {

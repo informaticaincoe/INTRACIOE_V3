@@ -17,7 +17,7 @@ export const generarFacturaService = async (data: any) => {
 export const generarAjusteService = async () => {
   try {
     const response = await axios.get(`${BASEURL}/factura_ajuste/generar/`);
-    console.log(response.data)
+    console.log(response.data);
     return response.data;
   } catch (error) {
     console.log(error);
@@ -46,7 +46,7 @@ export const getFacturaCodigos = async (tipo_dte: string) => {
       },
     });
     const productosConExtras: ProductosTabla[] = response.data.productos.map(
-      (p:ProductosTabla) => ({
+      (p: ProductosTabla) => ({
         ...p,
         cantidad: 1,
         descuento: 0,
@@ -56,15 +56,14 @@ export const getFacturaCodigos = async (tipo_dte: string) => {
         total_iva: 0,
         total_con_iva: 0,
         total_tributos: 0,
-        seleccionar:false
+        seleccionar: false,
       })
     );
 
     return {
       ...response.data,
-      producto: productosConExtras
+      producto: productosConExtras,
     };
-    
   } catch (error) {
     console.log(error);
     throw new Error();
@@ -106,5 +105,3 @@ export const getFacturaBycodigo = async (codigo_generacion: string) => {
     throw new Error();
   }
 };
-
-

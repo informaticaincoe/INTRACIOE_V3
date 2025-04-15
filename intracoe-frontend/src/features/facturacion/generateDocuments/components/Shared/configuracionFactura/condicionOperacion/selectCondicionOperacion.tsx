@@ -8,12 +8,16 @@ interface Item {
 interface SelectCondicionOperacionProps {
   selectedCondicionDeOperacion: any;
   setSelectedCondicionDeOperacion: any;
-  condicionesOperacionList:any
+  condicionesOperacionList: any;
 }
 
 export const SelectCondicionOperacion: React.FC<
   SelectCondicionOperacionProps
-> = ({ selectedCondicionDeOperacion, setSelectedCondicionDeOperacion, condicionesOperacionList }) => {
+> = ({
+  selectedCondicionDeOperacion,
+  setSelectedCondicionDeOperacion,
+  condicionesOperacionList,
+}) => {
   const [formData, setFormData] = useState({
     otraOperacion: '',
   });
@@ -29,15 +33,16 @@ export const SelectCondicionOperacion: React.FC<
       </label>
       <div className="flex flex-col gap-8">
         <div className="flex gap-10">
-          {condicionesOperacionList && condicionesOperacionList.map((item:any) => (
-            <button
-              key={item.id}
-              className={`${selectedCondicionDeOperacion === item.codigo ? 'bg-primary-blue text-white' : 'border-primary-blue text-primary-blue border bg-white'} h-14 w-50 rounded-md`} // Cambiar estilo según si está seleccionado
-              onClick={() => setSelectedCondicionDeOperacion(item.codigo)} //TODO: Enviar id en lugar del nombre
-            >
-              {item.descripcion}
-            </button>
-          ))}
+          {condicionesOperacionList &&
+            condicionesOperacionList.map((item: any) => (
+              <button
+                key={item.id}
+                className={`${selectedCondicionDeOperacion === item.codigo ? 'bg-primary-blue text-white' : 'border-primary-blue text-primary-blue border bg-white'} h-14 w-50 rounded-md`} // Cambiar estilo según si está seleccionado
+                onClick={() => setSelectedCondicionDeOperacion(item.codigo)} //TODO: Enviar id en lugar del nombre
+              >
+                {item.descripcion}
+              </button>
+            ))}
         </div>
       </div>
     </div>

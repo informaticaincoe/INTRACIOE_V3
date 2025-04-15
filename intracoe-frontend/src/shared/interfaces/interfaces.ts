@@ -1,4 +1,4 @@
-import { Nullable } from "primereact/ts-helpers";
+import { Nullable } from 'primereact/ts-helpers';
 
 export interface ActivitiesData {
   id: number;
@@ -10,14 +10,14 @@ export interface contingenciaData {
   id: number;
   codigo: string;
   descripcion: string;
-  motivo_contingencia:string
+  motivo_contingencia: string;
 }
 
 export interface tipoDocTributarioData {
   id: number;
   codigo: string;
   descripcion: string;
-  version:string
+  version: string;
 }
 
 export interface ActivitiesDataNew {
@@ -84,41 +84,41 @@ export interface EmisorInterface {
 }
 
 export const ReceptorDefault: ReceptorInterface = {
-  id: "",
+  id: '',
   tipo_documento: {
-    id: "",
-    descripcion: "",
-    code: "",
+    id: '',
+    descripcion: '',
+    code: '',
   },
-  num_documento: "",
-  nrc: "",
-  nombre: "",
+  num_documento: '',
+  nrc: '',
+  nombre: '',
   actividades_economicas: [],
-  municipio: { id: "", descripcion: "", code: "", },
-  direccion: "",
-  telefono: "",
-  correo: "",
-  nombre_comercial: "",
-}
+  municipio: { id: '', descripcion: '', code: '' },
+  direccion: '',
+  telefono: '',
+  correo: '',
+  nombre_comercial: '',
+};
 
 export const ReceptorRequestDefault: ReceptorRequestInterface = {
-  id: "",
+  id: '',
   tipo_documento: {
-    id: "",
-    descripcion: "",
-    code: ""
+    id: '',
+    descripcion: '',
+    code: '',
   },
-  num_documento: "",
-  nrc: "",
-  nombre: "",
+  num_documento: '',
+  nrc: '',
+  nombre: '',
   actividades_economicas: [],
-  municipio: "",
-  direccion: "",
-  telefono: "",
-  correo: "",
-  nombre_comercial: "",
-  tipo_receptor: ""
-}
+  municipio: '',
+  direccion: '',
+  telefono: '',
+  correo: '',
+  nombre_comercial: '',
+  tipo_receptor: '',
+};
 
 export interface ReceptorInterface {
   id: string;
@@ -158,7 +158,7 @@ export interface TipoDocumento {
 export interface TipoDocumentoDropDown {
   name: string;
   code: string;
-};
+}
 
 export interface Ambiente {
   id: string;
@@ -180,7 +180,7 @@ export interface DepartamentoCatalogo {
   id: string;
   descripcion: string;
   codigo: string;
-  pais:number;
+  pais: number;
 }
 
 export interface PaisCatalogo {
@@ -196,25 +196,25 @@ export interface Municipio {
 }
 
 export const RequestEmpresaDefault = {
-  nit: "",
-  nrc: "",
-  nombre_razon_social: "",
-  nombre_comercial: "",
-  direccion_comercial: "",
-  telefono: "",
-  email: "",
-  codigo_establecimiento: "",
-  codigo_punto_venta: "",
-  nombre_establecimiento: "",
-  tipoestablecimiento: "",
-  departamento: "",
-  municipio: "",
-  ambiente: "",
-  tipo_documento: "",
+  nit: '',
+  nrc: '',
+  nombre_razon_social: '',
+  nombre_comercial: '',
+  direccion_comercial: '',
+  telefono: '',
+  email: '',
+  codigo_establecimiento: '',
+  codigo_punto_venta: '',
+  nombre_establecimiento: '',
+  tipoestablecimiento: '',
+  departamento: '',
+  municipio: '',
+  ambiente: '',
+  tipo_documento: '',
   actividades_economicas: [],
-  clave_privada:"",
-  clave_publica:""
-}
+  clave_privada: '',
+  clave_publica: '',
+};
 
 export interface RequestEmpresa {
   nit: string;
@@ -434,6 +434,15 @@ export interface Descuento {
   fecha_fin: string;
   estdo: boolean;
 }
+
+export const DescuentoDefault = {
+  id: 0,
+  porcentaje: 0,
+  descripcion: '',
+  fecha_inicio: '',
+  fecha_fin: '',
+  estdo: false,
+};
 
 export interface FacturaDetalleItem {
   monto_a_aumentar: number;

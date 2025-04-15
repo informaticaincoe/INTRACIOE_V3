@@ -8,7 +8,7 @@ interface EditModalProps {
   activity: ActivitiesData;
   visible: boolean;
   setVisible: (v: boolean) => void;
-  onSave: () => void;  // callback tras guardar para refrescar tabla y cerrar modal
+  onSave: () => void; // callback tras guardar para refrescar tabla y cerrar modal
   saveFunction: (id: number, data: Partial<ActivitiesData>) => Promise<any>;
 }
 
@@ -34,7 +34,7 @@ export const EditModal: React.FC<EditModalProps> = ({
   }, [activity]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handlerForm = async (e: React.FormEvent) => {
@@ -77,7 +77,10 @@ export const EditModal: React.FC<EditModalProps> = ({
           />
         </label>
         <div className="flex justify-end gap-3">
-          <button type="submit" className="bg-primary-blue text-white px-6 py-2 rounded">
+          <button
+            type="submit"
+            className="bg-primary-blue rounded px-6 py-2 text-white"
+          >
             Guardar
           </button>
         </div>

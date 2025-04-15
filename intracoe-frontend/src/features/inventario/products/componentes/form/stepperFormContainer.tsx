@@ -8,37 +8,44 @@ import {
 import { StepperInformacionGeneral } from './stepperInformacionGeneral';
 import { StepperFormImpuestoStock } from './stepperFormImpuestoStock';
 import { StepperFormLotesYVencimiento } from './stepperFormLotesYVencimiento';
-import { createProductService, EditProductService, getProductById } from '../../services/productsServices';
-import CustomToast, { CustomToastRef, ToastSeverity } from '../../../../../shared/toast/customToast';
+import {
+  createProductService,
+  EditProductService,
+  getProductById,
+} from '../../services/productsServices';
+import CustomToast, {
+  CustomToastRef,
+  ToastSeverity,
+} from '../../../../../shared/toast/customToast';
 import { IoMdCloseCircle } from 'react-icons/io';
-import { FaCheckCircle } from "react-icons/fa";
+import { FaCheckCircle } from 'react-icons/fa';
 import { useNavigate, useParams } from 'react-router';
 
 export const StepperFormContainer = () => {
-  let params = useParams()
+  let params = useParams();
 
   // Estado para controlar el paso actual
   const [current, setCurrent] = useState(0);
   const [formData, setFormData] = useState<ProductoRequest>(productoInicial);
   const toastRef = useRef<CustomToastRef>(null);
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (params.id) {
-      fetchProductDataEdit()
+      fetchProductDataEdit();
     }
-  }, [])
+  }, []);
 
   const fetchProductDataEdit = async () => {
     try {
       if (params.id) {
-        const data = await getProductById(params.id)
-        setFormData(data)
+        const data = await getProductById(params.id);
+        setFormData(data);
       }
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
 
   const handleAccion = (
     severity: ToastSeverity,
@@ -59,27 +66,24 @@ export const StepperFormContainer = () => {
 
   const handleSendForm = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("data-----", formData.imagen)
-    console.log("datatypeof-----", typeof (formData.imagen))
+    console.log('data-----', formData.imagen);
+    console.log('datatypeof-----', typeof formData.imagen);
 
     if (formData.stock > formData.stock_maximo) {
-      console.log("")
+      console.log('');
       handleAccion(
         'error',
         <IoMdCloseCircle size={38} />,
         'Stock actual es mayor al stock maximo'
       );
-      return
+      return;
     }
     try {
       // 3) Envío con axios (o tu fetch), sin especificar Content-Type
       if (params.id) {
         const response = await EditProductService(params.id, formData);
-
-      }
-      else {
+      } else {
         const response = await createProductService(formData);
-
       }
       handleAccion(
         'success',
@@ -88,10 +92,8 @@ export const StepperFormContainer = () => {
       );
 
       setTimeout(() => {
-        navigate('/productos/')
-      }, 2000)
-
-
+        navigate('/productos/');
+      }, 2000);
     } catch (err) {
       handleAccion(
         'error',
@@ -100,7 +102,6 @@ export const StepperFormContainer = () => {
       );
     }
   };
-
 
   const steps = [
     {

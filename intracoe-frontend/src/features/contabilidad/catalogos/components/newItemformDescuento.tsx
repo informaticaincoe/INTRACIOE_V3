@@ -1,30 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Dialog } from 'primereact/dialog';
-import { Input } from '../forms/input';
 import { RadioButton, RadioButtonChangeEvent } from 'primereact/radiobutton';
-import { Descuento } from '../interfaces/interfaces';
+import {
+  Descuento,
+  DescuentoDefault,
+} from '../../../../shared/interfaces/interfaces';
+import { Input } from '../../../../shared/forms/input';
 
-interface EditModalDescuentoProps {
-  activity: Descuento;
+interface newModalDescuentoProps {
   visible: boolean;
   setVisible: (v: boolean) => void;
   onSave: () => void;
-  saveFunction: (id: number, data: Partial<Descuento>) => Promise<any>;
+  createFunction: (data: Partial<Descuento>) => Promise<any>;
 }
 
-export const EditModalDescuento: React.FC<EditModalDescuentoProps> = ({
-  activity,
+export const NewModalDescuento: React.FC<newModalDescuentoProps> = ({
   visible,
   setVisible,
   onSave,
-  saveFunction,
+  createFunction,
 }) => {
   // formData.estdo es boolean
-  const [formData, setFormData] = useState<Descuento>(activity);
-
-  useEffect(() => {
-    setFormData(activity);
-  }, [activity]);
+  const [formData, setFormData] =
+    useState<Partial<Descuento>>(DescuentoDefault);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
@@ -45,8 +43,8 @@ export const EditModalDescuento: React.FC<EditModalDescuentoProps> = ({
   const handlerForm = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const { id, ...rest } = formData;
-      await saveFunction(id, rest);
+      const { ...rest } = formData;
+      await createFunction(rest);
       onSave();
     } catch (err) {
       console.error(err);
@@ -55,7 +53,7 @@ export const EditModalDescuento: React.FC<EditModalDescuentoProps> = ({
 
   return (
     <Dialog
-      header="Editar Descuento"
+      header="Nuevo descuento"
       visible={visible}
       style={{ width: '60vw' }}
       onHide={() => setVisible(false)}
@@ -72,10 +70,10 @@ export const EditModalDescuento: React.FC<EditModalDescuentoProps> = ({
         </label>
 
         <label className="flex flex-col">
-          Descripción:
+          descripcion:
           <Input
             name="descripcion"
-            value={formData.descripcion}
+            value={formData.descripcion ?? ''}
             onChange={handleChange}
           />
         </label>
@@ -85,7 +83,7 @@ export const EditModalDescuento: React.FC<EditModalDescuentoProps> = ({
           <Input
             type="date"
             name="fecha_inicio"
-            value={formData.fecha_inicio}
+            value={formData.fecha_inicio ?? ''}
             onChange={handleChange}
           />
         </label>
@@ -95,7 +93,7 @@ export const EditModalDescuento: React.FC<EditModalDescuentoProps> = ({
           <Input
             type="date"
             name="fecha_fin"
-            value={formData.fecha_fin}
+            value={formData.fecha_fin ?? ''}
             onChange={handleChange}
           />
         </label>

@@ -5,7 +5,7 @@ import { getAllTipoIdReceptor } from '../../features/bussiness/configBussiness/s
 interface SelectedTipoIdDocumentoInterface {
   onChange: any;
   value: any;
-  name:any;
+  name: any;
 }
 
 export const SelectTipoIdDocumento: React.FC<
@@ -20,9 +20,8 @@ export const SelectTipoIdDocumento: React.FC<
   const fetchTipoDocId = async () => {
     try {
       const response = await getAllTipoIdReceptor();
-      console.log("response, response")
+      console.log('response, response');
       setTipoDocId(response);
-
     } catch (error) {
       console.log(error);
     }
@@ -32,9 +31,7 @@ export const SelectTipoIdDocumento: React.FC<
     <div className="justify-content-center flex">
       <Dropdown
         value={value}
-        onChange={(e) =>
-          onChange({ target: { name: name, value: e.value }})
-        }
+        onChange={(e) => onChange({ target: { name: name, value: e.value } })}
         options={tipoDocId}
         optionLabel="descripcion"
         optionValue="id"

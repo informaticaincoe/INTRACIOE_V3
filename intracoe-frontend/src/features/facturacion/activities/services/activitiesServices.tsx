@@ -3,7 +3,6 @@ import { ActivitiesDataNew } from '../../../../shared/interfaces/interfaces';
 
 const BASEURL = import.meta.env.VITE_URL_BASE;
 
-
 export const createActivity = async (activity: ActivitiesDataNew) => {
   console.log('activity', activity);
   try {

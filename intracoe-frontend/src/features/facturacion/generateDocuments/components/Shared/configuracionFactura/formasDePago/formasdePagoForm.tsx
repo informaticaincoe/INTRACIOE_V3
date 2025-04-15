@@ -1,15 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
 import { Dropdown } from 'primereact/dropdown';
-import { InputNumber, InputNumberValueChangeEvent } from 'primereact/inputnumber';
+import {
+  InputNumber,
+  InputNumberValueChangeEvent,
+} from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
 import { FaRegCreditCard } from 'react-icons/fa6';
 import { FaXmark } from 'react-icons/fa6';
 import { IoMdCloseCircle } from 'react-icons/io';
-import CustomToast, { CustomToastRef, ToastSeverity } from '../../../../../../../shared/toast/customToast';
+import CustomToast, {
+  CustomToastRef,
+  ToastSeverity,
+} from '../../../../../../../shared/toast/customToast';
 import styles from './formasDePagoCustom.module.css';
 import { MultiSelectChangeEvent } from 'primereact/multiselect';
 import { PaymentMethodInteface } from './formasdePagoData';
-import { getAllMetodosDePago, getAllPlazos } from '../../../../../../../shared/catalogos/services/catalogosServices';
+import {
+  getAllMetodosDePago,
+  getAllPlazos,
+} from '../../../../../../../shared/catalogos/services/catalogosServices';
 
 interface FormasdePagoFormProps {
   setFormasPagoList: (codes: string[]) => void;
@@ -28,8 +37,11 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
   setAuxManejoPagos,
   auxManejoPagos,
 }) => {
-  const [listFormasdePago, setListFormasdePago] = useState<PaymentMethodInteface[]>([]);
-  const [paymentSelected, setPaymentSelected] = useState<PaymentMethodInteface>();
+  const [listFormasdePago, setListFormasdePago] = useState<
+    PaymentMethodInteface[]
+  >([]);
+  const [paymentSelected, setPaymentSelected] =
+    useState<PaymentMethodInteface>();
   const [plazosList, setPlazosList] = useState<any[]>([]);
   const [selectedPlazosList, setSelectedPlazosList] = useState<number>(1);
   const [infoPagoLista, setInfoPagoLista] = useState<any[]>([]);
@@ -41,25 +53,28 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
   });
   const toastRef = useRef<CustomToastRef>(null);
 
-  const handleAccion = (severity: ToastSeverity, icon: any, summary: string) => {
+  const handleAccion = (
+    severity: ToastSeverity,
+    icon: any,
+    summary: string
+  ) => {
     toastRef.current?.show({ severity, summary, icon, life: 2000 });
   };
 
   useEffect(() => {
     getAllMetodosDePago().then(setListFormasdePago);
-    fetchPlazos()
+    fetchPlazos();
   }, []);
 
   const fetchPlazos = async () => {
     try {
-      const response = await getAllPlazos()
-      setPlazosList(response)
-      console.log("LLLLLLLLLLL", response[0].id)
-      setSelectedPlazosList(response[0].codigo)
+      const response = await getAllPlazos();
+      setPlazosList(response);
+      setSelectedPlazosList(response[0].codigo);
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
 
   // Cada vez que cambie la lista de pagos o el total, recalcula remaining
   useEffect(() => {
@@ -74,16 +89,18 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
 
     setAuxManejoPagos(remaining);
     // También actualiza los códigos en el padre
-    setFormasPagoList(infoPagoLista.map(p => p.codigo));
+    setFormasPagoList(infoPagoLista.map((p) => p.codigo));
   }, [infoPagoLista, totalAPagar, setAuxManejoPagos, setFormasPagoList]);
 
-  const handleChange = (e: InputNumberValueChangeEvent | React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: InputNumberValueChangeEvent | React.ChangeEvent<HTMLInputElement>
+  ) => {
     const { name, value } = e.target as any;
-    setFormData(fd => ({ ...fd, [name]: Number(value) }));
+    setFormData((fd) => ({ ...fd, [name]: Number(value) }));
   };
 
   const handlePagoCompleto = () => {
-    setFormData(fd => ({ ...fd, montoPago: auxManejoPagos }));
+    setFormData((fd) => ({ ...fd, montoPago: auxManejoPagos }));
   };
 
   const onClick = () => {
@@ -99,7 +116,7 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
     }
     // monto válido
     if (formData.montoPago <= auxManejoPagos) {
-      setInfoPagoLista(prev => [
+      setInfoPagoLista((prev) => [
         ...prev,
         {
           ...formData,
@@ -107,19 +124,23 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
           codigo: paymentSelected.codigo,
           descripcion: paymentSelected.descripcion,
           id: Date.now(),
-        }
+        },
       ]);
       setErrorFormasPago(false);
       setErorReferencia(false);
       // limpia form
       setFormData({ montoPago: 0, referecia: '', periodo: 0 });
     } else {
-      handleAccion('error', <IoMdCloseCircle size={38} />, 'El monto excede el total restante');
+      handleAccion(
+        'error',
+        <IoMdCloseCircle size={38} />,
+        'El monto excede el total restante'
+      );
     }
   };
 
   const deleteFromList = (item: any) => {
-    setInfoPagoLista(prev => prev.filter(p => p.id !== item.id));
+    setInfoPagoLista((prev) => prev.filter((p) => p.id !== item.id));
   };
   return (
     <div className="flex w-full flex-col items-start">
@@ -240,7 +261,7 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
                   </button>
                 </span>
                 <p className="pt-5 text-start">
-                  Falta a pagar: $ {(Math.round(auxManejoPagos * 100) / 100) }
+                  Falta a pagar: $ {Math.round(auxManejoPagos * 100) / 100}
                 </p>
               </div>
 

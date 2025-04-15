@@ -8,8 +8,11 @@ interface EditModalDocTributario {
   activity: tipoDocTributarioData;
   visible: boolean;
   setVisible: (v: boolean) => void;
-  onSave: () => void;  // callback tras guardar para refrescar tabla y cerrar modal
-  saveFunction: (id: number, data: Partial<tipoDocTributarioData>) => Promise<any>;
+  onSave: () => void; // callback tras guardar para refrescar tabla y cerrar modal
+  saveFunction: (
+    id: number,
+    data: Partial<tipoDocTributarioData>
+  ) => Promise<any>;
 }
 
 export const EditModalDocTributario: React.FC<EditModalDocTributario> = ({
@@ -23,7 +26,7 @@ export const EditModalDocTributario: React.FC<EditModalDocTributario> = ({
     id: activity.id,
     codigo: activity.codigo,
     descripcion: activity.descripcion,
-    version: activity.version
+    version: activity.version,
   });
 
   useEffect(() => {
@@ -31,12 +34,12 @@ export const EditModalDocTributario: React.FC<EditModalDocTributario> = ({
       id: activity.id,
       codigo: activity.codigo,
       descripcion: activity.descripcion,
-      version: activity.version
+      version: activity.version,
     });
   }, [activity]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handlerForm = async (e: React.FormEvent) => {
@@ -46,7 +49,7 @@ export const EditModalDocTributario: React.FC<EditModalDocTributario> = ({
       await saveFunction(formData.id, {
         codigo: formData.codigo,
         descripcion: formData.descripcion,
-        version: formData.version
+        version: formData.version,
       });
       onSave();
     } catch (err) {
@@ -88,7 +91,10 @@ export const EditModalDocTributario: React.FC<EditModalDocTributario> = ({
           />
         </label>
         <div className="flex justify-end gap-3">
-          <button type="submit" className="bg-primary-blue text-white px-6 py-2 rounded">
+          <button
+            type="submit"
+            className="bg-primary-blue rounded px-6 py-2 text-white"
+          >
             Guardar
           </button>
         </div>

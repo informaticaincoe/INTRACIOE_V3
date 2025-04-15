@@ -28,4 +28,3 @@ export const getCondicionDeOperacionById = async (id: number) => {
     throw new Error();
   }
 };
-

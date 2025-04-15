@@ -27,7 +27,9 @@ export function DeleteModal<T extends { id: any; [key: string]: any }>({
         message: (
           <div className="flex flex-col">
             <span>¿Estás seguro de eliminar:</span>
-            <strong className="italic mt-2">{String(item.nombre ?? item.descripcion ?? item.id)}</strong>
+            <strong className="mt-2 italic">
+              {String(item.nombre ?? item.descripcion ?? item.id)}
+            </strong>
           </div>
         ),
         header: 'Confirmar eliminación',

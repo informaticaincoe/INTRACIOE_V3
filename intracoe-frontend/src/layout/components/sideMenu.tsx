@@ -1,10 +1,10 @@
 import { MdDashboard } from 'react-icons/md';
 import { IoMdPerson } from 'react-icons/io';
-import { BsBuildingFill } from "react-icons/bs";
-import { FaCalculator } from "react-icons/fa";
+import { BsBuildingFill } from 'react-icons/bs';
+import { FaCalculator } from 'react-icons/fa';
 import { HiCurrencyDollar } from 'react-icons/hi2';
 import { RiFilePaperFill } from 'react-icons/ri';
-import { FaTruckRampBox } from "react-icons/fa6";
+import { FaTruckRampBox } from 'react-icons/fa6';
 import type { MenuProps } from 'antd';
 import { Menu } from 'antd';
 import { useNavigate } from 'react-router';
@@ -30,7 +30,7 @@ const items: MenuItem[] = [
         key: 'proveedor',
         label: <p className="text-start">Proveedores</p>,
       },
-    ]
+    ],
   },
   {
     key: 'conta',
@@ -49,7 +49,7 @@ const items: MenuItem[] = [
         key: 'catalogo',
         label: <p className="text-start">Catalogo</p>,
       },
-    ]
+    ],
   },
   {
     key: 'fact',
@@ -104,7 +104,7 @@ const items: MenuItem[] = [
         label: <p className="text-start">Configurar servidor</p>,
       },
     ],
-  }
+  },
 ];
 
 export const SideMenu = () => {
@@ -122,10 +122,10 @@ export const SideMenu = () => {
         navigate('/generar-documentos');
         break;
       case 'correcciones':
-        navigate('/generar-documentos-ajuste')
+        navigate('/generar-documentos-ajuste');
         break;
       case 'catalogo':
-        navigate('/catalogos')
+        navigate('/catalogos');
         break;
       case 'producto':
         navigate('/productos');

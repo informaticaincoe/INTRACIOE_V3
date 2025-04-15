@@ -11,8 +11,10 @@ interface TablaServiciosHeaderProps {
   onSearch: (codigo: string) => void;
 }
 
-
-export const TablaServiciosHeader: React.FC<TablaServiciosHeaderProps> = ({ codigo, onSearch }) => {
+export const TablaServiciosHeader: React.FC<TablaServiciosHeaderProps> = ({
+  codigo,
+  onSearch,
+}) => {
   const [input, setInput] = useState<string>(codigo);
   const navigate = useNavigate();
 
@@ -50,10 +52,7 @@ export const TablaServiciosHeader: React.FC<TablaServiciosHeaderProps> = ({ codi
             onChange={handleChange}
             className="flex-1 border-0 focus:ring-0"
           />
-          <button
-            onClick={handleClickSearch}
-            className="px-3 py-1"
-          >
+          <button onClick={handleClickSearch} className="px-3 py-1">
             Buscar
           </button>
         </span>

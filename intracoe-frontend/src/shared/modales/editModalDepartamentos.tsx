@@ -10,8 +10,11 @@ interface EditModalDocTributario {
   activity: DepartamentoCatalogo;
   visible: boolean;
   setVisible: (v: boolean) => void;
-  onSave: () => void;  // callback tras guardar para refrescar tabla y cerrar modal
-  saveFunction: (id: string, data: Partial<DepartamentoCatalogo>) => Promise<any>;
+  onSave: () => void; // callback tras guardar para refrescar tabla y cerrar modal
+  saveFunction: (
+    id: string,
+    data: Partial<DepartamentoCatalogo>
+  ) => Promise<any>;
 }
 
 export const EditModalDepartamento: React.FC<EditModalDocTributario> = ({
@@ -21,41 +24,41 @@ export const EditModalDepartamento: React.FC<EditModalDocTributario> = ({
   onSave,
   saveFunction,
 }) => {
-  const [paisesList, setPaisesList] = useState<PaisCatalogo[]>([])
-  const [paisSelect, setPaisSelect] = useState<PaisCatalogo>()
+  const [paisesList, setPaisesList] = useState<PaisCatalogo[]>([]);
+  const [paisSelect, setPaisSelect] = useState<PaisCatalogo>();
 
   const [formData, setFormData] = useState<DepartamentoCatalogo>({
     id: activity.id,
     codigo: activity.codigo,
     descripcion: activity.descripcion,
-    pais: activity.pais
+    pais: activity.pais,
   });
 
   useEffect(() => {
-    fetchPaises
-  }, [])
+    fetchPaises;
+  }, []);
 
   const fetchPaises = async () => {
     try {
-      const response = await getAllPaises()
-      console.log("pais", response)
-      setPaisesList(response)
+      const response = await getAllPaises();
+      console.log('pais', response);
+      setPaisesList(response);
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
 
   useEffect(() => {
     setFormData({
       id: activity.id,
       codigo: activity.codigo,
       descripcion: activity.descripcion,
-      pais: activity.pais
+      pais: activity.pais,
     });
   }, [activity]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handlerForm = async (e: React.FormEvent) => {
@@ -65,7 +68,7 @@ export const EditModalDepartamento: React.FC<EditModalDocTributario> = ({
       await saveFunction(formData.id, {
         codigo: formData.codigo,
         descripcion: formData.descripcion,
-        pais: formData.pais
+        pais: formData.pais,
       });
       onSave();
     } catch (err) {
@@ -83,9 +86,7 @@ export const EditModalDepartamento: React.FC<EditModalDocTributario> = ({
     >
       <form className="flex flex-col gap-7 px-5" onSubmit={handlerForm}>
         <span>
-          <label>
-            Código:
-          </label>
+          <label>Código:</label>
           <Input
             name="codigo"
             value={formData.codigo}
@@ -94,9 +95,7 @@ export const EditModalDepartamento: React.FC<EditModalDocTributario> = ({
         </span>
 
         <span>
-          <label>
-            Descripción:
-          </label>
+          <label>Descripción:</label>
           <Input
             name="descripcion"
             value={formData.descripcion}
@@ -110,12 +109,16 @@ export const EditModalDepartamento: React.FC<EditModalDocTributario> = ({
             onChange={(e) => setPaisSelect(e.value)}
             options={paisesList}
             placeholder="Seleccionar pais..."
-            optionValue='codigo'
+            optionValue="codigo"
             className="w-full"
-            checkmark={true}/>
+            checkmark={true}
+          />
         </span>
         <div className="flex justify-end gap-3">
-          <button type="submit" className="bg-primary-blue text-white px-6 py-2 rounded">
+          <button
+            type="submit"
+            className="bg-primary-blue rounded px-6 py-2 text-white"
+          >
             Guardar
           </button>
         </div>
