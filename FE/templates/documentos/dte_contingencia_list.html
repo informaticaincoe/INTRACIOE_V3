@@ -114,7 +114,7 @@
                     </th>
                   </tr>
                   <tr>
-                    <th><input type="checkbox" id="seleccionarTodoLote" name="seleccionar-todo-lote"></th>
+                    <th><input type="checkbox" id="seleccionarTodoLote" class="seleccionar-todas-facturas"></th>
                     <th>Estado</th>
                     <th>Tipo DTE</th>
                     <th>Total</th>
@@ -145,11 +145,10 @@
                       <td>{{ factura.codigo_generacion }}</td>
                       <td>{{ factura.sello_recepcion }}</td>
                       <td>
-                        {% if factura.recibido_mh == False and factura.sello_recepcion is None and grupo.evento.sello_recepcion is not None %}
-                          <form method="POST" action="{% url 'envio_dte_unificado' factura.id %}">
-                            <button type="submit" class="btn btn-sm btn-secondary">Enviar</button>
-                          </form>
-                        {% endif %}
+                        <form method="POST" action="{% url 'envio_dte_unificado' factura.id %}">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-sm btn-secondary">Enviar</button>
+                        </form>
                       </td>
                     </tr>
                   {% endfor %}
@@ -284,7 +283,7 @@
 <!-- JavaScript para manejar la selección y la llamada AJAX -->
 <script>
 document.addEventListener('DOMContentLoaded', function(){
-  // Seleccionar/des-seleccionar todos los checkboxes
+  //1.Seleccionar/des-seleccionar todos los checkboxes
   const seleccionarTodo = document.getElementById('seleccionarTodo');
   seleccionarTodo.addEventListener('change', function(){
     const checkboxes = document.querySelectorAll('input[name="contingencia_ids"]');
@@ -292,7 +291,17 @@ document.addEventListener('DOMContentLoaded', function(){
     checkboxes.forEach(chk => chk.checked = seleccionarTodo.checked);
   });
 
-  // Manejar el click en el botón "Enviar contingencias seleccionadas"
+  //2.Seleccionar/des-seleccionar todas las facturas de cada lote
+  const lotesSeleccionar = document.querySelectorAll('.seleccionar-todas-facturas');
+  lotesSeleccionar.forEach(function(checkbox) {
+    checkbox.addEventListener('change', function() {
+      const checkboxesLote = this.closest('table').querySelectorAll('input[name="factura_ids"]');
+      console.log("lote id: ", checkboxesLote)
+      checkboxesLote.forEach(chk => chk.checked = this.checked);
+    });
+  });
+
+  //3.Manejar el click en el botón "Enviar contingencias seleccionadas"
   const btnContingenciaSeleccionadas = document.getElementById('btnContingenciaSeleccionadas');
   btnContingenciaSeleccionadas.addEventListener('click', function(e){
     e.preventDefault();
@@ -326,59 +335,38 @@ document.addEventListener('DOMContentLoaded', function(){
       console.error('Error:', error);
     });
   });
-});
-</script>
 
-<script>
-
-//Enviar lotes
-document.addEventListener('DOMContentLoaded', function(){
-  // Seleccionar/des-seleccionar todos los checkboxes
-  const seleccionarTodoLote = document.getElementById('seleccionar-todo-lote');
-  console.log("Lotes seleccionados: ", seleccionarTodoLote)
-  seleccionarTodoLote.addEventListener('change', function () {
-    const checkboxes = document.querySelectorAll('input[name="factura_ids"]');
-    console.log("Factura seleccionada id: ", checkboxes.length)
-    checkboxes.forEach(chk => chk.checked = seleccionarTodoLote.checked);
-  });
-
-  // Manejar el click en el botón "Enviar lotes"
+  //4.Manejar el click en el botón "Enviar Facturas seleccionadas"
   const btnLoteContingenciaSeleccionadas = document.getElementById('btnLoteContingenciaSeleccionadas');
-  btnLoteContingenciaSeleccionadas.addEventListener('click', function(e){
-    e.preventDefault();
+  btnLoteContingenciaSeleccionadas.addEventListener('click', function(e) {
+    e.preventDefault(); // Evita que el formulario se envíe de manera tradicional
+    
+    // Creamos el objeto FormData con los valores del formulario
     const form = document.getElementById('formContingenciaFacturas');
-    const formData = new FormData(form);
+    const formData = new FormData(form);  // Recoge todos los valores del formulario
 
-    fetch("{% url 'lotes_dte' %}", {
+    // Enviar la solicitud Fetch con los datos para facturas
+    fetch("{% url 'lotes_dte' %}", { // URL diferente para facturas
       method: 'POST',
       body: formData,
       headers: {
-        'X-Requested-With': 'XMLHttpRequest',
-        // Si usas CSRF token, inclúyelo; por ejemplo:
-        'X-CSRFToken': '{{ csrf_token }}'
+        'X-Requested-With': 'XMLHttpRequest', // Para indicar que es una petición Ajax
+        'X-CSRFToken': '{{ csrf_token }}'  // Token CSRF para protección en Django
       }
     })
     .then(response => response.json())
     .then(data => {
-      console.log("Respuesta:", data);
-      let htmlResultado = '';
-      if (data.results && data.results.length) {
-        data.results.forEach(result => {
-          htmlResultado += `<p><strong>Factura ${result.factura_id}:</strong> ${result.mensaje}<br><small>${JSON.stringify(result.detalle)}</small></p>`;
-        });
-      } else {
-        htmlResultado = "<p>No se recibió respuesta.</p>";
-      }
-      document.getElementById('resultadoContingencia').innerHTML = htmlResultado;
-      const myModal = new bootstrap.Modal(document.getElementById('respuestaModal'));
-      myModal.show();
+      console.log("Respuesta para facturas:", data);
+      // Manejo de la respuesta aquí (como mostrar un modal, etc.)
     })
     .catch(error => {
       console.error('Error:', error);
     });
   });
 });
+</script>
 
+<script>
   document.querySelectorAll('.toggle-accordion').forEach(button => {
     button.addEventListener('click', () => {
       const targetId = button.getAttribute('data-target');
