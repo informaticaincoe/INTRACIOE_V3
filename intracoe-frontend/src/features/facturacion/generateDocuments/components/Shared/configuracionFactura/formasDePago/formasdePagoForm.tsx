@@ -45,13 +45,23 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
     toastRef.current?.show({ severity, summary, icon, life: 2000 });
   };
 
-  // 1) Carga métodos y plazos al montar
   useEffect(() => {
     getAllMetodosDePago().then(setListFormasdePago);
-    getAllPlazos().then(setPlazosList);
+    fetchPlazos()
   }, []);
 
-  // 2) Cada vez que cambie la lista de pagos o el total, recalcula remaining
+  const fetchPlazos = async () => {
+    try {
+      const response = await getAllPlazos()
+      setPlazosList(response)
+      console.log("LLLLLLLLLLL", response[0].id)
+      setSelectedPlazosList(response[0].codigo)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  // Cada vez que cambie la lista de pagos o el total, recalcula remaining
   useEffect(() => {
     const pagado = infoPagoLista.reduce((sum, p) => sum + p.montoPago, 0);
     let remaining = Math.round((totalAPagar - pagado) * 100) / 100;
@@ -206,7 +216,7 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
                           setSelectedPlazosList(e.value)
                         }
                         options={plazosList}
-                        optionLabel="valor"
+                        optionLabel="descripcion"
                         optionValue="codigo"
                         placeholder="Seleccionar tipo de plazo"
                         className={`md:w-14rem font-display flex w-full gap-2 bg-none text-start text-nowrap ${styles.inputWrapper}`}
