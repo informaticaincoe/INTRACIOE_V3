@@ -1,22 +1,26 @@
 import axios from 'axios';
-import { Descuento, Impuesto, ProductoResponse } from '../../interfaces/interfaces';
+import {
+  Descuento,
+  Impuesto,
+  ProductoResponse,
+} from '../../interfaces/interfaces';
 import { getTributoById } from '../tributos/tributos';
 
 const BASEURLINVENT = import.meta.env.VITE_URL_BASE_INVENT;
 const BASEURL = import.meta.env.VITE_URL_BASE;
 
-
 export const getAllProducts = async ({
   filter,
-  tipo
+  tipo,
 }: {
   filter?: string;
   tipo?: string | number;
-} = {}) => {// Si no se pasa argumento, se usa un objeto vacío
+} = {}) => {
+  // Si no se pasa argumento, se usa un objeto vacío
   try {
     const params: Record<string, any> = {}; // Construimos el objeto `params` sólo con los filtros proporcionados
-    if (filter) params.q    = filter;
-    if (tipo)   params.tipo = tipo;
+    if (filter) params.q = filter;
+    if (tipo) params.tipo = tipo;
 
     const response = await axios.get<ProductoResponse[]>(
       `${BASEURLINVENT}/productos/`,
@@ -34,7 +38,6 @@ export const getAllProducts = async ({
   }
 };
 
-
 export const getAllDescuentos = async () => {
   try {
     const response = await axios.get<Descuento[]>(`${BASEURL}/descuento/`);
@@ -51,7 +54,7 @@ export const getAllImpuestos = async () => {
   } catch (error) {
     throw new Error();
   }
-}
+};
 
 export const getAllUnidadesDeMedida = async () => {
   try {

@@ -48,7 +48,7 @@ export const generarFacturaService = async (id: string) => {
       pagoEnLetras: response.data.total_letras,
       condicionOpeacion: response.data.condicion_operacion,
       extension: response.data.json_original.extension,
-      ambiente: response.data.json_original.identificacion.ambiente
+      ambiente: response.data.json_original.identificacion.ambiente,
     };
   } catch (error) {
     console.log(error);

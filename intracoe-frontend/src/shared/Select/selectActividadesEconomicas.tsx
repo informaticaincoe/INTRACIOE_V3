@@ -5,17 +5,16 @@ import { getAllActivities } from '../catalogos/services/catalogosServices';
 
 interface SelectActividadesEconomicasProps {
   value: any[];
-  onChange: (e: { target: { name: string; value: (string | number)[] } }) => void;
+  onChange: (e: {
+    target: { name: string; value: (string | number)[] };
+  }) => void;
   className?: HTMLProps<HTMLElement>['className'];
   name: string;
 }
 
-export const SelectActividadesEconomicas: React.FC<SelectActividadesEconomicasProps> = ({
-  value,
-  onChange,
-  className,
-  name
-}) => {
+export const SelectActividadesEconomicas: React.FC<
+  SelectActividadesEconomicasProps
+> = ({ value, onChange, className, name }) => {
   const [listActividades, setListActividades] = useState<ActivitiesData[]>([]);
 
   // 1) Carga las actividades desde la API
@@ -30,12 +29,12 @@ export const SelectActividadesEconomicas: React.FC<SelectActividadesEconomicasPr
     })();
   }, []);
 
-  useEffect(()=> {
-    console.log("", value)
-  },[value])
+  useEffect(() => {
+    console.log('', value);
+  }, [value]);
 
   // 2) Deriva el array de objetos seleccionados, filtrando por código
-  const selectedActivities = listActividades.filter(act =>
+  const selectedActivities = listActividades.filter((act) =>
     value.includes(act.id)
   );
 
@@ -44,28 +43,28 @@ export const SelectActividadesEconomicas: React.FC<SelectActividadesEconomicasPr
       <MultiSelect
         value={value}
         options={listActividades}
-        optionLabel="descripcion"   // muestra la descripción en la lista y en los chips
-        optionValue="id"        // almacena sólo el código en `value`
+        optionLabel="descripcion" // muestra la descripción en la lista y en los chips
+        optionValue="id" // almacena sólo el código en `value`
         placeholder="Seleccionar actividad económica"
         className={`${className} w-full`}
         filter
-        maxSelectedLabels={1}       // opcional: "+N más"
+        maxSelectedLabels={1} // opcional: "+N más"
         panelStyle={{ overflowY: 'auto' }}
         onChange={(e: MultiSelectChangeEvent) => {
           onChange({
             target: {
               name,
-              value: e.value
-            }
+              value: e.value,
+            },
           });
         }}
       />
 
       {selectedActivities.length > 0 && (
-        <div className="py-5 max-h-40 overflow-auto">
+        <div className="max-h-40 overflow-auto py-5">
           <strong>Actividades seleccionadas:</strong>
           <ul className="list-inside list-disc px-5 text-black">
-            {selectedActivities.map(act => (
+            {selectedActivities.map((act) => (
               <li key={act.codigo}>{act.descripcion}</li>
             ))}
           </ul>

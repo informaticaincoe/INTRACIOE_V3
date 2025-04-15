@@ -6,7 +6,10 @@ import { Column } from 'primereact/column';
 import { FaCheckCircle } from 'react-icons/fa';
 import { IoMdCloseCircle } from 'react-icons/io';
 
-import CustomToast, { CustomToastRef, ToastSeverity } from '../../../../shared/toast/customToast';
+import CustomToast, {
+  CustomToastRef,
+  ToastSeverity,
+} from '../../../../shared/toast/customToast';
 import { useNavigate } from 'react-router';
 import { deleteProduct } from '../../products/services/productsServices';
 
@@ -16,16 +19,17 @@ export interface TablaServiciosProps {
 }
 
 export const TablaServicios: React.FC<TablaServiciosProps> = ({
-  servicios,refreshServicios
+  servicios,
+  refreshServicios,
 }) => {
   useEffect(() => {
-    console.log(servicios)
-  }, [servicios])
+    console.log(servicios);
+  }, [servicios]);
 
   const [rowClick] = useState<boolean>(true);
   const [selectedServices, setSelectedServices] = useState<any[]>([]);
   const toastRef = useRef<CustomToastRef>(null);
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const handleAccion = (
     severity: ToastSeverity,
@@ -45,10 +49,18 @@ export const TablaServicios: React.FC<TablaServiciosProps> = ({
     for (const servicio of selectedServices) {
       try {
         await deleteProduct(servicio.id);
-        handleAccion('success', <FaCheckCircle size={38} />, 'Servicio eliminado con éxito');
+        handleAccion(
+          'success',
+          <FaCheckCircle size={38} />,
+          'Servicio eliminado con éxito'
+        );
       } catch (error) {
         console.error(error);
-        handleAccion('error', <IoMdCloseCircle size={38} />, 'Error al eliminar el Servicio');
+        handleAccion(
+          'error',
+          <IoMdCloseCircle size={38} />,
+          'Error al eliminar el Servicio'
+        );
       }
     }
     // Después de eliminar, se limpia la selección y se actualiza la lista de servicios
@@ -57,7 +69,7 @@ export const TablaServicios: React.FC<TablaServiciosProps> = ({
   };
 
   const editHandler = () => {
-    navigate("/servicio/" + selectedServices[0].id)
+    navigate('/servicio/' + selectedServices[0].id);
   };
   return (
     <div>

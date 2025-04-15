@@ -5,11 +5,11 @@ import { Column } from 'primereact/column';
 import 'primereact/resources/themes/lara-light-blue/theme.css';
 import { ActivitiesData } from '../../../../../shared/interfaces/interfaces';
 
-interface TableContainerProp{
-  data:any
+interface TableContainerProp {
+  data: any;
 }
 
-export const TableContainer:React.FC<TableContainerProp> = ({data}) => {
+export const TableContainer: React.FC<TableContainerProp> = ({ data }) => {
   const [activities, setActivities] = useState<ActivitiesData[]>([]);
   const [filterTerm, setFilterTerm] = useState<string>('');
 
@@ -18,7 +18,7 @@ export const TableContainer:React.FC<TableContainerProp> = ({data}) => {
   // };
 
   return (
-    <div className='px-10 py-5'>
+    <div className="px-10 py-5">
       <>
         <HeaderTable
           setActivities={setActivities}

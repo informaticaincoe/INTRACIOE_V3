@@ -8,7 +8,10 @@ import { FaCheckCircle } from 'react-icons/fa';
 import { IoMdCloseCircle } from 'react-icons/io';
 
 import { deleteProduct } from '../services/productsServices';
-import CustomToast, { CustomToastRef, ToastSeverity } from '../../../../shared/toast/customToast';
+import CustomToast, {
+  CustomToastRef,
+  ToastSeverity,
+} from '../../../../shared/toast/customToast';
 import { useNavigate } from 'react-router';
 
 export interface TablaProductosProps {
@@ -17,16 +20,17 @@ export interface TablaProductosProps {
 }
 
 export const TablaProductos: React.FC<TablaProductosProps> = ({
-  productos,refreshProducts
+  productos,
+  refreshProducts,
 }) => {
   useEffect(() => {
-    console.log(productos)
-  }, [productos])
+    console.log(productos);
+  }, [productos]);
 
   const [rowClick] = useState<boolean>(true);
   const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
   const toastRef = useRef<CustomToastRef>(null);
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const handleAccion = (
     severity: ToastSeverity,
@@ -46,10 +50,18 @@ export const TablaProductos: React.FC<TablaProductosProps> = ({
     for (const product of selectedProducts) {
       try {
         await deleteProduct(product.id);
-        handleAccion('success', <FaCheckCircle size={38} />, 'Producto eliminado con éxito');
+        handleAccion(
+          'success',
+          <FaCheckCircle size={38} />,
+          'Producto eliminado con éxito'
+        );
       } catch (error) {
         console.error(error);
-        handleAccion('error', <IoMdCloseCircle size={38} />, 'Error al eliminar el producto');
+        handleAccion(
+          'error',
+          <IoMdCloseCircle size={38} />,
+          'Error al eliminar el producto'
+        );
       }
     }
     // Después de eliminar, se limpia la selección y se actualiza la lista de productos
@@ -58,7 +70,7 @@ export const TablaProductos: React.FC<TablaProductosProps> = ({
   };
 
   const editHandler = () => {
-    navigate("/producto/" + selectedProducts[0].id)
+    navigate('/producto/' + selectedProducts[0].id);
   };
   return (
     <div>

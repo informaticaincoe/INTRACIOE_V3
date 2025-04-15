@@ -20,10 +20,10 @@ export const SelectTipoGeneracionDelDocumento: React.FC<
 
   const fetchTipoListaGeneracionDocumento = async () => {
     try {
-      const response = await getAllTiposGeneracionDocumento();      
-      setTipoListaGeneracionDocumento(response)
-    } catch (error){
-      console.log(error)
+      const response = await getAllTiposGeneracionDocumento();
+      setTipoListaGeneracionDocumento(response);
+    } catch (error) {
+      console.log(error);
     }
   };
 

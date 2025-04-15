@@ -4,21 +4,20 @@ import { TableContainer } from '../components/activitiesTable/tableContainer';
 import { getAllActivities } from '../../../../shared/catalogos/services/catalogosServices';
 
 export const ActivitiesPage = () => {
-  const [actividades, setActividades] = useState()
+  const [actividades, setActividades] = useState();
 
   useEffect(() => {
-    fetchActividadesEconomicas()
-  }, [])
+    fetchActividadesEconomicas();
+  }, []);
 
   const fetchActividadesEconomicas = async () => {
-    try{
-      const response = await getAllActivities()
-      setActividades(response)
+    try {
+      const response = await getAllActivities();
+      setActividades(response);
+    } catch (error) {
+      console.log(error);
     }
-    catch(error){
-      console.log(error)
-    }
-  }
+  };
   return (
     <div>
       <Title text="Actividades economicas" />
