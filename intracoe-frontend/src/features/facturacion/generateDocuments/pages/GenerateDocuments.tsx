@@ -41,6 +41,7 @@ import CustomToast, {
 import { IoMdCloseCircle } from 'react-icons/io';
 import { TablaProductosAgregados } from '../components/FE/productosAgregados/tablaProductosAgregados';
 import { ExtensionCard } from '../components/Shared/entension/extensionCard';
+import { Skeleton } from 'antd';
 
 export const GenerateDocuments = () => {
   //lista de datos obtenidas de la api
@@ -89,6 +90,7 @@ export const GenerateDocuments = () => {
   const [descuentosProducto, setDescuentosProducto] = useState<string[]>([]);
   const navigate = useNavigate();
   const toastRef = useRef<CustomToastRef>(null);
+  const [loading, setLoading] = useState(true);
 
   const handleAccion = (
     severity: ToastSeverity,
@@ -114,6 +116,7 @@ export const GenerateDocuments = () => {
     });
     setTotalAPagar(aux)
   };
+
 
   useEffect(() => {
     const descuentosAux: string[] = selectedProducts.map(producto => {

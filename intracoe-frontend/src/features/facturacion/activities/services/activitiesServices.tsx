@@ -3,20 +3,6 @@ import { ActivitiesDataNew } from '../../../../shared/interfaces/interfaces';
 
 const BASEURL = import.meta.env.VITE_URL_BASE;
 
-export const getAllActivities = async (filtro?: string) => {
-  try {
-    // Asegúrate de que el endpoint sea el correcto
-    const response = await axios.get(
-      `${BASEURL}/actividad/`,
-      {
-        params: filtro ? { filtro } : {},
-      }
-    );
-    return response.data;
-  } catch (error) {
-    console.log('Error en la solicitud:', error);
-  }
-};
 
 export const createActivity = async (activity: ActivitiesDataNew) => {
   console.log('activity', activity);

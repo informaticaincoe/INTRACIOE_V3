@@ -388,7 +388,8 @@ export const GenerarDocumentosAjuste = () => {
                         listProducts={selectedProducts}
                         descuentos={descuentos}
                         setDescuentos={setDescuentos}
-                    />
+                        tipoDocumento={''}                    
+                        />
                 </div>
             </WhiteSectionsPage>
 

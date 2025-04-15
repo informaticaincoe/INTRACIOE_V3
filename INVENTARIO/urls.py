@@ -89,19 +89,19 @@ urlpatterns = [
     path('api/productos/<int:pk>/eliminar/', ProductoDestroyAPIView.as_view(), name='producto-destroy'),
 
     ############# TIPO TRIBUTOS #############
-    path('api/tipos-tributos/', TiposTributosListAPIView.as_view(), name='tipos-tributos-list'),
-    path('api/tipos-tributos/crear/', TiposTributosCreateAPIView.as_view(), name='tipos-tributos-create'),
-    path('api/tipos-tributos/<int:pk>/editar/', TiposTributosUpdateAPIView.as_view(), name='tipos-tributos-update'),
-    path('api/tipos-tributos/<int:pk>/eliminar/', TiposTributosDestroyAPIView.as_view(), name='tipos-tributos-destroy'),
+    path('api/tipo-tributos/', TiposTributosListAPIView.as_view(), name='tipos-tributos-list'),
+    path('api/tipo-tributos/crear/', TiposTributosCreateAPIView.as_view(), name='tipos-tributos-create'),
+    path('api/tipo-tributos/<int:pk>/editar/', TiposTributosUpdateAPIView.as_view(), name='tipos-tributos-update'),
+    path('api/tipo-tributos/<int:pk>/eliminar/', TiposTributosDestroyAPIView.as_view(), name='tipos-tributos-destroy'),
     # Lista tributos filtrados por el tipo (parámetro en la URL)
-    path('api/tipos-tributos/<int:tipo_valor>/tributos/', TributoByTipoListAPIView.as_view(), name='tributos-by-tipo'),
+    path('api/tipo-tributos/<int:tipo_valor>/tributos/', TributoByTipoListAPIView.as_view(), name='tributos-by-tipo'),
 
     ############# TRIBUTOS #############
-    path('api/tributos/', TributosListAPIView.as_view(), name='tributos-list'),
-    path('api/tributos/crear/', TributoCreateAPIView.as_view(), name='tributo-create'),
-    path('api/tributos/<int:pk>/', TributoDetailsAPIView.as_view(), name='tributo-detail'),
-    path('api/tributos/<int:pk>/editar/', TributoUpdateAPIView.as_view(), name='tributo-update'),
-    path('api/tributos/<int:pk>/eliminar/', TributoDestroyAPIView.as_view(), name='tributo-destroy'),
+    path('api/tributo/', TributosListAPIView.as_view(), name='tributos-list'),
+    path('api/tributo/crear/', TributoCreateAPIView.as_view(), name='tributo-create'),
+    path('api/tributo/<int:pk>/', TributoDetailsAPIView.as_view(), name='tributo-detail'),
+    path('api/tributo/<int:pk>/editar/', TributoUpdateAPIView.as_view(), name='tributo-update'),
+    path('api/tributo/<int:pk>/eliminar/', TributoDestroyAPIView.as_view(), name='tributo-destroy'),
 
     ############# UNIDAD DE MEDIDA #############
     path('api/unidades-medida/', UnidadMedidaListAPIView.as_view(), name='unidad-medida-list'),

@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 #root {
   padding: 0% !important;
@@ -68,6 +68,8 @@ input::file-selector-button {
 
 @theme {
   --color-primary-yellow: #fca94e;
+  --color-secondary-yellow: #FCC587;
+  --color-secondary-yellow-light: #FFF2E4;
   --color-primary-blue: #232c6e;
   --color-body-bg: #f2f2f2;
   --color-light-text: #757575;

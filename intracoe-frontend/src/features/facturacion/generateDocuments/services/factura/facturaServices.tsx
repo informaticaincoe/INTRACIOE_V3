@@ -45,9 +45,6 @@ export const getFacturaCodigos = async (tipo_dte: string) => {
         tipo_dte,
       },
     });
-    // console.log("mmmmmmmmmmmmmmmmmmmmmmmmmmm",response.data)
-    // return(response.data)
-    // Mapeamos cada producto para añadir las nuevas propiedades
     const productosConExtras: ProductosTabla[] = response.data.productos.map(
       (p:ProductosTabla) => ({
         ...p,
@@ -87,10 +84,10 @@ export const EnviarHacienda = async (id: string) => {
     const response = await axios.post(
       `${BASEURL}/factura/enviar_hacienda/${id}/`
     );
-    return response; // Devuelve si todo bien
+    return response;
   } catch (error) {
     console.error('Error desde EnviarHacienda:', error);
-    throw error; // ¡Importante! Propaga el error para que se pueda capturar fuera
+    throw error;
   }
 };
 
@@ -110,11 +107,4 @@ export const getFacturaBycodigo = async (codigo_generacion: string) => {
   }
 };
 
-export const getTiposGeneracionDocumento = async () => {
-  try {
-    const response = await axios.get(`${BASEURL}/tipo-generacion-facturas/`);
-    return response.data;
-  } catch (error) {
-    throw new Error();
-  }
-};
+
