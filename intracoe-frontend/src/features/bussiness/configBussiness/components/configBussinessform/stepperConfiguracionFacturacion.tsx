@@ -5,6 +5,7 @@ import { SelectTipoIdDocumento } from '../../../../../shared/Select/selectTipoId
 import { SelectActividadesEconomicas } from '../../../../../shared/Select/selectActividadesEconomicas';
 import { SelectAmbienteComponent } from '../../../../../shared/Select/selectAmbienteComponent';
 import { SelectTipoEstablecimiento } from '../../../../../shared/Select/selectTipoEstablecimiento';
+import { Password } from 'primereact/password';
 
 interface StepperConfiguracionFacturacionProp {
   formData: RequestEmpresa;
@@ -95,21 +96,43 @@ export const StepperConfiguracionFacturacion: React.FC<
           name={'tipoestablecimiento'}
         />
       </span>
-      <span>
-        <label htmlFor="clave_privada">clave_privada:</label>
-        <Input
-          onChange={handleChange}
+      <span className='flex flex-col'>
+        <label htmlFor="clave_privada">Clave privada:</label>
+        <Password
+          className="w-full"
+          style={{ width: '100%' }}
           value={formData.clave_privada}
-          name={'clave_privada'}
+          panelStyle={{ display: 'none' }}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            handleChange({
+              target: {
+                name: 'clave_privada',  // Aquí deberías usar 'name' en lugar de una clave directamente
+                value: e.target.value,
+              },
+            });
+          }}
+          toggleMask
         />
+
       </span>
       <span>
         <label htmlFor="email">Clave publica:</label>
-        <Input
-          onChange={handleChange}
+        <Password
+          className="w-full"
+          style={{ width: '100%' }}
           value={formData.clave_publica}
-          name={'clave_publica'}
+          panelStyle={{ display: 'none' }}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            handleChange({
+              target: {
+                name: 'clave_publica',  // Aquí deberías usar 'name' en lugar de una clave directamente
+                value: e.target.value,
+              },
+            });
+          }}
+          toggleMask
         />
+
       </span>
     </div>
   );

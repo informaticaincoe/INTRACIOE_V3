@@ -464,6 +464,8 @@ class EventoContingencia(models.Model):
     #Si el evento fue rechazado se indicara el error para su correcion en un plazo máximo de 24 horas despues de haber sido rechazado
     rechazado = models.BooleanField(default=False) #manejar estado de envio de contingencia a MH
     observaciones = models.CharField(max_length=3000, blank=True, null=True)
+    fecha_sello_recibido = models.DateTimeField(null=True, blank=True) 
+    cantidad_lote = models.IntegerField(null=True, verbose_name=None)
     
     def __str__(self):
         return f"Contingencia {self.codigo_generacion} - {self.fecha_transmision} - {self.hora_transmision}"
@@ -472,7 +474,7 @@ class LoteContingencia(models.Model):
     #eventocontingencia = models.ForeignKey(EventoContingencia, on_delete=models.CASCADE, null=True, blank=True)
     recibido_mh = models.BooleanField(default=False)
     #estado = models.BooleanField(default=False)
-    cantidad_lote = models.IntegerField(null=True, verbose_name=None)
+    #cantidad_lote = models.IntegerField(null=True, verbose_name=None)
     factura = models.ForeignKey(FacturaElectronica, on_delete=models.CASCADE, null=True, blank=True, related_name='lotes_factura')
     evento = models.ForeignKey(EventoContingencia, on_delete=models.CASCADE, null=True, blank=True, related_name='lotes_evento')
     finalizado = models.BooleanField(default=False)
