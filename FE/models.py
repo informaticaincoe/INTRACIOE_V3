@@ -452,7 +452,6 @@ class EventoContingencia(models.Model):
     hora_modificacion = models.TimeField(auto_now_add=True, null=True)
     #lotecontingencia = models.ForeignKey(LoteContingencia, on_delete=models.CASCADE, null=True, blank=True, related_name="lotes_evento")
     tipo_contingencia = models.ForeignKey(TipoContingencia, on_delete=models.CASCADE, null=True)
-    motivo_contingencia = models.CharField(max_length=500, blank=True, null=True)
     firmado = models.BooleanField(default=False)
     json_original = models.JSONField(blank=True, null=True)
     json_firmado = models.JSONField(blank=True, null=True)

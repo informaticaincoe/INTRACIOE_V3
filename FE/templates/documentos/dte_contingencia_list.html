@@ -53,6 +53,9 @@
 <!-- Tabla de Contingencias -->
 <form id="formContingenciaFacturas">
   <div class="table-responsive">
+
+    <div id="mensaje"></div>
+
     <table class="table table-striped">
       <thead class="table-dark">
         <tr>
@@ -74,7 +77,7 @@
         {% for grupo in eventos_con_lotes %}
         <tr>
           <td>
-            {% if grupo.evento.recibido_mh == False and grupo.evento.sello_recepcion is None%}
+            {% if grupo.evento.recibido_mh == False and grupo.evento.sello_recepcion is None and grupo.evento.finalizado == False %}
               <input type="checkbox" name="contingencia_ids" value="{{ grupo.evento.id }}">
             {% endif %}
           </td>
@@ -97,7 +100,7 @@
           <td>{{ grupo.total_lotes_evento }}</td> 
           <td>
             {% if grupo.evento.tipo_contingencia.codigo == "5"%}
-              <input type="text" name="motivo_contingencia" data-id="{{ grupo.evento.motivo_contingencia }}" class="form-control" id="motivo_contingencia_input"></td> 
+              <input type="text" name="motivo_contingencia" class="form-control" id="motivo_contingencia_input"></td> 
             {% endif %}
           <td>
             {% if grupo.evento.sello_recepcion is None and grupo.evento.finalizado == False %}
@@ -154,7 +157,7 @@
                       <td>{{ factura.codigo_generacion }}</td>
                       <td>{{ factura.sello_recepcion }}</td>
                       <td>
-                        {% if grupo.evento.sello_recepcion is not None %}
+                        {% if grupo.evento.sello_recepcion is not None and factura.sello_recepcion is None %}
                           <form method="POST" action="{% url 'envio_dte_unificado' factura.id %}">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-sm btn-secondary">Enviar</button>
@@ -466,32 +469,74 @@ document.addEventListener('DOMContentLoaded', function(){
       enlace.addEventListener('click', function (e) {
         e.preventDefault();
 
-        const contingencia_id = this.dataset.id; //id del evento
+        const contingencia_id = this.dataset.id; // id del evento
 
-        //Buscar input de motivo contingencia en la misma fila
+        // Buscar input de motivo contingencia en la misma fila
         const fila = this.closest('tr');
-        const input = fila.querySelector('.motivo_contingencia_input');
+        const input = fila.querySelector('#motivo_contingencia_input');
         const motivo_contingencia = input ? input.value.trim() : '';
 
-        const codigoMotivo = this.dataset.requiereMotivo; //obtener codigo del tipo de contingencia
+        const codigoMotivo = this.dataset.requiereMotivo; // obtener código del tipo de contingencia
         if (codigoMotivo === "5" && !motivo_contingencia) {
           alert("Ingrese el motivo de contingencia");
           return;
         }
 
+        console.log("motivo: ", motivo_contingencia, "Codigo motivo: ", codigoMotivo);
         const encodedMotivo = encodeURIComponent(motivo_contingencia);
 
-        fetch(`/fe/contingencia-dte/?contingencia_id=${contingencia_id}&motivo_contingencia=${motivo_contingencia}`)
+        fetch(`/fe/contingencia-dte/?contingencia_id=${contingencia_id}&motivo_contingencia=${motivo_contingencia}&codigo_motivo=${codigoMotivo}`)
           .then(response => {
             if (!response.ok) {  // Verifica si la respuesta fue exitosa (200-299)
-                throw new Error('Network response was not ok');
+              throw new Error('Network response was not ok');
             }
-            return response.json();  // Intenta convertir la respuesta a JSON
+            return response.json();  // Convierte la respuesta a JSON
           })
-          .catch(error => console.error('Error:', error));
+          .then(data => {
+            // Aquí puedes manejar la respuesta JSON que devuelve el servidor
+            console.log('Respuesta:', data);
+
+            // Obtener el div donde mostraremos la respuesta
+            const resultadoDiv = document.getElementById('resultadoContingencia');
+
+            // Limpiar cualquier contenido anterior
+            resultadoDiv.innerHTML = '';
+
+            // Mostrar el mensaje de éxito en la interfaz de usuario
+            if (data.mensaje) {
+              resultadoDiv.innerHTML += `<p><strong>Mensaje:</strong> ${data.mensaje}</p>`;
+            }
+            
+            // Si hay algún detalle adicional, lo mostramos también
+            if (data.detalle) {
+              // Si detalle es un objeto, lo convertimos a un formato legible
+              const detalle = data.detalle.respuesta;
+              if (detalle) {
+                const detalleString = `
+                  <p><strong>Estado:</strong> ${detalle.estado}</p>
+                  <p><strong>Fecha y Hora:</strong> ${detalle.fechaHora}</p>
+                  <p><strong>Mensaje:</strong> ${detalle.mensaje}</p>
+                  <p><strong>Sello Recibido:</strong> ${detalle.selloRecibido}</p>
+                  <p><strong>Observaciones:</strong> ${detalle.observaciones.length ? detalle.observaciones.join(', ') : 'Ninguna'}</p>
+                `;
+                resultadoDiv.innerHTML += detalleString;
+              } else {
+                resultadoDiv.innerHTML += `<p><strong>Detalle:</strong> ${JSON.stringify(data.detalle)}</p>`;
+              }
+            }
+
+            // Mostrar el modal
+            $('#respuestaModal').modal('show');
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            const resultadoDiv = document.getElementById('resultadoContingencia');
+            resultadoDiv.innerHTML = `<p style="color: red;">Ocurrió un error al procesar la solicitud.</p>`;
+            $('#respuestaModal').modal('show');
+          });
       });
     });
   });
-  </script>
+</script>
 
 {% endblock %}
