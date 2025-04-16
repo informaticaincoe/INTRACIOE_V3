@@ -31,6 +31,8 @@ import {
   getAllTiposGeneracionDocumento,
   getAllTipoTransmision,
   getAllTipoTransporte,
+  getPaisById,
+  getDepartamentoById,
 } from '../../../../shared/catalogos/services/catalogosServices';
 import { HeaderTable } from '../components/headerTable';
 // import { Paginator } from "primereact/paginator";
@@ -132,8 +134,6 @@ import {
 } from '../../../facturacion/activities/services/activitiesServices';
 import { EditActivityForm } from '../components/editActivityForm';
 
-//TODO: editar departamentos (no se esta enviando el id)
-
 type CatalogKey =
   | 'Actividades economicas'
   | 'Ambientes'
@@ -167,7 +167,7 @@ type CatalogKey =
 const fetchers: Record<CatalogKey, (filter?: string) => Promise<any[]>> = {
   'Actividades economicas': (filter = '', page = 1, limit = 10) =>
     getAllActivities(page, limit, filter),
-  Ambientes: () => getAllAmbientes(),
+  'Ambientes': () => getAllAmbientes(),
   'Modelo facturacion': () => getAllModelosDeFacturacion(),
   'Tipo transmision': () => getAllTipoTransmision(),
   'Tipo contingencia': () => getAllTipoContingencia(),
@@ -178,9 +178,9 @@ const fetchers: Record<CatalogKey, (filter?: string) => Promise<any[]>> = {
   'tipo documento tributario electronico': () => getAllTipoDTE(),
   'Otros documentos asociados': () => getAllOtrosDocumentosAsociados(),
   'Tipo de identificacion receptores': () => getAllTipoIdReceptor(),
-  Paises: () => getAllPaises(),
-  Departamentos: () => getAllDepartamentos(),
-  municipios: () => getAllMunicipios(),
+  'Paises': () => getAllPaises(),
+  'Departamentos': () => getAllDepartamentos(),
+  'municipios': () => getAllMunicipios(),
   'Condiciones de operación': () => getAllCondicioOperaciones(),
   'Formas de pago': () => getAllMetodosDePago(),
   'Plazos de pago': () => getAllPlazos(),
@@ -189,15 +189,15 @@ const fetchers: Record<CatalogKey, (filter?: string) => Promise<any[]>> = {
   'Tipo de donación': () => getAllTipoDonacion(),
   'Tipo de persona': () => getAllTipoPersona(),
   'Tipo de transporte': () => getAllTipoTransporte(),
-  Incoterms: () => getAllIncoterms(),
+  'Incoterms': () => getAllIncoterms(),
   'Tipo de domicilio fiscal': () => getAllTipoDomicilioFiscal(),
   'Tipo de moneda': () => getAllTipoMoneda(),
-  Descuento: () => getAllDescuento(),
+  'Descuento': () => getAllDescuento(),
 };
 
 const createFunctions: Record<CatalogKey, (body: any) => Promise<any>> = {
   'Actividades economicas': (body) => createActivity(body),
-  Ambientes: (body) => createAmbientes(body),
+  'Ambientes': (body) => createAmbientes(body),
   'Modelo facturacion': (body) => createModelosDeFacturacion(body),
   'Tipo transmision': (body) => createTipoTransmision(body),
   'Tipo contingencia': (body) => createTipoContingencia(body),
@@ -209,9 +209,9 @@ const createFunctions: Record<CatalogKey, (body: any) => Promise<any>> = {
   'tipo documento tributario electronico': (body) => createTipoDTE(body),
   'Otros documentos asociados': (body) => createOtrosDocumentosAsociados(body),
   'Tipo de identificacion receptores': (body) => createTipoIdReceptor(body),
-  Paises: (body) => createPaises(body),
-  Departamentos: (body) => createDepartamentos(body),
-  municipios: (body) => createMunicipios(body),
+  'Paises': (body) => createPaises(body),
+  'Departamentos': (body) => createDepartamentos(body),
+  'municipios': (body) => createMunicipios(body),
   'Condiciones de operación': (body) => createCondicioOperaciones(body),
   'Formas de pago': (body) => createMetodosDePago(body),
   'Plazos de pago': (body) => createPlazos(body),
@@ -221,15 +221,15 @@ const createFunctions: Record<CatalogKey, (body: any) => Promise<any>> = {
   'Tipo de donación': (body) => createTipoDonacion(body),
   'Tipo de persona': (body) => createTipoPersona(body),
   'Tipo de transporte': (body) => createTipoTransporte(body),
-  Incoterms: (body) => createIncoterms(body),
+  'Incoterms': (body) => createIncoterms(body),
   'Tipo de domicilio fiscal': (body) => createTipoDomicilioFiscal(body),
   'Tipo de moneda': (body) => createTipoMoneda(body),
-  Descuento: (body) => createDescuento(body),
+  'Descuento': (body) => createDescuento(body),
 };
 
 const deleteFunctions: Record<CatalogKey, (id: number) => Promise<any>> = {
   'Actividades economicas': (id) => deleteActivity(id),
-  Ambientes: (id) => deleteAmbientes(id),
+  'Ambientes': (id) => deleteAmbientes(id),
   'Modelo facturacion': (id) => deleteModelosDeFacturacion(id),
   'Tipo transmision': (id) => deleteTipoTransmision(id),
   'Tipo contingencia': (id) => deleteTipoContingencia(id),
@@ -240,9 +240,9 @@ const deleteFunctions: Record<CatalogKey, (id: number) => Promise<any>> = {
   'tipo documento tributario electronico': (id) => deleteTipoDTE(id),
   'Otros documentos asociados': (id) => deleteOtrosDocumentosAsociados(id),
   'Tipo de identificacion receptores': (id) => deleteTipoIdReceptor(id),
-  Paises: (id) => deletePaises(id),
-  Departamentos: (id) => deleteDepartamentos(id),
-  municipios: (id) => deleteMunicipios(id),
+  'Paises': (id) => deletePaises(id),
+  'Departamentos': (id) => deleteDepartamentos(id),
+  'municipios': (id) => deleteMunicipios(id),
   'Condiciones de operación': (id) => deleteCondicioOperaciones(id),
   'Formas de pago': (id) => deleteMetodosDePago(id),
   'Plazos de pago': (id) => deletePlazos(id),
@@ -251,49 +251,49 @@ const deleteFunctions: Record<CatalogKey, (id: number) => Promise<any>> = {
   'Tipo de donación': (id) => deleteTipoDonacion(id),
   'Tipo de persona': (id) => deleteTipoPersona(id),
   'Tipo de transporte': (id) => deleteTipoTransporte(id),
-  Incoterms: (id) => deleteIncoterms(id),
+  'Incoterms': (id) => deleteIncoterms(id),
   'Tipo de domicilio fiscal': (id) => deleteTipoDomicilioFiscal(id),
   'Tipo de moneda': (id) => deleteTipoMoneda(id),
-  Descuento: (id) => deleteDescuento(id),
+  'Descuento': (id) => deleteDescuento(id),
 };
 
 const editFunctions: Record<CatalogKey, (id: any, data: any) => Promise<any>> =
-  {
-    'Actividades economicas': (id, data) => updateActivity(id, data),
-    Ambientes: (id, data) => updateAmbientes(id, data),
-    'Modelo facturacion': (id, data) => updateModelosDeFacturacion(id, data),
-    'Tipo transmision': (id, data) => updateTipoTransmision(id, data),
-    'Tipo contingencia': (id, data) => updateTipoContingencia(id, data),
-    'Tipo retencion IVA': (id, data) => updateTipoTipoRentencionIVA(id, data),
-    'Tipo generación de documento': (id, data) =>
-      updateTiposGeneracionDocumento(id, data),
-    'Tipo establecimiento': (id, data) => updateTiposEstablecimientos(id, data),
-    'Tipo servicio medico': (id, data) => updateTipoServiciosMedicos(id, data),
-    'tipo documento tributario electronico': (id, data) =>
-      updateTipoDTE(id, data),
-    'Otros documentos asociados': (id, data) =>
-      updateOtrosDocumentosAsociados(id, data),
-    'Tipo de identificacion receptores': (id, data) =>
-      updateTipoIdReceptor(id, data),
-    Paises: (id, data) => updatePaises(id, data),
-    Departamentos: (id, data) => updateDepartamentos(id, data),
-    municipios: (id, data) => updateMunicipios(id, data),
-    'Condiciones de operación': (id, data) =>
-      updateCondicioOperaciones(id, data),
-    'Formas de pago': (id, data) => updateMetodosDePago(id, data),
-    'Plazos de pago': (id, data) => updatePlazos(id, data),
-    'tipo de documento de contingencia': (id, data) =>
-      updateTipoDocContingencia(id, data),
-    'Tipo de invalidación': (id, data) => updateTipoInvalidacion(id, data),
-    'Tipo de donación': (id, data) => updateTipoDonacion(id, data),
-    'Tipo de persona': (id, data) => updateTipoPersona(id, data),
-    'Tipo de transporte': (id, data) => updateTipoTransporte(id, data),
-    Incoterms: (id, data) => updateIncoterms(id, data),
-    'Tipo de domicilio fiscal': (id, data) =>
-      updateTipoDomicilioFiscal(id, data),
-    'Tipo de moneda': (id, data) => updateTipoMoneda(id, data),
-    Descuento: (id, data) => updateDescuento(id, data),
-  };
+{
+  'Actividades economicas': (id, data) => updateActivity(id, data),
+  'Ambientes': (id, data) => updateAmbientes(id, data),
+  'Modelo facturacion': (id, data) => updateModelosDeFacturacion(id, data),
+  'Tipo transmision': (id, data) => updateTipoTransmision(id, data),
+  'Tipo contingencia': (id, data) => updateTipoContingencia(id, data),
+  'Tipo retencion IVA': (id, data) => updateTipoTipoRentencionIVA(id, data),
+  'Tipo generación de documento': (id, data) =>
+    updateTiposGeneracionDocumento(id, data),
+  'Tipo establecimiento': (id, data) => updateTiposEstablecimientos(id, data),
+  'Tipo servicio medico': (id, data) => updateTipoServiciosMedicos(id, data),
+  'tipo documento tributario electronico': (id, data) =>
+    updateTipoDTE(id, data),
+  'Otros documentos asociados': (id, data) =>
+    updateOtrosDocumentosAsociados(id, data),
+  'Tipo de identificacion receptores': (id, data) =>
+    updateTipoIdReceptor(id, data),
+  'Paises': (id, data) => updatePaises(id, data),
+  'Departamentos': (id, data) => updateDepartamentos(id, data),
+  'municipios': (id, data) => updateMunicipios(id, data),
+  'Condiciones de operación': (id, data) =>
+    updateCondicioOperaciones(id, data),
+  'Formas de pago': (id, data) => updateMetodosDePago(id, data),
+  'Plazos de pago': (id, data) => updatePlazos(id, data),
+  'tipo de documento de contingencia': (id, data) =>
+    updateTipoDocContingencia(id, data),
+  'Tipo de invalidación': (id, data) => updateTipoInvalidacion(id, data),
+  'Tipo de donación': (id, data) => updateTipoDonacion(id, data),
+  'Tipo de persona': (id, data) => updateTipoPersona(id, data),
+  'Tipo de transporte': (id, data) => updateTipoTransporte(id, data),
+  'Incoterms': (id, data) => updateIncoterms(id, data),
+  'Tipo de domicilio fiscal': (id, data) =>
+    updateTipoDomicilioFiscal(id, data),
+  'Tipo de moneda': (id, data) => updateTipoMoneda(id, data),
+  'Descuento': (id, data) => updateDescuento(id, data),
+};
 
 export const CatalogosPage = () => {
   const [selectedCatalog, setSelectedCatalog] = useState<CatalogKey>(
@@ -318,6 +318,7 @@ export const CatalogosPage = () => {
   //   total_pages: 1,
   //   total_records: 1,
   // });
+
   useEffect(() => {
     console.log('AAAAAAAAA', editItem);
   }, [auxSelectedItem]);
@@ -333,7 +334,43 @@ export const CatalogosPage = () => {
     try {
       // Llamamos al fetcher correspondiente, pasándole filterTerm
       const result = await fetchers[selectedCatalog](filterTerm);
-      setData(result);
+
+      if (selectedCatalog === 'Departamentos') {
+        const departamentosConPais = await Promise.all(
+          result.map(async (departamento) => {
+            const paisData = await getPaisById(departamento.pais);
+            console.log("pdpdppdpdpd", paisData)
+            return {
+              ...departamento,
+              pais: {
+                id: departamento.pais,
+                descripcion: paisData
+              },
+            };
+          })
+        );
+        setData(departamentosConPais);
+        console.log("departamentosConPais:", departamentosConPais)
+      } else if (selectedCatalog === 'municipios') {
+        const municipiosConDepartamento = await Promise.all(
+          result.map(async (municipio) => {
+            const depData = await getDepartamentoById(municipio.departamento);
+            return {
+              ...municipio,
+              departamento: {
+                id: municipio.departamento,
+                descripcion: depData.descripcion,
+              },
+            };
+          })
+        );
+        setData(municipiosConDepartamento);
+        console.log("municipiosConDepartamento:", municipiosConDepartamento)
+
+      } else {
+        setData(result);
+      }
+
     } catch (e) {
       console.error(e);
     } finally {
@@ -367,9 +404,9 @@ export const CatalogosPage = () => {
   // Genera columnas dinámicamente
   const columns = data.length
     ? Object.keys(data[0]).map((field) => ({
-        field,
-        header: field.toUpperCase(),
-      }))
+      field,
+      header: field.toUpperCase(),
+    }))
     : [];
 
   return (
@@ -490,17 +527,27 @@ export const CatalogosPage = () => {
                   selectionMode="multiple"
                   headerStyle={{ width: '3rem' }}
                 ></Column>
+
                 {columns.map((col) => {
+
                   return (
-                    col.header != 'ID' && (
+                    col.header !== 'ID' && (
                       <Column
                         key={col.field}
                         field={col.field}
                         header={col.header}
+                        body={(rowData) => {
+                          const value = rowData[col.field];
+                          if (typeof value === 'object' && value !== null) {
+                            return value.descripcion || JSON.stringify(value);
+                          }
+                          return value;
+                        }}
                       />
-                    ) //no mostrara el id
+                    )
                   );
                 })}
+
               </DataTable>
             </>
           )}
