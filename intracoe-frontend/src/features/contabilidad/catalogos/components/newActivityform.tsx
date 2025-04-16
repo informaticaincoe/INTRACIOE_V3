@@ -19,6 +19,7 @@ export const NewActivityForm: React.FC<NewActivityProps> = ({
   createFunction,
 }) => {
   const [departamentoSelect, setDepartamentoSelect] = useState();
+  // const [paisSelect, setPaisSelect] = useState();
   const [formData, setFormData] = useState({
     codigo: '',
     descripcion: '',
@@ -58,11 +59,11 @@ export const NewActivityForm: React.FC<NewActivityProps> = ({
         };
         break;
 
-      case 'departamentos':
+      case 'Departamentos':
         body = {
           codigo: formData.codigo,
           descripcion: formData.descripcion,
-          pais: departamentoSelect,
+          pais: formData.pais,
         };
         break;
 
@@ -82,9 +83,10 @@ export const NewActivityForm: React.FC<NewActivityProps> = ({
         break;
     }
 
+    console.log("bbbbbbbbbbbbbb",body)
+
     try {
       const response = await createFunction(body);
-      console.log(response);
       setVisible(false);
     } catch (error) {
       console.log(error);
@@ -172,11 +174,9 @@ export const NewActivityForm: React.FC<NewActivityProps> = ({
               <label htmlFor="version" className="">
                 Pais:
               </label>
-              {/* <SelectPaisComponent value={formData.pais} onChange={handleChange} name={'pais'}/> */}
-              
+              <SelectPaisComponent value={formData.pais} onChange={handleChange} name={'pais'} />
             </span>
           )}
-
           <span className="flex w-full justify-end gap-3">
             <button
               className="bg-primary-blue rounded-md px-6 py-3 text-white hover:cursor-pointer"

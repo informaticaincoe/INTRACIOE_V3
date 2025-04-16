@@ -20,6 +20,10 @@ export const SelectMunicipios: React.FC<SelectMunicipiosInterface> = ({
   useEffect(() => {
     fetchMunicipalitiesByDepartment();
     console.log('municipio departamento', department);
+  }, []);
+
+  useEffect(() => {
+    fetchMunicipalitiesByDepartment();
   }, [department]);
 
   const fetchMunicipalitiesByDepartment = async () => {

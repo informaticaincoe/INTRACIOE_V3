@@ -229,7 +229,7 @@ export const updatePaises = async (id: string, data: any) => {
 export const updateDepartamentos = async (id: string, data: any) => {
   try {
     const response = await axios.put(
-      `${BASEURL}/departamentos/${id}/editar/`,
+      `${BASEURL}/departamento/${id}/editar/`,
       data,
       {
         headers: {
