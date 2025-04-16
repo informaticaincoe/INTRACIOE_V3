@@ -464,6 +464,7 @@ class EventoContingencia(models.Model):
     #Si el evento fue rechazado se indicara el error para su correcion en un plazo máximo de 24 horas despues de haber sido rechazado
     rechazado = models.BooleanField(default=False) #manejar estado de envio de contingencia a MH
     observaciones = models.CharField(max_length=3000, blank=True, null=True)
+    fecha_sello_recibido = models.DateTimeField(null=True, blank=True) 
     
     def __str__(self):
         return f"Contingencia {self.codigo_generacion} - {self.fecha_transmision} - {self.hora_transmision}"
