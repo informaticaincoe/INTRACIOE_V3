@@ -22,7 +22,7 @@ export const ProductsPage = () => {
       // Pasamos tipo=1 (productos) y, si hay código, también filter
       const response = await getAllProducts({
         tipo: 1,
-        filter: codigoFiltro || undefined
+        filter: codigoFiltro || undefined,
       });
       setProductos(response);
     } catch (error) {
@@ -42,7 +42,10 @@ export const ProductsPage = () => {
         <div>
           <TablaProductosHeader codigo={codigoFiltro} onSearch={handleSearch} />
           <Divider />
-          <TablaContainerProductos productos={productos} refreshProducts={fetchProductos} />
+          <TablaContainerProductos
+            productos={productos}
+            refreshProducts={fetchProductos}
+          />
         </div>
       </WhiteSectionsPage>
     </>

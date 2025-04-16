@@ -1,31 +1,42 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react';
 import { WhiteSectionsPage } from '../../../../../shared/containers/whiteSectionsPage';
 import { Steps } from 'antd';
-import CustomToast, { CustomToastRef, ToastSeverity } from '../../../../../shared/toast/customToast';
-import { RequestEmpresa, RequestEmpresaDefault } from '../../../../../shared/interfaces/interfaces';
+import CustomToast, {
+  CustomToastRef,
+  ToastSeverity,
+} from '../../../../../shared/toast/customToast';
+import {
+  RequestEmpresa,
+  RequestEmpresaDefault,
+} from '../../../../../shared/interfaces/interfaces';
 import { StepperConfiguracionFacturacion } from './stepperConfiguracionFacturacion';
 import { StepperContactBussiness } from './stepperContactBussiness';
-import { createEmpresa, editReceptor, getAllEmpresas } from '../../services/empresaServices';
+import {
+  createEmpresa,
+  editReceptor,
+  getAllEmpresas,
+} from '../../services/empresaServices';
 import { FaCheckCircle } from 'react-icons/fa';
 
 export const FormConfigBussinessContainer = () => {
-
   // Estado para controlar el paso actual
   const [current, setCurrent] = useState(0);
-  const [formData, setFormData] = useState<RequestEmpresa>(RequestEmpresaDefault);
+  const [formData, setFormData] = useState<RequestEmpresa>(
+    RequestEmpresaDefault
+  );
   const toastRef = useRef<CustomToastRef>(null);
-  const [empresaId, setEmpresaId] = useState<string>()
+  const [empresaId, setEmpresaId] = useState<string>();
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   useEffect(() => {
-    fetchEmpresa()
-  }, [])
+    fetchEmpresa();
+  }, []);
 
   const fetchEmpresa = async () => {
     try {
-      const response = await getAllEmpresas()
+      const response = await getAllEmpresas();
       if (response) {
         // Mezcla el objeto default con lo que venga de la API en caso de que algun campo venga vacio
         setFormData({
@@ -35,9 +46,9 @@ export const FormConfigBussinessContainer = () => {
         setEmpresaId(response[0].id);
       }
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
 
   const handleAccion = (
     severity: ToastSeverity,
@@ -61,7 +72,7 @@ export const FormConfigBussinessContainer = () => {
     });
     console.log('================');
 
-    console.log(formData)
+    console.log(formData);
     if (empresaId) {
       try {
         const response = await editReceptor(empresaId, formData);
@@ -77,8 +88,7 @@ export const FormConfigBussinessContainer = () => {
           'Ocurrio un error al guardar configuracion'
         );
       }
-    }
-    else {
+    } else {
       try {
         const response = await createEmpresa(formData);
         handleAccion(
@@ -109,9 +119,8 @@ export const FormConfigBussinessContainer = () => {
           </div>
           <div className="justify-content-end flex pt-4">
             <button
-              className='bg-primary-blue text-white px-8 py-3 mt-5 rounded-md'
-              onClick={() =>
-                setCurrent(current + 1)}
+              className="bg-primary-blue mt-5 rounded-md px-8 py-3 text-white"
+              onClick={() => setCurrent(current + 1)}
             >
               Siguiente
             </button>
@@ -152,7 +161,10 @@ export const FormConfigBussinessContainer = () => {
         <>
           <Steps
             current={current}
-            items={steps.map((item) => ({ key: item.title, title: item.title }))}
+            items={steps.map((item) => ({
+              key: item.title,
+              title: item.title,
+            }))}
             style={{ marginBottom: '5%' }}
           />
           <div style={{ marginTop: 24 }}>{steps[current].content}</div>

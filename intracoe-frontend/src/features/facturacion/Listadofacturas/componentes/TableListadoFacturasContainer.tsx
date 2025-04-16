@@ -1,7 +1,6 @@
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { TableListadoFacturasContainerProps } from '../../../../shared/interfaces/interfaces';
-import { useEffect } from 'react';
 import { Paginator } from 'primereact/paginator';
 
 import { RiBillLine } from 'react-icons/ri';

@@ -68,6 +68,8 @@ input::file-selector-button {
 
 @theme {
   --color-primary-yellow: #fca94e;
+  --color-secondary-yellow: #fcc587;
+  --color-secondary-yellow-light: #fff2e4;
   --color-primary-blue: #232c6e;
   --color-body-bg: #f2f2f2;
   --color-light-text: #757575;

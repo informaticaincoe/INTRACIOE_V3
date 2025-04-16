@@ -1,9 +1,7 @@
 import { Dropdown } from 'primereact/dropdown';
 import React, { useEffect, useState } from 'react';
-import {
-  TipoGeneracionDocumento,
-  TipoGeneracionDocumentoInterface,
-} from './TipoGeneracionDocumento';
+import { TipoGeneracionDocumentoInterface } from './TipoGeneracionDocumento';
+import { getAllTiposGeneracionDocumento } from '../../../../../../../shared/catalogos/services/catalogosServices';
 
 interface SelectTipoGeneracionDelDocumentoInterface {
   tipoGeneracion: any;
@@ -20,8 +18,13 @@ export const SelectTipoGeneracionDelDocumento: React.FC<
     fetchTipoListaGeneracionDocumento();
   }, []);
 
-  const fetchTipoListaGeneracionDocumento = () => {
-    setTipoListaGeneracionDocumento(TipoGeneracionDocumento);
+  const fetchTipoListaGeneracionDocumento = async () => {
+    try {
+      const response = await getAllTiposGeneracionDocumento();
+      setTipoListaGeneracionDocumento(response);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   return (
