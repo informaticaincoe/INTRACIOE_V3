@@ -1,13 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Dropdown } from 'primereact/dropdown';
-import { FileUpload, FileUploadHeaderTemplateOptions, FileUploadSelectEvent, FileUploadUploadEvent, ItemTemplateOptions } from 'primereact/fileupload';
-import { GrAdd } from "react-icons/gr";
-import { LuUpload } from "react-icons/lu";
-import { IoMdClose } from "react-icons/io";
+import {
+  FileUpload,
+  FileUploadHeaderTemplateOptions,
+  FileUploadSelectEvent,
+  FileUploadUploadEvent,
+  ItemTemplateOptions,
+} from 'primereact/fileupload';
+import { GrAdd } from 'react-icons/gr';
+import { LuUpload } from 'react-icons/lu';
+import { IoMdClose } from 'react-icons/io';
 import { Toast } from 'primereact/toast';
 import { ProgressBar } from 'primereact/progressbar';
-import { Button } from 'primereact/button'
-import { IoClose } from "react-icons/io5";
+import { Button } from 'primereact/button';
+import { IoClose } from 'react-icons/io5';
 import { ReceptorRequestInterface } from '../../../../../../../shared/interfaces/interfaces';
 import { Input } from '../../../../../../../shared/forms/input';
 import { SelectTipoIdDocumento } from '../../../../../../../shared/Select/selectTipoIdDocumento';
@@ -22,19 +28,19 @@ export const StepperInformacionGeneral: React.FC<
 > = ({ formData, handleChange }) => {
   const [tipoItem, setTipoItem] = useState();
 
-
   const toast = useRef<Toast>(null);
 
   return (
-    <div className='flex flex-col gap-8'>
+    <div className="flex flex-col gap-8">
       <span>
         <label htmlFor="tipo_documento" className="flex">
-          <span className="text-red pr-1">*</span> Tipo de documento de identificacion
+          <span className="text-red pr-1">*</span> Tipo de documento de
+          identificacion
         </label>
         <SelectTipoIdDocumento
           name="tipo_documento_id"
           value={formData.tipo_documento_id}
-          onChange={handleChange} 
+          onChange={handleChange}
         />
       </span>
 

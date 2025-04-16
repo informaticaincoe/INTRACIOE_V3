@@ -2,17 +2,26 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Input } from '../../../../../shared/forms/input';
 import { ProductoRequest } from '../../../../../shared/interfaces/interfaces';
 import { Dropdown } from 'primereact/dropdown';
-import { FileUpload, FileUploadHeaderTemplateOptions, FileUploadSelectEvent, FileUploadUploadEvent, ItemTemplateOptions } from 'primereact/fileupload';
+import {
+  FileUpload,
+  FileUploadHeaderTemplateOptions,
+  FileUploadSelectEvent,
+  FileUploadUploadEvent,
+  ItemTemplateOptions,
+} from 'primereact/fileupload';
 
-import { GrAdd } from "react-icons/gr";
-import { LuUpload } from "react-icons/lu";
-import { IoMdClose } from "react-icons/io";
+import { GrAdd } from 'react-icons/gr';
+import { LuUpload } from 'react-icons/lu';
+import { IoMdClose } from 'react-icons/io';
 import { Tooltip } from 'primereact/tooltip';
 import { Toast } from 'primereact/toast';
 import { ProgressBar } from 'primereact/progressbar';
-import { Button } from 'primereact/button'
-import { IoClose } from "react-icons/io5";
-import { getAllTipoItem, getAllUnidadesDeMedida } from '../../../../../shared/services/productos/productosServices';
+import { Button } from 'primereact/button';
+import { IoClose } from 'react-icons/io5';
+import {
+  getAllTipoItem,
+  getAllUnidadesDeMedida,
+} from '../../../../../shared/services/productos/productosServices';
 
 interface StepperInformacionGeneralProps {
   formData: ProductoRequest;
@@ -29,14 +38,14 @@ export const StepperInformacionGeneral: React.FC<
   const [totalSize, setTotalSize] = useState(0);
   const fileUploadRef = useRef<FileUpload>(null);
 
-    const onImageSelect = (e: FileUploadSelectEvent) => {
-      const file = e.files[0] as File;
-      handleChange({ target: { name: 'imagen', value: file } });
-    };
+  const onImageSelect = (e: FileUploadSelectEvent) => {
+    const file = e.files[0] as File;
+    handleChange({ target: { name: 'imagen', value: file } });
+  };
 
   useEffect(() => {
     fetchUnidadesDeMedida();
-    fetchTipoItem()
+    fetchTipoItem();
   }, []);
 
   const fetchUnidadesDeMedida = async () => {
@@ -65,7 +74,11 @@ export const StepperInformacionGeneral: React.FC<
     });
 
     setTotalSize(_totalSize);
-    toast.current?.show({ severity: 'info', summary: 'Success', detail: 'File Uploaded' });
+    toast.current?.show({
+      severity: 'info',
+      summary: 'Success',
+      detail: 'File Uploaded',
+    });
   };
 
   const onTemplateRemove = (file: File, callback: Function) => {
@@ -80,16 +93,30 @@ export const StepperInformacionGeneral: React.FC<
   const headerTemplate = (options: FileUploadHeaderTemplateOptions) => {
     const { className, chooseButton, uploadButton, cancelButton } = options;
     const value = totalSize / 10000;
-    const formatedValue = fileUploadRef && fileUploadRef.current ? fileUploadRef.current.formatSize(totalSize) : '0 B';
-    
+    const formatedValue =
+      fileUploadRef && fileUploadRef.current
+        ? fileUploadRef.current.formatSize(totalSize)
+        : '0 B';
+
     return (
-      <div className={className} style={{ backgroundColor: 'transparent', display: 'flex', alignItems: 'center' }}>
+      <div
+        className={className}
+        style={{
+          backgroundColor: 'transparent',
+          display: 'flex',
+          alignItems: 'center',
+        }}
+      >
         {chooseButton}
         {uploadButton}
         {cancelButton}
-        <div className="flex align-items-center gap-3 ml-auto">
+        <div className="align-items-center ml-auto flex gap-3">
           <span>{formatedValue} / 1 MB</span>
-          <ProgressBar value={value} showValue={false} style={{ width: '10rem', height: '12px' }}></ProgressBar>
+          <ProgressBar
+            value={value}
+            showValue={false}
+            style={{ width: '10rem', height: '12px' }}
+          ></ProgressBar>
         </div>
       </div>
     );
@@ -98,68 +125,86 @@ export const StepperInformacionGeneral: React.FC<
   const itemTemplate = (inFile: object, props: ItemTemplateOptions) => {
     const file = inFile as File;
     return (
-      <div className="flex align-items-center flex-wrap">
-        <div className="flex align-items-center" style={{ width: '40%' }}>
-          <img alt={file.name} role="presentation" src={URL.createObjectURL(file)} width={100} />
+      <div className="align-items-center flex flex-wrap">
+        <div className="align-items-center flex" style={{ width: '40%' }}>
+          <img
+            alt={file.name}
+            role="presentation"
+            src={URL.createObjectURL(file)}
+            width={100}
+          />
 
-          <span className="flex flex-column text-left ml-3">
-            {file.name}
-          </span>
+          <span className="flex-column ml-3 flex text-left">{file.name}</span>
         </div>
-        <Button type="button" icon={<IoClose />} className="p-button-outlined p-button-rounded p-button-danger ml-auto" onClick={() => onTemplateRemove(file, props.onRemove)} />
+        <Button
+          type="button"
+          icon={<IoClose />}
+          className="p-button-outlined p-button-rounded p-button-danger ml-auto"
+          onClick={() => onTemplateRemove(file, props.onRemove)}
+        />
       </div>
     );
   };
 
   const emptyTemplate = () => {
     return (
-      <div className="flex align-items-center flex-column">
-        <i className="pi pi-image mt-3 p-5" style={{ fontSize: '5em', borderRadius: '50%', backgroundColor: 'var(--surface-b)', color: 'var(--surface-d)' }}></i>
-        <span style={{ fontSize: '1.2em', color: 'var(--text-color-secondary)' }} className="my-5">
+      <div className="align-items-center flex-column flex">
+        <i
+          className="pi pi-image mt-3 p-5"
+          style={{
+            fontSize: '5em',
+            borderRadius: '50%',
+            backgroundColor: 'var(--surface-b)',
+            color: 'var(--surface-d)',
+          }}
+        ></i>
+        <span
+          style={{ fontSize: '1.2em', color: 'var(--text-color-secondary)' }}
+          className="my-5"
+        >
           Drag and Drop Image Here
         </span>
       </div>
     );
   };
 
-
   const chooseOptions = {
-    icon:
+    icon: (
       <span>
         <GrAdd size={20} />
-      </span>,
+      </span>
+    ),
     iconOnly: true,
-    className: 'custom-choose-btn p-button-rounded p-button-outlined'
+    className: 'custom-choose-btn p-button-rounded p-button-outlined',
   };
   const uploadOptions = {
-    icon:
-      <span >
+    icon: (
+      <span>
         <LuUpload size={20} />
-      </span>,
+      </span>
+    ),
     iconOnly: true,
-    className: 'custom-upload-btn p-button-rounded p-button-success p-button-outlined'
+    className:
+      'custom-upload-btn p-button-rounded p-button-success p-button-outlined',
   };
   const cancelOptions = {
-    icon:
+    icon: (
       <span>
         <IoMdClose size={22} />
-      </span>,
+      </span>
+    ),
     iconOnly: true,
-    className: 'custom-cancel-btn p-button-rounded p-button-danger p-button-outlined'
+    className:
+      'custom-cancel-btn p-button-rounded p-button-danger p-button-outlined',
   };
 
-
   return (
-    <div className='flex flex-col gap-8'>
+    <div className="flex flex-col gap-8">
       <span>
         <label htmlFor="tipo_documento" className="flex">
           <span className="text-red pr-1">*</span> Codigo
         </label>
-        <Input
-          name="codigo"
-          value={formData.codigo}
-          onChange={handleChange}
-        />
+        <Input name="codigo" value={formData.codigo} onChange={handleChange} />
       </span>
       <span>
         <label htmlFor="tipo_documento" className="flex">
@@ -167,13 +212,25 @@ export const StepperInformacionGeneral: React.FC<
         </label>
         <Toast ref={toast}></Toast>
 
-        <Tooltip target=".custom-choose-btn" content="Escoger imagen" position="bottom" />
-        <Tooltip target=".custom-upload-btn" content="Subir imagen" position="bottom" />
-        <Tooltip target=".custom-cancel-btn" content="Limpiar" position="bottom" />
+        <Tooltip
+          target=".custom-choose-btn"
+          content="Escoger imagen"
+          position="bottom"
+        />
+        <Tooltip
+          target=".custom-upload-btn"
+          content="Subir imagen"
+          position="bottom"
+        />
+        <Tooltip
+          target=".custom-cancel-btn"
+          content="Limpiar"
+          position="bottom"
+        />
         <FileUpload
           ref={fileUploadRef}
           name="demo[]"
-          customUpload      // para que no intente enviarla solo
+          customUpload // para que no intente enviarla solo
           onSelect={onImageSelect}
           accept="image/*"
           maxFileSize={1000000}
@@ -185,7 +242,8 @@ export const StepperInformacionGeneral: React.FC<
           emptyTemplate={emptyTemplate}
           chooseOptions={chooseOptions}
           uploadOptions={uploadOptions}
-          cancelOptions={cancelOptions} />
+          cancelOptions={cancelOptions}
+        />
       </span>
       <span>
         <label htmlFor="tipo_documento" className="flex">
@@ -231,8 +289,8 @@ export const StepperInformacionGeneral: React.FC<
           className="md:w-14rem w-full text-start"
         />
       </span>
-      <div className='flex w-full gap-5'>
-        <span className='w-full'>
+      <div className="flex w-full gap-5">
+        <span className="w-full">
           <label htmlFor="tipo_documento" className="flex">
             <span className="text-red pr-1">*</span> Precio unitario
           </label>
@@ -243,7 +301,7 @@ export const StepperInformacionGeneral: React.FC<
             onChange={handleChange}
           />
         </span>
-        <span className='w-full'>
+        <span className="w-full">
           <label htmlFor="tipo_documento" className="flex">
             <span className="text-red pr-1">*</span> Precio compra
           </label>
@@ -254,7 +312,7 @@ export const StepperInformacionGeneral: React.FC<
             onChange={handleChange}
           />
         </span>
-        <span className='w-full'>
+        <span className="w-full">
           <label htmlFor="tipo_documento" className="flex">
             <span className="text-red pr-1">*</span> Precio venta
           </label>

@@ -17,7 +17,7 @@ export const generarFacturaService = async (data: any) => {
 export const generarAjusteService = async () => {
   try {
     const response = await axios.get(`${BASEURL}/factura_ajuste/generar/`);
-    console.log(response.data)
+    console.log(response.data);
     return response.data;
   } catch (error) {
     console.log(error);
@@ -45,11 +45,8 @@ export const getFacturaCodigos = async (tipo_dte: string) => {
         tipo_dte,
       },
     });
-    // console.log("mmmmmmmmmmmmmmmmmmmmmmmmmmm",response.data)
-    // return(response.data)
-    // Mapeamos cada producto para añadir las nuevas propiedades
     const productosConExtras: ProductosTabla[] = response.data.productos.map(
-      (p:ProductosTabla) => ({
+      (p: ProductosTabla) => ({
         ...p,
         cantidad: 1,
         descuento: 0,
@@ -59,15 +56,14 @@ export const getFacturaCodigos = async (tipo_dte: string) => {
         total_iva: 0,
         total_con_iva: 0,
         total_tributos: 0,
-        seleccionar:false
+        seleccionar: false,
       })
     );
 
     return {
       ...response.data,
-      producto: productosConExtras
+      producto: productosConExtras,
     };
-    
   } catch (error) {
     console.log(error);
     throw new Error();
@@ -87,10 +83,10 @@ export const EnviarHacienda = async (id: string) => {
     const response = await axios.post(
       `${BASEURL}/factura/enviar_hacienda/${id}/`
     );
-    return response; // Devuelve si todo bien
+    return response;
   } catch (error) {
     console.error('Error desde EnviarHacienda:', error);
-    throw error; // ¡Importante! Propaga el error para que se pueda capturar fuera
+    throw error;
   }
 };
 
@@ -104,15 +100,6 @@ export const getFacturaBycodigo = async (codigo_generacion: string) => {
         },
       }
     );
-    return response.data;
-  } catch (error) {
-    throw new Error();
-  }
-};
-
-export const getTiposGeneracionDocumento = async () => {
-  try {
-    const response = await axios.get(`${BASEURL}/tipo-generacion-facturas/`);
     return response.data;
   } catch (error) {
     throw new Error();

@@ -53,10 +53,7 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
   };
 
   // Cambia cantidad
-  const onCantidadChange = (
-    e: InputNumberValueChangeEvent,
-    id: number
-  ) => {
+  const onCantidadChange = (e: InputNumberValueChangeEvent, id: number) => {
     const nueva = e.value ?? 1;
     setProducts((prev) =>
       prev.map((p) => (p.id === id ? { ...p, cantidad: nueva } : p))
@@ -64,25 +61,32 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
   };
 
   const guardar = () => {
-    const seleccionados = products.filter(p => p.seleccionar); // solo seleccionados
-  
-    seleccionados.forEach(producto => {
+    const seleccionados = products.filter((p) => p.seleccionar); // solo seleccionados
+
+    seleccionados.forEach((producto) => {
       const total_neto = producto.precio_venta * producto.cantidad;
-      const total_iva  = producto.cantidad * (producto.precio_venta * 0.13);
-      producto.total_neto    = total_neto;
-      producto.total_iva     = total_iva;
+      const total_iva = producto.cantidad * (producto.precio_venta * 0.13);
+      producto.total_neto = total_neto;
+      producto.total_iva = total_iva;
       producto.total_con_iva = total_neto + total_iva;
     });
-  
+
     setSelectedProducts(seleccionados);
     setVisible(false);
   };
-  
 
   const footer = (
     <div className="flex justify-end gap-2">
-      <SendFormButton onClick={guardar} text="Agregar" className="bg-primary-blue px-10 text-white" />
-      <SendFormButton onClick={() => setVisible(false)} text="Cerrar" className="border-primary-blue border px-10" />
+      <SendFormButton
+        onClick={guardar}
+        text="Agregar"
+        className="bg-primary-blue px-10 text-white"
+      />
+      <SendFormButton
+        onClick={() => setVisible(false)}
+        text="Cerrar"
+        className="border-primary-blue border px-10"
+      />
     </div>
   );
 

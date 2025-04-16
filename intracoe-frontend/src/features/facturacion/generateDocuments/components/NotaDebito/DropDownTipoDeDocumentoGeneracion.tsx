@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Dropdown } from 'primereact/dropdown';
-import { getTiposGeneracionDocumento } from '../../services/factura/facturaServices';
+import { getAllTiposGeneracionDocumento } from '../../../../../shared/catalogos/services/catalogosServices';
 
 interface DropFownTipoDeDocumentoGeneracionInterface {
   tipoGeneracionFactura: any;
@@ -19,7 +19,7 @@ export const DropFownTipoDeDocumentoGeneracion: React.FC<
 
   const fetchTipoGeneracionDeDocumento = async () => {
     try {
-      const response = await getTiposGeneracionDocumento();
+      const response = await getAllTiposGeneracionDocumento();
       console.log('response', response);
       seTipoGeneracionDocumentoTempLista(
         response.map((documento: { descripcion: any; codigo: any }) => ({

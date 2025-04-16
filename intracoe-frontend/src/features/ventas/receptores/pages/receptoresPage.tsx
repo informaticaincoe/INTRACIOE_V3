@@ -1,24 +1,29 @@
-
-import { useEffect, useRef, useState } from 'react'
-import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPage'
-import { Title } from '../../../../shared/text/title'
-import { Divider } from 'primereact/divider'
-import { TableReceptores } from '../components/tableReceptores'
-import { deleteReceptor, getAllReceptor } from '../../../../shared/services/receptor/receptorServices'
-import { ReceptorInterface } from '../../../../shared/interfaces/interfaces'
-import { HeaderReceptoresOptions } from '../components/headerReceptoresOptions'
-import { CustomToastRef, ToastSeverity } from '../../../../shared/toast/customToast'
-import { useNavigate } from 'react-router'
+import { useEffect, useRef, useState } from 'react';
+import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPage';
+import { Title } from '../../../../shared/text/title';
+import { Divider } from 'primereact/divider';
+import { TableReceptores } from '../components/tableReceptores';
+import {
+  deleteReceptor,
+  getAllReceptor,
+} from '../../../../shared/services/receptor/receptorServices';
+import { ReceptorInterface } from '../../../../shared/interfaces/interfaces';
+import { HeaderReceptoresOptions } from '../components/headerReceptoresOptions';
+import {
+  CustomToastRef,
+  ToastSeverity,
+} from '../../../../shared/toast/customToast';
+import { useNavigate } from 'react-router';
 
 import { FaCheckCircle } from 'react-icons/fa';
 import { IoMdCloseCircle } from 'react-icons/io';
 
 export const ReceptoresPage = () => {
-  const [receptores, setReceptores] = useState<ReceptorInterface[]>([])
+  const [receptores, setReceptores] = useState<ReceptorInterface[]>([]);
   const [codigoFiltro, setCodigoFiltro] = useState<string>('');
-  const [selectedReceptores, setSelectedReceptores] = useState<any[]>([])
+  const [selectedReceptores, setSelectedReceptores] = useState<any[]>([]);
   const toastRef = useRef<CustomToastRef>(null);
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const handleAccion = (
     severity: ToastSeverity,
@@ -36,27 +41,23 @@ export const ReceptoresPage = () => {
   // Cada vez que cambie el filtro, recargamos los productos
   useEffect(() => {
     fetchReceptores();
-    console.log("d")
+    console.log('d');
   }, [codigoFiltro, setSelectedReceptores, selectedReceptores]);
 
   const fetchReceptores = async () => {
     try {
-      const response = await getAllReceptor(
-        {
-          filter: codigoFiltro || undefined
-        }
-      )
-      console.log(response)
-      setReceptores(response)
+      const response = await getAllReceptor({
+        filter: codigoFiltro || undefined,
+      });
+      console.log(response);
+      setReceptores(response);
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
 
   const handleSearch = (nuevoCodigo: string) => {
     setCodigoFiltro(nuevoCodigo.trim());
-
-
   };
 
   const handleDelete = async () => {
@@ -64,10 +65,18 @@ export const ReceptoresPage = () => {
     for (const receptor of selectedReceptores) {
       try {
         await deleteReceptor(receptor.id);
-        handleAccion('success', <FaCheckCircle size={38} />, 'Receptor eliminado con éxito');
+        handleAccion(
+          'success',
+          <FaCheckCircle size={38} />,
+          'Receptor eliminado con éxito'
+        );
       } catch (error) {
         console.error(error);
-        handleAccion('error', <IoMdCloseCircle size={38} />, 'Error al eliminar el receptor');
+        handleAccion(
+          'error',
+          <IoMdCloseCircle size={38} />,
+          'Error al eliminar el receptor'
+        );
       }
     }
     // Después de eliminar, se limpia la selección y se actualiza la lista de productos
@@ -75,7 +84,7 @@ export const ReceptoresPage = () => {
   };
 
   const editHandler = () => {
-    navigate(`/receptor/${selectedReceptores[0].id}`)
+    navigate(`/receptor/${selectedReceptores[0].id}`);
   };
 
   return (
@@ -83,11 +92,20 @@ export const ReceptoresPage = () => {
       <Title text="Receptores" />
       <WhiteSectionsPage>
         <div>
-          <HeaderReceptoresOptions codigo={codigoFiltro} onSearch={handleSearch} />
+          <HeaderReceptoresOptions
+            codigo={codigoFiltro}
+            onSearch={handleSearch}
+          />
           <Divider />
-          <TableReceptores receptores={receptores} setSelectedReceptores={setSelectedReceptores} selectedReceptores={selectedReceptores} onDelete={handleDelete} onEdit={editHandler} />
+          <TableReceptores
+            receptores={receptores}
+            setSelectedReceptores={setSelectedReceptores}
+            selectedReceptores={selectedReceptores}
+            onDelete={handleDelete}
+            onEdit={editHandler}
+          />
         </div>
       </WhiteSectionsPage>
     </>
-  )
-}
+  );
+};
