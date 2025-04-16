@@ -44,6 +44,7 @@ from dateutil.relativedelta import relativedelta
 from django.db.models import Q
 from num2words import num2words
 import pytz
+from django.db.models import Count
 
 FIRMADOR_URL = "http://192.168.2.25:8113/firmardocumento/"
 DJANGO_SERVER_URL = "http://127.0.0.1:8000"
@@ -3225,7 +3226,7 @@ def contingencia_list(request):
             #Verificar cada lote asociado al evento si ya pasaron 72 horas desde el otorgamiento del sello para el evento entonces inactivar lotes
             if evento.sello_recepcion is not None and evento.recibido_mh and evento.fecha_sello_recibido is not None:
                 print(f"codigo evento: {evento.codigo_generacion}")
-                fecha_sello_recibido =  zona_horaria.localize(evento.fecha_sello_recibido)
+                fecha_sello_recibido =  evento.fecha_sello_recibido
                 if fecha_sello_recibido <= fecha_limite:
                     lote_obj = LoteContingencia.objects.filter(factura__id=lote.factura.id).first()
                     print("Lote: ", lote_obj)
@@ -3456,7 +3457,6 @@ def contingencia_dte_view(request, contingencia_id):
     # Generar json, firmar, enviar a MH
     global emisor_fe
     print("Emisor: ", emisor_fe)
-    max_items = 5000
     evento_contingencia = EventoContingencia.objects.get(id=contingencia_id)  # Buscar DTE a invalidar
     
     try: 
@@ -3488,7 +3488,8 @@ def contingencia_dte_view(request, contingencia_id):
                             "version": 3,
                             "ambiente":  str(AMBIENTE.codigo),
                             "codigoGeneracion": str(evento_contingencia.codigo_generacion).upper(),
-                            "fTransmision": str(fecha_transmision)#,
+                            "fTransmision": str(fecha_transmision),
+                            "hTransmision": str(datetime.now().strftime('%H:%M:%S'))
                         }#"hTransmision": str(datetime.now().strftime('%H:%M:%S')),
                         
                         json_emisor = {
@@ -3873,6 +3874,8 @@ def enviar_contingencia_hacienda_view(request, contingencia_id):
 def lote_contingencia_dte_view(request, factura_id, tipo_contiengencia_obj):
     print("Crear lote de los dte generados en contingencia: ", factura_id)
     lote_contingencia = None
+    crear_evento = False
+    max_items = 2
     try:
         #Paso 1: Buscar factura guardada en contingencia
         documento_contingencia = FacturaElectronica.objects.filter(id=factura_id).order_by('id').first()
@@ -3880,27 +3883,35 @@ def lote_contingencia_dte_view(request, factura_id, tipo_contiengencia_obj):
         
         if documento_contingencia and documento_contingencia.contingencia == True:
             #Paso 2: Verificar si existe un evento de contingencia activo, sino existe crear el evento
-            evento_contingencia = EventoContingencia.objects.filter(finalizado=False, recibido_mh=False).first()
-            if evento_contingencia and evento_contingencia.lotes_evento is not None:
-                #for lote in evento.lotes_evento.all():
-                #facturas.append(lote.factura)
-                if evento_contingencia is None:
-                    print("Crear contingencia")
-                    codigo_generacion_contingencia = str(uuid.uuid4()).upper()
-                    evento_contingencia = EventoContingencia.objects.create(
-                        codigo_generacion = codigo_generacion_contingencia,
-                        tipo_contingencia = tipo_contiengencia_obj
-                    )
+            evento_contingencia = EventoContingencia.objects.annotate(num_lotes_evento=Count('lotes_evento')).filter(finalizado=False, recibido_mh=False, num_lotes_evento__lt=max_items)
+            print("eventos contingencia encontrados: ", evento_contingencia)
+            if evento_contingencia:
+                crear_evento = False
+            elif evento_contingencia is None or not evento_contingencia:
+                crear_evento = True
+            print("bandera crear contingencia: ", crear_evento)
+            if crear_evento:
+                print("Crear contingencia")
+                codigo_generacion_contingencia = str(uuid.uuid4()).upper()
+                evento_contingencia = EventoContingencia.objects.create(
+                    codigo_generacion = codigo_generacion_contingencia,
+                    tipo_contingencia = tipo_contiengencia_obj
+                )
                 
             #Crear lotes
             if evento_contingencia:
-                print("Creacion de lotes")
-                lote_contingencia = LoteContingencia.objects.create(
-                    factura = documento_contingencia, 
-                    evento = evento_contingencia
-                )
-                mensaje = f"Lote creado correctamente: {lote_contingencia.id}"
-                return lote_contingencia
+                try:
+                    print("Creacion de lotes")
+                    lote_contingencia = LoteContingencia.objects.create(
+                        factura = documento_contingencia, 
+                        evento = evento_contingencia.first()
+                    )
+                    print("lote creado: ", lote_contingencia)
+                    mensaje = f"Lote creado correctamente: {lote_contingencia.id}"
+                    return lote_contingencia
+                except Exception as e:
+                    print(f"Error al crear el lote: {e}")
+                    mensaje = f"Hubo un fallo al crear el lote: {str(e)}"
             else:
                 mensaje = "Hubo un fallo en el evento de contingencia"
             
@@ -4193,7 +4204,7 @@ def enviar_lotes_hacienda_view(request, factura_id):
 #Finalizacion de eventos en contingencia(hacerlo automatico)
 @csrf_exempt
 def finalizar_contigencia_view(request):
-    print("Finzalizar contingencias")
+    print("Finzalizar contingencias activas")
     try:
         results = []
         contingencias = []
@@ -4204,7 +4215,7 @@ def finalizar_contigencia_view(request):
         #Fecha y hora actual
         zona_horaria = pytz.timezone('America/El_Salvador')
         fecha_actual = datetime.now(zona_horaria)
-        fecha_limite = (fecha_actual - timezone.timedelta(hours=1))
+        fecha_limite = (fecha_actual - timezone.timedelta(hours=24))
         
         try:
             print(f"Busqueda de contingencias activas con fecha fuera de plazo | fecha actual: {fecha_actual} | fecha plazo: {fecha_limite.date()} | hora plazo: {fecha_limite.time()}")
@@ -4216,9 +4227,9 @@ def finalizar_contigencia_view(request):
                     print(f"Fecha 1: {fecha_hora_unificada}")
                     print(f"Fecha 2: {fecha_limite}")
                     if fecha_hora_unificada <= fecha_limite:
-                        print("evento encontrado: ")
-                        contingencias_activas.extend(evento)
-            
+                        print("evento encontrado: ", evento)
+                        contingencias_activas.append(evento)
+            print("contingencias activas: ", contingencias_activas)
             #Agregar al listado las contingencias activas que fueron rechazadas por mh
             eventos_rechazados_mh = EventoContingencia.objects.filter(rechazado=True, finalizado=False)
             print("eventos rechazados: ", eventos_rechazados_mh)
@@ -4227,7 +4238,7 @@ def finalizar_contigencia_view(request):
                     fecha_hora_unificada =  zona_horaria.localize(datetime.combine(evento.fecha_modificacion, evento.hora_modificacion))
                     print("Fecha rechazado: ", fecha_hora_unificada)
                     if fecha_hora_unificada <= fecha_limite:
-                        contingencias_activas.extend(evento)
+                        contingencias_activas.append(evento)
             
             print("List contingencias activas: ", contingencias_activas)
             if contingencias_activas:
@@ -4246,6 +4257,7 @@ def finalizar_contigencia_view(request):
                 "mensaje": mensaje
             })
             print("Contingencias desactivadas: ", contingencias)
+            print("resultado: ", results)
             return JsonResponse({"results": results})
         except Exception as e:
             print(f"Error inesperado durante la actualización de contingencias activas: {str(e)}")
