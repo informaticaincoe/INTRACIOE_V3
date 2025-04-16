@@ -538,6 +538,15 @@ class MunicipioDestroyAPIView(generics.DestroyAPIView):
     queryset = Municipio.objects.all()
     serializer_class = MunicipioSerializer
 
+class MunicipioByDepartamentoAPIView(generics.ListAPIView):
+    serializer_class = MunicipioSerializer
+
+    def get_queryset(self):
+        # Obtener el departamento a partir del id que pasamos en la URL
+        departamento_id = self.kwargs['departamento_id']
+        # Filtramos los municipios que pertenecen a ese departamento
+        return Municipio.objects.filter(departamento__id=departamento_id)
+    
 # ========= CONDICION OPERACION =========
 class CondicionOperacionListAPIView(generics.ListAPIView):
     queryset = CondicionOperacion.objects.all()

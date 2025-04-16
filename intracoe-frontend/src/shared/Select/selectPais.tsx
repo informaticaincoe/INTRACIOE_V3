@@ -4,9 +4,7 @@ import { getAllPaises } from '../catalogos/services/catalogosServices';
 
 interface SelectPaisProps {
     value: any;
-    onChange: (e: {
-        target: { name: string; value: (string | number)[] };
-    }) => void;
+    onChange: any;
     className?: HTMLProps<HTMLElement>['className'];
     name: string;
 }
