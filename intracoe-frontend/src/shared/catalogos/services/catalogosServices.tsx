@@ -139,12 +139,15 @@ export const getAllPaises = async () => {
 export const getAllDepartamentos = async () => {
   try {
     const response = await axios.get(`${BASEURL}/departamentos/`);
-    await Promise.all(
-      response.data.map(async (data: any) => {
-        console.log(data);
-        data.pais = await getPaisById(data.pais);
-      })
-    );
+    return response.data;
+  } catch (error) {
+    throw new Error();
+  }
+};
+
+export const getDepartamentoById = async (id:number) => {
+  try {
+    const response = await axios.get(`${BASEURL}/departamento/${id}/`);
     return response.data;
   } catch (error) {
     throw new Error();

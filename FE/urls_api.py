@@ -2,7 +2,7 @@
 from django.urls import path
 from FE.api_views import (
     EmisorCreateAPIView, EmisorUpdateAPIView, EnviarFacturaHaciendaAPIView, FacturaDetailAPIView, FacturaListAPIView, FacturaPorCodigoGeneracionAPIView, FirmarFacturaAPIView, 
-    GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, ObtenerReceptorAPIView, autenticacion, EmisorListAPIView, receptorCreateAPIView, receptorDeleteAPIView, receptorDetailAPIView, 
+    GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, MunicipioByDepartamentoAPIView, ObtenerReceptorAPIView, autenticacion, EmisorListAPIView, receptorCreateAPIView, receptorDeleteAPIView, receptorDetailAPIView, 
     receptorListAPIView, receptorUpdateAPIView, GenerarDocumentoAjusteAPIView,
 
     # ACTIVIDAD ECONOMICA
@@ -198,7 +198,8 @@ urlpatterns = [
     # MUNICIPIO
     path('api/municipio/<int:pk>/', MunicipioListAPIView.as_view(), name='municipio_list_api'),
     path('api/municipio/crear/', MunicipioCreateAPIView.as_view(), name='municipio-create'),
-    path('api/municipio-by-id/<int:pk>/', MunicipioRetrieveAPIView.as_view(), name='municipio_detail_api'), 
+    path('api/municipio-by-id/<int:pk>/', MunicipioRetrieveAPIView.as_view(), name='municipio_detail_api'),
+     path('api/municipios/departamento/<int:departamento_id>/', MunicipioByDepartamentoAPIView.as_view(), name='municipios_by_departamento'), 
     path('api/municipio/<int:pk>/editar/', MunicipioUpdateAPIView.as_view(), name='municipio-update'),
     path('api/municipio/<int:pk>/eliminar/', MunicipioDestroyAPIView.as_view(), name='municipio-destroy'),
     

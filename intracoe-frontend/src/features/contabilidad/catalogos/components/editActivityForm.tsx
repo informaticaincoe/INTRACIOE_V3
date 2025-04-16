@@ -2,9 +2,9 @@ import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { Dialog } from 'primereact/dialog';
 import React from 'react';
 import { Input } from '../../../../shared/forms/input';
-import { SelectDepartmentComponent } from '../../../../shared/Select/selectDepartmentComponent';
 import { getAllDepartamentos } from '../../../bussiness/configBussiness/services/ubicacionService';
 import { Dropdown } from 'primereact/dropdown';
+import { SelectPaisComponent } from '../../../../shared/Select/selectPais';
 
 interface EditActivityProps {
   catalogo: string;
@@ -47,7 +47,7 @@ export const EditActivityForm: React.FC<EditActivityProps> = ({
     setFormData(item);
 
     if (item?.departamento && departmentList.length > 0) {
-      setDepartamentoSelect(item.departamento);
+      setDepartamentoSelect(item.departamento?.id || item.departamento);
     }
   }, [item, departmentList]);
 
@@ -66,13 +66,22 @@ export const EditActivityForm: React.FC<EditActivityProps> = ({
         };
         break;
 
+      case 'Departamentos':
+        body = {
+          codigo: formData.codigo,
+          descripcion: formData.descripcion,
+          pais: formData.pais?.id | formData.pais,
+        };
+        break;
+
       case 'municipios':
         body = {
           codigo: formData.codigo,
           descripcion: formData.descripcion,
-          departamento: departamentoSelect,
+          departamento: formData.departamento, // ya lo dejaste en forma de ID
         };
         break;
+
 
       case 'Tipo contingencia':
         body = {
@@ -92,7 +101,6 @@ export const EditActivityForm: React.FC<EditActivityProps> = ({
 
     try {
       const response = await saveFunction(formData.id, body);
-      console.log(response);
       setVisible(false);
       onSave();
     } catch (error) {
@@ -164,6 +172,16 @@ export const EditActivityForm: React.FC<EditActivityProps> = ({
               />
             </span>
           )}
+
+          {catalogo == 'Departamentos' && (
+            <span className="flex flex-col pt-5">
+              <label htmlFor="version" className="">
+                Pais:
+              </label>
+              <SelectPaisComponent value={formData.pais?.id || formData.pais} onChange={handleChange} name={'pais'} />
+            </span>
+          )}
+
           {catalogo == 'municipios' && (
             <span className="flex flex-col pt-5">
               <label htmlFor="version" className="">
@@ -171,7 +189,13 @@ export const EditActivityForm: React.FC<EditActivityProps> = ({
               </label>
               <Dropdown
                 value={departamentoSelect}
-                onChange={(e) => setDepartamentoSelect(e.value)}
+                onChange={(e) => {
+                  setDepartamentoSelect(e.value);
+                  setFormData((prev: any) => ({
+                    ...prev,
+                    departamento: e.value, // Esto guarda el ID también en formData
+                  }));
+                }}
                 options={departmentList}
                 optionLabel="descripcion"
                 optionValue="id"
@@ -179,6 +203,7 @@ export const EditActivityForm: React.FC<EditActivityProps> = ({
                 className="md:w-14rem font-display w-full"
                 filter
               />
+
             </span>
           )}
 
