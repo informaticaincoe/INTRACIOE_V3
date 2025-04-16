@@ -3285,37 +3285,52 @@ def generar_json_contingencia(evento_contingencia_id, emisor, detalles):
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 @csrf_exempt
-def contingencia_dte_unificado_view(request):#contingencia_id, motivo_contingencia
+def contingencia_dte_unificado_view(request):
     try:
         contingencia_id = request.GET.get("contingencia_id")
         motivo_contingencia = request.GET.get("motivo_contingencia", None)
+        codigo_motivo = request.GET.get("codigo_motivo", None)
+        motivo = None
         
-        print(f"contingencia_id: {contingencia_id}, motivo contingencia: {motivo_contingencia}")
+        print(f"request: {request}, contingencia_id: {contingencia_id}, motivo contingencia: {motivo_contingencia}, codigo motivo: {codigo_motivo}")
         print("[uno a uno]Inicio enviar contingencia view")
+        
         # ---------------------------------
-        # Paso 1: Obtener el json generado de contingencia
+        # Paso 1: Actualizar tipo contingencia si el codigo es 5
+        # ---------------------------------
+        if codigo_motivo and codigo_motivo == COD_TIPO_CONTINGENCIA:
+            motivo = TipoContingencia.objects.filter(codigo=codigo_motivo).first()
+            print("Asignar el motivo de contingencia")
+            if motivo:
+                motivo.motivo_contingencia = motivo_contingencia
+                motivo.save()
+        
+        # ---------------------------------
+        # Paso 2: Obtener el json generado de contingencia
         # ---------------------------------
         response_evento_contingencia = contingencia_dte_view(request, contingencia_id)
-        if response_evento_contingencia.status_code != 302 :
+        if response_evento_contingencia.status_code != 302:
             return response_evento_contingencia
         
         # ---------------------------------
-        # Paso 2: Llamar a la función firma del evento de contingencia
+        # Paso 3: Llamar a la función firma del evento de contingencia
         # ---------------------------------
         response_firma = firmar_contingencia_view(request, contingencia_id)
         if response_firma.status_code != 302:
             return response_firma
         
         # ---------------------------------
-        # Paso 3: Llamar a la función que envía el evento de contigencia firmado a Hacienda
+        # Paso 4: Llamar a la función que envía el evento de contigencia firmado a Hacienda
         # ---------------------------------
         response_envio = enviar_contingencia_hacienda_view(request, contingencia_id)
+        print("response envio contingencia: ", response_envio)
+        print(f"Codigo de estado de la respuesta de envio: {response_envio.status_code}")
+        print(f"Contenido de la respuesta de envio: {response_envio.content}")
         
         # ---------------------------------
         # Consultar el estado final y preparar el mensaje de respuesta
         # ---------------------------------
         evento = EventoContingencia.objects.filter(id=contingencia_id).first()
-        
         if evento:
             if evento.recibido_mh:
                 mensaje = "Contingencia enviada con éxito"
@@ -3324,10 +3339,22 @@ def contingencia_dte_unificado_view(request):#contingencia_id, motivo_contingenc
         else:
             mensaje = "No se encontró el evento de contingencia"
         
-        try:
-            detalle = json.loads(response_envio.content)
-        except Exception:
-            detalle = response_envio.content.decode()
+        
+        # Intentamos cargar el detalle (si es un JSON válido)
+        if response_envio.status_code == 200:
+            try:
+                detalle = json.loads(response_envio.content)
+            except Exception as e:
+                # Si no se puede cargar como JSON, mostramos el error
+                print(f"Error al convertir la respuesta a JSON: {e}")
+                detalle = response_envio.content.decode()  # Decodificamos como texto si no es JSON
+        else:
+            # Si el código de estado no es 200, mostramos el código y el contenido
+            print(f"Error en la respuesta de envío: {response_envio.status_code}")
+            detalle = f"Error al enviar la contingencia, código de estado: {response_envio.status_code}"
+
+        # Verificamos el contenido de 'detalle' antes de retornar
+        print(f"mensaje: {mensaje}, detalle: {detalle}")
         
         return JsonResponse({
             "mensaje": mensaje,
@@ -3335,8 +3362,9 @@ def contingencia_dte_unificado_view(request):#contingencia_id, motivo_contingenc
         })
     
     except Exception as e:
-        print("Error en el proceso unificado:", e)
+        print(f"Error en el proceso unificado: {e}")
         return JsonResponse({"error": str(e)}, status=400)
+
     
 @csrf_exempt
 def contingencias_dte_view(request):
@@ -3438,9 +3466,8 @@ def contingencia_dte_view(request, contingencia_id):
                             "version": 3,
                             "ambiente":  str(AMBIENTE.codigo),
                             "codigoGeneracion": str(evento_contingencia.codigo_generacion).upper(),
-                            "fTransmision": str(fecha_transmision),
-                            "hTransmision": str(datetime.now().strftime('%H:%M:%S')),
-                        }
+                            "fTransmision": str(fecha_transmision)#,
+                        }#"hTransmision": str(datetime.now().strftime('%H:%M:%S')),
                         
                         json_emisor = {
                             "nit": str(emisor_fe.nit),
@@ -3465,7 +3492,7 @@ def contingencia_dte_view(request, contingencia_id):
                         
                         #Especifiar motivo de contingencia
                         if evento_contingencia.tipo_contingencia and evento_contingencia.tipo_contingencia.codigo == COD_TIPO_CONTINGENCIA:
-                            json_motivo["motivoContingencia"] = evento_contingencia.motivo_contingencia #Explicar motivo contingencia
+                            json_motivo["motivoContingencia"] = evento_contingencia.tipo_contingencia.motivo_contingencia #Explicar motivo contingencia
                         else:
                             json_motivo["motivoContingencia"] = None
                         
@@ -3500,249 +3527,313 @@ def firmar_contingencia_view(request, contingencia_id):
     """
     Firma contingencia y, si ya está firmada, la envía a Hacienda.
     """
-    print("-Inicio firma contingencia DTE - id contingencia ", contingencia_id)
-    global emisor_fe
-    print("Emisor: ", emisor_fe)
-    #Buscar contingencia a firmar
-    evento_contingencia = EventoContingencia.objects.get(id=contingencia_id)
-
-    token_data = Token_data.objects.filter(activado=True).first()
-    if not token_data:
-        return JsonResponse({"error": "No hay token activo registrado en la base de datos."}, status=401)
-
-    if not os.path.exists(CERT_PATH):
-        return JsonResponse({"error": "No se encontró el certificado en la ruta especificada."}, status=400)
-    
-    # Verificar y formatear el JSON original de la contingencia
     try:
-        if isinstance(evento_contingencia.json_original, dict):
-            dte_json_str = json.dumps(evento_contingencia.json_original, separators=(',', ':'))
-        else:
-            json_obj = json.loads(evento_contingencia.json_original)
-            dte_json_str = json.dumps(json_obj, separators=(',', ':'))
-    except Exception as e:
-        return JsonResponse({
-            "error": "El JSON original de contingencia no es válido",
-            "detalle": str(e)
-        }, status=400)
-    # Construir el payload con los parámetros requeridos
-    payload = {
-        "nit": str(emisor_fe.nit),   # Nit del contribuyente
-        "activo": True,            # Indicador activo
-        "passwordPri": str(emisor_fe.clave_privada), #"3nCr!pT@d0Pr1v@d@",   # Contraseña de la llave privada
-        "dteJson": evento_contingencia.json_original   # JSON del DTE como cadena
-    }
+        print("-Inicio firma contingencia DTE - id contingencia ", contingencia_id)
+        global emisor_fe
+        print("Emisor: ", emisor_fe)
+        #Buscar contingencia a firmar
+        evento_contingencia = EventoContingencia.objects.get(id=contingencia_id)
+        print("contingencia encontrada: ", evento_contingencia)
+        token_data = Token_data.objects.filter(activado=True).first()
+        if not token_data:
+            return JsonResponse({"error": "No hay token activo registrado en la base de datos."}, status=401)
 
-    headers = {"Content-Type": "application/json"}
-
-    try:
-        response = requests.post(FIRMADOR_URL, json=payload, headers=headers)
+        if not os.path.exists(CERT_PATH):
+            return JsonResponse({"error": "No se encontró el certificado en la ruta especificada."}, status=400)
         
-        # Capturamos la respuesta completa
+        # Verificar y formatear el JSON original de la contingencia
         try:
-            response_data = response.json()
+            if isinstance(evento_contingencia.json_original, dict):
+                dte_json_str = json.dumps(evento_contingencia.json_original, separators=(',', ':'))
+            else:
+                json_obj = json.loads(evento_contingencia.json_original)
+                dte_json_str = json.dumps(json_obj, separators=(',', ':'))
         except Exception as e:
-            # En caso de error al parsear el JSON, se guarda el texto crudo
-            response_data = {"error": "No se pudo parsear JSON", "detalle": response.text}
-        
-        # Guardar toda la respuesta en la factura para depuración (incluso si hubo error)
-        evento_contingencia.json_firmado = response_data
-        evento_contingencia.firmado = True
-        evento_contingencia.save()
+            return JsonResponse({
+                "error": "El JSON original de contingencia no es válido",
+                "detalle": str(e)
+            }, status=400)
+        # Construir el payload con los parámetros requeridos
+        payload = {
+            "nit": str(emisor_fe.nit),   # Nit del contribuyente
+            "activo": True,            # Indicador activo
+            "passwordPri": str(emisor_fe.clave_privada), #"3nCr!pT@d0Pr1v@d@",   # Contraseña de la llave privada
+            "dteJson": evento_contingencia.json_original   # JSON del DTE como cadena
+        }
 
-        # Verificar si la firma fue exitosa
-        if response.status_code == 200 and response_data.get("status") == "OK":
-            # (Opcional) Guardar el JSON firmado en un archivo
-            json_signed_path = f"FE/json_facturas_firmadas/{evento_contingencia.codigo_generacion}.json"
-            os.makedirs(os.path.dirname(json_signed_path), exist_ok=True)
-            with open(json_signed_path, "w", encoding="utf-8") as json_file:
-                json.dump(response_data, json_file, indent=4, ensure_ascii=False)
-            print("-Fin firma contingencia DTE - id contingencia ", contingencia_id)
-            #enviar_factura_invalidacion_hacienda_view(factura_id)
-            return redirect(reverse('detalle_factura', args=[contingencia_id]))
-        else:
-            # Se devuelve el error completo recibido
-            return JsonResponse({"error": "Error al firmar la contingencia", "detalle": response_data}, status=400)
+        headers = {"Content-Type": "application/json"}
+
+        try:
+            response = requests.post(FIRMADOR_URL, json=payload, headers=headers)
+            
+            # Capturamos la respuesta completa
+            try:
+                response_data = response.json()
+            except Exception as e:
+                # En caso de error al parsear el JSON, se guarda el texto crudo
+                response_data = {"error": "No se pudo parsear JSON", "detalle": response.text}
+            
+            # Guardar toda la respuesta en la factura para depuración (incluso si hubo error)
+            evento_contingencia.json_firmado = response_data
+            evento_contingencia.firmado = True
+            evento_contingencia.save()
+            print("Guardar cambios contingencia firma")
+            
+            # Verificar si la firma fue exitosa
+            if response.status_code == 200 and response_data.get("status") == "OK":
+                # (Opcional) Guardar el JSON firmado en un archivo
+                json_signed_path = f"FE/json_facturas_firmadas/{evento_contingencia.codigo_generacion}.json"
+                os.makedirs(os.path.dirname(json_signed_path), exist_ok=True)
+                with open(json_signed_path, "w", encoding="utf-8") as json_file:
+                    json.dump(response_data, json_file, indent=4, ensure_ascii=False)
+                print("-Fin firma contingencia DTE - id contingencia ", contingencia_id)
+                #enviar_factura_invalidacion_hacienda_view(factura_id)
+                return redirect(reverse('detalle_factura', args=[contingencia_id]))
+            else:
+                # Se devuelve el error completo recibido
+                return JsonResponse({"error": "Error al firmar la contingencia", "detalle": response_data}, status=400)
+        except requests.exceptions.RequestException as e:
+            return JsonResponse({"error": "Error de conexión con el firmador", "detalle": str(e)}, status=500)
     except requests.exceptions.RequestException as e:
-        return JsonResponse({"error": "Error de conexión con el firmador", "detalle": str(e)}, status=500)
+            return JsonResponse({"error": "Error de conexión con el firmador", "detalle": str(e)}, status=500)
     
+
 csrf_exempt
 def enviar_contingencia_hacienda_view(request, contingencia_id):
-    print("-Inicio enviar contingencia a MH")
+    print("-Inicio enviar contingencia a MH: ", contingencia_id)
+
+    contingencia = True
+    intento = 1
+    intentos_max = 3  # Intentos para envio del DTE a MH
+    tipo_contingencia_obj = None
+    mensaje = None
+    # Banderas para verificar si ya se creo una contingencia
+    contingencia_creada = False
+    error_autenticacion = None
+    error_envio = None
+    
+    # Establecer la zona horaria de El Salvador
+    timezone_actual = pytz.timezone('America/El_Salvador')
+
+    # Obtener la fecha y hora actual UTC y convertirla a la zona horaria de El Salvador
+    datetime_utc = datetime.now(pytz.utc)  # Primero obtenemos la hora en UTC
+    hora_actual = datetime_utc.astimezone(timezone_actual)  # Convertimos a la zona de El Salvador
+
+    # Obtener la fecha y hora por separado
+    fecha = hora_actual.strftime('%Y-%m-%d')  # Año-Mes-Día
+    hora = hora_actual.strftime('%H:%M:%S')  # Hora:Minuto:Segundo
+
+    evento_contingencia = EventoContingencia.objects.get(id=contingencia_id)
+
     # Paso 1: Autenticación contra el servicio de Hacienda
     global emisor_fe
-    print("Emisor global: ", emisor_fe)
-    nit_empresa = str(emisor_fe.nit), #"06142811001040"
-    pwd = str(emisor_fe.clave_publica), #"Q#3P9l5&@aF!gT2sA"
+    nit_empresa = str(emisor_fe.nit)  # "06142811001040"
+    pwd = str(emisor_fe.clave_publica)  # "Q#3P9l5&@aF!gT2sA"
     auth_url = "https://api.dtes.mh.gob.sv/seguridad/auth"
     auth_headers = {
         "Content-Type": "application/x-www-form-urlencoded",
         "User-Agent": "MiAplicacionDjango/1.0"
     }
     auth_data = {"user": nit_empresa, "pwd": pwd}
+    auth_response = None
+    response_data = None
 
-    try:
-        auth_response = requests.post(auth_url, data=auth_data, headers=auth_headers)
+    print("Inicio response autenticacion")
+    while intento <= intentos_max:
+        print(f"Intento {intento} de {intentos_max}")
         try:
-            auth_response_data = auth_response.json()
-        except ValueError:
-            return JsonResponse({
-                "error": "Error al decodificar la respuesta de autenticación",
-                "detalle": auth_response.text
-            }, status=500)
-            
-        if auth_response.status_code == 200:
-            token_body = auth_response_data.get("body", {})
-            token = token_body.get("token")
-            token_type = token_body.get("tokenType", "Bearer")
-            roles = token_body.get("roles", [])
+            # --- Autenticación
+            auth_response = requests.post(auth_url, data=auth_data, headers=auth_headers)
 
-            if token and token.startswith("Bearer "):
-                token = token[len("Bearer "):]
+            if auth_response.status_code == 200:
+                auth_response_data = auth_response.json()
+                estado_response = auth_response_data.get("estado", None)
 
-            token_data_obj, created = Token_data.objects.update_or_create(
-                nit_empresa=nit_empresa,
-                defaults={
-                    'password_hacienda': pwd,
-                    'token': token,
-                    'token_type': token_type,
-                    'roles': roles,
-                    'activado': True,
-                    'fecha_caducidad': timezone.now() + timedelta(days=1)
+                token_body = auth_response_data.get("body", {})
+                token = token_body.get("token")
+                token_type = token_body.get("tokenType", "Bearer")
+                roles = token_body.get("roles", [])
+                if token and token.startswith("Bearer "):
+                    token = token[len("Bearer "):]
+
+                token_data_obj, created = Token_data.objects.update_or_create(
+                    nit_empresa=nit_empresa,
+                    defaults={
+                        'password_hacienda': pwd,
+                        'token': token,
+                        'token_type': token_type,
+                        'roles': roles,
+                        'activado': True,
+                        'fecha_caducidad': timezone.now() + timedelta(days=1)
+                    }
+                )
+                contingencia = False  # No es necesario continuar en contingencia
+                print("Autenticacion exitosa")
+                break
+            else:
+                # --- Error de autenticación
+                if auth_response.status_code in [500, 502, 503, 504, 408]:
+                    tipo_contingencia_obj = TipoContingencia.objects.get(codigo="1")
+                elif auth_response.status_code in [408, 499]:
+                    tipo_contingencia_obj = TipoContingencia.objects.get(codigo="2")
+                elif auth_response.status_code in [503, 504]:
+                    tipo_contingencia_obj = TipoContingencia.objects.get(codigo="4")
+                else:
+                    mensaje = f"Error en la autenticación: {auth_response.status_code}"
+                    tipo_contingencia_obj = TipoContingencia.objects.get(codigo="5")
+
+                # Intentar nuevamente
+                time.sleep(8)
+                intento += 1
+                error_autenticacion = f"Error en la autenticación: {auth_response.status_code}"
+        except requests.exceptions.RequestException as e:
+            tipo_contingencia_obj = TipoContingencia.objects.get(codigo="1")
+            print(f"Error de conexion con el servicio de autenticación: {e}")
+            time.sleep(8)
+            intento += 1
+            error_autenticacion = str(e)
+        except requests.exceptions.ConnectionError:
+            tipo_contingencia_obj = TipoContingencia.objects.get(codigo="3")
+            time.sleep(8)
+            intento += 1
+            print("Error de conexion, verificar la red o la configuracion DNS")
+        except requests.exceptions.Timeout:
+            tipo_contingencia_obj = TipoContingencia.objects.get(codigo="3")
+            time.sleep(8)
+            intento += 1
+            print("Se agoto el tiempo de espera")
+        except Exception as e:
+            tipo_contingencia_obj = TipoContingencia.objects.get(codigo="5")
+            print(f"Ocurrió un error inesperado: {e}")
+
+    print("Fin response autenticacion")
+
+    # Si la autenticación falló después de los intentos, detener el flujo
+    print("CONTINGENCIA: ", contingencia)
+
+    # --- Envio del DTE
+    if contingencia == False:
+        intento = 1
+        while intento <= intentos_max:
+            print(f"Intento {intento} de {intentos_max}")
+            try:
+                # Paso 2: Enviar la factura firmada a Hacienda
+                token_data_obj = Token_data.objects.filter(activado=True).first()
+                if not token_data_obj or not token_data_obj.token:
+                    return JsonResponse({"error": "No hay token activo para enviar la factura"}, status=401)
+
+                # --- Validación y limpieza del documento firmado ---
+                documento_str = evento_contingencia.json_firmado
+                if not isinstance(documento_str, str):
+                    documento_str = json.dumps(documento_str)
+
+                # Eliminar posibles caracteres BOM y espacios innecesarios
+                documento_str = documento_str.lstrip('\ufeff').strip()  # .upper()
+                print("Json contingencia firmado: ", documento_str)
+
+                try:
+                    if isinstance(evento_contingencia.json_firmado, str):
+                        firmado_data = json.loads(evento_contingencia.json_firmado)
+                    else:
+                        firmado_data = evento_contingencia.json_firmado
+                except Exception as e:
+                    return JsonResponse({
+                        "error": "Error al parsear el documento firmado",
+                        "detalle": str(e)
+                    }, status=400)
+
+                documento_token = firmado_data.get("body", "")
+                if not documento_token:
+                    return JsonResponse({
+                        "error": "El documento firmado no contiene el token en 'body'"
+                    }, status=400)
+
+                documento_token = documento_token.strip()  # Limpiar espacios innecesarios
+
+                envio_json = {
+                    "nit": str(emisor_fe.nit),  # "06142811001040", 
+                    "documento": str(documento_token)  # Enviamos solo el JWT firmado
                 }
-            )
-        else:
-            return JsonResponse({
-                "error": "Error en la autenticación",
-                "detalle": auth_response_data.get("message", "Error no especificado")
-            }, status=auth_response.status_code)
-    except requests.exceptions.RequestException as e:
-        return JsonResponse({
-            "error": "Error de conexión con el servicio de autenticación",
-            "detalle": str(e)
-        }, status=500)
 
-    # Paso 2: Enviar la factura firmada a Hacienda
-    evento_contingencia = EventoContingencia.objects.get(id=contingencia_id)
-    print("Evento contingencia: ", evento_contingencia)
+                envio_headers = {
+                    "Authorization": str(f"Bearer {token_data_obj.token}"),
+                    "User-Agent": "DjangoApp",
+                    "Content-Type": "Application/JSON"
+                }
 
-    token_data_obj = Token_data.objects.filter(activado=True).first()
-    if not token_data_obj or not token_data_obj.token:
-        return JsonResponse({"error": "No hay token activo para enviar la factura"}, status=401)
+                envio_response = requests.post(
+                    "https://api.dtes.mh.gob.sv/fesv/contingencia",
+                    headers=envio_headers,
+                    json=envio_json
+                )
 
-    # --- Validación y limpieza del documento firmado ---
-    documento_str = evento_contingencia.json_firmado
-    if not isinstance(documento_str, str):
-        documento_str = json.dumps(documento_str)
+                print("Envio response: ", envio_response)
+                print("Envio response status code:", envio_response.status_code)
+                print("Envio response headers:", envio_response.headers)
+                print("Envio response text:", envio_response.text)
+                sello_recibido = None
 
-    # Eliminar posibles caracteres BOM y espacios innecesarios
-    documento_str = documento_str.lstrip('\ufeff').strip().upper()
-    print("Json contingencia firmado: ", documento_str)
+                try:
+                    response_data = envio_response.json() if envio_response.text.strip() else {}
+                    sello_recibido = response_data.get("selloRecibido", None)
+                except ValueError as e:
+                    response_data = {"raw": envio_response.text or "No content"}
+                    print("Error al decodificar JSON en envío:", e)
 
-    try:
-        if isinstance(evento_contingencia.json_firmado, str):
-            firmado_data = json.loads(evento_contingencia.json_firmado)
-        else:
-            firmado_data = evento_contingencia.json_firmado
-    except Exception as e:
-        return JsonResponse({
-            "error": "Error al parsear el documento firmado",
-            "detalle": str(e)
-        }, status=400)
+                if envio_response.status_code == 200 and sello_recibido is not None:
+                    responseText = json.loads(envio_response.text)
+                    print(f"Respuesta MH: {envio_response.status_code}, sello de recepcion: {responseText['selloRecibido']}")
 
-    documento_token = firmado_data.get("body", "")
-    if not documento_token:
-        return JsonResponse({
-            "error": "El documento firmado no contiene el token en 'body'"
-        }, status=400)
+                    print("modificar evento")
+                    evento_contingencia.sello_recepcion = response_data.get("selloRecibido", "")
+                    evento_contingencia.recibido_mh = True
+                    evento_contingencia.finalizado = True
+                    # Guardar respuesta de MH en json_original
+                    json_response_data = {
+                        "jsonRespuestaMh": response_data
+                    }
+                    json_original = evento_contingencia.json_original
 
-    documento_token = documento_token.strip()  # Limpiar espacios innecesarios
+                    # Combinar jsons
+                    json_nuevo = json_original | json_response_data
+                    # Convertir diccionario en json
+                    json_respuesta_mh = json.dumps(json_nuevo)
+                    # Al convertir un diccionario en json se guarda como un string, por lo que se debe convertir a json (loads)
+                    json_original_campo = json.loads(json_respuesta_mh)
+                    evento_contingencia.json_original = json_original_campo
+                    evento_contingencia.fecha_modificacion = fecha
+                    evento_contingencia.hora_modificacion = hora
+                    evento_contingencia.save()
+                    print("-Fin enviar contingencia a MH")
+                    return JsonResponse({
+                        "mensaje": "Contingencia enviada con éxito",
+                        "respuesta": response_data
+                    }, status=envio_response.status_code)
+                else:                    
+                    evento_contingencia.rechazado = True
+                    evento_contingencia.observaciones = str(envio_response.content)
+                    evento_contingencia.fecha_modificacion = fecha
+                    evento_contingencia.hora_modificacion = hora
+                    evento_contingencia.save()
+                    print(f"-Fin enviar contingencia a MH no fue aceptada")
+                    return JsonResponse({
+                        "error": "Error al enviar contingencia a Hacienda",
+                        "detalle": response_data
+                    }, status=envio_response.status_code)
 
-    envio_json = {
-        "nit": str(emisor_fe.nit), #"06142811001040", 
-        "documento": str(documento_token) #Enviamos solo el JWT firmado
-    }
+            except requests.exceptions.RequestException as e:
+                time.sleep(5)
+                intento += 1
+                print(f"Error de conexión al enviar la contingencia a Hacienda: {e}")
+                error_envio = str(e)
+            except Exception as e:
+                print(f"Ocurrió un error inesperado al enviar la contingencia: {e}")
+                error_envio = str(e)
 
-    envio_headers = {
-        "Authorization": str(f"Bearer {token_data_obj.token}"),
-        "User-Agent": "DjangoApp",
-        "Content-Type": "Application/JSON"
-    }
-        
-    try:
-        envio_response = requests.post(
-            "https://api.dtes.mh.gob.sv/fesv/contingencia",
-            headers=envio_headers,
-            json=envio_json
-        )
-        
-        print("Envio response: ", envio_response)
-        print("Envio response status code:", envio_response.status_code)
-        print("Envio response headers:", envio_response.headers)
-        print("Envio response text:", envio_response.text)
-        #sello_recibido = None
-
-        try:
-            response_data = envio_response.json() if envio_response.text.strip() else {}
-            #sello_recibido = response_data.get("selloRecibido", None)
-        except ValueError as e:
-            response_data = {"raw": envio_response.text or "No content"}
-            print("Error al decodificar JSON en envío:", e)
-
-        if envio_response.status_code == 200 :#and sello_recibido is not None:
-            responseText =  json.loads(envio_response.text)
-            print(f"Respuesta MH: {envio_response.status_code}, sello de recepcion: {responseText["selloRecibido"]}")
-            
-            if responseText["selloRecibido"] is None:
-                print("No se obtuvo sello de recepcion")
-                return JsonResponse({
-                    "estado": responseText["estado"],
-                    "respuesta": responseText["observaciones"]
-                }, status=envio_response.status_code)
-                
-            print("modificar wevento")
-            evento_contingencia.sello_recepcion = response_data.get("selloRecibido", "")
-            evento_contingencia.recibido_mh = True
-            evento_contingencia.finalizado = True
-            #Guardar respuesta de MH en json_original
-            json_response_data = {
-                "jsonRespuestaMh": response_data
-            }
-            json_original = evento_contingencia.json_original
-            
-            #Combinar jsons
-            json_nuevo = json_original | json_response_data
-            #Convertir diccionario en json
-            json_respuesta_mh = json.dumps(json_nuevo)
-            #Al convertir un diccionario en json se guarda como un string, por lo que se debe convertir a json (loads)
-            json_original_campo = json.loads(json_respuesta_mh)
-            evento_contingencia.json_original = json_original_campo
-            evento_contingencia.fecha_modificacion = timezone.now().date()
-            evento_contingencia.hora_modificacion = timezone.now().strftime('%H:%M:%S')
-            evento_contingencia.save()
-            print("-Fin enviar contingencia a MH")
-            return JsonResponse({
-                "mensaje": "Contingencia enviada con éxito",
-                "respuesta": response_data
-            }, status=envio_response.status_code)
-        else:
-            evento_contingencia.rechazado = True
-            evento_contingencia.observaciones = None #response_data.get("descripcionMsg", None)
-            evento_contingencia.fecha_modificacion = timezone.now().date()
-            evento_contingencia.hora_modificacion = timezone.now().strftime('%H:%M:%S')
-            evento_contingencia.save()
-            print("-Detalle RespuestaMH ", response_data["descripcionMsg"])
-            return JsonResponse({
-                "error": "Error al enviar la contingencia",
-                "status": envio_response.status_code,
-                "detalle": response_data
-            }, status=envio_response.status_code)
-
-    except requests.exceptions.RequestException as e:
-        return JsonResponse({
-            "error": "Error de conexión con Hacienda",
-            "detalle": str(e)
-        }, status=500)
+    return JsonResponse({
+        "error": "Excedido el máximo número de intentos",
+        "detalle": f"Error de conexión o autenticación: {error_autenticacion or error_envio}"
+    })
 
 #########################################################################################################
 # ENVIO DE LOTES EN CONTINGENCIA
@@ -4050,6 +4141,7 @@ def enviar_lotes_hacienda_view(request, factura_id):
 #Finalizacion de eventos en contingencia(hacerlo automatico)
 @csrf_exempt
 def finalizar_contigencia_view(request):
+    print("Finzalizar contingencias")
     try:
         results = []
         contingencias = []
@@ -4063,7 +4155,10 @@ def finalizar_contigencia_view(request):
         
         #hora_transmision__lte=plazo_transmitir_contingencia busqueda en campo hora_transmision en la que la hora del modelo es menor o igual a plazo_transmitir_contingencia
         contingencia_registrada = EventoContingencia.objects.filter(hora_transmision__lte=plazo_transmitir_contingencia, finalizado=False)
-        
+        print("Contingencia plazo: ", contingencia_registrada.id)
+        if contingencia_registrada and contingencia_registrada.rechazado == True:
+            contingencia_registrada = EventoContingencia.objects.filter(hora_modificacion__lte=plazo_transmitir_contingencia, finalizado=False)
+            
         if contingencia_registrada:
             for contingencia_activa in contingencia_registrada:
                 if contingencia_activa.finalizado == False:
