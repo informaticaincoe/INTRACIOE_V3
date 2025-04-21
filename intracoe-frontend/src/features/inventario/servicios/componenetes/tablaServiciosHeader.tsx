@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { LuSearch } from 'react-icons/lu';
 import { FaPlus } from 'react-icons/fa';
 
-import { Input } from '../../../../shared/forms/input';
 import { useNavigate } from 'react-router';
 
 interface TablaServiciosHeaderProps {

@@ -502,3 +502,10 @@ export interface TableListadoFacturasContainerProps {
   pagination: pagination;
   onPageChange: (event: any) => void;
 }
+
+
+export interface Perfil {
+  usuario: string;
+  constraseña: string;
+  descripcion: string;
+}

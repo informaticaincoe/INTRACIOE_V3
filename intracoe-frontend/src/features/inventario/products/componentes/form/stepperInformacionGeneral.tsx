@@ -184,11 +184,6 @@ export const StepperInformacionGeneral: React.FC<
           position="bottom"
         />
         <Tooltip
-          target=".custom-upload-btn"
-          content="Subir imagen"
-          position="bottom"
-        />
-        <Tooltip
           target=".custom-cancel-btn"
           content="Limpiar"
           position="bottom"

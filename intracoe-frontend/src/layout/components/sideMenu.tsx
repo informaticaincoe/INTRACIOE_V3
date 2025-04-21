@@ -9,6 +9,8 @@ import type { MenuProps } from 'antd';
 import { Menu } from 'antd';
 import { useNavigate } from 'react-router';
 
+import defaultPerfil from "../../assets/default-perfil.png"
+
 type MenuItem = Required<MenuProps>['items'][number];
 
 const items: MenuItem[] = [
@@ -144,7 +146,7 @@ export const SideMenu = () => {
   };
 
   return (
-    <div className="h-full bg-white">
+    <div className="h-full bg-white flex flex-col justify-between sticky ">
       <Menu
         onClick={onClick}
         style={{
