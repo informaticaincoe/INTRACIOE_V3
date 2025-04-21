@@ -39,6 +39,14 @@ export interface ListResult {
   tipo_dte: number;
 }
 
+export interface ListFactura {
+  current_page:number;
+  page_size: number;
+  total_pages: number;
+  total_records: number;
+  results:  ListResult[]
+}
+
 export interface Filters {
   recibido_mh: boolean | null;
   sello_recepcion: string | null;

@@ -100,7 +100,7 @@ export const EditActivityForm: React.FC<EditActivityProps> = ({
     }
 
     try {
-      const response = await saveFunction(formData.id, body);
+      await saveFunction(formData.id, body);
       setVisible(false);
       onSave();
     } catch (error) {
