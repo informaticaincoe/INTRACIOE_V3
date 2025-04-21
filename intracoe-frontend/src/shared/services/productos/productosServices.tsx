@@ -49,7 +49,7 @@ export const getAllDescuentos = async () => {
 
 export const getAllImpuestos = async () => {
   try {
-    const response = await axios.get<Impuesto[]>(`${BASEURL}/impuestos/`);
+    const response = await axios.get<Impuesto[]>(`${BASEURLINVENT}/impuestos/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -58,7 +58,7 @@ export const getAllImpuestos = async () => {
 
 export const getAllUnidadesDeMedida = async () => {
   try {
-    const response = await axios.get(`${BASEURLINVENT}/unidad-medida/`);
+    const response = await axios.get(`${BASEURLINVENT}/unidades-medida/`);
     return response.data;
   } catch (error) {
     console.log(error);

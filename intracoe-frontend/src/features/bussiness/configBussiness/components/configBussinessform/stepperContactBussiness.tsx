@@ -40,22 +40,25 @@ export const StepperContactBussiness: React.FC<StepperContactBussinessProp> = ({
           name={'nombre_establecimiento'}
         />
       </span>
-      <span>
-        <label htmlFor="departamento">Departamentos</label>
-        <SelectDepartmentComponent
-          setDepartamentoSelect={setDepartamentoSelect}
-          departamentoSelect={departamentoSelect}
-        />
-      </span>
-      <span>
-        <label htmlFor="municipio">Municipio</label>
-        <SelectMunicipios
-          onChange={handleChange}
-          department={departamentoSelect}
-          value={formData.municipio}
-          name={'municipio'}
-        />
-      </span>
+      <div className='flex gap-5'>
+        <span className='w-full'>
+          <label htmlFor="departamento">Departamentos</label>
+          <SelectDepartmentComponent
+            setDepartamentoSelect={setDepartamentoSelect}
+            departamentoSelect={departamentoSelect}
+          />
+        </span>
+        <span className='w-full'>
+
+          <label htmlFor="municipio">Municipio</label>
+          <SelectMunicipios
+            onChange={handleChange}
+            department={departamentoSelect}
+            value={formData.municipio}
+            name={'municipio'}
+          />
+        </span>
+      </div>
       <span>
         <label htmlFor="direccion_comercial">Dirección comercial:</label>
         <Input

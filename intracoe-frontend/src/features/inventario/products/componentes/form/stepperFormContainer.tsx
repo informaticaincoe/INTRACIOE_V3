@@ -79,26 +79,26 @@ export const StepperFormContainer = () => {
       return;
     }
     try {
-      // 3) Envío con axios (o tu fetch), sin especificar Content-Type
       if (params.id) {
-        const response = await EditProductService(params.id, formData);
+        await EditProductService(params.id, formData);
       } else {
-        const response = await createProductService(formData);
+        await createProductService(formData);
       }
       handleAccion(
         'success',
         <FaCheckCircle size={38} />,
-        'Configuracion guardada con exito'
+        'Producto guardado con exito. Redirigiendo...'
       );
 
       setTimeout(() => {
         navigate('/productos/');
       }, 2000);
-    } catch (err) {
+    } catch (err:any) {
+      console.log("0000000000000",err.toString())
       handleAccion(
         'error',
         <IoMdCloseCircle size={38} />,
-        'Ha ocurrido un error al guardar la configuracion'
+        err.toString()
       );
     }
   };

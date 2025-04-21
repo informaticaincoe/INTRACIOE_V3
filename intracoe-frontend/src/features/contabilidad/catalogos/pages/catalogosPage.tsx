@@ -36,7 +36,6 @@ import {
 } from '../../../../shared/catalogos/services/catalogosServices';
 import { HeaderTable } from '../components/headerTable';
 // import { Paginator } from "primereact/paginator";
-// import { pagination } from "../../../../shared/interfaces/interfaces";
 import { FaCheckCircle } from 'react-icons/fa';
 import { EditModal } from '../../../../shared/modales/editModal';
 import {
@@ -133,6 +132,7 @@ import {
   deleteActivity,
 } from '../../../facturacion/activities/services/activitiesServices';
 import { EditActivityForm } from '../components/editActivityForm';
+import { Segmented } from 'antd';
 
 type CatalogKey =
   | 'Actividades economicas'
@@ -320,13 +320,8 @@ export const CatalogosPage = () => {
   // });
 
   useEffect(() => {
-    console.log('AAAAAAAAA', editItem);
-  }, [auxSelectedItem]);
-
-  useEffect(() => {
     //renderizar lista de datos
     fetchData();
-    console.log(selectedCatalog);
   }, [selectedCatalog, filterTerm, showModalNew]);
 
   const fetchData = async () => {
@@ -545,9 +540,8 @@ export const CatalogosPage = () => {
                         }}
                       />
                     )
-                  );
+                  )
                 })}
-
               </DataTable>
             </>
           )}
