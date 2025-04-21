@@ -102,59 +102,55 @@
         {% if grupo.factura.count > 0 %}
         <tr class="accordion-row" id="accordion-{{ forloop.counter }}" style="display: none;">
           <td colspan="12">
-            {% for lotes, facturas in grupo.facturas_por_lote %}
-                ID: {{ item }}, Cantidad Facturas: {{ item.facturas|length }}
-                    <table class="table table-bordered mb-4">
-                      <thead>
-                        <tr>
-                          <th colspan="12" class="text-center">
-                            ID: {{ item.lote }}, Cantidad Facturas: {{ item.facturas|length }}
-                          </th>
-                        </tr>
-                        <tr>
-                          <th><input type="checkbox" id="seleccionarLoteTodo"></th>
-                          <th>Estado</th>
-                          <th>Tipo DTE</th>
-                          <th>Total</th>
-                          <th>Fecha</th>
-                          <th>Codigo Generación</th>
-                          <th>Sello</th>
-                          <th>Enviar Lote MH</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {% for factura in facturas %}
-                          <tr>
-                            <td><input type="checkbox" name="factura_ids" value="{{ factura.id }}"></td>
-                            <td>
-                              {% if factura.estado and factura.sello_recepcion %}
-                                <i class="fa fa-check text-success"></i>
-                              {% else %}
-                                <i class="fa fa-ban text-danger"></i>
-                              {% endif %}
-                            </td>
-                            <td>{{ factura.tipo_dte.codigo }}</td>
-                            <td>{{ factura.total_pagar }}</td>
-                            <td>{{ factura.fecha_transmicion }}</td>
-                            <td>{{ factura.codigo_generacion }}</td>
-                            <td>{{ factura.sello_recepcion }}</td>
-                            <td>
-                              {% if not factura.recibido_mh and not factura.sello_recepcion %}
-                                <form method="POST" action="{% url 'envio_dte_unificado' factura.id %}">
-                                  {% csrf_token %}
-                                  <button type="submit" class="btn btn-sm btn-secondary">Enviar</button>
-                                </form>
-                              {% endif %}
-                            </td>
-                          </tr>
-                        {% endfor %}
-                      </tbody>
-                    </table>
-                {% endfor %}
-            
+            {% for item in grupo.facturas_por_lote %}
+              <h5>Lote ID: {{ item.lote.id }} (Cantidad Facturas: {{ item.facturas|length }})</h5>
+              <table class="table table-bordered mb-4">
+                <thead>
+                  <tr>
+                    <th><input type="checkbox" class="seleccionar-lote"></th>
+                    <th>Estado</th>
+                    <th>Tipo DTE</th>
+                    <th>Total</th>
+                    <th>Fecha</th>
+                    <th>Codigo Generación</th>
+                    <th>Sello</th>
+                    <th>Enviar Lote MH</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for factura in item.facturas %}
+                    <tr>
+                      <td><input type="checkbox" name="factura_ids" value="{{ factura.id }}"></td>
+                      <td>
+                        {% if factura.estado and factura.sello_recepcion %}
+                          <i class="fa fa-check text-success"></i>
+                        {% else %}
+                          <i class="fa fa-ban text-danger"></i>
+                        {% endif %}
+                      </td>
+                      <td>{{ factura.tipo_dte.codigo }}</td>
+                      <td>{{ factura.total_pagar }}</td>
+                      <td>{{ factura.fecha_transmicion }}</td>
+                      <td>{{ factura.codigo_generacion }}</td>
+                      <td>{{ factura.sello_recepcion }}</td>
+                      <td>
+                        {% if not factura.recibido_mh and not factura.sello_recepcion %}
+                          <form method="POST" action="{% url 'envio_dte_unificado' factura.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-secondary">Enviar</button>
+                          </form>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% endfor %}
           </td>
         </tr>
         {% endif %}
+        
+
         {% endfor %}
       </tbody>
     </table>

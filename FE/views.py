@@ -1178,7 +1178,6 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
             print(f"Error al generar el json de la factura: {e}")
             return JsonResponse({"error": str(e)}, status=400)
 
-        
 def generar_json_doc_ajuste(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_documento, observaciones, documentos_relacionados, contingencia, total_gravada):
     print("-Inicio llenar json")
     try:
@@ -1304,7 +1303,6 @@ def generar_json_doc_ajuste(ambiente_obj, tipo_dte_obj, factura, emisor, recepto
             return JsonResponse({"error": str(e)}, status=400)
 
 #VISTAS PARA FIRMAR Y GENERAR EL SELLO DE RECEPCION CON HACIENDA
-
 @csrf_exempt
 def firmar_factura_view(request, factura_id):
     """
@@ -1374,7 +1372,6 @@ def firmar_factura_view(request, factura_id):
             return JsonResponse({"error": "Error al firmar la factura", "detalle": response_data}, status=400)
     except requests.exceptions.RequestException as e:
         return JsonResponse({"error": "Error de conexión con el firmador", "detalle": str(e)}, status=500)
-
 
 @csrf_exempt
 @require_POST
@@ -1747,7 +1744,6 @@ def enviar_factura_hacienda_view(request, factura_id):
 
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)"""
-
 
 def detalle_factura(request, factura_id):
     factura = get_object_or_404(FacturaElectronica, id=factura_id)
@@ -3199,10 +3195,11 @@ def generar_documento_ajuste_view(request):
 #########################################################################################################
 # EVENTOS DE CONTINGENCIA DE DTE
 #########################################################################################################
+
 def contingencia_list(request):
     # Obtener el queryset base
-    #queryset = EventoContingencia.objects.prefetch_related('factura', 'factura__tipo_dte').order_by('id')
-    queryset = FacturaElectronica.objects.filter(contingencia=True).order_by('id')
+    queryset = EventoContingencia.objects.prefetch_related('factura', 'factura__tipo_dte').order_by('id')
+    #queryset = FacturaElectronica.objects.filter(contingencia=True).order_by('id')
     
     # Aplicar filtros según los parámetros GET
     recibido = request.GET.get('recibido_mh')
@@ -3221,7 +3218,7 @@ def contingencia_list(request):
     if tipo:
         queryset = queryset.filter(factura__tipo_dte__id=tipo)
     
-    # Configurar la paginación: 20 registros por página
+    # Configurar la paginación: 20 registros por página.
     paginator = Paginator(queryset, 20)
     page_number = request.GET.get('page')
     dtelist = paginator.get_page(page_number)
@@ -3230,7 +3227,7 @@ def contingencia_list(request):
     # Obtener todos los tipos de factura para el select del filtro
     lotes_por_evento = {}
     facturas = None
-    """for evento in dtelist:
+    for evento in dtelist:
         print("Evento: ", evento)
         facturas_repartidas = []
         
@@ -3261,24 +3258,19 @@ def contingencia_list(request):
                 chunk_size = ceil(len(facturas) / total_lotes)
                 start = index * chunk_size
                 end = start + chunk_size
-                
-                facturas_repartidas = facturas[start:end]
-                
-                if evento.id not in lotes_por_evento:
-                    lotes_por_evento[evento.id] = []
-                    
-                lotes_por_evento[evento.id].append({
-                    'lote': lote.id,
+                facturas_repartidas = facturas_evento[start:end]
+                facturas_por_lote.append({
+                    'lote': lote,
                     'facturas': facturas_repartidas
-                })"""
+                })
     
     tipos_dte = Tipo_dte.objects.filter(codigo__in=DTE_APLICA_CONTINGENCIA)
     context = {
         'dtelist': dtelist,
         'tipos_dte': tipos_dte,
-        'lotes_por_evento': lotes_por_evento
     }
     return render(request, 'documentos/dte_contingencia_list.html', context)
+
 
 def generar_json_contingencia(evento_contingencia_id, emisor, detalles):
     evento_contingencia = EventoContingencia.objects.get(id=evento_contingencia_id)
