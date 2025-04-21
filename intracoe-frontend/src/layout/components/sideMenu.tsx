@@ -58,10 +58,6 @@ const items: MenuItem[] = [
 
     children: [
       {
-        key: 'act',
-        label: <p className="text-start">Actividades economicas </p>,
-      },
-      {
         key: 'documentos',
         label: <p className="text-start">Generar facturas</p>,
       },
@@ -114,9 +110,6 @@ export const SideMenu = () => {
     switch (e.key) {
       case 'dashboard':
         navigate('/');
-        break;
-      case 'act':
-        navigate('/actividades-economicas');
         break;
       case 'documentos':
         navigate('/generar-documentos');

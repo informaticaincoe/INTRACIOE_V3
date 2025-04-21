@@ -4,13 +4,11 @@ import { useTotalesPorTipo } from '../hooks/useTotalesPorTipo';
 export const ChartDTE = () => {
     const { datos, loading } = useTotalesPorTipo();
 
-    if (loading) return <p>Cargando gráfico...</p>;
-
     const tipoDTE: { [key: string]: string } = {
         "01": "Factura",
-        "03": "CCF",
-        "05": "CNC",
-        "06": "CND",
+        "03": "Credito fiscal",
+        "05": "Nota de credito",
+        "06": "Nota de debito",
     };
 
     const chartData = [
@@ -27,19 +25,23 @@ export const ChartDTE = () => {
             title: 'Total de facturas',
             subtitle: 'intracoe',
         },
-        bars: 'vertical', // fuerza orientación vertical
-        colors: ['#232C6E'], // aquí sí “colors”
+        bars: 'vertical',
+        colors: ['#232C6E'],
     };
 
     return (
         <div style={{ height: '400px' }}>
-            <Chart
-                chartType="Bar"
-                width="100%"
-                height="100%"
-                data={chartData}
-                options={options}
-            />
+            {loading ?
+                <p>Cargando gráfico...</p>
+                :
+                <Chart
+                    chartType="Bar"
+                    width="100%"
+                    height="100%"
+                    data={chartData}
+                    options={options}
+                />
+            }
         </div>
     );
 };

@@ -7,7 +7,6 @@ import {
   FileUploadHeaderTemplateOptions,
   FileUploadSelectEvent,
   FileUploadUploadEvent,
-  ItemTemplateOptions,
 } from 'primereact/fileupload';
 
 import { GrAdd } from 'react-icons/gr';
@@ -15,9 +14,6 @@ import { LuUpload } from 'react-icons/lu';
 import { IoMdClose } from 'react-icons/io';
 import { Tooltip } from 'primereact/tooltip';
 import { Toast } from 'primereact/toast';
-import { ProgressBar } from 'primereact/progressbar';
-import { Button } from 'primereact/button';
-import { IoClose } from 'react-icons/io5';
 import {
   getAllTipoItem,
   getAllUnidadesDeMedida,
@@ -35,7 +31,6 @@ export const StepperInformacionGeneral: React.FC<
   const [tipoItem, setTipoItem] = useState();
 
   const toast = useRef<Toast>(null);
-  const [totalSize, setTotalSize] = useState(0);
   const fileUploadRef = useRef<FileUpload>(null);
 
   const onImageSelect = (e: FileUploadSelectEvent) => {
@@ -73,7 +68,6 @@ export const StepperInformacionGeneral: React.FC<
       _totalSize += file.size || 0;
     });
 
-    setTotalSize(_totalSize);
     toast.current?.show({
       severity: 'info',
       summary: 'Success',
@@ -81,22 +75,8 @@ export const StepperInformacionGeneral: React.FC<
     });
   };
 
-  const onTemplateRemove = (file: File, callback: Function) => {
-    setTotalSize(totalSize - file.size);
-    callback();
-  };
-
-  const onTemplateClear = () => {
-    setTotalSize(0);
-  };
-
   const headerTemplate = (options: FileUploadHeaderTemplateOptions) => {
-    const { className, chooseButton, uploadButton, cancelButton } = options;
-    const value = totalSize / 10000;
-    const formatedValue =
-      fileUploadRef && fileUploadRef.current
-        ? fileUploadRef.current.formatSize(totalSize)
-        : '0 B';
+    const { className, chooseButton, cancelButton } = options;
 
     return (
       <div
@@ -108,24 +88,16 @@ export const StepperInformacionGeneral: React.FC<
         }}
       >
         {chooseButton}
-        {uploadButton}
         {cancelButton}
-        <div className="align-items-center ml-auto flex gap-3">
-          <span>{formatedValue} / 1 MB</span>
-          <ProgressBar
-            value={value}
-            showValue={false}
-            style={{ width: '10rem', height: '12px' }}
-          ></ProgressBar>
-        </div>
+        
       </div>
     );
   };
 
-  const itemTemplate = (inFile: object, props: ItemTemplateOptions) => {
+  const itemTemplate = (inFile: object) => {
     const file = inFile as File;
     return (
-      <div className="align-items-center flex flex-wrap">
+      <div className="align-items-center flex flex-wrap w-full justify-between">
         <div className="align-items-center flex" style={{ width: '40%' }}>
           <img
             alt={file.name}
@@ -134,14 +106,8 @@ export const StepperInformacionGeneral: React.FC<
             width={100}
           />
 
-          <span className="flex-column ml-3 flex text-left">{file.name}</span>
+          <span className="ml-3 flex text-left wrap-break-word">{file.name}</span>
         </div>
-        <Button
-          type="button"
-          icon={<IoClose />}
-          className="p-button-outlined p-button-rounded p-button-danger ml-auto"
-          onClick={() => onTemplateRemove(file, props.onRemove)}
-        />
       </div>
     );
   };
@@ -235,8 +201,6 @@ export const StepperInformacionGeneral: React.FC<
           accept="image/*"
           maxFileSize={1000000}
           onUpload={onTemplateUpload}
-          onError={onTemplateClear}
-          onClear={onTemplateClear}
           headerTemplate={headerTemplate}
           itemTemplate={itemTemplate}
           emptyTemplate={emptyTemplate}
