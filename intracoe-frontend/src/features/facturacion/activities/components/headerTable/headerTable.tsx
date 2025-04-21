@@ -17,7 +17,7 @@ interface HeaderTableProps {
 export const HeaderTable: React.FC<HeaderTableProps> = ({
   setActivities,
   filterTerm,
-  setFilterTerm
+  setFilterTerm,
 }) => {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
@@ -65,10 +65,7 @@ export const HeaderTable: React.FC<HeaderTableProps> = ({
       </div>
 
       {showModal && (
-        <NewActivityForm
-          visible={showModal}
-          setVisible={setShowModal}
-        />
+        <NewActivityForm visible={showModal} setVisible={setShowModal} />
       )}
     </>
   );

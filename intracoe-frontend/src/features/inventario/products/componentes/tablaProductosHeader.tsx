@@ -10,8 +10,10 @@ interface TablaProductosHeaderProps {
   onSearch: (codigo: string) => void;
 }
 
-
-export const TablaProductosHeader: React.FC<TablaProductosHeaderProps> = ({ codigo, onSearch }) => {
+export const TablaProductosHeader: React.FC<TablaProductosHeaderProps> = ({
+  codigo,
+  onSearch,
+}) => {
   const [input, setInput] = useState<string>(codigo);
   const navigate = useNavigate();
 
@@ -20,22 +22,21 @@ export const TablaProductosHeader: React.FC<TablaProductosHeaderProps> = ({ codi
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    console.log(e.target)
+    console.log(e.target);
     // Si el usuario pulsa Enter, ejecuta la búsqueda
-      onSearch(input);
+    onSearch(input);
   };
 
   const agregarProducto = () => {
     navigate('/productos/nuevo');
   };
 
-
   return (
     <span className="flex items-center justify-between">
       <h1 className="text-lg font-bold">Lista productos</h1>
       <div className="flex gap-5">
         <span className="border-border-color flex w-[30vw] items-center rounded-md border">
-          <span className="pl-4 flex">
+          <span className="flex pl-4">
             <LuSearch />
           </span>
           <input
@@ -44,7 +45,7 @@ export const TablaProductosHeader: React.FC<TablaProductosHeaderProps> = ({ codi
             value={input}
             onChange={handleChange}
             onKeyDown={handleKeyPress}
-            className="focus:border-ring-0 border-0 focus:border-none focus:ring-0 focus:outline-none active:border-0 pl-3"
+            className="focus:border-ring-0 border-0 pl-3 focus:border-none focus:ring-0 focus:outline-none active:border-0"
           />
         </span>
         <button

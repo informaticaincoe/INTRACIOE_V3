@@ -66,8 +66,18 @@ input::file-selector-button {
   width: 100%;
 }
 
+.p-icon-field{
+  width:100%;
+}
+
+.p-password-input{
+  width: 100%;
+}
+
 @theme {
   --color-primary-yellow: #fca94e;
+  --color-secondary-yellow: #fcc587;
+  --color-secondary-yellow-light: #fff2e4;
   --color-primary-blue: #232c6e;
   --color-body-bg: #f2f2f2;
   --color-light-text: #757575;

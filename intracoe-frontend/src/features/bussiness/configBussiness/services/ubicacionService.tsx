@@ -17,8 +17,9 @@ export const getAllDepartamentos = async () => {
 };
 
 export const getMunicipiosByDepartamentos = async (idDepartmento: number) => {
+  console.log("qqqqqqqqqqqqqqqqq", idDepartmento)
   try {
-    const response = await axios.get(`${BASEURL}/municipio/${idDepartmento}/`, {
+    const response = await axios.get(`${BASEURL}/municipios/departamento/${idDepartmento}/`, {
       headers: {
         'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
       },

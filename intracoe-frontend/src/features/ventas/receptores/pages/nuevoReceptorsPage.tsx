@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react';
 import { ReceptorInterface } from '../../../../shared/interfaces/interfaces';
 import { getAllReceptor } from '../../../../shared/services/receptor/receptorServices';
 import { FormReceptoresContainer } from '../components/form/formReceptoresContainer';
 
 export const NuevoReceptorPage = () => {
- const [receptoresList, setReceptoreLists] = useState<ReceptorInterface[]>([]);
+  const [receptoresList, setReceptoreLists] = useState<ReceptorInterface[]>([]);
 
   useEffect(() => {
     fetchReceptores();
@@ -19,9 +19,9 @@ export const NuevoReceptorPage = () => {
     }
   };
 
-    return (
-        <div>
-            <FormReceptoresContainer/>
-        </div>
-    )
-}
+  return (
+    <div>
+      <FormReceptoresContainer />
+    </div>
+  );
+};

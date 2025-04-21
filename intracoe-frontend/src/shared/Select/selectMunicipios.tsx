@@ -19,7 +19,11 @@ export const SelectMunicipios: React.FC<SelectMunicipiosInterface> = ({
 
   useEffect(() => {
     fetchMunicipalitiesByDepartment();
-    console.log("municipio departamento", department)
+    console.log('municipio departamento', department);
+  }, []);
+
+  useEffect(() => {
+    fetchMunicipalitiesByDepartment();
   }, [department]);
 
   const fetchMunicipalitiesByDepartment = async () => {
@@ -27,7 +31,7 @@ export const SelectMunicipios: React.FC<SelectMunicipiosInterface> = ({
       if (department) {
         const response = await getMunicipiosByDepartamentos(department);
         setMunicipalities(response);
-        console.log(response)
+        console.log(response);
       }
     } catch (error) {
       console.log(error);
@@ -39,7 +43,7 @@ export const SelectMunicipios: React.FC<SelectMunicipiosInterface> = ({
       <Dropdown
         name={name}
         value={value}
-        onChange={(e) => onChange({ target: { name: name, value: e.value }})}
+        onChange={(e) => onChange({ target: { name: name, value: e.value } })}
         options={municipalities}
         optionLabel="descripcion"
         optionValue="id"

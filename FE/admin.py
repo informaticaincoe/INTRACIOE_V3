@@ -28,7 +28,7 @@ class LoteContingencia(admin.ModelAdmin):
     
 @admin.register(EventoContingencia)
 class EventoContingencia(admin.ModelAdmin):
-    list_display = ('id', 'codigo_generacion', 'sello_recepcion', 'finalizado', 'estado', 'fecha_transmision', 'fecha_modificacion', 'hora_modificacion')
+    list_display = ('id', 'codigo_generacion', 'sello_recepcion', 'finalizado', 'recibido_mh', 'rechazado', 'fecha_transmision', 'fecha_modificacion', 'hora_modificacion')
     search_fields = ('codigo_generacion', 'sello_recepcion')
 
 @admin.register(EventoInvalidacion)
@@ -44,7 +44,7 @@ class DetalleFacturaAdmin(admin.ModelAdmin):
 
 @admin.register(NumeroControl)
 class NumeroControlAdmin(admin.ModelAdmin):
-    list_display = ('anio', 'secuencia')
+    list_display = ('anio', 'secuencia', 'tipo_dte')
     ordering = ('-anio',)
     search_fields = ('anio',)
 

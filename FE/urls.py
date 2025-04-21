@@ -70,8 +70,9 @@ urlpatterns = [
     
     #Contingencia
     path('listar_contingencias/', views.contingencia_list, name='listar_contingencias'),
-    path('contingencia-dte/<int:contingencia_id>/', views.contingencia_dte_unificado_view, name='contingencia_dte_unificado'),
+    path('contingencia-dte/', views.contingencia_dte_unificado_view, name='contingencia_dte_unificado'),
     path('enviar-contingencias-dte/', views.contingencias_dte_view, name='contingencias_dte'),
+    path('finalizar-contingencias/', views.finalizar_contigencia_view, name='finalizar_contigencia'),
     
     #Lotes
     path('lote-contingencia-dte/<int:contingencia_id>/', views.lote_contingencia_dte_view, name='lote_contingencia_dte'),

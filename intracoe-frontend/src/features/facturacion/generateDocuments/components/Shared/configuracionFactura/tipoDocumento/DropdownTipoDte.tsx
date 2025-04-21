@@ -5,13 +5,17 @@ interface SeccionconfiguracionFacturaInterface {
   tipoDocumento: any;
   setTipoDocumento: any;
   setTipoDocumentoSelected: any;
-  tipoDocumentoSelected:any;
+  tipoDocumentoSelected: any;
 }
 
 export const DropDownTipoDte: React.FC<
   SeccionconfiguracionFacturaInterface
-> = ({ tipoDocumento, setTipoDocumento, setTipoDocumentoSelected, tipoDocumentoSelected }) => {
-
+> = ({
+  tipoDocumento,
+  setTipoDocumento,
+  setTipoDocumentoSelected,
+  tipoDocumentoSelected,
+}) => {
   return (
     <Dropdown
       value={tipoDocumentoSelected} // El valor seleccionado actualmente (ahora es el id del tipo de documento)
