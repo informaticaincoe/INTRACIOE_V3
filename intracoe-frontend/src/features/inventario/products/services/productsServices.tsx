@@ -7,9 +7,8 @@ export const createProductService = async (data: any) => {
   try {
     const response = await axios.post(`${BASEURL}/productos/crear/`, data); // Usar POST para enviar los datos
     return response.data;
-  } catch (error) {
-    console.log(error);
-    throw new Error('Error al crear el producto');
+  } catch (error:any) {
+    throw new Error(error.response.data.codigo[0]);
   }
 };
 
@@ -17,9 +16,8 @@ export const deleteProduct = async (id: any) => {
   try {
     const response = await axios.delete(`${BASEURL}/productos/${id}/eliminar/`); // Usar POST para enviar los datos
     return response.data;
-  } catch (error) {
-    console.log(error);
-    throw new Error('Error al crear el producto');
+  } catch (error:any) {
+    throw new Error(error.response.data.codigo[0]);
   }
 };
 
@@ -31,18 +29,16 @@ export const EditProductService = async (id: string, data: any) => {
       data
     ); // Usar POST para enviar los datos
     return response.data;
-  } catch (error) {
-    console.log(error);
-    throw new Error('Error al crear el producto');
+  } catch (error:any) {
+    throw new Error(error.response.data.codigo[0]);
   }
 };
 
 export const getProductById = async (id: string) => {
   try {
-    const response = await axios.get(`${BASEURL}/producto/${id}/`); // Usar POST para enviar los datos
+    const response = await axios.get(`${BASEURL}/productos/${id}/`); // Usar POST para enviar los datos
     return response.data;
-  } catch (error) {
-    console.log(error);
-    throw new Error('Error al crear el producto');
+  } catch (error:any) {
+    throw new Error(error.response.data.codigo[0]);
   }
 };

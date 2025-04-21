@@ -1,5 +1,3 @@
-import { useEffect, useState } from 'react';
-import { getAllProducts } from '../../../../shared/services/productos/productosServices';
 import { ProductoResponse } from '../../../../shared/interfaces/interfaces';
 import { TablaProductos } from './tablaProductos';
 
