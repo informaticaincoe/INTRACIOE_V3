@@ -1,8 +1,8 @@
 
 from django.urls import path
 from FE.api_views import (
-    EmisorCreateAPIView, EmisorUpdateAPIView, EnviarFacturaHaciendaAPIView, FacturaDetailAPIView, FacturaListAPIView, FacturaPorCodigoGeneracionAPIView, FirmarFacturaAPIView, 
-    GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, MunicipioByDepartamentoAPIView, ObtenerReceptorAPIView, TopClientes, TopProductosAPIView, TotalVentasAPIView, TotalesPorTipoDTE, autenticacion, EmisorListAPIView, receptorCreateAPIView, receptorDeleteAPIView, receptorDetailAPIView, 
+    ContingenciaDteAPIView, ContingenciaListAPIView, EmisorCreateAPIView, EmisorUpdateAPIView, EnviarFacturaHaciendaAPIView, FacturaDetailAPIView, FacturaListAPIView, FacturaPorCodigoGeneracionAPIView, FirmarFacturaAPIView, 
+    GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, LoteContingenciaDteAPIView, MunicipioByDepartamentoAPIView, ObtenerReceptorAPIView, autenticacion, EmisorListAPIView, receptorCreateAPIView, receptorDeleteAPIView, receptorDetailAPIView, 
     receptorListAPIView, receptorUpdateAPIView, GenerarDocumentoAjusteAPIView,
 
     # ACTIVIDAD ECONOMICA
@@ -317,6 +317,21 @@ urlpatterns = [
     path('api/receptor/crear/', receptorCreateAPIView.as_view(), name='receptor_list_api'), 
     path('api/receptor/actualizar/<int:pk>/', receptorUpdateAPIView.as_view(), name='receptor_list_api'), 
     path('api/receptor/eliminar/<int:pk>/', receptorDeleteAPIView.as_view(), name='receptor_list_api'), 
+
+
+    ##################################################################
+    # URLS CONTINGENCIA
+    ##################################################################
+
+    path('api/contingencia/', ContingenciaListAPIView.as_view(), name='contingencia-list'),
+    path('api/contingencia/<int:contingencia_id>/generar/', ContingenciaDteAPIView.as_view(), name='contingencia-dte-generate'),
+    path('api/contingencia/<int:contingencia_id>/generar/', ContingenciaDteAPIView.as_view(), name='contingencia-dte-generate'),
+    path(
+        'api/contingencia/<int:tipo_contingencia_id>/lote/<int:factura_id>/',
+        LoteContingenciaDteAPIView.as_view(),
+        name='lote-contingencia-dte'
+    ),
+
 
 
 ]
