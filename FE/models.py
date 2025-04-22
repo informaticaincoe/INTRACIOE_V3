@@ -212,6 +212,14 @@ class Receptor_fe(models.Model):
     def __str__(self):
         return self.nombre
 
+class representanteEmisor(models.Model):
+    nombre = models.CharField(max_length=200)
+    tipo_documento = models.ForeignKey(TiposDocIDReceptor, on_delete=models.CASCADE, null=True)
+    numero_documento = models.CharField(max_length=20, unique=True)
+    
+    def __str__(self):
+        return f"{self.nombre} ({self.numero_documento})"
+    
 class Emisor_fe(models.Model):
     nit = models.CharField(max_length=20, unique=True, verbose_name="NIT del Emisor")
     nrc = models.CharField(max_length=50, null=True)
@@ -231,10 +239,10 @@ class Emisor_fe(models.Model):
     logo = models.ImageField(upload_to='media/productos/', null=True, blank=True) #logo empresa
     clave_privada = models.CharField(max_length=255, null=True, blank=True)
     clave_publica = models.CharField(max_length=255, null=True, blank=True)
-
+    representante = models.ForeignKey(representanteEmisor, on_delete=models.CASCADE, null=True, blank=True)
+    
     def __str__(self):
         return f"{self.nombre_razon_social} ({self.nit})"
-
 
 # Modelo para manejar la numeración de control por año
 class NumeroControl(models.Model):
@@ -333,6 +341,9 @@ class FacturaElectronica(models.Model):
     #documento_relacionado = models.CharField(max_length=100, null=True, blank=True)#Agregar el documento relacionado
     base_imponible = models.BooleanField(default=False)
     tipotransmision = models.ForeignKey(TipoTransmision, on_delete=models.CASCADE, null=True, blank=True)
+    
+    fecha_modificacion = models.DateField(auto_now_add=True, null=True)
+    hora_modificacion = models.TimeField(auto_now_add=True, null=True)
     
     def save(self, *args, **kwargs):
         if not self.numero_control:
@@ -447,7 +458,7 @@ class EventoContingencia(models.Model):
     codigo_generacion = models.UUIDField(default=uuid.uuid4, unique=True)
     sello_recepcion = models.CharField(max_length=255, blank=True, null=True)
     fecha_transmision = models.DateField(auto_now_add=True, null=True) #fInicio
-    hora_transmision = models.TimeField(auto_now_add=True, null=True)
+    hora_transmision = models.TimeField(auto_now_add=True, null=True) #hInicio
     fecha_modificacion = models.DateField(auto_now_add=True, null=True)
     hora_modificacion = models.TimeField(auto_now_add=True, null=True)
     #lotecontingencia = models.ForeignKey(LoteContingencia, on_delete=models.CASCADE, null=True, blank=True, related_name="lotes_evento")
@@ -458,7 +469,7 @@ class EventoContingencia(models.Model):
     recibido_mh = models.BooleanField(default=False)
     #Agregar campos de fecha y hora que proporcionara hacienda
     f_fin = models.DateField(auto_now_add=True, null=True)
-    h_inicio = models.TimeField(auto_now_add=True, null=True)
+    #h_inicio = models.TimeField(auto_now_add=True, null=True)
     h_fin = models.TimeField(auto_now_add=True, null=True)
     finalizado = models.BooleanField(default=False)
     #Si el evento fue rechazado se indicara el error para su correcion en un plazo máximo de 24 horas despues de haber sido rechazado
@@ -486,3 +497,4 @@ class LoteContingencia(models.Model):
     hora_modificacion = models.TimeField(auto_now_add=True, null=True)
     #evento = models.ForeignKey(EventoContingencia, related_name='lotecontingencia', on_delete=models.CASCADE)
     
+

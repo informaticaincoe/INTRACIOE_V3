@@ -76,6 +76,6 @@ urlpatterns = [
     
     #Lotes
     path('lote-contingencia-dte/<int:contingencia_id>/', views.lote_contingencia_dte_view, name='lote_contingencia_dte'),
-    path('enviar-lote-unificado/<int:factura_id>/', views.envio_dte_unificado_view, name='envio_dte_unificado'),
+    path('enviar-lote-unificado/', views.envio_dte_unificado_view, name='envio_dte_unificado'),
     path('enviar-lotes/', views.lotes_dte_view, name='lotes_dte'),
 ]

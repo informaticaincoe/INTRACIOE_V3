@@ -103,7 +103,7 @@
               <input type="text" name="motivo_contingencia" class="form-control" id="motivo_contingencia_input"></td> 
             {% endif %}
           <td>
-            {% if grupo.evento.sello_recepcion is None and grupo.evento.finalizado == False %}
+            {% if grupo.evento.sello_recepcion is None and grupo.evento.finalizado == False and grupo.total_lotes_evento > 0 %}
               <a id="contingencia_unificado" data-id="{{ grupo.evento.id}}" data-requiere-motivo="{{grupo.evento.tipo_contingencia.codigo}}" class="btn btn-sm btn-secondary">Enviar</a>
             {% endif %}
           </td>
@@ -149,11 +149,8 @@
                       <td>{{ factura.codigo_generacion }}</td>
                       <td>{{ factura.sello_recepcion }}</td>
                       <td>
-                        {% if not factura.recibido_mh and not factura.sello_recepcion %}
-                          <form method="POST" action="{% url 'envio_dte_unificado' factura.id %}">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-sm btn-secondary">Enviar</button>
-                          </form>
+                        {% if grupo.evento.sello_recepcion is not None and factura.sello_recepcion is None %}
+                            <a id="lote_unificado" data-id="{{ factura.id}}" class="btn btn-sm btn-secondary">Enviar</button>
                         {% endif %}
                       </td>
                     </tr>
@@ -485,6 +482,7 @@ document.addEventListener('DOMContentLoaded', function(){
             if (!response.ok) {  // Verifica si la respuesta fue exitosa (200-299)
               throw new Error('Network response was not ok');
             }
+            console.log("Respuesta json: ", response.json)
             return response.json();  // Convierte la respuesta a JSON
           })
           .then(data => {
@@ -505,6 +503,65 @@ document.addEventListener('DOMContentLoaded', function(){
             // Si hay algún detalle adicional, lo mostramos también
             if (data.detalle) {
               // Si detalle es un objeto, lo convertimos a un formato legible
+              const detalle = data.detalle.respuesta;
+              if (detalle) {
+                const detalleString = `
+                  <p><strong>Estado:</strong> ${detalle.estado}</p>
+                  <p><strong>Fecha y Hora:</strong> ${detalle.fechaHora}</p>
+                  <p><strong>Mensaje:</strong> ${detalle.mensaje}</p>
+                  <p><strong>Sello Recibido:</strong> ${detalle.selloRecibido}</p>
+                  <p><strong>Observaciones:</strong> ${detalle.observaciones.length ? detalle.observaciones.join(', ') : 'Ninguna'}</p>
+                `;
+                resultadoDiv.innerHTML += detalleString;
+              } else {
+                resultadoDiv.innerHTML += `<p><strong>Detalle:</strong> ${JSON.stringify(data.detalle)}</p>`;
+              }
+            }
+
+            // Mostrar el modal
+            $('#respuestaModal').modal('show');
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            const resultadoDiv = document.getElementById('resultadoContingencia');
+            resultadoDiv.innerHTML = `<p style="color: red;">Ocurrió un error al procesar la solicitud.</p>`;
+            $('#respuestaModal').modal('show');
+          });
+      });
+    });
+  });
+
+  //Enviar lote uno a uno
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('#lote_unificado').forEach(function (enlace) {
+      enlace.addEventListener('click', function (e) {
+        e.preventDefault();
+
+        const lote_id = this.dataset.id; // id del evento
+        console.log("lote id: ", lote_id)
+
+        fetch(`/fe/enviar-lote-unificado/?lote_id=${lote_id}`)
+          .then(response => {
+            if (!response.ok) {  // Verifica si la respuesta fue exitosa (200-299)
+              throw new Error('Network response was not ok');
+            }
+            console.log("Respuesta json: ", response.json)
+            return response.json();  // Convierte la respuesta a JSON
+          })
+          .then(data => {
+
+            //Obtener el div para mostrar la respuesta
+            const resultadoDiv = document.getElementById('resultadoContingencia');
+            //Limpiar resultado
+            resultadoDiv.innerHTML = '';
+
+            // Mostrar el mensaje
+            if (data.mensaje) {
+              resultadoDiv.innerHTML += `<p><strong>Mensaje:</strong> ${data.mensaje}</p>`;
+            }
+            
+            if (data.detalle) {
+              //Si detalle es un objeto, convertirlo a un formato legible
               const detalle = data.detalle.respuesta;
               if (detalle) {
                 const detalleString = `
