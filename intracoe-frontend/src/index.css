@@ -74,6 +74,20 @@ input::file-selector-button {
   width: 100%;
 }
 
+.p-inplace {
+  height: 3vh;  
+}
+
+.p-sidebar-content {
+  margin: 0;
+  padding:0;
+}
+
+.p-sidebar-header{
+  position: absolute;
+  z-index: 10;
+}
+
 @theme {
   --color-primary-yellow: #fca94e;
   --color-secondary-yellow: #fcc587;

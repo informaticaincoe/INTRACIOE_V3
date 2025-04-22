@@ -1,6 +1,5 @@
 import { useState } from "react";
-import defaultPerfil from "../../assets/default-perfil.png"
-import { Tooltip } from 'primereact/tooltip';
+import defaultPerfil from "../../assets/grupo_incoe_logo.png"
 import { PerfilMenu } from "./perfilMenu";
 
 export const HeaderMenu = () => {
@@ -12,12 +11,7 @@ export const HeaderMenu = () => {
         <span className="text-primary-yellow">coe</span>
       </h1>
       <span className="flex gap-2 hover:cursor-pointer hover:bg-[#384183] rounded-full px-4 py-1" onClick={() => setVisible(true)}>
-        <Tooltip
-          target=".custom-choose-btn"
-          content="Escoger imagen"
-          position="bottom"
-        />
-        <img src={defaultPerfil} alt="perfil" className="object-cover h-7 custom-choose-btn" />
+        <img src={defaultPerfil} alt="perfil" className="object-cover h-7 rounded-full" />
         <p className="text-white">usuario</p>
       </span>
       <PerfilMenu visible={visible} setVisible={setVisible} />
