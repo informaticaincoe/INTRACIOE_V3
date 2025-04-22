@@ -68,7 +68,7 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
       const total_iva = producto.cantidad * (producto.precio_venta * 0.13);
       producto.total_neto = total_neto;
       producto.total_iva = total_iva;
-      producto.total_con_iva = total_neto + total_iva;
+      producto.total_con_iva = producto.preunitario;
     });
 
     setSelectedProducts(seleccionados);
