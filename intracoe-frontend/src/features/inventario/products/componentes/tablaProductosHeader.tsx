@@ -40,12 +40,12 @@ export const TablaProductosHeader: React.FC<TablaProductosHeaderProps> = ({
             <LuSearch />
           </span>
           <input
-            placeholder={'Buscar producto por codigo'}
+            placeholder={'Buscar producto por codigo o nombre'}
             name="codigo"
             value={input}
             onChange={handleChange}
             onKeyDown={handleKeyPress}
-            className="focus:border-ring-0 border-0 pl-3 focus:border-none focus:ring-0 focus:outline-none active:border-0"
+            className="w-full focus:border-ring-0 border-0 pl-3 focus:border-none focus:ring-0 focus:outline-none active:border-0"
           />
         </span>
         <button

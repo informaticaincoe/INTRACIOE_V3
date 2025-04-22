@@ -6,48 +6,54 @@ const BASEURL = import.meta.env.VITE_URL_BASE;
 interface FacturaParams {
   page?: number;
   limit?: number;
-  filters: Filters;
+  filters?: Filters;
 }
 
 export const getAllFacturas = async ({
   page,
   limit,
   filters,
-}: FacturaParams) => {
+}: FacturaParams = { page: 1, limit: 999999, filters: undefined }) => {
   try {
     const queryParams = new URLSearchParams();
+
     queryParams.append('page', String(page));
     queryParams.append('page_size', String(limit));
 
-    // Agregar los filtros si existen
-    if (filters.recibido_mh !== null) {
-      queryParams.append('recibido_mh', String(filters.recibido_mh));
+    // Agregar filtros si existen
+    if (filters?.recibido_mh !== null) {
+      queryParams.append('recibido_mh', String(filters?.recibido_mh));
     }
-    if (filters.sello_recepcion) {
-      queryParams.append('sello_recepcion', filters.sello_recepcion);
+    if (filters?.sello_recepcion) {
+      queryParams.append('sello_recepcion', filters?.sello_recepcion);
     }
-    if (filters.has_sello_recepcion !== null) {
+    if (filters?.has_sello_recepcion !== null) {
       queryParams.append(
         'has_sello_recepcion',
-        String(filters.has_sello_recepcion)
+        String(filters?.has_sello_recepcion)
       );
     }
-    if (filters.estado !== null) {
-      queryParams.append('estado', String(filters.estado));
+    if (filters?.estado !== null) {
+      queryParams.append('estado', String(filters?.estado));
     }
-    if (filters.estado_invalidacion !== null) {
+    if (filters?.estado_invalidacion !== null) {
       queryParams.append(
         'estado_invalidacion',
-        String(filters.estado_invalidacion)
+        String(filters?.estado_invalidacion)
       );
     }
-    if (filters.tipo_dte) {
-      queryParams.append('tipo_dte', filters.tipo_dte);
+    if (filters?.tipo_dte) {
+      queryParams.append('tipo_dte', filters?.tipo_dte);
+    }
+
+    if (!filters) {
+      queryParams.append('all', 'true');
     }
 
     const response = await axios.get(
       `${BASEURL}/facturas/?${queryParams.toString()}`
     );
+
     return (
       response.data || {
         results: [],
