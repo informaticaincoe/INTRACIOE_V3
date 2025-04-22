@@ -300,10 +300,10 @@ urlpatterns = [
     path('api/factura/firmar/<int:factura_id>/', FirmarFacturaAPIView.as_view(), name='firmar_factura_api'),
     path('api/factura/enviar_hacienda/<int:factura_id>/', EnviarFacturaHaciendaAPIView.as_view(), name='enviar_factura_hacienda_api'),
     path('api/factura_ajuste/generar/', GenerarDocumentoAjusteAPIView.as_view(), name='generar_factura_ajuste_api'), #Nota de credito y nota de debito
-    path('api/facturas/totales-por-tipo/', TotalesPorTipoDTE.as_view(), name='totales-por-tipo'),
-    path('api/facturas/totales-ventas/', TotalVentasAPIView.as_view(), name='total-ventas'),
-    path('api/facturas/clientes/', TopClientes.as_view(), name='Top-clientes'),
-    path('api/facturas/productos/', TopProductosAPIView.as_view(), name='Top-productos'),
+    # path('api/facturas/totales-por-tipo/', TotalesPorTipoDTE.as_view(), name='totales-por-tipo'),
+    # path('api/facturas/totales-ventas/', TotalVentasAPIView.as_view(), name='total-ventas'),
+    # path('api/facturas/clientes/', TopClientes.as_view(), name='Top-clientes'),
+    # path('api/facturas/productos/', TopProductosAPIView.as_view(), name='Top-productos'),
 
 
     #----------- EMISOR / RECEPTOR -----------#

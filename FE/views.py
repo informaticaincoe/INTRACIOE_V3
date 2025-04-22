@@ -3214,29 +3214,42 @@ def contingencia_list(request):
     # 4) Construir lotes_por_evento
     lotes_por_evento = {}
     for evento in dtelist:
-        lotes = evento.lotes_contingencia.all()  # ya viene precargado
-        eventos_con_lotes[evento.id] = []
-        #print("lotes: ", eventos_con_lotes)
-        for lote in lotes:
-            # Si un lote tiene solo 1 factura (FK):
-            factura = lote.factura
-            eventos_con_lotes[evento.id].append({
-                'evento': evento,
+        print("Evento: ", evento)
+        facturas_repartidas = []
+        
+        lotes = LoteContingencia.objects.prefetch_related('eventocontingencia__factura').order_by('id')
+        
+        # Asociar las facturas del evento
+        evento.lotes.set(lotes) 
+        evento.facturas = facturas
+        facturas = evento.factura.all()
+        
+        for lote in evento.lotes.all():
+            
+            facturas = list(evento.factura.all())
+            if evento.id not in lotes_por_evento:
+                lotes_por_evento[evento.id] = []
+            
+            lotes_por_evento[evento.id].append({
                 'lote': lote,
-                'facturas': [factura],              
-                'tipo_dte': factura.tipo_dte,        
+                'facturas': facturas
             })
-
-        # Si necesitas repartir facturas entre lotes, podrías hacerlo aquí:
-        # facturas_all = [l.factura for l in lotes]
-        # total_lotes = len(lotes)
-        # if total_lotes:
-        #     chunk = ceil(len(facturas_all)/total_lotes)
-        #     evento.facturas_repartidas = [
-        #         facturas_all[i*chunk:(i+1)*chunk] for i in range(total_lotes)
-        #     ]
-
-    # 5) Tipos de DTE para el filtro
+            
+            for evento in lote.eventocontingencia.all():
+                facturas = list(evento.factura.all()) #Facturas asociadas al evento
+                total_lotes = evento.lotes.count()  # cuántos lotes están usando este evento
+                index = list(evento.lotes.order_by('id')).index(lote)  # posición de este lote en la lista
+                
+                # Dividimos las facturas en partes iguales entre los lotes
+                chunk_size = ceil(len(facturas) / total_lotes)
+                start = index * chunk_size
+                end = start + chunk_size
+                facturas_repartidas = facturas_evento[start:end]
+                facturas_por_lote.append({
+                    'lote': lote,
+                    'facturas': facturas_repartidas
+                })
+    
     tipos_dte = Tipo_dte.objects.filter(codigo__in=DTE_APLICA_CONTINGENCIA)
 
     return render(request, 'documentos/dte_contingencia_list.html', {
@@ -3619,8 +3632,8 @@ def firmar_contingencia_view(request, contingencia_id):
             print("Error: ", e)
             return JsonResponse({"error": "Error de conexión con el firmador", "detalle": str(e)}, status=500)
     except requests.exceptions.RequestException as e:
-        print("Error: ", e)
-        return JsonResponse({"error": "Error de conexión con el firmador", "detalle": str(e)}, status=500)
+            return JsonResponse({"error": "Error de conexión con el firmador", "detalle": str(e)}, status=500)
+    
 
 csrf_exempt
 def enviar_contingencia_hacienda_view(request, contingencia_id):
