@@ -1,8 +1,10 @@
-from datetime import time, timedelta
+from datetime import datetime, time, timedelta
 from decimal import ROUND_HALF_UP, ConversionSyntax, Decimal
+from itertools import count
 from pyexpat.errors import messages
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+import pytz
 import requests
 import os, json, uuid
 from django.db import transaction
@@ -11,12 +13,12 @@ from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .views import enviar_factura_invalidacion_hacienda_view, firmar_factura_anulacion_view, invalidacion_dte_view, generar_json, num_to_letras, agregar_formas_pago_api, generar_json_contingencia, generar_json_doc_ajuste, obtener_listado_productos_view
+from .views import enviar_contingencia_hacienda_view, enviar_factura_invalidacion_hacienda_view, firmar_contingencia_view, firmar_factura_anulacion_view, invalidacion_dte_view, generar_json, num_to_letras, agregar_formas_pago_api, generar_json_contingencia, generar_json_doc_ajuste, obtener_listado_productos_view
 from INVENTARIO.serializers import DescuentoSerializer
 
 from .serializers import (
-    AmbienteSerializer, FacturaListSerializer, 
-    FormasPagosSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, 
+    AmbienteSerializer, EventoContingenciaSerializer, FacturaListSerializer, 
+    FormasPagosSerializer, LoteContingenciaSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, 
     TipoDteSerializer, TiposGeneracionDocumentoSerializer,
 
     ActividadEconomicaSerializer, ModelofacturacionSerializer,
@@ -30,7 +32,7 @@ from .serializers import (
 
     )
 from .models import (
-    INCOTERMS, ActividadEconomica, Departamento, Emisor_fe, EventoContingencia, Municipio, OtrosDicumentosAsociado, Pais, Receptor_fe, FacturaElectronica, DetalleFactura,
+    INCOTERMS, ActividadEconomica, Departamento, Emisor_fe, EventoContingencia, LoteContingencia, Municipio, OtrosDicumentosAsociado, Pais, Receptor_fe, FacturaElectronica, DetalleFactura,
     Ambiente, CondicionOperacion, Modelofacturacion, NumeroControl,
     Tipo_dte, TipoContingencia, TipoDocContingencia, TipoDomicilioFiscal, TipoDonacion, TipoGeneracionDocumento, TipoMoneda, TipoPersona, TipoRetencionIVAMH, TipoTransmision, TipoTransporte, TipoUnidadMedida, TiposDocIDReceptor, EventoInvalidacion, 
     Receptor_fe, TipoInvalidacion, TiposEstablecimientos, TiposServicio_Medico, Token_data, Descuento, FormasPago, TipoGeneracionDocumento, Plazo
@@ -2455,7 +2457,7 @@ class EnviarFacturaHaciendaAPIView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 ######################################################
-# EVENTOS DE INVALIDACION Y CONTINGENCIA
+# EVENTOS DE INVALIDACION
 ######################################################
 class InvalidarDteUnificadoAPIView(APIView):
     """
@@ -2636,46 +2638,275 @@ class FacturaListAPIView(generics.ListAPIView):
 
         return queryset
 
-class TotalesPorTipoDTE(generics.ListAPIView):
-    def get(self, request):
-        data = (
-            FacturaElectronica.objects.values('tipo_dte', 'tipo_dte__codigo' ).annotate(total=Count('id')).filter(recibido_mh=True) 
-        )
-        return Response({"totales_por_tipo": list(data)})
+######################################################
+# EVENTOS DE CONTINGENCIA
+######################################################
 
+class ContingenciaPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
-class TotalVentasAPIView(generics.ListAPIView):
-    def get(self, request):
-        resultado = (
-            FacturaElectronica.objects
-            .filter(recibido_mh=True)
-            .aggregate(total_ventas=Sum('total_pagar'))
-        )
+class ContingenciaListAPIView(generics.ListAPIView):
+    """
+    Lista los eventos de contingencia con filtros:
+    - recibido_mh: True/False
+    - sello_recepcion: búsqueda parcial
+    - has_sello_recepcion: 'yes'/'no'
+    - tipo_dte: id del tipo
+    """
+    serializer_class = EventoContingenciaSerializer
+    pagination_class = ContingenciaPagination
+
+    def get_queryset(self):
+        qs = EventoContingencia.objects.prefetch_related(
+            'factura', 'factura__tipo_dte', 'lotes_evento'
+        ).order_by('id')
+
+        recibido = self.request.query_params.get('recibido_mh')
+        sello   = self.request.query_params.get('sello_recepcion')
+        has_sello = self.request.query_params.get('has_sello_recepcion')
+        tipo    = self.request.query_params.get('tipo_dte')
+
+        if recibido in ['True', 'False', '0']:
+            qs = qs.filter(recibido_mh=(recibido == 'True'))
+        if sello:
+            qs = qs.filter(sello_recepcion__icontains=sello)
+        if has_sello == 'yes':
+            qs = qs.exclude(sello_recepcion__isnull=True)
+        elif has_sello == 'no':
+            qs = qs.filter(sello_recepcion__isnull=True)
+        if tipo:
+            qs = qs.filter(lotes_evento__factura__tipo_dte__id=tipo)
+
+        return qs
+    
+
+    """
+    Genera el JSON de contingencia para un EventoContingencia,
+    lo guarda en json_original y devuelve el JSON resultante.
+    """
+    def post(self, request, contingencia_id):
+        evento = get_object_or_404(EventoContingencia, id=contingencia_id)
         
-        # Devuelve 0 si no hay resultados
-        total = resultado['total_ventas'] or 0
+        detalles_dte = []
+        # Recolectamos todas las facturas de todos los lotes
+        for lote in evento.lotes_evento.all():
+            for fe in lote.factura.all():
+                detalles_dte.append({
+                    "noItem": len(detalles_dte) + 1,
+                    "tipoDoc":   str(fe.tipo_dte.codigo),
+                    "codigoGeneracion": str(fe.codigo_generacion).upper()
+                })
+        
+        # Si no hay facturas, devolvemos error
+        if not detalles_dte:
+            return Response(
+                {"error": "No se encontraron facturas en los lotes de contingencia."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Armado del JSON completo
+        ahora = datetime.now()
+        fecha_transmision = ahora.strftime('%Y-%m-%d')
+        
+        json_identificacion = {
+            "version": 3,
+            "ambiente": str(AMBIENTE.codigo),
+            "codigoGeneracion": str(evento.codigo_generacion).upper(),
+            "fTransmision": fecha_transmision,
+            "hTransmision": ahora.strftime('%H:%M:%S'),
+        }
+        
+        em = request.user.emisor_fe  # o como tengas la instancia de emisor_fe
+        json_emisor = {
+            "nit": str(em.nit),
+            "nombre": em.nombre_razon_social,
+            "nombreResponsable": em.nombre_razon_social,
+            "tipoDocResponsable": em.tipo_documento.codigo,
+            "numeroDocResponsable": str(em.nit),
+            "tipoEstablecimiento": em.tipoestablecimiento.codigo if em.tipoestablecimiento else "",
+            "codEstableMH": em.codigo_establecimiento,
+            "codPuntoVenta": em.codigo_punto_venta,
+            "telefono": em.telefono,
+            "correo": em.email,
+        }
+        
+        json_motivo = {
+            "fInicio": evento.fecha_transmision.strftime('%Y-%m-%d'),
+            "fFin": evento.fecha_transmision.strftime('%Y-%m-%d'),
+            "hInicio": evento.hora_transmision.strftime('%H:%M:%S'),
+            "hFin": ahora.strftime('%H:%M:%S'),
+            "tipoContingencia": int(evento.tipo_contingencia.codigo),
+            "motivoContingencia": (
+                evento.tipo_contingencia.motivo_contingencia
+                if evento.tipo_contingencia.codigo == COD_TIPO_CONTINGENCIA
+                else None
+            )
+        }
+        
+        json_completo = {
+            "identificacion": json_identificacion,
+            "emisor": json_emisor,
+            "detalleDTE": detalles_dte,
+            "motivo": json_motivo
+        }
+        
+        # Guardamos en el evento
+        evento.json_original = json_completo
+        evento.fecha_modificacion = timezone.now().date()
+        evento.hora_modificacion = now = datetime.now()
+        evento.save()
+        
+        return Response(json_completo, status=status.HTTP_200_OK)
+    
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 
-        return Response({"total_ventas": total})
+@method_decorator(csrf_exempt, name='dispatch')
+class ContingenciaDteAPIView(APIView):
+    """
+    Genera el JSON de contingencia para un EventoContingencia dado,
+    lo guarda en json_original y devuelve el JSON resultante.
+    """
 
-class TopClientes(APIView):
-    def get(self, request):
-        data = (
-            FacturaElectronica.objects
-            .filter(recibido_mh=True)
-            .values('dtereceptor', 'dtereceptor__nombre')  # Agrupamos por cliente
-            .annotate(total_ventas=Sum('total_pagar'))  # Sumamos total_pagar por cliente
-            .order_by('-total_ventas')[:3]  # Top 3
+    def post(self, request, contingencia_id):
+        evento = get_object_or_404(EventoContingencia, id=contingencia_id)
+
+        # Generar detalleDTE
+        detalles = []
+        for lote in evento.lotes_evento.all():
+            for fe in lote.factura.all():
+                detalles.append({
+                    "noItem": len(detalles) + 1,
+                    "tipoDoc": str(fe.tipo_dte.codigo),
+                    "codigoGeneracion": str(fe.codigo_generacion).upper(),
+                })
+
+        if not detalles:
+            return Response(
+                {"error": "No se encontraron facturas en los lotes de contingencia."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Fechas
+        ahora = datetime.now()
+        fecha_str = ahora.strftime('%Y-%m-%d')
+        hora_str  = ahora.strftime('%H:%M:%S')
+
+        # JSON Identificación
+        json_ident = {
+            "version": 3,
+            "ambiente": str(AMBIENTE.codigo),
+            "codigoGeneracion": str(evento.codigo_generacion).upper(),
+            "fTransmision": fecha_str,
+            "hTransmision": hora_str,
+        }
+
+        # JSON Emisor (ajusta emisor_fe como corresponda)
+        em = request.user.emisor_fe  
+        json_emisor = {
+            "nit": str(em.nit),
+            "nombre": em.nombre_razon_social,
+            "nombreResponsable": em.nombre_razon_social,
+            "tipoDocResponsable": em.tipo_documento.codigo,
+            "numeroDocResponsable": str(em.nit),
+            "tipoEstablecimiento": em.tipoestablecimiento.codigo if em.tipoestablecimiento else "",
+            "codEstableMH": em.codigo_establecimiento,
+            "codPuntoVenta": em.codigo_punto_venta,
+            "telefono": em.telefono,
+            "correo": em.email,
+        }
+
+        # JSON Motivo
+        json_motivo = {
+            "fInicio": evento.fecha_transmision.strftime('%Y-%m-%d'),
+            "fFin": evento.fecha_transmision.strftime('%Y-%m-%d'),
+            "hInicio": evento.hora_transmision.strftime('%H:%M:%S'),
+            "hFin": hora_str,
+            "tipoContingencia": int(evento.tipo_contingencia.codigo),
+            "motivoContingencia": (
+                evento.tipo_contingencia.motivo_contingencia
+                if evento.tipo_contingencia.codigo == COD_TIPO_CONTINGENCIA
+                else None
+            )
+        }
+
+        # JSON Completo
+        json_completo = {
+            "identificacion": json_ident,
+            "emisor": json_emisor,
+            "detalleDTE": detalles,
+            "motivo": json_motivo,
+        }
+
+        # Guardar en la instancia
+        evento.json_original = json_completo
+        evento.fecha_modificacion = timezone.now().date()
+        evento.hora_modificacion = ahora
+        evento.save()
+
+        return Response(json_completo, status=status.HTTP_200_OK)
+    
+
+# ENVIO DE LOTES EN CONTINGENCIA
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class LoteContingenciaDteAPIView(APIView):
+    """
+    Crea un LoteContingencia para una Factura en un EventoContingencia activo
+    (o crea uno nuevo si no hay ninguno disponible).
+    """
+
+    MAX_LOTES_POR_EVENTO = 2
+
+    def post(self, request, factura_id, tipo_contingencia_id):
+        # 1) Obtener la factura y el tipo de contingencia
+        factura = get_object_or_404(FacturaElectronica, id=factura_id)
+        tipo = get_object_or_404(TipoContingencia, id=tipo_contingencia_id)
+
+        # 2) Solo permitimos facturas en modo contingencia
+        if not factura.contingencia:
+            return Response(
+                {"error": "El documento electrónico no está disponible en contingencia."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 3) Buscar un EventoContingencia activo con espacio para más lotes
+        eventos = EventoContingencia.objects.annotate(
+            num_lotes=count('lotes_evento')
+        ).filter(finalizado=False, recibido_mh=False, num_lotes__lt=self.MAX_LOTES_POR_EVENTO)
+
+        if eventos.exists():
+            evento = eventos.first()
+        else:
+            # 4) Crear uno nuevo
+            evento = EventoContingencia.objects.create(
+                codigo_generacion = str(uuid.uuid4()).upper(),
+                tipo_contingencia = tipo
+            )
+
+        # 5) Crear el lote
+        try:
+            lote = LoteContingencia.objects.create(
+                factura = factura,
+                evento  = evento
+            )
+        except Exception as e:
+            return Response(
+                {"error": "No se pudo crear el lote", "detalle": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        # 6) Devolver datos del lote
+        serializer = LoteContingenciaSerializer(lote)
+        return Response(
+            {"mensaje": f"Lote creado con éxito (id={lote.id})", "lote": serializer.data},
+            status=status.HTTP_201_CREATED
         )
+    
 
-        return Response({"clientes": list(data)})
 
-class TopProductosAPIView(generics.ListAPIView):
-    def get(self, request):
-        data = (
-            DetalleFactura.objects
-            .values('producto', 'producto__descripcion')  # Agrupamos por producto
-            .annotate(total_vendido=Sum('cantidad'))  # Sumar cantidades
-            .order_by('-total_vendido')[:3]  # Top 3
-        )
 
-        return Response({"productos": list(data)})
+    
