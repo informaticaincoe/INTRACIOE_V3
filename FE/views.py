@@ -1185,7 +1185,6 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
             print(f"Error al generar el json de la factura: {e}")
             return JsonResponse({"error": str(e)}, status=400)
 
-        
 def generar_json_doc_ajuste(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_documento, observaciones, documentos_relacionados, contingencia, total_gravada):
     print("-Inicio llenar json")
     try:
@@ -1311,7 +1310,6 @@ def generar_json_doc_ajuste(ambiente_obj, tipo_dte_obj, factura, emisor, recepto
             return JsonResponse({"error": str(e)}, status=400)
 
 #VISTAS PARA FIRMAR Y GENERAR EL SELLO DE RECEPCION CON HACIENDA
-
 @csrf_exempt
 def firmar_factura_view(request, factura_id):
     """
@@ -1380,7 +1378,6 @@ def firmar_factura_view(request, factura_id):
             return JsonResponse({"error": "Error al firmar la factura", "detalle": response_data}, status=400)
     except requests.exceptions.RequestException as e:
         return JsonResponse({"error": "Error de conexión con el firmador", "detalle": str(e)}, status=500)
-
 
 @csrf_exempt
 @require_POST
@@ -1732,7 +1729,6 @@ def enviar_factura_hacienda_view(request, factura_id):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)"""
-
 
 def detalle_factura(request, factura_id):
     factura = get_object_or_404(FacturaElectronica, id=factura_id)
@@ -3184,6 +3180,7 @@ def generar_documento_ajuste_view(request):
 #########################################################################################################
 # EVENTOS DE CONTINGENCIA DE DTE
 #########################################################################################################
+
 def contingencia_list(request):
     #Verificar si existen eventos activo con fecha fuera de plazo y desactivarlos
     finalizar_contigencia_view(request)
@@ -3214,16 +3211,15 @@ def contingencia_list(request):
     if tipo:
         queryset = queryset.filter(lotes_evento__factura__tipo_dte__id=tipo)
     
-    # Configurar la paginación: 20 registros por página
+    # Configurar la paginación: 20 registros por página.
     paginator = Paginator(queryset, 20)
     page_number = request.GET.get('page')
     dtelist = paginator.get_page(page_number)
-        
-    tipos_dte = Tipo_dte.objects.filter(codigo__in=DTE_APLICA_CONTINGENCIA)
     
-    # Crear una lista para almacenar los eventos con lotes y facturas agrupadas
-    eventos_con_lotes = []
-
+    lotes = LoteContingencia.objects.prefetch_related('eventocontingencia__factura').order_by('id')
+    # Obtener todos los tipos de factura para el select del filtro
+    lotes_por_evento = {}
+    facturas = None
     for evento in dtelist:
         # Obtener todas las facturas relacionadas con los lotes del evento
         facturas = []
@@ -3253,12 +3249,39 @@ def contingencia_list(request):
             'total_lotes_evento': total_lotes_evento
         })            
         
+        for lote in evento.lotes.all():
+            
+            facturas = list(evento.factura.all())
+            if evento.id not in lotes_por_evento:
+                lotes_por_evento[evento.id] = []
+            
+            lotes_por_evento[evento.id].append({
+                'lote': lote,
+                'facturas': facturas
+            })
+            
+            for evento in lote.eventocontingencia.all():
+                facturas = list(evento.factura.all()) #Facturas asociadas al evento
+                total_lotes = evento.lotes.count()  # cuántos lotes están usando este evento
+                index = list(evento.lotes.order_by('id')).index(lote)  # posición de este lote en la lista
+                
+                # Dividimos las facturas en partes iguales entre los lotes
+                chunk_size = ceil(len(facturas) / total_lotes)
+                start = index * chunk_size
+                end = start + chunk_size
+                facturas_repartidas = facturas_evento[start:end]
+                facturas_por_lote.append({
+                    'lote': lote,
+                    'facturas': facturas_repartidas
+                })
+    
+    tipos_dte = Tipo_dte.objects.filter(codigo__in=DTE_APLICA_CONTINGENCIA)
     context = {
         'dtelist': dtelist,
         'tipos_dte': tipos_dte,
-        'eventos_con_lotes': eventos_con_lotes
     }
     return render(request, 'documentos/dte_contingencia_list.html', context)
+
 
 def generar_json_contingencia(evento_contingencia_id, emisor, detalles):
     evento_contingencia = EventoContingencia.objects.get(id=evento_contingencia_id)

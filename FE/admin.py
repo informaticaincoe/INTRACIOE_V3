@@ -186,3 +186,5 @@ class Token_dataAdmin(admin.ModelAdmin):
     #list_filter = ('created_at')
 
 admin.site.register(Token_data, Token_dataAdmin)
+
+

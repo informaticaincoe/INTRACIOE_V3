@@ -9,6 +9,8 @@ import type { MenuProps } from 'antd';
 import { Menu } from 'antd';
 import { useNavigate } from 'react-router';
 
+import defaultPerfil from "../../assets/default-perfil.png"
+
 type MenuItem = Required<MenuProps>['items'][number];
 
 const items: MenuItem[] = [
@@ -57,10 +59,6 @@ const items: MenuItem[] = [
     label: <p className="text-start">Facturación</p>,
 
     children: [
-      {
-        key: 'act',
-        label: <p className="text-start">Actividades economicas </p>,
-      },
       {
         key: 'documentos',
         label: <p className="text-start">Generar facturas</p>,
@@ -115,9 +113,6 @@ export const SideMenu = () => {
       case 'dashboard':
         navigate('/');
         break;
-      case 'act':
-        navigate('/actividades-economicas');
-        break;
       case 'documentos':
         navigate('/generar-documentos');
         break;
@@ -151,7 +146,7 @@ export const SideMenu = () => {
   };
 
   return (
-    <div className="h-full bg-white">
+    <div className="h-full bg-white flex flex-col justify-between sticky ">
       <Menu
         onClick={onClick}
         style={{

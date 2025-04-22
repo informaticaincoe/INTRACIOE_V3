@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const BASEURL = import.meta.env.VITE_URL_BASE_INVENT;
+const BASEURLINVENT = import.meta.env.VITE_URL_BASE_INVENT;
 
 export const getAllTipoTributos = async () => {
   try {
@@ -24,7 +25,7 @@ export const getAllTributosByTipo = async (id: number) => {
 
 export const getTributoById = async (id: number) => {
   try {
-    const response = await axios.get(`${BASEURL}/tributo/${id}/`);
+    const response = await axios.get(`${BASEURLINVENT}/tributo/${id}/`);
     return response.data;
   } catch (error) {
     console.log(error);
@@ -34,7 +35,7 @@ export const getTributoById = async (id: number) => {
 
 export const getAllTributos = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/tributos/`);
+    const response = await axios.get(`${BASEURL}/tributo/`);
     return response.data;
   } catch (error) {
     console.log(error);

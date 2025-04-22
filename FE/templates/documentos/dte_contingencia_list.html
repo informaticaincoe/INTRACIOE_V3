@@ -117,16 +117,12 @@
         <!-- Fila expandible para mostrar las facturas -->
         <tr class="accordion-row" id="accordion-{{ forloop.counter }}" style="display: none;">
           <td colspan="12">
-            {% for factura_group in grupo.facturas_en_grupos %}
+            {% for item in grupo.facturas_por_lote %}
+              <h5>Lote ID: {{ item.lote.id }} (Cantidad Facturas: {{ item.facturas|length }})</h5>
               <table class="table table-bordered mb-4">
                 <thead>
                   <tr>
-                    <th colspan="12" class="text-center">
-                      <strong>Lote | Cantidad facturas: {{ factura_group|length }}</strong>
-                    </th>
-                  </tr>
-                  <tr>
-                    <th><input type="checkbox" id="seleccionarTodoLote" class="seleccionar-todas-facturas"></th>
+                    <th><input type="checkbox" class="seleccionar-lote"></th>
                     <th>Estado</th>
                     <th>Tipo DTE</th>
                     <th>Total</th>
@@ -137,13 +133,9 @@
                   </tr>
                 </thead>
                 <tbody>
-                  {% for factura in factura_group %}
+                  {% for factura in item.facturas %}
                     <tr>
-                      <td>
-                        {% if factura.recibido_mh == False and factura.sello_recepcion is None%}
-                          <input type="checkbox" name="factura_ids" value="{{ factura.id }}">
-                        {% endif %}
-                      </td>
+                      <td><input type="checkbox" name="factura_ids" value="{{ factura.id }}"></td>
                       <td>
                         {% if factura.estado and factura.sello_recepcion %}
                           <i class="fa fa-check text-success"></i>
@@ -151,9 +143,9 @@
                           <i class="fa fa-ban text-danger"></i>
                         {% endif %}
                       </td>
-                      <td>{{ factura.tipo_dte.descripcion }}</td>
+                      <td>{{ factura.tipo_dte.codigo }}</td>
                       <td>{{ factura.total_pagar }}</td>
-                      <td>{{ factura.fecha_emision }}</td>
+                      <td>{{ factura.fecha_transmicion }}</td>
                       <td>{{ factura.codigo_generacion }}</td>
                       <td>{{ factura.sello_recepcion }}</td>
                       <td>
@@ -168,6 +160,9 @@
             {% endfor %}
           </td>
         </tr>
+        {% endif %}
+        
+
         {% endfor %}
       </tbody>
     </table>
