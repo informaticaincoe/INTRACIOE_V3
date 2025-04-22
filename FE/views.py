@@ -1613,7 +1613,7 @@ def enviar_factura_hacienda_view(request, factura_id):
                         producto.save()"""
                         
                     #Si la factura fue recibida por mh detener los eventos en contingencia activos
-                    finalizar_contigencia_view()
+                    finalizar_contigencia_view(request)
                     #break
                     return JsonResponse({
                         "mensaje": "Factura enviada con éxito",
@@ -3182,24 +3182,17 @@ def generar_documento_ajuste_view(request):
 #########################################################################################################
 
 def contingencia_list(request):
-    #Verificar si existen eventos activo con fecha fuera de plazo y desactivarlos
-    finalizar_contigencia_view(request)
-    
-    #Fecha y hora actual
-    fecha_actual = obtener_fecha_actual()
-    fecha_limite = (fecha_actual - timezone.timedelta(hours=1))#72 horas
-    
-    print("Fecha actual: ", fecha_actual)
-    
-    # Obtener listado de la base
-    queryset = EventoContingencia.objects.prefetch_related('lotes_evento__factura').distinct().all().order_by('id')
-    
-    # Aplicar filtros según los parámetros GET
-    recibido = request.GET.get('recibido_mh')
-    codigo = request.GET.get('sello_recepcion')
-    has_codigo = request.GET.get('has_sello_recepcion')
-    tipo = request.GET.get('tipo_dte')
-    
+    # 1) Prefetch de lotes_evento → factura → tipo_dte
+    queryset = EventoContingencia.objects.prefetch_related(
+        'lotes_contingencia__factura__tipo_dte'
+    ).order_by('id')
+
+    # 2) Filtros GET
+    recibido    = request.GET.get('recibido_mh')
+    codigo      = request.GET.get('sello_recepcion')
+    has_codigo  = request.GET.get('has_sello_recepcion')
+    tipo_dte_id = request.GET.get('tipo_dte')
+
     if recibido in ['True', 'False', '0']:
         queryset = queryset.filter(recibido_mh=(recibido == 'True'))
     if codigo:
@@ -3221,41 +3214,14 @@ def contingencia_list(request):
     # 4) Construir lotes_por_evento
     lotes_por_evento = {}
     for evento in dtelist:
-        # Obtener todas las facturas relacionadas con los lotes del evento
-        facturas = []
-        for lote in evento.lotes_evento.all():
-            facturas.append(lote.factura)
-            
-            #Verificar cada lote asociado al evento si ya pasaron 72 horas desde el otorgamiento del sello para el evento entonces inactivar lotes
-            if evento.sello_recepcion is not None and evento.recibido_mh and evento.fecha_sello_recibido is not None:
-                fecha_sello_recibido =  evento.fecha_sello_recibido
-                if fecha_sello_recibido <= fecha_limite:
-                    lote_obj = LoteContingencia.objects.filter(factura__id=lote.factura.id).first()
-                    if lote_obj and lote_obj.finalizado == False:
-                        lote_obj.finalizado = True
-                        lote_obj.fecha_modificacion = fecha_actual.date()
-                        lote_obj.hora_modificacion = fecha_actual.time()
-                        lote_obj.save()
-        # Dividir las facturas en grupos de 100
-        facturas_en_grupos = [facturas[i:i + 2] for i in range(0, len(facturas), 2)]
-        
-        # Contar cuántos grupos de 100 existen (lotes por evento)
-        total_lotes_evento = len(facturas_en_grupos)
-
-        # Agregar el evento con lotes y facturas agrupadas
-        eventos_con_lotes.append({
-            'evento': evento,
-            'facturas_en_grupos': facturas_en_grupos,
-            'total_lotes_evento': total_lotes_evento
-        })            
-        
-        for lote in evento.lotes.all():
-            
-            facturas = list(evento.factura.all())
-            if evento.id not in lotes_por_evento:
-                lotes_por_evento[evento.id] = []
-            
-            lotes_por_evento[evento.id].append({
+        lotes = evento.lotes_contingencia.all()  # ya viene precargado
+        eventos_con_lotes[evento.id] = []
+        #print("lotes: ", eventos_con_lotes)
+        for lote in lotes:
+            # Si un lote tiene solo 1 factura (FK):
+            factura = lote.factura
+            eventos_con_lotes[evento.id].append({
+                'evento': evento,
                 'lote': lote,
                 'facturas': [factura],              
                 'tipo_dte': factura.tipo_dte,        
