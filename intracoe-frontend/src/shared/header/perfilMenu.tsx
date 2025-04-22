@@ -1,19 +1,18 @@
 import { Sidebar } from "primereact/sidebar"
-import defaultPerfil from "../../assets/default-perfil.png"
+import defaultPerfil from "../../assets/grupo_incoe_logo.png"
 import { useState } from "react";
 import { password, Perfil } from "../interfaces/interfaces";
-import { Inplace, InplaceContent, InplaceDisplay } from "primereact/inplace";
-import { InputText } from "primereact/inputtext";
-import { Button } from "primereact/button";
 import banner from "../../assets/banner.png"
-
-import { CiEdit } from "react-icons/ci";
-import { RiLockPasswordLine } from "react-icons/ri";
-import { IoIosLogOut } from "react-icons/io";
-
 import { Divider } from "primereact/divider";
 import { Dialog } from "primereact/dialog";
 import { Input } from "../forms/input";
+/* icons */
+import { RiLockPasswordLine } from "react-icons/ri";
+import { IoIosLogOut } from "react-icons/io";
+import { MdPerson } from "react-icons/md";
+import { HiOutlineStatusOnline } from "react-icons/hi";
+import { FaRegClock } from "react-icons/fa6";
+import { EditableField } from "./editableFiedl";
 
 interface PerfilMenuProps {
     visible: boolean,
@@ -25,10 +24,13 @@ export const PerfilMenu: React.FC<PerfilMenuProps> = ({ visible, setVisible }) =
     const [formData, setFormData] = useState<Perfil>({
         usuario: 'admin',
         correo: 'admin@email.com',
-        descripcion: 'administrador encargado de gestionar y mantener el sistema',
     });
 
+    const [firstName, setFirstName] = useState("Nombre")
+    const [lastName, setLastName] = useState("Apellido")
+
     const [formDataPasswordChange, setFormDataPasswordChange] = useState<password>({
+        newPassword:'',
         password: '',
         confirmPassword: '',
     });
@@ -38,12 +40,12 @@ export const PerfilMenu: React.FC<PerfilMenuProps> = ({ visible, setVisible }) =
     };
 
     const handleChangePassword = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        setFormDataPasswordChange({ ...formDataPasswordChange, [e.target.name]: e.target.value });
     };
 
     return (
         <>
-            <Sidebar position="right" visible={visible} onHide={() => setVisible(false)}>
+            <Sidebar position="right" visible={visible} onHide={() => setVisible(false)} style={{ width: '20vw' }}>
                 <div className="flex flex-col justify-between h-full">
                     <div>
                         <div className="relative w-full flex flex-col items-center mb-10">
@@ -60,77 +62,118 @@ export const PerfilMenu: React.FC<PerfilMenuProps> = ({ visible, setVisible }) =
                             </div>
                         </div>
 
-
                         {/* Sección Usuario */}
-                        <div className="px-5">
-                            <Inplace closable>
-                                <InplaceDisplay>
-                                    <div className="flex items-center justify-center gap-2">
-                                        <p className="text-lg font-bold text-center">{formData.usuario}</p>
-                                        <CiEdit className="" size={20} />
-                                    </div>
-                                </InplaceDisplay>
-                                <InplaceContent>
-                                    <InputText value={formData.usuario} onChange={handleChange} name="usuario" autoFocus />
-                                </InplaceContent>
-                            </Inplace>
+                        <div className="px-5 flex flex-col py-3">
+                            {/* Usuario */}
+                            <EditableField
+                                value={formData.usuario}
+                                onSave={(val) => setFormData({ ...formData, usuario: val })}
+                                labelClass="text-lg font-bold"
+                            />
 
-                            {/* Sección Correo */}
-                            <Inplace closable>
-                                <InplaceDisplay>
-                                    <div className="flex items-center justify-center">
-                                        <p className="text-md text-center">{formData.correo}</p>
-                                        <CiEdit className="" size={20} />
-                                    </div>
-                                </InplaceDisplay>
-                                <InplaceContent>
-                                    <InputText value={formData.correo} onChange={handleChange} name="correo" autoFocus />
-                                </InplaceContent>
-                            </Inplace>
+                            {/* Correo */}
+                            <EditableField
+                                value={formData.correo}
+                                onSave={(val) => setFormData({ ...formData, correo: val })}
+                            />
 
-                            {/* Sección Descripción */}
-                            <div className="mt-10 flex text-center w-full">
-                                <Inplace closable>
-                                    <InplaceDisplay>
-                                        <div className="flex items-center">
-                                            <p>{formData.descripcion}</p>
-                                        </div>
-                                    </InplaceDisplay>
-                                    <InplaceContent>
-                                        <InputText value={formData.descripcion} onChange={handleChange} name="descripcion" autoFocus />
-                                    </InplaceContent>
-                                </Inplace>
+                        </div>
+
+                        <div className="mt-15 px-7 text-sm text-gray-700 space-y-10">
+                            {/* Perfil */}
+                            <div>
+                                <span className="flex items-center gap-2">
+                                    <MdPerson size={20} className="opacity-60" />
+                                    <p className="font-medium text-gray-800">Perfil</p>
+                                </span>
+                                <Divider
+                                    pt={{
+                                        root: {
+                                            style: {
+                                                margin: '4% 0',
+                                                padding: 0
+                                            }
+                                        }
+                                    }}
+                                />
+
+                                <div className=" text-gray-600 space-y-1 px-7">
+                                    <p>Nombre: {firstName}</p>
+                                    <p>Apellido: {lastName}</p>
+                                </div>
+                            </div>
+                            {/* Estado */}
+                            <div>
+                                <span className="flex items-center gap-2">
+                                    <HiOutlineStatusOnline size={22} className="opacity-70" />
+                                    <p className="font-medium text-gray-800">Estado</p>
+                                </span>
+                                <Divider
+                                    pt={{
+                                        root: {
+                                            style: {
+                                                margin: '4% 0',
+                                                padding: 0
+                                            }
+                                        }
+                                    }}
+                                />
+                                <div className=" text-green-600 font-medium px-7">● Activo</div>
+                            </div>
+
+                            {/* Última conexión */}
+                            <div>
+                                <span className="flex items-center gap-2">
+                                    <FaRegClock size={18} className="opacity-70" />
+                                    <p className="font-medium text-gray-800">Última conexión</p>
+                                </span>
+                                <Divider
+                                    pt={{
+                                        root: {
+                                            style: {
+                                                margin: '4% 0',
+                                                padding: 0
+                                            }
+                                        }
+                                    }}
+                                />
+                                <div className="text-gray-600 px-7">2025-04-08 15:12:23</div>
                             </div>
                         </div>
+
                     </div>
 
                     {/* Cambio de Contraseña */}
-                    <div className="px-5 pb-5">
+                    <div className="px-7 pb-5">
 
                         <span className="flex gap-2 items-center" onClick={() => setVisibleChangePassword(true)}>
                             <RiLockPasswordLine />
-                            <p className="">Cambiar contraseña</p>
+                            <p className="">Contraseña Anterior</p>
                         </span>
-                        <Divider className="pt-0 mt-0"></Divider>
+                        <Divider />
                         <span className="flex gap-2 items-center">
                             <IoIosLogOut size={20} />
                             <p className="">Cerrar sesión</p>
                         </span>
-
                     </div>
                 </div>
             </Sidebar>
             {visibleChangePassword &&
-                <Dialog header="Cambiar contraseña" visible={visibleChangePassword} modal={false} style={{ width: '50vw' }} onHide={() => { if (!visibleChangePassword) return; setVisibleChangePassword(false); }}>
-                    <div className="flex flex-col gap-10">
+                <Dialog header="Cambiar contraseña" visible={visibleChangePassword} modal={false} style={{ width: '35vw' }} onHide={() => { if (!visibleChangePassword) return; setVisibleChangePassword(false); }}>
+                    <div className="flex flex-col gap-10 px-5 py-1">
+
                         <div className="flex flex-col gap-5">
+                        <span>
+                                <p>Contraseña anterior:</p>
+                                <Input name="newPassword" value={formDataPasswordChange.newPassword} onChange={handleChangePassword} />
+                            </span>
                             <span>
                                 <p>Nueva contraseña:</p>
-                                <Input name="password" value={formDataPasswordChange.password} onChange={handleChangePassword}/>
+                                <Input name="password" value={formDataPasswordChange.password} onChange={handleChangePassword} />
                             </span>
                             <span>
                                 <p>Confirmar nueva contraseña:</p>
-                                <Input name="confirmPassword" value={formDataPasswordChange.confirmPassword} onChange={handleChangePassword}/>
+                                <Input name="confirmPassword" value={formDataPasswordChange.confirmPassword} onChange={handleChangePassword} />
                             </span>
                         </div>
                         <button className="bg-primary-blue text-white py-3 rounded-md">Cambiar contraseña</button>

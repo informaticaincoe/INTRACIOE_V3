@@ -507,10 +507,10 @@ export interface TableListadoFacturasContainerProps {
 export interface Perfil {
   usuario: string;
   correo: string;
-  descripcion: string;
 }
 
 export interface password {
+  newPassword: string;
   password: string;
   confirmPassword: string;
 }
