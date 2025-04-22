@@ -342,6 +342,7 @@ def obtener_numero_control_ajax(request):
     #iniciar_dte = request.GET.get('iniciar_dte', False)
     print(f"Inicializando DTE Vista: {tipo_dte}")
     nuevo_numero = NumeroControl.preview_numero_control(tipo_dte)
+    print("vista numero de control: ", nuevo_numero)
     return JsonResponse({'numero_control': nuevo_numero})
 
 def factura_list(request):
@@ -1384,7 +1385,7 @@ def firmar_factura_view(request, factura_id):
 def enviar_factura_hacienda_view(request, factura_id):
     print("Inicio enviar factura a MH")
     
-    contingencia = False
+    contingencia = True
     intento = 1
     intentos_max = 3 #Intentos para envio del dte a MH
     tipo_contiengencia_obj = None
@@ -3103,7 +3104,7 @@ def generar_documento_ajuste_view(request):
                                         
                     if cuerpo_documento_tributos is None:
                         cuerpo_documento.append(cuerpo_documento_tributos)
-        
+
             docs_permitidos = 50
             #tipo_dte_ob = Tipo_dte.objects.get(codigo=tipo_dte)
             factura_relacionar = None
@@ -3181,18 +3182,23 @@ def generar_documento_ajuste_view(request):
 # EVENTOS DE CONTINGENCIA DE DTE
 #########################################################################################################
 
+from math import ceil
+
+from math import ceil
+
 def contingencia_list(request):
-    # 1) Prefetch de lotes_evento → factura → tipo_dte
-    queryset = EventoContingencia.objects.prefetch_related(
-        'lotes_contingencia__factura__tipo_dte'
-    ).order_by('id')
-
-    # 2) Filtros GET
-    recibido    = request.GET.get('recibido_mh')
-    codigo      = request.GET.get('sello_recepcion')
-    has_codigo  = request.GET.get('has_sello_recepcion')
+    #Verificar si existen eventos activo con fecha fuera de plazo y desactivarlos
+    finalizar_contigencia_view(request)
+    
+    # Obtener listado de la base
+    queryset = EventoContingencia.objects.prefetch_related('lotes_contingencia__factura').distinct().all().order_by('id')
+    
+    # Aplicar filtros según los parámetros GET
+    recibido = request.GET.get('recibido_mh')
+    codigo = request.GET.get('sello_recepcion')
+    has_codigo = request.GET.get('has_sello_recepcion')
     tipo_dte_id = request.GET.get('tipo_dte')
-
+    
     if recibido in ['True', 'False', '0']:
         queryset = queryset.filter(recibido_mh=(recibido == 'True'))
     if codigo:
@@ -3202,48 +3208,43 @@ def contingencia_list(request):
     elif has_codigo == 'no':
         queryset = queryset.filter(sello_recepcion__isnull=True)
     if tipo_dte_id:
-        queryset = queryset.filter(
-            lotes_evento__factura__tipo_dte__id=tipo_dte_id
-        )
-
-    # 3) Paginación
-    paginator   = Paginator(queryset, 20)
+        queryset = queryset.filter(lotes_contingencia__factura__tipo_dte__id=tipo_dte_id)
+    
+    # Configurar la paginación: 20 registros por página
+    paginator = Paginator(queryset, 20)
     page_number = request.GET.get('page')
-    dtelist     = paginator.get_page(page_number)
-
-    # 4) Construir lotes_por_evento
-    eventos_con_lotes = {}
-    for evento in dtelist:
-        lotes = evento.lotes_contingencia.all()  # ya viene precargado
-        eventos_con_lotes[evento.id] = []
-        #print("lotes: ", eventos_con_lotes)
-        for lote in lotes:
-            # Si un lote tiene solo 1 factura (FK):
-            factura = lote.factura
-            eventos_con_lotes[evento.id].append({
-                'evento': evento,
-                'lote': lote,
-                'facturas': [factura],              
-                'tipo_dte': factura.tipo_dte,        
-            })
-
-        # Si necesitas repartir facturas entre lotes, podrías hacerlo aquí:
-        # facturas_all = [l.factura for l in lotes]
-        # total_lotes = len(lotes)
-        # if total_lotes:
-        #     chunk = ceil(len(facturas_all)/total_lotes)
-        #     evento.facturas_repartidas = [
-        #         facturas_all[i*chunk:(i+1)*chunk] for i in range(total_lotes)
-        #     ]
-
-    # 5) Tipos de DTE para el filtro
+    dtelist = paginator.get_page(page_number)
+        
     tipos_dte = Tipo_dte.objects.filter(codigo__in=DTE_APLICA_CONTINGENCIA)
+    
+    # Crear una lista para almacenar los eventos con lotes y facturas agrupadas
+    eventos_con_lotes = []
 
+    for evento in dtelist:
+        # Obtener todas las facturas relacionadas con los lotes del evento
+        facturas = []
+        for lote in evento.lotes_contingencia.all():
+            facturas.append(lote.factura)
+
+        # Dividir las facturas en grupos de 100
+        facturas_en_grupos = [facturas[i:i + 2] for i in range(0, len(facturas), 2)]
+        
+        # Contar cuántos grupos de existen (lotes por evento)
+        total_lotes_evento = len(facturas_en_grupos)
+
+        # Agregar el evento con lotes y facturas agrupadas
+        eventos_con_lotes.append({
+            'evento': evento,
+            'facturas_en_grupos': facturas_en_grupos,
+            'total_lotes_evento': total_lotes_evento
+        })
+    
     return render(request, 'documentos/dte_contingencia_list.html', {
         'dtelist': dtelist,
         'tipos_dte': tipos_dte,
-        'eventos_con_lotes': eventos_con_lotes,
+        'eventos_con_lotes': eventos_con_lotes
     })
+
 
 # GENERA EL JSON DE CONTINGENCIA - ESTE NO
 def generar_json_contingencia(evento_contingencia_id, emisor, detalles):
@@ -3352,7 +3353,6 @@ def contingencia_dte_unificado_view(request):
         else:
             mensaje = "No se encontró el evento de contingencia"
         
-        
         # Intentamos cargar el detalle (si es un JSON válido)
         if response_envio.status_code == 200:
             try:
@@ -3456,7 +3456,7 @@ def contingencia_dte_view(request, contingencia_id):
             detalles_dte = []
             facturas = []
             
-            for lote in evento_contingencia.lotes_evento.all():
+            for lote in evento_contingencia.lotes_contingencia.all():
                 facturas.append(lote.factura)
                 print("listado de facturas: ", facturas)
                 
@@ -3876,47 +3876,50 @@ def lote_contingencia_dte_view(request, factura_id, tipo_contiengencia_obj):
     print("Crear lote de los dte generados en contingencia: ", factura_id)
     lote_contingencia = None
     crear_evento = False
-    max_items = 2
+    max_items = 3
     try:
         #Paso 1: Buscar factura guardada en contingencia
         documento_contingencia = FacturaElectronica.objects.filter(id=factura_id).order_by('id').first()
         print("Dte contingencia: ", documento_contingencia)
         
         if documento_contingencia and documento_contingencia.contingencia == True:
-            #Paso 2: Verificar si existe un evento de contingencia activo, sino existe crear el evento
-            evento_contingencia = EventoContingencia.objects.annotate(num_lotes_evento=Count('lotes_evento')).filter(finalizado=False, recibido_mh=False, num_lotes_evento__lt=max_items).get()
-            print("eventos contingencia encontrados: ", evento_contingencia)
-            if evento_contingencia:
-                crear_evento = False
-            elif evento_contingencia is None or not evento_contingencia:
-                crear_evento = True
-            
-            print("bandera crear contingencia: ", crear_evento)
-            if crear_evento:
-                print("Crear contingencia")
-                codigo_generacion_contingencia = str(uuid.uuid4()).upper()
-                evento_contingencia = EventoContingencia.objects.create(
-                    codigo_generacion = codigo_generacion_contingencia,
-                    tipo_contingencia = tipo_contiengencia_obj
-                )
+            try:
+                #Paso 2: Verificar si existe un evento de contingencia activo, sino existe crear el evento, si la cantidad de facturas agregadas al evento supera los 5000 crear un nuevo evento
+                evento_contingencia = EventoContingencia.objects.annotate(num_lotes_evento=Count('lotes_contingencia')).filter(finalizado=False, recibido_mh=False, num_lotes_evento__lt=max_items).first()
+                print("eventos contingencia encontrados: ", evento_contingencia)
+                if evento_contingencia:
+                    crear_evento = False
+                elif evento_contingencia is None or not evento_contingencia:
+                    crear_evento = True
                 
-            #Crear lotes
-            if evento_contingencia:
-                try:
-                    print("Creacion de lotes")
-                    lote_contingencia = LoteContingencia.objects.create(
-                        factura = documento_contingencia, 
-                        evento = evento_contingencia
+                print("bandera crear contingencia: ", crear_evento)
+                if crear_evento:
+                    print("Crear contingencia")
+                    codigo_generacion_contingencia = str(uuid.uuid4()).upper()
+                    evento_contingencia = EventoContingencia.objects.create(
+                        codigo_generacion = codigo_generacion_contingencia,
+                        tipo_contingencia = tipo_contiengencia_obj
                     )
-                    print("lote creado: ", lote_contingencia)
-                    mensaje = f"Lote creado correctamente: {lote_contingencia.id}"
-                    return lote_contingencia
-                except Exception as e:
-                    print(f"Error al crear el lote: {e}")
-                    mensaje = f"Hubo un fallo al crear el lote: {str(e)}"
-            else:
-                mensaje = "Hubo un fallo en el evento de contingencia"
-            
+                    
+                #Crear lotes
+                if evento_contingencia:
+                    try:
+                        print("Creacion de lotes")
+                        lote_contingencia = LoteContingencia.objects.create(
+                            factura = documento_contingencia, 
+                            evento = evento_contingencia
+                        )
+                        print("lote creado: ", lote_contingencia)
+                        mensaje = f"Lote creado correctamente: {lote_contingencia.id}"
+                        return lote_contingencia
+                    except Exception as e:
+                        print(f"Error al crear el lote: {e}")
+                        mensaje = f"Hubo un fallo al crear el lote: {str(e)}"
+                else:
+                    mensaje = "Hubo un fallo en el evento de contingencia"
+            except Exception as e:
+                # En caso de que no se encuentre el evento que buscamos
+                print("No se encontró un evento con las condiciones especificadas. ", e)
             return JsonResponse({
                 #"factura_id": factura_id,
                 #"mensaje": mensaje,

@@ -89,7 +89,7 @@
             {% endif %}
           </td>
           <td>
-            {% if grupo.evento.lotes_evento.all %}
+            {% if grupo.evento.lotes_contingencia.all %}
               <button class="btn btn-sm btn-link toggle-accordion" type="button" data-target="#accordion-{{ forloop.counter }}">
                 ➕
               </button>
@@ -100,7 +100,7 @@
           <td>{{ grupo.total_lotes_evento }}</td> 
           <td>
             {% if grupo.evento.tipo_contingencia.codigo == "5"%}
-              <input type="text" name="motivo_contingencia" class="form-control" id="motivo_contingencia_input"></td> 
+              <input type="text" name="motivo_contingencia" data-id="{{ grupo.evento.motivo_contingencia }}" class="form-control" id="motivo_contingencia_input"></td> 
             {% endif %}
           <td>
             {% if grupo.evento.sello_recepcion is None and grupo.evento.finalizado == False and grupo.total_lotes_evento > 0 %}
@@ -117,12 +117,16 @@
         <!-- Fila expandible para mostrar las facturas -->
         <tr class="accordion-row" id="accordion-{{ forloop.counter }}" style="display: none;">
           <td colspan="12">
-            {% for item in grupo.facturas_por_lote %}
-              <h5>Lote ID: {{ item.lote.id }} (Cantidad Facturas: {{ item.facturas|length }})</h5>
+            {% for factura_group in grupo.facturas_en_grupos %}
               <table class="table table-bordered mb-4">
                 <thead>
                   <tr>
-                    <th><input type="checkbox" class="seleccionar-lote"></th>
+                    <th colspan="12" class="text-center">
+                      <strong>Lote | Cantidad facturas: {{ factura_group|length }}</strong>
+                    </th>
+                  </tr>
+                  <tr>
+                    <th><input type="checkbox" id="seleccionarTodoLote" class="seleccionar-todas-facturas"></th>
                     <th>Estado</th>
                     <th>Tipo DTE</th>
                     <th>Total</th>
@@ -133,9 +137,13 @@
                   </tr>
                 </thead>
                 <tbody>
-                  {% for factura in item.facturas %}
+                  {% for factura in factura_group %}
                     <tr>
-                      <td><input type="checkbox" name="factura_ids" value="{{ factura.id }}"></td>
+                      <td>
+                        {% if factura.recibido_mh == False and factura.sello_recepcion is None%}
+                          <input type="checkbox" name="factura_ids" value="{{ factura.id }}">
+                        {% endif %}
+                      </td>
                       <td>
                         {% if factura.estado and factura.sello_recepcion %}
                           <i class="fa fa-check text-success"></i>
@@ -143,9 +151,9 @@
                           <i class="fa fa-ban text-danger"></i>
                         {% endif %}
                       </td>
-                      <td>{{ factura.tipo_dte.codigo }}</td>
+                      <td>{{ factura.tipo_dte.descripcion }}</td>
                       <td>{{ factura.total_pagar }}</td>
-                      <td>{{ factura.fecha_transmicion }}</td>
+                      <td>{{ factura.fecha_emision }}</td>
                       <td>{{ factura.codigo_generacion }}</td>
                       <td>{{ factura.sello_recepcion }}</td>
                       <td>
@@ -460,11 +468,11 @@ document.addEventListener('DOMContentLoaded', function(){
       enlace.addEventListener('click', function (e) {
         e.preventDefault();
 
-        const contingencia_id = this.dataset.id; // id del evento
+        const contingencia_id = this.dataset.id; //id del evento
 
         // Buscar input de motivo contingencia en la misma fila
         const fila = this.closest('tr');
-        const input = fila.querySelector('#motivo_contingencia_input');
+        const input = fila.querySelector('.motivo_contingencia_input');
         const motivo_contingencia = input ? input.value.trim() : '';
 
         const codigoMotivo = this.dataset.requiereMotivo; // obtener código del tipo de contingencia
@@ -473,121 +481,19 @@ document.addEventListener('DOMContentLoaded', function(){
           return;
         }
 
-        console.log("motivo: ", motivo_contingencia, "Codigo motivo: ", codigoMotivo);
         const encodedMotivo = encodeURIComponent(motivo_contingencia);
 
-        fetch(`/fe/contingencia-dte/?contingencia_id=${contingencia_id}&motivo_contingencia=${motivo_contingencia}&codigo_motivo=${codigoMotivo}`)
+        fetch(`/fe/contingencia-dte/?contingencia_id=${contingencia_id}&motivo_contingencia=${motivo_contingencia}`)
           .then(response => {
             if (!response.ok) {  // Verifica si la respuesta fue exitosa (200-299)
-              throw new Error('Network response was not ok');
+                throw new Error('Network response was not ok');
             }
-            console.log("Respuesta json: ", response.json)
-            return response.json();  // Convierte la respuesta a JSON
+            return response.json();  // Intenta convertir la respuesta a JSON
           })
-          .then(data => {
-            // Aquí puedes manejar la respuesta JSON que devuelve el servidor
-            console.log('Respuesta:', data);
-
-            // Obtener el div donde mostraremos la respuesta
-            const resultadoDiv = document.getElementById('resultadoContingencia');
-
-            // Limpiar cualquier contenido anterior
-            resultadoDiv.innerHTML = '';
-
-            // Mostrar el mensaje de éxito en la interfaz de usuario
-            if (data.mensaje) {
-              resultadoDiv.innerHTML += `<p><strong>Mensaje:</strong> ${data.mensaje}</p>`;
-            }
-            
-            // Si hay algún detalle adicional, lo mostramos también
-            if (data.detalle) {
-              // Si detalle es un objeto, lo convertimos a un formato legible
-              const detalle = data.detalle.respuesta;
-              if (detalle) {
-                const detalleString = `
-                  <p><strong>Estado:</strong> ${detalle.estado}</p>
-                  <p><strong>Fecha y Hora:</strong> ${detalle.fechaHora}</p>
-                  <p><strong>Mensaje:</strong> ${detalle.mensaje}</p>
-                  <p><strong>Sello Recibido:</strong> ${detalle.selloRecibido}</p>
-                  <p><strong>Observaciones:</strong> ${detalle.observaciones.length ? detalle.observaciones.join(', ') : 'Ninguna'}</p>
-                `;
-                resultadoDiv.innerHTML += detalleString;
-              } else {
-                resultadoDiv.innerHTML += `<p><strong>Detalle:</strong> ${JSON.stringify(data.detalle)}</p>`;
-              }
-            }
-
-            // Mostrar el modal
-            $('#respuestaModal').modal('show');
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            const resultadoDiv = document.getElementById('resultadoContingencia');
-            resultadoDiv.innerHTML = `<p style="color: red;">Ocurrió un error al procesar la solicitud.</p>`;
-            $('#respuestaModal').modal('show');
-          });
+          .catch(error => console.error('Error:', error));
       });
     });
   });
-
-  //Enviar lote uno a uno
-  document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('#lote_unificado').forEach(function (enlace) {
-      enlace.addEventListener('click', function (e) {
-        e.preventDefault();
-
-        const lote_id = this.dataset.id; // id del evento
-        console.log("lote id: ", lote_id)
-
-        fetch(`/fe/enviar-lote-unificado/?lote_id=${lote_id}`)
-          .then(response => {
-            if (!response.ok) {  // Verifica si la respuesta fue exitosa (200-299)
-              throw new Error('Network response was not ok');
-            }
-            console.log("Respuesta json: ", response.json)
-            return response.json();  // Convierte la respuesta a JSON
-          })
-          .then(data => {
-
-            //Obtener el div para mostrar la respuesta
-            const resultadoDiv = document.getElementById('resultadoContingencia');
-            //Limpiar resultado
-            resultadoDiv.innerHTML = '';
-
-            // Mostrar el mensaje
-            if (data.mensaje) {
-              resultadoDiv.innerHTML += `<p><strong>Mensaje:</strong> ${data.mensaje}</p>`;
-            }
-            
-            if (data.detalle) {
-              //Si detalle es un objeto, convertirlo a un formato legible
-              const detalle = data.detalle.respuesta;
-              if (detalle) {
-                const detalleString = `
-                  <p><strong>Estado:</strong> ${detalle.estado}</p>
-                  <p><strong>Fecha y Hora:</strong> ${detalle.fechaHora}</p>
-                  <p><strong>Mensaje:</strong> ${detalle.mensaje}</p>
-                  <p><strong>Sello Recibido:</strong> ${detalle.selloRecibido}</p>
-                  <p><strong>Observaciones:</strong> ${detalle.observaciones.length ? detalle.observaciones.join(', ') : 'Ninguna'}</p>
-                `;
-                resultadoDiv.innerHTML += detalleString;
-              } else {
-                resultadoDiv.innerHTML += `<p><strong>Detalle:</strong> ${JSON.stringify(data.detalle)}</p>`;
-              }
-            }
-
-            // Mostrar el modal
-            $('#respuestaModal').modal('show');
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            const resultadoDiv = document.getElementById('resultadoContingencia');
-            resultadoDiv.innerHTML = `<p style="color: red;">Ocurrió un error al procesar la solicitud.</p>`;
-            $('#respuestaModal').modal('show');
-          });
-      });
-    });
-  });
-</script>
+  </script>
 
 {% endblock %}
