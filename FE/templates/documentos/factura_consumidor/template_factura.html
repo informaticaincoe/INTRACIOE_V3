@@ -123,9 +123,16 @@
             <h6 class="mb-1">Datos de la Factura</h6>
             <p class="mb-1"><strong>N° Control:</strong> {{ factura.numero_control }}</p>
             <p class="mb-1"><strong>Código de Generación:</strong> {{ factura.codigo_generacion }}</p>
-            <p class="mb-1"><strong>Sello de Recepción:</strong> {{ factura.sello_recepcion }}</p>
-            <p class="mb-1"><strong>Modelo de Facturación:</strong> {{ factura.tipomodelo.nombre|default:"Previo" }}</p>
-            <p class="mb-1"><strong>Tipo de Transmisión:</strong> {{ factura.json_original.identificacion.tipoTransmision }}</p>
+            <p class="mb-1"><strong>Sello de Recepción:</strong>
+                {% if factura.sello_recepcion is not null %}
+                    {{ factura.sello_recepcion }}
+                {% endif %}
+            </p>
+            <p class="mb-1"><strong>Modelo de Facturación:</strong> {{ factura.tipomodelo.descripcion|default:"Previo" }}</p>
+            <p class="mb-1"><strong>Tipo de Transmisión:</strong> {{ factura.tipotransmision.descripcion|default:"" }}</p>
+            {% if factura.contingencia %}
+                <p class="mb-1" style="color: red;"><strong>Estado:</strong> Contingencia</p>
+            {% endif %}
         </div>
     </div>
 

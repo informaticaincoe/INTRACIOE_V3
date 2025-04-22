@@ -1,92 +1,76 @@
-import { useEffect, useRef } from 'react';
+// src/.../DeleteModal.tsx
+import React, { useEffect, useRef } from 'react';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { Toast } from 'primereact/toast';
-import styles from './modalCustom.module.css';
-import { deleteActivity } from '../../services/activitiesServices';
-import { ActivitiesData } from '../../../../../shared/interfaces/interfaces';
 
-interface DeleteModalProps {
-  activity: ActivitiesData;
-  onClose: () => void; // Función para cerrar el modal
-  onDelete: () => void; // Función para cerrar el modal
+interface DeleteModalProps<T extends { id: any; [key: string]: any }> {
+  item: T | null;
+  visible: boolean;
+  setVisible: (v: boolean) => void;
+  deleteFunction: (id: T['id']) => Promise<any>;
+  onDeleted: () => void;
 }
 
-export const DeleteModal: React.FC<DeleteModalProps> = ({
-  activity,
-  onClose,
-  onDelete,
-}) => {
-  const toast = useRef<Toast | null>(null);
+export function DeleteModal<T extends { id: any; [key: string]: any }>({
+  item,
+  visible,
+  setVisible,
+  deleteFunction,
+  onDeleted,
+}: DeleteModalProps<T>) {
+  const toast = useRef<Toast>(null);
 
-  const accept = () => {
-    if (toast.current) {
-      toast.current.show({
-        severity: 'info',
-        summary: 'Confirmed',
-        detail: 'Activity deleted',
-        life: 3000,
-      });
-    }
-    try {
-      handleDeleteActivity();
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const reject = () => {
-    if (toast.current) {
-      toast.current.show({
-        severity: 'warn',
-        summary: 'Rejected',
-        detail: 'You have rejected',
-        life: 3000,
-      });
-    }
-    onClose();
-  };
-
-  const showTemplate = () => {
-    confirmDialog({
-      group: 'templating',
-      header: <p className="text-2xl">Eliminar actividad económica</p>,
-      message: (
-        <div className="flex-column align-items-center border-bottom-1 surface-border flex w-full">
-          <span>
-            ¿Estas seguro que deseas eliminar la actividad economica:{' '}
-            <span className="italic">{activity.descripcion}</span>?
-          </span>
-        </div>
-      ),
-      accept,
-      reject,
-    });
-  };
-
+  // Mostrar el confirmDialog cuando se abra y haya un item
   useEffect(() => {
-    if (activity) {
-      showTemplate();
+    if (visible && item) {
+      confirmDialog({
+        message: (
+          <div className="flex flex-col">
+            <span>¿Estás seguro de eliminar:</span>
+            <strong className="mt-2 italic">
+              {String(item.nombre ?? item.descripcion ?? item.id)}
+            </strong>
+          </div>
+        ),
+        header: 'Confirmar eliminación',
+        icon: 'pi pi-exclamation-triangle',
+        acceptLabel: 'Eliminar',
+        rejectLabel: 'Cancelar',
+        acceptClassName: 'p-button-danger',
+        rejectClassName: 'p-button-text',
+        accept: async () => {
+          try {
+            await deleteFunction(item.id);
+            toast.current?.show({
+              severity: 'success',
+              summary: 'Eliminado',
+              detail: 'El elemento fue eliminado correctamente',
+              life: 3000,
+            });
+            onDeleted();
+          } catch (err) {
+            console.error(err);
+            toast.current?.show({
+              severity: 'error',
+              summary: 'Error',
+              detail: 'No se pudo eliminar',
+              life: 3000,
+            });
+          } finally {
+            setVisible(false);
+          }
+        },
+        reject: () => {
+          setVisible(false);
+        },
+      });
     }
-  }, [activity]);
-
-  const handleDeleteActivity = async () => {
-    
-    const response = await deleteActivity(activity.id);
-    onDelete();
-    onClose();
-    console.log(response);
-  };
+  }, [visible, item, deleteFunction, onDeleted, setVisible]);
 
   return (
     <>
       <Toast ref={toast} />
-      <ConfirmDialog
-        group="templating"
-        acceptLabel={'Eliminar'}
-        rejectLabel="Cancelar"
-        acceptClassName={styles.delete}
-        rejectClassName={styles.cancel}
-      />
+      <ConfirmDialog />
     </>
   );
-};
+}

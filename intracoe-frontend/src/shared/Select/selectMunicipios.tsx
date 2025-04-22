@@ -1,39 +1,37 @@
 import React, { useEffect, useState } from 'react';
-import { DepartmentAndMunicipality } from './departmentAndMunicipalityData';
 import { Dropdown } from 'primereact/dropdown';
 import { getMunicipiosByDepartamentos } from '../../features/bussiness/configBussiness/services/ubicacionService';
 
-interface SelectMunicipioInterface {
+interface SelectMunicipiosInterface {
+  name: string;
   department: any; // Recibe el departamento seleccionado
-  municipio: any;
-  setMunicipio: React.Dispatch<React.SetStateAction<any>>; // Para actualizar el municipio seleccionado
+  value: any;
+  onChange: React.Dispatch<React.SetStateAction<any>>; // Para actualizar el value seleccionado
 }
 
-export const SelectMunicipios: React.FC<SelectMunicipioInterface> = ({
+export const SelectMunicipios: React.FC<SelectMunicipiosInterface> = ({
+  name,
   department,
-  municipio,
-  setMunicipio,
+  value,
+  onChange,
 }) => {
   const [municipalities, setMunicipalities] = useState<[]>([]);
 
   useEffect(() => {
     fetchMunicipalitiesByDepartment();
-  }, [department, department]);
+    console.log('municipio departamento', department);
+  }, []);
+
+  useEffect(() => {
+    fetchMunicipalitiesByDepartment();
+  }, [department]);
 
   const fetchMunicipalitiesByDepartment = async () => {
     try {
-      if (department.id != '') {
-        console.log(department.id);
-        const response = await getMunicipiosByDepartamentos(department.id);
-        const municipalityList = response.map(
-          (element: { id: string; descripcion: any; codigo: any }) => ({
-            id: element.id,
-            name: element.descripcion,
-            code: element.codigo,
-          })
-        );
-        console.log(municipalityList);
-        setMunicipalities(municipalityList);
+      if (department) {
+        const response = await getMunicipiosByDepartamentos(department);
+        setMunicipalities(response);
+        console.log(response);
       }
     } catch (error) {
       console.log(error);
@@ -43,10 +41,12 @@ export const SelectMunicipios: React.FC<SelectMunicipioInterface> = ({
   return (
     <div className="justify-content-center flex">
       <Dropdown
-        value={municipio}
-        onChange={(e) => setMunicipio(e.value)}
+        name={name}
+        value={value}
+        onChange={(e) => onChange({ target: { name: name, value: e.value } })}
         options={municipalities}
-        optionLabel="name"
+        optionLabel="descripcion"
+        optionValue="id"
         placeholder="Seleccionar tipo de establecimiento"
         className="md:w-14rem font-display w-full"
         filter

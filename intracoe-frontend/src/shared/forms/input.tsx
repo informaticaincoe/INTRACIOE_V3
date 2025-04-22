@@ -6,6 +6,7 @@ interface InputProps {
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   className?: string;
   required?: boolean;
+  icon?: any;
 }
 
 export const Input: React.FC<InputProps> = ({

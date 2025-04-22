@@ -30,6 +30,8 @@ ALLOWED_HOSTS=['*']
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',  # Asegúrate de que esta URL esté incluida
+    'http://localhost:5174',  # Asegúrate de que esta URL esté incluida
+    
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -53,6 +55,9 @@ CSRF_TRUSTED_ORIGINS = [
     'https://192.168.100.81',
     'http://localhost:5173',  # Puerto de tu frontend (React)
     'http://127.0.0.1:5173',  # Alternativa para localhost
+    'http://localhost:5174',  # Puerto de tu frontend (React)
+    'http://127.0.0.1:5174',  # Alternativa para localhost
+    
 ]
 
 ## CONFIGURACION DE CORREOS ##############################
@@ -225,3 +230,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+# REST_FRAMEWORK = {
+#     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+#     'PAGE_SIZE': 10  # Número de facturas por página
+# }

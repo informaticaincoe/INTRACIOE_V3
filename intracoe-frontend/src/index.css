@@ -6,26 +6,32 @@
   font-family: 'Inter', sans-serif;
 }
 
+@layer base {
+  img {
+    @apply inline-block;
+  }
+}
+
 body {
   background-color: var(--color-body-bg);
 }
 
-.p-multiselect-panel {
+/* .p-multiselect-panel {
   width: 40vw !important;
-}
+} */
 
 .p-multiselect-item {
   text-wrap: wrap;
 }
 
-.p-multiselect-label {
+/* .p-multiselect-label {
   overflow: hidden !important;
   width: 100% !important;
 }
 
 .p-multiselect {
   width: 40vw !important;
-}
+} */
 
 .p-checkbox,
 .p-checkbox-box {
@@ -40,9 +46,6 @@ input::file-selector-button {
   padding: 1% 3%;
 }
 
-.p-dropdown-items {
-}
-
 .p-dropdown-item {
   text-wrap: wrap;
 }
@@ -51,8 +54,30 @@ input::file-selector-button {
   width: 5vw;
 }
 
+.page {
+  position: relative;
+  height: 1122px; /* aprox para carta (11in * 96dpi) */
+}
+
+.footer-fixed {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+}
+
+.p-icon-field{
+  width:100%;
+}
+
+.p-password-input{
+  width: 100%;
+}
+
 @theme {
   --color-primary-yellow: #fca94e;
+  --color-secondary-yellow: #fcc587;
+  --color-secondary-yellow-light: #fff2e4;
   --color-primary-blue: #232c6e;
   --color-body-bg: #f2f2f2;
   --color-light-text: #757575;

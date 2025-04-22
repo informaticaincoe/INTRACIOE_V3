@@ -4,92 +4,89 @@ import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { Dialog } from 'primereact/dialog';
 import { useEffect, useState } from 'react';
-import { defaultProductosData, ProductosTabla } from './productosData';
-import { InputNumber, InputNumberValueChangeEvent } from 'primereact/inputnumber';
-import { getAllProducts } from '../../../services/productos/productosServices';
+import {
+  InputNumber,
+  InputNumberValueChangeEvent,
+} from 'primereact/inputnumber';
 import { SendFormButton } from '../../../../../../shared/buttons/sendFormButton';
+import { ProductosTabla } from './productosData';
 
 interface ModalListProductsInterface {
-  visible: any;
-  setVisible: any;
-  setListProducts:any;
-
+  visible: boolean;
+  setVisible: (v: boolean) => void;
+  listProducts: ProductosTabla[];
+  selectedProducts: ProductosTabla[];
+  setSelectedProducts: (ps: ProductosTabla[]) => void;
 }
 
 export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
   visible,
   setVisible,
-  setListProducts
+  listProducts,
+  selectedProducts,
+  setSelectedProducts,
 }) => {
-  const [products, setProducts] = useState<ProductosTabla[]>([defaultProductosData]);
-  const [selectedProducts, setSelectedProducts] = useState<ProductosTabla[]>([]);
+  // Solo un estado: la lista completa con sus flags
+  const [products, setProducts] = useState<
+    (ProductosTabla & { seleccionar: boolean; cantidad: number })[]
+  >([]);
 
   useEffect(() => {
-    fetchProductos()
-  }, [])
+    const merged = listProducts.map((prod) => {
+      const sel = selectedProducts.find((p) => p.id === prod.id);
+      return {
+        ...prod,
+        seleccionar: Boolean(sel),
+        cantidad: sel?.cantidad ?? 1,
+      };
+    });
+    setProducts(merged);
+  }, [listProducts, selectedProducts]);
 
-
-  const fetchProductos = async () => {
-    try {
-      const response = await getAllProducts()
-      const productos = response.map((product) => ({
-        id: product.id,
-        codigo: product.codigo,
-        descripcion: product.descripcion,
-        precio_unitario: product.preunitario,
-        cantidad: 1,
-        no_grabado: false,
-        descuento: 0,
-        iva_unitario: 0,
-        total_neto: 0,
-        total_iva: 0,
-        total_con_iva: 0,
-        iva_percibido: 0,
-        seleccionar: false,
-      }));
- 
-      setProducts(productos)
-    } catch (error) {
-      console.log(error)
-    }
-  }
-
-  // Función para manejar cambios en la cantidad
-  const handleCantidadChange = (
-    e: InputNumberValueChangeEvent,
-    index: number
-  ) => {
-    const updatedProducts = [...products];
-    updatedProducts[index].cantidad = e.value ?? 1;
-    setProducts(updatedProducts);
+  // Marca/desmarca
+  const onSelectChange = (e: CheckboxChangeEvent, id: number) => {
+    setProducts((prev) =>
+      prev.map((p) =>
+        p.id === id ? { ...p, seleccionar: e.checked ?? false } : p
+      )
+    );
   };
 
-  // Función para manejar la selección de productos
-  // Función para manejar la selección de productos
-  const handleSelectChange = (
-    e: CheckboxChangeEvent, // Cambiar el tipo del evento a CheckboxChangeEvent
-    index: number
-  ) => {
-    const updatedProducts = [...products];
-    updatedProducts[index].seleccionar = e.checked ?? false; // Actualizar solo el valor de "seleccionar"
-    setProducts(updatedProducts);
-
-    // Filtramos los productos seleccionados (con seleccionar === true)
-    const selected = updatedProducts.filter((product) => product.seleccionar);
-    setSelectedProducts(selected); // Guardamos los productos seleccionados en la variable
+  // Cambia cantidad
+  const onCantidadChange = (e: InputNumberValueChangeEvent, id: number) => {
+    const nueva = e.value ?? 1;
+    setProducts((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, cantidad: nueva } : p))
+    );
   };
 
-  const guardarProductos =(selectedProducts:ProductosTabla[])=> {
-    console.log(selectedProducts)
-    setListProducts(selectedProducts)
-  }
+  const guardar = () => {
+    const seleccionados = products.filter((p) => p.seleccionar); // solo seleccionados
 
-  const footerContent = (
-    <div>
-      <SendFormButton onClick={() => guardarProductos(selectedProducts)} text='Agregar' className='bg-primary-blue text-white px-10'/>
+    seleccionados.forEach((producto) => {
+      const total_neto = producto.precio_venta * producto.cantidad;
+      const total_iva = producto.cantidad * (producto.precio_venta * 0.13);
+      producto.total_neto = total_neto;
+      producto.total_iva = total_iva;
+      producto.total_con_iva = total_neto + total_iva;
+    });
 
-      <SendFormButton onClick={() => setVisible(false)} text='Cerrar' className='border border-primary-blue px-10'/>
-        
+    setSelectedProducts(seleccionados);
+    setVisible(false);
+  };
+
+  const footer = (
+    <div className="flex justify-end gap-2">
+      <SendFormButton
+        onClick={guardar}
+        text="Agregar"
+        className="bg-primary-blue px-10 text-white"
+      />
+      <SendFormButton
+        onClick={() => setVisible(false)}
+        text="Cerrar"
+        className="border-primary-blue border px-10"
+      />
     </div>
   );
 
@@ -99,13 +96,11 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
       modal
       header={
         <>
-          <h1 className="text-start text-2xl font-bold">
-            Seleccionar productos
-          </h1>
-          <Divider className="m-0 p-0"></Divider>
+          <h1 className="text-2xl font-bold">Seleccionar productos</h1>
+          <Divider className="m-0 p-0" />
         </>
       }
-      footer={footerContent}
+      footer={footer}
       style={{ width: '80%' }}
       onHide={() => setVisible(false)}
     >
@@ -117,28 +112,28 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
         rowsPerPageOptions={[5, 10, 25, 50]}
       >
         <Column
-          body={(rowData: ProductosTabla, { rowIndex }: any) => (
+          header="SELECCIONAR"
+          body={(row: any) => (
             <Checkbox
-              checked={rowData.seleccionar} // Usa el estado de "seleccionar"
-              onChange={(e) => handleSelectChange(e, rowIndex)} // Maneja el cambio solo para "seleccionar"
+              checked={row.seleccionar}
+              onChange={(e) => onSelectChange(e, row.id)}
             />
           )}
-          header={<p className="text-sm">SELECCIONAR</p>}
         />
         <Column
-          body={(rowData: ProductosTabla) => <p>{rowData.descripcion}</p>}
-          header={<p className="text-sm">PRODUCTOS</p>}
+          header="PRODUCTO"
+          body={(row: any) => <span>{row.descripcion}</span>}
         />
         <Column
-          body={(rowData: ProductosTabla) => <p>$ {rowData.precio_unitario}</p>}
-          header={<p className="text-sm">PRECIO UNITARIO</p>}
+          header="PRECIO UNITARIO"
+          body={(row: any) => <span>{row.preunitario}</span>}
         />
         <Column
-          header={<p className="text-sm">CANTIDAD</p>}
-          body={(rowData: ProductosTabla, { rowIndex }: any) => (
+          header="CANTIDAD"
+          body={(row: any) => (
             <InputNumber
-              value={rowData.cantidad}
-              onValueChange={(e: InputNumberValueChangeEvent) => handleCantidadChange(e, rowIndex)}
+              value={row.cantidad}
+              onValueChange={(e) => onCantidadChange(e, row.id)}
               className="w-[5rem]"
               min={1}
             />

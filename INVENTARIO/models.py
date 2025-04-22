@@ -94,6 +94,7 @@ class Producto(models.Model):
     tipo_item = models.ForeignKey(TipoItem, on_delete=models.SET_NULL, null=True, blank=True)
     referencia_interna = models.CharField(max_length=50, null=True, editable=True, default=None)
     tributo = models.ForeignKey(Tributo, on_delete=models.CASCADE, null=False, default=1)
+    precio_iva = models.BooleanField(default=False) #Indicar si el producto se guarda con IVA
     
     # Control de lotes y vencimientos (Opcional)
     maneja_lotes = models.BooleanField(default=False)
@@ -188,8 +189,6 @@ class AjusteInventario(models.Model):
 
     def __str__(self):
         return f"Ajuste {self.cantidad_ajustada} {self.producto.descripcion} ({self.almacen.nombre})"
-    
-from django.db import models
 
 # MODELO PARA DEVOLUCIONES DE CLIENTES (POST-VENTA)
 class DevolucionVenta(models.Model):

@@ -1,17 +1,19 @@
 import { Dropdown } from 'primereact/dropdown';
-import { getAllTiposEstablecimientos } from '../../features/bussiness/configBussiness/services/tiposEstablecimientosService';
 import { useEffect, useState } from 'react';
+import { getAllTiposEstablecimientos } from '../catalogos/services/catalogosServices';
 
 interface SelectedTipoEstablecimientoInterface {
-  tipoEstablecimiento: any;
-  setTipoEstablecimiento: any;
+  value: any;
+  onChange: (e: {
+    target: { name: string; value: (string | number)[] };
+  }) => void;
+  name: string;
 }
 
 export const SelectTipoEstablecimiento: React.FC<
   SelectedTipoEstablecimientoInterface
-> = ({ tipoEstablecimiento, setTipoEstablecimiento }) => {
-  const [selectedTipoEstablecimiento, setSelectedTipoEstablecimiento] =
-    useState<[]>([]);
+> = ({ value, onChange, name }) => {
+  const [tipoEstablecimiento, setTipoEstablecimiento] = useState<[]>([]);
 
   useEffect(() => {
     fetchListaAmbiente();
@@ -20,16 +22,7 @@ export const SelectTipoEstablecimiento: React.FC<
   const fetchListaAmbiente = async () => {
     try {
       const response = await getAllTiposEstablecimientos();
-
-      const data = response.map(
-        (doc: { id: string; descripcion: any; codigo: any }) => ({
-          id: doc.id,
-          name: doc.descripcion,
-          code: doc.codigo,
-        })
-      );
-
-      setSelectedTipoEstablecimiento(data);
+      setTipoEstablecimiento(response);
     } catch (error) {
       console.log(error);
     }
@@ -38,10 +31,18 @@ export const SelectTipoEstablecimiento: React.FC<
   return (
     <div className="justify-content-center flex">
       <Dropdown
-        value={tipoEstablecimiento}
-        onChange={(e) => setTipoEstablecimiento(e.value)}
-        options={selectedTipoEstablecimiento}
-        optionLabel="name"
+        value={value}
+        onChange={(e) =>
+          onChange({
+            target: {
+              name,
+              value: e.value,
+            },
+          })
+        }
+        options={tipoEstablecimiento}
+        optionLabel="descripcion"
+        optionValue="id"
         placeholder="Seleccionar ambiente"
         className="md:w-14rem font-display w-full"
       />

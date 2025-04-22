@@ -1,42 +1,81 @@
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
-import { Dialog } from 'primereact/dialog';
-import { InputText } from 'primereact/inputtext';
-import React, { useState } from 'react';
-import { Product, productosData } from '../FE/productosAgregados/productosData';
+import React, { useEffect, useState } from 'react';
 import {
   InputNumber,
   InputNumberValueChangeEvent,
 } from 'primereact/inputnumber';
+// import './InputNumberCustom.css';
 import { FaCheckCircle } from 'react-icons/fa';
+import { Dropdown } from 'primereact/dropdown';
+import { getAllDescuentos } from '../../../../../shared/services/productos/productosServices';
 import { ModalEliminarItemDeLista } from '../Shared/modal/modalEliminarItemDeLista';
-import { ModalAgregarRetencion } from '../Shared/modal/modalAgregarRetencion';
+import { ModalAgregarTributo } from '../Shared/modal/modalAgregarTributo';
+import { ProductosTabla } from '../FE/productosAgregados/productosData';
 
-export const TablaProductosCreditoFiscal = ({}) => {
-  const [products, setProducts] = useState<Product[]>(productosData);
-  const [rowClick, setRowClick] = useState<boolean>(true);
+interface TablaProductosAgregadosProps {
+  listProducts: ProductosTabla[];
+  setListProducts: any;
+  setCantidadListProducts: any;
+  setIdListProducts: any;
+  setDescuentoItem: any;
+  descuentoItem: number;
+}
+export const TablaProductosCreditoFiscal: React.FC<
+  TablaProductosAgregadosProps
+> = ({
+  setListProducts,
+  listProducts,
+  setCantidadListProducts,
+  setIdListProducts,
+}) => {
   const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
+  const [rowClick] = useState<boolean>(true);
   const [visibleDeleteModal, setVisibleDeleteModal] = useState<boolean>(false);
   const [visibleTributoModal, setVisibleTributoModal] =
     useState<boolean>(false);
-  const [visibleRetencionModal, setVisibleRetencionModal] =
-    useState<boolean>(false);
+  const [descuentosList, setDescuentosList] = useState<any[]>([]); // variable para almacenar al lista de descuentos y mostrarla en un dropdown
+
+  useEffect(() => {
+    fetchDescuento();
+    console.log(listProducts);
+  }, []);
+
+  useEffect(() => {
+    const auxId = listProducts.map((product) => product.id);
+    const auxCantidad = listProducts.map((product) => product.cantidad);
+
+    setCantidadListProducts(auxCantidad);
+    setIdListProducts(auxId);
+  }, [listProducts]);
 
   // Función para manejar cambios en la cantidad de un producto específico
   const handleCantidadChange = (value: number | null, productId: number) => {
-    setProducts((prevProducts) =>
-      prevProducts.map((product) =>
-        product.id === productId
-          ? { ...product, cantidad: value ?? 0 }
-          : product
-      )
+    setListProducts((prevProducts: any[]) =>
+      prevProducts.map((product) => {
+        if (product.id === productId) {
+          const nuevaCantidad = value ?? 1;
+          const totalNeto = product.precio_unitario * nuevaCantidad;
+          const totalIVA = product.iva_unitario * nuevaCantidad;
+          const totalConIVA = totalNeto + totalIVA;
+
+          return {
+            ...product,
+            cantidad: nuevaCantidad,
+            total_neto: totalNeto,
+            total_iva: totalIVA,
+            total_con_iva: totalConIVA,
+          };
+        }
+        return product;
+      })
     );
   };
 
   // Función para manejar cambios en el descuento de un producto específico
   const handleDescuentoChange = (value: number | null, productId: number) => {
-    setProducts((prevProducts) =>
-      prevProducts.map((product) =>
+    setListProducts((prevProducts: any[]) =>
+      prevProducts.map((product: { id: number }) =>
         product.id === productId
           ? { ...product, descuento: value ?? 0 }
           : product
@@ -45,13 +84,42 @@ export const TablaProductosCreditoFiscal = ({}) => {
   };
 
   const handleDelete = () => {
-    console.log(selectedProducts);
+    console.log('selectedProducts', selectedProducts);
     setVisibleDeleteModal(true);
   };
 
-  const handleRetencion = () => {
-    console.log(selectedProducts);
-    setVisibleRetencionModal(true);
+  const handleTributosModal = () => {
+    setVisibleTributoModal(true);
+  };
+
+  const handlerEliminarItem = () => {
+    // Filtrar los productos que NO están seleccionados
+    const filterList = listProducts.filter((product) => {
+      // Verificar si el producto no está en selectedProducts
+      return !selectedProducts.some((item) => product.id === item.id);
+    });
+
+    console.log('filterList', filterList);
+    setListProducts(filterList); // Actualizar la lista de productos
+    setSelectedProducts([]); // Limpiar los productos seleccionados
+    setVisibleDeleteModal(false);
+  };
+
+  const fetchDescuento = async () => {
+    try {
+      const response = await getAllDescuentos();
+      setDescuentosList(response);
+
+      // Aquí se establece el primer descuento de cada producto si no tiene descuento asignado
+      setListProducts((prevProducts: any[]) =>
+        prevProducts.map((product) => ({
+          ...product,
+          descuento: product.descuento || response[0]?.id, // Si no tiene descuento, se asigna el primer descuento
+        }))
+      );
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   return (
@@ -69,14 +137,11 @@ export const TablaProductosCreditoFiscal = ({}) => {
             >
               <p className="text-red">Eliminar</p>
             </button>
-            <span className="border-blue flex items-center gap-2 rounded-md border px-3 py-1 hover:cursor-pointer">
-              <p className="text-blue">Agregar tributo</p>
-            </span>
             <span
               className="border-blue flex items-center gap-2 rounded-md border px-3 py-1 hover:cursor-pointer"
-              onClick={handleRetencion}
+              onClick={handleTributosModal}
             >
-              <p className="text-blue">Agregar retención</p>
+              <p className="text-blue">Agregar tributo</p>
             </span>
           </span>
         </div>
@@ -85,14 +150,16 @@ export const TablaProductosCreditoFiscal = ({}) => {
         setVisible={setVisibleDeleteModal}
         visible={visibleDeleteModal}
         size={selectedProducts.length}
+        onClick={handlerEliminarItem}
       />
-      <ModalAgregarRetencion
-        setVisible={setVisibleRetencionModal}
-        visible={visibleRetencionModal}
+
+      <ModalAgregarTributo
+        setVisible={setVisibleTributoModal}
+        visible={visibleTributoModal}
       />
 
       <DataTable
-        value={products}
+        value={listProducts}
         tableStyle={{ minWidth: '50rem' }}
         paginator
         rows={5}
@@ -112,20 +179,18 @@ export const TablaProductosCreditoFiscal = ({}) => {
           header={<p className="text-sm">PRODUCTO</p>}
         ></Column>
         <Column
-          body={(rowData: Product) => <p>$ {rowData.precio_unitario}</p>}
+          body={(rowData: ProductosTabla) => <p>$ {rowData.precio_unitario}</p>}
           header={<p className="text-sm">PRECIO UNITARIO</p>}
         ></Column>
         <Column
-          body={(rowData: Product) => <p>$ {rowData.iva_unitario}</p>}
+          body={(rowData: ProductosTabla) => (
+            <p>$ {rowData.iva_unitario.toFixed(2)}</p>
+          )}
           header={<p className="text-sm">IVA UNITARIO</p>}
         ></Column>
         <Column
-          body={(rowData: Product) => <p>$ {rowData.iva_percibido}</p>}
-          header={<p className="text-sm">IVA PERCIBIDO</p>}
-        ></Column>
-        <Column
           header={<p className="text-sm">CANTIDAD</p>}
-          body={(rowData: Product) => (
+          body={(rowData: ProductosTabla) => (
             <InputNumber
               inputId="withoutgrouping"
               value={rowData.cantidad}
@@ -136,30 +201,39 @@ export const TablaProductosCreditoFiscal = ({}) => {
           )}
         />
         <Column
-          header={<p className="text-sm">DESCUENTO(%)</p>}
-          body={(rowData: Product) => (
-            <InputNumber
-              prefix="%"
-              inputId="withoutgrouping"
+          header={<p className="text-sm">DESCUENTO</p>}
+          body={(rowData: ProductosTabla) => (
+            <Dropdown
               value={rowData.descuento}
-              onValueChange={(e: InputNumberValueChangeEvent) =>
-                handleDescuentoChange(e.value ?? 0, rowData.id)
-              }
+              onChange={(e) => handleDescuentoChange(e.value, rowData.id)}
+              options={descuentosList}
+              optionLabel="porcentaje"
+              className="md:w-14rem w-full"
             />
           )}
         />
         <Column
-          body={(rowData: Product) => <p>$ {rowData.total_neto}</p>}
+          body={(rowData: ProductosTabla) => <p>$ {rowData.total_tributos}</p>}
+          header={<p className="text-sm uppercase">TOTAL tributos</p>}
+        ></Column>
+        <Column
+          body={(rowData: ProductosTabla) => (
+            <p>$ {rowData.total_neto.toFixed(2)}</p>
+          )}
           header={<p className="text-sm">TOTAL NETO</p>}
-        ></Column>
+        />
         <Column
-          body={(rowData: Product) => <p>$ {rowData.total_iva}</p>}
+          body={(rowData: ProductosTabla) => (
+            <p>$ {rowData.total_iva.toFixed(2)}</p>
+          )}
           header={<p className="text-sm">TOTAL IVA</p>}
-        ></Column>
+        />
         <Column
-          body={(rowData: Product) => <p>$ {rowData.total_con_iva}</p>}
+          body={(rowData: ProductosTabla) => (
+            <p>$ {rowData.total_con_iva.toFixed(2)}</p>
+          )}
           header={<p className="text-sm">TOTAL CON IVA</p>}
-        ></Column>
+        />
       </DataTable>
     </>
   );

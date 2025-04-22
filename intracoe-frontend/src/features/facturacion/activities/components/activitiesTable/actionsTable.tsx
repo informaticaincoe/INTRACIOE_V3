@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { IoEyeOutline } from 'react-icons/io5';
 import { MdDeleteOutline } from 'react-icons/md';
 import { RiEdit2Line } from 'react-icons/ri';
 import { DeleteModal } from '../modales/deleteModal';
 import { ViewModal } from '../modales/viewModal';
-import { EditModal } from '../modales/editModal';
+import { EditModal } from '../../../../../shared/modales/editModal';
 import { ActivitiesData } from '../../../../../shared/interfaces/interfaces';
 
 type ActionsProps = {

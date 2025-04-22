@@ -12,7 +12,7 @@ from .models import (INCOTERMS, ActividadEconomica, NumeroControl, FacturaElectr
                            TipoInvalidacion, TipoPersona, TipoTransmision, TipoContingencia, TipoRetencionIVAMH, 
                            TipoGeneracionDocumento, TipoTransporte, TiposDocIDReceptor, TiposEstablecimientos, 
                            TiposServicio_Medico, CondicionOperacion, FormasPago, Plazo,
-                            Descuento, DetalleFactura, TipoMoneda, TipoUnidadMedida, EventoInvalidacion)
+                            Descuento, DetalleFactura, TipoMoneda, TipoUnidadMedida, EventoInvalidacion, EventoContingencia, LoteContingencia, representanteEmisor)
 
 
 # Lista de todos los modelos a registrar
@@ -21,6 +21,15 @@ models = [
     TipoDonacion, TipoPersona, TipoTransporte, INCOTERMS, TipoDomicilioFiscal, Descuento,
     TipoMoneda, TipoUnidadMedida,
 ]
+
+@admin.register(LoteContingencia)
+class LoteContingencia(admin.ModelAdmin):
+    list_display = ('id', 'recibido_mh')
+    
+@admin.register(EventoContingencia)
+class EventoContingencia(admin.ModelAdmin):
+    list_display = ('id', 'codigo_generacion', 'sello_recepcion', 'finalizado', 'recibido_mh', 'rechazado', 'fecha_transmision', 'fecha_modificacion', 'hora_modificacion')
+    search_fields = ('codigo_generacion', 'sello_recepcion')
 
 @admin.register(EventoInvalidacion)
 class EventoInvalidacion(admin.ModelAdmin):
@@ -35,7 +44,7 @@ class DetalleFacturaAdmin(admin.ModelAdmin):
 
 @admin.register(NumeroControl)
 class NumeroControlAdmin(admin.ModelAdmin):
-    list_display = ('anio', 'secuencia')
+    list_display = ('anio', 'secuencia', 'tipo_dte')
     ordering = ('-anio',)
     search_fields = ('anio',)
 
@@ -51,7 +60,7 @@ class FacturaElectronicaAdmin(admin.ModelAdmin):
     )
     list_filter = ('firmado', 'fecha_emision')
     search_fields = ('numero_control', 'codigo_generacion')
-    readonly_fields = ('numero_control', 'codigo_generacion', 'fecha_emision', 'hora_emision')
+    readonly_fields = ('numero_control', 'codigo_generacion', 'fecha_emision', 'hora_emision', 'fecha_modificacion', 'hora_modificacion')
     # Excluir el campo 'id' ya que no es editable y no forma parte del formulario
     fields = [f.name for f in FacturaElectronica._meta.fields if f.name != "id"]
 
@@ -66,6 +75,7 @@ class ActividadEconomicaAdmin(admin.ModelAdmin):
 admin.site.register(ActividadEconomica, ActividadEconomicaAdmin)
 
 admin.site.register(Emisor_fe)
+admin.site.register(representanteEmisor)
 
 admin.site.register(Receptor_fe)
 
@@ -176,3 +186,5 @@ class Token_dataAdmin(admin.ModelAdmin):
     #list_filter = ('created_at')
 
 admin.site.register(Token_data, Token_dataAdmin)
+
+

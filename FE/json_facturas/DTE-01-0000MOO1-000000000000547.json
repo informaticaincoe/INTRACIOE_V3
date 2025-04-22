@@ -1,0 +1,116 @@
+{
+    "identificacion": {
+        "version": 1,
+        "ambiente": "01",
+        "tipoDte": "01",
+        "numeroControl": "DTE-01-0000MOO1-000000000000547",
+        "codigoGeneracion": "B06B7809-62CE-473A-B950-072FEBFB6A79",
+        "tipoModelo": 1,
+        "tipoOperacion": 1,
+        "tipoContingencia": null,
+        "motivoContin": null,
+        "fecEmi": "2025-04-01",
+        "horEmi": "11:40:32",
+        "tipoMoneda": "USD"
+    },
+    "documentoRelacionado": null,
+    "emisor": {
+        "nit": "06142811001040",
+        "nrc": "1278913",
+        "nombre": "Inversiones Comerciales Escobar SA de CV",
+        "codActividad": "46375",
+        "descActividad": "Venta al por mayor de productos lacteos",
+        "nombreComercial": "Inversiones Comerciales Escobar SA de CV",
+        "tipoEstablecimiento": "02",
+        "direccion": {
+            "departamento": "05",
+            "municipio": "19",
+            "complemento": "Carretera a Sonsonate, km 27 ½ Zona Industrial Lourdes, Calle Antigua Hda, La Libertad, El Salvador C.A"
+        },
+        "telefono": "77462310",
+        "correo": "informatica@grupoincoe.com",
+        "codEstableMH": "M001",
+        "codEstable": "0001",
+        "codPuntoVentaMH": "P001",
+        "codPuntoVenta": "0001"
+    },
+    "receptor": {
+        "nombre": "Dominick Norberto Hernandez Alfaro",
+        "codActividad": "47816",
+        "descActividad": "Venta al por menor de bebidas",
+        "direccion": {
+            "departamento": "05",
+            "municipio": "25",
+            "complemento": "final 2 calle pte p´sj 4 block o urb el sauce"
+        },
+        "telefono": "60447435",
+        "correo": "informatica@grupoincoe.com",
+        "nrc": "3228055",
+        "tipoDocumento": "36",
+        "numDocumento": "062280967"
+    },
+    "otrosDocumentos": null,
+    "ventaTercero": null,
+    "cuerpoDocumento": [
+        {
+            "numItem": 1,
+            "tipoItem": 1,
+            "numeroDocumento": null,
+            "codigo": "PCH456",
+            "codTributo": null,
+            "descripcion": "Leche entera de 250g",
+            "cantidad": 1.0,
+            "uniMedida": 59,
+            "precioUni": 1.41,
+            "montoDescu": 0.0,
+            "ventaNoSuj": 0.0,
+            "ventaExenta": 0.0,
+            "ventaGravada": 1.41,
+            "tributos": null,
+            "psv": 1.41,
+            "noGravado": 0.0,
+            "ivaItem": 0.16
+        }
+    ],
+    "resumen": {
+        "totalNoSuj": 0.0,
+        "totalExenta": 0.0,
+        "totalGravada": 1.41,
+        "subTotalVentas": 1.41,
+        "descuNoSuj": 0.0,
+        "descuExenta": 0.0,
+        "descuGravada": 0.0,
+        "porcentajeDescuento": 0.0,
+        "totalDescu": 0.0,
+        "subTotal": 1.41,
+        "ivaRete1": 0.0,
+        "reteRenta": 0.0,
+        "montoTotalOperacion": 1.41,
+        "totalNoGravado": 0.0,
+        "totalPagar": 1.41,
+        "totalLetras": "Uno con 41/100 USD",
+        "saldoFavor": 0.0,
+        "condicionOperacion": 1,
+        "pagos": [
+            {
+                "codigo": "01",
+                "montoPago": 1.41,
+                "referencia": null,
+                "plazo": null,
+                "periodo": null
+            }
+        ],
+        "numPagoElectronico": null,
+        "tributos": null,
+        "totalIva": 0.16
+    },
+    "extension": {
+        "nombEntrega": null,
+        "docuEntrega": null,
+        "nombRecibe": null,
+        "docuRecibe": null,
+        "observaciones": "",
+        "placaVehiculo": null
+    },
+    "apendice": null
+}
