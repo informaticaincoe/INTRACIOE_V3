@@ -305,7 +305,6 @@ urlpatterns = [
     # path('api/facturas/clientes/', TopClientes.as_view(), name='Top-clientes'),
     # path('api/facturas/productos/', TopProductosAPIView.as_view(), name='Top-productos'),
 
-
     #----------- EMISOR / RECEPTOR -----------#
     path('api/emisor/', EmisorListAPIView.as_view(), name='emisor_list_api'),
     path('api/emisor/editar/<int:pk>/', EmisorUpdateAPIView.as_view(), name='emisor_list_api'),
