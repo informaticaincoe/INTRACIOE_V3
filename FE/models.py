@@ -487,7 +487,7 @@ class LoteContingencia(models.Model):
     #estado = models.BooleanField(default=False)
     #cantidad_lote = models.IntegerField(null=True, verbose_name=None)
     factura = models.ForeignKey(FacturaElectronica, on_delete=models.CASCADE, null=True, blank=True, related_name='lotes_factura')
-    evento = models.ForeignKey(EventoContingencia, on_delete=models.CASCADE, null=True, blank=True, related_name='lotes_evento')
+    evento = models.ForeignKey(EventoContingencia, on_delete=models.CASCADE, null=True, blank=True, related_name='lotes_contingencia')
     finalizado = models.BooleanField(default=False)
     
     #Auditoria
