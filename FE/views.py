@@ -3212,7 +3212,7 @@ def contingencia_list(request):
     dtelist     = paginator.get_page(page_number)
 
     # 4) Construir lotes_por_evento
-    lotes_por_evento = {}
+    eventos_con_lotes = {}
     for evento in dtelist:
         lotes = evento.lotes_contingencia.all()  # ya viene precargado
         eventos_con_lotes[evento.id] = []
@@ -3242,7 +3242,7 @@ def contingencia_list(request):
     return render(request, 'documentos/dte_contingencia_list.html', {
         'dtelist': dtelist,
         'tipos_dte': tipos_dte,
-        'lotes_por_evento': lotes_por_evento,
+        'eventos_con_lotes': eventos_con_lotes,
     })
 
 # GENERA EL JSON DE CONTINGENCIA - ESTE NO
