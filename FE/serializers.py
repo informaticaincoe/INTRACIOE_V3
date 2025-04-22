@@ -4,7 +4,9 @@ from .models import (
     INCOTERMS,
     Departamento,
     Descuento,
+    EventoContingencia,
     FormasPago,
+    LoteContingencia,
     OtrosDicumentosAsociado,
     Pais,
     Plazo,
@@ -273,3 +275,27 @@ class DescuentoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Descuento
         fields = '__all__'
+
+
+##############################################################################
+# SERIALIZER PARA CONTINGENCIAS
+##############################################################################
+
+class LoteContingenciaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LoteContingencia
+        fields = '__all__'
+
+class EventoContingenciaSerializer(serializers.ModelSerializer):
+    factura = FacturaElectronicaSerializer(many=True, read_only=True)
+    lotes   = LoteContingenciaSerializer(source='lotes_evento', many=True, read_only=True)
+
+    class Meta:
+        model = EventoContingencia
+        fields = [
+            'id',
+            'recibido_mh',
+            'sello_recepcion',
+            'factura',
+            'lotes',
+        ]
