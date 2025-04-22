@@ -506,6 +506,11 @@ export interface TableListadoFacturasContainerProps {
 
 export interface Perfil {
   usuario: string;
-  constraseña: string;
+  correo: string;
   descripcion: string;
+}
+
+export interface password {
+  password: string;
+  confirmPassword: string;
 }
