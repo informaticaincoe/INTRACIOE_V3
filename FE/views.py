@@ -3212,8 +3212,7 @@ def contingencia_list(request):
     dtelist     = paginator.get_page(page_number)
 
     # 4) Construir lotes_por_evento
-    eventos_con_lotes = {}
-    eventos_con_lotes = []
+    lotes_por_evento = {}
     for evento in dtelist:
         lotes = evento.lotes_contingencia.all()  # ya viene precargado
         eventos_con_lotes[evento.id] = []
@@ -3239,14 +3238,14 @@ def contingencia_list(request):
 
     # 5) Tipos de DTE para el filtro
     tipos_dte = Tipo_dte.objects.filter(codigo__in=DTE_APLICA_CONTINGENCIA)
-    print("lote contingencia: ", eventos_con_lotes)
+
     return render(request, 'documentos/dte_contingencia_list.html', {
         'dtelist': dtelist,
         'tipos_dte': tipos_dte,
-        'eventos_con_lotes': eventos_con_lotes,
+        'lotes_por_evento': lotes_por_evento,
     })
 
-
+# GENERA EL JSON DE CONTINGENCIA - ESTE NO
 def generar_json_contingencia(evento_contingencia_id, emisor, detalles):
     evento_contingencia = EventoContingencia.objects.get(id=evento_contingencia_id)
     print("Generar json contingencia: ", evento_contingencia)
@@ -3298,6 +3297,7 @@ def generar_json_contingencia(evento_contingencia_id, emisor, detalles):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+# ENVIA LA CONTINGENCIA 1 A 1
 @csrf_exempt
 def contingencia_dte_unificado_view(request):
     try:
@@ -3378,7 +3378,7 @@ def contingencia_dte_unificado_view(request):
         print(f"Error en el proceso unificado: {e}")
         return JsonResponse({"error": str(e)}, status=400)
 
-    
+# ENVIA TODAS LAS CONTINGENCIAS SELECCIONADAS EN LA TABLA
 @csrf_exempt
 def contingencias_dte_view(request):
     if request.method == "POST":
@@ -3441,8 +3441,9 @@ def contingencias_dte_view(request):
         return JsonResponse({"results": results})
     else:
         return JsonResponse({"error": "Método no permitido"}, status=405)
-    
-@csrf_exempt    
+
+# GENERA EL EVENTO DE CONTINGENCIA
+@csrf_exempt
 def contingencia_dte_view(request, contingencia_id):
     print("Generar vista contingencia: id: ", contingencia_id)
     # Generar json, firmar, enviar a MH
@@ -3543,6 +3544,7 @@ def contingencia_dte_view(request, contingencia_id):
         print(f"Error al generar el evento de contingencia: {e}")
         return JsonResponse({"error": str(e)}, status=400)
 
+# FIRMAR EL JSON CONTINGENCIA
 @csrf_exempt
 def firmar_contingencia_view(request, contingencia_id):
     """
