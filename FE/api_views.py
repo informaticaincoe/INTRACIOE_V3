@@ -38,6 +38,9 @@ from .models import (
 from INVENTARIO.models import Producto, TipoItem, TipoTributo, Tributo, UnidadMedida
 from django.db.models import Q
 from django.core.paginator import Paginator  # esta sigue igual
+from rest_framework.test import APIRequestFactory
+from django.forms.models import model_to_dict
+from rest_framework.response import Response
 
 FIRMADOR_URL = "http://192.168.2.25:8113/firmardocumento/"
 DJANGO_SERVER_URL = "http://127.0.0.1:8000"
@@ -936,24 +939,25 @@ class FacturaListAPIView(APIView):
         
         return Response(data, status=status.HTTP_200_OK)
 
-def ProductoListAPIView(request):
-    print("Listado de productos API, ",request)
+class ProductoListAPIView(APIView):
     global tipo_documento_dte
-    
-    def post(self, request, format=None):
+
+    def get(self, request, format=None):
         print("request listado de productos: ", request)
+
         documento_ajuste = request.query_params.get('documento_ajuste', False)
         if documento_ajuste:
             tipo_documento_dte = request.GET.get('tipo_documento_dte', '05')
         else:
             tipo_documento_dte = request.GET.get('tipo_documento_dte', '01')
-            
+
         tipo_dte_obj = Tipo_dte.objects.get(codigo=tipo_documento_dte)
-        productos = list(Producto.objects.all().values())
-        tipoItems = list(TipoItem.objects.all().values())
-        descuentos = list(Descuento.objects.all().values())
+        productos = Producto.objects.all()  # No incluye la imagen
         
-        print("productoslist: ", productos)
+        descuentos = list(Descuento.objects.all().values())
+        tipoItems = list(TipoItem.objects.all().values())
+        productos_modificados = []
+
         if productos:
             #recorrer todos los productos y mostrarlos con IVA si aplica
             for producto in productos:
@@ -968,13 +972,14 @@ def ProductoListAPIView(request):
                     else:
                         producto.preunitario = (producto.preunitario).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
 
-        # Si no es una solicitud AJAX, se devuelve la página completa
-        context = {
-            'productos': list(productos.values()),
-            'tipoItems': tipoItems,
-            'descuentos': descuentos
-        }
-        #return Response(context, status=status.HTTP_200_OK)
+                #Excluir el campo "imagen" de la lista
+                productos_modificados.append(producto)
+
+        # Convertir los productos a diccionario, excluyendo la imagen
+        productos_dict = [model_to_dict(producto, exclude=['imagen']) for producto in productos_modificados]
+
+        #Retornar los productos modificados temporalmente
+        return Response(productos_dict, status=200)
 
 class GenerarFacturaAPIView(APIView):
     """
@@ -1004,7 +1009,7 @@ class GenerarFacturaAPIView(APIView):
         else:
             nuevo_numero = ""
         
-        codigo_generacion = self.cod_generacion
+        codigo_generacion = cod_generacion = str(uuid.uuid4()).upper()#self.cod_generacion
         fecha_generacion = timezone.now().date()
         hora_generacion = timezone.now().strftime('%H:%M:%S')
 
@@ -1020,8 +1025,13 @@ class GenerarFacturaAPIView(APIView):
         receptores = list(Receptor_fe.objects.values("id", "num_documento", "nombre"))
         # Se convierten los querysets a listas de diccionarios
         #productos = list(Producto.objects.all().values())
-        productos = ProductoListAPIView(request)
-        print("Productos: ", productos)
+        
+        #1.Llamar al listado de productos(simular un request GET), 2.Crear una instancia de APIRequestFactory(para solicitudes http), enviar parametros
+        request = APIRequestFactory().get('/api/productos/', {'documento_ajuste': 'False', 'tipo_documento_dte': '01'})
+        vista = ProductoListAPIView.as_view() #Obtener instancia para manejar la solicitud http
+        response = vista(request) #Simular la solicitud http (request) usando una vista
+        productos = response.data #Obtener los datos de la respuesta
+        
         tipooperaciones = list(CondicionOperacion.objects.all().values())
         tipoDocumentos = list(Tipo_dte.objects.all().values())
         tipoItems = list(TipoItem.objects.all().values())
@@ -1118,6 +1128,7 @@ class GenerarFacturaAPIView(APIView):
             cantidades = data.get('cantidades', [])
             #Obtener el descuento agregado en los productos
             descuentos_aplicados = data.get("descuento_select", [])
+            print("descuento select: ", descuentos_aplicados)
             # En este caso, se asume que el descuento por producto es 0 (se aplica globalmente)
             
             nombre_responsable = data.get("nombre_responsable", None)
@@ -1220,7 +1231,9 @@ class GenerarFacturaAPIView(APIView):
                 else:
                     cantidad = int(cantidades[index]) if index < len(cantidades) else 1
                     
-                porcentaje_descuento_producto = descuentos_aplicados[index] if index < len(descuentos_aplicados) else 1
+                print("descuento apl: ", descuentos_aplicados, "index: ", index)
+                porcentaje_descuento_producto = descuentos_aplicados[index] if index < len(descuentos_aplicados) else 0.0
+                print("descuento prod: ", porcentaje_descuento_producto)
                 precio_incl = producto.preunitario
                 
                 #Campo tributos
@@ -1262,17 +1275,18 @@ class GenerarFacturaAPIView(APIView):
                 precio_neto = Decimal(precio_neto)          
                 iva_unitario = (precio_incl - precio_neto).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
                 
+                print("descuento producto: ", porcentaje_descuento_producto)
                 if porcentaje_descuento_producto:
                     porcentaje_descuento_item = Descuento.objects.get(porcentaje=(porcentaje_descuento_producto * 100))
                 else:
                     porcentaje_descuento_item = Descuento.objects.first()
-                    
+                print("porcentaje descuento: ", porcentaje_descuento_item.porcentaje)
                 descuento_porcentaje = (porcentaje_descuento_item.porcentaje / 100).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
                 if porcentaje_descuento_item.porcentaje > Decimal("0.00"):
                     descuento_aplicado=True
                 else:
                     descuento_aplicado = False
-                
+                print("porcentaje item: ", descuento_porcentaje)
                 # Totales por ítem
                 #Campo Ventas gravadas
                 if monto_descuento:
@@ -1554,7 +1568,12 @@ class GenerarDocumentoAjusteAPIView(APIView):
 
             receptores = list(Receptor_fe.objects.values("id", "num_documento", "nombre"))
             #productos = list(Producto.objects.all().values())
-            productos = obtener_listado_productos_view(request)
+            #1.Llamar al listado de productos(simular un request GET), 2.Crear una instancia de APIRequestFactory(para solicitudes http), enviar parametros
+            request = APIRequestFactory().get('/api/productos/', {'documento_ajuste': 'False', 'tipo_documento_dte': '01'})
+            vista = ProductoListAPIView.as_view() #Obtener instancia para manejar la solicitud http
+            response = vista(request) #Simular la solicitud http (request) usando una vista
+            productos = response.data #Obtener los datos de la respuesta
+            
             tipooperaciones = list(CondicionOperacion.objects.all().values())
             tipoDocumentos = list(Tipo_dte.objects.filter( Q(codigo=COD_NOTA_CREDITO) | Q(codigo=COD_NOTA_DEBITO)).values())
             tipoItems = list(TipoItem.objects.all().values())
@@ -1619,6 +1638,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
             else:
                 documento_relacionado = documento_relacionado.upper()
             porcentaje_descuento = data.get("descuento_select", "0")
+            print("descuento select: ", porcentaje_descuento)
             porcentaje_descuento_producto = 0
             if porcentaje_descuento:
                 porcentaje_descuento_producto = porcentaje_descuento.replace(",", ".")
