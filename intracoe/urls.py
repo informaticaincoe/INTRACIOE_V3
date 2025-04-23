@@ -21,4 +21,5 @@ urlpatterns = [
 
     # Incluir las rutas de la API (asegúrate de ajustar 'fe.urls' al nombre correcto de tu app)
     path('api/', include('FE.urls_api')),
+    path('api/autenticacion/', include('AUTENTICACION.urls_api')),
 ]

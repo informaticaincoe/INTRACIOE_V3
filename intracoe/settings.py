@@ -102,6 +102,12 @@ REST_FRAMEWORK = {
     ),
 }
 
+# Caducidad de la cookie de sesión: 5 minutos
+SESSION_COOKIE_AGE = 300  
+
+# Renueva la cookie en cada petición
+SESSION_SAVE_EVERY_REQUEST = True
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -121,6 +127,7 @@ INSTALLED_APPS = [
     'INFORMATICA',
     'INVENTARIO',
     'corsheaders',
+    'AUTENTICACION',
 ]
 
 MIDDLEWARE = [
