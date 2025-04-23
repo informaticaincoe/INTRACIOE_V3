@@ -1,42 +1,11 @@
 from rest_framework import serializers
-
+from django.contrib.auth import authenticate
+from django.contrib.auth.models import User
 from .models import (
-    INCOTERMS,
-    Departamento,
-    Descuento,
-    EventoContingencia,
-    FormasPago,
-    LoteContingencia,
-    OtrosDicumentosAsociado,
-    Pais,
-    Plazo,
-    TipoContingencia,
-    TipoDocContingencia,
-    TipoDomicilioFiscal,
-    TipoDonacion,
-    TipoPersona,
-    TipoRetencionIVAMH,
-    TipoTransmision,
-    TipoTransporte,
-    TiposServicio_Medico,
-    Token_data,
-    Ambiente,
-    CondicionOperacion,
-    DetalleFactura,
-    FacturaElectronica,
-    Modelofacturacion,
-    NumeroControl,
-    Emisor_fe,
-    ActividadEconomica,
-    Receptor_fe,
-    Tipo_dte,
-    TipoMoneda,
-    TipoUnidadMedida,
-    TiposDocIDReceptor,
-    Municipio,
-    EventoInvalidacion,
-    TipoInvalidacion,
-    TiposEstablecimientos,
+    INCOTERMS, Departamento, Descuento, EventoContingencia, FormasPago, LoteContingencia, OtrosDicumentosAsociado, Pais, Plazo, TipoContingencia,
+    TipoDocContingencia, TipoDomicilioFiscal, TipoDonacion, TipoPersona, TipoRetencionIVAMH, TipoTransmision, TipoTransporte, TiposServicio_Medico,
+    Token_data, Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica,
+    Receptor_fe, Tipo_dte, TipoMoneda, TipoUnidadMedida, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos,
     TipoGeneracionDocumento
 )
 from INVENTARIO.models import Producto, TipoItem, TipoTributo, Tributo
@@ -52,6 +21,43 @@ class AuthResponseSerializer(serializers.Serializer):
     roles = serializers.ListField(
         child=serializers.CharField(), required=False, allow_empty=True
     )
+
+### SERIALIZER DE AUTENTICACION O LOGIN Y CAMBIO DE CONTRASEÑA
+
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        user = authenticate(
+            username=data.get('username'),
+            password=data.get('password')
+        )
+        if not user:
+            raise serializers.ValidationError("Credenciales inválidas")
+        if not user.is_active:
+            raise serializers.ValidationError("Usuario inactivo")
+        data['user'] = user
+        return data
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True)
+
+    def validate_old_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("La contraseña antigua es incorrecta")
+        return value
+
+    def save(self, **kwargs):
+        user = self.context['request'].user
+        user.set_password(self.validated_data['new_password'])
+        user.save()
+        return user
+
+
+#########################################
 
 # Serializador para Emisor_fe
 class EmisorSerializer(serializers.ModelSerializer):
