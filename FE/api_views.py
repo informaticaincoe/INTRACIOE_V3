@@ -1166,7 +1166,7 @@ class GenerarFacturaAPIView(APIView):
             documento_responsable = data.get("documento_responsable", None)
             
             print(f"parametro num control: {numero_control}, tipo dte: {tipo_dte}")
-            if numero_control:
+            if not numero_control:
                 numero_control = NumeroControl.obtener_numero_control(tipo_dte)
                 print("Numero control asignado: ", numero_control)
             if not codigo_generacion:
@@ -2611,7 +2611,7 @@ class ContingenciaListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         qs = EventoContingencia.objects.prefetch_related(
-            'lotes_de_factura', 'lotes_de_factura__tipo_dte', 'lotes_contingencia'
+            'lotes_contingencia__factura', 'lotes_contingencia__factura__tipo_dte', 'lotes_contingencia'
         ).order_by('id')
 
         recibido = self.request.query_params.get('recibido_mh')
