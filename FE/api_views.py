@@ -972,7 +972,8 @@ class GenerarFacturaAPIView(APIView):
             nuevo_numero = NumeroControl.preview_numero_control(tipo_dte)
         else:
             nuevo_numero = ""
-        codigo_generacion = str(uuid.uuid4()).upper()
+        print("Numero de control: ", nuevo_numero)
+        codigo_generacion = str(uuid.uuid4()).upper()#self.cod_generacion
         fecha_generacion = timezone.now().date()
         hora_generacion = timezone.now().strftime('%H:%M:%S')
 
@@ -1071,8 +1072,10 @@ class GenerarFacturaAPIView(APIView):
             nombre_responsable = data.get("nombre_responsable", None)
             documento_responsable = data.get("documento_responsable", None)
             
+            print(f"parametro num control: {numero_control}, tipo dte: {tipo_dte}")
             if numero_control:
                 numero_control = NumeroControl.obtener_numero_control(tipo_dte)
+                print("Numero control asignado: ", numero_control)
             if not codigo_generacion:
                 codigo_generacion = str(uuid.uuid4()).upper()
 
@@ -2515,7 +2518,7 @@ class ContingenciaListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         qs = EventoContingencia.objects.prefetch_related(
-            'factura', 'factura__tipo_dte', 'lotes_evento'
+            'lotes_de_factura', 'lotes_de_factura__tipo_dte', 'lotes_contingencia'
         ).order_by('id')
 
         recibido = self.request.query_params.get('recibido_mh')
