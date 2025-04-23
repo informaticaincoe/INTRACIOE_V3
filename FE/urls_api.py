@@ -334,6 +334,10 @@ urlpatterns = [
         name='lote-contingencia-dte'
     ),
 
-
+    # Dashboard
+    path('api/dashboard/totales-por-tipo/', TotalesPorTipoDTE.as_view(), name='totales-por-tipo'),
+    path('api/dashboard/totales-ventas/', TotalVentasAPIView.as_view(), name='total-ventas'),
+    path('api/dashboard/clientes/', TopClientes.as_view(), name='Top-clientes'),
+    path('api/dashboard/productos/', TopProductosAPIView.as_view(), name='Top-productos'),
 
 ]
