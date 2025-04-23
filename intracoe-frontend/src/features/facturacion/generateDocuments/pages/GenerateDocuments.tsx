@@ -173,12 +173,12 @@ export const GenerateDocuments = () => {
 
     console.log('dataFECF', dataFECF);
 
-    // try {
-    //   const response = await generarFacturaService(dataFECF);
-    //   firmarFactura(response.factura_id);
-    // } catch (error) {
-    //   console.log(error);
-    // }
+    try {
+      const response = await generarFacturaService(dataFECF);
+      firmarFactura(response.factura_id);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const firmarFactura = async (id: string) => {
