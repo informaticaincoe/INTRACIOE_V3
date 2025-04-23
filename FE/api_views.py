@@ -2827,7 +2827,50 @@ class LoteContingenciaDteAPIView(APIView):
             status=status.HTTP_201_CREATED
         )
     
-
+# Dashboard
+class TotalesPorTipoDTE(generics.ListAPIView):
+    def get(self, request):
+        data = (
+            FacturaElectronica.objects.values('tipo_dte', 'tipo_dte__codigo' ).annotate(total=Count('id')).filter(recibido_mh=True) 
+        )
+        return Response({"totales_por_tipo": list(data)})
+ 
+ 
+class TotalVentasAPIView(generics.ListAPIView):
+    def get(self, request):
+        resultado = (
+            FacturaElectronica.objects
+          .filter(recibido_mh=True)
+            .aggregate(total_ventas=Sum('total_pagar'))
+        )
+         
+         # Devuelve 0 si no hay resultados
+        total = resultado['total_ventas'] or 0
+ 
+        return Response({"total_ventas": total})
+ 
+class TopClientes(APIView):
+    def get(self, request):
+        data = (
+            FacturaElectronica.objects
+          .filter(recibido_mh=True)
+            .values('dtereceptor', 'dtereceptor__nombre')  # Agrupamos por cliente
+            .annotate(total_ventas=Sum('total_pagar'))  # Sumamos total_pagar por cliente
+            .order_by('-total_ventas')[:3]  # Top 3
+        )
+ 
+        return Response({"clientes": list(data)})
+ 
+class TopProductosAPIView(generics.ListAPIView):
+    def get(self, request):
+        data = (
+            DetalleFactura.objects
+          .values('producto', 'producto__descripcion')  # Agrupamos por producto
+            .annotate(total_vendido=Sum('cantidad'))  # Sumar cantidades
+             .order_by('-total_vendido')[:3]  # Top 3
+        )
+ 
+        return Response({"productos": list(data)})
 
 
     

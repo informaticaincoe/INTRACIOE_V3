@@ -1,4 +1,3 @@
-import React from 'react'
 import { WhiteCard } from '../whiteCard'
 import { Statistic, StatisticProps } from 'antd'
 import { CiFileOn } from 'react-icons/ci'
@@ -14,7 +13,7 @@ export const TotalFacturasEmitidasCard = () => {
             separator=","
         >
             {({ countUpRef }) => (
-                <span style={{ fontSize: '1.75rem', fontWeight: '600', height: '100%' }}>
+                <span style={{ fontSize: '2rem', fontWeight: '600', height: '100%' }}>
                     <span ref={countUpRef} />
                 </span>
             )}
@@ -32,6 +31,7 @@ export const TotalFacturasEmitidasCard = () => {
                     <CiFileOn size={24} color={'#FCC587'} />
                 </span>
             </div>
+            
         </WhiteCard>
     )
 }

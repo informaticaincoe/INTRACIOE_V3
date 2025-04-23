@@ -269,4 +269,5 @@ class EventoContingenciaSerializer(serializers.ModelSerializer):
             'sello_recepcion',
             'factura',
             'lotes',
+            'codigo_generacion',
         ]
