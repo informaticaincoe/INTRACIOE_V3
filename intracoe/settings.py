@@ -26,7 +26,22 @@ SECRET_KEY = 'django-insecure--t^=e+nnmjaah90onb$_&@5(kv1-_c!sjr^y1vov!(v0!5wa$a
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS=['*']               
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',  # Asegúrate de que esta URL esté incluida
+    'http://localhost:5174',  # Asegúrate de que esta URL esté incluida
+    
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_HEADERS = [
+    'content-type',
+    'authorization',
+    'accept',
+    # otros encabezados que necesites
+]
 
 CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:8000',
@@ -38,6 +53,11 @@ CSRF_TRUSTED_ORIGINS = [
     'https://intracoe.incoe.cloud',
     'http://intracoe.incoe.cloud',
     'https://192.168.100.81',
+    'http://localhost:5173',  # Puerto de tu frontend (React)
+    'http://127.0.0.1:5173',  # Alternativa para localhost
+    'http://localhost:5174',  # Puerto de tu frontend (React)
+    'http://127.0.0.1:5174',  # Alternativa para localhost
+    
 ]
 
 ## CONFIGURACION DE CORREOS ##############################
@@ -81,19 +101,21 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'widget_tweaks',
+    'django_select2',
     'RRHH',
     'FE',
     'CONTABILIDAD',
     'INFORMATICA',
-    'rest_framework',
-    'FE.dte',
-    'widget_tweaks',
-    'django_select2',
+    'INVENTARIO',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -113,6 +135,7 @@ TEMPLATES = [
             os.path.join(BASE_DIR, 'RRHH/templates'),
             os.path.join(BASE_DIR, 'CONTABILIDAD/templates'),
             os.path.join(BASE_DIR, 'INFORMATICA/templates'),
+            os.path.join(BASE_DIR, 'INVENTARIO/templates'),
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -207,3 +230,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+# REST_FRAMEWORK = {
+#     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+#     'PAGE_SIZE': 10  # Número de facturas por página
+# }

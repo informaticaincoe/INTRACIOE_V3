@@ -4,13 +4,13 @@
         "ambiente": "01",
         "tipoDte": "01",
         "numeroControl": "DTE-01-0000MOO1-000000000000127",
-        "codigoGeneracion": "C1BBDB88-F44E-4F36-9213-D355561AAB3D",
+        "codigoGeneracion": "98AF99C1-1757-41C6-826B-4AF363DD6625",
         "tipoModelo": 1,
         "tipoOperacion": 1,
         "tipoContingencia": null,
         "motivoContin": null,
-        "fecEmi": "2025-03-03",
-        "horEmi": "15:09:24",
+        "fecEmi": "2025-03-06",
+        "horEmi": "13:44:19",
         "tipoMoneda": "USD"
     },
     "documentoRelacionado": null,
@@ -35,9 +35,6 @@
         "codPuntoVenta": "0001"
     },
     "receptor": {
-        "tipoDocumento": "36",
-        "numDocumento": "06142802961066",
-        "nrc": null,
         "nombre": "Francisco Antonio Flores",
         "codActividad": "24310",
         "descActividad": "undición de hierro y acero",
@@ -47,7 +44,10 @@
             "complemento": "Carretera a Sonsonate, km 27 ½ Zona Industrial Lourdes, Calle Antigua Hda, La Libertad, El Salvador C.A"
         },
         "telefono": "604477435",
-        "correo": "juniorfran@hotmail.es"
+        "correo": "juniorfran@hotmail.es",
+        "nrc": null,
+        "tipoDocumento": "36",
+        "numDocumento": "06142802961066"
     },
     "otrosDocumentos": null,
     "ventaTercero": null,
@@ -69,7 +69,7 @@
             "tributos": null,
             "psv": 0.0,
             "noGravado": 0.0,
-            "ivaItem": 57.86
+            "ivaItem": 0.98
         }
     ],
     "resumen": {
@@ -85,16 +85,16 @@
         "subTotal": 8.5,
         "ivaRete1": 0.0,
         "reteRenta": 0.0,
-        "montoTotalOperacion": 8.5,
         "totalNoGravado": 0.0,
-        "totalPagar": 8.5,
         "totalLetras": "Ocho con 50/100 USD",
-        "totalIva": 0.0,
         "saldoFavor": 0.0,
         "condicionOperacion": 1,
         "pagos": null,
+        "numPagoElectronico": null,
         "tributos": null,
-        "numPagoElectronico": null
+        "totalIva": 0.98,
+        "montoTotalOperacion": 8.5,
+        "totalPagar": 8.5
     },
     "extension": {
         "nombEntrega": null,

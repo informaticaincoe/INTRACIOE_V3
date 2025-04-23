@@ -1,0 +1,118 @@
+def generar_json_doc_ajuste(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_documento, observaciones, documentos_relacionados, contingencia, total_gravada):
+    print("-Inicio llenar json")
+    try:
+        
+        #Resumen tributos
+        tributo = Tributo.objects.get(codigo="20")
+        
+        #Llenar json
+        json_identificacion = {
+            "version": int(tipo_dte_obj.version),
+            "ambiente":  str(ambiente_obj.codigo),
+            "tipoDte": str(tipo_dte_obj.codigo),
+            "numeroControl": str(factura.numero_control),
+            "codigoGeneracion": str(factura.codigo_generacion),
+            "tipoModelo": 1,
+            "tipoOperacion": 1,
+            "tipoContingencia": None,
+            "motivoContin": None,
+            "fecEmi": str(factura.fecha_emision),
+            "horEmi": factura.hora_emision.strftime('%H:%M:%S'),
+            "tipoMoneda": str(factura.tipomoneda.codigo) if factura.tipomoneda else "USD"
+        }
+        
+        json_emisor = {
+            "nit": str(emisor.nit),
+            "nrc": str(emisor.nrc),
+            "nombre": str(emisor.nombre_razon_social),
+            "codActividad": str(emisor.actividades_economicas.first().codigo) if emisor.actividades_economicas.exists() else "",
+            "descActividad": str(emisor.actividades_economicas.first().descripcion) if emisor.actividades_economicas.exists() else "",
+            "nombreComercial": str(emisor.nombre_comercial),
+            "tipoEstablecimiento": str(emisor.tipoestablecimiento.codigo) if emisor.tipoestablecimiento else "",
+            "direccion": {
+                "departamento": "05",
+                "municipio": "19",
+                "complemento": emisor.direccion_comercial
+            },
+            "telefono": str(emisor.telefono),
+            "correo": str(emisor.email)
+        }
+        
+        json_receptor = {
+            "nit": str(receptor.num_documento),
+            "nombre": str(receptor.nombre),            
+            "codActividad": str(receptor.actividades_economicas.first().codigo) if receptor.actividades_economicas.exists() else "", #"24310",
+            "descActividad": str(receptor.actividades_economicas.first().descripcion) if receptor.actividades_economicas.exists() else "", #"undición de hierro y acero",
+            "nombreComercial": str(receptor.nombreComercial),
+            "direccion": {
+                "departamento": "05",#str(receptor.departamento.codigo),
+                "municipio": str(receptor.municipio.codigo), #"19",
+                "complemento": receptor.direccion or ""
+            },
+            "telefono": receptor.telefono or "",
+            "correo": receptor.correo or "",
+        }
+        
+        json_resumen = {
+            "totalNoSuj": float(abs(factura.total_no_sujetas)),
+            "totalExenta": float(abs(factura.total_exentas)),
+            "totalGravada": float(abs(factura.total_gravadas)),
+            "subTotalVentas": float(abs(factura.sub_total_ventas)),
+            "descuNoSuj": float(abs(factura.descuen_no_sujeto)),
+            "descuExenta": float(abs(factura.descuento_exento)),
+            "descuGravada": float(abs(factura.descuento_gravado)),
+            "totalDescu": float(abs(factura.total_descuento)),
+            "subTotal": float(abs(factura.sub_total)),
+            "ivaPerci1": float(abs(factura.iva_percibido)),
+            "ivaRete1": float(abs(factura.iva_retenido)),
+            "reteRenta": float(abs(factura.retencion_renta)),
+            "montoTotalOperacion": float(abs(factura.total_operaciones)),
+            "totalLetras": factura.total_letras,
+            "condicionOperacion": int(factura.condicion_operacion.codigo) if factura.condicion_operacion and factura.condicion_operacion.codigo.isdigit() else 1
+        }
+        
+        #Requerido cuando el monto es mayor o igual a $11,428.57
+        json_extension = {
+            "nombEntrega": None,
+            "docuEntrega": None,
+            "nombRecibe": None,
+            "docuRecibe": None,
+            "observaciones": observaciones
+        }
+        
+        json_apendice = None
+        
+        #Modificacion de json en base al tipo dte a generar
+        if receptor is not None:
+            nrc_receptor = None
+            if receptor.nrc is not None and receptor.nrc !="None":
+                nrc_receptor = str(receptor.nrc)
+            json_receptor["nrc"] = nrc_receptor
+        
+        #Calcular el valor total del tributo
+        subTotalVentas = total_gravada
+        valorTributo = ( Decimal(subTotalVentas) * Decimal(tributo.valor_tributo) ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        
+        json_resumen["tributos"] = [
+            {
+            "codigo": str(tributo.codigo),
+            "descripcion": str(tributo.descripcion),
+            "valor": float(valorTributo)
+            }
+        ]
+            
+        json_completo = {
+            "identificacion": json_identificacion,
+            "documentoRelacionado": documentos_relacionados,
+            "emisor": json_emisor,
+            "receptor": json_receptor,
+            "ventaTercero": None,
+            "cuerpoDocumento": cuerpo_documento,
+            "resumen": json_resumen,
+            "extension": json_extension,
+            "apendice": json_apendice
+        }
+        return json_completo
+    except Exception as e:
+            print(f"Error al generar el json de la factura: {e}")
+            return JsonResponse({"error": str(e)}, status=400)

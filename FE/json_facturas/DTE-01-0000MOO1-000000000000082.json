@@ -1,0 +1,110 @@
+{
+    "identificacion": {
+        "version": 1,
+        "ambiente": "01",
+        "tipoDte": "01",
+        "numeroControl": "DTE-01-0000MOO1-000000000000082",
+        "codigoGeneracion": "5C9B8414-5AAB-4C3B-B11C-9739087551D0",
+        "tipoModelo": 1,
+        "tipoOperacion": 1,
+        "tipoContingencia": null,
+        "motivoContin": null,
+        "fecEmi": "2025-03-05",
+        "horEmi": "09:18:08",
+        "tipoMoneda": "USD"
+    },
+    "documentoRelacionado": null,
+    "emisor": {
+        "nit": "06142811001040",
+        "nrc": "1278913",
+        "nombre": "Inversiones Comerciales Escobar SA de CV",
+        "codActividad": "46375",
+        "descActividad": "Venta al por mayor de productos lacteos",
+        "nombreComercial": "Inversiones Comerciales Escobar SA de CV",
+        "tipoEstablecimiento": "02",
+        "direccion": {
+            "departamento": "05",
+            "municipio": "19",
+            "complemento": "Carretera a Sonsonate, km 27 ½ Zona Industrial Lourdes, Calle Antigua Hda, La Libertad, El Salvador C.A"
+        },
+        "telefono": "77462310",
+        "correo": "informatica@grupoincoe.com",
+        "codEstableMH": "M001",
+        "codEstable": "0001",
+        "codPuntoVentaMH": "P001",
+        "codPuntoVenta": "0001"
+    },
+    "receptor": {
+        "tipoDocumento": "36",
+        "numDocumento": "06142802961066",
+        "nit": "06142802961066",
+        "nrc": null,
+        "nombre": "Francisco Antonio Flores",
+        "codActividad": "24310",
+        "descActividad": "undición de hierro y acero",
+        "direccion": {
+            "departamento": "05",
+            "municipio": "19",
+            "complemento": "Carretera a Sonsonate, km 27 ½ Zona Industrial Lourdes, Calle Antigua Hda, La Libertad, El Salvador C.A"
+        },
+        "telefono": "604477435",
+        "correo": "juniorfran@hotmail.es",
+        "nombreComercial": "Francisco Antonio Flores"
+    },
+    "otrosDocumentos": null,
+    "ventaTercero": null,
+    "cuerpoDocumento": [
+        {
+            "numItem": 1,
+            "tipoItem": 1,
+            "numeroDocumento": null,
+            "codigo": "PCH405",
+            "codTributo": null,
+            "descripcion": "leche entera ira 26 250gb",
+            "cantidad": 1.0,
+            "uniMedida": 59,
+            "precioUni": 8.5,
+            "montoDescu": 0.0,
+            "ventaNoSuj": 0.0,
+            "ventaExenta": 0.0,
+            "ventaGravada": 8.5,
+            "tributos": null,
+            "psv": 0.0,
+            "noGravado": 0.0,
+            "ivaItem": 0.98
+        }
+    ],
+    "resumen": {
+        "totalNoSuj": 0.0,
+        "totalExenta": 0.0,
+        "totalGravada": 8.5,
+        "subTotalVentas": 8.5,
+        "descuNoSuj": 0.0,
+        "descuExenta": 0.0,
+        "descuGravada": 0.0,
+        "porcentajeDescuento": 0.0,
+        "totalDescu": 0.0,
+        "subTotal": 8.5,
+        "ivaRete1": 0.0,
+        "reteRenta": 0.0,
+        "montoTotalOperacion": 8.5,
+        "totalNoGravado": 0.0,
+        "totalPagar": 8.5,
+        "totalLetras": "Ocho con 50/100 USD",
+        "totalIva": 0.98,
+        "saldoFavor": 0.0,
+        "condicionOperacion": 1,
+        "pagos": null,
+        "tributos": null,
+        "numPagoElectronico": null
+    },
+    "extension": {
+        "nombEntrega": null,
+        "docuEntrega": null,
+        "nombRecibe": null,
+        "docuRecibe": null,
+        "observaciones": "",
+        "placaVehiculo": null
+    },
+    "apendice": null
+}
