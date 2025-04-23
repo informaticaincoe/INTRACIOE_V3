@@ -258,11 +258,13 @@ class NumeroControl(models.Model):
     @staticmethod
 
     def obtener_numero_control(cod_dte):
+        print("Inicio asignar numero de control: ")
         anio_actual = datetime.now().year
         control, creado = NumeroControl.objects.get_or_create(anio=anio_actual, tipo_dte=cod_dte)
         numero_control = f"DTE-{cod_dte}-0000MOO1-{str(control.secuencia).zfill(15)}"
         control.secuencia += 1
         control.save()
+        print("Asignar numero de control: ", numero_control)
         return numero_control
     
     @staticmethod
@@ -275,8 +277,10 @@ class NumeroControl(models.Model):
         try:
             control = NumeroControl.objects.get(anio=anio_actual, tipo_dte=cod_dte)
             current_sequence = control.secuencia
+            print("Secuencia: ", current_sequence)
         except NumeroControl.DoesNotExist:
             current_sequence += 1
+            print("Incrementar secuencia: ", current_sequence)
         return f"DTE-{cod_dte}-0000MOO1-{str(current_sequence).zfill(15)}"
 
 # Modelo de Factura Electrónica
