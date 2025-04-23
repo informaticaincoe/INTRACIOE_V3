@@ -41,7 +41,6 @@ import CustomToast, {
 import { IoMdCloseCircle } from 'react-icons/io';
 import { TablaProductosAgregados } from '../components/FE/productosAgregados/tablaProductosAgregados';
 import { ExtensionCard } from '../components/Shared/entension/extensionCard';
-import { Skeleton } from 'antd';
 
 export const GenerateDocuments = () => {
   //lista de datos obtenidas de la api
@@ -96,7 +95,7 @@ export const GenerateDocuments = () => {
   const [nombreResponsable, setNombreResponsable] = useState<string>('');
   const [docResponsable, setDocResponsable] = useState<string>('');
   const [tipoTransmision, setTipoTransmision] = useState<string>('');
-  const [descuentosProducto, setDescuentosProducto] = useState<string[]>([]);
+  const [descuentosProducto, setDescuentosProducto] = useState<number[]>([]);
   const navigate = useNavigate();
   const toastRef = useRef<CustomToastRef>(null);
   const [loading, setLoading] = useState(true);
@@ -127,15 +126,16 @@ export const GenerateDocuments = () => {
   };
 
   useEffect(() => {
-    const descuentosAux: string[] = selectedProducts.map((producto) => {
-      // Si no tiene descuento, usamos 0
+    const descuentosAux: number[] = selectedProducts.map((producto) => {
       const porcentaje: number = producto.descuento?.porcentaje ?? 0;
-      // toFixed(2) devuelve un string con dos decimales
-      return porcentaje.toFixed(2).replace('.', ',');
+      return Math.round(porcentaje * 100) / 100; // Redondea a 2 decimales
     });
 
+    console.log(selectedProducts)
+  
     setDescuentosProducto(descuentosAux);
   }, [selectedProducts]);
+  
 
   const generarFactura = async () => {
     console.log(descuentoItem);
@@ -148,8 +148,8 @@ export const GenerateDocuments = () => {
       telefono_receptor: receptor.telefono,
       correo_receptor: receptor.correo,
       tipo_item_select: 1, //TODO: obtener segun la lista de productos de forma dinamica (bien o servicio)
-      // descuento_select: descuentosProducto, //TODO: Implementar con cambios pendiente de la api
-      descuento_select: '0.00',
+      descuento_select: descuentosProducto, //TODO: Implementar con cambios pendiente de la api
+      // descuento_select: '0.00',
       tipo_documento_seleccionado: tipoDocumentoSelected, //tipo DTE
       condicion_operacion: selectedCondicionDeOperacion, //contado, credito, otros
       observaciones: observaciones,
