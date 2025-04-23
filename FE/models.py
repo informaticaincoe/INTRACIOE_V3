@@ -239,7 +239,7 @@ class Emisor_fe(models.Model):
     logo = models.ImageField(upload_to='media/productos/', null=True, blank=True) #logo empresa
     clave_privada = models.CharField(max_length=255, null=True, blank=True)
     clave_publica = models.CharField(max_length=255, null=True, blank=True)
-    representante = models.ForeignKey(representanteEmisor, on_delete=models.CASCADE, null=True, blank=True)
+    # representante = models.ForeignKey(representanteEmisor, on_delete=models.CASCADE, null=True, blank=True)
     
     def __str__(self):
         return f"{self.nombre_razon_social} ({self.nit})"
@@ -258,11 +258,13 @@ class NumeroControl(models.Model):
     @staticmethod
 
     def obtener_numero_control(cod_dte):
+        print("Inicio asignar numero de control: ")
         anio_actual = datetime.now().year
         control, creado = NumeroControl.objects.get_or_create(anio=anio_actual, tipo_dte=cod_dte)
         numero_control = f"DTE-{cod_dte}-0000MOO1-{str(control.secuencia).zfill(15)}"
         control.secuencia += 1
         control.save()
+        print("Asignar numero de control: ", numero_control)
         return numero_control
     
     @staticmethod
@@ -275,8 +277,10 @@ class NumeroControl(models.Model):
         try:
             control = NumeroControl.objects.get(anio=anio_actual, tipo_dte=cod_dte)
             current_sequence = control.secuencia
+            print("Secuencia: ", current_sequence)
         except NumeroControl.DoesNotExist:
             current_sequence += 1
+            print("Incrementar secuencia: ", current_sequence)
         return f"DTE-{cod_dte}-0000MOO1-{str(current_sequence).zfill(15)}"
 
 # Modelo de Factura Electrónica
@@ -469,7 +473,7 @@ class EventoContingencia(models.Model):
     recibido_mh = models.BooleanField(default=False)
     #Agregar campos de fecha y hora que proporcionara hacienda
     f_fin = models.DateField(auto_now_add=True, null=True)
-    #h_inicio = models.TimeField(auto_now_add=True, null=True)
+    h_inicio = models.TimeField(auto_now_add=True, null=True)
     h_fin = models.TimeField(auto_now_add=True, null=True)
     finalizado = models.BooleanField(default=False)
     #Si el evento fue rechazado se indicara el error para su correcion en un plazo máximo de 24 horas despues de haber sido rechazado

@@ -9,37 +9,36 @@ import requests
 import os, json, uuid
 from django.db import transaction
 from django.utils import timezone
-from rest_framework import generics
+from rest_framework import generics, status, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework.authtoken.models import Token
 from .views import enviar_contingencia_hacienda_view, enviar_factura_invalidacion_hacienda_view, firmar_contingencia_view, firmar_factura_anulacion_view, invalidacion_dte_view, generar_json, num_to_letras, agregar_formas_pago_api, generar_json_contingencia, generar_json_doc_ajuste, obtener_listado_productos_view
+
 from INVENTARIO.serializers import DescuentoSerializer
 
 from .serializers import (
     AmbienteSerializer, EventoContingenciaSerializer, FacturaListSerializer, 
     FormasPagosSerializer, LoteContingenciaSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, 
-    TipoDteSerializer, TiposGeneracionDocumentoSerializer,
-
-    ActividadEconomicaSerializer, ModelofacturacionSerializer,
-    TipoTransmisionSerializer, TipoContingenciaSerializer, TipoRetencionIVAMHSerializer,
-    TiposEstablecimientosSerializer, TiposServicio_MedicoSerializer,
-    OtrosDicumentosAsociadoSerializer, TiposDocIDReceptorSerializer,
-    PaisSerializer, DepartamentoSerializer, MunicipioSerializer, CondicionOperacionSerializer,                                                                                                                                                                                             
-    PlazoSerializer, TipoDocContingenciaSerializer, TipoInvalidacionSerializer,
-    TipoDonacionSerializer, TipoPersonaSerializer, TipoTransporteSerializer, INCOTERMS_Serializer,
-    TipoDomicilioFiscalSerializer, TipoMonedaSerializer, DescuentoSerializer
-
+    TipoDteSerializer, TiposGeneracionDocumentoSerializer, ActividadEconomicaSerializer, ModelofacturacionSerializer,
+    TipoTransmisionSerializer, TipoContingenciaSerializer, TipoRetencionIVAMHSerializer, TiposEstablecimientosSerializer, TiposServicio_MedicoSerializer,
+    OtrosDicumentosAsociadoSerializer, TiposDocIDReceptorSerializer, PaisSerializer, DepartamentoSerializer, MunicipioSerializer, CondicionOperacionSerializer,                                                                                                                                                                                             
+    PlazoSerializer, TipoDocContingenciaSerializer, TipoInvalidacionSerializer, TipoDonacionSerializer, TipoPersonaSerializer, TipoTransporteSerializer, INCOTERMS_Serializer,
+    TipoDomicilioFiscalSerializer, TipoMonedaSerializer, DescuentoSerializer, LoginSerializer, ChangePasswordSerializer
     )
 from .models import (
     INCOTERMS, ActividadEconomica, Departamento, Emisor_fe, EventoContingencia, LoteContingencia, Municipio, OtrosDicumentosAsociado, Pais, Receptor_fe, FacturaElectronica, DetalleFactura,
-    Ambiente, CondicionOperacion, Modelofacturacion, NumeroControl,
-    Tipo_dte, TipoContingencia, TipoDocContingencia, TipoDomicilioFiscal, TipoDonacion, TipoGeneracionDocumento, TipoMoneda, TipoPersona, TipoRetencionIVAMH, TipoTransmision, TipoTransporte, TipoUnidadMedida, TiposDocIDReceptor, EventoInvalidacion, 
+    Ambiente, CondicionOperacion, Modelofacturacion, NumeroControl, Tipo_dte, TipoContingencia, TipoDocContingencia, TipoDomicilioFiscal, TipoDonacion, TipoGeneracionDocumento, 
+    TipoMoneda, TipoPersona, TipoRetencionIVAMH, TipoTransmision, TipoTransporte, TipoUnidadMedida, TiposDocIDReceptor, EventoInvalidacion, 
     Receptor_fe, TipoInvalidacion, TiposEstablecimientos, TiposServicio_Medico, Token_data, Descuento, FormasPago, TipoGeneracionDocumento, Plazo
 )
 from INVENTARIO.models import Producto, TipoItem, TipoTributo, Tributo, UnidadMedida
 from django.db.models import Q
 from django.core.paginator import Paginator  # esta sigue igual
+
+from rest_framework.test import APIRequestFactory
+from django.forms.models import model_to_dict
+from rest_framework.response import Response
 from django.db.models import Count, Sum
 
 
@@ -88,6 +87,38 @@ productos_inventario = None
 
 emisor_fe = Emisor_fe.objects.get(id=1)#Hacer dinamico el id de empresa
 
+
+######################################################
+# AUTENTICACION CON DJANGO
+######################################################
+class LoginAPIView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        token, _ = Token.objects.get_or_create(user=user)
+        return Response({
+            'token': token.key,
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+            }
+        })
+
+class ChangePasswordAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(
+            data=request.data,
+            context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"detail": "Contraseña actualizada con éxito"}, status=status.HTTP_200_OK)
 
 ######################################################
 # AUTENTICACION CON MH
@@ -949,12 +980,66 @@ class FacturaListAPIView(APIView):
         
         return Response(data, status=status.HTTP_200_OK)
 
+class ProductoListAPIView(APIView):
+    global tipo_documento_dte
+
+    def get(self, request, format=None):
+        print("request listado de productos: ", request)
+
+        documento_ajuste = request.query_params.get('documento_ajuste', False)
+        if documento_ajuste:
+            tipo_documento_dte = request.GET.get('tipo_documento_dte', '05')
+        else:
+            tipo_documento_dte = request.GET.get('tipo_documento_dte', '01')
+
+        tipo_dte_obj = Tipo_dte.objects.get(codigo=tipo_documento_dte)
+        productos = Producto.objects.all()  # No incluye la imagen
+        
+        descuentos = list(Descuento.objects.all().values())
+        tipoItems = list(TipoItem.objects.all().values())
+        productos_modificados = []
+
+        if productos:
+            #recorrer todos los productos y mostrarlos con IVA si aplica
+            for producto in productos:
+                if tipo_dte_obj.codigo == COD_CONSUMIDOR_FINAL:
+                    if producto.precio_iva:
+                        producto.preunitario = (producto.preunitario).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+                    else:
+                        producto.preunitario = (producto.preunitario * Decimal("1.13")).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+                else:
+                    if producto.precio_iva:
+                        producto.preunitario = (producto.preunitario / Decimal("1.13")).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+                    else:
+                        producto.preunitario = (producto.preunitario).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+                
+                #Excluir el campo "imagen" de la lista
+                productos_modificados.append(producto)
+        
+        # Convertir los productos a diccionario, excluyendo la imagen
+        productos_dict = [model_to_dict(producto, exclude=['imagen']) for producto in productos_modificados]
+        
+        #Retornar los productos modificados temporalmente
+        return Response(productos_dict, status=200)
+
 class GenerarFacturaAPIView(APIView):
     """
     Vista API para generar facturas.
     En GET se retornan los datos para armar el formulario (en vez de renderizar una plantilla)  
     y en POST se procesa la generación de la factura.
     """
+    cod_generacion = str(uuid.uuid4()).upper()
+    global productos_ids_r
+    productos_ids_r = []
+    global cantidades_prod_r
+    cantidades_prod_r = []
+    global documentos_relacionados
+    documentos_relacionados = []
+    global descuentos_r
+    descuentos_r = []
+    
+    # Puedes agregar permisos o autenticación según tus necesidades:
+    # permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, format=None):
         # Inicializamos las variables globales (aunque es recomendable evitar globals)
@@ -972,7 +1057,8 @@ class GenerarFacturaAPIView(APIView):
             nuevo_numero = NumeroControl.preview_numero_control(tipo_dte)
         else:
             nuevo_numero = ""
-        codigo_generacion = str(uuid.uuid4()).upper()
+        print("Numero de control: ", nuevo_numero)
+        codigo_generacion = str(uuid.uuid4()).upper()#self.cod_generacion
         fecha_generacion = timezone.now().date()
         hora_generacion = timezone.now().strftime('%H:%M:%S')
 
@@ -985,8 +1071,16 @@ class GenerarFacturaAPIView(APIView):
         } if emisor_obj else None
 
         receptores = list(Receptor_fe.objects.values("id", "num_documento", "nombre"))
-        # Se asume que esta función retorna un listado adecuado
-        productos = obtener_listado_productos_view(request)
+
+        # Se convierten los querysets a listas de diccionarios
+        #productos = list(Producto.objects.all().values())
+        
+        #1.Llamar al listado de productos(simular un request GET), 2.Crear una instancia de APIRequestFactory(para solicitudes http), enviar parametros
+        request = APIRequestFactory().get('/api/productos/', {'documento_ajuste': 'False', 'tipo_documento_dte': '01'})
+        vista = ProductoListAPIView.as_view() #Obtener instancia para manejar la solicitud http
+        response = vista(request) #Simular la solicitud http (request) usando una vista
+        productos = response.data #Obtener los datos de la respuesta
+        
         tipooperaciones = list(CondicionOperacion.objects.all().values())
         tipoDocumentos = list(
             Tipo_dte.objects.exclude(Q(codigo=COD_NOTA_CREDITO) | Q(codigo=COD_NOTA_DEBITO)).values()
@@ -1016,11 +1110,9 @@ class GenerarFacturaAPIView(APIView):
     def post(self, request, format=None):
         try:
             items_permitidos = 2000
-            data = request.data  # DRF se encarga de parsear el JSON
-
-            docsRelacionados = []  # Acumular documentos relacionados
+            data = request.data 
+            docsRelacionados = []#Acumular los documentos relacionados
             contingencia = False
-
             # Datos básicos
             numero_control = data.get('numero_control', '')
             codigo_generacion = data.get('codigo_generacion', '')
@@ -1037,7 +1129,9 @@ class GenerarFacturaAPIView(APIView):
             
             tipo_doc_relacionar = data.get("documento_seleccionado", None)
             documento_relacionado = data.get("documento_relacionado", [])
-            
+            #porcentaje_descuento = data.get("descuento_select", "0")
+            #porcentaje_descuento_producto = porcentaje_descuento.replace(",", ".")
+
             # Configuración adicional
             tipooperacion_id = data.get("condicion_operacion", 1)
             porcentaje_retencion_iva = Decimal(data.get("porcentaje_retencion_iva", "0"))
@@ -1071,8 +1165,10 @@ class GenerarFacturaAPIView(APIView):
             nombre_responsable = data.get("nombre_responsable", None)
             documento_responsable = data.get("documento_responsable", None)
             
-            if numero_control:
+            print(f"parametro num control: {numero_control}, tipo dte: {tipo_dte}")
+            if not numero_control:
                 numero_control = NumeroControl.obtener_numero_control(tipo_dte)
+                print("Numero control asignado: ", numero_control)
             if not codigo_generacion:
                 codigo_generacion = str(uuid.uuid4()).upper()
 
@@ -2515,7 +2611,7 @@ class ContingenciaListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         qs = EventoContingencia.objects.prefetch_related(
-            'factura', 'factura__tipo_dte', 'lotes_evento'
+            'lotes_contingencia__factura', 'lotes_contingencia__factura__tipo_dte', 'lotes_contingencia'
         ).order_by('id')
 
         recibido = self.request.query_params.get('recibido_mh')
