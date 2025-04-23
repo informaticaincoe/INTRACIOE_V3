@@ -24,7 +24,7 @@ from .serializers import (
     TipoTransmisionSerializer, TipoContingenciaSerializer, TipoRetencionIVAMHSerializer, TiposEstablecimientosSerializer, TiposServicio_MedicoSerializer,
     OtrosDicumentosAsociadoSerializer, TiposDocIDReceptorSerializer, PaisSerializer, DepartamentoSerializer, MunicipioSerializer, CondicionOperacionSerializer,                                                                                                                                                                                             
     PlazoSerializer, TipoDocContingenciaSerializer, TipoInvalidacionSerializer, TipoDonacionSerializer, TipoPersonaSerializer, TipoTransporteSerializer, INCOTERMS_Serializer,
-    TipoDomicilioFiscalSerializer, TipoMonedaSerializer, DescuentoSerializer, LoginSerializer, ChangePasswordSerializer
+    TipoDomicilioFiscalSerializer, TipoMonedaSerializer, DescuentoSerializer
     )
 from .models import (
     INCOTERMS, ActividadEconomica, Departamento, Emisor_fe, EventoContingencia, LoteContingencia, Municipio, OtrosDicumentosAsociado, Pais, Receptor_fe, FacturaElectronica, DetalleFactura,
@@ -88,37 +88,7 @@ productos_inventario = None
 emisor_fe = Emisor_fe.objects.get(id=1)#Hacer dinamico el id de empresa
 
 
-######################################################
-# AUTENTICACION CON DJANGO
-######################################################
-class LoginAPIView(APIView):
-    permission_classes = [permissions.AllowAny]
 
-    def post(self, request):
-        serializer = LoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
-        token, _ = Token.objects.get_or_create(user=user)
-        return Response({
-            'token': token.key,
-            'user': {
-                'id': user.id,
-                'username': user.username,
-                'email': user.email,
-            }
-        })
-
-class ChangePasswordAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request):
-        serializer = ChangePasswordSerializer(
-            data=request.data,
-            context={'request': request}
-        )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response({"detail": "Contraseña actualizada con éxito"}, status=status.HTTP_200_OK)
 
 ######################################################
 # AUTENTICACION CON MH
