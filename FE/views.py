@@ -3868,7 +3868,6 @@ def firmar_contingencia_view(request, contingencia_id):
             print("Error al guardar archivo firmado:", e)
             print("-Fin firma contingencia DTE - id contingencia ", contingencia_id)
 
-
 csrf_exempt
 def enviar_contingencia_hacienda_view(request, contingencia_id):
     print("-Inicio enviar contingencia a MH: ", contingencia_id)
