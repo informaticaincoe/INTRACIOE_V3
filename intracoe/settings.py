@@ -91,6 +91,16 @@ LOGIN_ERROR_MESSAGE = 'Credenciales incorrectas'
 
 ########################################################
 
+## REST FRAMEWORK LOGIN CONFIGURATION
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}
 
 # Application definition
 
@@ -102,6 +112,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework.authtoken',
     'widget_tweaks',
     'django_select2',
     'RRHH',
