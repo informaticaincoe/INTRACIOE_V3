@@ -2662,7 +2662,7 @@ class ContingenciaListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         qs = EventoContingencia.objects.prefetch_related(
-            'factura', 'factura__tipo_dte', 'lotes_evento'
+            'lotes_de_factura', 'lotes_de_factura__tipo_dte', 'lotes_contingencia'
         ).order_by('id')
 
         recibido = self.request.query_params.get('recibido_mh')
