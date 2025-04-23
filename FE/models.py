@@ -239,7 +239,7 @@ class Emisor_fe(models.Model):
     logo = models.ImageField(upload_to='media/productos/', null=True, blank=True) #logo empresa
     clave_privada = models.CharField(max_length=255, null=True, blank=True)
     clave_publica = models.CharField(max_length=255, null=True, blank=True)
-    representante = models.ForeignKey(representanteEmisor, on_delete=models.CASCADE, null=True, blank=True)
+    # representante = models.ForeignKey(representanteEmisor, on_delete=models.CASCADE, null=True, blank=True)
     
     def __str__(self):
         return f"{self.nombre_razon_social} ({self.nit})"
