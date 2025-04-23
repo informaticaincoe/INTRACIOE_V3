@@ -87,9 +87,6 @@ productos_inventario = None
 
 emisor_fe = Emisor_fe.objects.get(id=1)#Hacer dinamico el id de empresa
 
-
-
-
 ######################################################
 # AUTENTICACION CON MH
 ######################################################
@@ -2684,7 +2681,7 @@ class ContingenciaListAPIView(generics.ListAPIView):
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
-@method_decorator(csrf_exempt, name='dispatch')
+# @method_decorator(csrf_exempt, name='dispatch')
 class ContingenciaDteAPIView(APIView):
     """
     Genera el JSON de contingencia para un EventoContingencia dado,
@@ -2773,7 +2770,7 @@ class ContingenciaDteAPIView(APIView):
 # ENVIO DE LOTES EN CONTINGENCIA
 
 
-@method_decorator(csrf_exempt, name='dispatch')
+# @method_decorator(csrf_exempt, name='dispatch')
 class LoteContingenciaDteAPIView(APIView):
     """
     Crea un LoteContingencia para una Factura en un EventoContingencia activo
