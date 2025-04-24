@@ -256,6 +256,74 @@
     
 </div>
 
+{% if mostrar_modal %}
+    <div class="modal fade" id="confirmModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Error al firmar el DTE</h5>
+                </div>
+                <div class="modal-body text-center">
+                    {% if intentos_modal >= 3 %}
+                        <p>Ya no se puede reintentar. Proceda bajo el plan de contingencia.</p>
+                        <button class="btn btn-primary" onclick="window.location.href='{% url 'detalle_factura' factura.id %}'">Continuar</button>
+                    {% else %}
+                        <p>¿Desea intentar firmar de nuevo?</p>
+                        <button class="btn btn-outline-primary" id="btnReintentar">Reintentar</button>
+                        <button class="btn btn-secondary" onclick="window.location.href='{% url 'detalle_factura' factura.id %}'">Continuar</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const intentos = parseInt("{{ intentos_modal }}");
+            const modalElement = document.getElementById('confirmModal');
+    
+            if (intentos >= 3) {
+                const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+                modal.hide();
+            } else {
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+            }
+    
+            const btn = document.getElementById("btnReintentar");
+            if (btn) {
+                btn.addEventListener("click", () => {
+                    btn.disabled = true;
+                
+                    fetch("{% url 'firmar_factura' factura.id %}", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": "{{ csrf_token }}",
+                        },
+                        body: JSON.stringify({ reintento: true }),
+                    }).then(response => {
+                        if (response.ok) {
+                            const intentos = parseInt("{{ intentos_modal }}") + 1;
+                            window.location.href = "{% url 'detalle_factura' factura.id %}?mostrar_modal=1&firma=1&envio_mh=0&intentos_modal=" + intentos;
+                        } else {
+                            alert("Hubo un error al intentar firmar el DTE.");
+                            btn.disabled = false;
+                        }
+                    }).catch(error => {
+                        console.error("Error en reintento:", error);
+                        alert("Error de red o en el servidor.");
+                        btn.disabled = false;
+                    });
+                });
+                
+            }
+        });
+    </script>    
+{% endif %}
+
+
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
