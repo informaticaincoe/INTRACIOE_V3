@@ -1,4 +1,3 @@
-import React from 'react'
 import { WhiteCard } from '../whiteCard'
 import { BsGraphUpArrow } from 'react-icons/bs'
 import { useTotalVentas } from '../../hooks/useTotalesPorTipo';

@@ -1,8 +1,8 @@
 
 from django.urls import path
 from FE.api_views import (
-    ChangePasswordAPIView, ContingenciaDteAPIView, ContingenciaListAPIView, EmisorCreateAPIView, EmisorUpdateAPIView, EnviarFacturaHaciendaAPIView, FacturaDetailAPIView, FacturaListAPIView, FacturaPorCodigoGeneracionAPIView, FirmarFacturaAPIView, 
-    GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, LoginAPIView, LoteContingenciaDteAPIView, MunicipioByDepartamentoAPIView, ObtenerReceptorAPIView, autenticacion, EmisorListAPIView, receptorCreateAPIView, receptorDeleteAPIView, receptorDetailAPIView, 
+    ContingenciaDteAPIView, ContingenciaListAPIView, EmisorCreateAPIView, EmisorUpdateAPIView, EnviarFacturaHaciendaAPIView, FacturaDetailAPIView, FacturaListAPIView, FacturaPorCodigoGeneracionAPIView, FirmarFacturaAPIView, 
+    GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, LoteContingenciaDteAPIView, MunicipioByDepartamentoAPIView, TopClientes, TopProductosAPIView, TotalVentasAPIView, TotalesPorTipoDTE, autenticacion, EmisorListAPIView, receptorCreateAPIView, receptorDeleteAPIView, receptorDetailAPIView, 
     receptorListAPIView, receptorUpdateAPIView, GenerarDocumentoAjusteAPIView,
 
     # ACTIVIDAD ECONOMICA
@@ -86,9 +86,6 @@ from . import views
 
 #renombrar el archivo
 urlpatterns = [
-
-    path('login/', LoginAPIView.as_view(), name='api-login'),
-    path('change-password/', ChangePasswordAPIView.as_view(), name='api-change-password'),
 
     # Autenticación vía API
     path('api/auth/', AutenticacionAPIView.as_view(), name='api_auth'),
@@ -334,6 +331,10 @@ urlpatterns = [
         name='lote-contingencia-dte'
     ),
 
-
+    # Dashboard
+    path('api/dashboard/totales-por-tipo/', TotalesPorTipoDTE.as_view(), name='totales-por-tipo'),
+    path('api/dashboard/totales-ventas/', TotalVentasAPIView.as_view(), name='total-ventas'),
+    path('api/dashboard/clientes/', TopClientes.as_view(), name='Top-clientes'),
+    path('api/dashboard/productos/', TopProductosAPIView.as_view(), name='Top-productos'),
 
 ]

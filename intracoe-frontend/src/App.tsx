@@ -9,6 +9,7 @@ import 'primereact/resources/themes/lara-light-blue/theme.css';
 import { Login } from './features/login/pages/loginPage';
 import { Layout } from './layout/layout';
 import { Dashboard } from './features/dashboard/pages/dashboard';
+import { ContingenciasPage } from './features/facturacion/contingencias/pages/contingenciasPage';
 const { ActivitiesPage } = lazily(
   () => import('./features/facturacion/activities/pages/activitiesPage')
 );
@@ -88,6 +89,7 @@ function App() {
           <Route path="/receptor/nuevo" element={<NuevoReceptorPage />} />
           <Route path="/receptor/:id" element={<NuevoReceptorPage />} />
           <Route path="/uploadExcel" element={<UploadExcelPage />} />
+          <Route path="/contingencias" element={<ContingenciasPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
