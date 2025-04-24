@@ -256,6 +256,168 @@
     
 </div>
 
+{% if mostrar_modal and intentos_modal < 3 %}
+<!-- Modal de confirmación -->
+<div class="modal fade" id="confirmModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Error al firmar el DTE</h5>
+        </div>
+        <div class="modal-body text-center">
+            {% if intentos_modal >= 2 and motivo_otro == 1 %}
+                <p>Este es su último reintento. Si vuelve a fallar, se procederá bajo el plan de contingencia.</p>
+            {% elif intentos_modal >= 2 and motivo_otro == 0 %}
+                <p>Este es su último reintento.</p>
+            {% else %}
+                <p>¿Desea intentar firmar de nuevo?</p>
+            {% endif %}
+            <button class="btn btn-outline-primary" id="btnReintentar">Reintentar</button>
+            <button class="btn btn-secondary" id="btnContinuar">Continuar</button>
+
+        </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para ingresar el motivo -->
+{% if motivo_otro %}
+<div class="modal fade" id="motivoModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Ingrese el motivo del error</h5>
+        </div>
+        <div class="modal-body">
+            <div class="mb-3">
+                <label for="motivoInput" class="form-label">Describa el motivo del error:</label>
+                <textarea class="form-control" id="motivoInput" rows="3" placeholder="Ingrese el motivo..."></textarea>
+            </div>
+            <div class="text-end">
+                <button class="btn btn-primary" id="btnEnviarMotivo" data-factura-id="{{ factura.id }}">Enviar</button>
+            </div>
+        </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endif %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const intentos = parseInt("{{ intentos_modal }}");
+        const mostrarModal = {{ mostrar_modal|yesno:"true,false" }};
+        const motivoOtro = {{ motivo_otro|yesno:"true,false" }};
+        const modalElement = document.getElementById('confirmModal');
+        const motivoModalElement = document.getElementById('motivoModal');
+        
+        if (mostrarModal && modalElement && intentos <= 3) {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+
+            // Ocultar botón si ya se llegó al límite (por si acaso)
+            if (intentos >= 3) {
+                const btnReintentar = document.getElementById("btnReintentar");
+                if (btnReintentar) btnReintentar.style.display = "none";
+            }
+
+            const btnReintentar = document.getElementById("btnReintentar");
+            if (btnReintentar) {
+                btnReintentar.addEventListener("click", () => {
+                    btnReintentar.disabled = true;
+
+                    fetch("{% url 'firmar_factura' factura.id %}", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": "{{ csrf_token }}",
+                        },
+                        body: JSON.stringify({ reintento: true }),
+                    }).then(response => {
+                        if (response.ok) {
+                            if (intentos >= 2 && motivoOtro) {
+                                // Verifica si el modal del motivo está disponible
+                                if (motivoModalElement) {
+                                    const motivoModal = new bootstrap.Modal(motivoModalElement);
+                                    motivoModal.show();
+                                }
+                            } else {
+                                window.location.href = "{% url 'detalle_factura' factura.id %}?mostrar_modal=1&firma=1&envio_mh=0&intentos_modal=" + (intentos + 1) + "&motivo_otro={{ motivo_otro|yesno:'1,0' }}";
+                            }
+                        } else {
+                            alert("Hubo un error al intentar firmar el DTE.");
+                            btnReintentar.disabled = false;
+                        }
+                    }).catch(error => {
+                        console.error("Error en reintento:", error);
+                        alert("Error de red o en el servidor.");
+                        btnReintentar.disabled = false;
+                    });
+                });
+            }
+
+            const btnEnviarMotivo = document.getElementById("btnEnviarMotivo");
+            if (btnEnviarMotivo) {
+                btnEnviarMotivo.addEventListener("click", () => {
+                    const texto = document.getElementById("motivoInput").value.trim();
+                    const facturaId = {{ factura.id }};
+
+                    if (!texto) {
+                        alert("Debe ingresar un motivo antes de continuar.");
+                        return;
+                    }
+
+                    const motivo = encodeURIComponent(texto);
+                    const url = "{% url 'enviar_motivo' %}?factura_id=" + facturaId + "&motivo=" + motivo;
+
+                    // Enviar el motivo y redirigir
+                    window.location.href = url;
+                });
+            }
+
+            // Lógica para el botón "Continuar" (manejada completamente en JavaScript)
+            const btnContinuar = document.getElementById("btnContinuar");
+            if (btnContinuar) {
+                btnContinuar.addEventListener("click", (e) => {
+                    // Verifica si motivo_otro es verdadero antes de continuar
+                    if (motivoOtro) {
+                        
+                        // Mostrar el modal de motivo
+                        if (motivoModalElement) {
+                            const motivoModal = new bootstrap.Modal(motivoModalElement);
+                            motivoModal.show();
+                        }
+                    } else {
+                        // Si motivo_otro es false, proceder con la redirección
+                        window.location.href = "{% url 'detalle_factura' factura.id %}";
+                    }
+                });
+            }
+
+            // Lógica para el modal de motivo:
+            const btnMotivoContinuar = document.getElementById("btnContinuarMotivo");
+            if (btnMotivoContinuar) {
+                btnMotivoContinuar.addEventListener("click", (e) => {
+                    // Evitar que el modal se cierre automáticamente hasta que el usuario seleccione una opción
+                    e.preventDefault(); 
+
+                    // Proceder solo si motivo_otro es verdadero
+                    if (motivoOtro) {
+                        // Mostrar el modal para ingresar el motivo
+                        if (motivoModalElement) {
+                            const motivoModal = new bootstrap.Modal(motivoModalElement);
+                            motivoModal.show();
+                        }
+                    } else {
+                        // Si no se requiere motivo, se redirige normalmente
+                        window.location.href = "{% url 'detalle_factura' factura.id %}";
+                    }
+                });
+            }
+        }
+    });
+</script>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
