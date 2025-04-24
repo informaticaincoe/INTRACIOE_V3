@@ -1322,7 +1322,7 @@ def firmar_factura_view(request, factura_id):
     intento = 1
     intentos_max = 3
     tipo_contingencia_obj = None
-    contingencia_creada = False
+    #contingencia_creada = False
     response = None
     response_data = {}
     fecha_actual = obtener_fecha_actual()
@@ -3304,7 +3304,7 @@ def contingencia_list(request):
         
         #Fecha y hora actual
         fecha_actual = obtener_fecha_actual()
-        fecha_limite = (fecha_actual - timezone.timedelta(hours=1))#72 horas
+        fecha_limite = (fecha_actual - timezone.timedelta(hours=72))#72 horas
 
         # Obtener listado de la base
         try:
@@ -3358,8 +3358,8 @@ def contingencia_list(request):
             # Dividir las facturas en grupos de 100
             facturas_en_grupos = []
             #facturas_en_grupos = [facturas[i:i + 2] for i in range(0, len(facturas), 2)]
-            for i in range(0, len(facturas), 2):
-                grupo_facturas = facturas[i:i + 2]
+            for i in range(0, len(facturas), 100):
+                grupo_facturas = facturas[i:i + 100]
                 mostrar_checkbox_lote = any(
                     f.recibido_mh == False and f.sello_recepcion and evento.sello_recibido is None for f in grupo_facturas
                 )
@@ -3446,24 +3446,8 @@ def generar_json_contingencia(evento_contingencia_id, emisor, detalles):
 def contingencia_dte_unificado_view(request):
     try:
         contingencia_id = request.GET.get("contingencia_id")
-        motivo_contingencia = request.GET.get("motivo_contingencia", None)
-        codigo_motivo = request.GET.get("codigo_motivo", None)
-        motivo = None
         
         print("[uno a uno]Inicio enviar contingencia view")
-        
-        # ---------------------------------
-        # Paso 1: Actualizar tipo contingencia si el codigo es 5
-        # ---------------------------------
-        if codigo_motivo and codigo_motivo == COD_TIPO_CONTINGENCIA:
-            try:
-                motivo = TipoContingencia.objects.filter(codigo=codigo_motivo).first()
-                if motivo:
-                    motivo.motivo_contingencia = motivo_contingencia
-                    motivo.save()
-            except Exception as e:
-                print(f"Error al actualizar motivo de contingencia: {str(e)}")
-                return JsonResponse({"error": "Error al actualizar motivo de contingencia"}, status=400)
         
         # ---------------------------------
         # Paso 2: Obtener el json generado de contingencia
@@ -4203,7 +4187,7 @@ def lote_contingencia_dte_view(request, factura_id, tipo_contiengencia_obj):
     print("Crear lote de los dte generados en contingencia: ", factura_id)
     lote_contingencia = None
     crear_evento = False
-    max_items = 3
+    max_items = 5000
     try:
         #Paso 1: Buscar factura guardada en contingencia
         documento_contingencia = FacturaElectronica.objects.filter(id=factura_id).order_by('id').first()
