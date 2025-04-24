@@ -86,7 +86,7 @@ descuentos_r = []
 tipo_documento_dte = "01"
 productos_inventario = None
 
-#emisor_fe = Emisor_fe.objects.get(id=1)#Hacer dinamico el id de empresa
+emisor_fe = Emisor_fe.objects.get(id=1)#Hacer dinamico el id de empresa
 
 ######################################################
 # AUTENTICACION CON MH
