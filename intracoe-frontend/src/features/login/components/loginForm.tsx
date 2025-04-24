@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Input } from '../../../shared/forms/input';
 import { SendFormButton } from '../../../shared/buttons/sendFormButton';
 import { useNavigate } from 'react-router';
+import { login } from '../services/loginServices';
 
 export const LoginForm = () => {
   const navigate = useNavigate(); // Hook para navegar en React Router
@@ -20,7 +21,7 @@ export const LoginForm = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handlerForm = (e: React.FormEvent) => {
+  const handlerForm = async (e: React.FormEvent) => {
     e.preventDefault();
 
     let newErrors = { username: '', password: '' };
@@ -35,7 +36,14 @@ export const LoginForm = () => {
     setErrors(newErrors);
 
     if (!newErrors.username && !newErrors.password) {
-      navigate('/');
+
+      try {
+        await login(formData)
+        navigate('/');
+      }
+      catch (error) {
+        console.log(error)
+      }
     }
   };
 
@@ -70,7 +78,7 @@ export const LoginForm = () => {
           )}
         </span>
       </span>
-      <SendFormButton text="Ingresar" onClick={handlerForm} />
+      <SendFormButton className='bg-primary-blue text-white' text="Ingresar" onClick={handlerForm} />
     </form>
   );
 };

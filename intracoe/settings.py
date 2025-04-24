@@ -91,6 +91,23 @@ LOGIN_ERROR_MESSAGE = 'Credenciales incorrectas'
 
 ########################################################
 
+## REST FRAMEWORK LOGIN CONFIGURATION
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        #'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}
+
+# Caducidad de la cookie de sesión: 5 minutos
+SESSION_COOKIE_AGE = 300  
+
+# Renueva la cookie en cada petición
+SESSION_SAVE_EVERY_REQUEST = True
 
 # Application definition
 
@@ -102,6 +119,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework.authtoken',
     'widget_tweaks',
     'django_select2',
     'RRHH',
@@ -110,6 +128,7 @@ INSTALLED_APPS = [
     'INFORMATICA',
     'INVENTARIO',
     'corsheaders',
+    'AUTENTICACION',
 ]
 
 MIDDLEWARE = [

@@ -473,7 +473,7 @@ class EventoContingencia(models.Model):
     recibido_mh = models.BooleanField(default=False)
     #Agregar campos de fecha y hora que proporcionara hacienda
     f_fin = models.DateField(auto_now_add=True, null=True)
-    #h_inicio = models.TimeField(auto_now_add=True, null=True)
+    h_inicio = models.TimeField(auto_now_add=True, null=True)
     h_fin = models.TimeField(auto_now_add=True, null=True)
     finalizado = models.BooleanField(default=False)
     #Si el evento fue rechazado se indicara el error para su correcion en un plazo máximo de 24 horas despues de haber sido rechazado

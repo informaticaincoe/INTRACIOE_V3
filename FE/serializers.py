@@ -1,42 +1,11 @@
 from rest_framework import serializers
-
+from django.contrib.auth import authenticate
+from django.contrib.auth.models import User
 from .models import (
-    INCOTERMS,
-    Departamento,
-    Descuento,
-    EventoContingencia,
-    FormasPago,
-    LoteContingencia,
-    OtrosDicumentosAsociado,
-    Pais,
-    Plazo,
-    TipoContingencia,
-    TipoDocContingencia,
-    TipoDomicilioFiscal,
-    TipoDonacion,
-    TipoPersona,
-    TipoRetencionIVAMH,
-    TipoTransmision,
-    TipoTransporte,
-    TiposServicio_Medico,
-    Token_data,
-    Ambiente,
-    CondicionOperacion,
-    DetalleFactura,
-    FacturaElectronica,
-    Modelofacturacion,
-    NumeroControl,
-    Emisor_fe,
-    ActividadEconomica,
-    Receptor_fe,
-    Tipo_dte,
-    TipoMoneda,
-    TipoUnidadMedida,
-    TiposDocIDReceptor,
-    Municipio,
-    EventoInvalidacion,
-    TipoInvalidacion,
-    TiposEstablecimientos,
+    INCOTERMS, Departamento, Descuento, EventoContingencia, FormasPago, LoteContingencia, OtrosDicumentosAsociado, Pais, Plazo, TipoContingencia,
+    TipoDocContingencia, TipoDomicilioFiscal, TipoDonacion, TipoPersona, TipoRetencionIVAMH, TipoTransmision, TipoTransporte, TiposServicio_Medico,
+    Token_data, Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica,
+    Receptor_fe, Tipo_dte, TipoMoneda, TipoUnidadMedida, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos,
     TipoGeneracionDocumento
 )
 from INVENTARIO.models import Producto, TipoItem, TipoTributo, Tributo
@@ -52,6 +21,8 @@ class AuthResponseSerializer(serializers.Serializer):
     roles = serializers.ListField(
         child=serializers.CharField(), required=False, allow_empty=True
     )
+
+#########################################
 
 # Serializador para Emisor_fe
 class EmisorSerializer(serializers.ModelSerializer):
@@ -298,4 +269,5 @@ class EventoContingenciaSerializer(serializers.ModelSerializer):
             'sello_recepcion',
             'factura',
             'lotes',
+            'codigo_generacion',
         ]

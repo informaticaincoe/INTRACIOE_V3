@@ -9,32 +9,27 @@ import requests
 import os, json, uuid
 from django.db import transaction
 from django.utils import timezone
-from rest_framework import generics
+from rest_framework import generics, status, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework.authtoken.models import Token
 from .views import enviar_contingencia_hacienda_view, enviar_factura_invalidacion_hacienda_view, firmar_contingencia_view, firmar_factura_anulacion_view, invalidacion_dte_view, generar_json, num_to_letras, agregar_formas_pago_api, generar_json_contingencia, generar_json_doc_ajuste, obtener_listado_productos_view
+
 from INVENTARIO.serializers import DescuentoSerializer
 
 from .serializers import (
     AmbienteSerializer, EventoContingenciaSerializer, FacturaListSerializer, 
     FormasPagosSerializer, LoteContingenciaSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, 
-    TipoDteSerializer, TiposGeneracionDocumentoSerializer,
-
-    ActividadEconomicaSerializer, ModelofacturacionSerializer,
-    TipoTransmisionSerializer, TipoContingenciaSerializer, TipoRetencionIVAMHSerializer,
-    TiposEstablecimientosSerializer, TiposServicio_MedicoSerializer,
-    OtrosDicumentosAsociadoSerializer, TiposDocIDReceptorSerializer,
-    PaisSerializer, DepartamentoSerializer, MunicipioSerializer, CondicionOperacionSerializer,                                                                                                                                                                                             
-    PlazoSerializer, TipoDocContingenciaSerializer, TipoInvalidacionSerializer,
-    TipoDonacionSerializer, TipoPersonaSerializer, TipoTransporteSerializer, INCOTERMS_Serializer,
+    TipoDteSerializer, TiposGeneracionDocumentoSerializer, ActividadEconomicaSerializer, ModelofacturacionSerializer,
+    TipoTransmisionSerializer, TipoContingenciaSerializer, TipoRetencionIVAMHSerializer, TiposEstablecimientosSerializer, TiposServicio_MedicoSerializer,
+    OtrosDicumentosAsociadoSerializer, TiposDocIDReceptorSerializer, PaisSerializer, DepartamentoSerializer, MunicipioSerializer, CondicionOperacionSerializer,                                                                                                                                                                                             
+    PlazoSerializer, TipoDocContingenciaSerializer, TipoInvalidacionSerializer, TipoDonacionSerializer, TipoPersonaSerializer, TipoTransporteSerializer, INCOTERMS_Serializer,
     TipoDomicilioFiscalSerializer, TipoMonedaSerializer, DescuentoSerializer
-
     )
 from .models import (
     INCOTERMS, ActividadEconomica, Departamento, Emisor_fe, EventoContingencia, LoteContingencia, Municipio, OtrosDicumentosAsociado, Pais, Receptor_fe, FacturaElectronica, DetalleFactura,
-    Ambiente, CondicionOperacion, Modelofacturacion, NumeroControl,
-    Tipo_dte, TipoContingencia, TipoDocContingencia, TipoDomicilioFiscal, TipoDonacion, TipoGeneracionDocumento, TipoMoneda, TipoPersona, TipoRetencionIVAMH, TipoTransmision, TipoTransporte, TipoUnidadMedida, TiposDocIDReceptor, EventoInvalidacion, 
+    Ambiente, CondicionOperacion, Modelofacturacion, NumeroControl, Tipo_dte, TipoContingencia, TipoDocContingencia, TipoDomicilioFiscal, TipoDonacion, TipoGeneracionDocumento, 
+    TipoMoneda, TipoPersona, TipoRetencionIVAMH, TipoTransmision, TipoTransporte, TipoUnidadMedida, TiposDocIDReceptor, EventoInvalidacion, 
     Receptor_fe, TipoInvalidacion, TiposEstablecimientos, TiposServicio_Medico, Token_data, Descuento, FormasPago, TipoGeneracionDocumento, Plazo
 )
 from INVENTARIO.models import Producto, TipoItem, TipoTributo, Tributo, UnidadMedida
@@ -91,7 +86,6 @@ tipo_documento_dte = "01"
 productos_inventario = None
 
 emisor_fe = Emisor_fe.objects.get(id=1)#Hacer dinamico el id de empresa
-
 
 ######################################################
 # AUTENTICACION CON MH
@@ -2687,7 +2681,7 @@ class ContingenciaListAPIView(generics.ListAPIView):
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
-@method_decorator(csrf_exempt, name='dispatch')
+# @method_decorator(csrf_exempt, name='dispatch')
 class ContingenciaDteAPIView(APIView):
     """
     Genera el JSON de contingencia para un EventoContingencia dado,
@@ -2776,7 +2770,7 @@ class ContingenciaDteAPIView(APIView):
 # ENVIO DE LOTES EN CONTINGENCIA
 
 
-@method_decorator(csrf_exempt, name='dispatch')
+# @method_decorator(csrf_exempt, name='dispatch')
 class LoteContingenciaDteAPIView(APIView):
     """
     Crea un LoteContingencia para una Factura en un EventoContingencia activo
@@ -2830,7 +2824,52 @@ class LoteContingenciaDteAPIView(APIView):
             status=status.HTTP_201_CREATED
         )
     
+# Dashboard
 
+class TotalesPorTipoDTE(generics.ListAPIView):
+    def get(self, request):
+        data = (
+            FacturaElectronica.objects.values('tipo_dte', 'tipo_dte__codigo' ).annotate(total=Count('id')).filter(recibido_mh=True) 
+        )
+        return Response({"totales_por_tipo": list(data)})
+ 
+
+class TotalVentasAPIView(generics.ListAPIView):
+    def get(self, request):
+        resultado = (
+            FacturaElectronica.objects
+          .filter(recibido_mh=True)
+            .aggregate(total_ventas=Sum('total_pagar'))
+        )
+         
+         # Devuelve 0 si no hay resultados
+        total = resultado['total_ventas'] or 0
+ 
+        return Response({"total_ventas": total})
+
+
+class TopClientes(APIView):
+    def get(self, request):
+        data = (
+            FacturaElectronica.objects
+          .filter(recibido_mh=True)
+            .values('dtereceptor', 'dtereceptor__nombre')  # Agrupamos por cliente
+            .annotate(total_ventas=Sum('total_pagar'))  # Sumamos total_pagar por cliente
+            .order_by('-total_ventas')[:3]  # Top 3
+        )
+ 
+        return Response({"clientes": list(data)})
+ 
+class TopProductosAPIView(generics.ListAPIView):
+    def get(self, request):
+        data = (
+            DetalleFactura.objects
+          .values('producto', 'producto__descripcion')  # Agrupamos por producto
+            .annotate(total_vendido=Sum('cantidad'))  # Sumar cantidades
+             .order_by('-total_vendido')[:3]  # Top 3
+        )
+ 
+        return Response({"productos": list(data)})
 
 
     
