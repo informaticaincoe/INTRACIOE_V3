@@ -1,13 +1,13 @@
-import axios from 'axios';
+// src/services/dteService.ts
+import { TipoDTE } from '../interfaces/interfaces';
+import { api } from './api';
 
-const BASEURL = import.meta.env.VITE_URL_BASE;
-
-export const DTEByCode = async (dte_id: string) => {
+export const DTEByCode = async (dte_id: string): Promise<TipoDTE> => {
   try {
-    const response = await axios.get(`${BASEURL}/tipo-dte/${dte_id}/`);
+    const response = await api.get<TipoDTE>(`/tipo-dte/${dte_id}/`);
     return response.data;
   } catch (error) {
-    console.log(error);
-    throw new Error();
+    console.error(`Error fetching DTE with id ${dte_id}:`, error);
+    throw new Error('Error fetching DTE by code');
   }
 };

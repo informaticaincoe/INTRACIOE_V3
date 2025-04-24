@@ -5,6 +5,7 @@ interface DatosEmisorData {
 }
 
 export const DatosEmisorCard: React.FC<DatosEmisorData> = ({ emisorData }) => {
+
   return (
     <>
       {emisorData && emisorData.nit && (

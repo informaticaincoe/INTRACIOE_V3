@@ -1,13 +1,12 @@
-import axios from 'axios';
+
 import {
   Descuento,
   Impuesto,
   ProductoResponse,
 } from '../../interfaces/interfaces';
+import { api } from '../api';
+import { apiInventory } from '../apiInventory';
 import { getTributoById } from '../tributos/tributos';
-
-const BASEURLINVENT = import.meta.env.VITE_URL_BASE_INVENT;
-const BASEURL = import.meta.env.VITE_URL_BASE;
 
 export const getAllProducts = async ({
   filter,
@@ -16,14 +15,13 @@ export const getAllProducts = async ({
   filter?: string;
   tipo?: string | number;
 } = {}) => {
-  // Si no se pasa argumento, se usa un objeto vacío
   try {
-    const params: Record<string, any> = {}; // Construimos el objeto `params` sólo con los filtros proporcionados
+    const params: Record<string, any> = {};
     if (filter) params.q = filter;
     if (tipo) params.tipo = tipo;
 
-    const response = await axios.get<ProductoResponse[]>(
-      `${BASEURLINVENT}/productos/`,
+    const response = await apiInventory.get<ProductoResponse[]>(
+      '/productos/',
       { params }
     );
 
@@ -40,38 +38,38 @@ export const getAllProducts = async ({
 
 export const getAllDescuentos = async () => {
   try {
-    const response = await axios.get<Descuento[]>(`${BASEURL}/descuento/`);
+    const response = await api.get<Descuento[]>('/descuento/');
     return response.data;
   } catch (error) {
-    throw new Error();
+    throw new Error('Error fetching descuentos');
   }
 };
 
 export const getAllImpuestos = async () => {
   try {
-    const response = await axios.get<Impuesto[]>(`${BASEURLINVENT}/impuestos/`);
+    const response = await apiInventory.get<Impuesto[]>('/impuestos/');
     return response.data;
   } catch (error) {
-    throw new Error();
+    throw new Error('Error fetching impuestos');
   }
 };
 
 export const getAllUnidadesDeMedida = async () => {
   try {
-    const response = await axios.get(`${BASEURLINVENT}/unidades-medida/`);
+    const response = await apiInventory.get('/unidades-medida/');
     return response.data;
   } catch (error) {
-    console.log(error);
-    throw new Error();
+    console.error(error);
+    throw new Error('Error fetching unidades de medida');
   }
 };
 
 export const getAllTipoItem = async () => {
   try {
-    const response = await axios.get(`${BASEURLINVENT}/tipo-item/`);
+    const response = await apiInventory.get('/tipo-item/');
     return response.data;
   } catch (error) {
-    console.log(error);
-    throw new Error();
+    console.error(error);
+    throw new Error('Error fetching tipo de item');
   }
 };
