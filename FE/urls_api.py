@@ -2,7 +2,7 @@
 from django.urls import path
 from FE.api_views import (
     ContingenciaDteAPIView, ContingenciaListAPIView, EmisorCreateAPIView, EmisorUpdateAPIView, EnviarFacturaHaciendaAPIView, FacturaDetailAPIView, FacturaListAPIView, FacturaPorCodigoGeneracionAPIView, FirmarFacturaAPIView, 
-    GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, LoteContingenciaDteAPIView, MunicipioByDepartamentoAPIView, ObtenerReceptorAPIView, TopClientes, TopProductosAPIView, TotalVentasAPIView, TotalesPorTipoDTE, autenticacion, EmisorListAPIView, receptorCreateAPIView, receptorDeleteAPIView, receptorDetailAPIView, 
+    GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, LoteContingenciaDteAPIView, MunicipioByDepartamentoAPIView, TopClientes, TopProductosAPIView, TotalVentasAPIView, TotalesPorTipoDTE, autenticacion, EmisorListAPIView, receptorCreateAPIView, receptorDeleteAPIView, receptorDetailAPIView, 
     receptorListAPIView, receptorUpdateAPIView, GenerarDocumentoAjusteAPIView,
 
     # ACTIVIDAD ECONOMICA
