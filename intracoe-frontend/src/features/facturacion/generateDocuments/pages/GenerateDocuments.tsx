@@ -11,7 +11,6 @@ import { IdentifcacionSeccion } from '../components/Shared/identificacion.tsx/id
 import { SelectReceptor } from '../components/Shared/receptor/SelectReceptor';
 import { ModalListaProdcutos } from '../components/FE/productosAgregados/modalListaProdcutos';
 import { FormasdePagoForm } from '../components/Shared/configuracionFactura/formasDePago/formasdePagoForm';
-// import { ButtonDocumentosRelacionados } from '../components/Shared/configuracionFactura/documentosRelacionados/ButtonDocumentosRelacionados';
 import { SelectModeloFactura } from '../components/Shared/configuracionFactura/modeloDeFacturacion/selectModeloFactura';
 import { SendFormButton } from '../../../../shared/buttons/sendFormButton';
 import {
@@ -98,7 +97,6 @@ export const GenerateDocuments = () => {
   const [descuentosProducto, setDescuentosProducto] = useState<number[]>([]);
   const navigate = useNavigate();
   const toastRef = useRef<CustomToastRef>(null);
-  const [loading, setLoading] = useState(true);
 
   const handleAccion = (
     severity: ToastSeverity,
@@ -202,7 +200,7 @@ export const GenerateDocuments = () => {
   const fetchfacturaData = async () => {
     try {
       const response = await getFacturaCodigos(tipoDocumentoSelected);
-      setCodigoGeneracion(response.codigo_generacion);
+      setCodigoGeneracion(response.codigo_generacion      );
       setNumeroControl(response.numero_control);
       setEmisorData(response.emisor);
       setCondicionesOperacionList(response.tipooperaciones);
@@ -215,6 +213,8 @@ export const GenerateDocuments = () => {
             doc.codigo === '01' || doc.codigo === '03'
         )
       );
+
+      console.log("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", response.emisor)
     } catch (error) {
       console.log(error);
     }

@@ -1,6 +1,6 @@
 import { Sidebar } from "primereact/sidebar"
 import defaultPerfil from "../../assets/grupo_incoe_logo.png"
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { password, Perfil } from "../interfaces/interfaces";
 import banner from "../../assets/banner.png"
 import { Divider } from "primereact/divider";
@@ -11,8 +11,11 @@ import { RiLockPasswordLine } from "react-icons/ri";
 import { IoIosLogOut } from "react-icons/io";
 import { MdPerson } from "react-icons/md";
 import { HiOutlineStatusOnline } from "react-icons/hi";
-import { FaRegClock } from "react-icons/fa6";
+import { FaCircleCheck, FaRegClock } from "react-icons/fa6";
 import { EditableField } from "./editableFiedl";
+import { ChangePassword, logout } from "../../features/login/services/loginServices";
+import { useNavigate } from "react-router";
+import CustomToast, { CustomToastRef, ToastSeverity } from "../toast/customToast";
 
 interface PerfilMenuProps {
     visible: boolean,
@@ -20,27 +23,105 @@ interface PerfilMenuProps {
 }
 
 export const PerfilMenu: React.FC<PerfilMenuProps> = ({ visible, setVisible }) => {
+    const navigate = useNavigate()
     const [visibleChangePassword, setVisibleChangePassword] = useState(false)
     const [formData, setFormData] = useState<Perfil>({
         usuario: 'admin',
         correo: 'admin@email.com',
     });
+    const toastRef = useRef<CustomToastRef>(null);
+
+    const handleAccion = (
+        severity: ToastSeverity,
+        icon: any,
+        summary: string
+    ) => {
+        toastRef.current?.show({
+            severity: severity,
+            summary: summary,
+            icon: icon,
+            life: 2000,
+        });
+    };
 
     const [firstName, setFirstName] = useState("Nombre")
     const [lastName, setLastName] = useState("Apellido")
+    const [passwordConfirm, setPasswordConfirm] = useState<string>('')
 
     const [formDataPasswordChange, setFormDataPasswordChange] = useState<password>({
-        newPassword:'',
-        password: '',
-        confirmPassword: '',
+        old_password: '',
+        new_password: '',
     });
+
+    const [errors, setErrors] = useState<{
+        old_password?: string;
+        new_password?: string;
+        confirmPassword?: string;
+        errorCambiarContra?: string;
+    }>({});
+
+    const [passwordError, setPasswordError] = useState<string>("");
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     const handleChangePassword = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormDataPasswordChange({ ...formDataPasswordChange, [e.target.name]: e.target.value });
+        setFormDataPasswordChange({
+            ...formDataPasswordChange,
+            [e.target.name]: e.target.value,
+        });
+        // limpiar error al escribir
+        setPasswordError("");
+    };
+
+    const handleConfirmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setPasswordConfirm(e.target.value);
+        setErrors(prev => ({ ...prev, confirmPassword: undefined }));
+    };
+
+    const logoutHandler = async () => {
+        try {
+            const response = await logout()
+            console.log(response)
+            navigate("/login")
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    const onSubmitPassword = async () => {
+        const { old_password, new_password } = formDataPasswordChange;
+        const newErrors: typeof errors = {};
+
+        if (!old_password) newErrors.old_password = "Ingresa tu contraseña anterior.";
+        if (!new_password) newErrors.new_password = "Ingresa la nueva contraseña.";
+        if (!passwordConfirm) newErrors.confirmPassword = "Confirma tu nueva contraseña.";
+        if (new_password && passwordConfirm && new_password !== passwordConfirm) {
+            newErrors.confirmPassword = "La confirmación no coincide.";
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
+
+        try {
+            await ChangePassword(formDataPasswordChange);
+            // Cerrar diálogo y limpiar estados
+            setVisibleChangePassword(false);
+            setFormDataPasswordChange({ old_password: "", new_password: "" });
+            setPasswordConfirm("");
+            setErrors({});
+            handleAccion(
+                'success',
+                <FaCircleCheck size={38} />,
+                'contraseña actualizada con exito'
+            );
+        } catch (error) {
+            console.log(error);
+            setErrors({ errorCambiarContra: "Contraseña anterior incorrecta" });
+        }
     };
 
     return (
@@ -148,35 +229,77 @@ export const PerfilMenu: React.FC<PerfilMenuProps> = ({ visible, setVisible }) =
 
                         <span className="flex gap-2 items-center" onClick={() => setVisibleChangePassword(true)}>
                             <RiLockPasswordLine />
-                            <p className="">Contraseña Anterior</p>
+                            <p className="">Cambiar contraseña</p>
                         </span>
                         <Divider />
-                        <span className="flex gap-2 items-center">
+                        <button className="flex gap-2 items-center" onClick={logoutHandler}>
                             <IoIosLogOut size={20} />
                             <p className="">Cerrar sesión</p>
-                        </span>
+                        </button>
                     </div>
                 </div>
+                <CustomToast ref={toastRef} />
             </Sidebar>
             {visibleChangePassword &&
-                <Dialog header="Cambiar contraseña" visible={visibleChangePassword} modal={false} style={{ width: '35vw' }} onHide={() => { if (!visibleChangePassword) return; setVisibleChangePassword(false); }}>
-                    <div className="flex flex-col gap-10 px-5 py-1">
+                <Dialog
+                    header="Cambiar contraseña"
+                    visible={visibleChangePassword}
+                    modal
+                    style={{ width: "35vw" }}
+                    onHide={() => setVisibleChangePassword(false)}
+                >
+                    {errors.errorCambiarContra && (
+                        <small className="text-red-500 px-4">{errors.errorCambiarContra}</small>
+                    )}
+                    <div className="flex flex-col gap-6 px-5 py-4">
 
-                        <div className="flex flex-col gap-5">
-                        <span>
+                        <div className="flex flex-col gap-4">
+                            <div>
                                 <p>Contraseña anterior:</p>
-                                <Input name="newPassword" value={formDataPasswordChange.newPassword} onChange={handleChangePassword} />
-                            </span>
-                            <span>
+                                <Input
+                                    name="old_password"
+                                    type="password"
+                                    value={formDataPasswordChange.old_password}
+                                    onChange={handleChangePassword}
+                                />
+                                {errors.old_password && (
+                                    <small className="text-red-500">{errors.old_password}</small>
+                                )}
+                            </div>
+
+                            <div>
                                 <p>Nueva contraseña:</p>
-                                <Input name="password" value={formDataPasswordChange.password} onChange={handleChangePassword} />
-                            </span>
-                            <span>
+                                <Input
+                                    name="new_password"
+                                    type="password"
+                                    value={formDataPasswordChange.new_password}
+                                    onChange={handleChangePassword}
+                                />
+                                {errors.new_password && (
+                                    <small className="text-red-500">{errors.new_password}</small>
+                                )}
+                            </div>
+
+                            <div>
                                 <p>Confirmar nueva contraseña:</p>
-                                <Input name="confirmPassword" value={formDataPasswordChange.confirmPassword} onChange={handleChangePassword} />
-                            </span>
+                                <Input
+                                    name="confirmPassword"
+                                    type="password"
+                                    value={passwordConfirm}
+                                    onChange={handleConfirmChange}
+                                />
+                                {errors.confirmPassword && (
+                                    <small className="text-red-500">{errors.confirmPassword}</small>
+                                )}
+                            </div>
                         </div>
-                        <button className="bg-primary-blue text-white py-3 rounded-md">Cambiar contraseña</button>
+
+                        <button
+                            className="bg-primary-blue text-white py-3 rounded-md"
+                            onClick={onSubmitPassword}
+                        >
+                            Cambiar contraseña
+                        </button>
                     </div>
                 </Dialog>
             }

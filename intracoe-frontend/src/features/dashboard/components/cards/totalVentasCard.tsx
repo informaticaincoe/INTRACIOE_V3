@@ -15,7 +15,7 @@ export const TotalVentas = () => {
             separator=","
         >
             {({ countUpRef }) => (
-                <span style={{ fontSize: '1.75rem', fontWeight: '600' }}>
+                <span style={{ fontSize: '1.5rem', fontWeight: '600' }}>
                     $<span ref={countUpRef} />
                 </span>
             )}

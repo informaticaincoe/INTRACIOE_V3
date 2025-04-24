@@ -346,31 +346,36 @@ export const GenerarDocumentosAjuste = () => {
 
       <WhiteSectionsPage>
         <div className="pt-2 pb-5">
-          <div className="flex justify-between">
+          <div className="flex justify-between ">
             <h1 className="text-start text-xl font-bold text-nowrap">
               Ajustar factura
             </h1>
           </div>
           <Divider className="m-0 p-0" />
-          <div className="flex items-center pb-5">
-            <label htmlFor="tipoDocumentoGeneracion" className="text-nowrap">
-              Tipo documento de generación:
-            </label>
-            <DropFownTipoDeDocumentoGeneracion
-              tipoGeneracionFactura={tipoGeneracionFactura}
-              setTipoGeneracionFactura={setTipoGeneracionFactura}
-            />
-            <label htmlFor="codigo" className="text-nowrap">
-              Codigo de generacion:
-            </label>
-            <Input
-              name="codigo"
-              placeholder="codigo"
-              type="text"
-              className="mr-10 ml-3"
-              value={formData.codigo}
-              onChange={handleChange}
-            />
+          <div className="flex items-center pb-5 justify-between">
+            <span className='flex justify-between gap-x-10 gap-y-5 w-full items-center flex-wrap'>
+              <label htmlFor="tipoDocumentoGeneracion" className="text-nowrap">
+                Tipo documento de generación: 
+                <span className='opacity-70'> Electronico</span>
+              </label>
+              {/* <DropFownTipoDeDocumentoGeneracion
+                tipoGeneracionFactura={tipoGeneracionFactura}
+                setTipoGeneracionFactura={setTipoGeneracionFactura}
+              /> */}
+              <span className='flex gap w-full items-center'>
+                <label htmlFor="codigo" className="text-nowrap">
+                  Codigo de generacion:
+                </label>
+                <Input
+                  name="codigo"
+                  placeholder="codigo"
+                  type="text"
+                  className="mr-10 ml-3"
+                  value={formData.codigo}
+                  onChange={handleChange}
+                />
+              </span>
+            </span>
             <button
               className="bg-primary-blue rounded-md px-5 py-3 text-nowrap text-white hover:cursor-pointer"
               onClick={() => fetchFacturaARelacionar()}

@@ -1,6 +1,5 @@
-import axios from 'axios';
+import { api } from "../../services/api";
 
-const BASEURL = import.meta.env.VITE_URL_BASE;
 
 export const getAllActivities = async (
   page?: number,
@@ -8,7 +7,7 @@ export const getAllActivities = async (
   filtro?: string
 ) => {
   try {
-    const response = await axios.get(`${BASEURL}/actividad/`, {
+    const response = await api.get(`/actividad/`, {
       params: filtro ? { filtro } : {},
     });
     return response.data;
@@ -19,7 +18,7 @@ export const getAllActivities = async (
 
 export const getAllAmbientes = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/ambientes/`, {
+    const response = await api.get(`/ambientes/`, {
       headers: {
         'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
       },
@@ -33,7 +32,7 @@ export const getAllAmbientes = async () => {
 
 export const getAllModelosDeFacturacion = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/modelo-facturacion/`);
+    const response = await api.get(`/modelo-facturacion/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -42,7 +41,7 @@ export const getAllModelosDeFacturacion = async () => {
 
 export const getAllTipoTransmision = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/tipo-transmision/`);
+    const response = await api.get(`/tipo-transmision/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -51,7 +50,7 @@ export const getAllTipoTransmision = async () => {
 
 export const getAllTipoContingencia = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/tipo-contingencia/`);
+    const response = await api.get(`/tipo-contingencia/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -60,7 +59,7 @@ export const getAllTipoContingencia = async () => {
 
 export const getAllTipoRentencionIVA = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/tipo-retencion-iva-mh/`);
+    const response = await api.get(`/tipo-retencion-iva-mh/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -69,7 +68,7 @@ export const getAllTipoRentencionIVA = async () => {
 
 export const getAllTiposGeneracionDocumento = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/tipo-generacion-facturas/`);
+    const response = await api.get(`/tipo-generacion-facturas/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -78,7 +77,7 @@ export const getAllTiposGeneracionDocumento = async () => {
 
 export const getAllTiposEstablecimientos = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/tipo-establecimiento/`, {
+    const response = await api.get(`/tipo-establecimiento/`, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -92,7 +91,7 @@ export const getAllTiposEstablecimientos = async () => {
 
 export const getAllTipoServiciosMedicos = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/tipos-servicio-medico/`);
+    const response = await api.get(`/tipos-servicio-medico/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -101,7 +100,7 @@ export const getAllTipoServiciosMedicos = async () => {
 
 export const getAllTipoDTE = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/tipo-dte/`);
+    const response = await api.get(`/tipo-dte/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -110,7 +109,7 @@ export const getAllTipoDTE = async () => {
 
 export const getAllOtrosDocumentosAsociados = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/otros-documentos-asociado/`);
+    const response = await api.get(`/otros-documentos-asociado/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -119,7 +118,7 @@ export const getAllOtrosDocumentosAsociados = async () => {
 
 export const getAllTipoIdReceptor = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/tipo-id-receptor/`);
+    const response = await api.get(`/tipo-id-receptor/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -128,7 +127,7 @@ export const getAllTipoIdReceptor = async () => {
 
 export const getAllPaises = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/pais/`);
+    const response = await api.get(`/pais/`);
     console.log(response.data);
     return response.data;
   } catch (error) {
@@ -138,7 +137,7 @@ export const getAllPaises = async () => {
 
 export const getAllDepartamentos = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/departamentos/`);
+    const response = await api.get(`/departamentos/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -147,7 +146,7 @@ export const getAllDepartamentos = async () => {
 
 export const getDepartamentoById = async (id:number) => {
   try {
-    const response = await axios.get(`${BASEURL}/departamento/${id}/`);
+    const response = await api.get(`/departamento/${id}/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -156,7 +155,7 @@ export const getDepartamentoById = async (id:number) => {
 
 export const getPaisById = async (idPais: any) => {
   try {
-    const response = await axios.get(`${BASEURL}/pais/${idPais}/`);
+    const response = await api.get(`/pais/${idPais}/`);
     return response.data.descripcion;
   } catch (error) {
     throw new Error();
@@ -165,7 +164,7 @@ export const getPaisById = async (idPais: any) => {
 
 export const getAllMunicipios = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/municipio/1/`); //TODO: Modificar endpoint apra obtener todos y no por id de departamento
+    const response = await api.get(`/municipio/1/`); //TODO: Modificar endpoint apra obtener todos y no por id de departamento
     return response.data;
   } catch (error) {
     throw new Error();
@@ -174,7 +173,7 @@ export const getAllMunicipios = async () => {
 
 export const getAllCondicioOperaciones = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/condicion-operacion/`);
+    const response = await api.get(`/condicion-operacion/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -183,7 +182,7 @@ export const getAllCondicioOperaciones = async () => {
 
 export const getAllMetodosDePago = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/formas-pago/`);
+    const response = await api.get(`/formas-pago/`);
     return response.data;
   } catch (error) {
     console.log(error);
@@ -192,7 +191,7 @@ export const getAllMetodosDePago = async () => {
 
 export const getAllPlazos = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/plazo/`);
+    const response = await api.get(`/plazo/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -201,7 +200,7 @@ export const getAllPlazos = async () => {
 
 export const getAllTipoDocContingencia = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/tipo-doc-contingencia/`);
+    const response = await api.get(`/tipo-doc-contingencia/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -210,7 +209,7 @@ export const getAllTipoDocContingencia = async () => {
 
 export const getAllTipoInvalidacion = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/tipo-invalidacion/`);
+    const response = await api.get(`/tipo-invalidacion/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -219,7 +218,7 @@ export const getAllTipoInvalidacion = async () => {
 
 export const getAllTipoDonacion = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/tipo-donacion/`);
+    const response = await api.get(`/tipo-donacion/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -228,7 +227,7 @@ export const getAllTipoDonacion = async () => {
 
 export const getAllTipoPersona = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/tipo-persona/`);
+    const response = await api.get(`/tipo-persona/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -237,7 +236,7 @@ export const getAllTipoPersona = async () => {
 
 export const getAllTipoTransporte = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/tipo-transporte/`);
+    const response = await api.get(`/tipo-transporte/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -246,7 +245,7 @@ export const getAllTipoTransporte = async () => {
 
 export const getAllIncoterms = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/incoterms/`);
+    const response = await api.get(`/incoterms/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -255,7 +254,7 @@ export const getAllIncoterms = async () => {
 
 export const getAllTipoDomicilioFiscal = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/tipo-domicilio-fiscal/`);
+    const response = await api.get(`/tipo-domicilio-fiscal/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -264,7 +263,7 @@ export const getAllTipoDomicilioFiscal = async () => {
 
 export const getAllTipoMoneda = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/tipo-moneda/`);
+    const response = await api.get(`/tipo-moneda/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -273,7 +272,7 @@ export const getAllTipoMoneda = async () => {
 
 export const getAllDescuento = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/descuento/`);
+    const response = await api.get(`/descuento/`);
     return response.data;
   } catch (error) {
     throw new Error();

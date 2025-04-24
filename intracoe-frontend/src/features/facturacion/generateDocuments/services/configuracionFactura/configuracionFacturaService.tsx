@@ -1,10 +1,8 @@
-import axios from 'axios';
-
-const BASEURL = import.meta.env.VITE_URL_BASE;
+import { api } from "../../../../../shared/services/api";
 
 export const getAllTipoDte = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/tipo-dte/`);
+    const response = await api.get(`/tipo-dte/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -13,7 +11,7 @@ export const getAllTipoDte = async () => {
 
 export const getAllCondicionDeOperacion = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/condicion-operacion/`);
+    const response = await api.get(`/condicion-operacion/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -22,7 +20,7 @@ export const getAllCondicionDeOperacion = async () => {
 
 export const getCondicionDeOperacionById = async (id: number) => {
   try {
-    const response = await axios.get(`${BASEURL}/condicion-operacion/${id}/`);
+    const response = await api.get(`/condicion-operacion/${id}/`);
     return response.data;
   } catch (error) {
     throw new Error();
