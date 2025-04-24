@@ -1315,7 +1315,6 @@ def generar_json_doc_ajuste(ambiente_obj, tipo_dte_obj, factura, emisor, recepto
 #VISTAS PARA FIRMAR Y GENERAR EL SELLO DE RECEPCION CON HACIENDA
 @csrf_exempt
 def firmar_factura_view(request, factura_id):
-    print("-Inicio firma DTE: ", factura_id)  
     print("-Inicio firma DTE: ", factura_id)
 
     factura = get_object_or_404(FacturaElectronica, id=factura_id)
@@ -1328,13 +1327,10 @@ def firmar_factura_view(request, factura_id):
     response_data = {}
     fecha_actual = obtener_fecha_actual()
     firma = True
-    fallo_total = True
-    modal_confirm = False
+    motivo_otro = False
 
     # Reintentos desde sesión (inicializar si no existe)
     intentos_modal = request.session.get('intentos_reintento', 0)
-
-    is_reintento = request.method == "POST"
 
     # Intentos automáticos
     while intento <= intentos_max:
@@ -1369,7 +1365,8 @@ def firmar_factura_view(request, factura_id):
             except Exception as e:
                 response_data = {"error": "No se pudo parsear JSON", "detalle": response.text}
                 print("Error al decodificar JSON:", e)
-
+                
+            print("Response data:", response_data)
             if response.status_code == 200 and response_data.get("status") == "OK":
                 factura.json_firmado = response_data
                 factura.firmado = True
@@ -1377,16 +1374,24 @@ def firmar_factura_view(request, factura_id):
                 request.session['intentos_reintento'] = 0  # Resetear intentos
                 request.session.modified = True
                 contingencia = False
-                fallo_total = False
+                motivo_otro = False
                 break
             else:
-                print("Error en firma:", response.status_code)
-                tipo_contingencia_obj = TipoContingencia.objects.get(
-                    codigo="1" if response.status_code in [500, 502, 503, 504, 408] else "5"
-                )
+                print("Firma | Ocurrio un error al firmar la factura")
+                motivo_otro = False
+                if response.status_code in [500, 502, 503, 504, 408]:
+                    tipo_contingencia_obj = TipoContingencia.objects.get(codigo="1")
+                elif response.status_code in [408, 499]:
+                    tipo_contingencia_obj = TipoContingencia.objects.get(codigo="2")
+                elif response.status_code in [503, 504]:
+                    tipo_contingencia_obj = TipoContingencia.objects.get(codigo="4")
+                else:  # Otro- 400, 500, 502
+                    tipo_contingencia_obj = TipoContingencia.objects.get(codigo="5")
+                    motivo_otro = True  # Activar motivo_otro en errores graves
+                    mensaje = f"Error en el envío de la factura: {response.status_code}"
+                    print("Error mh: ", mensaje)
                 intento += 1
                 time.sleep(1)
-
         except requests.exceptions.RequestException as e:
             tipo_contingencia_obj = TipoContingencia.objects.get(codigo="1")
             intento += 1
@@ -1402,12 +1407,14 @@ def firmar_factura_view(request, factura_id):
             time.sleep(1)
         except Exception as e:
             tipo_contingencia_obj = TipoContingencia.objects.get(codigo="5")
+            motivo_otro = True
             intento += 1
             time.sleep(1)
-            print("Error inesperado:", str(e))
+            print("Error inesperado emisor:", str(e))
 
     # Si fallaron todos los intentos
     if contingencia:
+        print("Tipo de contingencia: ", tipo_contingencia_obj)
         if not contingencia_creada:
             finalizar_contigencia_view(request)
 
@@ -1430,14 +1437,15 @@ def firmar_factura_view(request, factura_id):
 
         # Decidir si mostrar el modal dependiendo de los intentos
         mostrar_modal = intentos_modal < 3
-        print(f"Intentos: {intentos_modal}, sesion: {request.session['intentos_reintento']}, Mostrar modal: {mostrar_modal}")
+        print(f"Intentos: {intentos_modal}, sesion: {request.session['intentos_reintento']}, Mostrar modal: {mostrar_modal}, motivo: {motivo_otro}")
 
         return redirect(
-            f"{reverse('detalle_factura', args=[factura_id])}"
-            f"?mostrar_modal={'1' if mostrar_modal else '0'}"
+            f"{reverse('detalle_factura', args=[factura_id])}?"
+            f"mostrar_modal={'1' if mostrar_modal else '0'}"
             f"&firma={'1' if firma else '0'}"
             f"&envio_mh=0"
             f"&intentos_modal={intentos_modal}"
+            f"&motivo_otro={'1' if motivo_otro else '0'}"
         )
 
     # Firma exitosa
@@ -1454,9 +1462,6 @@ def firmar_factura_view(request, factura_id):
             'message': 'Factura firmada correctamente.',
             'redirect_url': reverse('detalle_factura', args=[factura_id])
         })
-
-
-
 
     
 @csrf_exempt
@@ -1815,21 +1820,24 @@ def enviar_factura_hacienda_view(request, factura_id):
     
 def detalle_factura(request, factura_id):
     factura = get_object_or_404(FacturaElectronica, id=factura_id)
-    
+
     mostrar_modal = request.GET.get('mostrar_modal') == '1'
     intentos_modal = int(request.GET.get('intentos_modal', 0))
     
-    firma = request.GET.get('firma') #== '1'
-    envio_mh = request.GET.get('envio_mh') #== '1'
-    
-    print(f"Detalle | Modal de confirmacion: {mostrar_modal}, firma: {firma}, envio mh: {envio_mh}, reintento: {intentos_modal}")
+    firma = request.GET.get('firma')
+    envio_mh = request.GET.get('envio_mh')
+    motivo_otro = request.GET.get('motivo_otro', '0')
+
+    print(f"Detalle | Modal: {mostrar_modal}, firma: {firma}, envio: {envio_mh}, intentos: {intentos_modal}, motivo_otro: {motivo_otro}")
 
     return render(request, 'documentos/factura_consumidor/template_factura.html', {
         'factura': factura,
         'mostrar_modal': mostrar_modal,
         'intentos_modal': intentos_modal,
+        'motivo_otro': int(motivo_otro),
     })
 
+    
 
 @csrf_exempt    
 def invalidacion_dte_view(request, factura_id):
@@ -4628,3 +4636,36 @@ def procesar_respuesta_view(request):
 
         return redirect('detalle_factura', factura_id=factura_id)
     return HttpResponse("Método no permitido", status=405)
+
+from django.shortcuts import get_object_or_404, redirect
+from django.http import JsonResponse
+from .models import EventoContingencia
+from datetime import datetime
+
+def motivo_contingencia_view(request):
+    try:
+        factura_id = request.GET.get("factura_id")
+        motivo = request.GET.get("motivo")
+
+        print(f"Asignar motivo: factura id: {factura_id}, motivo: {motivo}")
+
+        evento = EventoContingencia.objects.filter(lotes_contingencia__factura=factura_id).first()
+
+        if not evento:
+            return JsonResponse({"error": "No se encontró un evento asociado a esta factura."}, status=404)
+
+        fecha_actual = obtener_fecha_actual()
+
+        evento.motivo_contingencia = motivo
+        evento.fecha_modificacion = fecha_actual.date()
+        evento.hora_modificacion = fecha_actual.time()
+        evento.save()
+        print("Evento modificado: ", evento)
+        
+        return redirect (reverse('detalle_factura', args=[factura_id]))
+    
+    except Exception as e:
+        print("Error inesperado: ", e)
+        return JsonResponse({"error": f"Hubo un error inesperado: {str(e)}"}, status=500)
+
+
