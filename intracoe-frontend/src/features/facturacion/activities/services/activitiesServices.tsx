@@ -1,12 +1,11 @@
 import axios from 'axios';
 import { ActivitiesDataNew } from '../../../../shared/interfaces/interfaces';
-
-const BASEURL = import.meta.env.VITE_URL_BASE;
+import { api } from '../../../../shared/services/api';
 
 export const createActivity = async (activity: ActivitiesDataNew) => {
   console.log('activity', activity);
   try {
-    const response = await axios.post(`${BASEURL}/actividad/crear/`, activity, {
+    const response = await api.post(`/actividad/crear/`, activity, {
       headers: {
         'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
       },
@@ -19,7 +18,7 @@ export const createActivity = async (activity: ActivitiesDataNew) => {
 
 export const deleteActivity = async (id: number) => {
   try {
-    const response = await axios.delete(`${BASEURL}/actividad/eliminar/${id}/`);
+    const response = await api.delete(`/actividad/eliminar/${id}/`);
     console.log(response);
     return response;
   } catch (error) {

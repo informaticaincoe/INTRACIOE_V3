@@ -1,53 +1,154 @@
-{% if mostrar_modal %}
-    <div class="modal fade" id="confirmModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-        <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header"><h5 class="modal-title">Error al firmar el DTE</h5></div>
-            <div class="modal-body text-center">
-            {% if request.GET.intentos_modal|add:'0' >= 2 %}
-                <p>Ya no se puede reintentar. Proceda bajo el plan de contingencia.</p>
-                <button class="btn btn-primary" onclick="window.location.href='{% url 'detalle_factura' factura.id %}'">Continuar</button>
-            {% else %}
-                <p>¿Desea intentar firmar de nuevo?</p>
-                <button class="btn btn-outline-primary" id="btnReintentar">Reintentar</button>
-                <button class="btn btn-secondary" onclick="window.location.href='{% url 'detalle_factura' factura.id %}'">Continuar</button>
-            {% endif %}
-            </div>
-        </div>
-        </div>
-    </div>
+@csrf_exempt
+def firmar_factura_view(request, factura_id):
+    print("-Inicio firma DTE: ", factura_id)
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-        const intentos = parseInt("{{ request.GET.intentos_modal|default:'0' }}");
-        const modalElement = document.getElementById('confirmModal');
-        console.log("intentos: ", intentos)
+    factura = get_object_or_404(FacturaElectronica, id=factura_id)
+    contingencia = True
+    intento = 1
+    intentos_max = 3
+    tipo_contingencia_obj = None
+    contingencia_creada = False
+    response = None
+    response_data = {}
+    fecha_actual = obtener_fecha_actual()
+    firma = True
+    modal_confirm = False
+    motivo_otro = False
 
-        if (intentos >= 2) {
-            // No mostrar el modal, o cerrarlo si se alcanza el máximo
-            const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
-            modal.hide();
-        } else {
-            // Mostrar el modal si aún no se alcanzaron los intentos máximos
-            const modal = new bootstrap.Modal(modalElement);
-            modal.show();
+    # Reintentos desde sesión (inicializar si no existe)
+    intentos_modal = request.session.get('intentos_reintento', 0)
+
+    is_reintento = request.method == "POST"
+
+    # Intentos automáticos
+    while intento <= intentos_max:
+        print(f"Intento {intento} de {intentos_max}")
+        token_data = Token_data.objects.filter(activado=True).first()
+        if not token_data:
+            return JsonResponse({"error": "No hay token activo."}, status=401)
+
+        if not os.path.exists(CERT_PATH):
+            return JsonResponse({"error": "Certificado no encontrado."}, status=400)
+
+        try:
+            if isinstance(factura.json_original, dict):
+                dte_json_str = json.dumps(factura.json_original, separators=(',', ':'))
+            else:
+                json_obj = json.loads(factura.json_original)
+                dte_json_str = json.dumps(json_obj, separators=(',', ':'))
+        except Exception as e:
+            return JsonResponse({"error": "JSON inválido", "detalle": str(e)}, status=400)
+
+        payload = {
+            "nit": "06142811001040",
+            "activo": True,
+            "passwordPri": "3nCr!pT@d0Pr1v@d@",
+            "dteJson": dte_json_str,
         }
-    
-        const btn = document.getElementById("btnReintentar");
-        if (btn) {
-        btn.addEventListener("click", () => {
-            fetch("{% url 'firmar_factura' factura.id %}", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": "{{ csrf_token }}",
-            },
-            body: JSON.stringify({ reintento: true }),
-            }).then(() => location.reload());
-        });
-        }
-        });
-    </script>
-    
-    {% endif %}
-{% endif %}
+
+        try:
+            response = requests.post(FIRMADOR_URL, json=payload, headers={"Content-Type": "application/json"})
+            try:
+                response_data = response.json()
+            except Exception as e:
+                response_data = {"error": "No se pudo parsear JSON", "detalle": response.text}
+                print("Error al decodificar JSON:", e)
+
+            if response.status_code == 200 and response_data.get("status") == "OK":
+                factura.json_firmado = response_data
+                factura.firmado = True
+                factura.save()
+                request.session['intentos_reintento'] = 0  # Resetear intentos
+                request.session.modified = True
+                contingencia = False
+                fallo_total = False
+                break
+            else:
+                print("Firma | Ocurrio un error al firmar la factura")
+                if response.status_code in [500, 502, 503, 504, 408]: #503, 504
+                    print("Error al conectarse al servidor: ", response.status_code)
+                    tipo_contingencia_obj = TipoContingencia.objects.get(codigo="1")
+                elif response.status_code in [408, 499]: #500, 503
+                    print("Error al conectarse al servidor: ", response.status_code)
+                    tipo_contingencia_obj = TipoContingencia.objects.get(codigo="2")
+                elif response.status_code in [503, 504]: #503, 504
+                    print("Error al conectarse al servidor: ", response.status_code)
+                    tipo_contingencia_obj = TipoContingencia.objects.get(codigo="4")
+                else:#Otro- 400, 500, 502
+                    tipo_contingencia_obj = TipoContingencia.objects.get(codigo="5")
+                    mensaje = f"Error en el envío de la factura: {response.status_code}"
+                    print("Error: ", mensaje)
+                # Esperar antes de siguiente intento
+                error_envio = f"Error al firmar la factura: {response.status_code}"
+                print("Error en firma:", response.status_code)
+                intento += 1
+                time.sleep(1)
+
+        except requests.exceptions.RequestException as e:
+            tipo_contingencia_obj = TipoContingencia.objects.get(codigo="1")
+            intento += 1
+            time.sleep(1)
+            print("Excepción general:", str(e))
+        except requests.exceptions.ConnectionError:
+            tipo_contingencia_obj = TipoContingencia.objects.get(codigo="3")
+            intento += 1
+            time.sleep(1)
+        except requests.exceptions.Timeout:
+            tipo_contingencia_obj = TipoContingencia.objects.get(codigo="3")
+            intento += 1
+            time.sleep(1)
+        except Exception as e:
+            tipo_contingencia_obj = TipoContingencia.objects.get(codigo="5")
+            intento += 1
+            time.sleep(1)
+            print("Error inesperado:", str(e))
+
+    # Si fallaron todos los intentos
+    if contingencia:
+        if not contingencia_creada:
+            finalizar_contigencia_view(request)
+
+            factura.estado = False
+            factura.contingencia = True
+            factura.tipomodelo = Modelofacturacion.objects.get(codigo="2")
+            factura.tipotransmision = TipoTransmision.objects.get(codigo="2")
+            factura.fecha_modificacion = fecha_actual.date()
+            factura.hora_modificacion = fecha_actual.time()
+            factura.save()
+
+            lote_contingencia_dte_view(request, factura_id, tipo_contingencia_obj)
+            contingencia_creada = True
+
+        # Incrementar reintentos solo si falló la firma
+        print(f"Intentos de reintento (antes de incrementar): {intentos_modal}")
+        intentos_modal += 1
+        request.session['intentos_reintento'] = intentos_modal
+        request.session.modified = True
+
+        # Decidir si mostrar el modal dependiendo de los intentos
+        mostrar_modal = intentos_modal < 3
+        print(f"Intentos: {intentos_modal}, sesion: {request.session['intentos_reintento']}, Mostrar modal: {mostrar_modal}")
+
+        return redirect(
+            f"{reverse('detalle_factura', args=[factura_id])}"
+            f"?mostrar_modal={'1' if mostrar_modal else '0'}"
+            f"&firma={'1' if firma else '0'}"
+            f"&envio_mh=0"
+            f"&intentos_modal={intentos_modal}"
+            f"&motivo_otro={motivo_otro}"
+        )
+
+    # Firma exitosa
+    if response and response.status_code == 200 and response_data.get("status") == "OK":
+        json_signed_path = f"FE/json_facturas_firmadas/{factura.codigo_generacion}.json"
+        os.makedirs(os.path.dirname(json_signed_path), exist_ok=True)
+        with open(json_signed_path, "w", encoding="utf-8") as json_file:
+            json.dump(response_data, json_file, indent=4, ensure_ascii=False)
+
+        print("-Fin firma DTE:", factura_id)
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Factura firmada correctamente.',
+            'redirect_url': reverse('detalle_factura', args=[factura_id])
+        })

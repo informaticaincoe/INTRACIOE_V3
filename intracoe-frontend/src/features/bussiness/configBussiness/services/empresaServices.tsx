@@ -1,63 +1,59 @@
-import axios from 'axios';
+// src/services/empresaService.ts
 
-const BASEURL = import.meta.env.VITE_URL_BASE;
+import { RequestEmpresa } from "../../../../shared/interfaces/interfaces";
+import { api } from "../../../../shared/services/api";
 
-export const getAllEmpresas = async () => {
-  console.log(BASEURL);
+
+export const getAllEmpresas = async (): Promise<RequestEmpresa[]> => {
   try {
-    const response = await axios.get(`${BASEURL}/emisor/`, {
-      headers: {
-        'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
-      },
-    });
+    const response = await api.get<RequestEmpresa[]>('/emisor/');
     return response.data;
   } catch (error) {
-    console.log(error);
+    console.error('Error fetching empresas:', error);
+    throw new Error('Error fetching empresas');
   }
 };
 
-export const getEmpresaById = (id: number) => {
-  console.log(id);
-};
-
-export const createEmpresa = async (data: any) => {
+export const getEmpresaById = async (id: number): Promise<RequestEmpresa> => {
   try {
-    const response = await axios.post(`${BASEURL}/emisor/crear/`, data, {
-      headers: {
-        'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
-      },
-    });
-    console.log(response);
-    return response;
+    const response = await api.get<RequestEmpresa>(`/emisor/${id}/`);
+    return response.data;
   } catch (error) {
-    console.log(error);
-    throw new Error();
+    console.error(`Error fetching empresa ${id}:`, error);
+    throw new Error('Error fetching empresa');
   }
 };
 
-export const editReceptor = async (id: string, data: any) => {
+export const createEmpresa = async (data: RequestEmpresa): Promise<RequestEmpresa> => {
   try {
-    const response = await axios.put(`${BASEURL}/emisor/editar/${id}/`, data, {
-      headers: {
-        'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
-      },
-    });
-    console.log(response);
-    return response;
-  } catch (error) {
-    console.log(error);
-    throw new Error();
+    const response = await api.post<RequestEmpresa>('/emisor/crear/', data);
+    return response.data;
+  } catch (error: any) {
+    console.error('Error creating empresa:', error);
+    throw new Error(error.response?.data?.detail || 'Error creating empresa');
   }
 };
 
-export const getCodigoEstablecimientoById = async (idEstablecimiento: any) => {
+export const editEmpresa = async (id: string, data: Partial<RequestEmpresa>): Promise<RequestEmpresa> => {
   try {
-    const response = await axios.post(`${BASEURL}/emisor/crear/`, {
-      headers: {
-        'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
-      },
-    });
+    const response = await api.put<RequestEmpresa>(`/emisor/editar/${id}/`, data);
+    return response.data;
+  } catch (error: any) {
+    console.error(`Error updating empresa ${id}:`, error);
+    throw new Error(error.response?.data?.detail || 'Error updating empresa');
+  }
+};
+
+export const getCodigoEstablecimientoById = async (idEstablecimiento: number): Promise<string> => {
+  try {
+    // Ajusta la ruta y payload según tu API si fuera distinto
+    const response = await api.post<{ codigo: string }>(
+      '/emisor/codigo-establecimiento/',
+      { id: idEstablecimiento }
+    );
+    return response.data.codigo;
   } catch (error) {
-    throw new Error();
+    console.error(`Error fetching código de establecimiento ${idEstablecimiento}:`, error);
+    throw new Error('Error fetching código de establecimiento');
   }
 };

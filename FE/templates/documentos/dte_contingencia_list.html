@@ -67,7 +67,6 @@
           <th>Código de Generación</th>
           <th>Sello Recibido</th>
           <th>Cantidad Lotes</th>
-          <th>Motivo contingencia</th>
           <th>Enviar Contingencia</th>
           <th>Nota</th>
         </tr>
@@ -98,13 +97,8 @@
           <td>{{ grupo.evento.sello_recepcion }}</td>
           <td>{{ grupo.total_lotes_evento }}</td>
           <td>
-            {% if grupo.evento.tipo_contingencia.codigo == "5" %}
-              <input type="text" name="motivo_contingencia" data-id="{{ grupo.evento.motivo_contingencia }}" class="form-control">
-            {% endif %}
-          </td>
-          <td>
             {% if grupo.evento.sello_recepcion is None and grupo.evento.finalizado == False and grupo.total_lotes_evento > 0 %}
-              <a id="contingencia_unificado" data-id="{{ grupo.evento.id }}" data-requiere-motivo="{{ grupo.evento.tipo_contingencia.codigo }}" class="btn btn-sm btn-secondary">Enviar</a>
+              <a id="contingencia_unificado" data-id="{{ grupo.evento.id }}" class="btn btn-sm btn-secondary">Enviar</a>
             {% endif %}
           </td>
           <td>
@@ -453,7 +447,6 @@ document.addEventListener('DOMContentLoaded', function(){
       console.error('Error:', error);
     });
   });
-
 });
 
 //Seleccionar hasta 400 lotes de un evento
@@ -474,7 +467,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
       }
 
-      const maxLotes = 1;
+      const maxLotes = 400;
       let lotesSeleccionados = 0;
 
       tablasLotes.forEach(tabla => {
@@ -523,18 +516,8 @@ document.addEventListener('DOMContentLoaded', function () {
     
           const contingencia_id = this.dataset.id;
           const fila = this.closest('tr');
-          const input = fila.querySelector('.motivo_contingencia_input');
-          const motivo_contingencia = input ? input.value.trim() : '';
-          const codigoMotivo = this.dataset.requiereMotivo;
-    
-          if (codigoMotivo === "5" && !motivo_contingencia) {
-            alert("Ingrese el motivo de contingencia");
-            return;
-          }
-    
-          const encodedMotivo = encodeURIComponent(motivo_contingencia);
-    
-          fetch(`/fe/contingencia-dte/?contingencia_id=${contingencia_id}&motivo_contingencia=${encodedMotivo}`)
+          
+          fetch(`/fe/contingencia-dte/?contingencia_id=${contingencia_id}`)
             .then(response => {
               if (!response.ok) {
                 throw new Error('Network response was not ok');

@@ -10,7 +10,7 @@ import { StepperFormImpuestoStock } from './stepperFormImpuestoStock';
 import { StepperFormLotesYVencimiento } from './stepperFormLotesYVencimiento';
 import {
   createProductService,
-  EditProductService,
+  editProductService,
   getProductById,
 } from '../../services/productsServices';
 import CustomToast, {
@@ -80,7 +80,7 @@ export const StepperFormContainer = () => {
     }
     try {
       if (params.id) {
-        await EditProductService(params.id, formData);
+        await editProductService(params.id, formData);
       } else {
         await createProductService(formData);
       }
