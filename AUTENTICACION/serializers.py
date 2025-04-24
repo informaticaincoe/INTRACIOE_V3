@@ -1,4 +1,9 @@
 from rest_framework import serializers
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status, permissions
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 import random
@@ -44,7 +49,16 @@ class ChangePasswordSerializer(serializers.Serializer):
         user.set_password(self.validated_data['new_password'])
         user.save()
         return user
+    
+# LOGOUT INVALIDAR TOKEN
+class logoutAPIView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
 
+    def post(self, request):
+        #borrar todos los tokens del usuario para orzar re-login
+        Token.objects.filter(user=request.user).delete()
+        return Response({"detail":"Sesion cerrada con exito"}, status=status.HTTP_200_OK)
 
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
