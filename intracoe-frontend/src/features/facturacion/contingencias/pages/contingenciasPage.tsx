@@ -44,23 +44,9 @@ const facturas = [
     },
 ]
 
-const lotes = [
-    {
-        "lote": 1,
-        "cantidad": 2,
-    },
-    {
-        "lote": 1,
-        "cantidad": 2,
-    },
-]
-
-
 export const ContingenciasPage = () => {
     const [contingenciasList, setContingenciasList] = useState<Contingencias>()
     const [expandedRows, setExpandedRows] = useState<any[]>([]);
-    const [facturaExpandedRows, setFacturaExpandedRows] = useState<any[]>([]);
-
 
     const [filters, setFilters] = useState<FilterContingencia>({
         recibido_mh: null,
@@ -142,9 +128,6 @@ export const ContingenciasPage = () => {
             </div >
         );
     };
-
-
-
 
     return (
         <>

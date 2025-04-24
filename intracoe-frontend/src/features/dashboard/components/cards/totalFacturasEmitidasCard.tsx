@@ -13,7 +13,7 @@ export const TotalFacturasEmitidasCard = () => {
             separator=","
         >
             {({ countUpRef }) => (
-                <span style={{ fontSize: '2rem', fontWeight: '600', height: '100%' }}>
+                <span style={{ fontSize: '1.5rem', fontWeight: '600', height: '100%' }}>
                     <span ref={countUpRef} />
                 </span>
             )}

@@ -5,7 +5,7 @@ import { PerfilMenu } from "./perfilMenu";
 export const HeaderMenu = () => {
   const [visible, setVisible] = useState<boolean>(false);
   return (
-    <nav className="bg-primary-blue sticky top-0 z-40 flex justify-between px-10 py-5">
+    <nav className="bg-primary-blue sticky top-0 z-40 flex justify-between px-10 py-3">
       <h1 className="text-xl font-semibold">
         <span className="text-white">Intra</span>
         <span className="text-primary-yellow">coe</span>

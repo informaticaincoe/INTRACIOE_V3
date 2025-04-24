@@ -16,7 +16,7 @@ import { FaCheckCircle } from 'react-icons/fa';
 import { useNavigate, useParams } from 'react-router';
 import {
   createProductService,
-  EditProductService,
+  editProductService,
   getProductById,
 } from '../../../products/services/productsServices';
 
@@ -97,7 +97,7 @@ export const StepperServiciosFormContainer = () => {
     try {
       // 3) Envío con axios (o tu fetch), sin especificar Content-Type
       if (params.id) {
-        const response = await EditProductService(params.id, payload);
+        const response = await editProductService(params.id, payload);
       } else {
         const response = await createProductService(payload);
       }
