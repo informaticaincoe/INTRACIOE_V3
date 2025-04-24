@@ -1,6 +1,5 @@
-import axios from 'axios';
+import { api } from "../../services/api";
 
-const BASEURL = import.meta.env.VITE_URL_BASE;
 
 export const deleteActivities = async (
   page?: number,
@@ -8,7 +7,7 @@ export const deleteActivities = async (
   filtro?: string
 ) => {
   try {
-    const response = await axios.delete(`${BASEURL}/actividad/eliminar/`, {
+    const response = await api.delete(`/actividad/eliminar/`, {
       params: filtro ? { filtro } : {},
     });
     return response.data;
@@ -19,7 +18,7 @@ export const deleteActivities = async (
 
 export const deleteAmbientes = async (id: number) => {
   try {
-    const response = await axios.delete(`${BASEURL}/ambiente/${id}/eliminar/`, {
+    const response = await api.delete(`/ambiente/${id}/eliminar/`, {
       headers: {
         'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
       },
@@ -33,8 +32,8 @@ export const deleteAmbientes = async (id: number) => {
 
 export const deleteModelosDeFacturacion = async (id: number) => {
   try {
-    const response = await axios.delete(
-      `${BASEURL}/modelo-facturacion/${id}/eliminar/`
+    const response = await api.delete(
+      `/modelo-facturacion/${id}/eliminar/`
     );
     return response.data;
   } catch (error) {
@@ -44,8 +43,8 @@ export const deleteModelosDeFacturacion = async (id: number) => {
 
 export const deleteTipoTransmision = async (id: number) => {
   try {
-    const response = await axios.delete(
-      `${BASEURL}/tipo-transmision/${id}/eliminar/`
+    const response = await api.delete(
+      `/tipo-transmision/${id}/eliminar/`
     );
     return response.data;
   } catch (error) {
@@ -55,8 +54,8 @@ export const deleteTipoTransmision = async (id: number) => {
 
 export const deleteTipoContingencia = async (id: number) => {
   try {
-    const response = await axios.delete(
-      `${BASEURL}/tipo-contingencia/${id}/eliminar/`
+    const response = await api.delete(
+      `/tipo-contingencia/${id}/eliminar/`
     );
     return response.data;
   } catch (error) {
@@ -66,8 +65,8 @@ export const deleteTipoContingencia = async (id: number) => {
 
 export const deleteTipoRentencionIVA = async (id: number) => {
   try {
-    const response = await axios.delete(
-      `${BASEURL}/tipo-retencion-iva-mh/${id}/eliminar/`
+    const response = await api.delete(
+      `/tipo-retencion-iva-mh/${id}/eliminar/`
     );
     return response.data;
   } catch (error) {
@@ -77,8 +76,8 @@ export const deleteTipoRentencionIVA = async (id: number) => {
 
 export const deleteTiposGeneracionDocumento = async (id: number) => {
   try {
-    const response = await axios.delete(
-      `${BASEURL}/tipo-generacion-documento/${id}/eliminar/`
+    const response = await api.delete(
+      `/tipo-generacion-documento/${id}/eliminar/`
     );
     return response.data;
   } catch (error) {
@@ -88,8 +87,8 @@ export const deleteTiposGeneracionDocumento = async (id: number) => {
 
 export const deleteTiposEstablecimientos = async (id: number) => {
   try {
-    const response = await axios.delete(
-      `${BASEURL}/tipos-establecimientos/${id}/eliminar/`,
+    const response = await api.delete(
+      `/tipos-establecimientos/${id}/eliminar/`,
       {
         headers: {
           'Content-Type': 'application/json',
@@ -105,8 +104,8 @@ export const deleteTiposEstablecimientos = async (id: number) => {
 
 export const deleteTipoServiciosMedicos = async (id: number) => {
   try {
-    const response = await axios.delete(
-      `${BASEURL}/tipos-servicio-medico/${id}/eliminar/`
+    const response = await api.delete(
+      `/tipos-servicio-medico/${id}/eliminar/`
     );
     return response.data;
   } catch (error) {
@@ -116,7 +115,7 @@ export const deleteTipoServiciosMedicos = async (id: number) => {
 
 export const deleteTipoDTE = async (id: number) => {
   try {
-    const response = await axios.delete(`${BASEURL}/tipo-dte/${id}/eliminar/`);
+    const response = await api.delete(`/tipo-dte/${id}/eliminar/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -125,8 +124,8 @@ export const deleteTipoDTE = async (id: number) => {
 
 export const deleteOtrosDocumentosAsociados = async (id: number) => {
   try {
-    const response = await axios.delete(
-      `${BASEURL}/otros-documentos-asociado/${id}/eliminar/`
+    const response = await api.delete(
+      `/otros-documentos-asociado/${id}/eliminar/`
     );
     return response.data;
   } catch (error) {
@@ -136,8 +135,8 @@ export const deleteOtrosDocumentosAsociados = async (id: number) => {
 
 export const deleteTipoIdReceptor = async (id: number) => {
   try {
-    const response = await axios.delete(
-      `${BASEURL}/tipos-doc-id-receptor/${id}/eliminar/`
+    const response = await api.delete(
+      `/tipos-doc-id-receptor/${id}/eliminar/`
     );
     return response.data;
   } catch (error) {
@@ -147,7 +146,7 @@ export const deleteTipoIdReceptor = async (id: number) => {
 
 export const deletePaises = async (id: number) => {
   try {
-    const response = await axios.delete(`${BASEURL}/pais/${id}/eliminar/`);
+    const response = await api.delete(`/pais/${id}/eliminar/`);
     console.log(response.data);
     return response.data;
   } catch (error) {
@@ -157,8 +156,8 @@ export const deletePaises = async (id: number) => {
 
 export const deleteDepartamentos = async (id: number) => {
   try {
-    const response = await axios.delete(
-      `${BASEURL}/departamento/${id}/eliminar/`
+    const response = await api.delete(
+      `/departamento/${id}/eliminar/`
     );
 
     return response.data;
@@ -169,7 +168,7 @@ export const deleteDepartamentos = async (id: number) => {
 
 export const deletePaisById = async (idPais: any) => {
   try {
-    const response = await axios.delete(`${BASEURL}/pais/${idPais}/eliminar/`);
+    const response = await api.delete(`/pais/${idPais}/eliminar/`);
     return response.data.descripcion;
   } catch (error) {
     throw new Error();
@@ -178,7 +177,7 @@ export const deletePaisById = async (idPais: any) => {
 
 export const deleteMunicipios = async (id: number) => {
   try {
-    const response = await axios.delete(`${BASEURL}/municipio/${id}/eliminar/`);
+    const response = await api.delete(`/municipio/${id}/eliminar/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -187,8 +186,8 @@ export const deleteMunicipios = async (id: number) => {
 
 export const deleteCondicioOperaciones = async (id: number) => {
   try {
-    const response = await axios.delete(
-      `${BASEURL}/condicion-operacion/${id}/eliminar/`
+    const response = await api.delete(
+      `/condicion-operacion/${id}/eliminar/`
     );
     return response.data;
   } catch (error) {
@@ -198,8 +197,8 @@ export const deleteCondicioOperaciones = async (id: number) => {
 
 export const deleteMetodosDePago = async (id: number) => {
   try {
-    const response = await axios.delete(
-      `${BASEURL}/formas-pago/${id}/eliminar/`
+    const response = await api.delete(
+      `/formas-pago/${id}/eliminar/`
     );
     return response.data;
   } catch (error) {
@@ -209,7 +208,7 @@ export const deleteMetodosDePago = async (id: number) => {
 
 export const deletePlazos = async (id: number) => {
   try {
-    const response = await axios.delete(`${BASEURL}/plazo/${id}/eliminar/`);
+    const response = await api.delete(`/plazo/${id}/eliminar/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -218,8 +217,8 @@ export const deletePlazos = async (id: number) => {
 
 export const deleteTipoDocContingencia = async (id: number) => {
   try {
-    const response = await axios.delete(
-      `${BASEURL}/tipo-doc-contingencia/${id}/eliminar/`
+    const response = await api.delete(
+      `/tipo-doc-contingencia/${id}/eliminar/`
     );
     return response.data;
   } catch (error) {
@@ -229,8 +228,8 @@ export const deleteTipoDocContingencia = async (id: number) => {
 
 export const deleteTipoInvalidacion = async (id: number) => {
   try {
-    const response = await axios.delete(
-      `${BASEURL}/tipo-invalidacion/${id}/eliminar/`
+    const response = await api.delete(
+      `/tipo-invalidacion/${id}/eliminar/`
     );
     return response.data;
   } catch (error) {
@@ -240,8 +239,8 @@ export const deleteTipoInvalidacion = async (id: number) => {
 
 export const deleteTipoDonacion = async (id: number) => {
   try {
-    const response = await axios.delete(
-      `${BASEURL}/tipo-donacion/${id}/eliminar/`
+    const response = await api.delete(
+      `/tipo-donacion/${id}/eliminar/`
     );
     return response.data;
   } catch (error) {
@@ -251,8 +250,8 @@ export const deleteTipoDonacion = async (id: number) => {
 
 export const deleteTipoPersona = async (id: number) => {
   try {
-    const response = await axios.delete(
-      `${BASEURL}/tipo-persona/${id}/eliminar/`
+    const response = await api.delete(
+      `/tipo-persona/${id}/eliminar/`
     );
     return response.data;
   } catch (error) {
@@ -262,8 +261,8 @@ export const deleteTipoPersona = async (id: number) => {
 
 export const deleteTipoTransporte = async (id: number) => {
   try {
-    const response = await axios.delete(
-      `${BASEURL}/tipo-transporte/${id}/eliminar/`
+    const response = await api.delete(
+      `/tipo-transporte/${id}/eliminar/`
     );
     return response.data;
   } catch (error) {
@@ -273,7 +272,7 @@ export const deleteTipoTransporte = async (id: number) => {
 
 export const deleteIncoterms = async (id: number) => {
   try {
-    const response = await axios.delete(`${BASEURL}/incoterms/${id}/eliminar/`);
+    const response = await api.delete(`/incoterms/${id}/eliminar/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -282,8 +281,8 @@ export const deleteIncoterms = async (id: number) => {
 
 export const deleteTipoDomicilioFiscal = async (id: number) => {
   try {
-    const response = await axios.delete(
-      `${BASEURL}/tipo-domicilio-fiscal/${id}/eliminar/`
+    const response = await api.delete(
+      `/tipo-domicilio-fiscal/${id}/eliminar/`
     );
     return response.data;
   } catch (error) {
@@ -293,8 +292,8 @@ export const deleteTipoDomicilioFiscal = async (id: number) => {
 
 export const deleteTipoMoneda = async (id: number) => {
   try {
-    const response = await axios.delete(
-      `${BASEURL}/tipo-moneda/${id}/eliminar/`
+    const response = await api.delete(
+      `/tipo-moneda/${id}/eliminar/`
     );
     return response.data;
   } catch (error) {
@@ -304,7 +303,7 @@ export const deleteTipoMoneda = async (id: number) => {
 
 export const deleteDescuento = async (id: number) => {
   try {
-    const response = await axios.delete(`${BASEURL}/descuento/${id}/eliminar/`);
+    const response = await api.delete(`/descuento/${id}/eliminar/`);
     return response.data;
   } catch (error) {
     throw new Error();

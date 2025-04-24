@@ -1,5 +1,4 @@
 import { MdDashboard } from 'react-icons/md';
-import { IoMdPerson } from 'react-icons/io';
 import { BsBuildingFill } from 'react-icons/bs';
 import { FaCalculator } from 'react-icons/fa';
 import { HiCurrencyDollar } from 'react-icons/hi2';
@@ -9,101 +8,100 @@ import type { MenuProps } from 'antd';
 import { Menu } from 'antd';
 import { useNavigate } from 'react-router';
 
-import defaultPerfil from "../../assets/default-perfil.png"
 
 type MenuItem = Required<MenuProps>['items'][number];
 
 const items: MenuItem[] = [
   {
     key: 'dashboard',
-    icon: <MdDashboard size={24} />,
-    label: <p className="text-start">Dashboard</p>,
+    icon: <MdDashboard size={20} />,
+    label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Dashboard</p>,
   },
   {
     key: 'ventas',
-    icon: <HiCurrencyDollar size={24} />,
-    label: <p className="text-start">Ventas</p>,
+    icon: <HiCurrencyDollar size={20} />,
+    label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Ventas</p>,
     children: [
       {
         key: 'receptores',
-        label: <p className="text-start">clientes</p>,
+        label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">clientes</p>,
       },
       {
         key: 'proveedor',
-        label: <p className="text-start">Proveedores</p>,
+        label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Proveedores</p>,
       },
     ],
   },
   {
     key: 'conta',
-    icon: <FaCalculator size={24} />,
-    label: <p className="text-start">Contabilidad</p>,
+    icon: <FaCalculator size={20} />,
+    label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Contabilidad</p>,
     children: [
       {
         key: 'anexo',
-        label: <p className="text-start">Anexos</p>,
+        label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Anexos</p>,
       },
       {
         key: 'reportes',
-        label: <p className="text-start">Reportes</p>,
+        label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Reportes</p>,
       },
       {
         key: 'catalogo',
-        label: <p className="text-start">Catalogo</p>,
+        label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Catalogo</p>,
       },
     ],
   },
   {
     key: 'fact',
-    icon: <RiFilePaperFill size={24} />,
-    label: <p className="text-start">Facturación</p>,
+    icon: <RiFilePaperFill size={20} />,
+    label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Facturación</p>,
 
     children: [
       {
         key: 'documentos',
-        label: <p className="text-start">Generar facturas</p>,
+        label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Generar facturas</p>,
       },
       {
         key: 'correcciones',
-        label: <p className="text-start">Generar corecciones</p>,
+        label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Generar corecciones</p>,
       },
       {
         key: 'listado-facturas',
-        label: <p className="text-start">Listado Facturas</p>,
+        label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Listado Facturas</p>,
       },
       {
         key: 'listado-contingencias',
-        label: <p className="text-start">Listado contingencias</p>,
+        label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Listado contingencias</p>,
       },
     ],
   },
   {
     key: 'inventario',
-    icon: <FaTruckRampBox size={24} />,
-    label: <p className="text-start">Inventario</p>,
+    icon: <FaTruckRampBox size={20} />,
+    label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Inventario</p>,
     children: [
       {
         key: 'producto',
-        label: <p className="text-start">Productos</p>,
+        label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Productos</p>,
       },
       {
         key: 'servicios',
-        label: <p className="text-start">Servicios </p>,
+        label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Servicios </p>,
       },
     ],
   },
   {
     key: 'empresa',
-    icon: <BsBuildingFill size={24} />,
-    label: <p className="text-start">Empresa</p>,
+    icon: <BsBuildingFill size={20} />,
+    label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Empresa</p>,
     children: [
       {
         key: 'configuracion',
-        label: <p className="text-start">Configurar empresa</p>,
+        label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Configurar empresa</p>,
       },
       {
         key: 'server',
-        label: <p className="text-start">Configurar servidor</p>,
+        label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Configurar servidor</p>,
       },
     ],
   },
@@ -157,11 +155,13 @@ export const SideMenu = () => {
       <Menu
         onClick={onClick}
         style={{
-          width: 250,
+          width: '15vw',
           opacity: '75%',
           fontFamily: 'Inter',
           position: 'sticky',
           top: 80,
+          whiteSpace: 'normal',
+          wordWrap: 'break-word',
         }}
         defaultSelectedKeys={['1']}
         defaultOpenKeys={['dashboard']}

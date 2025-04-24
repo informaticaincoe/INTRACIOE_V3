@@ -1,15 +1,14 @@
-import axios from 'axios';
-import { ActivitiesDataNew } from '../../interfaces/interfaces';
 
-const BASEURL = import.meta.env.VITE_URL_BASE;
+import { ActivitiesDataNew } from '../../interfaces/interfaces';
+import { api } from '../../services/api';
 
 export const updateActivity = async (
   id: number,
   activity: ActivitiesDataNew
 ) => {
   try {
-    const response = await axios.put(
-      `${BASEURL}/actividad/actualizar/${id}/`,
+    const response = await api.put(
+      `/actividad/actualizar/${id}/`,
       activity,
       {
         headers: {
@@ -26,8 +25,8 @@ export const updateActivity = async (
 
 export const updateAmbientes = async (id: string, data: any) => {
   try {
-    const response = await axios.put(
-      `${BASEURL}/ambiente/${id}/editar/`,
+    const response = await api.put(
+      `/ambiente/${id}/editar/`,
       data,
       {
         headers: {
@@ -44,8 +43,8 @@ export const updateAmbientes = async (id: string, data: any) => {
 
 export const updateModelosDeFacturacion = async (id: string, data: any) => {
   try {
-    const response = await axios.put(
-      `${BASEURL}/modelo-facturacion/${id}/editar/`,
+    const response = await api.put(
+      `/modelo-facturacion/${id}/editar/`,
       data,
       {
         headers: {
@@ -61,8 +60,8 @@ export const updateModelosDeFacturacion = async (id: string, data: any) => {
 
 export const updateTipoTransmision = async (id: string, data: any) => {
   try {
-    const response = await axios.put(
-      `${BASEURL}/tipo-transmision/${id}/editar/`,
+    const response = await api.put(
+      `/tipo-transmision/${id}/editar/`,
       data,
       {
         headers: {
@@ -78,8 +77,8 @@ export const updateTipoTransmision = async (id: string, data: any) => {
 
 export const updateTipoContingencia = async (id: string, data: any) => {
   try {
-    const response = await axios.put(
-      `${BASEURL}/tipo-contingencia/${id}/editar/`,
+    const response = await api.put(
+      `/tipo-contingencia/${id}/editar/`,
       data,
       {
         headers: {
@@ -95,8 +94,8 @@ export const updateTipoContingencia = async (id: string, data: any) => {
 
 export const updateTipoTipoRentencionIVA = async (id: string, data: any) => {
   try {
-    const response = await axios.put(
-      `${BASEURL}/tipo-retencion-iva-mh/${id}/editar/`,
+    const response = await api.put(
+      `/tipo-retencion-iva-mh/${id}/editar/`,
       data,
       {
         headers: {
@@ -112,8 +111,8 @@ export const updateTipoTipoRentencionIVA = async (id: string, data: any) => {
 
 export const updateTiposGeneracionDocumento = async (id: string, data: any) => {
   try {
-    const response = await axios.put(
-      `${BASEURL}/tipo-generacion-documento/${id}/editar/`,
+    const response = await api.put(
+      `/tipo-generacion-documento/${id}/editar/`,
       data,
       {
         headers: {
@@ -129,8 +128,8 @@ export const updateTiposGeneracionDocumento = async (id: string, data: any) => {
 
 export const updateTiposEstablecimientos = async (id: string, data: any) => {
   try {
-    const response = await axios.put(
-      `${BASEURL}/tipos-establecimientos/${id}/editar/`,
+    const response = await api.put(
+      `/tipos-establecimientos/${id}/editar/`,
       data,
       {
         headers: {
@@ -147,8 +146,8 @@ export const updateTiposEstablecimientos = async (id: string, data: any) => {
 
 export const updateTipoServiciosMedicos = async (id: string, data: any) => {
   try {
-    const response = await axios.put(
-      `${BASEURL}/tipos-servicio-medico/${id}/editar/`,
+    const response = await api.put(
+      `/tipos-servicio-medico/${id}/editar/`,
       data,
       {
         headers: {
@@ -164,8 +163,8 @@ export const updateTipoServiciosMedicos = async (id: string, data: any) => {
 
 export const updateTipoDTE = async (id: string, data: any) => {
   try {
-    const response = await axios.put(
-      `${BASEURL}/tipo-dte/${id}/editar/`,
+    const response = await api.put(
+      `/tipo-dte/${id}/editar/`,
       data,
       {
         headers: {
@@ -181,8 +180,8 @@ export const updateTipoDTE = async (id: string, data: any) => {
 
 export const updateOtrosDocumentosAsociados = async (id: string, data: any) => {
   try {
-    const response = await axios.put(
-      `${BASEURL}/otros-documentos-asociado/${id}/editar/`,
+    const response = await api.put(
+      `/otros-documentos-asociado/${id}/editar/`,
       data,
       {
         headers: {
@@ -198,8 +197,8 @@ export const updateOtrosDocumentosAsociados = async (id: string, data: any) => {
 
 export const updateTipoIdReceptor = async (id: string, data: any) => {
   try {
-    const response = await axios.put(
-      `${BASEURL}/tipos-doc-id-receptor/${id}/editar/`,
+    const response = await api.put(
+      `/tipos-doc-id-receptor/${id}/editar/`,
       data,
       {
         headers: {
@@ -215,7 +214,7 @@ export const updateTipoIdReceptor = async (id: string, data: any) => {
 
 export const updatePaises = async (id: string, data: any) => {
   try {
-    const response = await axios.put(`${BASEURL}/pais/${id}/editar/`, data, {
+    const response = await api.put(`/pais/${id}/editar/`, data, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -228,8 +227,8 @@ export const updatePaises = async (id: string, data: any) => {
 
 export const updateDepartamentos = async (id: string, data: any) => {
   try {
-    const response = await axios.put(
-      `${BASEURL}/departamento/${id}/editar/`,
+    const response = await api.put(
+      `/departamento/${id}/editar/`,
       data,
       {
         headers: {
@@ -245,8 +244,8 @@ export const updateDepartamentos = async (id: string, data: any) => {
 
 export const updateMunicipios = async (id: string, data: any) => {
   try {
-    const response = await axios.put(
-      `${BASEURL}/municipio/${id}/editar/`,
+    const response = await api.put(
+      `/municipio/${id}/editar/`,
       data,
       {
         headers: {
@@ -262,8 +261,8 @@ export const updateMunicipios = async (id: string, data: any) => {
 
 export const updateCondicioOperaciones = async (id: string, data: any) => {
   try {
-    const response = await axios.put(
-      `${BASEURL}/condicion-operacion/${id}/editar/`,
+    const response = await api.put(
+      `/condicion-operacion/${id}/editar/`,
       data,
       {
         headers: {
@@ -279,8 +278,8 @@ export const updateCondicioOperaciones = async (id: string, data: any) => {
 
 export const updateMetodosDePago = async (id: string, data: any) => {
   try {
-    const response = await axios.put(
-      `${BASEURL}/formas-pago/${id}/editar/`,
+    const response = await api.put(
+      `/formas-pago/${id}/editar/`,
       data,
       {
         headers: {
@@ -296,7 +295,7 @@ export const updateMetodosDePago = async (id: string, data: any) => {
 
 export const updatePlazos = async (id: string, data: any) => {
   try {
-    const response = await axios.put(`${BASEURL}/plazo/${id}/editar/`, data, {
+    const response = await api.put(`/plazo/${id}/editar/`, data, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -309,8 +308,8 @@ export const updatePlazos = async (id: string, data: any) => {
 
 export const updateTipoDocContingencia = async (id: string, data: any) => {
   try {
-    const response = await axios.put(
-      `${BASEURL}/tipo-doc-contingencia/${id}/editar/`,
+    const response = await api.put(
+      `/tipo-doc-contingencia/${id}/editar/`,
       data,
       {
         headers: {
@@ -326,8 +325,8 @@ export const updateTipoDocContingencia = async (id: string, data: any) => {
 
 export const updateTipoInvalidacion = async (id: string, data: any) => {
   try {
-    const response = await axios.put(
-      `${BASEURL}/tipo-invalidacion/${id}/editar/`,
+    const response = await api.put(
+      `/tipo-invalidacion/${id}/editar/`,
       data,
       {
         headers: {
@@ -343,8 +342,8 @@ export const updateTipoInvalidacion = async (id: string, data: any) => {
 
 export const updateTipoDonacion = async (id: string, data: any) => {
   try {
-    const response = await axios.put(
-      `${BASEURL}/tipo-donacion/${id}/editar/`,
+    const response = await api.put(
+      `/tipo-donacion/${id}/editar/`,
       data,
       {
         headers: {
@@ -360,8 +359,8 @@ export const updateTipoDonacion = async (id: string, data: any) => {
 
 export const updateTipoPersona = async (id: string, data: any) => {
   try {
-    const response = await axios.put(
-      `${BASEURL}/tipo-persona/${id}/editar/`,
+    const response = await api.put(
+      `/tipo-persona/${id}/editar/`,
       data,
       {
         headers: {
@@ -377,8 +376,8 @@ export const updateTipoPersona = async (id: string, data: any) => {
 
 export const updateTipoTransporte = async (id: string, data: any) => {
   try {
-    const response = await axios.put(
-      `${BASEURL}/tipo-transporte/${id}/editar/`,
+    const response = await api.put(
+      `/tipo-transporte/${id}/editar/`,
       data,
       {
         headers: {
@@ -394,8 +393,8 @@ export const updateTipoTransporte = async (id: string, data: any) => {
 
 export const updateIncoterms = async (id: string, data: any) => {
   try {
-    const response = await axios.put(
-      `${BASEURL}/incoterms/${id}/editar/`,
+    const response = await api.put(
+      `/incoterms/${id}/editar/`,
       data,
       {
         headers: {
@@ -411,8 +410,8 @@ export const updateIncoterms = async (id: string, data: any) => {
 
 export const updateTipoDomicilioFiscal = async (id: string, data: any) => {
   try {
-    const response = await axios.put(
-      `${BASEURL}/tipo-domicilio-fiscal/${id}/editar/`,
+    const response = await api.put(
+      `/tipo-domicilio-fiscal/${id}/editar/`,
       data,
       {
         headers: {
@@ -428,8 +427,8 @@ export const updateTipoDomicilioFiscal = async (id: string, data: any) => {
 
 export const updateTipoMoneda = async (id: string, data: any) => {
   try {
-    const response = await axios.put(
-      `${BASEURL}/tipo-moneda/${id}/editar/`,
+    const response = await api.put(
+      `/tipo-moneda/${id}/editar/`,
       data,
       {
         headers: {
@@ -445,8 +444,8 @@ export const updateTipoMoneda = async (id: string, data: any) => {
 
 export const updateDescuento = async (id: string, data: any) => {
   try {
-    const response = await axios.put(
-      `${BASEURL}/descuento/${id}/editar/`,
+    const response = await api.put(
+      `/descuento/${id}/editar/`,
       data,
       {
         headers: {

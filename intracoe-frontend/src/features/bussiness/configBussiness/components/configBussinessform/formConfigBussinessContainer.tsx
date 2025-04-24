@@ -13,7 +13,7 @@ import { StepperConfiguracionFacturacion } from './stepperConfiguracionFacturaci
 import { StepperContactBussiness } from './stepperContactBussiness';
 import {
   createEmpresa,
-  editReceptor,
+  editEmpresa,
   getAllEmpresas,
 } from '../../services/empresaServices';
 import { FaCheckCircle } from 'react-icons/fa';
@@ -75,7 +75,7 @@ export const FormConfigBussinessContainer = () => {
     console.log(formData);
     if (empresaId) {
       try {
-        const response = await editReceptor(empresaId, formData);
+        await editEmpresa(empresaId, formData);
         handleAccion(
           'success',
           <FaCheckCircle size={38} />,
@@ -90,7 +90,7 @@ export const FormConfigBussinessContainer = () => {
       }
     } else {
       try {
-        const response = await createEmpresa(formData);
+        await createEmpresa(formData);
         handleAccion(
           'success',
           <FaCheckCircle size={38} />,

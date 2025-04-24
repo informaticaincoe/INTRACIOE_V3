@@ -196,6 +196,7 @@ export interface Municipio {
 }
 
 export const RequestEmpresaDefault = {
+  id: 0,
   nit: '',
   nrc: '',
   nombre_razon_social: '',
@@ -217,6 +218,7 @@ export const RequestEmpresaDefault = {
 };
 
 export interface RequestEmpresa {
+  id: any;
   nit: string;
   nrc: string;
   nombre_razon_social: string;
@@ -510,7 +512,6 @@ export interface Perfil {
 }
 
 export interface password {
-  newPassword: string;
-  password: string;
-  confirmPassword: string;
+  old_password: string;
+  new_password: string;
 }
