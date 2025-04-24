@@ -2825,6 +2825,7 @@ class LoteContingenciaDteAPIView(APIView):
         )
     
 # Dashboard
+
 class TotalesPorTipoDTE(generics.ListAPIView):
     def get(self, request):
         data = (
@@ -2832,7 +2833,7 @@ class TotalesPorTipoDTE(generics.ListAPIView):
         )
         return Response({"totales_por_tipo": list(data)})
  
- 
+
 class TotalVentasAPIView(generics.ListAPIView):
     def get(self, request):
         resultado = (
@@ -2845,7 +2846,8 @@ class TotalVentasAPIView(generics.ListAPIView):
         total = resultado['total_ventas'] or 0
  
         return Response({"total_ventas": total})
- 
+
+
 class TopClientes(APIView):
     def get(self, request):
         data = (
