@@ -1322,7 +1322,7 @@ def firmar_factura_view(request, factura_id):
     intento = 1
     intentos_max = 3
     tipo_contingencia_obj = None
-    #contingencia_creada = False
+    contingencia_creada = False
     response = None
     response_data = {}
     fecha_actual = obtener_fecha_actual()
@@ -1350,13 +1350,21 @@ def firmar_factura_view(request, factura_id):
                 dte_json_str = json.dumps(json_obj, separators=(',', ':'))
         except Exception as e:
             return JsonResponse({"error": "JSON inválido", "detalle": str(e)}, status=400)
+        
+        # Antes de la llamada al firmador, se parsea una sola vez a objeto:
+        if isinstance(factura.json_original, dict):
+            dte_json_obj = factura.json_original
+        else:
+            dte_json_obj = json.loads(factura.json_original)
 
         payload = {
             "nit": "06142811001040",
             "activo": True,
             "passwordPri": "3nCr!pT@d0Pr1v@d@",
-            "dteJson": dte_json_str,
+            "dteJson": dte_json_obj,
         }
+
+        print("payload: ", payload)
 
         try:
             response = requests.post(FIRMADOR_URL, json=payload, headers={"Content-Type": "application/json"})

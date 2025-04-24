@@ -13,6 +13,7 @@ from rest_framework import generics, status, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
+
 from .views import enviar_contingencia_hacienda_view, enviar_factura_invalidacion_hacienda_view, firmar_contingencia_view, firmar_factura_anulacion_view, invalidacion_dte_view, generar_json, num_to_letras, agregar_formas_pago_api, generar_json_contingencia, generar_json_doc_ajuste, obtener_listado_productos_view
 
 from INVENTARIO.serializers import DescuentoSerializer, ProductoSerializer
@@ -1044,10 +1045,10 @@ class GenerarFacturaAPIView(APIView):
         
         #1.Llamar al listado de productos(simular un request GET), 2.Crear una instancia de APIRequestFactory(para solicitudes http), enviar parametros
         # request = APIRequestFactory().get('/api/productos/', {'documento_ajuste': 'False', 'tipo_documento_dte': '01'})
-        # vista = ProductoListAPIView.as_view() #Obtener instancia para manejar la solicitud http
+        # vista = ProductoListAPIView.as_view() #Obtener instancia para manejar la solicitud http, obtener productos
         # response = vista(request) #Simular la solicitud http (request) usando una vista
         # productos = response.data #Obtener los datos de la respuesta
-
+        
         productos_qs = Producto.objects.all()
         productos = ProductoSerializer(productos_qs, many=True).data
         
