@@ -473,7 +473,6 @@ class EventoContingencia(models.Model):
     recibido_mh = models.BooleanField(default=False)
     #Agregar campos de fecha y hora que proporcionara hacienda
     f_fin = models.DateField(auto_now_add=True, null=True)
-    h_inicio = models.TimeField(auto_now_add=True, null=True)
     h_fin = models.TimeField(auto_now_add=True, null=True)
     finalizado = models.BooleanField(default=False)
     #Si el evento fue rechazado se indicara el error para su correcion en un plazo máximo de 24 horas despues de haber sido rechazado
@@ -481,6 +480,7 @@ class EventoContingencia(models.Model):
     observaciones = models.CharField(max_length=3000, blank=True, null=True)
     fecha_sello_recibido = models.DateTimeField(null=True, blank=True) 
     cantidad_lote = models.IntegerField(null=True, verbose_name=None)
+    motivo_contingencia = models.CharField(max_length=500, blank=True, null=True)
     
     def __str__(self):
         return f"Contingencia {self.codigo_generacion} - {self.fecha_transmision} - {self.hora_transmision}"
