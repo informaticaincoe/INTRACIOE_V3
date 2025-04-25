@@ -70,6 +70,13 @@ EMAIL_USE_TLS = False  # Deshabilitado el TLS
 EMAIL_HOST_USER = 'talentohumano@grupoincoe.com'
 EMAIL_HOST_PASSWORD = '*J{jLiwCF)E?'
 
+EMAIL_BACKEND_FE = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST_FE = 'mail.grupoincoe.com'
+EMAIL_PORT_FE = 465
+EMAIL_USE_SSL_FE = True  # Cambiado de TLS a SSL
+EMAIL_USE_TLS_FE = False  # Deshabilitado el TLS
+EMAIL_HOST_USER_FE = 'facturacion@grupoincoe.com'
+EMAIL_HOST_PASSWORD_FE = 'F4ctur4c10n.23'
 
 EMAIL_BACKEND_QUEDAN = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST_QUEDAN = 'mail.grupoincoe.com'
@@ -249,7 +256,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# REST_FRAMEWORK = {
-#     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-#     'PAGE_SIZE': 10  # Número de facturas por página
-# }
+#URL LOCAL PARA GUARDAR ARCHIVOS
+
+URL_ARCHIVOS_CORREO = "/factura_pdf"
