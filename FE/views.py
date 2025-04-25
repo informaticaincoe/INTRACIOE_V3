@@ -5,6 +5,10 @@ from rest_framework import status
 from django.contrib.auth.models import User
 from django.contrib import messages
 from openpyxl import Workbook
+from math import ceil
+
+from django.db.models import F, Value
+from django.db.models.functions import Greatest
 
 #importaciones para actividad economica
 from django.urls import reverse_lazy, reverse
@@ -27,7 +31,7 @@ from django.views.decorators.http import require_POST
 from decimal import ROUND_HALF_UP, ConversionSyntax, Decimal
 from intracoe import settings
 from .models import Token_data, Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica,  Receptor_fe, Tipo_dte, TipoMoneda, TipoUnidadMedida, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos, Descuento, FormasPago, Plazo, TipoGeneracionDocumento, TipoContingencia, EventoContingencia, TipoTransmision, LoteContingencia
-from INVENTARIO.models import Almacen, MovimientoInventario, Producto, TipoItem, Tributo
+from INVENTARIO.models import Almacen, DetalleDevolucionVenta, DevolucionVenta, MovimientoInventario, NotaCredito, Producto, TipoItem, Tributo
 from .forms import ExcelUploadForm
 from django.db import transaction
 from django.utils import timezone
@@ -45,6 +49,9 @@ from django.db.models import Q
 from num2words import num2words
 import pytz
 from django.db.models import Count
+from django.core.handlers.wsgi import WSGIRequest
+from io import BytesIO
+
 
 FIRMADOR_URL = "http://192.168.2.25:8113/firmardocumento/"
 DJANGO_SERVER_URL = "http://127.0.0.1:8000"
@@ -419,9 +426,6 @@ def export_facturas_excel(request):
     wb.save(response)
     return response
 
-from django.core.handlers.wsgi import WSGIRequest
-from io import BytesIO
-
 
 def obtener_listado_productos_view(request):
     global tipo_documento_dte
@@ -464,8 +468,7 @@ def obtener_listado_productos_view(request):
         'descuentos': descuentos
     }
     return render(request, 'generar_dte.html', context)
-    
-from decimal import Decimal, ROUND_DOWN
+
 
 @csrf_exempt
 @transaction.atomic
@@ -1474,7 +1477,6 @@ def firmar_factura_view(request, factura_id):
         #     'redirect_url': reverse('detalle_factura', args=[factura_id])
         # })
 
-    
 @csrf_exempt
 @require_POST
 def enviar_factura_hacienda_view(request, factura_id):
@@ -1690,28 +1692,20 @@ def enviar_factura_hacienda_view(request, factura_id):
                     contingencia = False
                     motivo_otro = False
                     
-                    #crear el movimeinto de inventario
-                    #Se asume que la factura tiene una relación a sus detalles, donde se encuentran los productos y cantidades
+                    # crear el movimeinto de inventario
+                    # Se asume que la factura tiene una relación a sus detalles, 
+                    # donde se encuentran los productos y cantidades
 
-                    """for detalle in factura.detalles.all():
-
-                        if detalle.producto.almacenes.exists():
-                            almacen = detalle.producto.almacenes.first()
-                        else:
-                            almacen = Almacen.objects.first()
-
+                    for detalle in factura.detalles.all():
+                        almacen = detalle.producto.almacenes.first() or Almacen.objects.first()
                         MovimientoInventario.objects.create(
-                            producto = detalle.producto,
-                            almacen = almacen,
+                            producto=detalle.producto,
+                            almacen=almacen,
                             tipo='Salida',
-                            cantidad = detalle.cantidad,
+                            cantidad=detalle.cantidad,
                             referencia=f"Factura {factura.codigo_generacion}",
                         )
-
-                        #actualizar el stock del producto (desconteo)
-                        producto = detalle.producto
-                        producto.stock = max(producto.stock - detalle.cantidad, 0) #evitamos calores negativos
-                        producto.save()"""
+                        # ¡El stock baja solo gracias al signal!
                         
                     #Si la factura fue recibida por mh detener los eventos en contingencia activos
                     finalizar_contigencia_view(request)
@@ -1858,7 +1852,6 @@ def enviar_factura_hacienda_view(request, factura_id):
         return JsonResponse({"error": str(e)}, status=400)"""
 
 
-    
 def detalle_factura(request, factura_id):
     factura = get_object_or_404(FacturaElectronica, id=factura_id)
 
@@ -1879,8 +1872,6 @@ def detalle_factura(request, factura_id):
         'firma': firma,
         'envio_mh': envio_mh,
     })
-
-    
 
 @csrf_exempt    
 def invalidacion_dte_view(request, factura_id):
@@ -2390,10 +2381,43 @@ def enviar_factura_invalidacion_hacienda_view(request, factura_id):
             print("-Fin enviar invalidacion a MH")
             respuestaMh = json_response_data["jsonRespuestaMh"]["descripcionMsg"]
             print("-Detalle RespuestaMH ", json_response_data["jsonRespuestaMh"]["descripcionMsg"])
+
+            # ---------------------------------------------------
+            #  AGREGAR EL PRODUCTO AL INVENTARIO (Entrada)
+            # ---------------------------------------------------
+            factura = evento_invalidacion.factura  # asumiendo ForeignKey desde EventoInvalidacion
+             # Crear la devolución de venta
+            devolucion = DevolucionVenta.objects.create(
+                num_factura=factura.numero_control,
+                motivo="Devolución automática por invalidación múltiple",
+                estado="Aprobada",
+                usuario=request.user.username if request.user.is_authenticated else None
+            )
+            for detalle in factura.detalles.all():
+                DetalleDevolucionVenta.objects.create(
+                    devolucion=devolucion,
+                    producto=detalle.producto,
+                    cantidad=detalle.cantidad,
+                    motivo_detalle="Reingreso automático por invalidación"
+                )
+                almacen = detalle.producto.almacenes.first() or Almacen.objects.first()
+                MovimientoInventario.objects.create(
+                    producto=detalle.producto,
+                    almacen=almacen,
+                    tipo='Entrada',
+                    cantidad=detalle.cantidad,
+                    referencia=f"Invalidación Factura {factura.codigo_generacion}",
+                )
+                # Ajuste de stock atómico
+                Producto.objects.filter(pk=detalle.producto.pk).update(
+                    stock=F('stock') + detalle.cantidad
+                )
+
             return JsonResponse({
                 "mensaje": "Factura invalidada con éxito",
                 "respuesta": response_data
             })
+
         else:
             evento_invalidacion.estado=False
             evento_invalidacion.save()
@@ -2446,26 +2470,36 @@ def invalidar_varias_dte_view(request):
                 if evento:
                     if evento.estado:
                         mensaje = "Factura invalidada con éxito"
-                        # al invalidad se procede a reintegrar el inventario
-                        factura = FacturaElectronica.objects.get(id=factura_id)
-                        for detalle in factura.detalles.all():
-                            #se selecciona el primer almacen asociado al producto
-                            if detalle.producto.almacenes.exists():
-                                almacen = detalle.producto.almacenes.first()
-                            else:
-                                almacen = Almacen.objects.first()
 
-                            #crear el movimiento de inventario de tipo "Entrada"
-                            MovimientoInventario.objects.create(
+                        factura = get_object_or_404(FacturaElectronica, id=factura_id)
+                        # Crear la devolución de venta
+                        devolucion = DevolucionVenta.objects.create(
+                            num_factura=factura.numero_control,
+                            motivo="Devolución automática por invalidación múltiple",
+                            estado="Aprobada",
+                            usuario=request.user.username if request.user.is_authenticated else None
+                        )
+                        # Registrar cada detalle y reingresar stock
+                        for detalle in factura.detalles.all():
+                            DetalleDevolucionVenta.objects.create(
+                                devolucion=devolucion,
                                 producto=detalle.producto,
                                 cantidad=detalle.cantidad,
+                                motivo_detalle="Reingreso automático por invalidación"
+                            )
+                            almacen = detalle.producto.almacenes.first() or Almacen.objects.first()
+                            MovimientoInventario.objects.create(
+                                producto=detalle.producto,
                                 almacen=almacen,
                                 tipo='Entrada',
-                                referencia=f"Reingreso por invalidación de factura {factura.numero_control}"
+                                cantidad=detalle.cantidad,
+                                referencia=f"Reingreso invalidación Factura {factura.numero_control}"
                             )
-                            #Actualizar el stock dl producto, smando la cantidad reingreso
-                            detalle.producto.stock += detalle.cantidad
-                            detalle.producto.save()
+                            # Ajuste de stock atómico
+                            Producto.objects.filter(pk=detalle.producto.pk).update(
+                                stock=F('stock') + detalle.cantidad
+                            )
+
                     else:
                         mensaje = "No se pudo invalidar la factura"
                 else:
@@ -2490,7 +2524,6 @@ def invalidar_varias_dte_view(request):
         return JsonResponse({"results": results})
     else:
         return JsonResponse({"error": "Método no permitido"}, status=405)
-
 
 @csrf_exempt
 def invalidar_dte_unificado_view(request, factura_id):
@@ -2539,7 +2572,7 @@ def invalidar_dte_unificado_view(request, factura_id):
 
 
 #############################################################################################################
-
+# VISTAS COMPLEMENTARIAS AJAX
 ######################################################################################
 
 def seleccion_descuento_ajax(request):
@@ -2761,7 +2794,6 @@ def agregar_docs_relacionados_ajax(request):
 ######################################################
 # GENERACION DE NOTA DE CREDITO Y DEBITO
 ######################################################
-from math import ceil
 @csrf_exempt
 @transaction.atomic
 def generar_documento_ajuste_view(request):
@@ -3309,6 +3341,60 @@ def generar_documento_ajuste_view(request):
             factura.json_original = factura_json
             factura.save()
 
+            
+            # Si acabamos de generar una Nota de Crédito, registramos la devolución al cliente:
+            if tipo_dte_obj.codigo == COD_NOTA_CREDITO:
+                # 1) Crear la devolución de venta
+                devolucion = DevolucionVenta.objects.create(
+                    num_factura=factura.numero_control,
+                    motivo="Devolución generada por Nota de Crédito",
+                    estado="Aprobada",
+                    usuario=request.user.username if request.user.is_authenticated else None
+                )
+                # 2) Registrar cada detalle de devolución y el reingreso de stock
+                for det in factura.detalles.all():
+                    # 2a) Detalle de la devolución
+                    DetalleDevolucionVenta.objects.create(
+                        devolucion=devolucion,
+                        producto=det.producto,
+                        cantidad=det.cantidad,
+                        motivo_detalle="Reingreso automático por NC"
+                    )
+                    # 2b) Movimiento de inventario de Entrada
+                    almacen = det.producto.almacenes.first() or Almacen.objects.first()
+                    MovimientoInventario.objects.create(
+                        producto=det.producto,
+                        almacen=almacen,
+                        tipo='Entrada',
+                        cantidad=det.cantidad,
+                        referencia=f"Reingreso NC {factura.numero_control}"
+                    )
+                    # 2c) Ajuste de stock atómico
+                    Producto.objects.filter(pk=det.producto.pk).update(
+                        stock=F('stock') + det.cantidad
+                    )
+                # 3) Generar la Nota de Crédito
+                NotaCredito.objects.create(
+                    devolucion=devolucion,
+                    monto=factura.total_pagar,
+                    estado="Pendiente"
+                )
+            # 2) Si es Nota de Débito ➞ salida extra de stock
+            elif tipo_dte_obj.codigo == COD_NOTA_DEBITO:
+                # (opcional) si quieres guardar un modelo NotaDebito, créalo aquí
+                for det in factura.detalles.all():
+                    MovimientoInventario.objects.create(
+                        producto=det.producto,
+                        almacen=det.producto.almacenes.first() or Almacen.objects.first(),
+                        tipo='Salida',
+                        cantidad=det.cantidad,
+                        referencia=f"Salida ND {factura.numero_control}"
+                    )
+                    # ajustar stock sin bajar de cero
+                    Producto.objects.filter(pk=det.producto.pk).update(
+                        stock=Greatest(F('stock') - det.cantidad, Value(0))
+                    )
+
             # Guardar el JSON en la carpeta "FE/json_facturas"
             json_path = os.path.join("FE/json_facturas", f"{factura.numero_control}.json")
             os.makedirs(os.path.dirname(json_path), exist_ok=True)
@@ -3328,18 +3414,8 @@ def generar_documento_ajuste_view(request):
 #########################################################################################################
 # EVENTOS DE CONTINGENCIA DE DTE
 #########################################################################################################
-#LISTADO DE EVENTOS listar_contingencias
-from django.shortcuts import render
-from django.core.paginator import Paginator
-from django.utils import timezone
-from .models import EventoContingencia, Tipo_dte, LoteContingencia  # Ajusta a tu importación real
 
-from django.shortcuts import render
-from django.core.paginator import Paginator
-from django.utils import timezone
-from .models import EventoContingencia, LoteContingencia, Tipo_dte
-
-#LISTADO DE EVENTOS dte_contingencia_list.html
+#LISTADO DE EVENTOS dte_contingencia_list
 def contingencia_list(request):
     try:
         #Verificar si existen eventos activos con fecha fuera de plazo y desactivarlos
@@ -4754,7 +4830,7 @@ def finalizar_contigencia_view(request):
         
     except Exception as e:
         return JsonResponse({"error": f"Error inesperado al actualizar contingencia: {str(e)}"})
-    
+
 def obtener_fecha_actual():
     try:
         zona_horaria = pytz.timezone('America/El_Salvador')
