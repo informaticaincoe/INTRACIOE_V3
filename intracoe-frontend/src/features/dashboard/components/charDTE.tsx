@@ -23,7 +23,7 @@ export const ChartDTE = () => {
   const options = {
     chart: {
       title: 'Total de facturas',
-      subtitle: 'intracoe'
+      subtitle: 'intracoe',
     },
     bars: 'vertical',
     colors: ['#232C6E'],

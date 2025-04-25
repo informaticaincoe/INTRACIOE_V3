@@ -46,14 +46,15 @@ import { getCondicionDeOperacionById } from '../../../generateDocuments/services
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
-
-
 export const FacturaVisualizacionPage = () => {
   let { id } = useParams();
   const [emisor, setEmisor] = useState<Emisor>(EmisorDefault);
   const [receptor, setReceptor] = useState<Receptor>(ReceptorDefault);
-  const [datosFactura, setDatosFactura] = useState<DatosFactura>(DatosFacturaDefault);
-  const [productos, setProductos] = useState<CuerpoDocumento[]>(CuerpoDocumentoDefault);
+  const [datosFactura, setDatosFactura] =
+    useState<DatosFactura>(DatosFacturaDefault);
+  const [productos, setProductos] = useState<CuerpoDocumento[]>(
+    CuerpoDocumentoDefault
+  );
   const [resumen, setResumen] = useState<Resumen>(resumenTablaFEDefault);
   const [extension, setExtension] = useState<Extension>(ExtensionDefault);
   const [pagoEnLetras, setPagoEnLetras] = useState<string>('');
@@ -120,18 +121,15 @@ export const FacturaVisualizacionPage = () => {
         setExtension(response.extension);
         setPagoEnLetras(response.pagoEnLetras);
         fetchCondicionOperacionDescripcion(response.condicionOpeacion);
-        setJson(response.json)
+        setJson(response.json);
         setQrCode(
           `https://admin.factura.gob.sv/consultaPublica?ambiente=${response.ambiente}&codGen=${response.datosFactura.codigoGeneracion.toUpperCase()}&fechaEmi=${response.datosFactura.fechaEmision}`
         );
-
       }
     } catch (error) {
       console.log(error);
     }
   };
-
-
 
   // … dentro de tu componente FacturaVisualizacionPage:
 
@@ -164,12 +162,14 @@ export const FacturaVisualizacionPage = () => {
     const zip = new JSZip();
     zip.file(`factura_${datosFactura.codigoGeneracion}.pdf`, pdfBlob);
     zip.file(`factura_${datosFactura.codigoGeneracion}.json`, jsonBlob);
-    console.log(pdfBlob)
+    console.log(pdfBlob);
+    console.log(jsonBlob);
+
 
     // 6) Genera el ZIP y dispara la descarga
     const zipBlob = await zip.generateAsync({ type: 'blob' });
     saveAs(zipBlob, `factura_${datosFactura.codigoGeneracion}.zip`);
-    setLoading(false)
+    setLoading(false);
   };
 
   return (
@@ -182,16 +182,17 @@ export const FacturaVisualizacionPage = () => {
           className="mt-5 mb-7 rounded-md bg-red-700 px-8 py-3 text-white"
         >
           <span className="flex items-center justify-center gap-2">
-            {loading ?
-              <span className='flex gap-2 items-center'>
-                <FaSpinner className="text-white animate-spin" />
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <FaSpinner className="animate-spin text-white" />
                 Convirtiendo...
-              </span> :
-              <span className='flex gap-2 items-center'>
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
                 <FaFilePdf size={24} className="text-white" />
                 <p>Descargar Factura</p>
               </span>
-            }
+            )}
           </span>
         </button>
         {datosFactura.selloRemision == null && (
