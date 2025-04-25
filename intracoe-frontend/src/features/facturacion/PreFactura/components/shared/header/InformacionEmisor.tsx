@@ -40,11 +40,6 @@ export const InformacionEmisor: React.FC<InformacionEmisorProps> = ({
       </span>
       <span className="border-border-color col-start-5 flex w-full flex-col items-center rounded-md border-2 p-2">
         <p>{nombreDte}</p>
-        {/* <img
-          style={{ width: '5vw', height: '5vw', margin: '0.5rem 0' }}
-          src="https://upload.wikimedia.org/wikipedia/commons/d/d7/Commons_QR_code.png"
-          alt="qr"
-        /> */}
         <div style={{ width: '7vw', height: '7vw', margin: '0' }}>
           <QRCode
             value={qrCode || '-'}

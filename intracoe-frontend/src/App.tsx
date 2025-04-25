@@ -108,7 +108,7 @@ function App() {
           <Route path="/uploadExcel" element={<UploadExcelPage />} />
           <Route path="/contingencias" element={<ContingenciasPage />} />
         </Route>
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
   );
