@@ -396,7 +396,10 @@ document.addEventListener('DOMContentLoaded', function(){
       let htmlResultado = '';
       if (data.results && data.results.length) {
         data.results.forEach(result => {
-          htmlResultado += `<p><strong>Factura ${result.factura_id}:</strong> ${result.mensaje}<br><small>${JSON.stringify(result.detalle)}</small></p>`;
+          htmlResultado += `
+          <p><strong>Factura ${result.factura_id}:</strong> 
+            ${result.mensaje}<br>x
+            Detalle: <small>${JSON.stringify(result.detalle)}</small></p>`;
         });
       } else {
         htmlResultado = "<p>No se recibió respuesta.</p>";

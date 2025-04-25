@@ -89,7 +89,6 @@ export const StepperInformacionGeneral: React.FC<
       >
         {chooseButton}
         {cancelButton}
-        
       </div>
     );
   };
@@ -97,7 +96,7 @@ export const StepperInformacionGeneral: React.FC<
   const itemTemplate = (inFile: object) => {
     const file = inFile as File;
     return (
-      <div className="align-items-center flex flex-wrap w-full justify-between">
+      <div className="align-items-center flex w-full flex-wrap justify-between">
         <div className="align-items-center flex" style={{ width: '40%' }}>
           <img
             alt={file.name}
@@ -106,7 +105,9 @@ export const StepperInformacionGeneral: React.FC<
             width={100}
           />
 
-          <span className="ml-3 flex text-left wrap-break-word">{file.name}</span>
+          <span className="ml-3 flex text-left wrap-break-word">
+            {file.name}
+          </span>
         </div>
       </div>
     );

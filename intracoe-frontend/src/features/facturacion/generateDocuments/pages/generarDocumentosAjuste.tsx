@@ -346,23 +346,23 @@ export const GenerarDocumentosAjuste = () => {
 
       <WhiteSectionsPage>
         <div className="pt-2 pb-5">
-          <div className="flex justify-between ">
+          <div className="flex justify-between">
             <h1 className="text-start text-xl font-bold text-nowrap">
               Ajustar factura
             </h1>
           </div>
           <Divider className="m-0 p-0" />
-          <div className="flex items-center pb-5 justify-between">
-            <span className='flex justify-between gap-x-10 gap-y-5 w-full items-center flex-wrap'>
+          <div className="flex items-center justify-between pb-5">
+            <span className="flex w-full flex-wrap items-center justify-between gap-x-10 gap-y-5">
               <label htmlFor="tipoDocumentoGeneracion" className="text-nowrap">
-                Tipo documento de generación: 
-                <span className='opacity-70'> Electronico</span>
+                Tipo documento de generación:
+                <span className="opacity-70"> Electronico</span>
               </label>
               {/* <DropFownTipoDeDocumentoGeneracion
                 tipoGeneracionFactura={tipoGeneracionFactura}
                 setTipoGeneracionFactura={setTipoGeneracionFactura}
               /> */}
-              <span className='flex gap w-full items-center'>
+              <span className="gap flex w-full items-center">
                 <label htmlFor="codigo" className="text-nowrap">
                   Codigo de generacion:
                 </label>

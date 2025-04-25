@@ -66,24 +66,24 @@ input::file-selector-button {
   width: 100%;
 }
 
-.p-icon-field{
-  width:100%;
+.p-icon-field {
+  width: 100%;
 }
 
-.p-password-input{
+.p-password-input {
   width: 100%;
 }
 
 .p-inplace {
-  height: 3vh;  
+  height: 3vh;
 }
 
 .p-sidebar-content {
   margin: 0;
-  padding:0;
+  padding: 0;
 }
 
-.p-sidebar-header{
+.p-sidebar-header {
   position: absolute;
   z-index: 10;
 }

@@ -10,7 +10,9 @@ export const getAllReceptor = async ({
     const params: Record<string, any> = {};
     if (filter) params.filtro = filter;
 
-    const response = await api.get<ReceptorInterface[]>('/receptor/', { params });
+    const response = await api.get<ReceptorInterface[]>('/receptor/', {
+      params,
+    });
     return response.data;
   } catch (error) {
     console.error('Error fetching receptores:', error);
@@ -18,7 +20,9 @@ export const getAllReceptor = async ({
   }
 };
 
-export const getReceptorById = async (id: string): Promise<ReceptorInterface> => {
+export const getReceptorById = async (
+  id: string
+): Promise<ReceptorInterface> => {
   try {
     const response = await api.get<ReceptorInterface>(`/receptor/${id}/`);
     return response.data;
@@ -48,9 +52,14 @@ export const deleteReceptor = async (receptor_id: string): Promise<any> => {
   }
 };
 
-export const createReceptor = async (data: ReceptorInterface): Promise<ReceptorInterface> => {
+export const createReceptor = async (
+  data: ReceptorInterface
+): Promise<ReceptorInterface> => {
   try {
-    const response = await api.post<ReceptorInterface>('/receptor/crear/', data);
+    const response = await api.post<ReceptorInterface>(
+      '/receptor/crear/',
+      data
+    );
     return response.data;
   } catch (error) {
     console.error('Error creating receptor:', error);
@@ -58,9 +67,15 @@ export const createReceptor = async (data: ReceptorInterface): Promise<ReceptorI
   }
 };
 
-export const editReceptor = async (id: string, data: ReceptorInterface): Promise<ReceptorInterface> => {
+export const editReceptor = async (
+  id: string,
+  data: ReceptorInterface
+): Promise<ReceptorInterface> => {
   try {
-    const response = await api.put<ReceptorInterface>(`/receptor/actualizar/${id}/`, data);
+    const response = await api.put<ReceptorInterface>(
+      `/receptor/actualizar/${id}/`,
+      data
+    );
     return response.data;
   } catch (error) {
     console.error(`Error updating receptor ${id}:`, error);

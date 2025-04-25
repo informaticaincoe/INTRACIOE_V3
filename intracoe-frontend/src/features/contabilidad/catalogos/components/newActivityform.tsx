@@ -26,7 +26,7 @@ export const NewActivityForm: React.FC<NewActivityProps> = ({
     version: '', //Tipo de documento tributario electronico
     departamento: '',
     motivo_contingencia: '',
-    pais: ''
+    pais: '',
   });
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -83,7 +83,7 @@ export const NewActivityForm: React.FC<NewActivityProps> = ({
         break;
     }
 
-    console.log("bbbbbbbbbbbbbb",body)
+    console.log('bbbbbbbbbbbbbb', body);
 
     try {
       const response = await createFunction(body);
@@ -174,7 +174,11 @@ export const NewActivityForm: React.FC<NewActivityProps> = ({
               <label htmlFor="version" className="">
                 Pais:
               </label>
-              <SelectPaisComponent value={formData.pais} onChange={handleChange} name={'pais'} />
+              <SelectPaisComponent
+                value={formData.pais}
+                onChange={handleChange}
+                name={'pais'}
+              />
             </span>
           )}
           <span className="flex w-full justify-end gap-3">

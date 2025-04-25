@@ -1,5 +1,4 @@
-import { api } from "../../services/api";
-
+import { api } from '../../services/api';
 
 export const deleteActivities = async (
   page?: number,
@@ -32,9 +31,7 @@ export const deleteAmbientes = async (id: number) => {
 
 export const deleteModelosDeFacturacion = async (id: number) => {
   try {
-    const response = await api.delete(
-      `/modelo-facturacion/${id}/eliminar/`
-    );
+    const response = await api.delete(`/modelo-facturacion/${id}/eliminar/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -43,9 +40,7 @@ export const deleteModelosDeFacturacion = async (id: number) => {
 
 export const deleteTipoTransmision = async (id: number) => {
   try {
-    const response = await api.delete(
-      `/tipo-transmision/${id}/eliminar/`
-    );
+    const response = await api.delete(`/tipo-transmision/${id}/eliminar/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -54,9 +49,7 @@ export const deleteTipoTransmision = async (id: number) => {
 
 export const deleteTipoContingencia = async (id: number) => {
   try {
-    const response = await api.delete(
-      `/tipo-contingencia/${id}/eliminar/`
-    );
+    const response = await api.delete(`/tipo-contingencia/${id}/eliminar/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -65,9 +58,7 @@ export const deleteTipoContingencia = async (id: number) => {
 
 export const deleteTipoRentencionIVA = async (id: number) => {
   try {
-    const response = await api.delete(
-      `/tipo-retencion-iva-mh/${id}/eliminar/`
-    );
+    const response = await api.delete(`/tipo-retencion-iva-mh/${id}/eliminar/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -104,9 +95,7 @@ export const deleteTiposEstablecimientos = async (id: number) => {
 
 export const deleteTipoServiciosMedicos = async (id: number) => {
   try {
-    const response = await api.delete(
-      `/tipos-servicio-medico/${id}/eliminar/`
-    );
+    const response = await api.delete(`/tipos-servicio-medico/${id}/eliminar/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -135,9 +124,7 @@ export const deleteOtrosDocumentosAsociados = async (id: number) => {
 
 export const deleteTipoIdReceptor = async (id: number) => {
   try {
-    const response = await api.delete(
-      `/tipos-doc-id-receptor/${id}/eliminar/`
-    );
+    const response = await api.delete(`/tipos-doc-id-receptor/${id}/eliminar/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -156,9 +143,7 @@ export const deletePaises = async (id: number) => {
 
 export const deleteDepartamentos = async (id: number) => {
   try {
-    const response = await api.delete(
-      `/departamento/${id}/eliminar/`
-    );
+    const response = await api.delete(`/departamento/${id}/eliminar/`);
 
     return response.data;
   } catch (error) {
@@ -186,9 +171,7 @@ export const deleteMunicipios = async (id: number) => {
 
 export const deleteCondicioOperaciones = async (id: number) => {
   try {
-    const response = await api.delete(
-      `/condicion-operacion/${id}/eliminar/`
-    );
+    const response = await api.delete(`/condicion-operacion/${id}/eliminar/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -197,9 +180,7 @@ export const deleteCondicioOperaciones = async (id: number) => {
 
 export const deleteMetodosDePago = async (id: number) => {
   try {
-    const response = await api.delete(
-      `/formas-pago/${id}/eliminar/`
-    );
+    const response = await api.delete(`/formas-pago/${id}/eliminar/`);
     return response.data;
   } catch (error) {
     console.log(error);
@@ -217,9 +198,7 @@ export const deletePlazos = async (id: number) => {
 
 export const deleteTipoDocContingencia = async (id: number) => {
   try {
-    const response = await api.delete(
-      `/tipo-doc-contingencia/${id}/eliminar/`
-    );
+    const response = await api.delete(`/tipo-doc-contingencia/${id}/eliminar/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -228,9 +207,7 @@ export const deleteTipoDocContingencia = async (id: number) => {
 
 export const deleteTipoInvalidacion = async (id: number) => {
   try {
-    const response = await api.delete(
-      `/tipo-invalidacion/${id}/eliminar/`
-    );
+    const response = await api.delete(`/tipo-invalidacion/${id}/eliminar/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -239,9 +216,7 @@ export const deleteTipoInvalidacion = async (id: number) => {
 
 export const deleteTipoDonacion = async (id: number) => {
   try {
-    const response = await api.delete(
-      `/tipo-donacion/${id}/eliminar/`
-    );
+    const response = await api.delete(`/tipo-donacion/${id}/eliminar/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -250,9 +225,7 @@ export const deleteTipoDonacion = async (id: number) => {
 
 export const deleteTipoPersona = async (id: number) => {
   try {
-    const response = await api.delete(
-      `/tipo-persona/${id}/eliminar/`
-    );
+    const response = await api.delete(`/tipo-persona/${id}/eliminar/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -261,9 +234,7 @@ export const deleteTipoPersona = async (id: number) => {
 
 export const deleteTipoTransporte = async (id: number) => {
   try {
-    const response = await api.delete(
-      `/tipo-transporte/${id}/eliminar/`
-    );
+    const response = await api.delete(`/tipo-transporte/${id}/eliminar/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -281,9 +252,7 @@ export const deleteIncoterms = async (id: number) => {
 
 export const deleteTipoDomicilioFiscal = async (id: number) => {
   try {
-    const response = await api.delete(
-      `/tipo-domicilio-fiscal/${id}/eliminar/`
-    );
+    const response = await api.delete(`/tipo-domicilio-fiscal/${id}/eliminar/`);
     return response.data;
   } catch (error) {
     throw new Error();
@@ -292,9 +261,7 @@ export const deleteTipoDomicilioFiscal = async (id: number) => {
 
 export const deleteTipoMoneda = async (id: number) => {
   try {
-    const response = await api.delete(
-      `/tipo-moneda/${id}/eliminar/`
-    );
+    const response = await api.delete(`/tipo-moneda/${id}/eliminar/`);
     return response.data;
   } catch (error) {
     throw new Error();
