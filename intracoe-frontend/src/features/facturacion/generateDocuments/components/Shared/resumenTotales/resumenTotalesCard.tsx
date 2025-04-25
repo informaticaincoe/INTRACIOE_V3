@@ -90,7 +90,7 @@ export const ResumenTotalesCard: React.FC<ResumenTotalesCardProps> = ({
       <p>$ {totalIVA}</p>
 
       <p className="opacity-60">Total a pagar:</p>
-      <p>$ {totalAPagar}</p>
+      <p>$ {(totalAPagar).toFixed(2)}</p>
 
       <p className="opacity-60">Descuento general:</p>
       <InputNumber
