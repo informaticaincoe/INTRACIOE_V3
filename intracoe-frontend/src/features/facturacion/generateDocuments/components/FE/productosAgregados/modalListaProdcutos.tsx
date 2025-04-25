@@ -17,6 +17,7 @@ interface ModalListProductsInterface {
   listProducts: ProductosTabla[];
   selectedProducts: ProductosTabla[];
   setSelectedProducts: (ps: ProductosTabla[]) => void;
+  tipoDte: string
 }
 
 export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
@@ -25,6 +26,7 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
   listProducts,
   selectedProducts,
   setSelectedProducts,
+  tipoDte
 }) => {
   // Solo un estado: la lista completa con sus flags
   const [products, setProducts] = useState<
@@ -61,19 +63,47 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
   };
 
   const guardar = () => {
-    const seleccionados = products.filter((p) => p.seleccionar); // solo seleccionados
-
-    seleccionados.forEach((producto) => {
-      const total_neto = producto.precio_venta * producto.cantidad;
-      const total_iva = producto.cantidad * (producto.precio_venta * 0.13);
-      producto.total_neto = total_neto;
-      producto.total_iva = total_iva;
-      producto.total_con_iva = producto.preunitario;
+    const seleccionados = products.filter((p) => p.seleccionar);
+    const IVA = 0.13;
+  
+    const productosConTotales = seleccionados.map((producto) => {
+      const cantidad = producto.cantidad;
+  
+      // Aseguramos que el precio unitario usado para visualización y totales
+      let preUnitario: number;
+  
+      // Precio mostrado y total depende del tipo de DTE y si ya tiene IVA
+      if (tipoDte === '01') {
+        // Para consumidor final, el precio final debe incluir IVA
+        preUnitario = producto.precio_iva
+          ? producto.preunitario // ya viene con IVA incluido
+          : producto.preunitario * (1 + IVA); // agregamos IVA
+      } else {
+        // Para crédito fiscal, el precio se deja tal cual, ya sea con o sin IVA, se desglosa después
+        preUnitario = producto.preunitario;
+      }
+  
+      const baseUnit = producto.precio_iva
+        ? producto.preunitario / (1 + IVA)
+        : producto.preunitario;
+  
+      const total_neto = baseUnit * cantidad;
+      const total_iva = total_neto * IVA;
+      const total_con_iva = total_neto + total_iva;
+  
+      return {
+        ...producto,
+        preunitario: preUnitario,
+        total_neto: tipoDte === '01' ? total_con_iva : total_neto,
+        total_iva,
+        total_con_iva,
+      };
     });
-
-    setSelectedProducts(seleccionados);
+  
+    setSelectedProducts(productosConTotales);
     setVisible(false);
   };
+  
 
   const footer = (
     <div className="flex justify-end gap-2">

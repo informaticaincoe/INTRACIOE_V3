@@ -130,10 +130,10 @@ export const GenerateDocuments = () => {
     });
 
     console.log(selectedProducts)
-  
+
     setDescuentosProducto(descuentosAux);
   }, [selectedProducts]);
-  
+
 
   const generarFactura = async () => {
     console.log(descuentoItem);
@@ -153,12 +153,12 @@ export const GenerateDocuments = () => {
       observaciones: observaciones,
       productos_ids: idListProducts,
       cantidades: cantidadListProducts, //cantidad de cada producto de la factura
-      monto_fp: totalAPagar.toFixed(2),
+      monto_fp: totalAPagar,
       num_ref: null,
       no_gravado: baseImponible,
       retencion_iva: tieneRetencionIva,
       porcentaje_retencion_iva: (retencionIva / 100).toString(),
-      fp_id: formasPagoList,
+      formas_pago_id: formasPagoList,
       saldo_favor_input: '0.00',
       descuento_gravado: (descuentos.descuentoGravado / 100).toString(),
       descuento_global_input: (descuentos.descuentoGeneral / 100).toString(),
@@ -200,7 +200,7 @@ export const GenerateDocuments = () => {
   const fetchfacturaData = async () => {
     try {
       const response = await getFacturaCodigos(tipoDocumentoSelected);
-      setCodigoGeneracion(response.codigo_generacion      );
+      setCodigoGeneracion(response.codigo_generacion);
       setNumeroControl(response.numero_control);
       setEmisorData(response.emisor);
       setCondicionesOperacionList(response.tipooperaciones);
@@ -222,6 +222,7 @@ export const GenerateDocuments = () => {
 
   const handleClickGenerarFactura = async () => {
     if (auxManejoPagos != 0) {
+      console.log("errpr pagos")
       setErrorFormasPago(true);
       handleAccion(
         'error',
@@ -231,6 +232,8 @@ export const GenerateDocuments = () => {
     }
 
     if (receptor.id == '') {
+      console.log("errpr receptr")
+
       setErrorReceptor(true);
       handleAccion(
         'error',
@@ -363,6 +366,7 @@ export const GenerateDocuments = () => {
             tipoDte={tipoDocumentoSelected}
           />
           <ModalListaProdcutos
+            tipoDte={tipoDocumentoSelected}
             visible={showProductsModal}
             setVisible={setShowProductsModal}
             listProducts={listProducts}

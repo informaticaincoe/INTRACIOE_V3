@@ -61,3 +61,16 @@ export const sendCode = async (data:any) => {
     throw new Error(msg);
   }
 }
+
+export const changePassword = async (data:any) => {
+  try {
+    const response = await authApi.post('/password-reset/confirm/', data);
+    return response.data
+  } catch (error:any) {
+    console.log(error)
+    const msg =
+      error.response?.data?.non_field_errors?.[0] ??
+      'Error';
+    throw new Error(msg);
+  }
+}
