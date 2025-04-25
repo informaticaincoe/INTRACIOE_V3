@@ -1,8 +1,6 @@
-
 import { FacturaPorCodigoGeneracionResponse } from '../../../../../shared/interfaces/interfaces';
 import { api } from '../../../../../shared/services/api';
 import { ProductosTabla } from '../../components/FE/productosAgregados/productosData';
-
 
 export const generarFacturaService = async (data: any) => {
   try {
@@ -27,10 +25,7 @@ export const generarAjusteService = async () => {
 
 export const generarNotaCreditoService = async (data: any) => {
   try {
-    const response = await api.post(
-      `/factura_ajuste/generar/`,
-      data
-    );
+    const response = await api.post(`/factura_ajuste/generar/`, data);
     return response.data;
   } catch (error) {
     console.log(error);
@@ -46,7 +41,7 @@ export const getFacturaCodigos = async (tipo_dte: string) => {
       },
     });
 
-    console.log("productos response-------------", response.data)
+    console.log('productos response-------------', response.data);
     const productosConExtras: ProductosTabla[] = response.data.productos.map(
       (p: ProductosTabla) => ({
         ...p,
@@ -62,8 +57,7 @@ export const getFacturaCodigos = async (tipo_dte: string) => {
       })
     );
 
-    console.log("productos con extras-------------", productosConExtras)
-
+    console.log('productos con extras-------------', productosConExtras);
 
     return {
       ...response.data,
@@ -85,9 +79,7 @@ export const FirmarFactura = async (id: string) => {
 
 export const EnviarHacienda = async (id: string) => {
   try {
-    const response = await api.post(
-      `/factura/enviar_hacienda/${id}/`
-    );
+    const response = await api.post(`/factura/enviar_hacienda/${id}/`);
     return response;
   } catch (error) {
     console.error('Error desde EnviarHacienda:', error);

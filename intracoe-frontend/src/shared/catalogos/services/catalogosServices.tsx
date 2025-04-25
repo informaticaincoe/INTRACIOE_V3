@@ -1,5 +1,4 @@
-import { api } from "../../services/api";
-
+import { api } from '../../services/api';
 
 export const getAllActivities = async (
   page?: number,
@@ -144,7 +143,7 @@ export const getAllDepartamentos = async () => {
   }
 };
 
-export const getDepartamentoById = async (id:number) => {
+export const getDepartamentoById = async (id: number) => {
   try {
     const response = await api.get(`/departamento/${id}/`);
     return response.data;

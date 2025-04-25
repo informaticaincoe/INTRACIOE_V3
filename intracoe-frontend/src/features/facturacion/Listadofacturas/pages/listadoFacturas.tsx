@@ -35,7 +35,7 @@ export const ListadoFacturas = () => {
   useEffect(() => {
     // Reinicia a la página 1 cada vez que los filtros cambian
     setPagination((prev) => ({ ...prev, current_page: 1 }));
-    console.log(filters)
+    console.log(filters);
     // Se utiliza el page_size actual para la consulta
     fetchFacturas(1, pagination.page_size);
   }, [filters]);

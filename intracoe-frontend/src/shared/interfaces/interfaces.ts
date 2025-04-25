@@ -505,7 +505,6 @@ export interface TableListadoFacturasContainerProps {
   onPageChange: (event: any) => void;
 }
 
-
 export interface Perfil {
   usuario: string;
   correo: string;

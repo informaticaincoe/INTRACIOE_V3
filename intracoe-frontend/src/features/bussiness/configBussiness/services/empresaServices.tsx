@@ -1,8 +1,7 @@
 // src/services/empresaService.ts
 
-import { RequestEmpresa } from "../../../../shared/interfaces/interfaces";
-import { api } from "../../../../shared/services/api";
-
+import { RequestEmpresa } from '../../../../shared/interfaces/interfaces';
+import { api } from '../../../../shared/services/api';
 
 export const getAllEmpresas = async (): Promise<RequestEmpresa[]> => {
   try {
@@ -24,7 +23,9 @@ export const getEmpresaById = async (id: number): Promise<RequestEmpresa> => {
   }
 };
 
-export const createEmpresa = async (data: RequestEmpresa): Promise<RequestEmpresa> => {
+export const createEmpresa = async (
+  data: RequestEmpresa
+): Promise<RequestEmpresa> => {
   try {
     const response = await api.post<RequestEmpresa>('/emisor/crear/', data);
     return response.data;
@@ -34,9 +35,15 @@ export const createEmpresa = async (data: RequestEmpresa): Promise<RequestEmpres
   }
 };
 
-export const editEmpresa = async (id: string, data: Partial<RequestEmpresa>): Promise<RequestEmpresa> => {
+export const editEmpresa = async (
+  id: string,
+  data: Partial<RequestEmpresa>
+): Promise<RequestEmpresa> => {
   try {
-    const response = await api.put<RequestEmpresa>(`/emisor/editar/${id}/`, data);
+    const response = await api.put<RequestEmpresa>(
+      `/emisor/editar/${id}/`,
+      data
+    );
     return response.data;
   } catch (error: any) {
     console.error(`Error updating empresa ${id}:`, error);
@@ -44,7 +51,9 @@ export const editEmpresa = async (id: string, data: Partial<RequestEmpresa>): Pr
   }
 };
 
-export const getCodigoEstablecimientoById = async (idEstablecimiento: number): Promise<string> => {
+export const getCodigoEstablecimientoById = async (
+  idEstablecimiento: number
+): Promise<string> => {
   try {
     // Ajusta la ruta y payload según tu API si fuera distinto
     const response = await api.post<{ codigo: string }>(
@@ -53,7 +62,10 @@ export const getCodigoEstablecimientoById = async (idEstablecimiento: number): P
     );
     return response.data.codigo;
   } catch (error) {
-    console.error(`Error fetching código de establecimiento ${idEstablecimiento}:`, error);
+    console.error(
+      `Error fetching código de establecimiento ${idEstablecimiento}:`,
+      error
+    );
     throw new Error('Error fetching código de establecimiento');
   }
 };

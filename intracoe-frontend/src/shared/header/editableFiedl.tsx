@@ -1,8 +1,8 @@
-import { InputText } from "primereact/inputtext";
-import { useState } from "react";
-import { FaCheck } from "react-icons/fa6";
-import { IoClose } from "react-icons/io5";
-import { CiEdit } from "react-icons/ci";
+import { InputText } from 'primereact/inputtext';
+import { useState } from 'react';
+import { FaCheck } from 'react-icons/fa6';
+import { IoClose } from 'react-icons/io5';
+import { CiEdit } from 'react-icons/ci';
 
 interface Props {
   value: string;
@@ -10,16 +10,24 @@ interface Props {
   onSave: (newValue: string) => void;
 }
 
-export const EditableField: React.FC<Props> = ({ value, labelClass = "", onSave }) => {
+export const EditableField: React.FC<Props> = ({
+  value,
+  labelClass = '',
+  onSave,
+}) => {
   const [isEditing, setIsEditing] = useState(false);
   const [tempValue, setTempValue] = useState(value);
 
   return (
-    <div className="flex items-center justify-center gap-2 w-full">
+    <div className="flex w-full items-center justify-center gap-2">
       {!isEditing ? (
         <>
           <p className={`text-center ${labelClass}`}>{value}</p>
-          <CiEdit size={20} className="cursor-pointer" onClick={() => setIsEditing(true)} />
+          <CiEdit
+            size={20}
+            className="cursor-pointer"
+            onClick={() => setIsEditing(true)}
+          />
         </>
       ) : (
         <>
@@ -30,7 +38,7 @@ export const EditableField: React.FC<Props> = ({ value, labelClass = "", onSave 
             autoFocus
           />
           <button
-            className="bg-primary-yellow text-white px-3 py-3 rounded"
+            className="bg-primary-yellow rounded px-3 py-3 text-white"
             onClick={() => {
               onSave(tempValue);
               setIsEditing(false);
@@ -39,7 +47,7 @@ export const EditableField: React.FC<Props> = ({ value, labelClass = "", onSave 
             <FaCheck />
           </button>
           <button
-            className="bg-slate-500 text-white px-3 py-3 rounded"
+            className="rounded bg-slate-500 px-3 py-3 text-white"
             onClick={() => {
               setTempValue(value);
               setIsEditing(false);

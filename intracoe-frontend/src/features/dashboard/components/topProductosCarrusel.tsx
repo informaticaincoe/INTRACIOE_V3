@@ -22,8 +22,8 @@ export const TopProductosCarousel = () => {
   // Solo mostramos el nombre
   const productoTemplate = (producto: Producto) => {
     return (
-      <div className="flex items-center justify-start w-full">
-        <p className="text-[1.5vw] font-semibold text-black text-start wrap-break-word">
+      <div className="flex w-full items-center justify-start">
+        <p className="text-start text-[1.5vw] font-semibold wrap-break-word text-black">
           {producto.producto__descripcion}
         </p>
       </div>
@@ -31,7 +31,7 @@ export const TopProductosCarousel = () => {
   };
 
   return (
-    <div className="w-full  overflow-hidden">
+    <div className="w-full overflow-hidden">
       <Carousel
         value={productos}
         numVisible={1}
@@ -41,7 +41,7 @@ export const TopProductosCarousel = () => {
         showIndicators={false}
         showNavigators={false}
         itemTemplate={productoTemplate}
-        className="w-full h-full"
+        className="h-full w-full"
       />
     </div>
   );
