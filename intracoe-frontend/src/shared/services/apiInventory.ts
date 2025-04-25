@@ -7,7 +7,7 @@ export const apiInventory = axios.create({
   withCredentials: true,
 });
 
-apiInventory.interceptors.request.use(cfg => {
+apiInventory.interceptors.request.use((cfg) => {
   const token = getCookie('authToken');
   if (token && cfg.headers) {
     // DRF TokenAuthentication espera "Token <key>"
@@ -15,4 +15,3 @@ apiInventory.interceptors.request.use(cfg => {
   }
   return cfg;
 });
-

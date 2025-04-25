@@ -93,13 +93,9 @@ export const StepperFormContainer = () => {
       setTimeout(() => {
         navigate('/productos/');
       }, 2000);
-    } catch (err:any) {
-      console.log("0000000000000",err.toString())
-      handleAccion(
-        'error',
-        <IoMdCloseCircle size={38} />,
-        err.toString()
-      );
+    } catch (err: any) {
+      console.log('0000000000000', err.toString());
+      handleAccion('error', <IoMdCloseCircle size={38} />, err.toString());
     }
   };
 

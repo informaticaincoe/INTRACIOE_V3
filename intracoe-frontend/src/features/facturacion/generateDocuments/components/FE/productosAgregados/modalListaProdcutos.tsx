@@ -17,7 +17,7 @@ interface ModalListProductsInterface {
   listProducts: ProductosTabla[];
   selectedProducts: ProductosTabla[];
   setSelectedProducts: (ps: ProductosTabla[]) => void;
-  tipoDte: string
+  tipoDte: string;
 }
 
 export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
@@ -26,7 +26,7 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
   listProducts,
   selectedProducts,
   setSelectedProducts,
-  tipoDte
+  tipoDte,
 }) => {
   // Solo un estado: la lista completa con sus flags
   const [products, setProducts] = useState<
@@ -65,13 +65,13 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
   const guardar = () => {
     const seleccionados = products.filter((p) => p.seleccionar);
     const IVA = 0.13;
-  
+
     const productosConTotales = seleccionados.map((producto) => {
       const cantidad = producto.cantidad;
-  
+
       // Aseguramos que el precio unitario usado para visualización y totales
       let preUnitario: number;
-  
+
       // Precio mostrado y total depende del tipo de DTE y si ya tiene IVA
       if (tipoDte === '01') {
         // Para consumidor final, el precio final debe incluir IVA
@@ -82,15 +82,15 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
         // Para crédito fiscal, el precio se deja tal cual, ya sea con o sin IVA, se desglosa después
         preUnitario = producto.preunitario;
       }
-  
+
       const baseUnit = producto.precio_iva
         ? producto.preunitario / (1 + IVA)
         : producto.preunitario;
-  
+
       const total_neto = baseUnit * cantidad;
       const total_iva = total_neto * IVA;
       const total_con_iva = total_neto + total_iva;
-  
+
       return {
         ...producto,
         preunitario: preUnitario,
@@ -99,11 +99,10 @@ export const ModalListaProdcutos: React.FC<ModalListProductsInterface> = ({
         total_con_iva,
       };
     });
-  
+
     setSelectedProducts(productosConTotales);
     setVisible(false);
   };
-  
 
   const footer = (
     <div className="flex justify-end gap-2">

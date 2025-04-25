@@ -45,7 +45,7 @@ export const TablaProductosHeader: React.FC<TablaProductosHeaderProps> = ({
             value={input}
             onChange={handleChange}
             onKeyDown={handleKeyPress}
-            className="w-full focus:border-ring-0 border-0 pl-3 focus:border-none focus:ring-0 focus:outline-none active:border-0"
+            className="focus:border-ring-0 w-full border-0 pl-3 focus:border-none focus:ring-0 focus:outline-none active:border-0"
           />
         </span>
         <button

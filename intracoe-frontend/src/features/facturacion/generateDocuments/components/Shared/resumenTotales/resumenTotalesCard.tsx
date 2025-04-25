@@ -15,7 +15,7 @@ interface ResumenTotalesCardProps {
   tipoDocumento: string;
 }
 
-export const  ResumenTotalesCard: React.FC<ResumenTotalesCardProps> = ({
+export const ResumenTotalesCard: React.FC<ResumenTotalesCardProps> = ({
   listProducts,
   setDescuentos,
   descuentos,

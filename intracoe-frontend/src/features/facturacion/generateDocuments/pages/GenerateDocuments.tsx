@@ -129,11 +129,10 @@ export const GenerateDocuments = () => {
       return Math.round(porcentaje * 100) / 100; // Redondea a 2 decimales
     });
 
-    console.log(selectedProducts)
+    console.log(selectedProducts);
 
     setDescuentosProducto(descuentosAux);
   }, [selectedProducts]);
-
 
   const generarFactura = async () => {
     console.log(descuentoItem);
@@ -214,7 +213,7 @@ export const GenerateDocuments = () => {
         )
       );
 
-      console.log("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", response.emisor)
+      console.log('eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', response.emisor);
     } catch (error) {
       console.log(error);
     }
@@ -222,7 +221,7 @@ export const GenerateDocuments = () => {
 
   const handleClickGenerarFactura = async () => {
     if (auxManejoPagos != 0) {
-      console.log("errpr pagos")
+      console.log('errpr pagos');
       setErrorFormasPago(true);
       handleAccion(
         'error',
@@ -232,7 +231,7 @@ export const GenerateDocuments = () => {
     }
 
     if (receptor.id == '') {
-      console.log("errpr receptr")
+      console.log('errpr receptr');
 
       setErrorReceptor(true);
       handleAccion(

@@ -1,4 +1,3 @@
-
 import {
   Descuento,
   Impuesto,
@@ -20,10 +19,9 @@ export const getAllProducts = async ({
     if (filter) params.q = filter;
     if (tipo) params.tipo = tipo;
 
-    const response = await apiInventory.get<ProductoResponse[]>(
-      '/productos/',
-      { params }
-    );
+    const response = await apiInventory.get<ProductoResponse[]>('/productos/', {
+      params,
+    });
 
     await Promise.all(
       response.data.map(async (data) => {
