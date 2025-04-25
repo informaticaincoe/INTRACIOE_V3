@@ -259,3 +259,6 @@ class DetalleDevolucionCompra(models.Model):
     def __str__(self):
         return f"{self.cantidad} x {self.producto.descripcion} - Devolución {self.devolucion.id}"
 
+
+
+import INVENTARIO.signals
