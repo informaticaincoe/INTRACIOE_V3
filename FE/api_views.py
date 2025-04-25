@@ -429,6 +429,10 @@ class Tipo_dteListAPIView(generics.ListAPIView):
     queryset = Tipo_dte.objects.all()
     serializer_class = TipoDteSerializer
 
+class Tipo_dteDetailAPIView(generics.RetrieveAPIView):
+    queryset = Tipo_dte.objects.all()
+    serializer_class = TipoDteSerializer
+
 class Tipo_dteCreateAPIView(generics.CreateAPIView):
     queryset = Tipo_dte.objects.all()
     serializer_class = TipoDteSerializer
@@ -436,6 +440,17 @@ class Tipo_dteCreateAPIView(generics.CreateAPIView):
 class Tipo_dteRetrieveAPIView(generics.RetrieveAPIView):
     queryset = Tipo_dte.objects.all()
     serializer_class = TipoDteSerializer
+
+    def get_object(self):
+        """
+        Sobrescribe el método `get_object()` para que recupere el objeto
+        basándose en el parámetro `codigo` en lugar de `id`.
+        """
+        codigo = self.kwargs['codigo']
+        # Usamos get_object_or_404 para simplificar la obtención y manejo de errores
+        tipo_dte = get_object_or_404(Tipo_dte, codigo=codigo)
+        return tipo_dte
+
 
 class Tipo_dteUpdateAPIView(generics.UpdateAPIView):
     queryset = Tipo_dte.objects.all()
@@ -471,6 +486,10 @@ class TiposDocIDReceptorListAPIView(generics.ListAPIView):
     queryset = TiposDocIDReceptor.objects.all()
     serializer_class = TiposDocIDReceptorSerializer
 
+class TiposDocIDReceptorDetailAPIView(generics.RetrieveAPIView):
+    queryset = TiposDocIDReceptor.objects.all()
+    serializer_class = TiposDocIDReceptorSerializer
+
 class TiposDocIDReceptorCreateAPIView(generics.CreateAPIView):
     queryset = TiposDocIDReceptor.objects.all()
     serializer_class = TiposDocIDReceptorSerializer
@@ -478,6 +497,14 @@ class TiposDocIDReceptorCreateAPIView(generics.CreateAPIView):
 class TiposDocIDReceptorRetrieveAPIView(generics.RetrieveAPIView):
     queryset = TiposDocIDReceptor.objects.all()
     serializer_class = TiposDocIDReceptorSerializer
+
+    def get_object(self):
+        """
+        Sobrescribe el método `get_object()` para que recupere el objeto
+        basándose en el parámetro `codigo` en lugar de `id`.
+        """
+        codigo = self.kwargs['codigo']
+        return TiposDocIDReceptor.objects.get(codigo=codigo)
 
 class TiposDocIDReceptorUpdateAPIView(generics.UpdateAPIView):
     queryset = TiposDocIDReceptor.objects.all()
@@ -561,6 +588,10 @@ class MunicipioByDepartamentoAPIView(generics.ListAPIView):
     
 # ========= CONDICION OPERACION =========
 class CondicionOperacionListAPIView(generics.ListAPIView):
+    queryset = CondicionOperacion.objects.all()
+    serializer_class = CondicionOperacionSerializer
+
+class CondicionOperacionDetailAPIView(generics.RetrieveAPIView):
     queryset = CondicionOperacion.objects.all()
     serializer_class = CondicionOperacionSerializer
 
