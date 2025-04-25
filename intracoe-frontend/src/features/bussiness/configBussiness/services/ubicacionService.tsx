@@ -1,5 +1,4 @@
-import { api } from "../../../../shared/services/api";
-
+import { api } from '../../../../shared/services/api';
 
 export const getAllDepartamentos = async () => {
   try {
@@ -17,11 +16,14 @@ export const getAllDepartamentos = async () => {
 
 export const getMunicipiosByDepartamentos = async (idDepartmento: number) => {
   try {
-    const response = await api.get(`/municipios/departamento/${idDepartmento}/`, {
-      headers: {
-        'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
-      },
-    });
+    const response = await api.get(
+      `/municipios/departamento/${idDepartmento}/`,
+      {
+        headers: {
+          'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
+        },
+      }
+    );
     console.log(response.data);
     return response.data;
   } catch (error) {

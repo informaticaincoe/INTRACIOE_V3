@@ -7,11 +7,10 @@ import { TotalFacturasEmitidasCard } from '../components/cards/totalFacturasEmit
 import { ProductosMasVendidosCard } from '../components/cards/productosMasVendidosCard';
 
 export const Dashboard = () => {
-
   return (
     <>
       <Title text="Dashboard" />
-      <div className="my-10 grid grid-cols-3 justify-between gap-10 px-10 flex-1">
+      <div className="my-10 grid flex-1 grid-cols-3 justify-between gap-10 px-10">
         <TotalVentas />
         <TotalFacturasEmitidasCard />
         <ProductosMasVendidosCard />

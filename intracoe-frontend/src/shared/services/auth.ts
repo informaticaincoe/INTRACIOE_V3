@@ -10,7 +10,7 @@ export const authApi = axios.create({
 // -------------------
 // 1) Interceptor de petición
 // -------------------
-authApi.interceptors.request.use(config => {
+authApi.interceptors.request.use((config) => {
   const token = getCookie('authToken');
   if (token) {
     config.headers = config.headers ?? {};
@@ -23,7 +23,7 @@ authApi.interceptors.request.use(config => {
 // -------------------
 // 2) Interceptor de respuesta para login
 // -------------------
-authApi.interceptors.response.use(resp => {
+authApi.interceptors.response.use((resp) => {
   // Al hacer login, guardamos el token en cookie
   if (resp.config.url?.endsWith('/login/') && resp.data.token) {
     setCookie('authToken', resp.data.token, {

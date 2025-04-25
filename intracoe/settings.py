@@ -126,7 +126,7 @@ INSTALLED_APPS = [
     'FE',
     'CONTABILIDAD',
     'INFORMATICA',
-    'INVENTARIO',
+    'INVENTARIO.apps.InventarioConfig',
     'corsheaders',
     'AUTENTICACION',
 ]

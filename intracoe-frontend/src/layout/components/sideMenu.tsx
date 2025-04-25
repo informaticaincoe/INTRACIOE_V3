@@ -8,100 +8,175 @@ import type { MenuProps } from 'antd';
 import { Menu } from 'antd';
 import { useNavigate } from 'react-router';
 
-
 type MenuItem = Required<MenuProps>['items'][number];
 
 const items: MenuItem[] = [
   {
     key: 'dashboard',
     icon: <MdDashboard size={20} />,
-    label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Dashboard</p>,
+    label: (
+      <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+        Dashboard
+      </p>
+    ),
   },
   {
     key: 'ventas',
     icon: <HiCurrencyDollar size={20} />,
-    label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Ventas</p>,
+    label: (
+      <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+        Ventas
+      </p>
+    ),
     children: [
       {
         key: 'receptores',
-        label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">clientes</p>,
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            clientes
+          </p>
+        ),
       },
       {
         key: 'proveedor',
-        label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Proveedores</p>,
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Proveedores
+          </p>
+        ),
       },
     ],
   },
   {
     key: 'conta',
     icon: <FaCalculator size={20} />,
-    label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Contabilidad</p>,
+    label: (
+      <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+        Contabilidad
+      </p>
+    ),
     children: [
       {
         key: 'anexo',
-        label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Anexos</p>,
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Anexos
+          </p>
+        ),
       },
       {
         key: 'reportes',
-        label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Reportes</p>,
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Reportes
+          </p>
+        ),
       },
       {
         key: 'catalogo',
-        label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Catalogo</p>,
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Catalogo
+          </p>
+        ),
       },
     ],
   },
   {
     key: 'fact',
     icon: <RiFilePaperFill size={20} />,
-    label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Facturación</p>,
+    label: (
+      <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+        Facturación
+      </p>
+    ),
 
     children: [
       {
         key: 'documentos',
-        label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Generar facturas</p>,
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Generar facturas
+          </p>
+        ),
       },
       {
         key: 'correcciones',
-        label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Generar corecciones</p>,
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Generar corecciones
+          </p>
+        ),
       },
       {
         key: 'listado-facturas',
-        label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Listado Facturas</p>,
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Listado Facturas
+          </p>
+        ),
       },
       {
         key: 'listado-contingencias',
-        label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Listado contingencias</p>,
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Listado contingencias
+          </p>
+        ),
       },
     ],
   },
   {
     key: 'inventario',
     icon: <FaTruckRampBox size={20} />,
-    label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Inventario</p>,
+    label: (
+      <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+        Inventario
+      </p>
+    ),
     children: [
       {
         key: 'producto',
-        label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Productos</p>,
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Productos
+          </p>
+        ),
       },
       {
         key: 'servicios',
-        label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Servicios </p>,
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Servicios{' '}
+          </p>
+        ),
       },
     ],
   },
   {
     key: 'empresa',
     icon: <BsBuildingFill size={20} />,
-    label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Empresa</p>,
+    label: (
+      <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+        Empresa
+      </p>
+    ),
     children: [
       {
         key: 'configuracion',
-        label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Configurar empresa</p>,
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Configurar empresa
+          </p>
+        ),
       },
       {
         key: 'server',
-        label: <p className="text-[0.9em] text-start whitespace-normal break-words leading-tight m-0">Configurar servidor</p>,
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Configurar servidor
+          </p>
+        ),
       },
     ],
   },
@@ -113,7 +188,7 @@ export const SideMenu = () => {
   const onClick: MenuProps['onClick'] = (e) => {
     switch (e.key) {
       case 'dashboard':
-        navigate('/');
+        navigate('/dashboard');
         break;
       case 'documentos':
         navigate('/generar-documentos');
@@ -151,7 +226,7 @@ export const SideMenu = () => {
   };
 
   return (
-    <div className="h-full bg-white flex flex-col justify-between sticky ">
+    <div className="sticky flex h-full flex-col justify-between bg-white">
       <Menu
         onClick={onClick}
         style={{

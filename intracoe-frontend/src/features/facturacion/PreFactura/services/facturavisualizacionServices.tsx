@@ -1,13 +1,9 @@
-import axios from 'axios';
 import { FacturaResponse } from '../interfaces/facturaPdfInterfaces';
-
-const BASEURL = import.meta.env.VITE_URL_BASE;
+import { api } from '../../../../shared/services/api';
 
 export const generarFacturaService = async (id: string) => {
   try {
-    const response = await axios.get<FacturaResponse>(
-      `${BASEURL}/factura_pdf/${id}/`
-    );
+    const response = await api.get<FacturaResponse>(`/factura_pdf/${id}/`);
     return {
       emisor: response.data.json_original.emisor,
       receptor: response.data.json_original.receptor,

@@ -90,7 +90,7 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
     setAuxManejoPagos(remaining);
     // También actualiza los códigos en el padre
     setFormasPagoList(infoPagoLista.map((p) => p.idTipoPago));
-    console.log(infoPagoLista.map((p) => p.idTipoPago))
+    console.log(infoPagoLista.map((p) => p.idTipoPago));
   }, [infoPagoLista, totalAPagar, setAuxManejoPagos, setFormasPagoList]);
 
   const handleChange = (

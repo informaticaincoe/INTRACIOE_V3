@@ -1,8 +1,8 @@
 
 from django.urls import path
 from FE.api_views import (
-    ContingenciaDteAPIView, ContingenciaListAPIView, EmisorCreateAPIView, EmisorUpdateAPIView, EnviarFacturaHaciendaAPIView, FacturaDetailAPIView, FacturaListAPIView, FacturaPorCodigoGeneracionAPIView, FirmarFacturaAPIView, 
-    GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, LoteContingenciaDteAPIView, MunicipioByDepartamentoAPIView, TopClientes, TopProductosAPIView, TotalVentasAPIView, TotalesPorTipoDTE, autenticacion, EmisorListAPIView, receptorCreateAPIView, receptorDeleteAPIView, receptorDetailAPIView, 
+    ContingenciaDteAPIView, ContingenciaDteUnificadoAPIView, ContingenciaListAPIView, EmisorCreateAPIView, EmisorUpdateAPIView, EnviarContingenciaHaciendaAPIView, EnviarFacturaHaciendaAPIView, EnviarLotesHaciendaAPIView, EnvioDteUnificadoAPIView, FacturaDetailAPIView, FacturaListAPIView, FacturaPorCodigoGeneracionAPIView, FinalizarContingenciaAPIView, FirmarContingenciaAPIView, FirmarFacturaAPIView, 
+    GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, LoteContingenciaDteAPIView, LotesDteAPIView, MotivoContingenciaAPIView, MunicipioByDepartamentoAPIView, TopClientes, TopProductosAPIView, TotalVentasAPIView, TotalesPorTipoDTE, autenticacion, EmisorListAPIView, receptorCreateAPIView, receptorDeleteAPIView, receptorDetailAPIView, 
     receptorListAPIView, receptorUpdateAPIView, GenerarDocumentoAjusteAPIView,
 
     # ACTIVIDAD ECONOMICA
@@ -324,14 +324,22 @@ urlpatterns = [
 
     path('api/contingencia/', ContingenciaListAPIView.as_view(), name='contingencia-list'),
     path('api/contingencia/<int:contingencia_id>/generar/', ContingenciaDteAPIView.as_view(), name='contingencia-dte-generate'),
-    path('api/contingencia/<int:contingencia_id>/generar/', ContingenciaDteAPIView.as_view(), name='contingencia-dte-generate'),
-    path(
-        'api/contingencia/<int:tipo_contingencia_id>/lote/<int:factura_id>/',
-        LoteContingenciaDteAPIView.as_view(),
-        name='lote-contingencia-dte'
-    ),
+    #path('api/contingencia/<int:tipo_contingencia_id>/lote/<int:factura_id>/',LoteContingenciaDteAPIView.as_view(),name='lote-contingencia-dte'),
+    path('api/contingencia/unificado/',ContingenciaDteUnificadoAPIView.as_view(),name='api-contingencia-unificado'),
+    path('api/contingencia/firmar/',FirmarContingenciaAPIView.as_view(),name='api-contingencia-firmar'),
+    path('api/contingencia/enviar/',EnviarContingenciaHaciendaAPIView.as_view(),name='api-contingencia-enviar'),
+    path('api/contingencia/finalizar/',FinalizarContingenciaAPIView.as_view(),name='api-finalizar-contingencia'),
+    path('api/contingencia/lote/',LoteContingenciaDteAPIView.as_view(),name='api-contingencia-lote'),
+    path('api/dte/envio-unificado/',EnvioDteUnificadoAPIView.as_view(),name='api-dte-envio-unificado'),
+    path('api/dte/lotes/',LotesDteAPIView.as_view(),name='api-dte-lotes'),
+    path('api/dte/enviar-lote/',EnviarLotesHaciendaAPIView.as_view(),name='api-dte-enviar-lote'),
+    path('api/contingencia/motivo/',MotivoContingenciaAPIView.as_view(),name='api-contingencia-motivo'),
 
-    # Dashboard
+
+
+    ##################################################################
+    # URLS DASHBOARD
+    ##################################################################
     path('api/dashboard/totales-por-tipo/', TotalesPorTipoDTE.as_view(), name='totales-por-tipo'),
     path('api/dashboard/totales-ventas/', TotalVentasAPIView.as_view(), name='total-ventas'),
     path('api/dashboard/clientes/', TopClientes.as_view(), name='Top-clientes'),
