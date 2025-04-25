@@ -231,9 +231,7 @@ export const TablaProductosAgregados: React.FC<
           <Column
             header={<p className="text-sm">PRECIO UNITARIO</p>}
             body={(rowData: ProductosTabla) => {
-              const precio = rowData.precio_iva
-                ? rowData.preunitario / 1.13
-                : rowData.preunitario;
+              const precio = rowData.preunitario / 1.13;
               return <p>$ {precio.toFixed(2)}</p>;
             }}
           ></Column>
@@ -243,7 +241,9 @@ export const TablaProductosAgregados: React.FC<
           <Column
             header={<p className="text-sm">IVA UNITARIO</p>}
             body={(rowData: ProductosTabla) => {
-              return <p>$ {(rowData.preunitario / 1.13) * 0.13}</p>;
+              return (
+                <p>$ {((rowData.preunitario / 1.13) * 0.13).toFixed(2)}</p>
+              );
             }}
           ></Column>
         )}
@@ -251,7 +251,9 @@ export const TablaProductosAgregados: React.FC<
           <Column
             header={<p className="text-sm">PRECIO UNITARIO (IVA INCLUIDO)</p>}
             body={(rowData: ProductosTabla) => {
-              return <p>$ {rowData.preunitario}</p>;
+              // forzamos a number; si viene undefined o no numérico, cae a NaN→0
+              const precio = Number(rowData.preunitario) || 0;
+              return <p>$ {precio.toFixed(2)}</p>;
             }}
           />
         )}
@@ -289,15 +291,16 @@ export const TablaProductosAgregados: React.FC<
           <Column
             header="TOTAL"
             body={(rowData) => {
-              return <p>$ {rowData.total_con_iva}</p>;
+              return <p>$ {rowData.total_con_iva.toFixed(2)}</p>;
             }}
           />
         )}
+
         {tipoDte == '03' && (
           <Column
             header="TOTAL NETO"
             body={(rowData) => {
-              return <span>$ {rowData.total_neto}</span>;
+              return <span>$ {rowData.total_neto.toFixed(2)}</span>;
             }}
           />
         )}
@@ -306,7 +309,7 @@ export const TablaProductosAgregados: React.FC<
           <Column
             header="TOTAL IVA"
             body={(rowData) => {
-              return <span>$ {rowData.total_iva}</span>;
+              return <span>$ {rowData.total_iva.toFixed(2)}</span>;
             }}
           />
         )}
@@ -315,7 +318,7 @@ export const TablaProductosAgregados: React.FC<
           <Column
             header="TOTAL CON IVA"
             body={(row) => {
-              return <span>$ {row.total_con_iva}</span>;
+              return <span>$ {row.total_con_iva.toFixed(2)}</span>;
             }}
           />
         )}
