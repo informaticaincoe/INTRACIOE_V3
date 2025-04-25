@@ -10,7 +10,7 @@ import { StepperFormImpuestoStock } from './stepperFormImpuestoStock';
 import { StepperFormLotesYVencimiento } from './stepperFormLotesYVencimiento';
 import {
   createProductService,
-  EditProductService,
+  editProductService,
   getProductById,
 } from '../../services/productsServices';
 import CustomToast, {
@@ -80,7 +80,7 @@ export const StepperFormContainer = () => {
     }
     try {
       if (params.id) {
-        await EditProductService(params.id, formData);
+        await editProductService(params.id, formData);
       } else {
         await createProductService(formData);
       }
@@ -93,13 +93,9 @@ export const StepperFormContainer = () => {
       setTimeout(() => {
         navigate('/productos/');
       }, 2000);
-    } catch (err:any) {
-      console.log("0000000000000",err.toString())
-      handleAccion(
-        'error',
-        <IoMdCloseCircle size={38} />,
-        err.toString()
-      );
+    } catch (err: any) {
+      console.log('0000000000000', err.toString());
+      handleAccion('error', <IoMdCloseCircle size={38} />, err.toString());
     }
   };
 

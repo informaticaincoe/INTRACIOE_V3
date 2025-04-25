@@ -82,7 +82,6 @@ export const EditActivityForm: React.FC<EditActivityProps> = ({
         };
         break;
 
-
       case 'Tipo contingencia':
         body = {
           codigo: formData.codigo,
@@ -178,7 +177,11 @@ export const EditActivityForm: React.FC<EditActivityProps> = ({
               <label htmlFor="version" className="">
                 Pais:
               </label>
-              <SelectPaisComponent value={formData.pais?.id || formData.pais} onChange={handleChange} name={'pais'} />
+              <SelectPaisComponent
+                value={formData.pais?.id || formData.pais}
+                onChange={handleChange}
+                name={'pais'}
+              />
             </span>
           )}
 
@@ -203,7 +206,6 @@ export const EditActivityForm: React.FC<EditActivityProps> = ({
                 className="md:w-14rem font-display w-full"
                 filter
               />
-
             </span>
           )}
 

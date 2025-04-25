@@ -352,25 +352,30 @@ export const GenerarDocumentosAjuste = () => {
             </h1>
           </div>
           <Divider className="m-0 p-0" />
-          <div className="flex items-center pb-5">
-            <label htmlFor="tipoDocumentoGeneracion" className="text-nowrap">
-              Tipo documento de generación:
-            </label>
-            <DropFownTipoDeDocumentoGeneracion
-              tipoGeneracionFactura={tipoGeneracionFactura}
-              setTipoGeneracionFactura={setTipoGeneracionFactura}
-            />
-            <label htmlFor="codigo" className="text-nowrap">
-              Codigo de generacion:
-            </label>
-            <Input
-              name="codigo"
-              placeholder="codigo"
-              type="text"
-              className="mr-10 ml-3"
-              value={formData.codigo}
-              onChange={handleChange}
-            />
+          <div className="flex items-center justify-between pb-5">
+            <span className="flex w-full flex-wrap items-center justify-between gap-x-10 gap-y-5">
+              <label htmlFor="tipoDocumentoGeneracion" className="text-nowrap">
+                Tipo documento de generación:
+                <span className="opacity-70"> Electronico</span>
+              </label>
+              {/* <DropFownTipoDeDocumentoGeneracion
+                tipoGeneracionFactura={tipoGeneracionFactura}
+                setTipoGeneracionFactura={setTipoGeneracionFactura}
+              /> */}
+              <span className="gap flex w-full items-center">
+                <label htmlFor="codigo" className="text-nowrap">
+                  Codigo de generacion:
+                </label>
+                <Input
+                  name="codigo"
+                  placeholder="codigo"
+                  type="text"
+                  className="mr-10 ml-3"
+                  value={formData.codigo}
+                  onChange={handleChange}
+                />
+              </span>
+            </span>
             <button
               className="bg-primary-blue rounded-md px-5 py-3 text-nowrap text-white hover:cursor-pointer"
               onClick={() => fetchFacturaARelacionar()}

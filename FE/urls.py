@@ -73,9 +73,12 @@ urlpatterns = [
     path('contingencia-dte/', views.contingencia_dte_unificado_view, name='contingencia_dte_unificado'),
     path('enviar-contingencias-dte/', views.contingencias_dte_view, name='contingencias_dte'),
     path('finalizar-contingencias/', views.finalizar_contigencia_view, name='finalizar_contigencia'),
+    #path('procesar-reintento-envio-dte/', views.procesar_respuesta_view, name='procesar_respuesta'),
     
     #Lotes
     path('lote-contingencia-dte/<int:contingencia_id>/', views.lote_contingencia_dte_view, name='lote_contingencia_dte'),
     path('enviar-lote-unificado/', views.envio_dte_unificado_view, name='envio_dte_unificado'),
     path('enviar-lotes/', views.lotes_dte_view, name='lotes_dte'),
+    path('enviar-motivo-evento/', views.motivo_contingencia_view, name='enviar_motivo'),
+
 ]

@@ -96,7 +96,7 @@ export const StepperConfiguracionFacturacion: React.FC<
           name={'tipoestablecimiento'}
         />
       </span>
-      <span className='flex flex-col'>
+      <span className="flex flex-col">
         <label htmlFor="clave_privada">Clave privada:</label>
         <Password
           className="w-full"
@@ -106,14 +106,13 @@ export const StepperConfiguracionFacturacion: React.FC<
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             handleChange({
               target: {
-                name: 'clave_privada',  // Aquí deberías usar 'name' en lugar de una clave directamente
+                name: 'clave_privada', // Aquí deberías usar 'name' en lugar de una clave directamente
                 value: e.target.value,
               },
             });
           }}
           toggleMask
         />
-
       </span>
       <span>
         <label htmlFor="email">Clave publica:</label>
@@ -125,14 +124,13 @@ export const StepperConfiguracionFacturacion: React.FC<
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             handleChange({
               target: {
-                name: 'clave_publica',  // Aquí deberías usar 'name' en lugar de una clave directamente
+                name: 'clave_publica', // Aquí deberías usar 'name' en lugar de una clave directamente
                 value: e.target.value,
               },
             });
           }}
           toggleMask
         />
-
       </span>
     </div>
   );

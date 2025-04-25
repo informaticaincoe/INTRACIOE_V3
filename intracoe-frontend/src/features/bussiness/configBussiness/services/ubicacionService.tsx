@@ -1,10 +1,8 @@
-import axios from 'axios';
-
-const BASEURL = import.meta.env.VITE_URL_BASE;
+import { api } from '../../../../shared/services/api';
 
 export const getAllDepartamentos = async () => {
   try {
-    const response = await axios.get(`${BASEURL}/departamentos/`, {
+    const response = await api.get(`/departamentos/`, {
       headers: {
         'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
       },
@@ -17,13 +15,15 @@ export const getAllDepartamentos = async () => {
 };
 
 export const getMunicipiosByDepartamentos = async (idDepartmento: number) => {
-  console.log("qqqqqqqqqqqqqqqqq", idDepartmento)
   try {
-    const response = await axios.get(`${BASEURL}/municipios/departamento/${idDepartmento}/`, {
-      headers: {
-        'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
-      },
-    });
+    const response = await api.get(
+      `/municipios/departamento/${idDepartmento}/`,
+      {
+        headers: {
+          'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
+        },
+      }
+    );
     console.log(response.data);
     return response.data;
   } catch (error) {
@@ -33,7 +33,7 @@ export const getMunicipiosByDepartamentos = async (idDepartmento: number) => {
 
 export const getMunicipiosById = async (id: string) => {
   try {
-    const response = await axios.get(`${BASEURL}/municipio-by-id/${id}/`, {
+    const response = await api.get(`/municipio-by-id/${id}/`, {
       headers: {
         'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
       },

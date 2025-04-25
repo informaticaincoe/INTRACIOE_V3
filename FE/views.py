@@ -5,6 +5,10 @@ from rest_framework import status
 from django.contrib.auth.models import User
 from django.contrib import messages
 from openpyxl import Workbook
+from math import ceil
+
+from django.db.models import F, Value
+from django.db.models.functions import Greatest
 
 #importaciones para actividad economica
 from django.urls import reverse_lazy, reverse
@@ -27,7 +31,7 @@ from django.views.decorators.http import require_POST
 from decimal import ROUND_HALF_UP, ConversionSyntax, Decimal
 from intracoe import settings
 from .models import Token_data, Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica,  Receptor_fe, Tipo_dte, TipoMoneda, TipoUnidadMedida, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos, Descuento, FormasPago, Plazo, TipoGeneracionDocumento, TipoContingencia, EventoContingencia, TipoTransmision, LoteContingencia
-from INVENTARIO.models import Almacen, MovimientoInventario, Producto, TipoItem, Tributo
+from INVENTARIO.models import Almacen, DetalleDevolucionVenta, DevolucionVenta, MovimientoInventario, NotaCredito, Producto, TipoItem, Tributo
 from .forms import ExcelUploadForm
 from django.db import transaction
 from django.utils import timezone
@@ -45,6 +49,9 @@ from django.db.models import Q
 from num2words import num2words
 import pytz
 from django.db.models import Count
+from django.core.handlers.wsgi import WSGIRequest
+from io import BytesIO
+
 
 FIRMADOR_URL = "http://192.168.2.25:8113/firmardocumento/"
 DJANGO_SERVER_URL = "http://127.0.0.1:8000"
@@ -419,9 +426,6 @@ def export_facturas_excel(request):
     wb.save(response)
     return response
 
-from django.core.handlers.wsgi import WSGIRequest
-from io import BytesIO
-
 
 def obtener_listado_productos_view(request):
     global tipo_documento_dte
@@ -464,8 +468,7 @@ def obtener_listado_productos_view(request):
         'descuentos': descuentos
     }
     return render(request, 'generar_dte.html', context)
-    
-from decimal import Decimal, ROUND_DOWN
+
 
 @csrf_exempt
 @transaction.atomic
@@ -480,6 +483,8 @@ def generar_factura_view(request):
     documentos_relacionados = []
     global descuentos_r
     descuentos_r = []
+    # Inicializamos el contador de intentos de reintento
+    request.session['intentos_reintento'] = 0  # Establecemos el contador a 0 al inicio
     
     if request.method == 'GET':
         global tipo_documento_dte
@@ -1313,34 +1318,33 @@ def generar_json_doc_ajuste(ambiente_obj, tipo_dte_obj, factura, emisor, recepto
 #VISTAS PARA FIRMAR Y GENERAR EL SELLO DE RECEPCION CON HACIENDA
 @csrf_exempt
 def firmar_factura_view(request, factura_id):
-    """
-    Firma la factura y, si ya está firmada, la envía a Hacienda.
-    """
-    print("-Inicio firma DTE: ", factura_id)  
-    
+    print("-Inicio firma DTE: ", factura_id)
+
+    factura = get_object_or_404(FacturaElectronica, id=factura_id)
     contingencia = True
     intento = 1
-    intentos_max = 3 #Intentos para envio del dte a MH
+    intentos_max = 3
     tipo_contingencia_obj = None
-    mensaje = None
-    # Banderas para verificar si ya se creo una contingencia
     contingencia_creada = False
-    error_envio = None
     response = None
     response_data = {}
     fecha_actual = obtener_fecha_actual()
-    factura = get_object_or_404(FacturaElectronica, id=factura_id)
+    firma = True
+    motivo_otro = False
 
-    print("Factura electronica: ", factura)
+    # Reintentos desde sesión (inicializar si no existe)
+    intentos_modal = request.session.get('intentos_reintento', 0)
+
+    # Intentos automáticos
     while intento <= intentos_max:
+        print(f"Intento {intento} de {intentos_max}")
         token_data = Token_data.objects.filter(activado=True).first()
         if not token_data:
-            return JsonResponse({"error": "No hay token activo registrado en la base de datos."}, status=401)
+            return JsonResponse({"error": "No hay token activo."}, status=401)
 
         if not os.path.exists(CERT_PATH):
-            return JsonResponse({"error": "No se encontró el certificado en la ruta especificada."}, status=400)
-        
-        # Verificar y formatear el JSON original de la factura
+            return JsonResponse({"error": "Certificado no encontrado."}, status=400)
+
         try:
             if isinstance(factura.json_original, dict):
                 dte_json_str = json.dumps(factura.json_original, separators=(',', ':'))
@@ -1348,124 +1352,130 @@ def firmar_factura_view(request, factura_id):
                 json_obj = json.loads(factura.json_original)
                 dte_json_str = json.dumps(json_obj, separators=(',', ':'))
         except Exception as e:
-            return JsonResponse({
-                "error": "El JSON original de la factura no es válido",
-                "detalle": str(e)
-            }, status=400)
+            return JsonResponse({"error": "JSON inválido", "detalle": str(e)}, status=400)
+        
+        # Antes de la llamada al firmador, se parsea una sola vez a objeto:
+        if isinstance(factura.json_original, dict):
+            dte_json_obj = factura.json_original
+        else:
+            dte_json_obj = json.loads(factura.json_original)
 
-        # Construir el payload con los parámetros requeridos
         payload = {
-            "nit": "06142811001040",   # Nit del contribuyente
-            "activo": True,            # Indicador activo
-            "passwordPri": "3nCr!pT@d0Pr1v@d@",   # Contraseña de la llave privada
-            "dteJson": factura.json_original    # JSON del DTE como cadena
+            "nit": "06142811001040",
+            "activo": True,
+            "passwordPri": "3nCr!pT@d0Pr1v@d@",
+            "dteJson": dte_json_obj,
         }
 
-        headers = {"Content-Type": "application/json"}
-
         try:
-            response = requests.post(FIRMADOR_URL, json=payload, headers=headers)
-            # Capturamos la respuesta completa
+            response = requests.post(FIRMADOR_URL, json=payload, headers={"Content-Type": "application/json"})
             try:
                 response_data = response.json()
             except Exception as e:
-                # En caso de error al parsear el JSON, se guarda el texto crudo
                 response_data = {"error": "No se pudo parsear JSON", "detalle": response.text}
-                print("Error al decodificar JSON en envío:", e)
-            
-            # Guardar toda la respuesta en la factura para depuración (incluso si hubo error)
-            print("Envio response status code:", response.status_code)
-            print("Envio response headers:", response.headers)
-            print("Envio response text:", response.text)
-            print("Response data:", response_data)
-            
+                print("Error al decodificar JSON:", e)
+                
             if response.status_code == 200 and response_data.get("status") == "OK":
                 factura.json_firmado = response_data
                 factura.firmado = True
                 factura.save()
-                
+                request.session['intentos_reintento'] = 0  # Resetear intentos
+                request.session.modified = True
                 contingencia = False
+                motivo_otro = False
                 break
             else:
                 print("Firma | Ocurrio un error al firmar la factura")
-                if response.status_code in [500, 502, 503, 504, 408]: #503, 504
-                    print("Error al conectarse al servidor: ", response.status_code)
+                motivo_otro = False
+                if response.status_code in [500, 502, 503, 504, 408]:
                     tipo_contingencia_obj = TipoContingencia.objects.get(codigo="1")
-                elif response.status_code in [408, 499]: #500, 503
-                    print("Error al conectarse al servidor: ", response.status_code)
+                elif response.status_code in [408, 499]:
                     tipo_contingencia_obj = TipoContingencia.objects.get(codigo="2")
-                elif response.status_code in [503, 504]: #503, 504
-                    print("Error al conectarse al servidor: ", response.status_code)
+                elif response.status_code in [503, 504]:
                     tipo_contingencia_obj = TipoContingencia.objects.get(codigo="4")
-                else:#Otro- 400, 500, 502
+                else:  # Otro- 400, 500, 502
                     tipo_contingencia_obj = TipoContingencia.objects.get(codigo="5")
+                    motivo_otro = True  # Activar motivo_otro en errores graves
                     mensaje = f"Error en el envío de la factura: {response.status_code}"
-                    print("Error: ", mensaje)
-                # Esperar antes de siguiente intento
-                error_envio = f"Error al firmar la factura: {response.status_code}"
-                print("Error en el intento de firma:", intento)
+                    print("Error mh: ", mensaje)
                 intento += 1
                 time.sleep(8)
-                contingencia = True
         except requests.exceptions.RequestException as e:
-            error_envio = "Error de conexión con el firmador"
             tipo_contingencia_obj = TipoContingencia.objects.get(codigo="1")
-            time.sleep(8)
             intento += 1
-            print("Error: ", error_envio)
-            #return JsonResponse({"error": "Error de conexión con el firmador", "detalle": str(e)}, status=500)
+            time.sleep(8)
+            print("Excepción general:", str(e))
         except requests.exceptions.ConnectionError:
-            #Error de red del emisor
             tipo_contingencia_obj = TipoContingencia.objects.get(codigo="3")
-            time.sleep(8)
             intento += 1
-            error_envio = f"Error de conexion: {response.status_code}"
-            print("Error: ", error_envio)
+            time.sleep(8)
         except requests.exceptions.Timeout:
-            #Error del emisor
             tipo_contingencia_obj = TipoContingencia.objects.get(codigo="3")
-            time.sleep(8)
             intento += 1
-            error_envio = f"Se agoto el tiempo de espera: {response.status_code}"
-            print("Error: ", error_envio)
+            time.sleep(8)
         except Exception as e:
             tipo_contingencia_obj = TipoContingencia.objects.get(codigo="5")
-            error_envio = str(e)
-            print(f"Ocurrió un error inesperado: {error_envio}")
+            motivo_otro = True
             intento += 1
             time.sleep(8)
+            print("Error inesperado emisor:", str(e))
             
-    # Solo crear contingencia si al menos uno de los flujos falló
+    #Bloquear creacion de eventos por reintentos
+    if intentos_modal > 0:
+        creacion_contingencia = False
+    else:
+        creacion_contingencia = True
+    
+    # Si fallaron todos los intentos
     if contingencia:
-        print("Firma | Crear contingencia")
-        if not contingencia_creada:
-            #Verificar si existen contingencias activas
+        print("Tipo de contingencia: ", tipo_contingencia_obj)
+        if not contingencia_creada and creacion_contingencia:
             finalizar_contigencia_view(request)
-            
-            #Actualizar facturaElectronica
-            factura.estado=False
+
+            factura.estado = False
             factura.contingencia = True
-            factura.tipomodelo = Modelofacturacion.objects.get(codigo="2") #Cuando es imposible enviar el documento asignar el tipo de modelo "Diferido"
-            factura.tipotransmision = TipoTransmision.objects.get(codigo="2") #Cuando es un evento en contingencia guardar tipo de transmision "2-Transmision por Contingencia"
+            factura.tipomodelo = Modelofacturacion.objects.get(codigo="2")
+            factura.tipotransmision = TipoTransmision.objects.get(codigo="2")
             factura.fecha_modificacion = fecha_actual.date()
             factura.hora_modificacion = fecha_actual.time()
             factura.save()
-            
+
             lote_contingencia_dte_view(request, factura_id, tipo_contingencia_obj)
-            contingencia_creada = True  #Indica que la contingencia fue creada
-    # Verificar si la firma fue exitosa
+            contingencia_creada = True
+
+        # Incrementar reintentos solo si falló la firma
+        print(f"Intentos de reintento (antes de incrementar): {intentos_modal}")
+        intentos_modal += 1
+        request.session['intentos_reintento'] = intentos_modal
+        request.session.modified = True
+
+        # Decidir si mostrar el modal dependiendo de los intentos
+        mostrar_modal = intentos_modal < 3
+        print(f"Intentos: {intentos_modal}, sesion: {request.session['intentos_reintento']}, Mostrar modal: {mostrar_modal}, motivo: {motivo_otro}")
+
+        return redirect(
+            f"{reverse('detalle_factura', args=[factura_id])}?"
+            f"mostrar_modal={'1' if mostrar_modal else '0'}"
+            f"&firma={'1' if firma else '0'}"
+            f"&envio_mh=0"
+            f"&intentos_modal={intentos_modal}"
+            f"&motivo_otro={'1' if motivo_otro else '0'}"
+        )
+
+    # Firma exitosa
     if response and response.status_code == 200 and response_data.get("status") == "OK":
-        # (Opcional) Guardar el JSON firmado en un archivo
         json_signed_path = f"FE/json_facturas_firmadas/{factura.codigo_generacion}.json"
         os.makedirs(os.path.dirname(json_signed_path), exist_ok=True)
         with open(json_signed_path, "w", encoding="utf-8") as json_file:
             json.dump(response_data, json_file, indent=4, ensure_ascii=False)
 
-        print("-Fin firma DTE: ", factura_id)  
-        return redirect(reverse('detalle_factura', args=[factura_id]))
-    else:
-        # Se devuelve el error completo recibido
-        return JsonResponse({"error": "Error al firmar la factura", "detalle": response_data}, status=400)
+        print("-Fin firma DTE:", factura_id)
+        return redirect (reverse('detalle_factura', args=[factura_id]))
+        # return JsonResponse({
+        #     'success': True,
+        #     'message': 'Factura firmada correctamente.',
+        #     'redirect_url': reverse('detalle_factura', args=[factura_id])
+        # })
 
 @csrf_exempt
 @require_POST
@@ -1483,6 +1493,11 @@ def enviar_factura_hacienda_view(request, factura_id):
     error_envio = None
     
     fecha_actual = obtener_fecha_actual()
+    envio_mh = True
+    motivo_otro = False
+    
+    # Reintentos desde sesión (inicializar si no existe)
+    intentos_modal = request.session.get('intentos_reintento', 0)
     
     factura = get_object_or_404(FacturaElectronica, id=factura_id)
 
@@ -1530,23 +1545,22 @@ def enviar_factura_hacienda_view(request, factura_id):
                     }
                 )
                 contingencia = False
+                motivo_otro = False
                 print("Autenticacion exitosa")
                 break
             else:
                 # Manejo de errores según el código de estado de la respuesta
+                motivo_otro = False
                 if auth_response.status_code in [500, 502, 503, 504, 408]: #503, 504
-                    print("Error al conectarse al servidor: ", auth_response.status_code)
                     tipo_contingencia_obj = TipoContingencia.objects.get(codigo="1")
                 elif auth_response.status_code in [408, 499]: #500, 503
-                    print("Error al conectarse al servidor: ", auth_response.status_code)
                     tipo_contingencia_obj = TipoContingencia.objects.get(codigo="2")
                 elif auth_response.status_code in [503, 504]: #503, 504
-                    print("Error al conectarse al servidor: ", auth_response.status_code)
                     tipo_contingencia_obj = TipoContingencia.objects.get(codigo="4")
                 else:#Otro- 400, 500, 502
                     mensaje = f"Error en la autenticación: {auth_response.status_code}"
                     tipo_contingencia_obj = TipoContingencia.objects.get(codigo="5")
-                
+                    motivo_otro = True 
                 # Intentar nuevamente
                 error_autenticacion = f"Error en la autenticación: {auth_response.status_code}"
                 print("Error autenticación: ", error_autenticacion)
@@ -1576,6 +1590,7 @@ def enviar_factura_hacienda_view(request, factura_id):
             print("Error: ", error_autenticacion)
         except Exception as e:
             tipo_contingencia_obj = TipoContingencia.objects.get(codigo="5")
+            motivo_otro = True
             error_autenticacion = str(e)
             print(f"Ocurrió un error inesperado: {e}")
     
@@ -1675,36 +1690,30 @@ def enviar_factura_hacienda_view(request, factura_id):
                     factura.contingencia = False
                     factura.save()
                     contingencia = False
+                    motivo_otro = False
                     
-                    #crear el movimeinto de inventario
-                    #Se asume que la factura tiene una relación a sus detalles, donde se encuentran los productos y cantidades
+                    # crear el movimeinto de inventario
+                    # Se asume que la factura tiene una relación a sus detalles, 
+                    # donde se encuentran los productos y cantidades
 
-                    """for detalle in factura.detalles.all():
-
-                        if detalle.producto.almacenes.exists():
-                            almacen = detalle.producto.almacenes.first()
-                        else:
-                            almacen = Almacen.objects.first()
-
+                    for detalle in factura.detalles.all():
+                        almacen = detalle.producto.almacenes.first() or Almacen.objects.first()
                         MovimientoInventario.objects.create(
-                            producto = detalle.producto,
-                            almacen = almacen,
+                            producto=detalle.producto,
+                            almacen=almacen,
                             tipo='Salida',
-                            cantidad = detalle.cantidad,
+                            cantidad=detalle.cantidad,
                             referencia=f"Factura {factura.codigo_generacion}",
                         )
-
-                        #actualizar el stock del producto (desconteo)
-                        producto = detalle.producto
-                        producto.stock = max(producto.stock - detalle.cantidad, 0) #evitamos calores negativos
-                        producto.save()"""
+                        # ¡El stock baja solo gracias al signal!
                         
                     #Si la factura fue recibida por mh detener los eventos en contingencia activos
                     finalizar_contigencia_view(request)
-                    return JsonResponse({
-                        "mensaje": "Factura enviada con éxito",
-                        "respuesta": response_data
-                    })
+                    # return JsonResponse({
+                    #     "mensaje": "Factura enviada con éxito",
+                    #     "respuesta": response_data
+                    # })
+                    return redirect (reverse('detalle_factura', args=[factura.id]))
                 else:              
                     if envio_response.status_code in [500, 502, 503, 504, 408]: #503, 504
                         print("Error al conectarse al servidor: ", envio_response.status_code)
@@ -1717,6 +1726,7 @@ def enviar_factura_hacienda_view(request, factura_id):
                         tipo_contingencia_obj = TipoContingencia.objects.get(codigo="4")
                     else:#Otro- 400, 500, 502
                         tipo_contingencia_obj = TipoContingencia.objects.get(codigo="5")
+                        motivo_otro = True
                         mensaje = f"Error en el envío de la factura: {envio_response.status_code}"
                         print("Error en el envio de la factura: # intento de envio: ", intento)
                         
@@ -1755,14 +1765,20 @@ def enviar_factura_hacienda_view(request, factura_id):
                 print("Error: ", error_envio)
             except Exception as e:
                 tipo_contingencia_obj = TipoContingencia.objects.get(codigo="5")
+                motivo_otro = True
                 error_envio = str(e)
                 print(f"Ocurrió un error inesperado: {error_envio}")
                 intento += 1
                 time.sleep(8)
     
+    #Bloquear creacion de eventos por reintentos
+    if intentos_modal > 0:
+        creacion_contingencia = False
+    else:
+        creacion_contingencia = True
     # Si la autenticación o el envio fallaron despues de los intentos
     print(f"error auth: {error_autenticacion}, error envio: {error_envio}")
-    if error_autenticacion or error_envio:
+    if (error_autenticacion or error_envio) and creacion_contingencia:
         # Solo crear contingencia si al menos uno de los flujos falló
         if not contingencia_creada:
             #Verificar si existen contingencias activas
@@ -1779,8 +1795,24 @@ def enviar_factura_hacienda_view(request, factura_id):
             
             lote_contingencia_dte_view(request, factura_id, tipo_contingencia_obj)
             contingencia_creada = True  #Indica que la contingencia fue creada
-        return render(request, "documentos/factura_consumidor/template_factura.html", {"factura": factura})
-    
+        
+        # Incrementar reintentos solo si falló la firma
+        intentos_modal += 1
+        request.session['intentos_reintento'] = intentos_modal
+        request.session.modified = True
+
+        # Decidir si mostrar el modal dependiendo de los intentos
+        mostrar_modal = intentos_modal < 3
+        #return render(request, "documentos/factura_consumidor/template_factura.html", {"factura": factura})
+
+        return redirect(
+            f"{reverse('detalle_factura', args=[factura_id])}?"
+            f"mostrar_modal={'1' if mostrar_modal else '0'}"
+            f"&firma=0"
+            f"&envio_mh={'1' if envio_mh else '0'}"
+            f"&intentos_modal={intentos_modal}"
+            f"&motivo_otro={'1' if motivo_otro else '0'}"
+        )
     return JsonResponse({"mensaje": "Factura procesada con éxito"})
 
     """if request.method != 'POST':
@@ -1819,9 +1851,27 @@ def enviar_factura_hacienda_view(request, factura_id):
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)"""
 
+
 def detalle_factura(request, factura_id):
     factura = get_object_or_404(FacturaElectronica, id=factura_id)
-    return render(request, "documentos/factura_consumidor/template_factura.html", {"factura": factura})
+
+    mostrar_modal = request.GET.get('mostrar_modal') == '1'
+    intentos_modal = int(request.GET.get('intentos_modal', 0))
+    
+    firma = request.GET.get('firma')
+    envio_mh = request.GET.get('envio_mh')
+    motivo_otro = request.GET.get('motivo_otro', '0')
+
+    print(f"Detalle | Modal: {mostrar_modal}, firma: {firma}, envio: {envio_mh}, envio: {envio_mh}, intentos: {intentos_modal}, motivo_otro: {motivo_otro}")
+
+    return render(request, 'documentos/factura_consumidor/template_factura.html', {
+        'factura': factura,
+        'mostrar_modal': mostrar_modal,
+        'intentos_modal': intentos_modal,
+        'motivo_otro': int(motivo_otro),
+        'firma': firma,
+        'envio_mh': envio_mh,
+    })
 
 @csrf_exempt    
 def invalidacion_dte_view(request, factura_id):
@@ -2331,10 +2381,43 @@ def enviar_factura_invalidacion_hacienda_view(request, factura_id):
             print("-Fin enviar invalidacion a MH")
             respuestaMh = json_response_data["jsonRespuestaMh"]["descripcionMsg"]
             print("-Detalle RespuestaMH ", json_response_data["jsonRespuestaMh"]["descripcionMsg"])
+
+            # ---------------------------------------------------
+            #  AGREGAR EL PRODUCTO AL INVENTARIO (Entrada)
+            # ---------------------------------------------------
+            factura = evento_invalidacion.factura  # asumiendo ForeignKey desde EventoInvalidacion
+             # Crear la devolución de venta
+            devolucion = DevolucionVenta.objects.create(
+                num_factura=factura.numero_control,
+                motivo="Devolución automática por invalidación múltiple",
+                estado="Aprobada",
+                usuario=request.user.username if request.user.is_authenticated else None
+            )
+            for detalle in factura.detalles.all():
+                DetalleDevolucionVenta.objects.create(
+                    devolucion=devolucion,
+                    producto=detalle.producto,
+                    cantidad=detalle.cantidad,
+                    motivo_detalle="Reingreso automático por invalidación"
+                )
+                almacen = detalle.producto.almacenes.first() or Almacen.objects.first()
+                MovimientoInventario.objects.create(
+                    producto=detalle.producto,
+                    almacen=almacen,
+                    tipo='Entrada',
+                    cantidad=detalle.cantidad,
+                    referencia=f"Invalidación Factura {factura.codigo_generacion}",
+                )
+                # Ajuste de stock atómico
+                Producto.objects.filter(pk=detalle.producto.pk).update(
+                    stock=F('stock') + detalle.cantidad
+                )
+
             return JsonResponse({
                 "mensaje": "Factura invalidada con éxito",
                 "respuesta": response_data
             })
+
         else:
             evento_invalidacion.estado=False
             evento_invalidacion.save()
@@ -2387,26 +2470,36 @@ def invalidar_varias_dte_view(request):
                 if evento:
                     if evento.estado:
                         mensaje = "Factura invalidada con éxito"
-                        # al invalidad se procede a reintegrar el inventario
-                        factura = FacturaElectronica.objects.get(id=factura_id)
-                        for detalle in factura.detalles.all():
-                            #se selecciona el primer almacen asociado al producto
-                            if detalle.producto.almacenes.exists():
-                                almacen = detalle.producto.almacenes.first()
-                            else:
-                                almacen = Almacen.objects.first()
 
-                            #crear el movimiento de inventario de tipo "Entrada"
-                            MovimientoInventario.objects.create(
+                        factura = get_object_or_404(FacturaElectronica, id=factura_id)
+                        # Crear la devolución de venta
+                        devolucion = DevolucionVenta.objects.create(
+                            num_factura=factura.numero_control,
+                            motivo="Devolución automática por invalidación múltiple",
+                            estado="Aprobada",
+                            usuario=request.user.username if request.user.is_authenticated else None
+                        )
+                        # Registrar cada detalle y reingresar stock
+                        for detalle in factura.detalles.all():
+                            DetalleDevolucionVenta.objects.create(
+                                devolucion=devolucion,
                                 producto=detalle.producto,
                                 cantidad=detalle.cantidad,
+                                motivo_detalle="Reingreso automático por invalidación"
+                            )
+                            almacen = detalle.producto.almacenes.first() or Almacen.objects.first()
+                            MovimientoInventario.objects.create(
+                                producto=detalle.producto,
                                 almacen=almacen,
                                 tipo='Entrada',
-                                referencia=f"Reingreso por invalidación de factura {factura.numero_control}"
+                                cantidad=detalle.cantidad,
+                                referencia=f"Reingreso invalidación Factura {factura.numero_control}"
                             )
-                            #Actualizar el stock dl producto, smando la cantidad reingreso
-                            detalle.producto.stock += detalle.cantidad
-                            detalle.producto.save()
+                            # Ajuste de stock atómico
+                            Producto.objects.filter(pk=detalle.producto.pk).update(
+                                stock=F('stock') + detalle.cantidad
+                            )
+
                     else:
                         mensaje = "No se pudo invalidar la factura"
                 else:
@@ -2431,7 +2524,6 @@ def invalidar_varias_dte_view(request):
         return JsonResponse({"results": results})
     else:
         return JsonResponse({"error": "Método no permitido"}, status=405)
-
 
 @csrf_exempt
 def invalidar_dte_unificado_view(request, factura_id):
@@ -2480,7 +2572,7 @@ def invalidar_dte_unificado_view(request, factura_id):
 
 
 #############################################################################################################
-
+# VISTAS COMPLEMENTARIAS AJAX
 ######################################################################################
 
 def seleccion_descuento_ajax(request):
@@ -2702,7 +2794,6 @@ def agregar_docs_relacionados_ajax(request):
 ######################################################
 # GENERACION DE NOTA DE CREDITO Y DEBITO
 ######################################################
-from math import ceil
 @csrf_exempt
 @transaction.atomic
 def generar_documento_ajuste_view(request):
@@ -3250,6 +3341,60 @@ def generar_documento_ajuste_view(request):
             factura.json_original = factura_json
             factura.save()
 
+            
+            # Si acabamos de generar una Nota de Crédito, registramos la devolución al cliente:
+            if tipo_dte_obj.codigo == COD_NOTA_CREDITO:
+                # 1) Crear la devolución de venta
+                devolucion = DevolucionVenta.objects.create(
+                    num_factura=factura.numero_control,
+                    motivo="Devolución generada por Nota de Crédito",
+                    estado="Aprobada",
+                    usuario=request.user.username if request.user.is_authenticated else None
+                )
+                # 2) Registrar cada detalle de devolución y el reingreso de stock
+                for det in factura.detalles.all():
+                    # 2a) Detalle de la devolución
+                    DetalleDevolucionVenta.objects.create(
+                        devolucion=devolucion,
+                        producto=det.producto,
+                        cantidad=det.cantidad,
+                        motivo_detalle="Reingreso automático por NC"
+                    )
+                    # 2b) Movimiento de inventario de Entrada
+                    almacen = det.producto.almacenes.first() or Almacen.objects.first()
+                    MovimientoInventario.objects.create(
+                        producto=det.producto,
+                        almacen=almacen,
+                        tipo='Entrada',
+                        cantidad=det.cantidad,
+                        referencia=f"Reingreso NC {factura.numero_control}"
+                    )
+                    # 2c) Ajuste de stock atómico
+                    Producto.objects.filter(pk=det.producto.pk).update(
+                        stock=F('stock') + det.cantidad
+                    )
+                # 3) Generar la Nota de Crédito
+                NotaCredito.objects.create(
+                    devolucion=devolucion,
+                    monto=factura.total_pagar,
+                    estado="Pendiente"
+                )
+            # 2) Si es Nota de Débito ➞ salida extra de stock
+            elif tipo_dte_obj.codigo == COD_NOTA_DEBITO:
+                # (opcional) si quieres guardar un modelo NotaDebito, créalo aquí
+                for det in factura.detalles.all():
+                    MovimientoInventario.objects.create(
+                        producto=det.producto,
+                        almacen=det.producto.almacenes.first() or Almacen.objects.first(),
+                        tipo='Salida',
+                        cantidad=det.cantidad,
+                        referencia=f"Salida ND {factura.numero_control}"
+                    )
+                    # ajustar stock sin bajar de cero
+                    Producto.objects.filter(pk=det.producto.pk).update(
+                        stock=Greatest(F('stock') - det.cantidad, Value(0))
+                    )
+
             # Guardar el JSON en la carpeta "FE/json_facturas"
             json_path = os.path.join("FE/json_facturas", f"{factura.numero_control}.json")
             os.makedirs(os.path.dirname(json_path), exist_ok=True)
@@ -3270,8 +3415,7 @@ def generar_documento_ajuste_view(request):
 # EVENTOS DE CONTINGENCIA DE DTE
 #########################################################################################################
 
-from math import ceil
-#LISTADO DE EVENTOS dte_contingencia_list.html
+#LISTADO DE EVENTOS dte_contingencia_list
 def contingencia_list(request):
     try:
         #Verificar si existen eventos activos con fecha fuera de plazo y desactivarlos
@@ -3279,14 +3423,14 @@ def contingencia_list(request):
         
         #Fecha y hora actual
         fecha_actual = obtener_fecha_actual()
-        fecha_limite = (fecha_actual - timezone.timedelta(hours=1))#72 horas
+        fecha_limite = (fecha_actual - timezone.timedelta(hours=72))#72 horas
 
         # Obtener listado de la base
         try:
             queryset = EventoContingencia.objects.prefetch_related('lotes_contingencia__factura').distinct().all().order_by('id')
         except Exception as e:
-            return Response({"Error en la busqueda de contingencias": str(e)})
-        
+            return render(request, 'dte_contingencia.html', {"Error en la busqueda de contingencias": str(e)})
+
         # Aplicar filtros según los parámetros GET
         recibido = request.GET.get('recibido_mh')
         codigo = request.GET.get('sello_recepcion')
@@ -3331,8 +3475,18 @@ def contingencia_list(request):
                             lote_obj.hora_modificacion = fecha_actual.time()
                             lote_obj.save()
             # Dividir las facturas en grupos de 100
-            facturas_en_grupos = [facturas[i:i + 2] for i in range(0, len(facturas), 2)]
-            
+            facturas_en_grupos = []
+            #facturas_en_grupos = [facturas[i:i + 2] for i in range(0, len(facturas), 2)]
+            for i in range(0, len(facturas), 100):
+                grupo_facturas = facturas[i:i + 100]
+                mostrar_checkbox_lote = any(
+                    f.recibido_mh == False and f.sello_recepcion and evento.sello_recibido is None for f in grupo_facturas
+                )
+                facturas_en_grupos.append({
+                    'facturas': grupo_facturas,
+                    'mostrar_checkbox_lote': mostrar_checkbox_lote
+                })
+
             # Contar cuántos grupos de lotes existen (lotes por evento)
             total_lotes_evento = len(facturas_en_grupos)
 
@@ -3340,7 +3494,10 @@ def contingencia_list(request):
             eventos_con_lotes.append({
                 'evento': evento,
                 'facturas_en_grupos': facturas_en_grupos,
-                'total_lotes_evento': total_lotes_evento
+                'total_lotes_evento': total_lotes_evento,
+                'mostrar_checkbox': any(  # Para checkbox del evento
+                    f.recibido_mh == False and f.sello_recepcion is None for f in facturas
+                )
             })
         
         return render(request, 'documentos/dte_contingencia_list.html', {
@@ -3349,7 +3506,7 @@ def contingencia_list(request):
             'eventos_con_lotes': eventos_con_lotes
         })
     except Exception as e:
-        return Response({"error": str(e)})
+        return render(request, 'dte_contingencia.html', {"error": str(e)})
 
 # GENERA EL JSON DE CONTINGENCIA - ESTE NO
 def generar_json_contingencia(evento_contingencia_id, emisor, detalles):
@@ -3408,30 +3565,15 @@ def generar_json_contingencia(evento_contingencia_id, emisor, detalles):
 def contingencia_dte_unificado_view(request):
     try:
         contingencia_id = request.GET.get("contingencia_id")
-        motivo_contingencia = request.GET.get("motivo_contingencia", None)
-        codigo_motivo = request.GET.get("codigo_motivo", None)
-        motivo = None
         
         print("[uno a uno]Inicio enviar contingencia view")
-        
-        # ---------------------------------
-        # Paso 1: Actualizar tipo contingencia si el codigo es 5
-        # ---------------------------------
-        if codigo_motivo and codigo_motivo == COD_TIPO_CONTINGENCIA:
-            try:
-                motivo = TipoContingencia.objects.filter(codigo=codigo_motivo).first()
-                if motivo:
-                    motivo.motivo_contingencia = motivo_contingencia
-                    motivo.save()
-            except Exception as e:
-                print(f"Error al actualizar motivo de contingencia: {str(e)}")
-                return JsonResponse({"error": "Error al actualizar motivo de contingencia"}, status=400)
         
         # ---------------------------------
         # Paso 2: Obtener el json generado de contingencia
         # ---------------------------------
         try:
             response_evento_contingencia = contingencia_dte_view(request, contingencia_id)
+            print("Response evento contingencia: ", response_evento_contingencia)
             if response_evento_contingencia and response_evento_contingencia.status_code != 302:
                 return response_evento_contingencia
             print("Status contingencia dte view: ", response_evento_contingencia)
@@ -3443,18 +3585,22 @@ def contingencia_dte_unificado_view(request):
         # ---------------------------------
         try:
             response_firma = firmar_contingencia_view(request, contingencia_id)
-            if response_firma.status_code != 302:
+            print("Response firma: ", response_firma)
+            if response_firma and response_firma.status_code != 302 and response_firma.status_code !=200:
                 return response_firma
+            else:
+                print("La respuesta de firma es None")
+                ValueError("La respuesta de firma es None")
         except Exception as e:
             print(f"Error al firmar contingencia: {str(e)}")
         
         # ---------------------------------
         # Paso 4: Llamar a la función que envía el evento de contigencia firmado a Hacienda
         # ---------------------------------
+        print("Enviar contingencia view")
         try:
             response_envio = enviar_contingencia_hacienda_view(request, contingencia_id)#PENDIENTE ACTUALIZAR
-            print("response envio contingencia: ", response_envio)
-            print(f"Codigo de estado de la respuesta de envio: {response_envio.status_code}")
+            print("response text envio contingencia: ", response_envio)
             print(f"Contenido de la respuesta de envio: {response_envio.content}")
         except Exception as e:
             print(f"Error al enviar contingencia a Hacienda: {str(e)}")
@@ -3507,111 +3653,119 @@ def contingencia_dte_unificado_view(request):
 # ENVIA TODAS LAS CONTINGENCIAS SELECCIONADAS EN LA TABLA
 @csrf_exempt
 def contingencias_dte_view(request):
+    print("Enviar contingencias")
     if request.method == "POST":
-        # Se espera recibir una lista de IDs en el parámetro 'contingencia_ids'
-        contingencia_ids = request.POST.getlist('contingencia_ids')
-        motivos_contingencia = request.GET.get("motivo_contingencia", None)
-        codigos_motivo = request.GET.get("codigo_motivo", None)
-        motivo = None
-        
-        results = []
-        for contingencia_id in contingencia_ids:
-            print("Enviar contingencia idd: ", contingencia_id)
+        try:
+            # Se espera recibir una lista de IDs en el parámetro 'contingencia_ids'
+            contingencia_ids = request.POST.getlist('contingencia_ids')
+            motivos_contingencia = request.GET.get("motivo_contingencia", None)
+            codigos_motivo = request.GET.get("codigo_motivo", None)
+            motivo = None
             
-            # ---------------------------------
-            # Paso 1: Actualizar tipo contingencia si el codigo es 5
-            # ---------------------------------
-            # if codigo_motivo and codigo_motivo == COD_TIPO_CONTINGENCIA:
-            #     try:
-            #         motivo = TipoContingencia.objects.filter(codigo=codigo_motivo).first()
-            #         if motivo:
-            #             motivo.motivo_contingencia = motivo_contingencia
-            #             motivo.save()
-            #     except Exception as e:
-            #         print(f"Error al actualizar motivo de contingencia: {str(e)}")
-            #         return JsonResponse({"error": "Error al actualizar motivo de contingencia"}, status=400)
-            
-            # ---------------------------------
-            # Paso 2: Obtener el json generado de contingencia
-            # ---------------------------------
-            try:
-                # Llamar a la función de generacion del evento en contingencia
-                response_evento_contingencia = contingencia_dte_view(request, contingencia_id)
-                if response_evento_contingencia and response_evento_contingencia.status_code != 302:
-                    results.append({
-                        "contingencia_id": contingencia_id,
-                        "mensaje": "Error en contingencia",
-                        "detalle": response_evento_contingencia.content.decode()
-                    })
-                    continue
-            except Exception as e:
-                print(f"Error al generar evento de contingencia: {str(e)}")
+            results = []
+            for contingencia_id in contingencia_ids:
+                print("Enviar contingencia idd: ", contingencia_id)
+                
+                # ---------------------------------
+                # Paso 1: Actualizar tipo contingencia si el codigo es 5
+                # ---------------------------------
+                # if codigo_motivo and codigo_motivo == COD_TIPO_CONTINGENCIA:
+                #     try:
+                #         motivo = TipoContingencia.objects.filter(codigo=codigo_motivo).first()
+                #         if motivo:
+                #             motivo.motivo_contingencia = motivo_contingencia
+                #             motivo.save()
+                #     except Exception as e:
+                #         print(f"Error al actualizar motivo de contingencia: {str(e)}")
+                #         return JsonResponse({"error": "Error al actualizar motivo de contingencia"}, status=400)
+                
+                # ---------------------------------
+                # Paso 2: Obtener el json generado de contingencia
+                # ---------------------------------
+                try:
+                    # Llamar a la función de generacion del evento en contingencia
+                    response_evento_contingencia = contingencia_dte_view(request, contingencia_id)
+                    if response_evento_contingencia and response_evento_contingencia.status_code != 302:
+                        results.append({
+                            "contingencia_id": contingencia_id,
+                            "mensaje": "Error en contingencia",
+                            "detalle": response_evento_contingencia.content.decode()
+                        })
+                        continue
+                except Exception as e:
+                    print(f"Error al generar evento de contingencia: {str(e)}")
 
-            # ---------------------------------
-            # Paso 3: Llamar a la función firma del evento de contingencia
-            # ---------------------------------
-            try:
-                response_firma = firmar_contingencia_view(request, contingencia_id)
-                if response_firma.status_code != 302:
-                    results.append({
-                        "contingencia_id": contingencia_id,
-                        "mensaje": "Error en firma",
-                        "detalle": response_firma.content.decode()
-                    })
-                    continue
-            except Exception as e:
-                print(f"Error al firmar contingencia: {str(e)}")
+                # ---------------------------------
+                # Paso 3: Llamar a la función firma del evento de contingencia
+                # ---------------------------------
+                try:
+                    response_firma = firmar_contingencia_view(request, contingencia_id)
+                    print("Firma generada: ", response_firma)
+                    if response_firma and (response_firma.status_code != 302 and response_firma.status_code !=200):
+                        results.append({
+                            "contingencia_id": contingencia_id,
+                            "mensaje": "Error en firma",
+                            "detalle": response_firma.content.decode()
+                        })
+                        continue
+                except Exception as e:
+                    print(f"Error al firmar contingencia: {str(e)}")
 
-            # ---------------------------------
-            # Paso 4: Llamar a la función que envía el evento de contigencia firmado a Hacienda
-            # ---------------------------------
-            try:
-                response_envio = enviar_contingencia_hacienda_view(request, contingencia_id)
-            except Exception as e:
-                print(f"Error al enviar contingencia a Hacienda: {str(e)}")
-            # ---------------------------------
-            # Consultar el estado final y preparar el mensaje de respuesta
-            # ---------------------------------
-            try:
-                evento = EventoContingencia.objects.filter(id=contingencia_id).first()
-                if evento:
-                    if evento.recibido_mh:
-                        mensaje = "Contingencia enviada con éxito"
+                # ---------------------------------
+                # Paso 4: Llamar a la función que envía el evento de contigencia firmado a Hacienda
+                # ---------------------------------
+                print("Enviar contingencias a MH")
+                try:
+                    response_envio = enviar_contingencia_hacienda_view(request, contingencia_id)
+                except Exception as e:
+                    print(f"Error al enviar contingencia a Hacienda: {str(e)}")
+                # ---------------------------------
+                # Consultar el estado final y preparar el mensaje de respuesta
+                # ---------------------------------
+                try:
+                    evento = EventoContingencia.objects.filter(id=contingencia_id).first()
+                    if evento:
+                        if evento.recibido_mh:
+                            mensaje = "Contingencia enviada con éxito"
+                        else:
+                            mensaje = "No se pudo enviar la contingencia"
                     else:
-                        mensaje = "No se pudo enviar la contingencia"
-                else:
-                    mensaje = "No se encontró el evento de contingencia"
-            except Exception as e:
-                print(f"Error al verificar el estado del evento: {str(e)}")
-                mensaje = "Error al consultar el evento de contingencia"
+                        mensaje = "No se encontró el evento de contingencia"
+                except Exception as e:
+                    print(f"Error al verificar el estado del evento: {str(e)}")
+                    mensaje = "Error al consultar el evento de contingencia"
 
-            # Intentamos cargar el detalle (si es un JSON válido)
-            try:
-                if response_envio.status_code == 200:
-                    try:
-                        detalle = json.loads(response_envio.content)
-                    except Exception as e:
-                        # Si no se puede cargar como JSON, mostramos el error
-                        print(f"Error al convertir la respuesta a JSON: {e}")
-                        detalle = response_envio.content.decode()  # Decodificamos como texto si no es JSON
+                # Intentamos cargar el detalle (si es un JSON válido)
+                try:
+                    if response_envio.status_code == 200:
+                        try:
+                            detalle = json.loads(response_envio.content)
+                        except Exception as e:
+                            # Si no se puede cargar como JSON, mostramos el error
+                            print(f"Error al convertir la respuesta a JSON: {e}")
+                            detalle = response_envio.content.decode()  # Decodificamos como texto si no es JSON
+                        results.append({
+                            "contingencia_id": contingencia_id,
+                            "mensaje": mensaje,
+                            "detalle": detalle
+                        })
+                    else:
+                        # Si el código de estado no es 200, mostramos el código y el contenido
+                        print(f"Error en la respuesta de envío: {response_envio.status_code}")
+                        detalle = f"Error al enviar la contingencia, código de estado: {response_envio.status_code}"
+                except Exception as e:
+                    detalle = f"Error procesando respuesta de envío: {str(e)}"
                     results.append({
-                        "contingencia_id": contingencia_id,
-                        "mensaje": mensaje,
-                        "detalle": detalle
-                    })
-                else:
-                    # Si el código de estado no es 200, mostramos el código y el contenido
-                    print(f"Error en la respuesta de envío: {response_envio.status_code}")
-                    detalle = f"Error al enviar la contingencia, código de estado: {response_envio.status_code}"
-            except Exception as e:
-                detalle = f"Error procesando respuesta de envío: {str(e)}"
-                results.append({
-                        "contingencia_id": contingencia_id,
-                        "mensaje": "Error inesperado",
-                        "detalle": str(e)
-                    })
-                return JsonResponse({"results": results})
-            
+                            "contingencia_id": contingencia_id,
+                            "mensaje": "Error inesperado",
+                            "detalle": str(e)
+                        })
+                    return JsonResponse({"results": results})
+                
+            return JsonResponse({"results": results})
+        except Exception as e:
+            print(f"Error general en el proceso unificado: {e}")
+            return JsonResponse({"error": str(e)}, status=400)
     else:
         return JsonResponse({"error": "Método no permitido"}, status=405)
 
@@ -3639,7 +3793,6 @@ def contingencia_dte_view(request, contingencia_id):
             try:
                 for lote in evento_contingencia.lotes_contingencia.all():
                     facturas.append(lote.factura)
-                    print("listado de facturas: ", facturas)
             except Exception as e:
                 print(f"Error al obtener facturas de los lotes: {e}")
                 return JsonResponse({"error": "No se pudieron obtener las facturas"}, status=400)
@@ -3737,8 +3890,6 @@ def firmar_contingencia_view(request, contingencia_id):
     intentos_max = 3 #Intentos para envio del dte a MH
     tipo_contingencia_obj = None
     mensaje = None
-    # Banderas para verificar si ya se creo una contingencia
-    contingencia_creada = False
     error_envio = None
     response = None
     response_data = {}
@@ -3772,12 +3923,18 @@ def firmar_contingencia_view(request, contingencia_id):
                 "detalle": str(e)
             }, status=400)
             
+        # Antes de la llamada al firmador, se parsea una sola vez a objeto:
+        if isinstance(evento_contingencia.json_original, dict):
+            dte_json_obj = evento_contingencia.json_original
+        else:
+            dte_json_obj = json.loads(evento_contingencia.json_original)
+            
         # Construir el payload con los parámetros requeridos
         payload = {
             "nit": str(emisor_fe.nit),   # Nit del contribuyente
             "activo": True,            # Indicador activo
             "passwordPri": str(emisor_fe.clave_privada), #"3nCr!pT@d0Pr1v@d@",   # Contraseña de la llave privada
-            "dteJson": evento_contingencia.json_original   # JSON del DTE como cadena
+            "dteJson": dte_json_obj   # JSON del DTE como cadena
         }
 
         headers = {"Content-Type": "application/json"}
@@ -3786,45 +3943,46 @@ def firmar_contingencia_view(request, contingencia_id):
             response = requests.post(FIRMADOR_URL, json=payload, headers=headers)
             
             # Capturamos la respuesta completa
-            try:
-                response_data = response.json()
-            except Exception as e:
-                # En caso de error al parsear el JSON, se guarda el texto crudo
-                response_data = {"error": "No se pudo parsear JSON", "detalle": response.text}
-                print("Error al decodificar JSON en envío:", e)
-            
-            # Guardar toda la respuesta en la factura para depuración (incluso si hubo error)
-            # Verificar si la firma fue exitosa
-            if response.status_code == 200 and response_data.get("status") == "OK":
-                evento_contingencia.json_firmado = response_data
-                evento_contingencia.firmado = True
-                evento_contingencia.save()
-                print("Guardar cambios contingencia firma")
-                break
-            else:
-                print("Firma | Ocurrio un error al firmar la factura")
-                if response.status_code in [500, 502, 503, 504, 408]: #503, 504
-                    print("Error al conectarse al servidor: ", response.status_code)
-                    tipo_contingencia_obj = TipoContingencia.objects.get(codigo="1")
-                elif response.status_code in [408, 499]: #500, 503
-                    print("Error al conectarse al servidor: ", response.status_code)
-                    tipo_contingencia_obj = TipoContingencia.objects.get(codigo="2")
-                elif response.status_code in [503, 504]: #503, 504
-                    print("Error al conectarse al servidor: ", response.status_code)
-                    tipo_contingencia_obj = TipoContingencia.objects.get(codigo="4")
-                else:#Otro- 400, 500, 502
-                    tipo_contingencia_obj = TipoContingencia.objects.get(codigo="5")
-                    mensaje = f"Error en el envío de la factura: {response.status_code}"
-                    print("Error: ", mensaje)
-                # Esperar antes de siguiente intento
-                error_envio = f"Error al firmar la factura: {response.status_code}"
-                print("Error en el intento de firma:", intento)
-                intento += 1
-                time.sleep(8)
-                contingencia = True
+            if response:
+                try:
+                    response_data = response.json()
+                except Exception as e:
+                    # En caso de error al parsear el JSON, se guarda el texto crudo
+                    response_data = {"error": "No se pudo parsear JSON", "detalle": response.text}
+                    print("Error al decodificar JSON en envío:", e)
+                
+                # Guardar toda la respuesta en la factura para depuración (incluso si hubo error)
+                # Verificar si la firma fue exitosa
+                if response.status_code == 200 and response_data.get("status") == "OK":
+                    evento_contingencia.json_firmado = response_data
+                    evento_contingencia.firmado = True
+                    evento_contingencia.save()
+                    print("Guardar cambios contingencia firma: ", response_data.get("status"))
+                    return JsonResponse({
+                        "mensaje": "Firma de contingencia exitosa.",
+                        "detalle": response_data
+                }, status=response.status_code)
+                else:
+                    print("Firma | Ocurrio un error al firmar la factura")
+                    if response.status_code in [500, 502, 503, 504, 408]: #503, 504
+                        tipo_contingencia_obj = TipoContingencia.objects.get(codigo="1")
+                    elif response.status_code in [408, 499]: #500, 503
+                        tipo_contingencia_obj = TipoContingencia.objects.get(codigo="2")
+                    elif response.status_code in [503, 504]: #503, 504
+                        tipo_contingencia_obj = TipoContingencia.objects.get(codigo="4")
+                    else:#Otro- 400, 500, 502
+                        tipo_contingencia_obj = TipoContingencia.objects.get(codigo="5")
+                        mensaje = f"Error en el envío de la factura: {response.status_code}"
+                        print("Error: ", mensaje)
+                    # Esperar antes de siguiente intento
+                    error_envio = f"Error al firmar la factura: {response.status_code}"
+                    print("Error en el intento de firma:", intento)
+                    intento += 1
+                    time.sleep(8)
+                    contingencia = True
         except requests.exceptions.RequestException as e:
             error_envio = "Error de conexión con el firmador"
-            tipo_coningencia_obj = TipoContingencia.objects.get(codigo="1")
+            tipo_contingencia_obj = TipoContingencia.objects.get(codigo="1")
             time.sleep(8)
             intento += 1
             print("Error: ", error_envio)
@@ -3866,7 +4024,7 @@ def firmar_contingencia_view(request, contingencia_id):
                 return JsonResponse({"error": "Error al firmar la contingencia", "detalle": response_data}, status=400)
         except Exception as e:
             print("Error al guardar archivo firmado:", e)
-            print("-Fin firma contingencia DTE - id contingencia ", contingencia_id)
+    print("-Fin firma contingencia DTE - id contingencia ", contingencia_id)
 
 csrf_exempt
 def enviar_contingencia_hacienda_view(request, contingencia_id):
@@ -4032,10 +4190,6 @@ def enviar_contingencia_hacienda_view(request, contingencia_id):
                     headers=envio_headers,
                     json=envio_json
                 )
-
-                print("Envio response: ", envio_response)
-                print("Envio response status code:", envio_response.status_code)
-                print("Envio response headers:", envio_response.headers)
                 print("Envio response text:", envio_response.text)
                 sello_recibido = None
 
@@ -4074,8 +4228,8 @@ def enviar_contingencia_hacienda_view(request, contingencia_id):
                     #Al convertir un diccionario en json se guarda como un string, por lo que se debe convertir a json (loads)
                     json_original_campo = json.loads(json_respuesta_mh)
                     evento_contingencia.json_original = json_original_campo
-                    evento_contingencia.fecha_modificacion = fecha
-                    evento_contingencia.hora_modificacion = hora
+                    evento_contingencia.fecha_modificacion = fecha_actual.date()
+                    evento_contingencia.hora_modificacion = fecha_actual.time()
                     evento_contingencia.fecha_sello_recibido = fecha_actual
                     evento_contingencia.save()
                     print("-Fin enviar contingencia a MH")
@@ -4086,15 +4240,15 @@ def enviar_contingencia_hacienda_view(request, contingencia_id):
                 else:
                     if auth_response.status_code in [500, 502, 503, 504, 408]: #503, 504
                         print("Error al conectarse al servidor: ", auth_response.status_code)
-                        tipo_contiengencia_obj = TipoContingencia.objects.get(codigo="1")
+                        tipo_contingencia_obj = TipoContingencia.objects.get(codigo="1")
                     elif auth_response.status_code in [408, 499]: #500, 503
                         print("Error al conectarse al servidor: ", auth_response.status_code)
-                        tipo_contiengencia_obj = TipoContingencia.objects.get(codigo="2")
+                        tipo_contingencia_obj = TipoContingencia.objects.get(codigo="2")
                     elif auth_response.status_code in [503, 504]: #503, 504
                         print("Error al conectarse al servidor: ", auth_response.status_code)
-                        tipo_contiengencia_obj = TipoContingencia.objects.get(codigo="4")
+                        tipo_contingencia_obj = TipoContingencia.objects.get(codigo="4")
                     else:#Otro- 400, 500, 502
-                        tipo_contiengencia_obj = TipoContingencia.objects.get(codigo="5")
+                        tipo_contingencia_obj = TipoContingencia.objects.get(codigo="5")
                         mensaje = f"Error en el envío de la factura: {envio_response.status_code}"
                         print("Error en el envio de la factura: # intento de envio: ", intento)
                         
@@ -4154,23 +4308,30 @@ def lote_contingencia_dte_view(request, factura_id, tipo_contiengencia_obj):
     print("Crear lote de los dte generados en contingencia: ", factura_id)
     lote_contingencia = None
     crear_evento = False
-    max_items = 3
+    max_items = 5000
     try:
         #Paso 1: Buscar factura guardada en contingencia
         documento_contingencia = FacturaElectronica.objects.filter(id=factura_id).order_by('id').first()
         print("Dte contingencia: ", documento_contingencia)
         
-        if documento_contingencia and documento_contingencia.contingencia == True:
+        if documento_contingencia is None:
+            return JsonResponse({
+                "mensaje": f"Factura con ID {factura_id} no encontrada.",
+                "detalle": "No se encontro el documento electronico"
+            }, status=404)
+        #Buscar si existe un dte en contigencia
+        lote_existe = LoteContingencia.objects.filter(factura_id=documento_contingencia.id)
+        print("Lote ya existe: ", lote_existe)
+        
+        if not lote_existe and documento_contingencia.contingencia == True:
             try:
                 #Paso 2: Verificar si existe un evento de contingencia activo, sino existe crear el evento, si la cantidad de facturas agregadas al evento supera los 5000 crear un nuevo evento
                 evento_contingencia = EventoContingencia.objects.annotate(num_lotes_evento=Count('lotes_contingencia')).filter(finalizado=False, recibido_mh=False, num_lotes_evento__lt=max_items).first()
-                print("eventos contingencia encontrados: ", evento_contingencia)
                 if evento_contingencia:
                     crear_evento = False
                 elif evento_contingencia is None or not evento_contingencia:
                     crear_evento = True
                 
-                print("bandera crear contingencia: ", crear_evento)
                 if crear_evento:
                     print("Crear contingencia")
                     codigo_generacion_contingencia = str(uuid.uuid4()).upper()
@@ -4187,7 +4348,6 @@ def lote_contingencia_dte_view(request, factura_id, tipo_contiengencia_obj):
                             factura = documento_contingencia, 
                             evento = evento_contingencia
                         )
-                        print("lote creado: ", lote_contingencia)
                         mensaje = f"Lote creado correctamente: {lote_contingencia.id}"
                         return lote_contingencia
                     except Exception as e:
@@ -4205,68 +4365,97 @@ def lote_contingencia_dte_view(request, factura_id, tipo_contiengencia_obj):
             })
         else:
             mensaje = "El documento electrónico no está disponible"
+        
+        return JsonResponse({
+            "mensaje": mensaje
+        }, status=400)
     except Exception as e:
         return JsonResponse({
             "mensaje": "Error en la creación de lotes",
             "detalle": str(e)
         }, status=404)
+    finally:
+        print("Proceso de creacion de lote de contingencia finalizado")
 
 @csrf_exempt
 def envio_dte_unificado_view(request):
-    
-    factura_id = request.GET.get("factura_id")
-    print("[uno a uno]Inicio enviar lote view: ", factura_id)
-    # Establecer la zona horaria de El Salvador
-    timezone_actual = pytz.timezone('America/El_Salvador')
-
-    # Obtener la fecha y hora actual UTC y convertirla a la zona horaria de El Salvador
-    datetime_utc = datetime.now(pytz.utc)
-    fecha_actual = datetime_utc.astimezone(timezone_actual)
-    
     try:
-        results = []
-        # ---------------------------------
-        # Paso 1: Llamar a la función firma
-        # ---------------------------------
-        response_firma = firmar_factura_view(request, factura_id)
-        print("response firma: ", response_firma)
-        if response_firma.status_code != 302:
-            print("Dte firmado")
-            return response_firma
+        factura_id = request.GET.get("factura_id")
+        print("[uno a uno]Inicio enviar lote view: ", factura_id)
+        # Establecer la zona horaria de El Salvador
+        timezone_actual = pytz.timezone('America/El_Salvador')
+
+        # Obtener la fecha y hora actual UTC y convertirla a la zona horaria de El Salvador
+        datetime_utc = datetime.now(pytz.utc)
+        fecha_actual = datetime_utc.astimezone(timezone_actual)
         
+        try:
+            results = []
+            # ---------------------------------
+            # Paso 1: Llamar a la función firma
+            # ---------------------------------
+            response_firma = firmar_factura_view(request, factura_id)
+            print("response firma: ", response_firma)
+            if response_firma and response_firma.status_code != 302 and response_firma.status_code != 200:
+                print("Dte firmado: ", response_firma)
+                return response_firma
+            else:
+                print("La respuesta de firma es None")
+                mensaje = "La respuesta de firma es None"
+                return JsonResponse({"Respuesto: ": mensaje})
+        except Exception as e:
+            print(f"Error al firmar contingencia: {str(e)}")
+            
         # ---------------------------------
         # Paso 2: Llamar a la función que envía el dte firmado a Hacienda
         # ---------------------------------
-        print("Enviar lote a MH")
-        response_envio = enviar_factura_hacienda_view(request, factura_id)
-        print("Lote enviado a MH: ", response_envio)
+        print(f"Enviar lote a MH: request: {request}, factura id: {factura_id}")
+        try:
+            response_envio = enviar_factura_hacienda_view(request, factura_id)
+            print("Lote enviado a MH: ", response_envio)
+        except Exception as e:
+            print(f"Error al enviar contingencia a Hacienda: {str(e)}")
         
         # ---------------------------------
         # Consultar el estado final y preparar el mensaje de respuesta
         # ---------------------------------
-        factura = FacturaElectronica.objects.filter(id=factura_id).first()
-        print("Factura procesada: ", factura)
-        if factura:
-            if factura.sello_recepcion is not None:
-                #Si la factura fue recibida y obtuvo sello de recepcion entonces finalizar el lote
-                lote = LoteContingencia.objects.filter(factura__id=factura_id).first()
-                print("Lote-Factura: ", lote.factura.numero_control)
-                if lote:
-                    lote.finalizado=True
-                    lote.recibido_mh = True
-                    lote.fecha_modificacion = fecha_actual.date()
-                    lote.hora_modificacion = fecha_actual.time()
-                    lote.save()
-                mensaje = "Factura recibida con éxito"
-            else:
-                mensaje = "No se pudo enviar la factura"
-        else:
-            mensaje = "No se encontró el dte"
-        
         try:
-            detalle = json.loads(response_envio.content)
-        except Exception:
-            detalle = response_envio.content.decode()
+            factura = FacturaElectronica.objects.filter(id=factura_id).first()
+            print("Factura procesada: ", factura)
+            if factura:
+                if factura.sello_recepcion is not None:
+                    #Si la factura fue recibida y obtuvo sello de recepcion entonces finalizar el lote
+                    lote = LoteContingencia.objects.filter(factura__id=factura_id).first()
+                    print("Lote-Factura: ", lote.factura.numero_control)
+                    if lote:
+                        lote.finalizado=True
+                        lote.recibido_mh = True
+                        lote.fecha_modificacion = fecha_actual.date()
+                        lote.hora_modificacion = fecha_actual.time()
+                        lote.save()
+                    mensaje = "Factura recibida con éxito"
+                else:
+                    mensaje = "No se pudo enviar la factura"
+            else:
+                mensaje = "No se encontró el documento elerectronico"
+        except Exception as e:
+            print(f"Error al verificar el estado del evento: {str(e)}")
+            mensaje = "Error al consultar el evento de contingencia"
+
+        try:
+            if response_envio.status_code == 200:
+                try:
+                    detalle = json.loads(response_envio.content)
+                except Exception as e:
+                    # Si no se puede cargar como JSON, mostramos el error
+                    print(f"Error al convertir la respuesta a JSON: {e}")
+                    detalle = response_envio.content.decode()  # Decodificamos como texto si no es JSON
+            else:
+                # Si el código de estado no es 200, mostramos el código y el contenido
+                print(f"Error en la respuesta de envío: {response_envio.status_code}")
+                detalle = f"Error al enviar la contingencia, código de estado: {response_envio.status_code}"
+        except Exception as e:
+            detalle = f"Error procesando respuesta de envío: {str(e)}"
         print(f"mensaje: {mensaje}, detalle: {detalle}")
         results.append({
             "factura_id": factura_id,
@@ -4283,61 +4472,125 @@ def envio_dte_unificado_view(request):
             "mensaje": "Error inesperado",
             "detalle": str(e)
         })
-    print({"error": str(e)}, status=400)
+        print({"error": str(e)}, status=400)
     return JsonResponse({"results": results})
         
 @csrf_exempt
 def lotes_dte_view(request):
     if request.method == "POST":
-        # Se espera recibir una lista de IDs en el parámetro 'factura_ids'
-        factura_ids = request.POST.getlist('factura_ids')
-        print("Lote de contingencias: ", factura_ids)
-        results = []
-        for factura_id in factura_ids:
-            print("Enviar contingencia idd: ", factura_id)
-            try:
-                # Llamar a la función de firma
-                response_firma = firmar_factura_view(request, factura_id)
-                if response_firma.status_code != 302:
+        try:
+            # Se espera recibir una lista de IDs en el parámetro 'factura_ids'
+            factura_ids = request.POST.getlist('factura_ids')
+            print("Lote de contingencias: ", factura_ids)
+            results = []
+            #facturas_firmadas_ids = []
+            
+            detalle_firma = None
+            
+            for factura_id in factura_ids:
+                print("Enviar contingencia idd: ", factura_id)
+                try:
+                    # Llamar a la función de firma
+                    response_firma = firmar_factura_view(request, factura_id)
+                    if response_firma and response_firma.status_code != 302 and response_firma.status_code != 200:
+                        try:
+                            detalle_error = response_firma.content.decode()
+                        except Exception:
+                            detalle_error = str(response_firma.content)
+                        results.append({
+                            "factura_id": factura_id,
+                            "mensaje": "Error en firma",
+                            "detalle": detalle_error
+                        })
+                        continue
+                    print("decodificar respuesta firma: ", response_firma.content)
+                    
+                    #Asignar todos los ids de facturas firmadas
+                    #facturas_firmadas_ids.append(factura_id)
+
+                    # Llamar a la función de envío
+                    response_envio = enviar_lotes_hacienda_view(request, factura_id)
+                    print("Lote enviado a MH")
+                    # Consultar el estado final del evento de contingencia
+                    factura_electronica = FacturaElectronica.objects.get(id=factura_id)
+                    
+                    if factura_electronica:
+                        if factura_electronica.recibido_mh:
+                            mensaje = "Dte enviado con éxito"
+                        else:
+                            mensaje = "No se pudo enviar el dte"
+                    else:
+                        mensaje = "No se encontró el dte"
+
+                    try:
+                        detalle_firma = json.loads(response_firma.content)
+                    except Exception:
+                        detalle_firma = response_firma.content.decode()
+                    
+                    try:
+                        detalle = json.loads(response_envio.content)
+                    except Exception:
+                        detalle = response_envio.content.decode()
+                    
                     results.append({
                         "factura_id": factura_id,
-                        "mensaje": "Error en firma",
-                        "detalle": response_firma.content.decode()
+                        "mensaje": mensaje,
+                        "detalle_firma: ": detalle_firma,
+                        "detalle": detalle
                     })
-                    continue
+                    
+                except Exception as e:
+                    print("Ocurrio un error al firmar documentos: ", str(e))
+                    results.append({
+                        "factura_id": factura_id,
+                        "mensaje": "Error inesperado",
+                        "detalle_firma: ": detalle_firma,
+                        "detalle": str(e)
+                    })
+                    return JsonResponse({"results": results})
+                    
+            #Enviar lotes firmados, en la recepcion de lotes se envia una lista de Documentos Tributarios Electrónicos Firmados los cuales seran procesados
+            # for factura_id in facturas_firmadas_ids:
+            #     try:
+            #         # Llamar a la función de envío
+            #         response_envio = enviar_lotes_hacienda_view(request, factura_id)
+            #         print("Lote enviado a MH")
+                    
+            #         try:
+            #             # Consultar el estado final del evento de contingencia
+            #             factura_electronica = FacturaElectronica.objects.get(id=factura_id)
+            #             if factura_electronica:
+            #                 if factura_electronica.recibido_mh:
+            #                     mensaje = "Dte enviado con éxito"
+            #                 else:
+            #                     mensaje = "No se pudo enviar el dte"
+            #             else:
+            #                 mensaje = "No se encontró el dte"
+            #         except FacturaElectronica.DoesNotExist:
+            #             mensaje = "No se encontró el DTE"
 
-                # Llamar a la función de envío
-                response_envio = enviar_lotes_hacienda_view(request, factura_id)
-                print("Lote enviado a MH")
-                # Consultar el estado final del evento de contingencia
-                factura_electronica = FacturaElectronica.objects.get(id=factura_id)
-                
-                if factura_electronica:
-                    if factura_electronica.recibido_mh:
-                        mensaje = "Dte enviado con éxito"
-                    else:
-                        mensaje = "No se pudo enviar el dte"
-                else:
-                    mensaje = "No se encontró el dte"
-
-                try:
-                    detalle = json.loads(response_envio.content)
-                except Exception:
-                    detalle = response_envio.content.decode()
-                
-                results.append({
-                    "factura_id": factura_id,
-                    "mensaje": mensaje,
-                    "detalle": detalle
-                })
-                
-            except Exception as e:
-                results.append({
-                    "factura_id": factura_id,
-                    "mensaje": "Error inesperado",
-                    "detalle": str(e)
-                })
-        return JsonResponse({"results": results})
+            #         try:
+            #             detalle = json.loads(response_envio.content)
+            #         except Exception:
+            #             detalle = response_envio.content.decode()
+                    
+            #         results.append({
+            #             "factura_id": factura_id,
+            #             "mensaje": mensaje,
+            #             "detalle": detalle
+            #         })
+            #     except Exception as e:
+            #         print("Error al enviar lote a MH:", str(e))
+            #         results.append({
+            #             "factura_id": factura_id,
+            #             "mensaje": "Error inesperado",
+            #             "detalle": str(e)
+            #         })
+                    
+            return JsonResponse({"results": results})
+        except Exception as e:
+            print(f"Error general en el proceso unificado: {e}")
+            return JsonResponse({"error": str(e)}, status=400)
     else:
         return JsonResponse({"error": "Método no permitido"}, status=405)
     
@@ -4349,8 +4602,9 @@ def enviar_lotes_hacienda_view(request, factura_id):
     contingencia = True
     intento = 1
     intentos_max = 3 #Intentos para envio del dte a MH
-    tipo_contiengencia_obj = None
+    tipo_contingencia_obj = None
     
+    fecha_actual = obtener_fecha_actual()
     factura = get_object_or_404(FacturaElectronica, id=factura_id)
     # Paso 1: Autenticación contra el servicio de Hacienda
     global emisor_fe
@@ -4362,17 +4616,13 @@ def enviar_lotes_hacienda_view(request, factura_id):
         "User-Agent": "MiAplicacionDjango/1.0"
     }
     auth_data = {"user": nit_empresa, "pwd": pwd}
+    auth_response = None
+    response_data = None
     try:
         auth_response = requests.post(auth_url, data=auth_data, headers=auth_headers)
-        try:
-            auth_response_data = auth_response.json()
-        except ValueError:
-            return JsonResponse({
-                "error": "Error al decodificar la respuesta de autenticación",
-                "detalle": auth_response.text
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         if auth_response.status_code == 200:
+            auth_response_data = auth_response.json()
             token_body = auth_response_data.get("body", {})
             token = token_body.get("token")
             token_type = token_body.get("tokenType", "Bearer")
@@ -4445,7 +4695,10 @@ def enviar_lotes_hacienda_view(request, factura_id):
         "version": int(factura.json_original["identificacion"]["version"]),
         "tipoDte": str(factura.json_original["identificacion"]["tipoDte"]),
         "documento": documento_token,  # Enviamos solo el JWT firmado
-        "codigoGeneracion": codigo_generacion_str
+        "codigoGeneracion": codigo_generacion_str#,
+        #Campos para envio de recepcionLote
+        #"nitEmisor": str(emisor_fe.nit),
+        #"documentos": documento_token # Enviamos solo el JWT firmado
     }
 
     envio_headers = {
@@ -4455,26 +4708,35 @@ def enviar_lotes_hacienda_view(request, factura_id):
     }
 
     try:
+        #URL para el envio de lotes "https://api.dtes.mh.gob.sv/fesv/recepcionlote/",
+        #Error: {"error":"Error al enviar la factura","status":400,"detalle":{"timestamp":"2025-04-24T19:08:13.918-0600","status":400,"error":"Bad Request","path":"/fesv/recepcionlote/"}}
         envio_response = requests.post(
             "https://api.dtes.mh.gob.sv/fesv/recepciondte",
             json=envio_json,
             headers=envio_headers
         )
+        
+        sello_recibido = None
 
         try:
             response_data = envio_response.json() if envio_response.text.strip() else {}
+            sello_recibido = response_data.get("selloRecibido", None)
         except ValueError as e:
             response_data = {"raw": envio_response.text or "No content"}
 
-        if envio_response.status_code == 200:
+        if envio_response.status_code == 200 and sello_recibido is not None:
             # Actualizar campos de la factura según la respuesta
             factura.sello_recepcion = response_data.get("selloRecibido", "")
             factura.recibido_mh = True
             # Combinar la respuesta de Hacienda con el JSON original para guardar trazabilidad
             json_response_data = {"jsonRespuestaMh": response_data}
-            json_nuevo = factura.json_original | json_response_data
+            json_original = factura.json_original
+            
+            json_nuevo = json_original | json_response_data
             factura.json_original = json.loads(json.dumps(json_nuevo))
             factura.estado = True
+            factura.fecha_modificacion = fecha_actual.date()
+            factura.hora_modificacion = fecha_actual.time()
             factura.save()
             return JsonResponse({
                 "mensaje": "Factura enviada con éxito",
@@ -4482,6 +4744,8 @@ def enviar_lotes_hacienda_view(request, factura_id):
             }, status=status.HTTP_200_OK)
         else:
             factura.estado = False
+            factura.fecha_modificacion = fecha_actual.date()
+            factura.hora_modificacion = fecha_actual.time()
             factura.save()
             return JsonResponse({
                 "error": "Error al enviar la factura",
@@ -4518,7 +4782,6 @@ def finalizar_contigencia_view(request):
                 for evento in eventos:
                     try:
                         fecha_hora_unificada = zona_horaria.localize(datetime.combine(evento.fecha_transmision, evento.hora_transmision))
-                        print(f"Fecha unificada: {fecha_hora_unificada}, Fecha limite: {fecha_limite}")
                         if fecha_hora_unificada <= fecha_limite:
                             contingencias_activas.append(evento)
                     except Exception as e:
@@ -4534,14 +4797,12 @@ def finalizar_contigencia_view(request):
                 for evento in eventos_rechazados_mh:
                     try:
                         fecha_hora_unificada = zona_horaria.localize(datetime.combine(evento.fecha_modificacion, evento.hora_modificacion))
-                        print(f"Fecha rechazado: {fecha_hora_unificada}")
                         if fecha_hora_unificada <= fecha_limite:
                             contingencias_activas.append(evento)
                     except Exception as e:
                         print(f"Error procesando evento rechazado: {str(e)}")
         except Exception as e:
             return JsonResponse({"error": f"Error al consultar eventos rechazados: {str(e)}"})
-        print("List de contingencias activas: ", contingencias_activas)
         if contingencias_activas:
             for contingencia_activa in contingencias_activas:
                 try:
@@ -4569,7 +4830,7 @@ def finalizar_contigencia_view(request):
         
     except Exception as e:
         return JsonResponse({"error": f"Error inesperado al actualizar contingencia: {str(e)}"})
-    
+
 def obtener_fecha_actual():
     try:
         zona_horaria = pytz.timezone('America/El_Salvador')
@@ -4578,3 +4839,47 @@ def obtener_fecha_actual():
     except Exception as e:
         print(f"Error al obtener fecha actual: {str(e)}")
         return None
+
+#Eliminar despues de realizar pruebas
+@csrf_exempt
+def procesar_respuesta_view(request):
+    if request.method == 'POST':
+        respuesta = request.POST.get('respuesta')
+        factura_id = request.POST.get('factura_id')
+
+        if respuesta == 'si':
+            # Procesar acción afirmativa
+            print("Usuario aceptó")
+        else:
+            print("Usuario canceló")
+
+        return redirect('detalle_factura', factura_id=factura_id)
+    return HttpResponse("Método no permitido", status=405)
+
+def motivo_contingencia_view(request):
+    try:
+        factura_id = request.GET.get("factura_id")
+        motivo = request.GET.get("motivo")
+
+        print(f"Asignar motivo: factura id: {factura_id}, motivo: {motivo}")
+
+        evento = EventoContingencia.objects.filter(lotes_contingencia__factura=factura_id).first()
+
+        if not evento:
+            return JsonResponse({"error": "No se encontró un evento asociado a esta factura."}, status=404)
+
+        fecha_actual = obtener_fecha_actual()
+
+        evento.motivo_contingencia = motivo
+        evento.fecha_modificacion = fecha_actual.date()
+        evento.hora_modificacion = fecha_actual.time()
+        evento.save()
+        print("Evento modificado: ", evento)
+        
+        return redirect (reverse('detalle_factura', args=[factura_id]))
+    
+    except Exception as e:
+        print("Error inesperado: ", e)
+        return JsonResponse({"error": f"Hubo un error inesperado: {str(e)}"}, status=500)
+
+

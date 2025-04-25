@@ -1,10 +1,8 @@
-import axios from 'axios';
-
-const BASEURL = import.meta.env.VITE_URL_BASE;
+import { api } from '../../services/api';
 
 export const createActivities = async (body: any) => {
   try {
-    const response = await axios.post(`${BASEURL}/actividad/crear/`, body, {
+    const response = await api.post(`/actividad/crear/`, body, {
       headers: {
         'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
       },
@@ -17,7 +15,7 @@ export const createActivities = async (body: any) => {
 
 export const createAmbientes = async (body: any) => {
   try {
-    const response = await axios.post(`${BASEURL}/ambiente/crear/`, body, {
+    const response = await api.post(`/ambiente/crear/`, body, {
       headers: {
         'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
       },
@@ -30,15 +28,11 @@ export const createAmbientes = async (body: any) => {
 
 export const createModelosDeFacturacion = async (body: any) => {
   try {
-    const response = await axios.post(
-      `${BASEURL}/modelo-facturacion/crear/`,
-      body,
-      {
-        headers: {
-          'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
-        },
-      }
-    );
+    const response = await api.post(`/modelo-facturacion/crear/`, body, {
+      headers: {
+        'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error();
@@ -47,15 +41,11 @@ export const createModelosDeFacturacion = async (body: any) => {
 
 export const createTipoTransmision = async (body: any) => {
   try {
-    const response = await axios.post(
-      `${BASEURL}/tipo-transmision/crear/`,
-      body,
-      {
-        headers: {
-          'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
-        },
-      }
-    );
+    const response = await api.post(`/tipo-transmision/crear/`, body, {
+      headers: {
+        'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error();
@@ -64,15 +54,11 @@ export const createTipoTransmision = async (body: any) => {
 
 export const createTipoContingencia = async (body: any) => {
   try {
-    const response = await axios.post(
-      `${BASEURL}/tipo-contingencia/crear/`,
-      body,
-      {
-        headers: {
-          'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
-        },
-      }
-    );
+    const response = await api.post(`/tipo-contingencia/crear/`, body, {
+      headers: {
+        'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error();
@@ -81,15 +67,11 @@ export const createTipoContingencia = async (body: any) => {
 
 export const createTipoRentencionIVA = async (body: any) => {
   try {
-    const response = await axios.post(
-      `${BASEURL}/tipo-retencion-iva-mh/crear/`,
-      body,
-      {
-        headers: {
-          'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
-        },
-      }
-    );
+    const response = await api.post(`/tipo-retencion-iva-mh/crear/`, body, {
+      headers: {
+        'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error();
@@ -98,15 +80,11 @@ export const createTipoRentencionIVA = async (body: any) => {
 
 export const createTiposGeneracionDocumento = async (body: any) => {
   try {
-    const response = await axios.post(
-      `${BASEURL}/tipo-generacion-documento/crear/`,
-      body,
-      {
-        headers: {
-          'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
-        },
-      }
-    );
+    const response = await api.post(`/tipo-generacion-documento/crear/`, body, {
+      headers: {
+        'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error();
@@ -115,15 +93,11 @@ export const createTiposGeneracionDocumento = async (body: any) => {
 
 export const createTiposEstablecimientos = async (body: any) => {
   try {
-    const response = await axios.post(
-      `${BASEURL}/tipos-establecimientos/crear/`,
-      body,
-      {
-        headers: {
-          'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
-        },
-      }
-    );
+    const response = await api.post(`/tipos-establecimientos/crear/`, body, {
+      headers: {
+        'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
+      },
+    });
 
     return response.data;
   } catch (error) {
@@ -133,15 +107,11 @@ export const createTiposEstablecimientos = async (body: any) => {
 
 export const createTipoServiciosMedicos = async (body: any) => {
   try {
-    const response = await axios.post(
-      `${BASEURL}/tipos-servicio-medico/crear/`,
-      body,
-      {
-        headers: {
-          'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
-        },
-      }
-    );
+    const response = await api.post(`/tipos-servicio-medico/crear/`, body, {
+      headers: {
+        'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error();
@@ -150,7 +120,7 @@ export const createTipoServiciosMedicos = async (body: any) => {
 
 export const createTipoDTE = async (body: any) => {
   try {
-    const response = await axios.post(`${BASEURL}/tipo-dte/crear/`, body, {
+    const response = await api.post(`/tipo-dte/crear/`, body, {
       headers: {
         'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
       },
@@ -163,15 +133,11 @@ export const createTipoDTE = async (body: any) => {
 
 export const createOtrosDocumentosAsociados = async (body: any) => {
   try {
-    const response = await axios.post(
-      `${BASEURL}/otros-documentos-asociado/crear/`,
-      body,
-      {
-        headers: {
-          'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
-        },
-      }
-    );
+    const response = await api.post(`/otros-documentos-asociado/crear/`, body, {
+      headers: {
+        'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error();
@@ -180,15 +146,11 @@ export const createOtrosDocumentosAsociados = async (body: any) => {
 
 export const createTipoIdReceptor = async (body: any) => {
   try {
-    const response = await axios.post(
-      `${BASEURL}/tipos-doc-id-receptor/crear/`,
-      body,
-      {
-        headers: {
-          'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
-        },
-      }
-    );
+    const response = await api.post(`/tipos-doc-id-receptor/crear/`, body, {
+      headers: {
+        'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error();
@@ -197,7 +159,7 @@ export const createTipoIdReceptor = async (body: any) => {
 
 export const createPaises = async (body: any) => {
   try {
-    const response = await axios.post(`${BASEURL}/pais/crear/`, body, {
+    const response = await api.post(`/pais/crear/`, body, {
       headers: {
         'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
       },
@@ -211,7 +173,7 @@ export const createPaises = async (body: any) => {
 
 export const createDepartamentos = async (body: any) => {
   try {
-    const response = await axios.post(`${BASEURL}/departamento/crear/`, body, {
+    const response = await api.post(`/departamento/crear/`, body, {
       headers: {
         'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
       },
@@ -224,7 +186,7 @@ export const createDepartamentos = async (body: any) => {
 
 export const createPaisById = async (body: any) => {
   try {
-    const response = await axios.post(`${BASEURL}/pais/crear/`, body, {
+    const response = await api.post(`/pais/crear/`, body, {
       headers: {
         'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
       },
@@ -237,7 +199,7 @@ export const createPaisById = async (body: any) => {
 
 export const createMunicipios = async (body: any) => {
   try {
-    const response = await axios.post(`${BASEURL}/municipio/crear/`, body, {
+    const response = await api.post(`/municipio/crear/`, body, {
       headers: {
         'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
       },
@@ -250,15 +212,11 @@ export const createMunicipios = async (body: any) => {
 
 export const createCondicioOperaciones = async (body: any) => {
   try {
-    const response = await axios.post(
-      `${BASEURL}/condicion-operacion/crear/`,
-      body,
-      {
-        headers: {
-          'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
-        },
-      }
-    );
+    const response = await api.post(`/condicion-operacion/crear/`, body, {
+      headers: {
+        'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error();
@@ -267,7 +225,7 @@ export const createCondicioOperaciones = async (body: any) => {
 
 export const createMetodosDePago = async (body: any) => {
   try {
-    const response = await axios.post(`${BASEURL}/formas-pago/crear/`, body, {
+    const response = await api.post(`/formas-pago/crear/`, body, {
       headers: {
         'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
       },
@@ -280,7 +238,7 @@ export const createMetodosDePago = async (body: any) => {
 
 export const createPlazos = async (body: any) => {
   try {
-    const response = await axios.post(`${BASEURL}/plazo/crear/`, body, {
+    const response = await api.post(`/plazo/crear/`, body, {
       headers: {
         'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
       },
@@ -293,15 +251,11 @@ export const createPlazos = async (body: any) => {
 
 export const createTipoDocContingencia = async (body: any) => {
   try {
-    const response = await axios.post(
-      `${BASEURL}/tipo-doc-contingencia/crear/`,
-      body,
-      {
-        headers: {
-          'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
-        },
-      }
-    );
+    const response = await api.post(`/tipo-doc-contingencia/crear/`, body, {
+      headers: {
+        'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error();
@@ -310,15 +264,11 @@ export const createTipoDocContingencia = async (body: any) => {
 
 export const createTipoInvalidacion = async (body: any) => {
   try {
-    const response = await axios.post(
-      `${BASEURL}/tipo-invalidacion/crear/`,
-      body,
-      {
-        headers: {
-          'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
-        },
-      }
-    );
+    const response = await api.post(`/tipo-invalidacion/crear/`, body, {
+      headers: {
+        'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error();
@@ -327,7 +277,7 @@ export const createTipoInvalidacion = async (body: any) => {
 
 export const createTipoDonacion = async (body: any) => {
   try {
-    const response = await axios.post(`${BASEURL}/tipo-donacion/crear/`, body, {
+    const response = await api.post(`/tipo-donacion/crear/`, body, {
       headers: {
         'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
       },
@@ -340,7 +290,7 @@ export const createTipoDonacion = async (body: any) => {
 
 export const createTipoPersona = async (body: any) => {
   try {
-    const response = await axios.post(`${BASEURL}/tipo-persona/crear/`, body, {
+    const response = await api.post(`/tipo-persona/crear/`, body, {
       headers: {
         'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
       },
@@ -353,15 +303,11 @@ export const createTipoPersona = async (body: any) => {
 
 export const createTipoTransporte = async (body: any) => {
   try {
-    const response = await axios.post(
-      `${BASEURL}/tipo-transporte/crear/`,
-      body,
-      {
-        headers: {
-          'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
-        },
-      }
-    );
+    const response = await api.post(`/tipo-transporte/crear/`, body, {
+      headers: {
+        'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error();
@@ -370,7 +316,7 @@ export const createTipoTransporte = async (body: any) => {
 
 export const createIncoterms = async (body: any) => {
   try {
-    const response = await axios.post(`${BASEURL}/incoterms/crear/`, body, {
+    const response = await api.post(`/incoterms/crear/`, body, {
       headers: {
         'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
       },
@@ -383,15 +329,11 @@ export const createIncoterms = async (body: any) => {
 
 export const createTipoDomicilioFiscal = async (body: any) => {
   try {
-    const response = await axios.post(
-      `${BASEURL}/tipo-domicilio-fiscal/crear/`,
-      body,
-      {
-        headers: {
-          'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
-        },
-      }
-    );
+    const response = await api.post(`/tipo-domicilio-fiscal/crear/`, body, {
+      headers: {
+        'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error();
@@ -400,7 +342,7 @@ export const createTipoDomicilioFiscal = async (body: any) => {
 
 export const createTipoMoneda = async (body: any) => {
   try {
-    const response = await axios.post(`${BASEURL}/tipo-moneda/crear/`, body, {
+    const response = await api.post(`/tipo-moneda/crear/`, body, {
       headers: {
         'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
       },
@@ -413,7 +355,7 @@ export const createTipoMoneda = async (body: any) => {
 
 export const createDescuento = async (body: any) => {
   try {
-    const response = await axios.post(`${BASEURL}/descuento/crear/`, body, {
+    const response = await api.post(`/descuento/crear/`, body, {
       headers: {
         'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
       },

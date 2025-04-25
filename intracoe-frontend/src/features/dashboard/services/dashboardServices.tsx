@@ -1,23 +1,13 @@
-import axios from 'axios';
+import { api } from '../../../shared/services/api';
 
-const BASEURL = import.meta.env.VITE_URL_BASE;
+export const getTotalesPorTipoDTE = () =>
+  api.get('/dashboard/totales-por-tipo/').then((r) => r.data.totales_por_tipo);
 
-export const getTotalesPorTipoDTE = async () => {
-    const response = await axios.get(`${BASEURL}/dashboard/totales-por-tipo/`);
-    return response.data.totales_por_tipo;
-};
+export const getTotalVentas = () =>
+  api.get('/dashboard/totales-ventas/').then((res) => res.data.total_ventas);
 
-export const getTotalVentas = async () => {
-    const response = await axios.get(`${BASEURL}/dashboard/totales-ventas/`);
-    return response.data.total_ventas;
-}
+export const getClientes = () =>
+  api.get('/dashboard/clientes/').then((res) => res.data.clientes);
 
-export const getClientes = async () => {
-    const response = await axios.get(`${BASEURL}/dashboard/clientes/`);
-    return response.data.clientes;
-}
-
-export const getProductos = async () => {
-    const response = await axios.get(`${BASEURL}/dashboard/productos/`);
-    return response.data.productos;
-}
+export const getProductos = () =>
+  api.get('/dashboard/productos/').then((res) => res.data.productos);

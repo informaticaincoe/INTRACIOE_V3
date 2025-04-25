@@ -1,44 +1,45 @@
-import axios from 'axios';
-
-const BASEURL = import.meta.env.VITE_URL_BASE_INVENT;
+import { apiInventory } from '../../../../shared/services/apiInventory';
 
 export const createProductService = async (data: any) => {
-  console.log('data', data);
   try {
-    const response = await axios.post(`${BASEURL}/productos/crear/`, data); // Usar POST para enviar los datos
+    const response = await apiInventory.post('/productos/crear/', data);
     return response.data;
-  } catch (error:any) {
-    throw new Error(error.response.data.codigo[0]);
+  } catch (error: any) {
+    const msg =
+      error.response?.data?.codigo?.[0] ?? 'Error creando el producto';
+    throw new Error(msg);
   }
 };
 
-export const deleteProduct = async (id: any) => {
+export const deleteProduct = async (id: string) => {
   try {
-    const response = await axios.delete(`${BASEURL}/productos/${id}/eliminar/`); // Usar POST para enviar los datos
+    const response = await apiInventory.delete(`/productos/${id}/eliminar/`);
     return response.data;
-  } catch (error:any) {
-    throw new Error(error.response.data.codigo[0]);
+  } catch (error: any) {
+    const msg =
+      error.response?.data?.codigo?.[0] ?? 'Error eliminando el producto';
+    throw new Error(msg);
   }
 };
 
-export const EditProductService = async (id: string, data: any) => {
-  console.log('data', data);
+export const editProductService = async (id: string, data: any) => {
   try {
-    const response = await axios.put(
-      `${BASEURL}/productos/${id}/editar/`,
-      data
-    ); // Usar POST para enviar los datos
+    const response = await apiInventory.put(`/productos/${id}/editar/`, data);
     return response.data;
-  } catch (error:any) {
-    throw new Error(error.response.data.codigo[0]);
+  } catch (error: any) {
+    const msg =
+      error.response?.data?.codigo?.[0] ?? 'Error editando el producto';
+    throw new Error(msg);
   }
 };
 
 export const getProductById = async (id: string) => {
   try {
-    const response = await axios.get(`${BASEURL}/productos/${id}/`); // Usar POST para enviar los datos
+    const response = await apiInventory.get(`/productos/${id}/`);
     return response.data;
-  } catch (error:any) {
-    throw new Error(error.response.data.codigo[0]);
+  } catch (error: any) {
+    const msg =
+      error.response?.data?.codigo?.[0] ?? 'Error obteniendo el producto';
+    throw new Error(msg);
   }
 };

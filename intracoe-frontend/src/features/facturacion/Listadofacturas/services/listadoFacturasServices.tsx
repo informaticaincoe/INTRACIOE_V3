@@ -1,7 +1,5 @@
-import axios from 'axios';
 import { Filters } from '../../../../shared/interfaces/interfaceFacturaJSON';
-
-const BASEURL = import.meta.env.VITE_URL_BASE;
+import { api } from '../../../../shared/services/api';
 
 interface FacturaParams {
   page?: number;
@@ -9,11 +7,13 @@ interface FacturaParams {
   filters?: Filters;
 }
 
-export const getAllFacturas = async ({
-  page,
-  limit,
-  filters,
-}: FacturaParams = { page: 1, limit: 999999, filters: undefined }) => {
+export const getAllFacturas = async (
+  { page, limit, filters }: FacturaParams = {
+    page: 1,
+    limit: 999999,
+    filters: undefined,
+  }
+) => {
   try {
     const queryParams = new URLSearchParams();
 
@@ -50,9 +50,7 @@ export const getAllFacturas = async ({
       queryParams.append('all', 'true');
     }
 
-    const response = await axios.get(
-      `${BASEURL}/facturas/?${queryParams.toString()}`
-    );
+    const response = await api.get(`/facturas/?${queryParams.toString()}`);
 
     return (
       response.data || {
@@ -71,9 +69,7 @@ export const getAllFacturas = async ({
 
 export const invalidarDte = async (factura_id: number) => {
   try {
-    const response = await axios.post(
-      `${BASEURL}/invalidar_dte/${factura_id}/`
-    );
+    const response = await api.post(`/invalidar_dte/${factura_id}/`);
     return response.data;
   } catch (error) {
     console.log(error);

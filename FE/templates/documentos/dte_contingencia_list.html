@@ -53,7 +53,6 @@
 <!-- Tabla de Contingencias -->
 <form id="formContingenciaFacturas">
   <div class="table-responsive">
-
     <div id="mensaje"></div>
 
     <table class="table table-striped">
@@ -65,10 +64,9 @@
           <th><input type="checkbox" id="seleccionarTodo"></th>
           <th>Estado</th>
           <th></th>
-          <th>Codigo de Generacion</th>
+          <th>Código de Generación</th>
           <th>Sello Recibido</th>
           <th>Cantidad Lotes</th>
-          <th>Motivo contingencia</th>
           <th>Enviar Contingencia</th>
           <th>Nota</th>
         </tr>
@@ -77,7 +75,7 @@
         {% for grupo in eventos_con_lotes %}
         <tr>
           <td>
-            {% if grupo.evento.recibido_mh == False and grupo.evento.sello_recepcion is None and grupo.evento.finalizado == False %}
+            {% if grupo.mostrar_checkbox %}
               <input type="checkbox" name="contingencia_ids" value="{{ grupo.evento.id }}">
             {% endif %}
           </td>
@@ -97,14 +95,10 @@
           </td>
           <td>{{ grupo.evento.codigo_generacion }}</td>
           <td>{{ grupo.evento.sello_recepcion }}</td>
-          <td>{{ grupo.total_lotes_evento }}</td> 
-          <td>
-            {% if grupo.evento.tipo_contingencia.codigo == "5"%}
-              <input type="text" name="motivo_contingencia" data-id="{{ grupo.evento.motivo_contingencia }}" class="form-control" id="motivo_contingencia_input"></td> 
-            {% endif %}
+          <td>{{ grupo.total_lotes_evento }}</td>
           <td>
             {% if grupo.evento.sello_recepcion is None and grupo.evento.finalizado == False and grupo.total_lotes_evento > 0 %}
-              <a id="contingencia_unificado" data-id="{{ grupo.evento.id}}" data-requiere-motivo="{{grupo.evento.tipo_contingencia.codigo}}" class="btn btn-sm btn-secondary">Enviar</a>
+              <a id="contingencia_unificado" data-id="{{ grupo.evento.id }}" class="btn btn-sm btn-secondary">Enviar</a>
             {% endif %}
           </td>
           <td>
@@ -117,64 +111,75 @@
         <!-- Fila expandible para mostrar las facturas -->
         <tr class="accordion-row" id="accordion-{{ forloop.counter }}" style="display: none;">
           <td colspan="12">
-            {% for factura_group in grupo.facturas_en_grupos %}
-              <table class="table table-bordered mb-4">
+            {% if grupo.evento.sello_recepcion %}
+              <div class="mb-3">
+                <label>
+                  <input type="checkbox" class="seleccionar-maximo-facturas">
+                  Seleccionar hasta 400 grupos de facturas
+                </label>
+              </div>
+              {% endif %}
+            {% for lote in grupo.facturas_en_grupos %}
+              <table class="table table-bordered mb-4" id="tablaLotes">
                 <thead>
                   <tr>
                     <th colspan="12" class="text-center">
-                      <strong>Lote | Cantidad facturas: {{ factura_group|length }}</strong>
+                      <strong>Lote | Cantidad facturas: {{ lote.facturas|length }}</strong>
                     </th>
                   </tr>
                   <tr>
-                    <th><input type="checkbox" id="seleccionarTodoLote" class="seleccionar-todas-facturas"></th>
+                    <th>
+                      {% if lote.mostrar_checkbox_lote %}
+                        <input type="checkbox" id="seleccionarTodoLote" class="seleccionar-todas-facturas">
+                      {% endif %}
+                    </th>
                     <th>Estado</th>
                     <th>Tipo DTE</th>
                     <th>Total</th>
                     <th>Fecha</th>
-                    <th>Codigo Generación</th>
+                    <th>Código Generación</th>
                     <th>Sello</th>
                     <th>Enviar Lote MH</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {% for factura in factura_group %}
-                    <tr>
-                      <td>
-                        {% if factura.recibido_mh == False and factura.sello_recepcion is None%}
-                          <input type="checkbox" name="factura_ids" value="{{ factura.id }}">
-                        {% endif %}
-                      </td>
-                      <td>
-                        {% if factura.estado and factura.sello_recepcion %}
-                          <i class="fa fa-check text-success"></i>
-                        {% else %}
-                          <i class="fa fa-ban text-danger"></i>
-                        {% endif %}
-                      </td>
-                      <td>{{ factura.tipo_dte.descripcion }}</td>
-                      <td>{{ factura.total_pagar }}</td>
-                      <td>{{ factura.fecha_emision }}</td>
-                      <td>{{ factura.codigo_generacion }}</td>
-                      <td>{{ factura.sello_recepcion }}</td>
-                      <td>
-                        {% if grupo.evento.sello_recepcion is not None and factura.sello_recepcion is None %}
-                            <a id="lote_unificado" data-id="{{ factura.id}}" class="btn btn-sm btn-secondary">Enviar</button>
-                        {% endif %}
-                      </td>
-                    </tr>
+                  {% for factura in lote.facturas %}
+                  <tr>
+                    <td>
+                      {% if factura.recibido_mh == False and factura.sello_recepcion is None and grupo.evento.sello_recepcion %}
+                        <input type="checkbox" name="factura_ids" value="{{ factura.id }}">
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if factura.recibido_mh and factura.sello_recepcion %}
+                        <i class="fa fa-check text-success"></i>
+                      {% else %}
+                        <i class="fa fa-ban text-danger"></i>
+                      {% endif %}
+                    </td>
+                    <td>{{ factura.tipo_dte.descripcion }}</td>
+                    <td>{{ factura.total_pagar }}</td>
+                    <td>{{ factura.fecha_emision }}</td>
+                    <td>{{ factura.codigo_generacion }}</td>
+                    <td>{{ factura.sello_recepcion }}</td>
+                    <td>
+                      {% if grupo.evento.sello_recepcion is not None and factura.sello_recepcion is None %}
+                        <a id="lote_unificado" data-id="{{ factura.id }}" class="btn btn-sm btn-secondary">Enviar Lote</a>
+                      {% endif %}
+                    </td>
+                  </tr>
                   {% endfor %}
                 </tbody>
               </table>
             {% endfor %}
           </td>
         </tr>
-        
-
         {% endfor %}
       </tbody>
     </table>
   </div>
 </form>
+
     
 <!-- Paginación -->
 {% remove_query_param 'page' as query_params %}
@@ -272,11 +277,11 @@
 </div>
 
 <!-- Paginación -->
-{% remove_query_param 'page' as query_params %}
+<!-- {% remove_query_param 'page' as query_params %}
 {% if dtelist.has_other_pages %}
 <nav aria-label="Page navigation">
 <ul class="pagination justify-content-center">
-    <!-- Paginación existente -->
+    Paginación existente 
     {% if dtelist.has_previous %}
     <li class="page-item">
     <a class="page-link" href="?{{ query_params }}{% if query_params %}&{% endif %}page={{ dtelist.previous_page_number }}" aria-label="Anterior">
@@ -309,7 +314,7 @@
 </ul>
 </nav>
 {% endif %}
-</div>
+</div> -->
 
 <!-- JavaScript para manejar la selección y la llamada AJAX -->
 <script>
@@ -391,7 +396,10 @@ document.addEventListener('DOMContentLoaded', function(){
       let htmlResultado = '';
       if (data.results && data.results.length) {
         data.results.forEach(result => {
-          htmlResultado += `<p><strong>Factura ${result.factura_id}:</strong> ${result.mensaje}<br><small>${JSON.stringify(result.detalle)}</small></p>`;
+          htmlResultado += `
+          <p><strong>Factura ${result.factura_id}:</strong> 
+            ${result.mensaje}<br>x
+            Detalle: <small>${JSON.stringify(result.detalle)}</small></p>`;
         });
       } else {
         htmlResultado = "<p>No se recibió respuesta.</p>";
@@ -442,8 +450,49 @@ document.addEventListener('DOMContentLoaded', function(){
       console.error('Error:', error);
     });
   });
-
 });
+
+//Seleccionar hasta 400 lotes de un evento
+document.addEventListener('DOMContentLoaded', function () {
+  const seleccionarFacturasCheckboxes = document.querySelectorAll('.seleccionar-maximo-facturas');
+
+  seleccionarFacturasCheckboxes.forEach(function (checkboxControl) {
+    checkboxControl.addEventListener('change', function () {
+      const contenedor = this.closest('td[colspan="12"]');
+      if (!contenedor) {
+        console.warn("No se encontró contenedor del evento.");
+        return;
+      }
+
+      const tablasLotes = contenedor.querySelectorAll('table.table-bordered');
+      if (tablasLotes.length === 0) {
+        console.warn("No se encontraron tablas de lotes en el evento.");
+        return;
+      }
+
+      const maxLotes = 400;
+      let lotesSeleccionados = 0;
+
+      tablasLotes.forEach(tabla => {
+        const checkboxes = tabla.querySelectorAll('input[name="factura_ids"]:not([disabled])');
+        const tieneFacturasSeleccionables = checkboxes.length > 0;
+
+        const checkboxLote = tabla.querySelector('.seleccionar-todas-facturas');
+
+        if (checkboxControl.checked && lotesSeleccionados < maxLotes && tieneFacturasSeleccionables) {
+          checkboxes.forEach(cb => cb.checked = true);
+          if (checkboxLote) checkboxLote.checked = true;
+          lotesSeleccionados++;
+        } else {
+          checkboxes.forEach(cb => cb.checked = false);
+          if (checkboxLote) checkboxLote.checked = false;
+        }
+      });
+
+      console.log(`Lotes seleccionados en este evento: ${lotesSeleccionados}`);
+    });
+  });
+});  
 </script>
 
 <script>
@@ -463,39 +512,68 @@ document.addEventListener('DOMContentLoaded', function(){
 </script>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('#contingencia_unificado').forEach(function (enlace) {
-      enlace.addEventListener('click', function (e) {
-        e.preventDefault();
-
-        const contingencia_id = this.dataset.id; //id del evento
-
-        // Buscar input de motivo contingencia en la misma fila
-        const fila = this.closest('tr');
-        const input = fila.querySelector('.motivo_contingencia_input');
-        const motivo_contingencia = input ? input.value.trim() : '';
-
-        const codigoMotivo = this.dataset.requiereMotivo; // obtener código del tipo de contingencia
-        if (codigoMotivo === "5" && !motivo_contingencia) {
-          alert("Ingrese el motivo de contingencia");
-          return;
-        }
-
-        const encodedMotivo = encodeURIComponent(motivo_contingencia);
-
-        fetch(`/fe/contingencia-dte/?contingencia_id=${contingencia_id}&motivo_contingencia=${motivo_contingencia}`)
-          .then(response => {
-            if (!response.ok) {  // Verifica si la respuesta fue exitosa (200-299)
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('#contingencia_unificado').forEach(function (enlace) {
+        enlace.addEventListener('click', function (e) {
+          e.preventDefault();
+    
+          const contingencia_id = this.dataset.id;
+          const fila = this.closest('tr');
+          
+          fetch(`/fe/contingencia-dte/?contingencia_id=${contingencia_id}`)
+            .then(response => {
+              if (!response.ok) {
                 throw new Error('Network response was not ok');
-            }
-            return response.json();  // Intenta convertir la respuesta a JSON
-          })
-          .catch(error => console.error('Error:', error));
+              }
+              return response.json();
+            })
+            .then(data => {
+              console.log("Respuesta del servidor:", data);
+              const resultadoContingencia = document.getElementById('resultadoContingencia');
+              if (resultadoContingencia) {
+                resultadoContingencia.innerHTML = ''; // Limpiar
+    
+                if (data.mensaje) {
+                  resultadoContingencia.innerHTML += `<p><strong>Mensaje:</strong> ${data.mensaje}</p>`;
+                }
+    
+                if (data.detalle) {
+                  try {
+                    const detalle = data.detalle.respuesta;
+                    if (detalle) {
+                      resultadoContingencia.innerHTML += `
+                        <p><strong>Estado:</strong> ${detalle.estado}</p>
+                        <p><strong>Fecha y Hora:</strong> ${detalle.fechaHora}</p>
+                        <p><strong>Mensaje:</strong> ${detalle.mensaje}</p>
+                        <p><strong>Sello Recibido:</strong> ${detalle.selloRecibido}</p>
+                        <p><strong>Observaciones:</strong> ${detalle.observaciones?.length ? detalle.observaciones.join(', ') : 'Ninguna'}</p>
+                      `;
+                    } else {
+                      resultadoContingencia.innerHTML += `<p><strong>Detalle:</strong> ${JSON.stringify(data.detalle)}</p>`;
+                    }
+                  } catch (e) {
+                    resultadoContingencia.innerHTML += `<p><strong>Error al procesar detalle:</strong> ${e}</p>`;
+                  }
+                }
+    
+                // Mostrar el modal (con jQuery o Bootstrap 5 puro)
+                const modal = new bootstrap.Modal(document.getElementById('respuestaModal'));
+                modal.show();
+              }
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              const resultadoContingencia = document.getElementById('resultadoContingencia');
+              if (resultadoContingencia) {
+                resultadoContingencia.innerHTML = `<p style="color: red;">Ocurrió un error al procesar la solicitud.</p>`;
+                const modal = new bootstrap.Modal(document.getElementById('respuestaModal'));
+                modal.show();
+              }
+            });
+        });
       });
     });
-  });
-
-
+  
   //Enviar lote uno a uno
   document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('#lote_unificado').forEach(function (enlace) {
@@ -505,52 +583,58 @@ document.addEventListener('DOMContentLoaded', function(){
         const lote_id = this.dataset.id; // id del evento
         console.log("lote id: ", lote_id)
 
-        fetch(`/fe/enviar-lote-unificado/?factura_id=${lote_id}`)
-          .then(response => {
-            if (!response.ok) {  // Verifica si la respuesta fue exitosa (200-299)
-              throw new Error('Network response was not ok');
-            }
-            console.log("Respuesta json: ", response.json)
-            return response.json();  // Convierte la respuesta a JSON
-          })
-          .then(data => {
+        fetch(`/fe/enviar-lote-unificado/?factura_id=${lote_id}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',  // Esto indica que estamos enviando JSON
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value // Asegúrate de enviar el token CSRF si es necesario
+          },
+        })
+        .then(response => {
+          if (!response.ok) {  // Verifica si la respuesta fue exitosa (200-299)
+            throw new Error('Network response was not ok');
+          }
+          console.log("Respuesta json: ", response.json)
+          return response.json();  // Convierte la respuesta a JSON
+        })
+        .then(data => {
 
-            //Obtener el div para mostrar la respuesta
-            const resultadoDiv = document.getElementById('resultadoContingencia');
-            //Limpiar resultado
-            resultadoDiv.innerHTML = '';
+          //Obtener el div para mostrar la respuesta
+          const resultadoDiv = document.getElementById('resultadoContingencia');
+          //Limpiar resultado
+          resultadoDiv.innerHTML = '';
 
-            // Mostrar el mensaje
-            if (data.mensaje) {
-              resultadoDiv.innerHTML += `<p><strong>Mensaje:</strong> ${data.mensaje}</p>`;
+          // Mostrar el mensaje
+          if (data.mensaje) {
+            resultadoDiv.innerHTML += `<p><strong>Mensaje:</strong> ${data.mensaje}</p>`;
+          }
+          
+          if (data.detalle) {
+            //Si detalle es un objeto, convertirlo a un formato legible
+            const detalle = data.detalle.respuesta;
+            if (detalle) {
+              const detalleString = `
+                <p><strong>Estado:</strong> ${detalle.estado}</p>
+                <p><strong>Fecha y Hora:</strong> ${detalle.fechaHora}</p>
+                <p><strong>Mensaje:</strong> ${detalle.mensaje}</p>
+                <p><strong>Sello Recibido:</strong> ${detalle.selloRecibido}</p>
+                <p><strong>Observaciones:</strong> ${detalle.observaciones.length ? detalle.observaciones.join(', ') : 'Ninguna'}</p>
+              `;
+              resultadoDiv.innerHTML += detalleString;
+            } else {
+              resultadoDiv.innerHTML += `<p><strong>Detalle:</strong> ${JSON.stringify(data.detalle)}</p>`;
             }
-            
-            if (data.detalle) {
-              //Si detalle es un objeto, convertirlo a un formato legible
-              const detalle = data.detalle.respuesta;
-              if (detalle) {
-                const detalleString = `
-                  <p><strong>Estado:</strong> ${detalle.estado}</p>
-                  <p><strong>Fecha y Hora:</strong> ${detalle.fechaHora}</p>
-                  <p><strong>Mensaje:</strong> ${detalle.mensaje}</p>
-                  <p><strong>Sello Recibido:</strong> ${detalle.selloRecibido}</p>
-                  <p><strong>Observaciones:</strong> ${detalle.observaciones.length ? detalle.observaciones.join(', ') : 'Ninguna'}</p>
-                `;
-                resultadoDiv.innerHTML += detalleString;
-              } else {
-                resultadoDiv.innerHTML += `<p><strong>Detalle:</strong> ${JSON.stringify(data.detalle)}</p>`;
-              }
-            }
+          }
 
-            // Mostrar el modal
-            $('#respuestaModal').modal('show');
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            const resultadoDiv = document.getElementById('resultadoContingencia');
-            resultadoDiv.innerHTML = `<p style="color: red;">Ocurrió un error al procesar la solicitud.</p>`;
-            $('#respuestaModal').modal('show');
-          });
+          // Mostrar el modal
+          $('#respuestaModal').modal('show');
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          const resultadoDiv = document.getElementById('resultadoContingencia');
+          resultadoDiv.innerHTML = `<p style="color: red;">Ocurrió un error al procesar la solicitud.</p>`;
+          $('#respuestaModal').modal('show');
+        });
       });
     });
   });

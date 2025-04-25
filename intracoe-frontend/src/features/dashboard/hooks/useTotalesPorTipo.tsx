@@ -1,6 +1,10 @@
 // hooks/useTotalesPorTipo.ts
 import { useEffect, useState } from 'react';
-import { getClientes, getTotalesPorTipoDTE, getTotalVentas } from '../services/dashboardServices';
+import {
+  getClientes,
+  getTotalesPorTipoDTE,
+  getTotalVentas,
+} from '../services/dashboardServices';
 
 interface TotalPorTipo {
   tipo_dte: number;
@@ -18,7 +22,7 @@ export const useTotalesPorTipo = () => {
         const result = await getTotalesPorTipoDTE();
         setDatos(result);
       } catch (error) {
-        console.error("Error al obtener totales por tipo DTE:", error);
+        console.error('Error al obtener totales por tipo DTE:', error);
       } finally {
         setLoading(false);
       }
@@ -47,7 +51,7 @@ export const useTotalFacturasEmitidas = () => {
 
         setTotal(totalSumado);
       } catch (error) {
-        console.error("Error al obtener totales por tipo DTE:", error);
+        console.error('Error al obtener totales por tipo DTE:', error);
       } finally {
         setLoadingTotal(false);
       }
@@ -69,7 +73,7 @@ export const useTotalVentas = () => {
         const result = await getTotalVentas();
         setTotalVentas(result);
       } catch (error) {
-        console.error("Error al obtener totales por tipo DTE:", error);
+        console.error('Error al obtener totales por tipo DTE:', error);
       } finally {
         setLoadingTotalVentas(false);
       }
@@ -97,7 +101,7 @@ export const useTopClientes = () => {
         const result = await getClientes();
         setClientes(result);
       } catch (error) {
-        console.error("Error al obtener totales por tipo DTE:", error);
+        console.error('Error al obtener totales por tipo DTE:', error);
       } finally {
         setLoadingclientes(false);
       }

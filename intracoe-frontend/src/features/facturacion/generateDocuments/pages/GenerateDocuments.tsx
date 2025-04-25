@@ -11,7 +11,6 @@ import { IdentifcacionSeccion } from '../components/Shared/identificacion.tsx/id
 import { SelectReceptor } from '../components/Shared/receptor/SelectReceptor';
 import { ModalListaProdcutos } from '../components/FE/productosAgregados/modalListaProdcutos';
 import { FormasdePagoForm } from '../components/Shared/configuracionFactura/formasDePago/formasdePagoForm';
-// import { ButtonDocumentosRelacionados } from '../components/Shared/configuracionFactura/documentosRelacionados/ButtonDocumentosRelacionados';
 import { SelectModeloFactura } from '../components/Shared/configuracionFactura/modeloDeFacturacion/selectModeloFactura';
 import { SendFormButton } from '../../../../shared/buttons/sendFormButton';
 import {
@@ -98,7 +97,6 @@ export const GenerateDocuments = () => {
   const [descuentosProducto, setDescuentosProducto] = useState<number[]>([]);
   const navigate = useNavigate();
   const toastRef = useRef<CustomToastRef>(null);
-  const [loading, setLoading] = useState(true);
 
   const handleAccion = (
     severity: ToastSeverity,
@@ -131,11 +129,10 @@ export const GenerateDocuments = () => {
       return Math.round(porcentaje * 100) / 100; // Redondea a 2 decimales
     });
 
-    console.log(selectedProducts)
-  
+    console.log(selectedProducts);
+
     setDescuentosProducto(descuentosAux);
   }, [selectedProducts]);
-  
 
   const generarFactura = async () => {
     console.log(descuentoItem);
@@ -155,12 +152,12 @@ export const GenerateDocuments = () => {
       observaciones: observaciones,
       productos_ids: idListProducts,
       cantidades: cantidadListProducts, //cantidad de cada producto de la factura
-      monto_fp: totalAPagar.toFixed(2),
+      monto_fp: totalAPagar,
       num_ref: null,
       no_gravado: baseImponible,
       retencion_iva: tieneRetencionIva,
       porcentaje_retencion_iva: (retencionIva / 100).toString(),
-      fp_id: formasPagoList,
+      formas_pago_id: formasPagoList,
       saldo_favor_input: '0.00',
       descuento_gravado: (descuentos.descuentoGravado / 100).toString(),
       descuento_global_input: (descuentos.descuentoGeneral / 100).toString(),
@@ -215,6 +212,8 @@ export const GenerateDocuments = () => {
             doc.codigo === '01' || doc.codigo === '03'
         )
       );
+
+      console.log('eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', response.emisor);
     } catch (error) {
       console.log(error);
     }
@@ -222,6 +221,7 @@ export const GenerateDocuments = () => {
 
   const handleClickGenerarFactura = async () => {
     if (auxManejoPagos != 0) {
+      console.log('errpr pagos');
       setErrorFormasPago(true);
       handleAccion(
         'error',
@@ -231,6 +231,8 @@ export const GenerateDocuments = () => {
     }
 
     if (receptor.id == '') {
+      console.log('errpr receptr');
+
       setErrorReceptor(true);
       handleAccion(
         'error',
@@ -363,6 +365,7 @@ export const GenerateDocuments = () => {
             tipoDte={tipoDocumentoSelected}
           />
           <ModalListaProdcutos
+            tipoDte={tipoDocumentoSelected}
             visible={showProductsModal}
             setVisible={setShowProductsModal}
             listProducts={listProducts}

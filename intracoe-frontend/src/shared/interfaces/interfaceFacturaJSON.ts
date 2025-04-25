@@ -40,11 +40,11 @@ export interface ListResult {
 }
 
 export interface ListFactura {
-  current_page:number;
+  current_page: number;
   page_size: number;
   total_pages: number;
   total_records: number;
-  results:  ListResult[]
+  results: ListResult[];
 }
 
 export interface Filters {

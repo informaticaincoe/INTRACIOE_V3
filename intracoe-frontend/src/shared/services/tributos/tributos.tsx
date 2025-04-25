@@ -1,55 +1,65 @@
-import axios from 'axios';
+import { apiInventory } from '../apiInventory';
 
-const BASEURL = import.meta.env.VITE_URL_BASE_INVENT;
-const BASEURLINVENT = import.meta.env.VITE_URL_BASE_INVENT;
-
-export const getAllTipoTributos = async () => {
+export const getAllTipoTributos = async (): Promise<any[]> => {
   try {
-    const response = await axios.get(`${BASEURL}/tipo-tributos/`);
+    const response = await apiInventory.get('/tipo-tributos/');
     return response.data;
   } catch (error) {
-    console.log(error);
-    throw new Error();
+    console.error('Error fetching tipo-tributos:', error);
+    throw new Error('Error fetching tipo de tributos');
   }
 };
 
-export const getAllTributosByTipo = async (id: number) => {
+/**
+ * Obtiene los tributos de un tipo específico
+ * @param id Identificador del tipo de tributo
+ */
+export const getAllTributosByTipo = async (id: number): Promise<any[]> => {
   try {
-    const response = await axios.get(`${BASEURL}/tributos/tipo/${id}/`);
+    const response = await apiInventory.get(`/tributos/tipo/${id}/`);
     return response.data;
   } catch (error) {
-    console.log(error);
-    throw new Error();
+    console.error(`Error fetching tributos for tipo ${id}:`, error);
+    throw new Error('Error fetching tributos by tipo');
   }
 };
 
-export const getTributoById = async (id: number) => {
+/**
+ * Obtiene un tributo por su ID
+ * @param id Identificador del tributo
+ */
+export const getTributoById = async (id: number): Promise<any> => {
   try {
-    const response = await axios.get(`${BASEURLINVENT}/tributo/${id}/`);
+    const response = await apiInventory.get(`/tributo/${id}/`);
     return response.data;
   } catch (error) {
-    console.log(error);
-    throw new Error();
+    console.error(`Error fetching tributo ${id}:`, error);
+    throw new Error('Error fetching tributo by ID');
   }
 };
 
-export const getAllTributos = async () => {
+/**
+ * Obtiene todos los tributos disponibles
+ */
+export const getAllTributos = async (): Promise<any[]> => {
   try {
-    const response = await axios.get(`${BASEURL}/tributo/`);
+    const response = await apiInventory.get('/tributo/');
     return response.data;
   } catch (error) {
-    console.log(error);
-    throw new Error();
+    console.error('Error fetching all tributos:', error);
+    throw new Error('Error fetching tributos');
   }
 };
 
-export const getAllAlmacenes = async () => {
+/**
+ * Obtiene el listado de almacenes
+ */
+export const getAllAlmacenes = async (): Promise<any[]> => {
   try {
-    const response = await axios.get(`${BASEURL}/almacenes/`);
-    console.log(response.data);
+    const response = await apiInventory.get('/almacenes/');
     return response.data;
   } catch (error) {
-    console.log(error);
-    throw new Error();
+    console.error('Error fetching almacenes:', error);
+    throw new Error('Error fetching almacenes');
   }
 };
