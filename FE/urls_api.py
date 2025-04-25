@@ -1,8 +1,8 @@
 
 from django.urls import path
 from FE.api_views import (
-    ContingenciaDteAPIView, ContingenciaListAPIView, EmisorCreateAPIView, EmisorUpdateAPIView, EnviarFacturaHaciendaAPIView, FacturaDetailAPIView, FacturaListAPIView, FacturaPorCodigoGeneracionAPIView, FirmarFacturaAPIView, 
-    GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, LoteContingenciaDteAPIView, MunicipioByDepartamentoAPIView, TopClientes, TopProductosAPIView, TotalVentasAPIView, TotalesPorTipoDTE, autenticacion, EmisorListAPIView, receptorCreateAPIView, receptorDeleteAPIView, receptorDetailAPIView, 
+    CondicionOperacionDetailAPIView, ContingenciaDteAPIView, ContingenciaListAPIView, EmisorCreateAPIView, EmisorUpdateAPIView, EnviarFacturaHaciendaAPIView, FacturaDetailAPIView, FacturaListAPIView, FacturaPorCodigoGeneracionAPIView, FirmarFacturaAPIView, 
+    GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, LoteContingenciaDteAPIView, MunicipioByDepartamentoAPIView, Tipo_dteDetailAPIView, TiposDocIDReceptorDetailAPIView, TopClientes, TopProductosAPIView, TotalVentasAPIView, TotalesPorTipoDTE, autenticacion, EmisorListAPIView, receptorCreateAPIView, receptorDeleteAPIView, receptorDetailAPIView, 
     receptorListAPIView, receptorUpdateAPIView, GenerarDocumentoAjusteAPIView,
 
     # ACTIVIDAD ECONOMICA
@@ -205,6 +205,7 @@ urlpatterns = [
     
     # CONDICION OPERACION
     path('api/condicion-operacion/', CondicionOperacionListAPIView.as_view(), name='condicion_operacion_list_api'),
+    path('api/condicion-operacion/<int:pk>/', CondicionOperacionDetailAPIView.as_view(), name='condicion_operacion_list_api'),
     path('api/condicion-operacion/crear/', CondicionOperacionCreateAPIView.as_view(), name='condicion-operacion-create'),
     path('api/condicion-operacion/<str:codigo>/', CondicionOperacionRetrieveAPIView.as_view(), name='condicion_operacion_list_api'),
     path('api/condicion-operacion/<int:pk>/editar/', CondicionOperacionUpdateAPIView.as_view(), name='condicion-operacion-update'),
