@@ -1,33 +1,33 @@
 .customTable :global(.p-datatable-thead > tr > th) {
-    background-color: #dcdde1;
-    font-weight: bold;
-    text-align: center;
+  background-color: #dcdde1;
+  font-weight: bold;
+  text-align: center;
 }
 
 .customTable :global(.p-datatable-tbody > tr > td) {
-    background-color: #fafafa;
+  background-color: #fafafa;
 }
 
 .customSubTable :global(.p-datatable-thead > tr > th) {
-    background-color: #ffffff;
-    text-align: center;
+  background-color: #ffffff;
+  text-align: center;
 }
 
 .customSubTable :global(.p-datatable-tbody > tr > td) {
-    background-color: #ffffff;
+  background-color: #ffffff;
 }
 
 .customCollapse :global(.p-badge) {
-    background-color: var(--color-primary-yellow) !important;
-    color: var(--color-primary-blue);
+  background-color: var(--color-primary-yellow) !important;
+  color: var(--color-primary-blue);
 }
 
 .customCollapse :global(.p-badge) {
-    background-color: var(--color-primary-yellow) !important;
-    color: var(--color-primary-blue);
+  background-color: var(--color-primary-yellow) !important;
+  color: var(--color-primary-blue);
 }
 
 .customCollapse :global(.p-accordion-header-link) {
-    background-color: #ffffff!important;
-    color: #1f2937;
+  background-color: #ffffff !important;
+  color: #1f2937;
 }

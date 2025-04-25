@@ -40,16 +40,15 @@ export const StepperContactBussiness: React.FC<StepperContactBussinessProp> = ({
           name={'nombre_establecimiento'}
         />
       </span>
-      <div className='flex gap-5'>
-        <span className='w-full'>
+      <div className="flex gap-5">
+        <span className="w-full">
           <label htmlFor="departamento">Departamentos</label>
           <SelectDepartmentComponent
             setDepartamentoSelect={setDepartamentoSelect}
             departamentoSelect={departamentoSelect}
           />
         </span>
-        <span className='w-full'>
-
+        <span className="w-full">
           <label htmlFor="municipio">Municipio</label>
           <SelectMunicipios
             onChange={handleChange}

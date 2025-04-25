@@ -1,18 +1,21 @@
+// LoginForm.tsx
 import { useEffect, useRef, useState } from 'react';
 import { Input } from '../../../shared/forms/input';
 import { SendFormButton } from '../../../shared/buttons/sendFormButton';
 import { useNavigate } from 'react-router';
-import { login, sendCode } from '../services/loginServices';
-import CustomToast, { CustomToastRef, ToastSeverity } from '../../../shared/toast/customToast';
+import { changePassword, login, sendCode } from '../services/loginServices';
+import CustomToast, {
+  CustomToastRef,
+  ToastSeverity,
+} from '../../../shared/toast/customToast';
 import { IoMdCloseCircle } from 'react-icons/io';
-import { Dialog } from 'primereact/dialog';
-import { InputOtp } from 'primereact/inputotp';
-
-import { RiLockPasswordFill } from "react-icons/ri";
+import { PasswordRecoveryDialog } from './passwordRecoveryDialog';
+import { FaCircleCheck } from 'react-icons/fa6';
+import LoadingScreen from '../../../shared/loading/loadingScreen';
 
 export const LoginForm = () => {
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate(); // Hook para navegar en React Router
-
 
   /**************************** Form ****************************/
   const [formData, setFormData] = useState({
@@ -24,6 +27,20 @@ export const LoginForm = () => {
     username: '',
     password: '',
   });
+
+  const cleanForm = () => {
+    setVisible(false);
+    setStep1(true);
+    setCodigo('');
+    setNewPassword('');
+  };
+
+  const [step1, setStep1] = useState<boolean>(true);
+  const [newPassword, setNewPassword] = useState<string>('');
+  const [visible, setVisible] = useState<boolean>(false);
+  const [codigo, setCodigo] = useState<string | number | null | undefined>(
+    undefined
+  );
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -44,22 +61,52 @@ export const LoginForm = () => {
     setErrors(newErrors);
 
     if (!newErrors.username && !newErrors.password) {
-
       try {
-        await login(formData)
-        navigate('/');
-      }
-      catch (error: any) {
-        console.log(error)
-        handleAccion(
-          'error',
-          <IoMdCloseCircle size={38} />,
-          error.toString()
-        );
+        setLoading(true);
+        await login(formData);
+        navigate('/dashboard');
+      } catch (error: any) {
+        console.log(error);
+        handleAccion('error', <IoMdCloseCircle size={38} />, error.toString());
+      } finally {
+        setLoading(false);
       }
     }
   };
-  /*************************************************************/
+
+  const handleChangePassword = async () => {
+    console.log('length', codigo?.toString().length);
+    if (codigo?.toString().length != 6) {
+      handleAccion(
+        'error',
+        <IoMdCloseCircle size={38} />,
+        'Ingrese el codigo completo'
+      );
+      return;
+    }
+
+    try {
+      await changePassword({
+        email: 'karen.burgos@grupoincoe.com',
+        code: codigo,
+        new_password: newPassword,
+      });
+      cleanForm();
+      handleAccion(
+        'success',
+        <FaCircleCheck size={38} />,
+        'Contraseña cambiada con exito'
+      );
+    } catch (error) {
+      console.log(error);
+      cleanForm();
+      handleAccion(
+        'error',
+        <IoMdCloseCircle size={38} />,
+        'Error al modific contraseña'
+      );
+    }
+  };
 
   /**************************** Toast ****************************/
   const toastRef = useRef<CustomToastRef>(null);
@@ -76,29 +123,24 @@ export const LoginForm = () => {
       life: 2000,
     });
   };
-  /*************************************************************/
 
-  /* Recuperar contraseña */
-  const [email, setEmail] = useState<string>('')
-  const [visible, setVisible] = useState<boolean>(false);
-  const [codigo, setCodigo] = useState<string | number | null | undefined>(undefined);
-
-
+  /**************************** Password Recovery ****************************/
   const handleSendCodePassword = async () => {
-    setVisible(true)
+    setVisible(true);
     try {
-      await sendCode({ email: "karen.burgos@grupoincoe.com" })
+      await sendCode({ email: 'karen.burgos@grupoincoe.com' });
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
 
-  useEffect(()=>{
-    console.log(codigo)
-  },[codigo])
+  useEffect(() => {
+    console.log(codigo);
+  }, [codigo]);
 
   return (
     <>
+      {loading && <LoadingScreen />}
       <form className="flex w-full flex-col gap-10">
         <span className="flex flex-col gap-5">
           <span className="flex flex-col items-start">
@@ -128,29 +170,33 @@ export const LoginForm = () => {
               <span className="text-sm text-red-500">{errors.password}</span>
             )}
           </span>
-          <p className='text-blue underline text-end' onClick={handleSendCodePassword}>¿Olvidaste tu contraseña?</p>
-
+          <p
+            className="text-blue text-end underline hover:cursor-pointer hover:brightness-90"
+            onClick={handleSendCodePassword}
+          >
+            ¿Olvidaste tu contraseña?
+          </p>
         </span>
-        <SendFormButton className='bg-primary-blue text-white' text="Ingresar" onClick={handlerForm} />
+        <SendFormButton
+          className="bg-primary-blue text-white"
+          text="Ingresar"
+          onClick={handlerForm}
+        />
         <CustomToast ref={toastRef} />
       </form>
-      {
-        visible &&
-        <Dialog visible={visible} style={{ width: '50vw' }} onHide={() => { if (!visible) return; setVisible(false); }}>
-          <div>
-            <RiLockPasswordFill size={100} className='text-center w-full pb-5' />
-            <p className='text-xl font-bold text-center'>Codigo de recuperación</p>
-            <label className="m-0 text-center">
-              Codigo de recuperación enviado al correo:
-              <span className='italic'> karen.burgos@grupoincoe.com</span>
-            </label>
-            <div className='pt-5 flex flex-col justify-center items-center'>
-              <label htmlFor="codigo">Codigo de verificacion:</label>
-              <InputOtp name="codigo" value={codigo} onChange={(e) => setCodigo(e.value)} integerOnly length={6} style={{ padding: '3% 0' }} />
-            </div>
-          </div>
-        </Dialog>
-      }
+
+      {/* Password Recovery Dialog */}
+      <PasswordRecoveryDialog
+        visible={visible}
+        step1={step1}
+        codigo={codigo}
+        newPassword={newPassword}
+        onChangeCodigo={setCodigo}
+        onChangeNewPassword={setNewPassword}
+        onConfirm={handleChangePassword}
+        onCancel={cleanForm}
+        onNextStep={() => setStep1(false)}
+      />
     </>
   );
 };

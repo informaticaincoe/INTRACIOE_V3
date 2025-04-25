@@ -7,7 +7,7 @@ export const api = axios.create({
   withCredentials: true,
 });
 
-api.interceptors.request.use(cfg => {
+api.interceptors.request.use((cfg) => {
   const token = getCookie('authToken');
   if (token && cfg.headers) {
     // DRF TokenAuthentication espera "Token <key>"

@@ -1,4 +1,3 @@
-
 import { ActivitiesDataNew } from '../../interfaces/interfaces';
 import { api } from '../../services/api';
 
@@ -7,15 +6,11 @@ export const updateActivity = async (
   activity: ActivitiesDataNew
 ) => {
   try {
-    const response = await api.put(
-      `/actividad/actualizar/${id}/`,
-      activity,
-      {
-        headers: {
-          'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
-        },
-      }
-    );
+    const response = await api.put(`/actividad/actualizar/${id}/`, activity, {
+      headers: {
+        'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
+      },
+    });
     console.log(response);
     return response;
   } catch (error) {
@@ -25,15 +20,11 @@ export const updateActivity = async (
 
 export const updateAmbientes = async (id: string, data: any) => {
   try {
-    const response = await api.put(
-      `/ambiente/${id}/editar/`,
-      data,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await api.put(`/ambiente/${id}/editar/`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
     return response.data;
   } catch (error) {
@@ -43,15 +34,11 @@ export const updateAmbientes = async (id: string, data: any) => {
 
 export const updateModelosDeFacturacion = async (id: string, data: any) => {
   try {
-    const response = await api.put(
-      `/modelo-facturacion/${id}/editar/`,
-      data,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await api.put(`/modelo-facturacion/${id}/editar/`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error();
@@ -60,15 +47,11 @@ export const updateModelosDeFacturacion = async (id: string, data: any) => {
 
 export const updateTipoTransmision = async (id: string, data: any) => {
   try {
-    const response = await api.put(
-      `/tipo-transmision/${id}/editar/`,
-      data,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await api.put(`/tipo-transmision/${id}/editar/`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error();
@@ -77,15 +60,11 @@ export const updateTipoTransmision = async (id: string, data: any) => {
 
 export const updateTipoContingencia = async (id: string, data: any) => {
   try {
-    const response = await api.put(
-      `/tipo-contingencia/${id}/editar/`,
-      data,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await api.put(`/tipo-contingencia/${id}/editar/`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error();
@@ -163,15 +142,11 @@ export const updateTipoServiciosMedicos = async (id: string, data: any) => {
 
 export const updateTipoDTE = async (id: string, data: any) => {
   try {
-    const response = await api.put(
-      `/tipo-dte/${id}/editar/`,
-      data,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await api.put(`/tipo-dte/${id}/editar/`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error();
@@ -227,15 +202,11 @@ export const updatePaises = async (id: string, data: any) => {
 
 export const updateDepartamentos = async (id: string, data: any) => {
   try {
-    const response = await api.put(
-      `/departamento/${id}/editar/`,
-      data,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await api.put(`/departamento/${id}/editar/`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error();
@@ -244,15 +215,11 @@ export const updateDepartamentos = async (id: string, data: any) => {
 
 export const updateMunicipios = async (id: string, data: any) => {
   try {
-    const response = await api.put(
-      `/municipio/${id}/editar/`,
-      data,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    ); //TODO: Modificar endpoint apra obtener todos y no por id de departamento
+    const response = await api.put(`/municipio/${id}/editar/`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }); //TODO: Modificar endpoint apra obtener todos y no por id de departamento
     return response.data;
   } catch (error) {
     throw new Error();
@@ -261,15 +228,11 @@ export const updateMunicipios = async (id: string, data: any) => {
 
 export const updateCondicioOperaciones = async (id: string, data: any) => {
   try {
-    const response = await api.put(
-      `/condicion-operacion/${id}/editar/`,
-      data,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await api.put(`/condicion-operacion/${id}/editar/`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error();
@@ -278,15 +241,11 @@ export const updateCondicioOperaciones = async (id: string, data: any) => {
 
 export const updateMetodosDePago = async (id: string, data: any) => {
   try {
-    const response = await api.put(
-      `/formas-pago/${id}/editar/`,
-      data,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await api.put(`/formas-pago/${id}/editar/`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
     return response.data;
   } catch (error) {
     console.log(error);
@@ -325,15 +284,11 @@ export const updateTipoDocContingencia = async (id: string, data: any) => {
 
 export const updateTipoInvalidacion = async (id: string, data: any) => {
   try {
-    const response = await api.put(
-      `/tipo-invalidacion/${id}/editar/`,
-      data,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await api.put(`/tipo-invalidacion/${id}/editar/`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error();
@@ -342,15 +297,11 @@ export const updateTipoInvalidacion = async (id: string, data: any) => {
 
 export const updateTipoDonacion = async (id: string, data: any) => {
   try {
-    const response = await api.put(
-      `/tipo-donacion/${id}/editar/`,
-      data,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await api.put(`/tipo-donacion/${id}/editar/`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error();
@@ -359,15 +310,11 @@ export const updateTipoDonacion = async (id: string, data: any) => {
 
 export const updateTipoPersona = async (id: string, data: any) => {
   try {
-    const response = await api.put(
-      `/tipo-persona/${id}/editar/`,
-      data,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await api.put(`/tipo-persona/${id}/editar/`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error();
@@ -376,15 +323,11 @@ export const updateTipoPersona = async (id: string, data: any) => {
 
 export const updateTipoTransporte = async (id: string, data: any) => {
   try {
-    const response = await api.put(
-      `/tipo-transporte/${id}/editar/`,
-      data,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await api.put(`/tipo-transporte/${id}/editar/`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error();
@@ -393,15 +336,11 @@ export const updateTipoTransporte = async (id: string, data: any) => {
 
 export const updateIncoterms = async (id: string, data: any) => {
   try {
-    const response = await api.put(
-      `/incoterms/${id}/editar/`,
-      data,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await api.put(`/incoterms/${id}/editar/`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error();
@@ -427,15 +366,11 @@ export const updateTipoDomicilioFiscal = async (id: string, data: any) => {
 
 export const updateTipoMoneda = async (id: string, data: any) => {
   try {
-    const response = await api.put(
-      `/tipo-moneda/${id}/editar/`,
-      data,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await api.put(`/tipo-moneda/${id}/editar/`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error();
@@ -444,15 +379,11 @@ export const updateTipoMoneda = async (id: string, data: any) => {
 
 export const updateDescuento = async (id: string, data: any) => {
   try {
-    const response = await api.put(
-      `/descuento/${id}/editar/`,
-      data,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await api.put(`/descuento/${id}/editar/`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error();

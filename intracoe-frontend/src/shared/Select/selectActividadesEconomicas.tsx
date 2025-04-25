@@ -2,7 +2,7 @@ import React, { useEffect, useState, HTMLProps } from 'react';
 import { MultiSelect, MultiSelectChangeEvent } from 'primereact/multiselect';
 import { ActivitiesData } from '../interfaces/interfaces';
 import { getAllActivities } from '../catalogos/services/catalogosServices';
-import { GoX } from "react-icons/go";
+import { GoX } from 'react-icons/go';
 
 interface SelectActividadesEconomicasProps {
   value: any[];
@@ -76,22 +76,21 @@ export const SelectActividadesEconomicas: React.FC<
         <div className="pt-10">
           <strong>Actividades seleccionadas:</strong>
           <div>
-            <ul className="flex flex-col text-black gap-4 my-4 bg-body-bg rounded-sm p-5 max-h-80 overflow-auto">
+            <ul className="bg-body-bg my-4 flex max-h-80 flex-col gap-4 overflow-auto rounded-sm p-5 text-black">
               {selectedActivities.map((act) => (
                 <li
-                  className="flex justify-between gap-5 bg-white rounded-md p-3 w-full"
+                  className="flex w-full justify-between gap-5 rounded-md bg-white p-3"
                   key={act.id} // Usar `id` como clave única
                 >
                   <div className="flex items-center gap-2">
                     <button
-                      className="text-primary-blue hover:bg-[#DDDFF0] rounded-full p-2"
+                      className="text-primary-blue rounded-full p-2 hover:bg-[#DDDFF0]"
                       onClick={() => handleRemoveActivity(act.id)}
                     >
                       <GoX size={24} />
                     </button>
                     <span>{act.descripcion}</span>
                   </div>
-
                 </li>
               ))}
             </ul>
