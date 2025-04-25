@@ -20,7 +20,7 @@ export const Dashboard = () => {
         <div className="col-span-2 flex w-full justify-between gap-10">
           <WhiteCard>
             <>
-              <h1 className="text-xl font-semibold">Tipo de facturas</h1>
+              <h1 className="text-[1.2rem] font-semibold">Tipo de facturas</h1>
               <div>
                 <ChartDTE />
               </div>
@@ -30,7 +30,7 @@ export const Dashboard = () => {
         <div className="col-start-3 flex w-full justify-between">
           <WhiteCard>
             <>
-              <h1 className="text-xl font-semibold">Top 3 clientes</h1>
+              <h1 className="text-[1.2rem] font-semibold">Top 3 clientes</h1>
               <PieChartClients />
             </>
           </WhiteCard>

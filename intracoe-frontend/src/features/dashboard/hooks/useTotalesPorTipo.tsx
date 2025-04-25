@@ -60,7 +60,7 @@ export const useTotalFacturasEmitidas = () => {
     fetchData();
   }, []);
 
-  return { total, loadingTotal }; // datos ahora es el total sumado
+  return { total, loadingTotal };
 };
 
 export const useTotalVentas = () => {
@@ -82,7 +82,7 @@ export const useTotalVentas = () => {
     fetchData();
   }, []);
 
-  return { totalVentas, loadingTotalVentas }; // datos ahora es el total sumado
+  return { totalVentas, loadingTotalVentas };
 };
 
 interface ClienteData {
@@ -110,5 +110,5 @@ export const useTopClientes = () => {
     fetchData();
   }, []);
 
-  return { clientes, loadingclientes }; // datos ahora es el total sumado
+  return { clientes, loadingclientes };
 };

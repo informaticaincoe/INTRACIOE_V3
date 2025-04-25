@@ -1,5 +1,6 @@
 import { Chart } from 'react-google-charts';
 import { useTotalesPorTipo } from '../hooks/useTotalesPorTipo';
+import { Legend } from 'recharts';
 
 export const ChartDTE = () => {
   const { datos, loading } = useTotalesPorTipo();
@@ -22,10 +23,11 @@ export const ChartDTE = () => {
   const options = {
     chart: {
       title: 'Total de facturas',
-      subtitle: 'intracoe',
+      subtitle: 'intracoe'
     },
     bars: 'vertical',
     colors: ['#232C6E'],
+    legend: { position: 'none' },
   };
 
   return (

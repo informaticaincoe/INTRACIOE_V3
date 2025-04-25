@@ -30,7 +30,7 @@ import { Contactos } from '../../components/shared/footer/contactos';
 import { Title } from '../../../../../shared/text/title';
 import { FaFilePdf } from 'react-icons/fa';
 import { RiFileUploadFill } from 'react-icons/ri';
-import { FaCircleCheck } from 'react-icons/fa6';
+import { FaCircleCheck, FaSpinner } from 'react-icons/fa6';
 import { IoMdCloseCircle } from 'react-icons/io';
 
 import html2canvas from 'html2canvas';
@@ -43,57 +43,28 @@ import CustomToast, {
 } from '../../../../../shared/toast/customToast';
 import { getCondicionDeOperacionById } from '../../../generateDocuments/services/configuracionFactura/configuracionFacturaService';
 
-const exportToPDF = async () => {
-  const element = document.getElementById('content-id');
-  if (!element) return;
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 
-  const canvas = await html2canvas(element, {
-    useCORS: true,
-    scale: 3, // mejor resolución
-  });
 
-  const imgData = canvas.toDataURL('image/png');
-
-  const pdf = new jsPDF({
-    orientation: 'portrait',
-    unit: 'px',
-  });
-
-  const pageWidth = pdf.internal.pageSize.getWidth();
-
-  // 🧠 Calcular altura proporcional manteniendo aspecto
-  const imgProps = {
-    width: canvas.width,
-    height: canvas.height,
-  };
-
-  const ratio = imgProps.height / imgProps.width;
-  const imgHeight = pageWidth * ratio;
-  const xOffset = (pageWidth - canvas.width * (pageWidth / canvas.width)) / 2;
-  const imgWidth = pageWidth;
-
-  // ✅ Añadir imagen con altura real proporcional
-  pdf.addImage(imgData, 'PNG', xOffset, 0, imgWidth, imgHeight);
-  pdf.save('factura.pdf');
-};
 
 export const FacturaVisualizacionPage = () => {
   let { id } = useParams();
   const [emisor, setEmisor] = useState<Emisor>(EmisorDefault);
   const [receptor, setReceptor] = useState<Receptor>(ReceptorDefault);
-  const [datosFactura, setDatosFactura] =
-    useState<DatosFactura>(DatosFacturaDefault);
-  const [productos, setProductos] = useState<CuerpoDocumento[]>(
-    CuerpoDocumentoDefault
-  );
+  const [datosFactura, setDatosFactura] = useState<DatosFactura>(DatosFacturaDefault);
+  const [productos, setProductos] = useState<CuerpoDocumento[]>(CuerpoDocumentoDefault);
   const [resumen, setResumen] = useState<Resumen>(resumenTablaFEDefault);
   const [extension, setExtension] = useState<Extension>(ExtensionDefault);
   const [pagoEnLetras, setPagoEnLetras] = useState<string>('');
-  const [condicionOperacion, setCondicionOperacion] = useState<number>(0);
-  const navigate = useNavigate();
-  const { targetRef } = usePDF({ filename: 'page.pdf' });
-  const toastRef = useRef<CustomToastRef>(null);
   const [qrCode, setQrCode] = useState<string>('');
+  const [condicionOperacion, setCondicionOperacion] = useState<number>(0);
+  const [json, setJson] = useState<any>();
+  const { targetRef } = usePDF({ filename: 'page.pdf' });
+  const navigate = useNavigate();
+  const toastRef = useRef<CustomToastRef>(null);
+
+  const [loading, setLoading] = useState(false);
 
   const handleAccion = (
     severity: ToastSeverity,
@@ -120,7 +91,7 @@ export const FacturaVisualizacionPage = () => {
   const enviarHacienda = async () => {
     if (id) {
       try {
-        const response = await EnviarHacienda(id);
+        await EnviarHacienda(id);
         handleAccion(
           'success',
           <FaCircleCheck size={32} />,
@@ -149,13 +120,56 @@ export const FacturaVisualizacionPage = () => {
         setExtension(response.extension);
         setPagoEnLetras(response.pagoEnLetras);
         fetchCondicionOperacionDescripcion(response.condicionOpeacion);
+        setJson(response.json)
         setQrCode(
           `https://admin.factura.gob.sv/consultaPublica?ambiente=${response.ambiente}&codGen=${response.datosFactura.codigoGeneracion.toUpperCase()}&fechaEmi=${response.datosFactura.fechaEmision}`
         );
+
       }
     } catch (error) {
       console.log(error);
     }
+  };
+
+
+
+  // … dentro de tu componente FacturaVisualizacionPage:
+
+  const downloadZip = async () => {
+    setLoading(true);
+
+    const element = document.getElementById('content-id');
+    if (!element) return;
+
+    // 1) Render a canvas
+    const canvas = await html2canvas(element, { useCORS: true, scale: 3 });
+    const imgData = canvas.toDataURL('image/png');
+
+    // 2) Genera el PDF en memoria
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'px' });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const ratio = canvas.height / canvas.width;
+    const imgHeight = pageWidth * ratio;
+    pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, imgHeight);
+
+    // 3) Obtén el Blob del PDF
+    const pdfBlob = pdf.output('blob');
+
+    // 4) Crea el Blob del JSON
+    //    Asume que lo tienes en el estado `json`
+    const jsonString = JSON.stringify(json, null, 2);
+    const jsonBlob = new Blob([jsonString], { type: 'application/json' });
+
+    // 5) Empaqueta todo en un ZIP
+    const zip = new JSZip();
+    zip.file(`factura_${datosFactura.codigoGeneracion}.pdf`, pdfBlob);
+    zip.file(`factura_${datosFactura.codigoGeneracion}.json`, jsonBlob);
+    console.log(pdfBlob)
+
+    // 6) Genera el ZIP y dispara la descarga
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    saveAs(zipBlob, `factura_${datosFactura.codigoGeneracion}.zip`);
+    setLoading(false)
   };
 
   return (
@@ -164,12 +178,20 @@ export const FacturaVisualizacionPage = () => {
 
       <div className="flex justify-center gap-5">
         <button
-          onClick={exportToPDF}
+          onClick={downloadZip}
           className="mt-5 mb-7 rounded-md bg-red-700 px-8 py-3 text-white"
         >
           <span className="flex items-center justify-center gap-2">
-            <FaFilePdf size={24} />
-            <p>Descargar PDF</p>
+            {loading ?
+              <span className='flex gap-2 items-center'>
+                <FaSpinner className="text-white animate-spin" />
+                Convirtiendo...
+              </span> :
+              <span className='flex gap-2 items-center'>
+                <FaFilePdf size={24} className="text-white" />
+                <p>Descargar Factura</p>
+              </span>
+            }
           </span>
         </button>
         {datosFactura.selloRemision == null && (

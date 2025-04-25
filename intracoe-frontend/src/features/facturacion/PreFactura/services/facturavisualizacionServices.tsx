@@ -45,6 +45,7 @@ export const generarFacturaService = async (id: string) => {
       condicionOpeacion: response.data.condicion_operacion,
       extension: response.data.json_original.extension,
       ambiente: response.data.json_original.identificacion.ambiente,
+      json: response.data.json_firmado
     };
   } catch (error) {
     console.log(error);
