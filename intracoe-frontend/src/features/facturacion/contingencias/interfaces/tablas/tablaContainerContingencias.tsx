@@ -5,12 +5,15 @@ import { FaCheck } from 'react-icons/fa6';
 import { FcCancel } from 'react-icons/fc';
 import { RiSendPlaneFill } from 'react-icons/ri';
 import styles from '../../style/ContingenciasTable.module.css';
+import { Paginator } from 'primereact/paginator';
 
 interface TablaContainerContingenciasProps {
     contingenciasList: any;
     expandedRows: any;
     setExpandedRows: any;
     rowExpansionTemplate: any;
+    pagination: any;
+    setPagination: any;
 }
 
 export const TablaContainerContingencias: React.FC<
@@ -20,10 +23,19 @@ export const TablaContainerContingencias: React.FC<
     expandedRows,
     setExpandedRows,
     rowExpansionTemplate,
+    pagination,
+    setPagination,
 }) => {
 
+        const onPageChange = (event: any) => {
+            setPagination({
+                ...pagination,
+                currentPage: event.page + 1, // PrimeReact comienza en la página 0
+            });
+        };
+
         useEffect(() => {
-            console.log("**************", contingenciasList)
+            console.log("**************", pagination)
         }, [contingenciasList])
         return (
             <>
@@ -32,8 +44,8 @@ export const TablaContainerContingencias: React.FC<
                     expandedRows={expandedRows}
                     onRowToggle={(e: any) => setExpandedRows(e.data)}
                     rowExpansionTemplate={rowExpansionTemplate}
-                    dataKey="codigo_generacion"
-                    tableStyle={{ minWidth: '100%' }}
+                    dataKey="sello_recepcion"
+                    tableStyle={{ minWidth: '100%', fontSize: '0.9em' }}
                     className={styles.customTable}
                 >
                     <Column expander style={{ width: '3em' }} />
@@ -64,7 +76,7 @@ export const TablaContainerContingencias: React.FC<
                             overflowWrap: 'break-word',
                         }}
                     />
-                    <Column field="cantidad_lote" header="Cantidad lotes" />
+                    <Column field="total_lotes_evento" header="Cantidad lotes" />
                     <Column field="motivo_contingencia" header="Motivo de contingencia" />
                     <Column
                         header="Enviar contingencia"
@@ -78,6 +90,15 @@ export const TablaContainerContingencias: React.FC<
                         )}
                     />
                 </DataTable>
+                <div className="pt-5">
+                    <Paginator
+                        first={(pagination.currentPage - 1) * pagination.pageSize}
+                        rows={pagination.pageSize}
+                        totalRecords={pagination.totalRecords}
+                        rowsPerPageOptions={[10, 25, 50]}
+                        onPageChange={onPageChange}
+                    />
+                </div>
             </>
         );
     };
