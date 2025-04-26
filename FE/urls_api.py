@@ -1,8 +1,10 @@
 
 from django.urls import path
 from FE.api_views import (
-    ContingenciaDteAPIView, ContingenciaDteUnificadoAPIView, ContingenciaListAPIView, EmisorCreateAPIView, EmisorUpdateAPIView, EnviarContingenciaHaciendaAPIView, EnviarFacturaHaciendaAPIView, EnviarLotesHaciendaAPIView, EnvioDteUnificadoAPIView, FacturaDetailAPIView, FacturaListAPIView, FacturaPorCodigoGeneracionAPIView, FinalizarContingenciaAPIView, FirmarContingenciaAPIView, FirmarFacturaAPIView, 
-    GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, LoteContingenciaDteAPIView, LotesDteAPIView, MotivoContingenciaAPIView, MunicipioByDepartamentoAPIView, TopClientes, TopProductosAPIView, TotalVentasAPIView, TotalesPorTipoDTE, autenticacion, EmisorListAPIView, receptorCreateAPIView, receptorDeleteAPIView, receptorDetailAPIView, 
+
+    CondicionOperacionDetailAPIView, ContingenciaDteAPIView, ContingenciaDteUnificadoAPIView, ContingenciaListAPIView, EmisorCreateAPIView, EmisorUpdateAPIView, EnviarContingenciaHaciendaAPIView, EnviarFacturaHaciendaAPIView, EnviarFacturaInvalidacionAPIView, EnviarLotesHaciendaAPIView, EnvioDteUnificadoAPIView, FacturaDetailAPIView, FacturaListAPIView, FacturaPorCodigoGeneracionAPIView, FinalizarContingenciaAPIView, FirmarContingenciaAPIView, FirmarFacturaAPIView, 
+    GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, InvalidarVariasDteAPIView, LoteContingenciaDteAPIView, LotesDteAPIView, MotivoContingenciaAPIView, MunicipioByDepartamentoAPIView, TopClientes, TopProductosAPIView, TotalVentasAPIView, TotalesPorTipoDTE, autenticacion, EmisorListAPIView, receptorCreateAPIView, receptorDeleteAPIView, receptorDetailAPIView, 
+
     receptorListAPIView, receptorUpdateAPIView, GenerarDocumentoAjusteAPIView,
 
     # ACTIVIDAD ECONOMICA
@@ -205,6 +207,7 @@ urlpatterns = [
     
     # CONDICION OPERACION
     path('api/condicion-operacion/', CondicionOperacionListAPIView.as_view(), name='condicion_operacion_list_api'),
+    path('api/condicion-operacion/<int:pk>/', CondicionOperacionDetailAPIView.as_view(), name='condicion_operacion_list_api'),
     path('api/condicion-operacion/crear/', CondicionOperacionCreateAPIView.as_view(), name='condicion-operacion-create'),
     path('api/condicion-operacion/<str:codigo>/', CondicionOperacionRetrieveAPIView.as_view(), name='condicion_operacion_list_api'),
     path('api/condicion-operacion/<int:pk>/editar/', CondicionOperacionUpdateAPIView.as_view(), name='condicion-operacion-update'),
@@ -288,29 +291,35 @@ urlpatterns = [
     path('api/descuento/<int:pk>/eliminar/', DescuentoDestroyAPIView.as_view(), name='descuento-destroy'),
 
     ##################################################################
-    # FIN URLS CATALOGO
+    # URLS FACTURAS
     ##################################################################
-
-    #-----------FACTURA -----------#
     path('api/facturas/', FacturaListAPIView.as_view(), name='api_factura_list'),
     path("api/factura-por-codigo/", FacturaPorCodigoGeneracionAPIView.as_view(), name="factura_por_codigo"),
-    path('api/invalidar_dte/<int:factura_id>/', InvalidarDteUnificadoAPIView.as_view(), name='api_invalidar_firmar_enviar'),
     path('api/factura/generar/', GenerarFacturaAPIView.as_view(), name='generar_factura_api'),
     path('api/factura_pdf/<int:pk>/', FacturaDetailAPIView.as_view(), name='factura_pdf_api'),
     path('api/factura/firmar/<int:factura_id>/', FirmarFacturaAPIView.as_view(), name='firmar_factura_api'),
-    path('api/factura/enviar_hacienda/<int:factura_id>/', EnviarFacturaHaciendaAPIView.as_view(), name='enviar_factura_hacienda_api'),
+    path('api/factura/<int:factura_id>/enviar/',EnviarFacturaHaciendaAPIView.as_view(),name='api-factura-enviar-factura'),
+    #path('api/factura/enviar_hacienda/<int:factura_id>/', EnviarFacturaHaciendaAPIView.as_view(), name='enviar_factura_hacienda_api'),
     path('api/factura_ajuste/generar/', GenerarDocumentoAjusteAPIView.as_view(), name='generar_factura_ajuste_api'), #Nota de credito y nota de debito
     # path('api/facturas/totales-por-tipo/', TotalesPorTipoDTE.as_view(), name='totales-por-tipo'),
     # path('api/facturas/totales-ventas/', TotalVentasAPIView.as_view(), name='total-ventas'),
     # path('api/facturas/clientes/', TopClientes.as_view(), name='Top-clientes'),
     # path('api/facturas/productos/', TopProductosAPIView.as_view(), name='Top-productos'),
 
-    #----------- EMISOR / RECEPTOR -----------#
+
+    ##################################################################
+    # URLS INVALIDACION
+    ##################################################################
+    path('api/invalidar_dte/<int:factura_id>/', InvalidarDteUnificadoAPIView.as_view(), name='api_invalidar_firmar_enviar'),
+    path('api/factura/<int:factura_id>/invalidar/',EnviarFacturaInvalidacionAPIView.as_view(),name='api-factura-invalidar'),
+    path('api/dte/invalidar-lote/',InvalidarVariasDteAPIView.as_view(),name='api-invalidar-lote'),
+    
+    ##################################################################
+    # URLS RECEPTOR --- EMISOR
+    ##################################################################
     path('api/emisor/', EmisorListAPIView.as_view(), name='emisor_list_api'),
     path('api/emisor/editar/<int:pk>/', EmisorUpdateAPIView.as_view(), name='emisor_list_api'),
     path('api/emisor/crear/', EmisorCreateAPIView.as_view(), name='emisor_create_api'),
-
-    #Obtener todos los receptores
     path('api/receptor/', receptorListAPIView.as_view(), name='receptor_list_api'), 
     path('api/receptor/<int:pk>/', receptorDetailAPIView.as_view(), name='receptor_detail_api'), 
     path('api/receptor/crear/', receptorCreateAPIView.as_view(), name='receptor_list_api'), 
@@ -321,7 +330,6 @@ urlpatterns = [
     ##################################################################
     # URLS CONTINGENCIA
     ##################################################################
-
     path('api/contingencia/', ContingenciaListAPIView.as_view(), name='contingencia-list'),
     path('api/contingencia/<int:contingencia_id>/generar/', ContingenciaDteAPIView.as_view(), name='contingencia-dte-generate'),
     #path('api/contingencia/<int:tipo_contingencia_id>/lote/<int:factura_id>/',LoteContingenciaDteAPIView.as_view(),name='lote-contingencia-dte'),
@@ -334,7 +342,6 @@ urlpatterns = [
     path('api/dte/lotes/',LotesDteAPIView.as_view(),name='api-dte-lotes'),
     path('api/dte/enviar-lote/',EnviarLotesHaciendaAPIView.as_view(),name='api-dte-enviar-lote'),
     path('api/contingencia/motivo/',MotivoContingenciaAPIView.as_view(),name='api-contingencia-motivo'),
-
 
 
     ##################################################################

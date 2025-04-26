@@ -99,12 +99,20 @@
                 <i class="bi bi-pencil-square btn-print"></i> Enviar Invalidacion MH
             </button>
         </form>
+        <form action="{% url 'enviar_correo_individual' factura.id %}" method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary btn-sm me-1 btn-print">
+                <i class="bi bi-pencil-square btn-print"></i> Enviar Correo
+            </button>
+        </form>
     </div>
-    
 <div class="container factura-container">
     
     <!-- Datos del Emisor y Datos de la Factura -->
     <div class="row mb-2">
+        {% if factura.envio_correo %}
+            <p class="mb-1"><strong>Correo enviado al receptor:</strong> {{ factura.dtereceptor.correo }}</p>
+        {% endif %}
         <div class="col-md-6 border p-2">
             <div class="d-flex align-items-center">
                 <img src="{% static 'img/logo_empresa.png' %}" alt="Logo Empresa" class="img-fluid me-2" style="max-width: 70px;">

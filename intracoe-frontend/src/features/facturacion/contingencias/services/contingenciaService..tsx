@@ -1,18 +1,19 @@
 import { Contingencias } from '../interfaces/contingenciaInterfaces';
 import { api } from '../../../../shared/services/api';
 
-export const GetAlEventosContingencia = async () => {
+export const GetAlEventosContingencia = async (page: number) => {
   try {
     const response = await api.get<Contingencias>(`/contingencia/`, {
+      params: { page },
       headers: {
-        'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
+        'Content-Type': 'application/json',
       },
     });
-    console.log(response.data);
-    console.log(response.data.results);
 
+    console.log("rrrrrrrrrrrrrrrr",response.data)
     return response.data;
   } catch (error) {
-    console.log(error);
+    console.log('Error en la solicitud de contingencias:', error);
+    return null; // Devolver null si ocurre un error
   }
 };

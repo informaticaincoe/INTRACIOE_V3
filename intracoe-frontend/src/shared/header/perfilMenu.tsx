@@ -12,7 +12,7 @@ import { IoIosLogOut } from 'react-icons/io';
 import { MdPerson } from 'react-icons/md';
 import { HiOutlineStatusOnline } from 'react-icons/hi';
 import { FaCircleCheck, FaRegClock } from 'react-icons/fa6';
-import { TbLogout } from "react-icons/tb";
+import { TbLogout } from 'react-icons/tb';
 
 import { EditableField } from './editableFiedl';
 import {
@@ -247,11 +247,14 @@ export const PerfilMenu: React.FC<PerfilMenuProps> = ({
               className="flex items-center gap-2 hover:cursor-pointer"
               onClick={() => setVisibleChangePassword(true)}
             >
-              <TbLogout size={18}/>
+              <TbLogout size={18} />
               <p className="">Cambiar contraseña</p>
             </span>
             <Divider />
-            <button className="flex items-center gap-2 hover:cursor-pointer" onClick={logoutHandler}>
+            <button
+              className="flex items-center gap-2 hover:cursor-pointer"
+              onClick={logoutHandler}
+            >
               <IoIosLogOut size={20} />
               <p className="">Cerrar sesión</p>
             </button>
