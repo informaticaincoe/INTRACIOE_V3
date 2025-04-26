@@ -71,6 +71,8 @@ export const getFacturaCodigos = async (tipo_dte: string) => {
 
 export const FirmarFactura = async (id: string) => {
   try {
+    console.log("prueba")
+    console.log(id)
     await api.post(`/factura/firmar/${id}/`);
   } catch (error) {
     console.log(error);
@@ -79,7 +81,7 @@ export const FirmarFactura = async (id: string) => {
 
 export const EnviarHacienda = async (id: string) => {
   try {
-    const response = await api.post(`/factura/enviar_hacienda/${id}/`);
+    const response = await api.post(`/factura/${id}/enviar/`);
     return response;
   } catch (error) {
     console.error('Error desde EnviarHacienda:', error);

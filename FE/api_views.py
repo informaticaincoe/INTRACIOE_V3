@@ -1,4 +1,5 @@
-from datetime import datetime, time, timedelta
+from datetime import datetime, timedelta
+import time
 from decimal import ROUND_HALF_UP, ConversionSyntax, Decimal
 from itertools import count
 from pyexpat.errors import messages
@@ -2259,7 +2260,7 @@ class EnviarFacturaHaciendaAPIView(APIView):
             "version": int(factura.json_original["identificacion"]["version"]),
             "tipoDte": str(factura.json_original["identificacion"]["tipoDte"]),
             "documento": documento,
-            "codigoGeneracion": factura.codigo_generacion
+            "codigoGeneracion": str(factura.codigo_generacion)
         }
 
         error_envio = None
