@@ -514,3 +514,10 @@ export interface password {
   old_password: string;
   new_password: string;
 }
+export interface PagoPayload {
+  codigo: string;
+  montoPago: number;
+  referencia: string | null;
+  plazo: number | null;
+  periodo: number | null;
+}
