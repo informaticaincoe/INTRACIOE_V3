@@ -263,11 +263,4 @@ class EventoContingenciaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = EventoContingencia
-        fields = [
-            'id',
-            'recibido_mh',
-            'sello_recepcion',
-            'factura',
-            'lotes',
-            'codigo_generacion',
-        ]
+        fields = '__all__'

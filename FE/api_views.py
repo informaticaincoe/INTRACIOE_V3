@@ -1,4 +1,5 @@
-from datetime import datetime, time, timedelta
+from datetime import datetime, timedelta
+import time
 from decimal import ROUND_HALF_UP, ConversionSyntax, Decimal
 from itertools import count
 from pyexpat.errors import messages
@@ -20,7 +21,7 @@ from rest_framework.pagination import PageNumberPagination
 from .views import (
     contingencia_dte_view, enviar_contingencia_hacienda_view, enviar_factura_hacienda_view, enviar_factura_invalidacion_hacienda_view, enviar_lotes_hacienda_view, 
     finalizar_contigencia_view, firmar_contingencia_view, firmar_factura_anulacion_view, firmar_factura_view, 
-    invalidacion_dte_view, generar_json, num_to_letras, agregar_formas_pago_api, generar_json_contingencia, 
+    invalidacion_dte_view, generar_json, lote_contingencia_dte_view, num_to_letras, agregar_formas_pago_api, generar_json_contingencia, 
     generar_json_doc_ajuste, obtener_fecha_actual, obtener_listado_productos_view
 )
 
@@ -41,7 +42,7 @@ from .models import (
     TipoMoneda, TipoPersona, TipoRetencionIVAMH, TipoTransmision, TipoTransporte, TipoUnidadMedida, TiposDocIDReceptor, EventoInvalidacion, 
     Receptor_fe, TipoInvalidacion, TiposEstablecimientos, TiposServicio_Medico, Token_data, Descuento, FormasPago, TipoGeneracionDocumento, Plazo
 )
-from INVENTARIO.models import Producto, TipoItem, TipoTributo, Tributo, UnidadMedida
+from INVENTARIO.models import Almacen, DetalleDevolucionVenta, DevolucionVenta, MovimientoInventario, Producto, TipoItem, TipoTributo, Tributo, UnidadMedida
 from django.db.models import Q
 from django.core.paginator import Paginator  # esta sigue igual
 
@@ -437,6 +438,10 @@ class Tipo_dteListAPIView(generics.ListAPIView):
     queryset = Tipo_dte.objects.all()
     serializer_class = TipoDteSerializer
 
+class Tipo_dteDetailAPIView(generics.RetrieveAPIView):
+    queryset = Tipo_dte.objects.all()
+    serializer_class = TipoDteSerializer
+
 class Tipo_dteCreateAPIView(generics.CreateAPIView):
     queryset = Tipo_dte.objects.all()
     serializer_class = TipoDteSerializer
@@ -444,6 +449,17 @@ class Tipo_dteCreateAPIView(generics.CreateAPIView):
 class Tipo_dteRetrieveAPIView(generics.RetrieveAPIView):
     queryset = Tipo_dte.objects.all()
     serializer_class = TipoDteSerializer
+
+    def get_object(self):
+        """
+        Sobrescribe el método `get_object()` para que recupere el objeto
+        basándose en el parámetro `codigo` en lugar de `id`.
+        """
+        codigo = self.kwargs['codigo']
+        # Usamos get_object_or_404 para simplificar la obtención y manejo de errores
+        tipo_dte = get_object_or_404(Tipo_dte, codigo=codigo)
+        return tipo_dte
+
 
 class Tipo_dteUpdateAPIView(generics.UpdateAPIView):
     queryset = Tipo_dte.objects.all()
@@ -479,6 +495,10 @@ class TiposDocIDReceptorListAPIView(generics.ListAPIView):
     queryset = TiposDocIDReceptor.objects.all()
     serializer_class = TiposDocIDReceptorSerializer
 
+class TiposDocIDReceptorDetailAPIView(generics.RetrieveAPIView):
+    queryset = TiposDocIDReceptor.objects.all()
+    serializer_class = TiposDocIDReceptorSerializer
+
 class TiposDocIDReceptorCreateAPIView(generics.CreateAPIView):
     queryset = TiposDocIDReceptor.objects.all()
     serializer_class = TiposDocIDReceptorSerializer
@@ -486,6 +506,14 @@ class TiposDocIDReceptorCreateAPIView(generics.CreateAPIView):
 class TiposDocIDReceptorRetrieveAPIView(generics.RetrieveAPIView):
     queryset = TiposDocIDReceptor.objects.all()
     serializer_class = TiposDocIDReceptorSerializer
+
+    def get_object(self):
+        """
+        Sobrescribe el método `get_object()` para que recupere el objeto
+        basándose en el parámetro `codigo` en lugar de `id`.
+        """
+        codigo = self.kwargs['codigo']
+        return TiposDocIDReceptor.objects.get(codigo=codigo)
 
 class TiposDocIDReceptorUpdateAPIView(generics.UpdateAPIView):
     queryset = TiposDocIDReceptor.objects.all()
@@ -569,6 +597,10 @@ class MunicipioByDepartamentoAPIView(generics.ListAPIView):
     
 # ========= CONDICION OPERACION =========
 class CondicionOperacionListAPIView(generics.ListAPIView):
+    queryset = CondicionOperacion.objects.all()
+    serializer_class = CondicionOperacionSerializer
+
+class CondicionOperacionDetailAPIView(generics.RetrieveAPIView):
     queryset = CondicionOperacion.objects.all()
     serializer_class = CondicionOperacionSerializer
 
@@ -1018,6 +1050,7 @@ class GenerarFacturaAPIView(APIView):
     # permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, format=None):
+        
         # Inicializamos las variables globales (aunque es recomendable evitar globals)
         global productos_ids_r, cantidades_prod_r, documentos_relacionados, descuentos_r
         productos_ids_r = []
@@ -1025,8 +1058,7 @@ class GenerarFacturaAPIView(APIView):
         documentos_relacionados = []
         descuentos_r = []
         
-        global tipo_documento_dte
-        tipo_dte = tipo_documento_dte
+        tipo_dte = request.query_params.get('tipo_dte', '01')
 
         emisor_obj = Emisor_fe.objects.first()
         if emisor_obj:
@@ -2031,360 +2063,257 @@ class GenerarDocumentoAjusteAPIView(APIView):
             print(f"Error al generar la factura: {e}")
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+######################################################
+# FIRMA Y ENVIO DE DOCUMENTOS A MH
+######################################################
+
 class FirmarFacturaAPIView(APIView):
     """
-    Firma la factura y, si ya está firmada, la envía a Hacienda.
+    POST /api/factura/{factura_id}/firmar/
+    Firma el DTE de la factura y maneja contingencia si falla.
     """
-
+    @transaction.atomic
     def post(self, request, factura_id, format=None):
-        print("-Inicio firma DTE api view")
         factura = get_object_or_404(FacturaElectronica, id=factura_id)
+        fecha_actual = obtener_fecha_actual()
 
-        token_data = Token_data.objects.filter(activado=True).first()
-        if not token_data:
-            return Response(
-                {"error": "No hay token activo registrado en la base de datos."},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+        contingencia = True
+        mensaje = None
+        motivo_otro = False
+        tipo_contingencia_obj = None
+        intentos_max = 3
+        response_data = {}
 
-        if not os.path.exists(CERT_PATH):
-            return Response(
-                {"error": "No se encontró el certificado en la ruta especificada."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        # Leer intentos previos de sesión
+        intentos_sesion = request.session.get('intentos_reintento', 0)
 
-        # Verificar y formatear el JSON original de la factura
-        try:
-            if isinstance(factura.json_original, dict):
-                dte_json_str = json.dumps(factura.json_original, separators=(',', ':'))
-            else:
-                json_obj = json.loads(factura.json_original)
-                dte_json_str = json.dumps(json_obj, separators=(',', ':'))
-        except Exception as e:
-            return Response(
-                {"error": "El JSON original de la factura no es válido", "detalle": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Construir el payload con los parámetros requeridos
-        payload = {
-            "nit": "06142811001040",   # Nit del contribuyente
-            "activo": True,            # Indicador activo
-            "passwordPri": "3nCr!pT@d0Pr1v@d@",   # Contraseña de la llave privada
-            "dteJson": factura.json_original    # JSON del DTE (se envía tal cual)
-        }
-
-        headers = {"Content-Type": "application/json"}
-
-        try:
-            response = requests.post(FIRMADOR_URL, json=payload, headers=headers)
-
+        # Ciclo de intentos
+        for intento in range(1, intentos_max + 1):
+            # Verificar token activo
+            token_data = Token_data.objects.filter(activado=True).first()
+            if not token_data:
+                return Response({"error": "No hay token activo."}, status=status.HTTP_401_UNAUTHORIZED)
+            # Verificar certificado
+            if not os.path.exists(CERT_PATH):
+                return Response({"error": "Certificado no encontrado."}, status=status.HTTP_400_BAD_REQUEST)
+            # Preparar JSON a firmar
             try:
-                response_data = response.json()
+                if isinstance(factura.json_original, dict):
+                    dte_obj = factura.json_original
+                else:
+                    dte_obj = json.loads(factura.json_original)
             except Exception as e:
-                response_data = {"error": "No se pudo parsear JSON", "detalle": response.text}
+                return Response({"error": "JSON inválido", "detalle": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Guardar la respuesta en la factura para depuración y marcar como firmado
-            factura.json_firmado = response_data
-            factura.firmado = True
-            factura.save()
+            payload = {
+                "nit": str(factura.dteemisor.nit),
+                "activo": True,
+                "passwordPri": str(factura.dteemisor.clave_privada),
+                "dteJson": dte_obj
+            }
+            try:
+                resp = requests.post(FIRMADOR_URL, json=payload, headers={"Content-Type": "application/json"}, timeout=30)
+                try:
+                    response_data = resp.json()
+                except ValueError:
+                    response_data = {"error": "No se pudo parsear JSON", "detalle": resp.text}
+                # Éxito
+                if resp.status_code == 200 and response_data.get("status") == "OK":
+                    factura.json_firmado = response_data
+                    factura.firmado = True
+                    factura.save()
+                    # Resetear intentos en sesión
+                    request.session['intentos_reintento'] = 0
+                    request.session.modified = True
+                    contingencia = False
+                    return Response({
+                        "mensaje": "Firma exitosa",
+                        "detalle": response_data
+                    }, status=status.HTTP_200_OK)
+                # Error transitorio o definitivo
+                if resp.status_code in [500,502,503,504,408]:
+                    tipo_contingencia_obj = TipoContingencia.objects.get(codigo="1")
+                elif resp.status_code in [408,499]:
+                    tipo_contingencia_obj = TipoContingencia.objects.get(codigo="2")
+                elif resp.status_code in [503,504]:
+                    tipo_contingencia_obj = TipoContingencia.objects.get(codigo="4")
+                else:
+                    tipo_contingencia_obj = TipoContingencia.objects.get(codigo="5")
+                    motivo_otro = True
+                    mensaje = f"Error en firma: {resp.status_code}"
+                time.sleep(8)
+            except requests.RequestException as e:
+                tipo_contingencia_obj = TipoContingencia.objects.get(codigo="1")
+                time.sleep(8)
+            # continue next attempt
 
-            # Verificar si la firma fue exitosa
-            if response.status_code == 200 and response_data.get("status") == "OK":
-                # (Opcional) Guardar el JSON firmado en un archivo
-                json_signed_path = f"FE/json_facturas_firmadas/{factura.codigo_generacion}.json"
-                os.makedirs(os.path.dirname(json_signed_path), exist_ok=True)
-                with open(json_signed_path, "w", encoding="utf-8") as json_file:
-                    json.dump(response_data, json_file, indent=4, ensure_ascii=False)
-
-                return Response({
-                    "mensaje": "Factura firmada correctamente",
-                    "redirect": reverse('detalle_factura', args=[factura_id])
-                }, status=status.HTTP_200_OK)
-            else:
-                return Response({
-                    "error": "Error al firmar la factura",
-                    "detalle": response_data
-                }, status=status.HTTP_400_BAD_REQUEST)
-        except requests.exceptions.RequestException as e:
+        # Si tras todos los intentos sigue en contingencia
+        if contingencia:
+            # Crear evento de contingencia si aplica
+            if intentos_sesion == 0:
+                finalizar_contigencia_view(request)
+                factura.estado = False
+                factura.contingencia = True
+                factura.tipomodelo = Modelofacturacion.objects.get(codigo="2")
+                factura.tipotransmision = TipoTransmision.objects.get(codigo="2")
+                factura.fecha_modificacion = fecha_actual.date()
+                factura.hora_modificacion = fecha_actual.time()
+                factura.save()
+                lote_contingencia_dte_view(request, factura_id, tipo_contingencia_obj)
+            # Actualizar sesión
+            request.session['intentos_reintento'] = intentos_sesion + 1
+            request.session.modified = True
             return Response({
-                "error": "Error de conexión con el firmador",
-                "detalle": str(e)
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                "error": "No se pudo firmar el DTE después de varios intentos",
+                "motivo_otro": motivo_otro
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Caso inesperado
+        return Response({"error": "Error inesperado en firma"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class EnviarFacturaHaciendaAPIView(APIView):
     """
-    Vista API para enviar la factura a Hacienda.
-    Se espera que la URL reciba el parámetro factura_id.
+    POST /api/factura/{factura_id}/enviar/
+    Autentica con MH, envía el DTE, registra movimientos de inventario y maneja contingencia.
     """
+    @transaction.atomic
     def post(self, request, factura_id, format=None):
-        print("Inicio enviar factura a MH")
-        
-        contingencia = True
-        intento = 1
-        intentos_max = 3  # Número máximo de reintentos
-        tipo_contiengencia_obj = None
-        mensaje = None
-
-        # Buscar la factura por su id
         factura = get_object_or_404(FacturaElectronica, id=factura_id)
-
-        # PASO 1: Autenticación con el servicio de Hacienda
-        nit_empresa = str(emisor_fe.nit)  # Ejemplo: "06142811001040"
-        pwd = str(emisor_fe.clave_publica)  # Ejemplo: "Q#3P9l5&@aF!gT2sA"
+        fecha_actual = obtener_fecha_actual()
+        print("factura_id: ", factura_id)
+        
+        # Paso 1: Autenticación
+        nit = str(emisor_fe.nit)
+        pwd = str(emisor_fe.clave_publica)
         auth_url = "https://api.dtes.mh.gob.sv/seguridad/auth"
         auth_headers = {
             "Content-Type": "application/x-www-form-urlencoded",
             "User-Agent": "MiAplicacionDjango/1.0"
         }
-        auth_data = {"user": nit_empresa, "pwd": pwd}
-        auth_response = None
+        auth_data = {"user": nit, "pwd": pwd}
 
-        print("Inicio response autenticacion")
-        while intento <= intentos_max:
-            print(f"Intento {intento} de {intentos_max}")
+        contingencia = True
+        error_auth = None
+        for intento in range(1, 4):
             try:
-                auth_response = requests.post(auth_url, data=auth_data, headers=auth_headers)
-                print("Autenticacion response:", auth_response)
-            except requests.exceptions.RequestException as e:
-                tipo_contiengencia_obj = TipoContingencia.objects.get(codigo="3")
-                time.sleep(8)
-                intento += 1
-                mensaje = "Error de conexión con el servicio de autenticación: " + str(e)
-                print(mensaje)
-                continue
-
-            if auth_response:
-                try:
-                    auth_response_data = auth_response.json()
-                except ValueError:
-                    print("Error al decodificar la respuesta de autenticación")
-                    mensaje = "Error al decodificar la respuesta de autenticación"
-                    auth_response.status_code = 500
-                    time.sleep(8)
-                    intento += 1
-                    continue
-
-                print("Autenticacion:", auth_response)
-                if auth_response.status_code == 200:
-                    token_body = auth_response_data.get("body", {})
-                    token = token_body.get("token")
-                    token_type = token_body.get("tokenType", "Bearer")
-                    roles = token_body.get("roles", [])
-
-                    if token and token.startswith("Bearer "):
-                        token = token[len("Bearer "):]
-
-                    token_data_obj, created = Token_data.objects.update_or_create(
-                        nit_empresa=nit_empresa,
+                resp = requests.post(auth_url, data=auth_data, headers=auth_headers, timeout=30)
+                if resp.status_code == 200:
+                    body = resp.json().get("body", {})
+                    token = body.get("token", "")
+                    if token.startswith("Bearer "):
+                        token = token.split(" ", 1)[1]
+                    Token_data.objects.update_or_create(
+                        nit_empresa=nit,
                         defaults={
-                            'password_hacienda': pwd,
-                            'token': token,
-                            'token_type': token_type,
-                            'roles': roles,
-                            'activado': True,
-                            'fecha_caducidad': timezone.now() + timedelta(days=1)
+                            "password_hacienda": pwd,
+                            "token": token,
+                            "token_type": body.get("tokenType", "Bearer"),
+                            "roles": body.get("roles", []),
+                            "activado": True,
+                            "fecha_caducidad": timezone.now() + timedelta(days=1)
                         }
                     )
                     contingencia = False
-                    break  # Se obtuvo autenticación exitosa
-                elif auth_response.status_code == 500:
-                    tipo_contiengencia_obj = TipoContingencia.objects.get(codigo="1")
-                    time.sleep(8)
-                    print(f"Error {auth_response.status_code} - intento {intento}")
-                    intento += 1
-                elif auth_response.status_code in [502, 503]:
-                    tipo_contiengencia_obj = TipoContingencia.objects.get(codigo="2")
-                    time.sleep(8)
-                    print(f"Error {auth_response.status_code} - intento {intento}")
-                    intento += 1
-                elif auth_response.status_code == "E010":
-                    tipo_contiengencia_obj = TipoContingencia.objects.get(codigo="3")
-                    time.sleep(8)
-                    print(f"Error {auth_response.status_code} - intento {intento}")
-                    intento += 1
-                elif auth_response.status_code in ["E015", "E019"]:
-                    tipo_contiengencia_obj = TipoContingencia.objects.get(codigo="4")
-                    time.sleep(8)
-                    print(f"Error {auth_response.status_code} - intento {intento}")
-                    intento += 1
+                    break
                 else:
-                    mensaje = "Error en la autenticación: " + str(auth_response.status_code)
-                    time.sleep(8)
-                    intento += 1
-                print(f"error: {auth_response.status_code}, tipo contingencia: {tipo_contiengencia_obj}")
+                    error_auth = f"Auth failed {resp.status_code}"
+            except requests.RequestException as e:
+                error_auth = str(e)
+            time.sleep(8)
+        print("factura_id1: ", factura_id)
+        print("datos: ", request)
 
-        # Verificar que se obtuvo un token activo
-        token_data_obj = Token_data.objects.filter(activado=True).first()
-        if not token_data_obj or not token_data_obj.token:
-            return Response({"error": "No hay token activo para enviar la factura"},
-                            status=status.HTTP_401_UNAUTHORIZED)
 
-        codigo_generacion_str = str(factura.codigo_generacion)
+        if contingencia:
+            return Response(
+                {"error": "No se autenticó con Hacienda", "detalle": error_auth},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        # PASO 2: Validar y limpiar el documento firmado
-        documento_str = factura.json_firmado
-        if not isinstance(documento_str, str):
-            documento_str = json.dumps(documento_str)
-        documento_str = documento_str.lstrip('\ufeff').strip()
+        # Paso 2: Envío del DTE
+        token_obj = Token_data.objects.filter(activado=True).first()
+        if not token_obj or not token_obj.token:
+            return Response({"error": "Sin token activo"}, status=status.HTTP_401_UNAUTHORIZED)
+
         try:
-            if isinstance(factura.json_firmado, str):
-                firmado_data = json.loads(factura.json_firmado)
-            else:
-                firmado_data = factura.json_firmado
+            dte_json = factura.json_firmado
+            if isinstance(dte_json, str):
+                dte_json = json.loads(dte_json)
         except Exception as e:
-            return Response({
-                "error": "Error al parsear el documento firmado",
-                "detalle": str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "JSON firmado inválido", "detalle": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        documento_token = firmado_data.get("body", "")
-        if not documento_token:
-            return Response({
-                "error": "El documento firmado no contiene el token en 'body'"
-            }, status=status.HTTP_400_BAD_REQUEST)
-        documento_token = documento_token.strip()
+        documento = dte_json.get("body", "").strip()
 
-        # Armar el JSON de envío
-        envio_json = {
-            "ambiente": AMBIENTE.codigo,  # Ejemplo: "00" para pruebas, "01" para producción
+        print("documento: ", documento)
+
+        if not documento:
+            return Response(
+                {"error": "Falta token en 'body' del JSON firmado"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        envio_url = "https://api.dtes.mh.gob.sv/fesv/recepciondte"
+        envio_headers = {
+            "Authorization": f"Bearer {token_obj.token}",
+            "User-Agent": "MiAplicacionDjango/1.0",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "ambiente": AMBIENTE.codigo,
             "idEnvio": factura.id,
             "version": int(factura.json_original["identificacion"]["version"]),
             "tipoDte": str(factura.json_original["identificacion"]["tipoDte"]),
-            "documento": documento_token,  # Se envía el JWT firmado
-            "codigoGeneracion": codigo_generacion_str
+            "documento": documento,
+            "codigoGeneracion": str(factura.codigo_generacion)
         }
 
-        envio_headers = {
-            "Authorization": f"Bearer {token_data_obj.token}",
-            "User-Agent": "DjangoApp",
-            "Content-Type": "application/json"
-        }
-
-        try:
-            print("Inicio envío a Hacienda")
-            envio_response = requests.post(
-                "https://api.dtes.mh.gob.sv/fesv/recepciondte",
-                json=envio_json,
-                headers=envio_headers
-            )
-            print("Envio response status code:", envio_response.status_code)
-            print("Envio response headers:", envio_response.headers)
-            print("Envio response text:", envio_response.text)
-
+        error_envio = None
+        for intento in range(1, 4):
             try:
-                response_data = envio_response.json() if envio_response.text.strip() else {}
-            except ValueError as e:
-                response_data = {"raw": envio_response.text or "No content"}
-                print("Error al decodificar JSON en envío:", e)
+                resp = requests.post(envio_url, json=payload, headers=envio_headers, timeout=30)
+                data = resp.json() if resp.text.strip() else {}
+                if resp.status_code == 200 and data.get("selloRecibido"):
+                    # Actualizar factura
+                    factura.sello_recepcion = data["selloRecibido"]
+                    factura.recibido_mh = True
+                    factura.contingencia = False
+                    factura.json_original = {**factura.json_original, "jsonRespuestaMh": data}
+                    factura.save()
 
-            if envio_response.status_code == 200:
-                factura.sello_recepcion = response_data.get("selloRecibido", "")
-                factura.recibido_mh = True
-                # Guardar la respuesta de MH en el campo json_original
-                json_response_data = {"jsonRespuestaMh": response_data}
-                json_original = factura.json_original
-                # Combinar ambos diccionarios (usa el operador | para fusionar en Python 3.9+)
-                factura.json_original = json_original | json_response_data
-                factura.estado = True
-                factura.save()
-                contingencia = False
+                    # Registrar movimiento de inventario
+                    for det in factura.detalles.all():
+                        almacen = det.producto.almacenes.first() or Almacen.objects.first()
+                        MovimientoInventario.objects.create(
+                            producto=det.producto,
+                            almacen=almacen,
+                            tipo='Salida',
+                            cantidad=det.cantidad,
+                            referencia=f"Factura {factura.codigo_generacion}"
+                        )
+                    # Finalizar contingencias
+                    finalizar_contigencia_view(request)
 
-                # Actualización de contingencias: se buscan eventos en las últimas 24 horas
-                el_salvador_tz = pytz.timezone('America/El_Salvador')
-                hora_actual = timezone.now().astimezone(el_salvador_tz)
-                plazo_transmitir_contingencia = (hora_actual - timedelta(hours=24)).replace(second=0, microsecond=0)
-                contingencia_registrada = EventoContingencia.objects.filter(
-                    hora_transmision=plazo_transmitir_contingencia, finalizado=False
-                )
-                print("Contingencias registradas:", contingencia_registrada)
-                if contingencia_registrada.exists():
-                    for contingencia_activa in contingencia_registrada:
-                        if not contingencia_activa.finalizado:
-                            contingencia_activa.finalizado = True
-                            contingencia_activa.save()
-                else:
-                    mensaje = "Contingencias no encontradas"
-
-                return Response({
-                    "mensaje": "Factura enviada con éxito",
-                    "respuesta": response_data
-                }, status=status.HTTP_200_OK)
-
-            elif envio_response.status_code == 500:
-                tipo_contiengencia_obj = TipoContingencia.objects.get(codigo="1")
-                factura.save()
-                time.sleep(8)
-                print("Error en el envío de la factura - intento", intento)
-                intento += 1
-            elif envio_response.status_code in [502, 503]:
-                tipo_contiengencia_obj = TipoContingencia.objects.get(codigo="2")
-                factura.save()
-                time.sleep(8)
-                print("Error en el envío de la factura - intento", intento)
-                intento += 1
-            elif envio_response.status_code == "E010":
-                tipo_contiengencia_obj = TipoContingencia.objects.get(codigo="3")
-                factura.save()
-                time.sleep(8)
-                print("Error en el envío de la factura - intento", intento)
-                intento += 1
-            elif envio_response.status_code in ["E015", "E019"]:
-                tipo_contiengencia_obj = TipoContingencia.objects.get(codigo="4")
-                factura.save()
-                time.sleep(8)
-                print("Error en el envío de la factura - intento", intento)
-                intento += 1
-            else:
-                factura.estado = False
-                factura.save()
-                print("Error en el envío de la factura - intento", intento)
-            print(f"error: {envio_response.status_code}, tipo contingencia: {tipo_contiengencia_obj}")
-
-        except requests.exceptions.RequestException as e:
-            tipo_contiengencia_obj = TipoContingencia.objects.get(codigo="1")
-            factura.estado = False
-            factura.contingencia = True
-            factura.save()
-            contingencia = True
-            time.sleep(8)
-            intento += 1
-
-        try:
-            # Si se está en contingencia, se actualiza la factura y se asocia a un evento de contingencia
-            if contingencia:
-                factura.estado = False
-                factura.contingencia = True
-                factura.tipomodelo = Modelofacturacion.objects.get(codigo="2")  # Modelo "Diferido"
-                factura.tipotransmision = TipoTransmision.objects.get(codigo="2")  # Transmisión por Contingencia
-                factura.save()
-
-                evento_contingencia = EventoContingencia.objects.filter(finalizado=False).first()
-                print("Contingencia encontrada:", evento_contingencia)
-                if evento_contingencia:
-                    evento_contingencia.factura.add(factura)
-                    evento_contingencia.save()
-                    print("Se agregó la factura al evento de contingencia existente")
-                else:
-                    print("Creando nueva contingencia")
-                    codigo_generacion_contingencia = str(uuid.uuid4()).upper()
-                    evento_contingencia = EventoContingencia.objects.create(
-                        codigo_generacion=codigo_generacion_contingencia,
-                        estado=False,
-                        tipo_contingencia=tipo_contiengencia_obj
+                    return Response(
+                        {"mensaje": "Factura enviada con éxito", "respuesta": data},
+                        status=status.HTTP_200_OK
                     )
-                    evento_contingencia.factura.add(factura)
-                    evento_contingencia.save()
-                return Response({
-                    "mensaje": "Factura en contingencia, no se pudo enviar a Hacienda. Se creó evento de contingencia.",
-                    "factura_id": factura.id
-                }, status=status.HTTP_200_OK)
-            else:
-                return Response({
-                    "error": "Error de conexión con Hacienda"
-                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    error_envio = f"Envio failed {resp.status_code}"
+            except requests.RequestException as e:
+                error_envio = str(e)
+            time.sleep(8)
+
+        # Si llegó aquí, envió falló repetidamente → contingencia
+        factura.estado = False
+        factura.contingencia = True
+        factura.save()
+        return Response(
+            {"error": "Error al enviar factura", "detalle": error_envio},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 ######################################################
 # EVENTOS DE INVALIDACION
@@ -2569,6 +2498,226 @@ class FacturaListAPIView(generics.ListAPIView):
                 
 
         return queryset
+
+# ENVIAR FACTURA INVALIDACION HACIENDA
+class EnviarFacturaInvalidacionAPIView(APIView):
+    """
+    POST /api/factura/{factura_id}/invalidar/
+    Autentica con MH, envía la invalidación de la factura,
+    reingresa el inventario y registra la devolución de venta.
+    """
+    @transaction.atomic
+    def post(self, request, factura_id, format=None):
+        # 1) Autenticación con MH
+        nit = "06142811001040"
+        pwd = "Q#3P9l5&@aF!gT2sA"
+        auth_url = "https://api.dtes.mh.gob.sv/seguridad/auth"
+        auth_resp = requests.post(auth_url,
+                                  data={"user": nit, "pwd": pwd},
+                                  headers={
+                                      "Content-Type": "application/x-www-form-urlencoded",
+                                      "User-Agent": "MiAplicacionDjango/1.0"
+                                  },
+                                  timeout=30)
+        try:
+            auth_body = auth_resp.json().get("body", {})
+        except ValueError:
+            return Response(
+                {"error": "Error al decodificar autenticación", "detalle": auth_resp.text},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        if auth_resp.status_code != 200:
+            return Response(
+                {"error": "Autenticación fallida", "detalle": auth_body.get("message", auth_resp.text)},
+                status=auth_resp.status_code
+            )
+
+        token = auth_body.get("token", "")
+        if token.startswith("Bearer "):
+            token = token.split(" ", 1)[1]
+        Token_data.objects.update_or_create(
+            nit_empresa=nit,
+            defaults={
+                "password_hacienda": pwd,
+                "token": token,
+                "token_type": auth_body.get("tokenType", "Bearer"),
+                "roles": auth_body.get("roles", []),
+                "activado": True,
+                "fecha_caducidad": timezone.now() + timedelta(days=1)
+            }
+        )
+
+        # 2) Obtener evento de invalidación
+        evento = get_object_or_404(EventoInvalidacion, factura__id=factura_id)
+
+        # 3) Validar JSON firmado
+        try:
+            firmado = evento.json_firmado
+            if isinstance(firmado, str):
+                firmado = json.loads(firmado)
+        except Exception as e:
+            return Response(
+                {"error": "JSON firmado inválido", "detalle": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        documento = firmado.get("body", "").strip()
+        if not documento:
+            return Response(
+                {"error": "El JSON firmado no contiene 'body'"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 4) Envío de invalidación a Hacienda
+        envio_url = "https://api.dtes.mh.gob.sv/fesv/anulardte"
+        envio_headers = {
+            "Authorization": f"Bearer {token}",
+            "User-Agent": "MiAplicacionDjango/1.0",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "ambiente": "01",
+            "idEnvio": evento.id,
+            "version": int(evento.json_invalidacion["identificacion"]["version"]),
+            "documento": documento
+        }
+        try:
+            resp = requests.post(envio_url, json=payload, headers=envio_headers, timeout=30)
+            try:
+                data = resp.json()
+            except ValueError:
+                data = {"raw": resp.text}
+        except requests.RequestException as e:
+            return Response(
+                {"error": "Error de conexión con Hacienda", "detalle": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        # 5) Procesar respuesta
+        if resp.status_code == 200:
+            # Actualizar evento
+            evento.sello_recepcion = data.get("selloRecibido", "")
+            evento.recibido_mh = True
+            evento.json_invalidacion = {**evento.json_invalidacion, "jsonRespuestaMh": data}
+            evento.estado = True
+            evento.save()
+
+            # 6) Reingresar inventario y registrar devolución
+            factura = evento.factura
+            devolucion = DevolucionVenta.objects.create(
+                num_factura=factura.numero_control,
+                motivo="Devolución por invalidación",
+                estado="Aprobada",
+                usuario=request.user.username if request.user.is_authenticated else None
+            )
+            for det in factura.detalles.all():
+                DetalleDevolucionVenta.objects.create(
+                    devolucion=devolucion,
+                    producto=det.producto,
+                    cantidad=det.cantidad,
+                    motivo_detalle="Reingreso automático por invalidación"
+                )
+                almacen = det.producto.almacenes.first() or Almacen.objects.first()
+                MovimientoInventario.objects.create(
+                    producto=det.producto,
+                    almacen=almacen,
+                    tipo='Entrada',
+                    cantidad=det.cantidad,
+                    referencia=f"Invalidación Factura {factura.codigo_generacion}"
+                )
+                Producto.objects.filter(pk=det.producto.pk).update(
+                    stock=F('stock') + det.cantidad
+                )
+
+            return Response(
+                {"mensaje": "Factura invalidada con éxito", "respuesta": data},
+                status=status.HTTP_200_OK
+            )
+        else:
+            # Error al invalidar
+            evento.estado = False
+            evento.save()
+            return Response(
+                {"error": "Error al invalidar", "detalle": data},
+                status=resp.status_code
+            )
+
+# INVALIDACION DE VARIOS DTE
+class InvalidarVariasDteAPIView(APIView):
+    """
+    POST /api/dte/invalidar-lote/
+    Invalidación en lote de múltiples DTEs: crea evento, firma, envía, y reingresa stock.
+    """
+    @transaction.atomic
+    def post(self, request, format=None):
+        factura_ids = request.data.get('factura_ids')
+        if not isinstance(factura_ids, list):
+            return Response(
+                {"error": "Se requiere 'factura_ids' como lista."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        results = []
+        for factura_id in factura_ids:
+            entry = {"factura_id": factura_id}
+            # 1) Invalidación DTE
+            resp_inv = invalidacion_dte_view(request, factura_id)
+            if getattr(resp_inv, 'status_code', None) != 302:
+                entry.update({
+                    "mensaje": "Error en invalidación",
+                    "detalle": getattr(resp_inv, 'content', b'').decode(errors='ignore')
+                })
+                results.append(entry)
+                continue
+            # 2) Firma invalidación
+            resp_firma = firmar_factura_anulacion_view(request, factura_id)
+            if getattr(resp_firma, 'status_code', None) != 302:
+                entry.update({
+                    "mensaje": "Error en firma",
+                    "detalle": getattr(resp_firma, 'content', b'').decode(errors='ignore')
+                })
+                results.append(entry)
+                continue
+            # 3) Envío a Hacienda
+            resp_env = enviar_factura_invalidacion_hacienda_view(request, factura_id)
+            content_env = getattr(resp_env, 'content', b'')
+            # 4) Procesar estado en BD
+            evento = EventoInvalidacion.objects.filter(factura__id=factura_id).first()
+            if evento and evento.estado:
+                entry['mensaje'] = 'Factura invalidada con éxito'
+                # Reingresar inventario y registrar devolución
+                factura = get_object_or_404(FacturaElectronica, id=factura_id)
+                devolucion = DevolucionVenta.objects.create(
+                    num_factura=factura.numero_control,
+                    motivo='Devolución por invalidación múltiple',
+                    estado='Aprobada',
+                    usuario=request.user.username if request.user and request.user.is_authenticated else None
+                )
+                for detalle in factura.detalles.all():
+                    DetalleDevolucionVenta.objects.create(
+                        devolucion=devolucion,
+                        producto=detalle.producto,
+                        cantidad=detalle.cantidad,
+                        motivo_detalle='Reingreso automático por invalidación'
+                    )
+                    almacen = detalle.producto.almacenes.first() or Almacen.objects.first()
+                    MovimientoInventario.objects.create(
+                        producto=detalle.producto,
+                        almacen=almacen,
+                        tipo='Entrada',
+                        cantidad=detalle.cantidad,
+                        referencia=f'Reingreso invalidación Factura {factura.numero_control}'
+                    )
+                    Producto.objects.filter(pk=detalle.producto.pk).update(
+                        stock=F('stock') + detalle.cantidad
+                    )
+            else:
+                entry['mensaje'] = 'No se pudo invalidar la factura'
+            # 5) Detalle de respuesta de envío
+            try:
+                entry['detalle'] = json.loads(content_env)
+            except Exception:
+                entry['detalle'] = content_env.decode(errors='ignore')
+            results.append(entry)
+        return Response({"results": results}, status=status.HTTP_200_OK)
 
 
 ######################################################

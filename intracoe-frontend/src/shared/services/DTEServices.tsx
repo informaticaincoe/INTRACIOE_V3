@@ -2,12 +2,12 @@
 import { TipoDTE } from '../interfaces/interfaces';
 import { api } from './api';
 
-export const DTEByCode = async (dte_id: string): Promise<TipoDTE> => {
+export const DTEByCode = async (dte_code: string): Promise<TipoDTE> => {
   try {
-    const response = await api.get<TipoDTE>(`/tipo-dte/${dte_id}/`);
+    const response = await api.get<TipoDTE>(`/tipo-dte/${dte_code}/`);
     return response.data;
   } catch (error) {
-    console.error(`Error fetching DTE with id ${dte_id}:`, error);
+    console.error(`Error fetching DTE with id ${dte_code}:`, error);
     throw new Error('Error fetching DTE by code');
   }
 };
