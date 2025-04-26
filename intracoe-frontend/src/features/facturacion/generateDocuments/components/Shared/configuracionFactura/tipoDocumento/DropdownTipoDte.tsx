@@ -18,7 +18,6 @@ export const DropDownTipoDte: React.FC<
 }) => {
 
   useEffect(()=>{
-    console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@",tipoDocumento)
 
   },[tipoDocumento])
 

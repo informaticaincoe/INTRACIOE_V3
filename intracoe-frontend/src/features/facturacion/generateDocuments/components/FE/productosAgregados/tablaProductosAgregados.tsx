@@ -59,9 +59,6 @@ export const TablaProductosAgregados: React.FC<
     const auxDescuento = listProducts.map(
       (product) => product.descuento?.porcentaje
     );
-    console.log(auxDescuento);
-
-    console.log(auxCantidad);
 
     setCantidadListProducts(auxCantidad);
     setIdListProducts(auxId);
@@ -135,7 +132,6 @@ export const TablaProductosAgregados: React.FC<
   };
 
   const handleDelete = () => {
-    console.log('auxSelectedProducts', auxSelectedProducts);
     setVisibleDeleteModal(true);
   };
 
