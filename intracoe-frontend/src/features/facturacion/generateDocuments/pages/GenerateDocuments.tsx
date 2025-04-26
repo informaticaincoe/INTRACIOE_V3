@@ -125,7 +125,7 @@ export const GenerateDocuments = () => {
     setTotalAPagar(aux);
   };
 
-  
+
 
   useEffect(() => {
     const descuentosAux: number[] = selectedProducts.map((producto) => {
@@ -140,47 +140,77 @@ export const GenerateDocuments = () => {
 
   const generarFactura = async () => {
     console.log(descuentoItem);
+    // const dataFECF = {
+    //   numero_control: numeroControl,
+    //   receptor_id: receptor.id,
+    //   nit_receptor: receptor.num_documento,
+    //   nombre_receptor: receptor.nombre,
+    //   direccion_receptor: receptor.direccion,
+    //   telefono_receptor: receptor.telefono,
+    //   correo_receptor: receptor.correo,
+    //   tipo_item_select: 1, //TODO: obtener segun la lista de productos de forma dinamica (bien o servicio)
+    //   descuento_select: descuentosProducto, //TODO: Implementar con cambios pendiente de la api
+    //   // descuento_select: '0.00',
+    //   tipo_documento_seleccionado: tipoDocumentoSelected?.codigo ?? '01', //tipo DTE
+    //   condicion_operacion: selectedCondicionDeOperacion, //contado, credito, otros
+    //   observaciones: observaciones,
+    //   productos_ids: idListProducts,
+    //   cantidades: cantidadListProducts, //cantidad de cada producto de la factura
+    //   monto_fp: totalAPagar,
+    //   num_ref: null,
+    //   no_gravado: baseImponible,
+    //   retencion_iva: tieneRetencionIva,
+    //   porcentaje_retencion_iva: (retencionIva / 100).toString(),
+    //   formas_pago_id: formasPagoList,
+    //   // formas_pago_id: [
+    //   //   {
+    //   //     "idTipoPago": 1,
+    //   //     "codigo": "01",
+    //   //     "montoPago": 1.41,
+    //   //     "referencia": null,
+    //   //     "plazo": null,
+    //   //     "periodo": null
+    //   //   }
+    //   // ],
+    //   saldo_favor_input: '0.00',
+    //   descuento_gravado: (descuentos.descuentoGravado / 100).toString(),
+    //   descuento_global_input: (descuentos.descuentoGeneral / 100).toString(),
+    //   porcentaje_retencion_renta: (retencionRenta / 100).toString(),
+    //   retencion_renta: tieneRetencionRenta,
+    //   nombre_responsable: nombreResponsable || null,
+    //   doc_responsable: docResponsable || null,
+    //   tipotransmision: tipoTransmision,
+    // };
+
+
     const dataFECF = {
-      numero_control: numeroControl,
-      receptor_id: receptor.id,
-      nit_receptor: receptor.num_documento,
-      nombre_receptor: receptor.nombre,
-      direccion_receptor: receptor.direccion,
-      telefono_receptor: receptor.telefono,
-      correo_receptor: receptor.correo,
-      tipo_item_select: 1, //TODO: obtener segun la lista de productos de forma dinamica (bien o servicio)
-      descuento_select: descuentosProducto, //TODO: Implementar con cambios pendiente de la api
-      // descuento_select: '0.00',
-      tipo_documento_seleccionado: tipoDocumentoSelected?.codigo ?? '01', //tipo DTE
-      condicion_operacion: selectedCondicionDeOperacion, //contado, credito, otros
-      observaciones: observaciones,
-      productos_ids: idListProducts,
-      cantidades: cantidadListProducts, //cantidad de cada producto de la factura
-      monto_fp: totalAPagar,
-      num_ref: null,
-      no_gravado: baseImponible,
-      retencion_iva: tieneRetencionIva,
-      porcentaje_retencion_iva: (retencionIva / 100).toString(),
-      formas_pago_id: formasPagoList,
-      // formas_pago_id: [
-      //   {
-      //     "idTipoPago": 1,
-      //     "codigo": "01",
-      //     "montoPago": 1.41,
-      //     "referencia": null,
-      //     "plazo": null,
-      //     "periodo": null
-      //   }
-      // ],
-      saldo_favor_input: '0.00',
-      descuento_gravado: (descuentos.descuentoGravado / 100).toString(),
-      descuento_global_input: (descuentos.descuentoGeneral / 100).toString(),
-      porcentaje_retencion_renta: (retencionRenta / 100).toString(),
-      retencion_renta: tieneRetencionRenta,
-      nombre_responsable: nombreResponsable || null,
-      doc_responsable: docResponsable || null,
-      tipotransmision: tipoTransmision,
-    };
+      "numero_control": "DTE-01-0000MOO1-000000000001088",
+      "receptor_id": 1,
+      "nit_receptor": "06142802961066",
+      "nombre_receptor": "Francisco Antonio Flores",
+      "direccion_receptor": "Carretera a Sonsonate, km 27 ½ Zona Industrial Lourdes, Calle Antigua Hda, La Libertad, El Salvador C.A",
+      "telefono_receptor": "604477435",
+      "correo_receptor": "juniorfran@hotmail.es",
+      "observaciones": "",
+      "tipo_documento_seleccionado": "01",
+      "tipo_item_select": 1,
+      "condicion_operacion": 1,
+      "no_gravado": false,
+      "retencion_iva": false,
+      "porcentaje_retencion_iva": "0",
+      "retencion_renta": false,
+      "porcentaje_retencion_renta": "0",
+      "formas_pago_id": [{ "codigo": "01", "montoPago": 1.41, "referencia": null, "plazo": null, "periodo": null }],
+      "saldo_favor_input": "0.00",
+      "descuento_gravado": "0",
+      "descuento_global_input": "0",
+      "productos_ids": [1],
+      "cantidades": [1],
+      "descuento_select": [0],
+      "nombre_responsable": null,
+      "documento_responsable": null
+    }
+
 
     console.log('dataFECF', dataFECF);
 
