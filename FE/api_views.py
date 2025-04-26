@@ -1050,6 +1050,7 @@ class GenerarFacturaAPIView(APIView):
     # permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, format=None):
+        
         # Inicializamos las variables globales (aunque es recomendable evitar globals)
         global productos_ids_r, cantidades_prod_r, documentos_relacionados, descuentos_r
         productos_ids_r = []
@@ -1057,8 +1058,7 @@ class GenerarFacturaAPIView(APIView):
         documentos_relacionados = []
         descuentos_r = []
         
-        global tipo_documento_dte
-        tipo_dte = tipo_documento_dte
+        tipo_dte = request.query_params.get('tipo_dte', '01')
 
         emisor_obj = Emisor_fe.objects.first()
         if emisor_obj:

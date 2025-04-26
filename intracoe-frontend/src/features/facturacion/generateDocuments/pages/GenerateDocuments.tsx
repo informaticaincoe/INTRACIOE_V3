@@ -22,6 +22,7 @@ import {
   ReceptorDefault,
   ReceptorInterface,
   TipoDocumento,
+  TipoDTE,
 } from '../../../../shared/interfaces/interfaces';
 import { ProductosTabla } from '../components/FE/productosAgregados/productosData';
 import { ResumenTotalesCard } from '../components/Shared/resumenTotales/resumenTotalesCard';
@@ -51,7 +52,7 @@ export const GenerateDocuments = () => {
     useState<EmisorInterface>(defaultEmisorData); // almcenar informacion del emisor
   const [tipoDocumento, setTipoDocumento] = useState<TipoDocumento[]>([]); // almcenar tipo de dte
   const [tipoDocumentoSelected, setTipoDocumentoSelected] =
-    useState<string>('01'); // almcenar tipo de dte
+    useState<TipoDTE>(); // almcenar tipo de dte
 
   const [descuentos, setDescuentos] = useState<Descuentos>({
     descuentoGeneral: 0,
@@ -150,7 +151,7 @@ export const GenerateDocuments = () => {
       tipo_item_select: 1, //TODO: obtener segun la lista de productos de forma dinamica (bien o servicio)
       descuento_select: descuentosProducto, //TODO: Implementar con cambios pendiente de la api
       // descuento_select: '0.00',
-      tipo_documento_seleccionado: tipoDocumentoSelected, //tipo DTE
+      tipo_documento_seleccionado: tipoDocumentoSelected?.codigo ?? '01', //tipo DTE
       condicion_operacion: selectedCondicionDeOperacion, //contado, credito, otros
       observaciones: observaciones,
       productos_ids: idListProducts,
@@ -207,12 +208,13 @@ export const GenerateDocuments = () => {
   /* OBTENCION DE DATOS              
   /************************************/
   useEffect(() => {
+    console.log("++++++++++++++++++++++++++++++++++")
     fetchfacturaData();
-  }, [tipoDocumentoSelected]);
+  }, [tipoDocumentoSelected?.codigo]);
 
   const fetchfacturaData = async () => {
     try {
-      const response = await getFacturaCodigos(tipoDocumentoSelected);
+      const response = await getFacturaCodigos(tipoDocumentoSelected?.codigo ?? '03');
       setCodigoGeneracion(response.codigo_generacion);
       setNumeroControl(response.numero_control);
       setEmisorData(response.emisor);
@@ -227,7 +229,10 @@ export const GenerateDocuments = () => {
         )
       );
 
-      console.log('eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', response.emisor);
+      console.log('eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', response.tipoDocumentos.filter(
+        (doc: { codigo: string }) =>
+          doc.codigo === '01' || doc.codigo === '03'
+      ));
     } catch (error) {
       console.log(error);
     }
@@ -379,7 +384,7 @@ export const GenerateDocuments = () => {
             tipoDte={tipoDocumentoSelected}
           />
           <ModalListaProdcutos
-            tipoDte={tipoDocumentoSelected}
+            tipoDte={tipoDocumentoSelected?.codigo ?? '01'}
             visible={showProductsModal}
             setVisible={setShowProductsModal}
             listProducts={listProducts}
@@ -429,7 +434,7 @@ export const GenerateDocuments = () => {
           </div>
           <Divider className="m-0 p-0"></Divider>
           <ResumenTotalesCard
-            tipoDocumento={tipoDocumentoSelected}
+            tipoDocumento={tipoDocumentoSelected?.codigo ?? '01'}
             setTotalAPagar={setTotalAPagar}
             totalAPagar={totalAPagar}
             listProducts={selectedProducts}
