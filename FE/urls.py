@@ -80,5 +80,8 @@ urlpatterns = [
     path('enviar-lote-unificado/', views.envio_dte_unificado_view, name='envio_dte_unificado'),
     path('enviar-lotes/', views.lotes_dte_view, name='lotes_dte'),
     path('enviar-motivo-evento/', views.motivo_contingencia_view, name='enviar_motivo'),
+    
+    #ENVIO DE CORREO(DOCUMENTOS ELECTRONICOS)
+    path('enviar-correo/<int:factura_id>/', views.enviar_correo_individual_view, name='enviar_correo_individual'),
 
 ]

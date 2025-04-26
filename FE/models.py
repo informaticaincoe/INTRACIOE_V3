@@ -349,6 +349,9 @@ class FacturaElectronica(models.Model):
     fecha_modificacion = models.DateField(auto_now_add=True, null=True)
     hora_modificacion = models.TimeField(auto_now_add=True, null=True)
     
+    envio_correo = models.BooleanField(default=False)
+    envio_correo_contingencia = models.BooleanField(default=False)
+    
     def save(self, *args, **kwargs):
         if not self.numero_control:
             super().save(*args, **kwargs)
