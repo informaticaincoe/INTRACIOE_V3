@@ -1,3 +1,5 @@
+import facturaJson from "../../../../data/factura.json"
+
 import { Divider } from 'primereact/divider';
 import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPage';
 import { Title } from '../../../../shared/text/title';
@@ -133,13 +135,11 @@ export const GenerateDocuments = () => {
       return Math.round(porcentaje * 100) / 100; // Redondea a 2 decimales
     });
 
-    console.log(selectedProducts);
 
     setDescuentosProducto(descuentosAux);
   }, [selectedProducts]);
 
   const generarFactura = async () => {
-    console.log(descuentoItem);
     // const dataFECF = {
     //   numero_control: numeroControl,
     //   receptor_id: receptor.id,
@@ -183,36 +183,9 @@ export const GenerateDocuments = () => {
     // };
 
 
-    const dataFECF = {
-      "numero_control": "DTE-01-0000MOO1-000000000001088",
-      "receptor_id": 1,
-      "nit_receptor": "06142802961066",
-      "nombre_receptor": "Francisco Antonio Flores",
-      "direccion_receptor": "Carretera a Sonsonate, km 27 ½ Zona Industrial Lourdes, Calle Antigua Hda, La Libertad, El Salvador C.A",
-      "telefono_receptor": "604477435",
-      "correo_receptor": "juniorfran@hotmail.es",
-      "observaciones": "",
-      "tipo_documento_seleccionado": "01",
-      "tipo_item_select": 1,
-      "condicion_operacion": 1,
-      "no_gravado": false,
-      "retencion_iva": false,
-      "porcentaje_retencion_iva": "0",
-      "retencion_renta": false,
-      "porcentaje_retencion_renta": "0",
-      "formas_pago_id": [{ "codigo": "01", "montoPago": 1.41, "referencia": null, "plazo": null, "periodo": null }],
-      "saldo_favor_input": "0.00",
-      "descuento_gravado": "0",
-      "descuento_global_input": "0",
-      "productos_ids": [1],
-      "cantidades": [1],
-      "descuento_select": [0],
-      "nombre_responsable": null,
-      "documento_responsable": null
-    }
+    const dataFECF = facturaJson
 
 
-    console.log('dataFECF', dataFECF);
 
     try {
       const response = await generarFacturaService(dataFECF);
@@ -238,7 +211,6 @@ export const GenerateDocuments = () => {
   /* OBTENCION DE DATOS              
   /************************************/
   useEffect(() => {
-    console.log("++++++++++++++++++++++++++++++++++")
     fetchfacturaData();
   }, [tipoDocumentoSelected?.codigo]);
 
@@ -258,39 +230,34 @@ export const GenerateDocuments = () => {
             doc.codigo === '01' || doc.codigo === '03'
         )
       );
-
-      console.log('eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', response.tipoDocumentos.filter(
-        (doc: { codigo: string }) =>
-          doc.codigo === '01' || doc.codigo === '03'
-      ));
     } catch (error) {
       console.log(error);
     }
   };
 
   const handleClickGenerarFactura = async () => {
-    if (auxManejoPagos != 0) {
-      console.log('errpr pagos');
-      setErrorFormasPago(true);
-      handleAccion(
-        'error',
-        <IoMdCloseCircle size={38} />,
-        'No se ha realizado el pago completo'
-      );
-    }
+    // if (auxManejoPagos != 0) {
+    //   console.log('errpr pagos');
+    //   setErrorFormasPago(true);
+    //   handleAccion(
+    //     'error',
+    //     <IoMdCloseCircle size={38} />,
+    //     'No se ha realizado el pago completo'
+    //   );
+    // }
 
-    if (receptor.id == '') {
-      console.log('errpr receptr');
+    // if (receptor.id == '') {
+    //   console.log('errpr receptr');
 
-      setErrorReceptor(true);
-      handleAccion(
-        'error',
-        <IoMdCloseCircle size={38} />,
-        'Campo de receptor no debe estar vacio'
-      );
-    } else {
+    //   setErrorReceptor(true);
+    //   handleAccion(
+    //     'error',
+    //     <IoMdCloseCircle size={38} />,
+    //     'Campo de receptor no debe estar vacio'
+    //   );
+    // } else {
       generarFactura();
-    }
+    // }
   };
 
   //************************************/
