@@ -1,3 +1,5 @@
+import facturaJson from "../../../../data/factura.json"
+
 import { Divider } from 'primereact/divider';
 import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPage';
 import { Title } from '../../../../shared/text/title';
@@ -125,7 +127,7 @@ export const GenerateDocuments = () => {
     setTotalAPagar(aux);
   };
 
-  
+
 
   useEffect(() => {
     const descuentosAux: number[] = selectedProducts.map((producto) => {
@@ -133,56 +135,57 @@ export const GenerateDocuments = () => {
       return Math.round(porcentaje * 100) / 100; // Redondea a 2 decimales
     });
 
-    console.log(selectedProducts);
 
     setDescuentosProducto(descuentosAux);
   }, [selectedProducts]);
 
   const generarFactura = async () => {
-    console.log(descuentoItem);
-    const dataFECF = {
-      numero_control: numeroControl,
-      receptor_id: receptor.id,
-      nit_receptor: receptor.num_documento,
-      nombre_receptor: receptor.nombre,
-      direccion_receptor: receptor.direccion,
-      telefono_receptor: receptor.telefono,
-      correo_receptor: receptor.correo,
-      tipo_item_select: 1, //TODO: obtener segun la lista de productos de forma dinamica (bien o servicio)
-      descuento_select: descuentosProducto, //TODO: Implementar con cambios pendiente de la api
-      // descuento_select: '0.00',
-      tipo_documento_seleccionado: tipoDocumentoSelected?.codigo ?? '01', //tipo DTE
-      condicion_operacion: selectedCondicionDeOperacion, //contado, credito, otros
-      observaciones: observaciones,
-      productos_ids: idListProducts,
-      cantidades: cantidadListProducts, //cantidad de cada producto de la factura
-      monto_fp: totalAPagar,
-      num_ref: null,
-      no_gravado: baseImponible,
-      retencion_iva: tieneRetencionIva,
-      porcentaje_retencion_iva: (retencionIva / 100).toString(),
-      formas_pago_id: formasPagoList,
-      // formas_pago_id: [
-      //   {
-      //     "idTipoPago": 1,
-      //     "codigo": "01",
-      //     "montoPago": 1.41,
-      //     "referencia": null,
-      //     "plazo": null,
-      //     "periodo": null
-      //   }
-      // ],
-      saldo_favor_input: '0.00',
-      descuento_gravado: (descuentos.descuentoGravado / 100).toString(),
-      descuento_global_input: (descuentos.descuentoGeneral / 100).toString(),
-      porcentaje_retencion_renta: (retencionRenta / 100).toString(),
-      retencion_renta: tieneRetencionRenta,
-      nombre_responsable: nombreResponsable || null,
-      doc_responsable: docResponsable || null,
-      tipotransmision: tipoTransmision,
-    };
+    // const dataFECF = {
+    //   numero_control: numeroControl,
+    //   receptor_id: receptor.id,
+    //   nit_receptor: receptor.num_documento,
+    //   nombre_receptor: receptor.nombre,
+    //   direccion_receptor: receptor.direccion,
+    //   telefono_receptor: receptor.telefono,
+    //   correo_receptor: receptor.correo,
+    //   tipo_item_select: 1, //TODO: obtener segun la lista de productos de forma dinamica (bien o servicio)
+    //   descuento_select: descuentosProducto, //TODO: Implementar con cambios pendiente de la api
+    //   // descuento_select: '0.00',
+    //   tipo_documento_seleccionado: tipoDocumentoSelected?.codigo ?? '01', //tipo DTE
+    //   condicion_operacion: selectedCondicionDeOperacion, //contado, credito, otros
+    //   observaciones: observaciones,
+    //   productos_ids: idListProducts,
+    //   cantidades: cantidadListProducts, //cantidad de cada producto de la factura
+    //   monto_fp: totalAPagar,
+    //   num_ref: null,
+    //   no_gravado: baseImponible,
+    //   retencion_iva: tieneRetencionIva,
+    //   porcentaje_retencion_iva: (retencionIva / 100).toString(),
+    //   formas_pago_id: formasPagoList,
+    //   // formas_pago_id: [
+    //   //   {
+    //   //     "idTipoPago": 1,
+    //   //     "codigo": "01",
+    //   //     "montoPago": 1.41,
+    //   //     "referencia": null,
+    //   //     "plazo": null,
+    //   //     "periodo": null
+    //   //   }
+    //   // ],
+    //   saldo_favor_input: '0.00',
+    //   descuento_gravado: (descuentos.descuentoGravado / 100).toString(),
+    //   descuento_global_input: (descuentos.descuentoGeneral / 100).toString(),
+    //   porcentaje_retencion_renta: (retencionRenta / 100).toString(),
+    //   retencion_renta: tieneRetencionRenta,
+    //   nombre_responsable: nombreResponsable || null,
+    //   doc_responsable: docResponsable || null,
+    //   tipotransmision: tipoTransmision,
+    // };
 
-    console.log('dataFECF', dataFECF);
+
+    const dataFECF = facturaJson
+
+
 
     try {
       const response = await generarFacturaService(dataFECF);
@@ -208,7 +211,6 @@ export const GenerateDocuments = () => {
   /* OBTENCION DE DATOS              
   /************************************/
   useEffect(() => {
-    console.log("++++++++++++++++++++++++++++++++++")
     fetchfacturaData();
   }, [tipoDocumentoSelected?.codigo]);
 
@@ -228,39 +230,34 @@ export const GenerateDocuments = () => {
             doc.codigo === '01' || doc.codigo === '03'
         )
       );
-
-      console.log('eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', response.tipoDocumentos.filter(
-        (doc: { codigo: string }) =>
-          doc.codigo === '01' || doc.codigo === '03'
-      ));
     } catch (error) {
       console.log(error);
     }
   };
 
   const handleClickGenerarFactura = async () => {
-    if (auxManejoPagos != 0) {
-      console.log('errpr pagos');
-      setErrorFormasPago(true);
-      handleAccion(
-        'error',
-        <IoMdCloseCircle size={38} />,
-        'No se ha realizado el pago completo'
-      );
-    }
+    // if (auxManejoPagos != 0) {
+    //   console.log('errpr pagos');
+    //   setErrorFormasPago(true);
+    //   handleAccion(
+    //     'error',
+    //     <IoMdCloseCircle size={38} />,
+    //     'No se ha realizado el pago completo'
+    //   );
+    // }
 
-    if (receptor.id == '') {
-      console.log('errpr receptr');
+    // if (receptor.id == '') {
+    //   console.log('errpr receptr');
 
-      setErrorReceptor(true);
-      handleAccion(
-        'error',
-        <IoMdCloseCircle size={38} />,
-        'Campo de receptor no debe estar vacio'
-      );
-    } else {
+    //   setErrorReceptor(true);
+    //   handleAccion(
+    //     'error',
+    //     <IoMdCloseCircle size={38} />,
+    //     'Campo de receptor no debe estar vacio'
+    //   );
+    // } else {
       generarFactura();
-    }
+    // }
   };
 
   //************************************/

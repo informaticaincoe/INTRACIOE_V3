@@ -1003,11 +1003,14 @@ def generar_factura_view(request):
     return JsonResponse({"error": "Método no permitido"}, status=405)
 
 #BC 05/03/2025:
-def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_documento, observaciones, iva_item_total, base_imponible_checkbox, saldo_favor, documentos_relacionados, contingencia, total_gravada, nombre_responsable, doc_responsable):
+def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_documento, observaciones, iva_item_total, base_imponible_checkbox, saldo_favor, documentos_relacionados, contingencia, total_gravada, nombre_responsable, doc_responsable, formas_pago=None):
     print("-Inicio llenar json")
     try:
         if saldo_favor is None or saldo_favor == "":
             saldo_favor = Decimal("0.00")
+
+        if formas_pago is None:
+            formas_pago = factura.formas_Pago or []
         
         montoExtension = Decimal("11428.57")
         
@@ -1089,7 +1092,8 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
             "totalLetras": factura.total_letras,
             "saldoFavor": float(saldo_favor),
             "condicionOperacion": int(factura.condicion_operacion.codigo) if factura.condicion_operacion and factura.condicion_operacion.codigo.isdigit() else 1,
-            "pagos": pagos,
+            # "pagos": pagos,
+            "pagos" :formas_pago,
             "numPagoElectronico": None
         }
                 
