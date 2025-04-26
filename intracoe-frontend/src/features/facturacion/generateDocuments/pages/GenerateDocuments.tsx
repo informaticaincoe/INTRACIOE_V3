@@ -161,7 +161,7 @@ export const GenerateDocuments = () => {
       no_gravado: baseImponible,
       retencion_iva: tieneRetencionIva,
       porcentaje_retencion_iva: (retencionIva / 100).toString(),
-      formas_pagos: formasPagoList,
+      formas_pago_id: formasPagoList,
       // formas_pago_id: [
       //   {
       //     "idTipoPago": 1,
