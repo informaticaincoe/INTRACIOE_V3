@@ -181,7 +181,8 @@ export const GenerateDocuments = () => {
   const firmarFactura = async (id: string) => {
     try {
       if (id) {
-        await FirmarFactura(id);
+        const response = await FirmarFactura(id);
+
         navigate(`/factura/${id}`);
       }
     } catch (error) {
