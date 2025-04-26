@@ -161,17 +161,17 @@ export const GenerateDocuments = () => {
       no_gravado: baseImponible,
       retencion_iva: tieneRetencionIva,
       porcentaje_retencion_iva: (retencionIva / 100).toString(),
-      // formas_pago_id: formasPagoList,
-      formas_pago_id: [
-        {
-          "idTipoPago": 1,
-          "codigo": "01",
-          "montoPago": 1.41,
-          "referencia": null,
-          "plazo": null,
-          "periodo": null
-        }
-      ],
+      formas_pagos: formasPagoList,
+      // formas_pago_id: [
+      //   {
+      //     "idTipoPago": 1,
+      //     "codigo": "01",
+      //     "montoPago": 1.41,
+      //     "referencia": null,
+      //     "plazo": null,
+      //     "periodo": null
+      //   }
+      // ],
       saldo_favor_input: '0.00',
       descuento_gravado: (descuentos.descuentoGravado / 100).toString(),
       descuento_global_input: (descuentos.descuentoGeneral / 100).toString(),
