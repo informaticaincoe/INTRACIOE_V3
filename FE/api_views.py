@@ -1050,6 +1050,7 @@ class GenerarFacturaAPIView(APIView):
     # permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, format=None):
+        
         # Inicializamos las variables globales (aunque es recomendable evitar globals)
         global productos_ids_r, cantidades_prod_r, documentos_relacionados, descuentos_r
         productos_ids_r = []
@@ -1057,8 +1058,7 @@ class GenerarFacturaAPIView(APIView):
         documentos_relacionados = []
         descuentos_r = []
         
-        global tipo_documento_dte
-        tipo_dte = tipo_documento_dte
+        tipo_dte = request.query_params.get('tipo_dte', '01')
 
         emisor_obj = Emisor_fe.objects.first()
         if emisor_obj:
@@ -2180,6 +2180,7 @@ class EnviarFacturaHaciendaAPIView(APIView):
     def post(self, request, factura_id, format=None):
         factura = get_object_or_404(FacturaElectronica, id=factura_id)
         fecha_actual = obtener_fecha_actual()
+        print("factura_id: ", factura_id)
         
         # Paso 1: Autenticación
         nit = str(emisor_fe.nit)
@@ -2219,6 +2220,9 @@ class EnviarFacturaHaciendaAPIView(APIView):
             except requests.RequestException as e:
                 error_auth = str(e)
             time.sleep(8)
+        print("factura_id1: ", factura_id)
+        print("datos: ", request)
+
 
         if contingencia:
             return Response(
@@ -2242,6 +2246,9 @@ class EnviarFacturaHaciendaAPIView(APIView):
             )
 
         documento = dte_json.get("body", "").strip()
+
+        print("documento: ", documento)
+
         if not documento:
             return Response(
                 {"error": "Falta token en 'body' del JSON firmado"},
