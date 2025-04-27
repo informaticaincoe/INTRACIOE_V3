@@ -53,6 +53,9 @@ from django.db.models import Count, Sum
 from AUTENTICACION.models import ConfiguracionServidor
 from django.core.mail import EmailMessage
 from intracoe import settings
+from xhtml2pdf import pisa
+from io import BytesIO
+from django.template.loader import render_to_string
 
 FIRMADOR_URL = "http://192.168.2.25:8113/firmardocumento/"
 DJANGO_SERVER_URL = "http://127.0.0.1:8000"
@@ -3997,7 +4000,18 @@ class EnviarCorreoIndividualAPIView(APIView):
             archivo_pdf = os.path.join(ruta_pdf, f"{documento_electronico.codigo_generacion}.pdf")
             if not os.path.exists(archivo_pdf):
                 print(f"Archivo PDF no encontrado en {archivo_pdf}")
-                messages.error(request, "Archivo PDF no encontrado.")
+                
+                html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": documento_electronico})
+                #Guardar archivo pdf
+                pdf_signed_path = f"{RUTA_COMPROBANTES_PDF.ruta_archivo}{documento_electronico.tipo_dte.codigo}/pdf/{documento_electronico.codigo_generacion}.pdf"
+                print("guardar pdf: ", pdf_signed_path)
+                with open(pdf_signed_path, "wb") as pdf_file:
+                    pisa_status = pisa.CreatePDF(BytesIO(html_content.encode('utf-8')), dest=pdf_file)
+                    
+                if pisa_status.err:
+                    print(f"Error al crear el PDF en {pdf_signed_path}")
+                else:
+                    print(f"PDF guardado exitosamente en {pdf_signed_path}")
         
         if not archivo_json:
             ruta_json = RUTA_COMPROBANTES_JSON.ruta_archivo
