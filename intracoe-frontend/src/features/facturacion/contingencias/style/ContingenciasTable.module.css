@@ -1,0 +1,23 @@
+.customTable :global(.p-datatable-thead > tr > th) {
+  background-color: #dcdde1;
+  font-weight: bold;
+  text-align: center;
+}
+
+.customTable :global(.p-datatable-tbody > tr > td) {
+  background-color: #fafafa;
+}
+
+.customSubTable :global(.p-datatable-thead > tr > th) {
+  background-color: #ffffff;
+  text-align: center;
+}
+
+.customSubTable :global(.p-datatable-tbody > tr > td) {
+  background-color: #ffffff;
+}
+
+.customCollapse :global(.p-accordion-header-link) {
+  background-color: #ffffff !important;
+  color: #1f2937;
+}

@@ -12,6 +12,13 @@ class UnidadMedida(models.Model):
 
     def __str__(self):
         return f"{self.nombre} ({self.abreviatura})"
+    
+class TipoUnidadMedida(models.Model):
+    codigo = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=50)
+    
+    def __str__(self):
+        return f"{self.codigo} - {self.descripcion}"
 
 class Impuesto(models.Model):
     nombre = models.CharField(max_length=50)
@@ -30,14 +37,14 @@ class Almacen(models.Model):
         return self.nombre
     
 #modelo para descuentos por productos
-class Descuento(models.Model):
-    porcentaje = models.DecimalField(max_digits=5, decimal_places=2)
-    descripcion = models.CharField(max_length=50)
-    fecha_inicio = models.DateField()
-    fecha_fin = models.DateField()
-    estdo = models.BooleanField(default=True)
-    def __str__(self):
-        return f"{self.descripcion} - {self.porcentaje}%"
+# class Descuento(models.Model):
+#     porcentaje = models.DecimalField(max_digits=5, decimal_places=2)
+#     descripcion = models.CharField(max_length=50)
+#     fecha_inicio = models.DateField()
+#     fecha_fin = models.DateField()
+#     estdo = models.BooleanField(default=True)
+#     def __str__(self):
+#         return f"{self.descripcion} - {self.porcentaje}%"
     
 class TipoItem(models.Model):
     codigo = models.CharField(max_length=50)
@@ -72,7 +79,7 @@ class Producto(models.Model):
     codigo = models.CharField(max_length=50, unique=True)  # SKU único
     descripcion = models.CharField(max_length=255)
     categoria = models.ForeignKey(Categoria, on_delete=models.SET_NULL, null=True, blank=True)
-    unidad_medida = models.ForeignKey(UnidadMedida, on_delete=models.SET_NULL, null=True, blank=True)
+    unidad_medida = models.ForeignKey(TipoUnidadMedida, on_delete=models.SET_NULL, null=True, blank=True)
     preunitario = models.DecimalField(max_digits=5, decimal_places=2)
     precio_compra = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     precio_venta = models.DecimalField(max_digits=10, decimal_places=2)
@@ -80,14 +87,14 @@ class Producto(models.Model):
     stock_minimo = models.PositiveIntegerField(default=0)
     stock_maximo = models.PositiveIntegerField(default=0)
     
-    tiene_descuento = models.BooleanField(default=False)
-    descuento = models.ForeignKey(Descuento, on_delete=models.SET_NULL, null=True, blank=True)
-    
     impuestos = models.ManyToManyField(Impuesto, blank=True)  # Soporte para múltiples impuestos
+    # tiene_descuento = models.BooleanField(default=False)
+    # descuento = models.ForeignKey(Descuento, on_delete=models.SET_NULL, null=True, blank=True)
     
     tipo_item = models.ForeignKey(TipoItem, on_delete=models.SET_NULL, null=True, blank=True)
     referencia_interna = models.CharField(max_length=50, null=True, editable=True, default=None)
     tributo = models.ForeignKey(Tributo, on_delete=models.CASCADE, null=False, default=1)
+    precio_iva = models.BooleanField(default=False) #Indicar si el producto se guarda con IVA
     
     # Control de lotes y vencimientos (Opcional)
     maneja_lotes = models.BooleanField(default=False)
@@ -182,8 +189,6 @@ class AjusteInventario(models.Model):
 
     def __str__(self):
         return f"Ajuste {self.cantidad_ajustada} {self.producto.descripcion} ({self.almacen.nombre})"
-    
-from django.db import models
 
 # MODELO PARA DEVOLUCIONES DE CLIENTES (POST-VENTA)
 class DevolucionVenta(models.Model):
@@ -254,3 +259,6 @@ class DetalleDevolucionCompra(models.Model):
     def __str__(self):
         return f"{self.cantidad} x {self.producto.descripcion} - Devolución {self.devolucion.id}"
 
+
+
+import INVENTARIO.signals

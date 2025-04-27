@@ -1,13 +1,9 @@
-import React from 'react';
-import {
-  AppstoreOutlined,
-  MailOutlined,
-  SettingOutlined,
-} from '@ant-design/icons';
 import { MdDashboard } from 'react-icons/md';
-import { IoMdPerson } from 'react-icons/io';
+import { BsBuildingFill } from 'react-icons/bs';
+import { FaCalculator } from 'react-icons/fa';
 import { HiCurrencyDollar } from 'react-icons/hi2';
 import { RiFilePaperFill } from 'react-icons/ri';
+import { FaTruckRampBox } from 'react-icons/fa6';
 import type { MenuProps } from 'antd';
 import { Menu } from 'antd';
 import { useNavigate } from 'react-router';
@@ -17,56 +13,170 @@ type MenuItem = Required<MenuProps>['items'][number];
 const items: MenuItem[] = [
   {
     key: 'dashboard',
-    icon: <MdDashboard size={24} />,
-    label: <p className="text-start">Dashboard</p>,
+    icon: <MdDashboard size={20} />,
+    label: (
+      <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+        Dashboard
+      </p>
+    ),
   },
   {
-    key: 'rrhh',
-    icon: <IoMdPerson size={24} />,
-    label: <p className="text-start">RRHH</p>,
+    key: 'ventas',
+    icon: <HiCurrencyDollar size={20} />,
+    label: (
+      <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+        Ventas
+      </p>
+    ),
+    children: [
+      {
+        key: 'receptores',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            clientes
+          </p>
+        ),
+      },
+      {
+        key: 'proveedor',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Proveedores
+          </p>
+        ),
+      },
+    ],
   },
   {
     key: 'conta',
-    icon: <HiCurrencyDollar size={24} />,
-    label: <p className="text-start">Contabilidad</p>,
+    icon: <FaCalculator size={20} />,
+    label: (
+      <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+        Contabilidad
+      </p>
+    ),
+    children: [
+      {
+        key: 'anexo',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Anexos
+          </p>
+        ),
+      },
+      {
+        key: 'reportes',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Reportes
+          </p>
+        ),
+      },
+      {
+        key: 'catalogo',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Catalogo
+          </p>
+        ),
+      },
+    ],
   },
   {
     key: 'fact',
-    icon: <RiFilePaperFill size={24} />,
-    label: <p className="text-start">Facturación</p>,
+    icon: <RiFilePaperFill size={20} />,
+    label: (
+      <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+        Facturación
+      </p>
+    ),
 
     children: [
       {
-        key: 'fe',
-        label: <p className="text-start">Facturación electronica</p>,
-        children: [
-          {
-            key: 'act',
-            label: <p className="text-start">Actividades economicas </p>,
-          },
-          {
-            key: 'documentos',
-            label: <p className="text-start">Generar documentos</p>,
-          },
-        ],
+        key: 'documentos',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Generar facturas
+          </p>
+        ),
       },
       {
-        key: 'empresa',
-        label: <p className="text-start">Empresa</p>,
-        children: [
-          {
-            key: 'producto',
-            label: <p className="text-start">Producto</p>,
-          },
-          {
-            key: 'servicios',
-            label: <p className="text-start">Servicios</p>,
-          },
-          {
-            key: 'configuracion',
-            label: <p className="text-start">Configurar empresa</p>,
-          },
-        ],
+        key: 'correcciones',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Generar corecciones
+          </p>
+        ),
+      },
+      {
+        key: 'listado-facturas',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Listado Facturas
+          </p>
+        ),
+      },
+      {
+        key: 'listado-contingencias',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Listado contingencias
+          </p>
+        ),
+      },
+    ],
+  },
+  {
+    key: 'inventario',
+    icon: <FaTruckRampBox size={20} />,
+    label: (
+      <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+        Inventario
+      </p>
+    ),
+    children: [
+      {
+        key: 'producto',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Productos
+          </p>
+        ),
+      },
+      {
+        key: 'servicios',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Servicios{' '}
+          </p>
+        ),
+      },
+    ],
+  },
+  {
+    key: 'empresa',
+    icon: <BsBuildingFill size={20} />,
+    label: (
+      <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+        Empresa
+      </p>
+    ),
+    children: [
+      {
+        key: 'configuracion',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Configurar empresa
+          </p>
+        ),
+      },
+      {
+        key: 'server',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Configurar servidor
+          </p>
+        ),
       },
     ],
   },
@@ -76,17 +186,18 @@ export const SideMenu = () => {
   const navigate = useNavigate(); // Hook para navegar en React Router
 
   const onClick: MenuProps['onClick'] = (e) => {
-    console.log('click ', e);
-
     switch (e.key) {
       case 'dashboard':
-        navigate('/');
-        break;
-      case 'act':
-        navigate('/actividades-economicas');
+        navigate('/dashboard');
         break;
       case 'documentos':
         navigate('/generar-documentos');
+        break;
+      case 'correcciones':
+        navigate('/generar-documentos-ajuste');
+        break;
+      case 'catalogo':
+        navigate('/catalogos');
         break;
       case 'producto':
         navigate('/productos');
@@ -97,18 +208,36 @@ export const SideMenu = () => {
       case 'configuracion':
         navigate('/empresa');
         break;
+      case 'receptores':
+        navigate('/receptores');
+        break;
+      case 'listado-facturas':
+        navigate('/listado-facturas');
+        break;
+      case 'listado-contingencias':
+        navigate('/contingencias');
+        break;
+      case 'proveedor':
+        navigate('/proveedor');
+        break;
       default:
         break;
     }
   };
 
   return (
-    <div className="bg-white">
+    <div className="sticky flex h-full flex-col justify-between bg-white">
       <Menu
         onClick={onClick}
-
-        style={{ width: 300, opacity: '75%', fontFamily: 'Inter' }}
-
+        style={{
+          width: '15vw',
+          opacity: '75%',
+          fontFamily: 'Inter',
+          position: 'sticky',
+          top: 80,
+          whiteSpace: 'normal',
+          wordWrap: 'break-word',
+        }}
         defaultSelectedKeys={['1']}
         defaultOpenKeys={['dashboard']}
         mode="inline"

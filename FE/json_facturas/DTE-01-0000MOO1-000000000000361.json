@@ -1,0 +1,88 @@
+{
+    "identificacion": {
+        "version": 1,
+        "ambiente": "01",
+        "tipoDte": "01",
+        "numeroControl": "DTE-01-0000MOO1-000000000000361",
+        "codigoGeneracion": "7038E654-98D8-4402-A993-DDC52497E2DE",
+        "tipoModelo": 1,
+        "tipoOperacion": 1,
+        "tipoContingencia": null,
+        "motivoContin": null,
+        "fecEmi": "2025-03-20",
+        "horEmi": "15:14:03",
+        "tipoMoneda": "USD"
+    },
+    "documentoRelacionado": null,
+    "emisor": {
+        "nit": "06142811001040",
+        "nrc": "1278913",
+        "nombre": "Inversiones Comerciales Escobar SA de CV",
+        "codActividad": "46375",
+        "descActividad": "Venta al por mayor de productos lacteos",
+        "nombreComercial": "Inversiones Comerciales Escobar SA de CV",
+        "tipoEstablecimiento": "02",
+        "direccion": {
+            "departamento": "05",
+            "municipio": "19",
+            "complemento": "Carretera a Sonsonate, km 27 ½ Zona Industrial Lourdes, Calle Antigua Hda, La Libertad, El Salvador C.A"
+        },
+        "telefono": "77462310",
+        "correo": "informatica@grupoincoe.com",
+        "codEstableMH": "M001",
+        "codEstable": "0001",
+        "codPuntoVentaMH": "P001",
+        "codPuntoVenta": "0001"
+    },
+    "receptor": {
+        "nombre": "Francisco Antonio Flores",
+        "codActividad": "24310",
+        "descActividad": "undición de hierro y acero",
+        "direccion": {
+            "departamento": "05",
+            "municipio": "19",
+            "complemento": "Carretera a Sonsonate, km 27 ½ Zona Industrial Lourdes, Calle Antigua Hda, La Libertad, El Salvador C.A"
+        },
+        "telefono": "604477435",
+        "correo": "juniorfran@hotmail.es",
+        "nrc": null,
+        "tipoDocumento": "36",
+        "numDocumento": "06142802961066"
+    },
+    "otrosDocumentos": null,
+    "ventaTercero": null,
+    "cuerpoDocumento": [],
+    "resumen": {
+        "totalNoSuj": 0.0,
+        "totalExenta": 0.0,
+        "totalGravada": 0.0,
+        "subTotalVentas": 0.0,
+        "descuNoSuj": 0.0,
+        "descuExenta": 0.0,
+        "descuGravada": 0.0,
+        "porcentajeDescuento": 0.0,
+        "totalDescu": 0.0,
+        "subTotal": 0.0,
+        "ivaRete1": 0.0,
+        "reteRenta": 0.0,
+        "montoTotalOperacion": 0.0,
+        "totalNoGravado": 0.0,
+        "totalPagar": 0.0,
+        "totalLetras": "Cero con 00/100 USD",
+        "saldoFavor": 0.0,
+        "condicionOperacion": 1,
+        "pagos": [],
+        "numPagoElectronico": null,
+        "tributos": null,
+        "totalIva": 0.0
+    },
+    "extension": {
+        "nombEntrega": null,
+        "docuEntrega": null,
+        "nombRecibe": null,
+        "docuRecibe": null,
+        "observaciones": " ",
+        "placaVehiculo": null
+    },
+    "apendice": null
+}

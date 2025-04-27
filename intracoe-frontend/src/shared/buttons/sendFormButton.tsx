@@ -1,20 +1,20 @@
-import React from 'react';
+import React, { HTMLProps } from 'react';
 
 interface SendFormButtonProps {
   text: string;
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  className?: HTMLProps<HTMLElement>['className'];
 }
 
 export const SendFormButton: React.FC<SendFormButtonProps> = ({
   text,
   onClick,
+  className,
 }) => {
   return (
     <button
       type="button"
-
-      className="bg-primary-yellow mb-5 w-full rounded-md py-3 text-white hover:cursor-pointer"
-
+      className={`${className} rounded-md py-3 hover:cursor-pointer`}
       onClick={onClick}
     >
       {text}

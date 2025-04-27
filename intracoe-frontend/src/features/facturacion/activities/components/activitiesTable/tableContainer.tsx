@@ -1,68 +1,54 @@
-import { useEffect, useState } from 'react';
-import { ActivitiesData } from '../../interfaces/activitiesData';
-import { TableData } from './tableData';
+import { useState } from 'react';
 import { HeaderTable } from '../headerTable/headerTable';
+import { DataTable } from 'primereact/datatable';
+import { Column } from 'primereact/column';
+import 'primereact/resources/themes/lara-light-blue/theme.css';
+import { ActivitiesData } from '../../../../../shared/interfaces/interfaces';
 
-//datos de prueba
-const activityList = [
-  {
-    codigo: '46375',
-    descripcion: 'Venta al por mayor de productos lacteos',
-  },
-  {
-    codigo: '47816',
-    descripcion: 'Venta al por menor de bebidas',
-  },
-  {
-    codigo: '47815',
-    descripcion: 'Venta al por menor de bebidas',
-  },
-  {
-    codigo: '47814',
-    descripcion: 'Venta al por menor de bebidas',
-  },
-  {
-    codigo: '47813',
-    descripcion: 'Venta al por menor de bebidas',
-  },
-  {
-    codigo: '47810',
-    descripcion: 'Venta al por menor de bebidas',
-  },
-  {
-    codigo: '47816',
-    descripcion: 'Venta al por menor de bebidas',
-  },
-  {
-    codigo: '47815',
-    descripcion: 'Venta al por menor de bebidas',
-  },
-  {
-    codigo: '47814',
-    descripcion: 'Venta al por menor de bebidas',
-  },
-  {
-    codigo: '47813',
-    descripcion: 'Venta al por menor de bebidas',
-  },
-  {
-    codigo: '47810',
-    descripcion: 'Venta al por menor de bebidas',
-  },
-];
+interface TableContainerProp {
+  data: any;
+}
 
-export const TableContainer = () => {
+export const TableContainer: React.FC<TableContainerProp> = ({ data }) => {
   const [activities, setActivities] = useState<ActivitiesData[]>([]);
+  const [filterTerm, setFilterTerm] = useState<string>('');
 
-  //consumo de api
-  useEffect(() => {
-    setActivities(activityList);
-  }, []);
+  // const onDelete = () => {
+  //   fetchActivities();
+  // };
 
   return (
-    <div className="m-10 bg-white px-10 py-5">
-      <HeaderTable />
-      <TableData activities={activities} />
+    <div className="px-10 py-5">
+      <>
+        <HeaderTable
+          setActivities={setActivities}
+          filterTerm={filterTerm}
+          setFilterTerm={setFilterTerm}
+        />
+        <>
+          <DataTable
+            value={data}
+            paginator
+            rows={5}
+            rowsPerPageOptions={[5, 10, 25, 50]}
+          >
+            <Column
+              field="codigo"
+              header={<p className="text-black">CODIGO</p>}
+            />
+            <Column
+              field="descripcion"
+              header={<p className="text-black">DESCRIPCIÓN</p>}
+            />
+            {/* <Column
+              header="ACCIONES"
+              body={(activity: ActivitiesData) => (
+                <Actionsz activity={activity} onDelete={onDelete} />
+              )}
+            /> */}
+          </DataTable>
+        </>
+      </>
     </div>
   );
 };

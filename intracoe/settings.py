@@ -26,7 +26,22 @@ SECRET_KEY = 'django-insecure--t^=e+nnmjaah90onb$_&@5(kv1-_c!sjr^y1vov!(v0!5wa$a
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS=['*']               
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',  # Asegúrate de que esta URL esté incluida
+    'http://localhost:5174',  # Asegúrate de que esta URL esté incluida
+    
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_HEADERS = [
+    'content-type',
+    'authorization',
+    'accept',
+    # otros encabezados que necesites
+]
 
 CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:8000',
@@ -38,6 +53,11 @@ CSRF_TRUSTED_ORIGINS = [
     'https://intracoe.incoe.cloud',
     'http://intracoe.incoe.cloud',
     'https://192.168.100.81',
+    'http://localhost:5173',  # Puerto de tu frontend (React)
+    'http://127.0.0.1:5173',  # Alternativa para localhost
+    'http://localhost:5174',  # Puerto de tu frontend (React)
+    'http://127.0.0.1:5174',  # Alternativa para localhost
+    
 ]
 
 ## CONFIGURACION DE CORREOS ##############################
@@ -50,6 +70,13 @@ EMAIL_USE_TLS = False  # Deshabilitado el TLS
 EMAIL_HOST_USER = 'talentohumano@grupoincoe.com'
 EMAIL_HOST_PASSWORD = '*J{jLiwCF)E?'
 
+EMAIL_BACKEND_FE = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST_FE = 'mail.grupoincoe.com'
+EMAIL_PORT_FE = 465
+EMAIL_USE_SSL_FE = True  # Cambiado de TLS a SSL
+EMAIL_USE_TLS_FE = False  # Deshabilitado el TLS
+EMAIL_HOST_USER_FE = 'facturacion@grupoincoe.com'
+EMAIL_HOST_PASSWORD_FE = 'F4ctur4c10n.23'
 
 EMAIL_BACKEND_QUEDAN = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST_QUEDAN = 'mail.grupoincoe.com'
@@ -71,6 +98,23 @@ LOGIN_ERROR_MESSAGE = 'Credenciales incorrectas'
 
 ########################################################
 
+## REST FRAMEWORK LOGIN CONFIGURATION
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        #'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}
+
+# Caducidad de la cookie de sesión: 5 minutos
+SESSION_COOKIE_AGE = 300  
+
+# Renueva la cookie en cada petición
+SESSION_SAVE_EVERY_REQUEST = True
 
 # Application definition
 
@@ -82,18 +126,22 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework.authtoken',
     'widget_tweaks',
     'django_select2',
     'RRHH',
     'FE',
     'CONTABILIDAD',
     'INFORMATICA',
-    'INVENTARIO',
+    'INVENTARIO.apps.InventarioConfig',
+    'corsheaders',
+    'AUTENTICACION',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -208,3 +256,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+#URL LOCAL PARA GUARDAR ARCHIVOS
+
+URL_ARCHIVOS_CORREO = "/factura_pdf"

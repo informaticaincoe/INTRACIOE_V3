@@ -2,10 +2,8 @@ from django.db import models
 from django.utils import timezone
 from datetime import timedelta, datetime
 from decimal import ROUND_HALF_UP, Decimal
-from INVENTARIO.models import Producto
-import uuid 
-
-
+from INVENTARIO.models import Producto, TipoUnidadMedida
+import uuid
 
 class ActividadEconomica(models.Model):
     codigo = models.CharField(max_length=50, verbose_name="Código de Actividad Económica")
@@ -36,7 +34,9 @@ class TipoTransmision(models.Model):
 
 class TipoContingencia(models.Model):
     codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=150)
+    #En el campo motivo_contingencia el contribuyente podra definir la razon de la contingencia, si el tipo de contingencia es 5, este campo sera obligatorio
+    motivo_contingencia = models.CharField(max_length=500, blank=True, null=True)
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
 
@@ -175,13 +175,6 @@ class TipoMoneda(models.Model):
     descripcion = models.CharField(max_length=50)
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
-    
-class TipoUnidadMedida(models.Model):
-    codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
-    def __str__(self):
-        return f"{self.codigo} - {self.descripcion}"
-    
         
 #modelo para descuentos por productos
 class Descuento(models.Model):
@@ -214,11 +207,19 @@ class Receptor_fe(models.Model):
     direccion = models.TextField(blank=True, null=True)
     telefono = models.CharField(max_length=30, blank=True, null=True)
     correo = models.EmailField(blank=True, null=True)
-    nombreComercial = models.CharField(max_length=150, null=True, verbose_name=None)
+    nombreComercial = models.CharField(max_length=150, null=True, verbose_name=None, blank=True)
 
     def __str__(self):
         return self.nombre
 
+class representanteEmisor(models.Model):
+    nombre = models.CharField(max_length=200)
+    tipo_documento = models.ForeignKey(TiposDocIDReceptor, on_delete=models.CASCADE, null=True)
+    numero_documento = models.CharField(max_length=20, unique=True)
+    
+    def __str__(self):
+        return f"{self.nombre} ({self.numero_documento})"
+    
 class Emisor_fe(models.Model):
     nit = models.CharField(max_length=20, unique=True, verbose_name="NIT del Emisor")
     nrc = models.CharField(max_length=50, null=True)
@@ -235,10 +236,13 @@ class Emisor_fe(models.Model):
     ambiente = models.ForeignKey(Ambiente, on_delete=models.CASCADE)
     nombre_establecimiento = models.CharField(max_length=255, null=True, blank=True, verbose_name="Nombre Establecimiento")
     tipo_documento = models.ForeignKey(TiposDocIDReceptor, on_delete=models.CASCADE, null=True)
-
+    logo = models.ImageField(upload_to='media/productos/', null=True, blank=True) #logo empresa
+    clave_privada = models.CharField(max_length=255, null=True, blank=True)
+    clave_publica = models.CharField(max_length=255, null=True, blank=True)
+    representante = models.ForeignKey(representanteEmisor, on_delete=models.CASCADE, null=True, blank=True)
+    
     def __str__(self):
         return f"{self.nombre_razon_social} ({self.nit})"
-
 
 # Modelo para manejar la numeración de control por año
 class NumeroControl(models.Model):
@@ -254,11 +258,13 @@ class NumeroControl(models.Model):
     @staticmethod
 
     def obtener_numero_control(cod_dte):
+        print("Inicio asignar numero de control: ")
         anio_actual = datetime.now().year
         control, creado = NumeroControl.objects.get_or_create(anio=anio_actual, tipo_dte=cod_dte)
         numero_control = f"DTE-{cod_dte}-0000MOO1-{str(control.secuencia).zfill(15)}"
         control.secuencia += 1
         control.save()
+        print("Asignar numero de control: ", numero_control)
         return numero_control
     
     @staticmethod
@@ -271,8 +277,10 @@ class NumeroControl(models.Model):
         try:
             control = NumeroControl.objects.get(anio=anio_actual, tipo_dte=cod_dte)
             current_sequence = control.secuencia
+            print("Secuencia: ", current_sequence)
         except NumeroControl.DoesNotExist:
             current_sequence += 1
+            print("Incrementar secuencia: ", current_sequence)
         return f"DTE-{cod_dte}-0000MOO1-{str(current_sequence).zfill(15)}"
 
 # Modelo de Factura Electrónica
@@ -286,8 +294,8 @@ class FacturaElectronica(models.Model):
     codigo_generacion = models.UUIDField(default=uuid.uuid4, unique=True)
     tipomodelo = models.ForeignKey(Modelofacturacion, on_delete=models.CASCADE, null=True)
     #tipooperacion = models.ForeignKey(CondicionOperacion, on_delete=models.CASCADE, null=True)
-    tipocontingencia = models.ForeignKey(TipoContingencia, on_delete=models.CASCADE, null=True)
-    motivocontin = models.CharField(max_length=350, null=True)
+    tipocontingencia = models.ForeignKey(TipoContingencia, on_delete=models.CASCADE, null=True, blank=True)
+    motivocontin = models.CharField(max_length=350, null=True, blank=True)
     fecha_emision = models.DateField(auto_now_add=True) 
     hora_emision = models.TimeField(auto_now_add=True) 
     tipomoneda = models.ForeignKey(TipoMoneda, on_delete=models.CASCADE, null=True)
@@ -297,6 +305,9 @@ class FacturaElectronica(models.Model):
     
     #RECEPTOR
     dtereceptor = models.ForeignKey(Receptor_fe, on_delete=models.CASCADE, related_name='facturas_receptor_FE')
+    
+    #CONTINGENCIA
+    #dtecontingencia = models.ForeignKey(EventoContingencia, on_delete=models.CASCADE, related_name='contingencia_dte', null=True, blank=True)
     
     #RESUMEN
     total_no_sujetas = models.DecimalField(max_digits=15, decimal_places=2, null=True)
@@ -318,6 +329,8 @@ class FacturaElectronica(models.Model):
     total_iva = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     condicion_operacion = models.ForeignKey(CondicionOperacion, on_delete=models.CASCADE, null=True)
     iva_percibido = models.DecimalField(max_digits=10, decimal_places=2, null=True)
+    saldo_favor = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    formas_Pago = models.JSONField(blank=True, null=True)
 
     #ESTADO DEL DOCUMENTO
     firmado = models.BooleanField(default=False)
@@ -326,7 +339,19 @@ class FacturaElectronica(models.Model):
     sello_recepcion = models.CharField(max_length=255, blank=True, null=True)
     recibido_mh = models.BooleanField(default=False)
     estado = models.BooleanField(default=False)
-
+    contingencia = models.BooleanField(default=False)
+    contingencia_recibida_mh = models.BooleanField(default=False)
+    #tipo_documento_relacionar = models.CharField(max_length=50, null=True, blank=True)#Identificar si el documento es Fisico(F) o Electronico(E)
+    #documento_relacionado = models.CharField(max_length=100, null=True, blank=True)#Agregar el documento relacionado
+    base_imponible = models.BooleanField(default=False)
+    tipotransmision = models.ForeignKey(TipoTransmision, on_delete=models.CASCADE, null=True, blank=True)
+    
+    fecha_modificacion = models.DateField(auto_now_add=True, null=True)
+    hora_modificacion = models.TimeField(auto_now_add=True, null=True)
+    
+    envio_correo = models.BooleanField(default=False)
+    envio_correo_contingencia = models.BooleanField(default=False)
+    
     def save(self, *args, **kwargs):
         if not self.numero_control:
             super().save(*args, **kwargs)
@@ -341,17 +366,20 @@ class DetalleFactura(models.Model):
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE,help_text="Producto asociado a este detalle")
     cantidad = models.PositiveIntegerField(default=1,help_text="Cantidad del producto")
     unidad_medida = models.ForeignKey(TipoUnidadMedida, on_delete=models.CASCADE, null=True)
-    iva_item = models.DecimalField(max_digits=10, decimal_places=2, null=True, default=Decimal('0.00'),)
-    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2,help_text="Precio unitario del producto")
-    descuento = models.DecimalField(max_digits=5, decimal_places=2, default=0,help_text="Descuento aplicado (en monto) sobre el total sin IVA")
-    ventas_no_sujetas = models.DecimalField(max_digits=10, decimal_places=2, null=True)
-    ventas_exentas = models.DecimalField(max_digits=10, decimal_places=2, null=True)
-    ventas_gravadas = models.DecimalField(max_digits=10, decimal_places=2, null=True)
-    pre_sug_venta = models.DecimalField(max_digits=10, decimal_places=2, null=True)
-    no_gravado = models.DecimalField(max_digits=10, decimal_places=2, null=True)
-    base_imponible = models.BooleanField(default=False)
+    iva_item = models.DecimalField(max_digits=10, decimal_places=6, null=True, default=Decimal('0.00'),)
+    precio_unitario = models.DecimalField(max_digits=10, decimal_places=6,help_text="Precio unitario del producto")
+    #descuento = models.DecimalField(max_digits=5, decimal_places=2, default=0,help_text="Descuento aplicado (en monto) sobre el total sin IVA")
+    ventas_no_sujetas = models.DecimalField(max_digits=10, decimal_places=6, null=True)
+    ventas_exentas = models.DecimalField(max_digits=10, decimal_places=6, null=True)
+    ventas_gravadas = models.DecimalField(max_digits=10, decimal_places=6, null=True)
+    pre_sug_venta = models.DecimalField(max_digits=10, decimal_places=6, null=True)
+    no_gravado = models.DecimalField(max_digits=10, decimal_places=6, null=True)
+    tiene_descuento = models.BooleanField(default=False)
+    descuento = models.ForeignKey(Descuento, on_delete=models.SET_NULL, null=True, blank=True)
     #iva_item = models.DecimalField(max_digits=10, decimal_places=2, blank=True, editable=False,help_text="IVA calculado (por ejemplo, 13% sobre el total sin IVA)")
-    
+    saldo_favor = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    tipo_documento_relacionar = models.CharField(max_length=50, null=True, blank=True)#Identificar si el documento es Fisico(F) o Electronico(E)
+    documento_relacionado = models.CharField(max_length=100, null=True, blank=True)#Agregar el documento relacionado
     # def save(self, *args, **kwargs):
     #     # Calcular el total sin IVA
     #     self.total_sin_iva = (self.cantidad * self.precio_unitario) - self.descuento
@@ -382,7 +410,7 @@ class EventoInvalidacion(models.Model):
     #-dtereceptor = models.ForeignKey(Receptor_fe, on_delete=models.CASCADE, related_name='dte_invalidar_receptor_FE')
 
     #Motivo (tabla TipoInvalidacion)
-    tipo_anulacion = models.ForeignKey(TipoInvalidacion, on_delete=models.CASCADE, related_name='dte_tipo_invalidacion_FE')
+    tipo_invalidacion = models.ForeignKey(TipoInvalidacion, on_delete=models.CASCADE, related_name='dte_tipo_invalidacion_FE')
     motivo_anulacion = models.CharField(max_length=255, blank=True, null=True)
     
     #Llena los campos nombreResponsable, tipoDocResponsable y numDocResponsable [Acceder desde factura]
@@ -398,7 +426,6 @@ class EventoInvalidacion(models.Model):
     sello_recepcion = models.CharField(max_length=255, blank=True, null=True)
     recibido_mh = models.BooleanField(default=False)
     estado = models.BooleanField(default=False)
-    
 
 class Token_data(models.Model):
     nit_empresa = models.CharField(max_length=20, unique=True)  # NIT de la empresa
@@ -433,5 +460,56 @@ class Token_data(models.Model):
         verbose_name = "Token Data"
         verbose_name_plural = "Token Data"
         
-
+class EventoContingencia(models.Model):
+    #Identificacion
+    codigo_generacion = models.UUIDField(default=uuid.uuid4, unique=True)
+    sello_recepcion = models.CharField(max_length=255, blank=True, null=True)
+    fecha_transmision = models.DateField(auto_now_add=True, null=True) #fInicio
+    hora_transmision = models.TimeField(auto_now_add=True, null=True) #hInicio
+    fecha_modificacion = models.DateField(auto_now_add=True, null=True)
+    hora_modificacion = models.TimeField(auto_now_add=True, null=True)
+    #lotecontingencia = models.ForeignKey(LoteContingencia, on_delete=models.CASCADE, null=True, blank=True, related_name="lotes_evento")
+    tipo_contingencia = models.ForeignKey(TipoContingencia, on_delete=models.CASCADE, null=True)
+    firmado = models.BooleanField(default=False)
+    json_original = models.JSONField(blank=True, null=True)
+    json_firmado = models.JSONField(blank=True, null=True)
+    recibido_mh = models.BooleanField(default=False)
+    #Agregar campos de fecha y hora que proporcionara hacienda
+    f_fin = models.DateField(auto_now_add=True, null=True)
+    h_fin = models.TimeField(auto_now_add=True, null=True)
+    finalizado = models.BooleanField(default=False)
+    #Si el evento fue rechazado se indicara el error para su correcion en un plazo máximo de 24 horas despues de haber sido rechazado
+    rechazado = models.BooleanField(default=False) #manejar estado de envio de contingencia a MH
+    observaciones = models.CharField(max_length=3000, blank=True, null=True)
+    fecha_sello_recibido = models.DateTimeField(null=True, blank=True) 
+    cantidad_lote = models.IntegerField(null=True, verbose_name=None)
+    motivo_contingencia = models.CharField(max_length=500, blank=True, null=True)
     
+    def __str__(self):
+        return f"Contingencia {self.codigo_generacion} - {self.fecha_transmision} - {self.hora_transmision}"
+
+class LoteContingencia(models.Model):
+    #eventocontingencia = models.ForeignKey(EventoContingencia, on_delete=models.CASCADE, null=True, blank=True)
+    recibido_mh = models.BooleanField(default=False)
+    #estado = models.BooleanField(default=False)
+    #cantidad_lote = models.IntegerField(null=True, verbose_name=None)
+    evento = models.ForeignKey(
+        EventoContingencia,
+        related_name='lotes_contingencia',  # queda claro que son lotes de contingencia
+        on_delete=models.CASCADE, null=True, blank=True
+    )
+    factura = models.ForeignKey(
+        FacturaElectronica,
+        related_name='lotes_de_factura',      # lotes en los que aparece esta factura
+        on_delete=models.CASCADE, null=True, blank=True
+    )
+    finalizado = models.BooleanField(default=False)
+    
+    #Auditoria
+    fecha_transmicion = models.DateField(auto_now_add=True, null=True) #fInicio
+    hora_transmision = models.TimeField(auto_now_add=True, null=True)
+    fecha_modificacion = models.DateField(auto_now_add=True, null=True)
+    hora_modificacion = models.TimeField(auto_now_add=True, null=True)
+    #evento = models.ForeignKey(EventoContingencia, related_name='lotecontingencia', on_delete=models.CASCADE)
+    
+

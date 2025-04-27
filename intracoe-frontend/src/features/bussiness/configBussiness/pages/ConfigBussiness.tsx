@@ -1,7 +1,11 @@
+import { Title } from '../../../../shared/text/title';
+import { FormConfigBussinessContainer } from '../components/configBussinessform/formConfigBussinessContainer';
+
 export const ConfigBussiness = () => {
   return (
     <>
-      <h1>Configurar empresa</h1>
+      <Title text="Configurar empresa" />
+      <FormConfigBussinessContainer />
     </>
   );
 };
