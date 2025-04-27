@@ -90,12 +90,9 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
     setAuxManejoPagos(remaining);
 
     // Y en lugar de enviar sólo el ID, enviamos este array de objetos:
-    const pagosParaApi: PagoPayload[] = infoPagoLista.map(p => ({
-      codigo:     p.codigo,
+    const pagosParaApi: any[] = infoPagoLista.map(p => ({
+      formaPagoId: p.idTipoPago,
       montoPago:  p.montoPago,
-      referencia: p.referecia  || null,
-      plazo:      p.plazo      || null,
-      periodo:    p.periodo    || null,
     }));
     setFormasPagoList(pagosParaApi);
     setFormasPagoList(pagosParaApi);

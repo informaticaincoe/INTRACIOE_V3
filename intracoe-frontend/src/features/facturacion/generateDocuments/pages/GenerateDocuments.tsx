@@ -140,7 +140,6 @@ export const GenerateDocuments = () => {
   }, [selectedProducts]);
 
   const generarFactura = async () => {
-    console.log(descuentoItem);
     // const dataFECF = {
     //   numero_control: numeroControl,
     //   receptor_id: receptor.id,
@@ -237,28 +236,28 @@ export const GenerateDocuments = () => {
   };
 
   const handleClickGenerarFactura = async () => {
-    if (auxManejoPagos != 0) {
-      console.log('errpr pagos');
-      setErrorFormasPago(true);
-      handleAccion(
-        'error',
-        <IoMdCloseCircle size={38} />,
-        'No se ha realizado el pago completo'
-      );
-    }
+    // if (auxManejoPagos != 0) {
+    //   console.log('errpr pagos');
+    //   setErrorFormasPago(true);
+    //   handleAccion(
+    //     'error',
+    //     <IoMdCloseCircle size={38} />,
+    //     'No se ha realizado el pago completo'
+    //   );
+    // }
 
-    if (receptor.id == '') {
-      console.log('errpr receptr');
+    // if (receptor.id == '') {
+    //   console.log('errpr receptr');
 
-      setErrorReceptor(true);
-      handleAccion(
-        'error',
-        <IoMdCloseCircle size={38} />,
-        'Campo de receptor no debe estar vacio'
-      );
-    } else {
+    //   setErrorReceptor(true);
+    //   handleAccion(
+    //     'error',
+    //     <IoMdCloseCircle size={38} />,
+    //     'Campo de receptor no debe estar vacio'
+    //   );
+    // } else {
       generarFactura();
-    }
+    // }
   };
 
   //************************************/

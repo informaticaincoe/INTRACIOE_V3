@@ -1,5 +1,5 @@
 {
-    "numero_control": "DTE-01-0000MOO1-000000000001092",
+    "numero_control": "DTE-01-0000MOO1-000000000001123",
     "receptor_id": 1,
     "nit_receptor": "06142802961066",
     "nombre_receptor": "Francisco Antonio Flores",
@@ -15,15 +15,8 @@
     "porcentaje_retencion_iva": "0",
     "retencion_renta": false,
     "porcentaje_retencion_renta": "0",
-    "formas_pago_id": [
-        {
-            "codigo": "01",
-            "montoPago": 1.41,
-            "referencia": null,
-            "plazo": null,
-            "periodo": null
-        }
-    ],
+    "fp_id": [1],
+    "monto_fp": 1.41,
     "saldo_favor_input": "0.00",
     "descuento_gravado": "0",
     "descuento_global_input": "0",
