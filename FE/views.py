@@ -982,7 +982,7 @@ def generar_factura_view(request):
             factura_json = generar_json(
                 ambiente_obj, tipo_dte_obj, factura, emisor, receptor,
                 cuerpo_documento, observaciones, Decimal(str(total_iva_item)), base_imponible_checkbox, saldo_favor, documentos_relacionados, contingencia, 
-                total_gravada, nombre_responsable, documento_responsable
+                total_gravada, nombre_responsable, documento_responsable, formas_pago
             )
             
             factura.json_original = factura_json
@@ -2716,7 +2716,7 @@ def agregar_formas_pago_ajax(request):
         return None
 
 def agregar_formas_pago_api(request):
-    print("-Fromas de pago view: ", request)
+    print("-Fromas de pago api: ", request)
     data = request.data
     global formas_pago
     formas_pago = []
