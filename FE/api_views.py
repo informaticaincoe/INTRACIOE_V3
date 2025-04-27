@@ -4090,3 +4090,4 @@ class EnviarCorreoIndividualAPIView(APIView):
                     status=status.HTTP_502_BAD_GATEWAY
                 )
     #return redirect('detalle_factura', factura_id=factura_id)
+    
