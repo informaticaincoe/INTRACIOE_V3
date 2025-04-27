@@ -6,8 +6,8 @@ export const generarFacturaService = async (data: any) => {
   try {
     const response = await api.post(`/factura/generar/`, data);
     return response.data;
-  } catch (error) {
-    console.log(error);
+  } catch (error:any) {
+    console.log("ERROR:", error.response.data);
     throw new Error();
   }
 };
@@ -15,10 +15,11 @@ export const generarFacturaService = async (data: any) => {
 export const generarAjusteService = async () => {
   try {
     const response = await api.get(`/factura_ajuste/generar/`);
-    console.log(response.data);
+    
     return response.data;
-  } catch (error) {
-    console.log(error);
+  } catch (error:any) {
+    console.log("ERROR:", error.response.data);
+
     throw new Error();
   }
 };
@@ -41,7 +42,6 @@ export const getFacturaCodigos = async (tipo_dte: string) => {
       },
     });
 
-    console.log('productos response-------------', response.data);
     const productosConExtras: ProductosTabla[] = response.data.productos.map(
       (p: ProductosTabla) => ({
         ...p,
@@ -57,7 +57,6 @@ export const getFacturaCodigos = async (tipo_dte: string) => {
       })
     );
 
-    console.log('productos con extras-------------', productosConExtras);
 
     return {
       ...response.data,
@@ -71,8 +70,6 @@ export const getFacturaCodigos = async (tipo_dte: string) => {
 
 export const FirmarFactura = async (id: string) => {
   try {
-    console.log("prueba")
-    console.log(id)
     await api.post(`/factura/firmar/${id}/`);
   } catch (error) {
     console.log(error);
@@ -84,7 +81,6 @@ export const EnviarHacienda = async (id: string) => {
     const response = await api.post(`/factura/${id}/enviar/`);
     return response;
   } catch (error) {
-    console.error('Error desde EnviarHacienda:', error);
     throw error;
   }
 };
