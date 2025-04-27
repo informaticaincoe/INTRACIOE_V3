@@ -54,7 +54,7 @@ from io import BytesIO
 from django.contrib.auth.decorators import login_required
 from xhtml2pdf import pisa
 from django.core.mail import EmailMessage
-# from AUTENTICACION.models import ConfiguracionServidor
+from AUTENTICACION.models import ConfiguracionServidor
 
 FIRMADOR_URL = "http://192.168.2.25:8113/firmardocumento/"
 DJANGO_SERVER_URL = "http://127.0.0.1:8000"
@@ -92,13 +92,9 @@ HTTP_INTERNAL_SERVER_ERROR_MH = [502, 503, 504, 500, 408] #Errores en el servido
 HTTP_INTERNAL_SERVER_ERROR_EMISOR = [400, 404, 500, 503, 504, 408, 429, 599] #Errores en el sistema del emisor 400-499
 HTTP_INTERNAL_SERVER_ERROR_INTERNET_EMISOR = [400, 401, 403, 404, 408, 500, 503] #Falla en el suministro de servicio de Internet del cliente
 HTTP_INTERNAL_SERVER_ERROR_SUMINISTRO_ENERGIA = ["E015", "E019", "503", "504", "E010"] #Falla een el suministro de servicio de energia electrica del cliente que impida la transmision de los documentos electronicos
-#RUTA_COMPROBANTES_PDF = ConfiguracionServidor.objects.filter(codigo="ruta_comprobantes_dte").first()
-#RUTA_COMPROBANTES_JSON = ConfiguracionServidor.objects.filter(codigo="ruta_comprobante_json").first()
-#RUTA_JSON_FACTURA = ConfiguracionServidor.objects.filter(codigo="json_factura").first()
-
-RUTA_COMPROBANTES_PDF = None
-RUTA_COMPROBANTES_JSON = None
-RUTA_JSON_FACTURA = None
+RUTA_COMPROBANTES_PDF = ConfiguracionServidor.objects.filter(codigo="ruta_comprobantes_dte").first()
+RUTA_COMPROBANTES_JSON = ConfiguracionServidor.objects.filter(codigo="ruta_comprobante_json").first()
+RUTA_JSON_FACTURA = ConfiguracionServidor.objects.filter(codigo="json_factura").first()
 
 formas_pago = [] #Asignar formas de pago
 documentos_relacionados = []
