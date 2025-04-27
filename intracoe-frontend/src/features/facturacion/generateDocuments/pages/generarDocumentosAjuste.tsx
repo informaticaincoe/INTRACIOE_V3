@@ -136,11 +136,11 @@ export const GenerarDocumentosAjuste = () => {
       tipoDocumento: tipoDocumentoSelected?.codigo,
       receptor_id: receptor.id,
       observaciones: observaciones,
-      tipo_documento_seleccionado: tipoDocumentoSelected?.id ?? '05', //tipo DTE
+      tipo_documento_seleccionado: tipoDocumentoSelected?.codigo ?? '05', //tipo DTE
       tipo_item_select: 1,
       documento_seleccionado: 2, // solo manjeo de documento electronico
       documento_relacionado:
-        facturasAjuste[0]?.num_documento.toUpperCase() ?? '',
+        facturasAjuste[0]?.codigo_generacion.toUpperCase() ?? '',
       // descuento_select: descuentos, //TODO: Descuento por item
       condicion_operacion: selectedCondicionDeOperacion, //contado, credito, otros
       porcentaje_retencion_iva: (retencionIva / 100).toString(),
@@ -219,7 +219,7 @@ export const GenerarDocumentosAjuste = () => {
 
   const fetchfacturaData = async () => {
     try {
-      const response = await generarAjusteService();
+      const response = await generarAjusteService(tipoDocumentoSelected?.codigo ?? '05');
       setCodigoGeneracion(response.codigo_generacion);
       setNumeroControl(response.numero_control);
       setEmisorData(response.emisor);

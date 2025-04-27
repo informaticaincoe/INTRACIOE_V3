@@ -3981,7 +3981,8 @@ class TopProductosAPIView(generics.ListAPIView):
 #@csrf_exempt
 class EnviarCorreoIndividualAPIView(APIView):
     def post(self, request, factura_id, format=None):
-        # print(f"Inicio envio de correos: pdf: {archivo_pdf}, json: {archivo_json}")
+        
+        print(f"Inicio envio de correos: pdf: {archivo_pdf}, json: {archivo_json}")
         documento_electronico = get_object_or_404(FacturaElectronica, id=factura_id).order_by('id').first()
         receptor = get_object_or_404(Receptor_fe, id=documento_electronico.dtereceptor_id)
         emisor = get_object_or_404(Emisor_fe, id=documento_electronico.dteemisor_id)
@@ -3992,7 +3993,6 @@ class EnviarCorreoIndividualAPIView(APIView):
         archivo_json = request.data.get('archivo_json')
 
         # Si no vienen los archivos como parámetro, buscar en las rutas
-        print("antes>", archivo_pdf)
 
         if not archivo_pdf:
             print("RUTA_COMPROBANTES_PDF", RUTA_COMPROBANTES_PDF)

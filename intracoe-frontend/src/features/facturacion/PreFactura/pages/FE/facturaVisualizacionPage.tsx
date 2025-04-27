@@ -127,7 +127,7 @@ export const FacturaVisualizacionPage = () => {
 
     } catch (error) {
       setLoadingFirma(false)
-      setViewDiaog(true)
+      // setViewDiaog(true)
       console.log(error)
     }
 
@@ -177,7 +177,7 @@ export const FacturaVisualizacionPage = () => {
       formData.append('archivo_json', jsonBlob, `factura_${datosFactura.codigoGeneracion}.json`);
 
       console.log(pdfBlob)
-      const emailResponse = await enviarFactura(id);
+      await enviarFactura(id, formData);
     } catch (error) {
       console.log(error)
     }
