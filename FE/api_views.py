@@ -50,7 +50,9 @@ from rest_framework.test import APIRequestFactory
 from django.forms.models import model_to_dict
 from rest_framework.response import Response
 from django.db.models import Count, Sum
-
+from AUTENTICACION.models import ConfiguracionServidor
+from django.core.mail import EmailMessage
+from intracoe import settings
 
 FIRMADOR_URL = "http://192.168.2.25:8113/firmardocumento/"
 DJANGO_SERVER_URL = "http://127.0.0.1:8000"
@@ -84,6 +86,9 @@ RELACIONAR_DOC_FISICO = 1
 RELACIONAR_DOC_ELECTRONICO = 2
 COD_TIPO_CONTINGENCIA = "5"
 DTE_APLICA_CONTINGENCIA = ["01", "03", "04", "05", "06", "11", "14"]
+RUTA_COMPROBANTES_PDF = ConfiguracionServidor.objects.filter(codigo="ruta_comprobantes_dte").first()
+RUTA_COMPROBANTES_JSON = ConfiguracionServidor.objects.filter(codigo="ruta_comprobante_json").first()
+RUTA_JSON_FACTURA = ConfiguracionServidor.objects.filter(codigo="json_factura").first()
 
 formas_pago = [] #Asignar formas de pago
 documentos_relacionados = []
@@ -2083,6 +2088,7 @@ class FirmarFacturaAPIView(APIView):
         contingencia = True
         mensaje = None
         motivo_otro = False
+        mostrar_modal = False
         tipo_contingencia_obj = None
         intentos_max = 3
         response_data = {}
@@ -2129,6 +2135,7 @@ class FirmarFacturaAPIView(APIView):
                     request.session['intentos_reintento'] = 0
                     request.session.modified = True
                     contingencia = False
+                    mostrar_modal = False
                     return Response({
                         "mensaje": "Firma exitosa",
                         "detalle": response_data
@@ -2303,6 +2310,11 @@ class EnviarFacturaHaciendaAPIView(APIView):
                         factura.recibido_mh = True
                         factura.contingencia = False
                         factura.json_original = {**factura.json_original, "jsonRespuestaMh": data}
+                        
+                        #Enviar correo
+                        if factura.recibido_mh == False:
+                            enviar_correo_individual_view(request, factura_id, None, None)
+                            factura.envio_correo = True
                         factura.save()
                         
                         # Registrar movimiento de inventario
@@ -2318,7 +2330,6 @@ class EnviarFacturaHaciendaAPIView(APIView):
                                 )
                         # Finalizar contingencias
                         finalizar_contigencia_view(request)
-
                         return Response(
                             {"mensaje": "Factura enviada con éxito", "respuesta": data},
                             status=status.HTTP_200_OK
@@ -2332,6 +2343,12 @@ class EnviarFacturaHaciendaAPIView(APIView):
             # Si llegó aquí, envió falló repetidamente → contingencia
             factura.estado = False
             factura.contingencia = True
+            
+            #Enviar correo
+            if factura:
+                enviar_correo_individual_view(request, factura_id, None, None)
+                factura.envio_correo_contingencia = True
+            
             factura.save()
             return Response(
                 {"error": "Error al enviar factura", "detalle": error_envio},
@@ -3029,9 +3046,9 @@ class ContingenciaDteAPIView(APIView):
             json_emisor = {
                 "nit": str(emisor_fe.nit),
                 "nombre": str(emisor_fe.nombre_razon_social),
-                "nombreResponsable": str(emisor_fe.representante.nombre),
-                "tipoDocResponsable": str(emisor_fe.representante.tipo_documento.codigo),
-                "numeroDocResponsable": str(emisor_fe.representante.numero_documento),
+                "nombreResponsable": str(emisor_fe.representante.nombre) if emisor_fe.representante else str(emisor_fe.nombre_razon_social),
+                "tipoDocResponsable": str(emisor_fe.representante.tipo_documento.codigo) if emisor_fe.representante else str(emisor_fe.tipo_documento.codigo),
+                "numeroDocResponsable": str(emisor_fe.representante.numero_documento) if emisor_fe.representante else str(emisor_fe.nit),
                 "tipoEstablecimiento": str(emisor_fe.tipoestablecimiento.codigo) if emisor_fe.tipoestablecimiento else "",
                 "codEstableMH": str(emisor_fe.codigo_establecimiento),
                 "codPuntoVenta": str(emisor_fe.codigo_punto_venta),
@@ -3830,6 +3847,11 @@ class EnviarLotesHaciendaAPIView(APIView):
             factura.estado = True
             factura.fecha_modificacion = fecha_actual.date()
             factura.hora_modificacion = fecha_actual.time()
+            
+            #Enviar correo
+            if factura:
+                enviar_correo_individual_view(request, factura.id, None, None)
+                factura.envio_correo = True
             factura.save()
 
             return Response(
@@ -3945,5 +3967,112 @@ class TopProductosAPIView(generics.ListAPIView):
  
         return Response({"productos": list(data)})
 
+#@csrf_exempt
+class EnviarCorreoIndividualAPIView(APIView):
+    def post(self, request, factura_id, format=None):
+        print(f"Inicio envio de correos: pdf: {archivo_pdf}, json: {archivo_json}")
+        documento_electronico = get_object_or_404(FacturaElectronica, id=factura_id).order_by('id').first()
+        receptor = get_object_or_404(Receptor_fe, id=documento_electronico.dtereceptor_id)
+        emisor = get_object_or_404(Emisor_fe, id=documento_electronico.dteemisor_id)
+        #Correo receptor principal: juniorfran@hotmail.es
+        
+        # 2) Leer parámetros del body
+        archivo_pdf = request.data.get('archivo_pdf')
+        archivo_json = request.data.get('archivo_json')
 
-    
+        # Si no vienen los archivos como parámetro, buscar en las rutas
+        if not archivo_pdf:
+            ruta_pdf = os.path.join(RUTA_COMPROBANTES_PDF.ruta_archivo, documento_electronico.tipo_dte.codigo, "pdf")
+            archivo_pdf = os.path.join(ruta_pdf, f"{documento_electronico.codigo_generacion}.pdf")
+            if not os.path.exists(archivo_pdf):
+                print(f"Archivo PDF no encontrado en {archivo_pdf}")
+                messages.error(request, "Archivo PDF no encontrado.")
+        
+        if not archivo_json:
+            ruta_json = RUTA_COMPROBANTES_JSON.ruta_archivo
+            archivo_json = os.path.join(ruta_json, f"{documento_electronico.numero_control}.json")
+            if not os.path.exists(archivo_json):
+                print(f"Archivo JSON no encontrado en {archivo_json}")
+                messages.error(request, "Archivo JSON no encontrado.")
+        print(f"json: {archivo_json} pdf: {archivo_pdf}")
+        if documento_electronico:
+            
+            # Renderizar el HTML del mensaje del correo
+            email_html_content = f"""
+            <p>Estimado/a {receptor.nombre} reciba un cordial saludo.</p>
+            <p>Le notificamos que se ha generado el documento electrónico. A continuación, los detalles principales:</p>
+            <ul>
+                <li><strong>Código de generación:</strong> {str(documento_electronico.codigo_generacion).upper()}</li>
+                <li><strong>Fecha de emisión:</strong> {documento_electronico.fecha_emision.strftime("%Y-%m-%d")}</li>
+                <li><strong>Hora de emisión:</strong> {documento_electronico.hora_emision.strftime('%H:%M:%S')}</li>
+                <li><strong>Estado:</strong> {"Procesado" if documento_electronico.recibido_mh and documento_electronico.sello_recepcion else "Contingencia" if documento_electronico.contingencia else ""}</li>
+            </ul>
+            
+            <p>Adjuntamos el documento en formato PDF y JSON para su respaldo.</p>
+            <p>Si tiene alguna consulta, estamos a su disposición.</p>
+            
+            Consulte el documento electrónico aquí: https://admin.factura.gob.sv/consultaPublica
+            <BR>
+            <BR>
+            
+            Atentamente, <BR>
+            {emisor.nombre_razon_social} <BR>
+            {emisor.email}
+            """
+            
+            # Crear el correo electrónico con formato HTML
+            email = EmailMessage(
+                subject="Documento Electrónico "+ documento_electronico.tipo_dte.descripcion,
+                body=email_html_content,
+                from_email=request.settings.EMAIL_HOST_USER_FE,
+                to=[receptor.correo],
+            )
+            email.content_subtype = "html"  # Indicar que el contenido es HTML
+            
+            # Adjuntar el archivo PDF
+            try:
+                with open(archivo_pdf, 'rb') as pdf_file_to_attach:
+                    email.attach(
+                        f"Documento_Electrónico_{receptor.nombre}.pdf",
+                        pdf_file_to_attach.read(),
+                        'application/pdf'
+                    )
+            except Exception as e:
+                print(f"Error al abrir el archivo PDF: {e}")
+                return Response(
+                {"error": "Error al abrir el archivo PDF", "detalle": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+            # Adjuntar el archivo JSON
+            try:
+                with open(archivo_json, 'rb') as json_file_to_attach:
+                    email.attach(
+                        f"Documento_Electrónico_{receptor.nombre}.json",
+                        json_file_to_attach.read(),
+                        'application/json'
+                    )
+            except Exception as e:
+                return Response(
+                {"error": "Error al abrir el archivo JSON:", "detalle": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+            
+            # Enviar el correo
+            try:
+                email.send(fail_silently=False)
+                documento_electronico.envio_correo = True
+                documento_electronico.save()
+                print(f"Correo enviado a {receptor.correo}")
+                return Response(
+                    {"mensaje": "El correo fue enviado exitosamente a"},
+                    status=status.HTTP_200_OK
+                    )
+            except Exception as e:
+                documento_electronico.envio_correo = False
+                documento_electronico.save()
+                print(f"Error al enviar el correo a {receptor.correo}: {e}")
+                return Response(
+                    {"error": "Error al enviar el correo", "detalle": str(e)},
+                    status=status.HTTP_502_BAD_GATEWAY
+                )
+    #return redirect('detalle_factura', factura_id=factura_id)

@@ -4859,7 +4859,7 @@ def finalizar_contigencia_view(request):
 
         #Verificar si existen eventos en contingencia activos de las ultimas 24 horas
         fecha_actual = obtener_fecha_actual()
-        fecha_limite = (fecha_actual - timezone.timedelta(hours=1))
+        fecha_limite = (fecha_actual - timezone.timedelta(hours=24))
         
         # Contingencias activas sin rechazo
         try:
