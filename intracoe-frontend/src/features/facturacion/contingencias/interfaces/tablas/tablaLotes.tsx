@@ -17,7 +17,11 @@ export const TablaLotes: React.FC<TablaLotesProps> = ({ lotes }) => {
 
     useEffect(() => {
         console.log("66666666666666666666", lotes)
-    }, [])
+    }, [lotes])
+
+    // Helper to render a value or a hyphen if empty
+    const renderValue = (value: any) =>
+        value !== null && value !== undefined && value !== '' ? value : '-'
 
     return (
         <Accordion multiple activeIndex={[0]} className={styles.customCollapse}>
@@ -50,10 +54,26 @@ export const TablaLotes: React.FC<TablaLotesProps> = ({ lotes }) => {
                             value={grupo.facturas}
                             className={styles.customSubTable}
                         >
-                            <Column field="sello_recepcion" header="Sello recepción" />
-                            <Column field="fecha_emision" header="Fecha Emisión" />
-                            <Column field="total_pagar" header="Total a Pagar" />
-                            <Column field="total_iva" header="IVA" />
+                            <Column
+                                header="Numero control"
+                                body={(row: any) => renderValue(row.numero_control)}
+                            />
+                            <Column
+                                header="Sello recepción"
+                                body={(row: any) => renderValue(row.sello_recepcion)}
+                            />
+                            <Column
+                                header="Fecha Emisión"
+                                body={(row: any) => renderValue(row.fecha_emision)}
+                            />
+                            <Column
+                                header="Total a Pagar"
+                                body={(row: any) => renderValue(row.total_pagar)}
+                            />
+                            <Column
+                                header="IVA"
+                                body={(row: any) => renderValue(row.total_iva)}
+                            />
                             <Column
                                 header="Estado"
                                 body={(row: any) =>

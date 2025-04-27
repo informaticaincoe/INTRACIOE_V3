@@ -29,6 +29,7 @@ import {
 import { ProductosTabla } from '../components/FE/productosAgregados/productosData';
 import { ResumenTotalesCard } from '../components/Shared/resumenTotales/resumenTotalesCard';
 import {
+  enviarFactura,
   FirmarFactura,
   generarFacturaService,
   getFacturaCodigos,
@@ -141,7 +142,7 @@ export const GenerateDocuments = () => {
 
   const generarFactura = async () => {
     const dataFECF = {
-      numero_control: numeroControl,
+      // numero_control: numeroControl,
       receptor_id: receptor.id,
       nit_receptor: receptor.num_documento,
       nombre_receptor: receptor.nombre,
@@ -156,7 +157,7 @@ export const GenerateDocuments = () => {
       observaciones: observaciones,
       productos_ids: idListProducts,
       cantidades: cantidadListProducts, //cantidad de cada producto de la factura
-      monto_fp: totalAPagar.toFixed(2),
+      monto_fp: totalAPagar,
       num_ref: null,
       no_gravado: baseImponible,
       retencion_iva: tieneRetencionIva,
@@ -188,8 +189,6 @@ export const GenerateDocuments = () => {
   const firmarFactura = async (id: string) => {
     try {
       if (id) {
-        const response = await FirmarFactura(id);
-
         navigate(`/factura/${id}`);
       }
     } catch (error) {
