@@ -29,6 +29,7 @@ import {
 import { ProductosTabla } from '../components/FE/productosAgregados/productosData';
 import { ResumenTotalesCard } from '../components/Shared/resumenTotales/resumenTotalesCard';
 import {
+  enviarFactura,
   FirmarFactura,
   generarFacturaService,
   getFacturaCodigos,
@@ -61,7 +62,7 @@ export const GenerateDocuments = () => {
     descuentoGravado: 0,
   });
   const [listProducts, setListProducts] = useState<ProductosTabla[]>([]); //lista que almacena todos los productos
-  const [formasPagoList, setFormasPagoList] = useState<PagoPayload[]>([]);
+  const [formasPagoList, setFormasPagoList] = useState<number[]>([]);
 
   const [numeroControl, setNumeroControl] = useState('');
   const [codigoGeneracion, setCodigoGeneracion] = useState('');
@@ -140,53 +141,43 @@ export const GenerateDocuments = () => {
   }, [selectedProducts]);
 
   const generarFactura = async () => {
-    // const dataFECF = {
-    //   numero_control: numeroControl,
-    //   receptor_id: receptor.id,
-    //   nit_receptor: receptor.num_documento,
-    //   nombre_receptor: receptor.nombre,
-    //   direccion_receptor: receptor.direccion,
-    //   telefono_receptor: receptor.telefono,
-    //   correo_receptor: receptor.correo,
-    //   tipo_item_select: 1, //TODO: obtener segun la lista de productos de forma dinamica (bien o servicio)
-    //   descuento_select: descuentosProducto, //TODO: Implementar con cambios pendiente de la api
-    //   // descuento_select: '0.00',
-    //   tipo_documento_seleccionado: tipoDocumentoSelected?.codigo ?? '01', //tipo DTE
-    //   condicion_operacion: selectedCondicionDeOperacion, //contado, credito, otros
-    //   observaciones: observaciones,
-    //   productos_ids: idListProducts,
-    //   cantidades: cantidadListProducts, //cantidad de cada producto de la factura
-    //   monto_fp: totalAPagar,
-    //   num_ref: null,
-    //   no_gravado: baseImponible,
-    //   retencion_iva: tieneRetencionIva,
-    //   porcentaje_retencion_iva: (retencionIva / 100).toString(),
-    //   formas_pago_id: formasPagoList,
-    //   // formas_pago_id: [
-    //   //   {
-    //   //     "idTipoPago": 1,
-    //   //     "codigo": "01",
-    //   //     "montoPago": 1.41,
-    //   //     "referencia": null,
-    //   //     "plazo": null,
-    //   //     "periodo": null
-    //   //   }
-    //   // ],
-    //   saldo_favor_input: '0.00',
-    //   descuento_gravado: (descuentos.descuentoGravado / 100).toString(),
-    //   descuento_global_input: (descuentos.descuentoGeneral / 100).toString(),
-    //   porcentaje_retencion_renta: (retencionRenta / 100).toString(),
-    //   retencion_renta: tieneRetencionRenta,
-    //   nombre_responsable: nombreResponsable || null,
-    //   doc_responsable: docResponsable || null,
-    //   tipotransmision: tipoTransmision,
-    // };
+    const dataFECF = {
+      // numero_control: numeroControl,
+      receptor_id: receptor.id,
+      nit_receptor: receptor.num_documento,
+      nombre_receptor: receptor.nombre,
+      direccion_receptor: receptor.direccion,
+      telefono_receptor: receptor.telefono,
+      correo_receptor: receptor.correo,
+      tipo_item_select: 1, //TODO: obtener segun la lista de productos de forma dinamica (bien o servicio)
+      descuento_select: descuentosProducto, //TODO: Implementar con cambios pendiente de la api
+      // descuento_select: '0.00',
+      tipo_documento_seleccionado: tipoDocumentoSelected?.codigo ?? '01', //tipo DTE
+      condicion_operacion: selectedCondicionDeOperacion, //contado, credito, otros
+      observaciones: observaciones,
+      productos_ids: idListProducts,
+      cantidades: cantidadListProducts, //cantidad de cada producto de la factura
+      monto_fp: totalAPagar,
+      num_ref: null,
+      no_gravado: baseImponible,
+      retencion_iva: tieneRetencionIva,
+      porcentaje_retencion_iva: (retencionIva / 100).toString(),
+      fp_id: formasPagoList,
+      saldo_favor_input: '0.00',
+      descuento_gravado: (descuentos.descuentoGravado / 100).toString(),
+      descuento_global_input: (descuentos.descuentoGeneral / 100).toString(),
+      porcentaje_retencion_renta: (retencionRenta / 100).toString(),
+      retencion_renta: tieneRetencionRenta,
+      nombre_responsable: nombreResponsable || null,
+      doc_responsable: docResponsable || null,
+      tipotransmision: tipoTransmision,
+    };
 
 
-    const dataFECF = facturaJson
+    // const dataFECF = facturaJson
 
 
-
+    console.log(dataFECF)
     try {
       const response = await generarFacturaService(dataFECF);
       firmarFactura(response.factura_id);
@@ -198,8 +189,6 @@ export const GenerateDocuments = () => {
   const firmarFactura = async (id: string) => {
     try {
       if (id) {
-        const response = await FirmarFactura(id);
-
         navigate(`/factura/${id}`);
       }
     } catch (error) {
@@ -216,7 +205,7 @@ export const GenerateDocuments = () => {
 
   const fetchfacturaData = async () => {
     try {
-      const response = await getFacturaCodigos(tipoDocumentoSelected?.codigo ?? '03');
+      const response = await getFacturaCodigos(tipoDocumentoSelected?.codigo ?? '01');
       setCodigoGeneracion(response.codigo_generacion);
       setNumeroControl(response.numero_control);
       setEmisorData(response.emisor);
@@ -256,7 +245,7 @@ export const GenerateDocuments = () => {
     //     'Campo de receptor no debe estar vacio'
     //   );
     // } else {
-      generarFactura();
+    generarFactura();
     // }
   };
 

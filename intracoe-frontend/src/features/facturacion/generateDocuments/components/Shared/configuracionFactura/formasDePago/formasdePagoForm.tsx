@@ -22,7 +22,7 @@ import {
 import { PagoPayload } from '../../../../../../../shared/interfaces/interfaces';
 
 interface FormasdePagoFormProps {
-  setFormasPagoList: (codes: PagoPayload[]) => void;
+  setFormasPagoList: (codes: number[]) => void;
   totalAPagar: number;
   setErrorFormasPago: (b: boolean) => void;
   errorFormasPago: boolean;
@@ -80,24 +80,21 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
   // Cada vez que cambie la lista de pagos o el total, recalcula remaining
   // 2) En el useEffect que sincroniza con el padre, mapeamos el objeto completo
   useEffect(() => {
-    // Calcula cuánto falta (igual que antes)…
+    // Calcula cuánto falta (igual que antes)...
     const pagado = infoPagoLista.reduce((sum, p) => sum + p.montoPago, 0);
     let remaining = Math.round((totalAPagar - pagado) * 100) / 100;
     if (remaining < 0) {
-      setInfoPagoLista([]);
+      setInfoPagoLista([]); // Limpiar la lista si el total es negativo
       remaining = totalAPagar;
     }
     setAuxManejoPagos(remaining);
-
-    // Y en lugar de enviar sólo el ID, enviamos este array de objetos:
-    const pagosParaApi: any[] = infoPagoLista.map(p => ({
-      formaPagoId: p.idTipoPago,
-      montoPago:  p.montoPago,
-    }));
-    setFormasPagoList(pagosParaApi);
-    setFormasPagoList(pagosParaApi);
+  
+    // En lugar de enviar los objetos completos, solo pasamos los idTipoPago
+    const pagosParaApi: number[] = infoPagoLista.map(p => p.idTipoPago); // Solo el id
+  
+    setFormasPagoList(pagosParaApi); // Establece solo el array de ids
   }, [infoPagoLista, totalAPagar]);
-
+  
 
   const handleChange = (
     e: InputNumberValueChangeEvent | React.ChangeEvent<HTMLInputElement>

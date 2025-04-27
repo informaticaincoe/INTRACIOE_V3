@@ -68,11 +68,12 @@ export const getFacturaCodigos = async (tipo_dte: string) => {
   }
 };
 
-export const FirmarFactura = async (id: string) => {
+export const FirmarFactura = async (id: string | undefined) => {
   try {
     await api.post(`/factura/firmar/${id}/`);
   } catch (error) {
     console.log(error);
+    throw new Error()
   }
 };
 
@@ -97,6 +98,23 @@ export const getFacturaBycodigo = async (codigo_generacion: string) => {
     );
     return response.data;
   } catch (error) {
+    throw new Error();
+  }
+};
+
+export const enviarFactura = async (id: any) => {
+
+  console.log("@@@@@@@@@@@@@@@@@@@@@@@@",)
+  try {
+    const response = await api.post(`/enviar-correo/${id}/`,
+    //   {
+    //   headers: { 'Content-Type': 'multipart/form-data' }
+    // }
+  );
+    console.log(response.data)
+    return response.data;
+  } catch (error:any) {
+    console.log("ERROR:", error.response.data);
     throw new Error();
   }
 };

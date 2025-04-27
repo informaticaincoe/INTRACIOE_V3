@@ -355,6 +355,6 @@ urlpatterns = [
     path('api/dashboard/productos/', TopProductosAPIView.as_view(), name='Top-productos'),
     
     #ENVIO DE CORREO(DOCUMENTOS ELECTRONICOS)
-    path('enviar-correo/<int:factura_id>/', EnviarCorreoIndividualAPIView.as_view(), name='enviar_correo_individual'),
+    path('api/enviar-correo/<int:factura_id>/', EnviarCorreoIndividualAPIView.as_view(), name='enviar_correo_individual'),
 
 ]
