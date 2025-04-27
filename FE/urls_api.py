@@ -81,7 +81,9 @@ from FE.api_views import (
     TipoMonedaUpdateAPIView, TipoMonedaDestroyAPIView,
     # DESCUENTO
     DescuentoListAPIView, DescuentoCreateAPIView, DescuentoRetrieveAPIView,
-    DescuentoUpdateAPIView, DescuentoDestroyAPIView
+    DescuentoUpdateAPIView, DescuentoDestroyAPIView,
+    
+    EnviarCorreoIndividualAPIView
 
     )
 from . import views
@@ -351,5 +353,8 @@ urlpatterns = [
     path('api/dashboard/totales-ventas/', TotalVentasAPIView.as_view(), name='total-ventas'),
     path('api/dashboard/clientes/', TopClientes.as_view(), name='Top-clientes'),
     path('api/dashboard/productos/', TopProductosAPIView.as_view(), name='Top-productos'),
+    
+    #ENVIO DE CORREO(DOCUMENTOS ELECTRONICOS)
+    path('enviar-correo/<int:factura_id>/', EnviarCorreoIndividualAPIView.as_view(), name='enviar_correo_individual'),
 
 ]
