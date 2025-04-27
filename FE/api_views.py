@@ -19,7 +19,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.pagination import PageNumberPagination
 
 from .views import (
-    contingencia_dte_view, enviar_contingencia_hacienda_view, enviar_factura_hacienda_view, enviar_factura_invalidacion_hacienda_view, enviar_lotes_hacienda_view, 
+    contingencia_dte_view, enviar_contingencia_hacienda_view, enviar_correo_individual_view, enviar_factura_hacienda_view, enviar_factura_invalidacion_hacienda_view, enviar_lotes_hacienda_view, 
     finalizar_contigencia_view, firmar_contingencia_view, firmar_factura_anulacion_view, firmar_factura_view, 
     invalidacion_dte_view, generar_json, lote_contingencia_dte_view, num_to_letras, agregar_formas_pago_api, generar_json_contingencia, 
     generar_json_doc_ajuste, obtener_fecha_actual, obtener_listado_productos_view
@@ -2311,6 +2311,7 @@ class EnviarFacturaHaciendaAPIView(APIView):
                         # Actualizar factura
                         factura.sello_recepcion = data["selloRecibido"]
                         factura.recibido_mh = True
+                        factura.estado = True
                         factura.contingencia = False
                         factura.json_original = {**factura.json_original, "jsonRespuestaMh": data}
                         
@@ -2852,6 +2853,7 @@ class ContingenciaListAPIView(APIView):
                 facturas_en_grupos = []
                 for i in range(0, len(facturas), 100):
                     grupo = facturas[i : i + 100]
+                    
                     mostrar_checkbox_lote = any(
                         (not f.recibido_mh)
                         and f.sello_recepcion
@@ -2865,6 +2867,10 @@ class ContingenciaListAPIView(APIView):
                             'numero': getattr(f, 'numero', None),
                             'recibido_mh': f.recibido_mh,
                             'sello_recepcion': f.sello_recepcion,
+                            'fecha_emision': f.fecha_emision,
+                            'total_pagar': f.total_pagar,
+                            'numero_control': f.numero_control,
+                            # 'tipo_dte': f.tipo_dte
                         }
                         for f in grupo
                     ]
@@ -2880,6 +2886,8 @@ class ContingenciaListAPIView(APIView):
                     'fecha_sello_recibido': evento.fecha_sello_recibido,
                     'facturas_en_grupos': facturas_en_grupos,
                     'total_lotes_evento': len(facturas_en_grupos),
+                    'codigo_generacion': evento.codigo_generacion,
+                    'motivo_contingencia': evento.motivo_contingencia,
                     'mostrar_checkbox': any(
                         (not f.recibido_mh) and f.sello_recepcion is None
                         for f in facturas
@@ -3973,7 +3981,7 @@ class TopProductosAPIView(generics.ListAPIView):
 #@csrf_exempt
 class EnviarCorreoIndividualAPIView(APIView):
     def post(self, request, factura_id, format=None):
-        print(f"Inicio envio de correos: pdf: {archivo_pdf}, json: {archivo_json}")
+        # print(f"Inicio envio de correos: pdf: {archivo_pdf}, json: {archivo_json}")
         documento_electronico = get_object_or_404(FacturaElectronica, id=factura_id).order_by('id').first()
         receptor = get_object_or_404(Receptor_fe, id=documento_electronico.dtereceptor_id)
         emisor = get_object_or_404(Emisor_fe, id=documento_electronico.dteemisor_id)
@@ -3984,7 +3992,10 @@ class EnviarCorreoIndividualAPIView(APIView):
         archivo_json = request.data.get('archivo_json')
 
         # Si no vienen los archivos como parámetro, buscar en las rutas
+        print("antes>", archivo_pdf)
+
         if not archivo_pdf:
+            print("RUTA_COMPROBANTES_PDF", RUTA_COMPROBANTES_PDF)
             ruta_pdf = os.path.join(RUTA_COMPROBANTES_PDF.ruta_archivo, documento_electronico.tipo_dte.codigo, "pdf")
             archivo_pdf = os.path.join(ruta_pdf, f"{documento_electronico.codigo_generacion}.pdf")
             if not os.path.exists(archivo_pdf):

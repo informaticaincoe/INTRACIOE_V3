@@ -36,7 +36,7 @@ import { IoMdCloseCircle } from 'react-icons/io';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { usePDF } from 'react-to-pdf';
-import { EnviarHacienda } from '../../../generateDocuments/services/factura/facturaServices';
+import { enviarFactura, EnviarHacienda, FirmarFactura } from '../../../generateDocuments/services/factura/facturaServices';
 import CustomToast, {
   CustomToastRef,
   ToastSeverity,
@@ -45,6 +45,8 @@ import { getCondicionDeOperacionById } from '../../../generateDocuments/services
 
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import { form } from 'motion/react-client';
+import { Dialog } from 'primereact/dialog';
 
 export const FacturaVisualizacionPage = () => {
   let { id } = useParams();
@@ -66,6 +68,9 @@ export const FacturaVisualizacionPage = () => {
   const toastRef = useRef<CustomToastRef>(null);
 
   const [loading, setLoading] = useState(false);
+  const [loadingFirma, setLoadingFirma] = useState(false);
+
+  const [viewDialog, setViewDiaog] = useState(false)
 
   const handleAccion = (
     severity: ToastSeverity,
@@ -80,10 +85,53 @@ export const FacturaVisualizacionPage = () => {
     });
   };
 
+  const generarPdf = async () => {
+    const element = document.getElementById('content-id');
+    if (!element) {
+      throw new Error('El elemento de la factura no se encontró');
+    }
+
+    // 1) Render a canvas
+    const canvas = await html2canvas(element, { useCORS: true, scale: 3 });
+    const imgData = canvas.toDataURL('image/png');
+
+    // 2) Generar el PDF en memoria
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'px' });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const ratio = canvas.height / canvas.width;
+    const imgHeight = pageWidth * ratio;
+    pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, imgHeight);
+
+    // 3) Obtener el Blob del PDF
+    const pdfBlob = pdf.output('blob');
+
+    if (!pdfBlob) {
+      throw new Error('No se pudo generar el PDF');
+    }
+
+    return pdfBlob;
+  };
+
+
+
   useEffect(() => {
+    firmar()
     fetchDatosFactura();
   }, []);
 
+
+  const firmar = async () => {
+    try {
+      setLoadingFirma(true)
+      const response = await FirmarFactura(id);
+
+    } catch (error) {
+      setLoadingFirma(false)
+      setViewDiaog(true)
+      console.log(error)
+    }
+
+  }
   const fetchCondicionOperacionDescripcion = async (id: number) => {
     const response = await getCondicionDeOperacionById(id);
     setCondicionOperacion(response.descripcion);
@@ -98,6 +146,10 @@ export const FacturaVisualizacionPage = () => {
           <FaCircleCheck size={32} />,
           'La factura fue publicada correctamente'
         );
+
+        // Generar PDF y JSON
+
+
         setInterval(() => navigate(0), 2000);
       } catch (error) {
         handleAccion(
@@ -108,6 +160,28 @@ export const FacturaVisualizacionPage = () => {
       }
     }
   };
+
+
+  const enviarEmail = async () => {
+    try {
+      const pdfBlob = await generarPdf(); // Puede lanzar un error si no se genera
+      if (!pdfBlob) {
+        throw new Error('El archivo PDF no se pudo generar');
+      }
+
+      const jsonBlob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
+
+      // Crear FormData para enviar archivos
+      const formData = new FormData();
+      formData.append('archivo_pdf', pdfBlob, `factura_${datosFactura.codigoGeneracion}.pdf`);
+      formData.append('archivo_json', jsonBlob, `factura_${datosFactura.codigoGeneracion}.json`);
+
+      console.log(pdfBlob)
+      const emailResponse = await enviarFactura(id);
+    } catch (error) {
+      console.log(error)
+    }
+  }
 
   const fetchDatosFactura = async () => {
     try {
@@ -212,6 +286,7 @@ export const FacturaVisualizacionPage = () => {
         >
           Realizar otra factura
         </button>
+        <button onClick={enviarEmail}>ENviar email</button>
       </div>
       <div
         id="content-id"
@@ -269,6 +344,20 @@ export const FacturaVisualizacionPage = () => {
         </div>
       </div>
       <CustomToast ref={toastRef} />
+      {
+        viewDialog &&
+        <Dialog header="Error en firma de dte" visible={viewDialog} style={{ width: '50vw' }} onHide={() => { if (!viewDialog) return; setViewDiaog(false); }}>
+          <div className='flex flex-col justify-center w-full items-center'>
+            <p className="m-0">
+              ¿Desea intentar de nuevo?
+            </p>
+            <span className='flex w-full items-center justify-center gap-4 pt-5'>
+            <button onClick={firmar} className='flex bg-primary-blue text-white px-7 py-3 rounded'>{loadingFirma ? 'cargando...' : 'reintentar'}</button>
+            <button onClick={()=> setViewDiaog(false)} className='flex border border-primary-blue text-primary-blue px-7 py-3 rounded'>Cancelar</button>
+              </span>
+          </div>
+        </Dialog>
+      }
     </>
   );
 };
