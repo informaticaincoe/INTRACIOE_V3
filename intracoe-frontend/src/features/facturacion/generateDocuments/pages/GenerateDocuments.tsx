@@ -157,7 +157,7 @@ export const GenerateDocuments = () => {
       observaciones: observaciones,
       productos_ids: idListProducts,
       cantidades: cantidadListProducts, //cantidad de cada producto de la factura
-      monto_fp: totalAPagar,
+      monto_fp: totalAPagar.toFixed(2),
       num_ref: null,
       no_gravado: baseImponible,
       retencion_iva: tieneRetencionIva,
