@@ -66,6 +66,8 @@
             <th>IVA</th>
             <th>Recibido por Hacienda</th>
             <th>Acciones</th>
+            <th>Correo enviado</th>
+            <th>Enviar correo</th>
           </tr>
         </thead>
         <tbody>
@@ -105,6 +107,10 @@
             <td>
               <!-- Acción individual (opcional) -->
               <a href="{% url 'invalidar_dte_unificado' factura.id %}" class="btn btn-sm btn-secondary btn-invalidar" data-factura-id="{{ factura.id }}">Anular</a>
+            </td>
+            <td>{% if factura.envio_correo %}Sí{% else %}No{% endif %}</td>
+            <td>
+              <a href="{% url 'enviar_correo_individual' factura.id %}" class="btn btn-sm btn-secondary btn-invalidar" data-factura-id="{{ factura.id }}">Enviar</a>
             </td>
           </tr>
           {% empty %}

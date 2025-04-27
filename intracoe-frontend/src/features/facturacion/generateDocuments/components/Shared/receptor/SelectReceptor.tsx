@@ -43,7 +43,6 @@ export const SelectReceptor: React.FC<StepperProps> = ({
   useEffect(() => {
     fetchReceptores();
     setVisibleModal(false);
-    console.log('dentro', visibleModal);
   }, [updateReceptores]);
 
   const fetchReceptores = async () => {

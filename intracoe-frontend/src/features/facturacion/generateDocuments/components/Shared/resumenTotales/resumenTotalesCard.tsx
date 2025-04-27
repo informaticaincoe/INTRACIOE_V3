@@ -29,9 +29,6 @@ export const ResumenTotalesCard: React.FC<ResumenTotalesCardProps> = ({
   const [descuentoTotal, setDescuentoTotal] = useState('0.00');
 
   useEffect(() => {
-    console.log('ListProducts', listProducts);
-    console.log('Descuentos', descuentos);
-    console.log('Total a pagar', totalAPagar);
   }, [listProducts, descuentos, totalAPagar]);
 
   useEffect(() => {
@@ -90,7 +87,7 @@ export const ResumenTotalesCard: React.FC<ResumenTotalesCardProps> = ({
       <p>$ {totalIVA}</p>
 
       <p className="opacity-60">Total a pagar:</p>
-      <p>$ {totalAPagar}</p>
+      <p>$ {totalAPagar.toFixed(2)}</p>
 
       <p className="opacity-60">Descuento general:</p>
       <InputNumber

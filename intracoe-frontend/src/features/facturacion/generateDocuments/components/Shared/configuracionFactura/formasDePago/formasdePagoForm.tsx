@@ -19,9 +19,10 @@ import {
   getAllMetodosDePago,
   getAllPlazos,
 } from '../../../../../../../shared/catalogos/services/catalogosServices';
+import { PagoPayload } from '../../../../../../../shared/interfaces/interfaces';
 
 interface FormasdePagoFormProps {
-  setFormasPagoList: (codes: string[]) => void;
+  setFormasPagoList: (codes: PagoPayload[]) => void;
   totalAPagar: number;
   setErrorFormasPago: (b: boolean) => void;
   errorFormasPago: boolean;
@@ -77,21 +78,26 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
   };
 
   // Cada vez que cambie la lista de pagos o el total, recalcula remaining
+  // 2) En el useEffect que sincroniza con el padre, mapeamos el objeto completo
   useEffect(() => {
+    // Calcula cuánto falta (igual que antes)…
     const pagado = infoPagoLista.reduce((sum, p) => sum + p.montoPago, 0);
     let remaining = Math.round((totalAPagar - pagado) * 100) / 100;
-
     if (remaining < 0) {
-      // Si queda negativo, resetea todo
       setInfoPagoLista([]);
       remaining = totalAPagar;
     }
-
     setAuxManejoPagos(remaining);
-    // También actualiza los códigos en el padre
-    setFormasPagoList(infoPagoLista.map((p) => p.idTipoPago));
-    console.log(infoPagoLista.map((p) => p.idTipoPago));
-  }, [infoPagoLista, totalAPagar, setAuxManejoPagos, setFormasPagoList]);
+
+    // Y en lugar de enviar sólo el ID, enviamos este array de objetos:
+    const pagosParaApi: any[] = infoPagoLista.map(p => ({
+      formaPagoId: p.idTipoPago,
+      montoPago:  p.montoPago,
+    }));
+    setFormasPagoList(pagosParaApi);
+    setFormasPagoList(pagosParaApi);
+  }, [infoPagoLista, totalAPagar]);
+
 
   const handleChange = (
     e: InputNumberValueChangeEvent | React.ChangeEvent<HTMLInputElement>
@@ -124,7 +130,7 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
           idTipoPago: paymentSelected.id,
           codigo: paymentSelected.codigo,
           descripcion: paymentSelected.descripcion,
-          id: Date.now(),
+          plazo: selectedPlazosList,
         },
       ]);
       setErrorFormasPago(false);
