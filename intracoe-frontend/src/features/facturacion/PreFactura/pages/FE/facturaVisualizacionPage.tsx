@@ -45,8 +45,8 @@ import { getCondicionDeOperacionById } from '../../../generateDocuments/services
 
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import { form } from 'motion/react-client';
 import { Dialog } from 'primereact/dialog';
+import LoadingScreen from '../../../../../shared/loading/loadingScreen';
 
 export const FacturaVisualizacionPage = () => {
   let { id } = useParams();
@@ -69,8 +69,13 @@ export const FacturaVisualizacionPage = () => {
 
   const [loading, setLoading] = useState(false);
   const [loadingFirma, setLoadingFirma] = useState(false);
+  
 
-  const [viewDialog, setViewDiaog] = useState(false)
+  // arriba, junto a tus otros useState
+  const [firmaIntentos, setFirmaIntentos] = useState(0);
+  const [viewDialog, setViewDiaog] = useState(false);
+  const [enviarHaciendLoading, setEnviarHaciendLoading] = useState(false);
+
 
   const handleAccion = (
     severity: ToastSeverity,
@@ -112,57 +117,74 @@ export const FacturaVisualizacionPage = () => {
     return pdfBlob;
   };
 
-
-
   useEffect(() => {
-    firmar()
     fetchDatosFactura();
   }, []);
 
+  
+  useEffect(() => {
+    console.log(json)
+    if (json !== undefined) {
+      if (json == "OK") {
+        handleAccion('info', <FaCircleCheck size={32} />, 'Factura ya firmada');
+      } else {
+        console.log("error")
+        firmar();
+      }
+    }
+  }, [json]);
 
   const firmar = async () => {
+    setLoadingFirma(true);
     try {
-      setLoadingFirma(true)
-      const response = await FirmarFactura(id);
-
+      await FirmarFactura(id!);
+      setLoadingFirma(false);
+      handleAccion('success', <FaCircleCheck size={32} />, 'Firma exitosa');
+      setViewDiaog(false);
     } catch (error) {
-      setLoadingFirma(false)
-      // setViewDiaog(true)
-      console.log(error)
-    }
+      setLoadingFirma(false);
+      const next = firmaIntentos + 1;
+      setFirmaIntentos(next);
 
-  }
+      if (next < 3) {
+        handleAccion(
+          'warn',
+          <IoMdCloseCircle size={32} />,
+          `Error al firmar (Intento ${next}/3). ¿Reintentar?`
+        );
+        setViewDiaog(true);
+      } else {
+        handleAccion('error', <IoMdCloseCircle size={32} />, 'No se pudo firmar tras 3 intentos.');
+        setViewDiaog(false);
+      }
+    }
+  };
+
+
   const fetchCondicionOperacionDescripcion = async (id: number) => {
     const response = await getCondicionDeOperacionById(id);
     setCondicionOperacion(response.descripcion);
   };
 
   const enviarHacienda = async () => {
-    if (id) {
-      try {
-        await EnviarHacienda(id);
-        handleAccion(
-          'success',
-          <FaCircleCheck size={32} />,
-          'La factura fue publicada correctamente'
-        );
-
-        // Generar PDF y JSON
-
-
-        setInterval(() => navigate(0), 2000);
-      } catch (error) {
-        handleAccion(
-          'error',
-          <IoMdCloseCircle size={38} />,
-          'Ha ocurrido un error al publicar la factura'
-        );
-      }
+    if (!id) return;
+    setEnviarHaciendLoading(true);
+    try {
+      await EnviarHacienda(id);
+      handleAccion('success', <FaCircleCheck size={32} />, 'Factura publicada correctamente');
+      setTimeout(() => window.location.reload(), 2000);
+    } catch (error) {
+      console.error(error);
+      handleAccion('error', <IoMdCloseCircle size={32} />, 'Error al publicar la factura');
+    } finally {
+      setEnviarHaciendLoading(false);
     }
   };
 
 
+
   const enviarEmail = async () => {
+
     try {
       const pdfBlob = await generarPdf(); // Puede lanzar un error si no se genera
       if (!pdfBlob) {
@@ -173,10 +195,10 @@ export const FacturaVisualizacionPage = () => {
 
       // Crear FormData para enviar archivos
       const formData = new FormData();
-      formData.append('archivo_pdf', pdfBlob, `factura_${datosFactura.codigoGeneracion}.pdf`);
-      formData.append('archivo_json', jsonBlob, `factura_${datosFactura.codigoGeneracion}.json`);
+      formData.append('archivo_pdf', pdfBlob, `${datosFactura.codigoGeneracion}.pdf`);
+      formData.append('archivo_json', jsonBlob, `${datosFactura.numeroControl}.json`);
 
-      console.log(pdfBlob)
+      console.log("PDF:npm run dev",pdfBlob)
       await enviarFactura(id, formData);
     } catch (error) {
       console.log(error)
@@ -187,6 +209,7 @@ export const FacturaVisualizacionPage = () => {
     try {
       if (id) {
         const response = await generarFacturaService(id);
+        console.log(response)
         setEmisor(response.emisor);
         setDatosFactura(response.datosFactura);
         setReceptor(response.receptor);
@@ -195,7 +218,7 @@ export const FacturaVisualizacionPage = () => {
         setExtension(response.extension);
         setPagoEnLetras(response.pagoEnLetras);
         fetchCondicionOperacionDescripcion(response.condicionOpeacion);
-        setJson(response.json);
+        setJson(response.jsonFirmadoStatus);
         setQrCode(
           `https://admin.factura.gob.sv/consultaPublica?ambiente=${response.ambiente}&codGen=${response.datosFactura.codigoGeneracion.toUpperCase()}&fechaEmi=${response.datosFactura.fechaEmision}`
         );
@@ -343,21 +366,39 @@ export const FacturaVisualizacionPage = () => {
           </div>
         </div>
       </div>
+      {enviarHaciendLoading && <LoadingScreen />}
+
       <CustomToast ref={toastRef} />
-      {
-        viewDialog &&
-        <Dialog header="Error en firma de dte" visible={viewDialog} style={{ width: '50vw' }} onHide={() => { if (!viewDialog) return; setViewDiaog(false); }}>
-          <div className='flex flex-col justify-center w-full items-center'>
+      {viewDialog && (
+        <Dialog
+          header="Error al firmar DTE"
+          visible={viewDialog}
+          style={{ width: '40vw' }}
+          onHide={() => setViewDiaog(false)}
+        >
+          <div className="flex flex-col items-center gap-4">
             <p className="m-0">
-              ¿Desea intentar de nuevo?
+              {`Intento ${firmaIntentos}/3 fallido. ¿Deseas reintentar?`}
             </p>
-            <span className='flex w-full items-center justify-center gap-4 pt-5'>
-            <button onClick={firmar} className='flex bg-primary-blue text-white px-7 py-3 rounded'>{loadingFirma ? 'cargando...' : 'reintentar'}</button>
-            <button onClick={()=> setViewDiaog(false)} className='flex border border-primary-blue text-primary-blue px-7 py-3 rounded'>Cancelar</button>
-              </span>
+            <div className="flex gap-4 pt-2">
+              <button
+                onClick={firmar}
+                className="bg-primary-blue text-white px-6 py-2 rounded"
+                disabled={loadingFirma}
+              >
+                {loadingFirma ? 'Cargando...' : 'Reintentar'}
+              </button>
+              <button
+                onClick={() => setViewDiaog(false)}
+                className="border border-primary-blue text-primary-blue px-6 py-2 rounded"
+              >
+                Cancelar
+              </button>
+            </div>
           </div>
         </Dialog>
-      }
+      )}
+
     </>
   );
 };
