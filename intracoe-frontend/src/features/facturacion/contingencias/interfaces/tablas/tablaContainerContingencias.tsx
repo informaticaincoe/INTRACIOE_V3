@@ -48,9 +48,6 @@ export const TablaContainerContingencias: React.FC<
             });
         };
 
-      
-
-
         const handleEnviarEventoContingencia = async (id: number) => {
             try {
                 const
@@ -68,11 +65,11 @@ export const TablaContainerContingencias: React.FC<
                         <FaCheckCircle size={38} />,
                         response.mensaje
                     );
-            } catch (error) {
+            } catch (error:any) {
                 handleAccion(
                     'error',
                     <IoMdCloseCircle size={38} />,
-                    'Ha ocurrido un error al enviar contingencia a hacienda'
+                    "error" //TODO: validar si es error por que ya esta firmado
                 );
             }
         }

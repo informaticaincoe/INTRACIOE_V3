@@ -64,7 +64,11 @@ export const ContingenciasPage = () => {
       currentPage: page,
     }));
 
-    GetAlEventosContingencia(page, newFilters).then(response => {
+    fetchAllEventos(page, newFilters)
+  }, [searchParams]);
+
+  const fetchAllEventos = async (page: any, newFilters: any) => {
+    await GetAlEventosContingencia(page, newFilters).then(response => {
       if (!response) return;
       setContingenciasList(response);
       setPagination(p => ({
@@ -73,7 +77,7 @@ export const ContingenciasPage = () => {
         totalRecords: response.count,
       }));
     });
-  }, [searchParams]);
+  }
 
   const onFilterChange = (newFilters: FilterContingencia) => {
     // Reconstruyo params y reseteo la página a 1
@@ -81,7 +85,7 @@ export const ContingenciasPage = () => {
     if (newFilters.recibido_mh !== null)
       params.recibido_mh = String(newFilters.recibido_mh);
     if (newFilters.sello_recepcion)
-          params.sello_recepcion = newFilters.sello_recepcion;
+      params.sello_recepcion = newFilters.sello_recepcion;
     if (newFilters.has_sello_recepcion !== null)
       params.has_sello_recepcion = String(newFilters.has_sello_recepcion);
     if (newFilters.tipo_dte !== null)
@@ -97,10 +101,14 @@ export const ContingenciasPage = () => {
     setSearchParams({ ...params, page: String(newPage) });
   };
 
+  const updateContingencias = () => {
+    fetchAllEventos(pagination.currentPage, filters);
+  }
+
   const rowExpansionTemplate = (rowData: any) => {
     return (
       <div className="flex w-full flex-col justify-center px-10">
-        <TablaLotes lotes={rowData.facturas_en_grupos} />
+        <TablaLotes lotes={rowData.facturas_en_grupos} contingenciaEstado={rowData.recibido_mh} updateContingencias={updateContingencias}/>
       </div>
     );
   };

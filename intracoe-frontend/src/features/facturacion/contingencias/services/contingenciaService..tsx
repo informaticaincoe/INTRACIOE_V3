@@ -53,7 +53,27 @@ export const enviarEventoContingencia = async (
 
     console.log('Respuesta unificada:', response.data);
     return response.data;
-  } catch (error) {
+  } catch (error:any) {
+    console.log('Respuesta :', error);
+    throw new Error();
+  }
+};
+
+export const enviarFacturaContingencia = async (
+  factura_id: number
+): Promise<any | null> => {
+  try {
+    const response = await api.get<any>(
+      '/dte/envio-unificado/',
+      {
+        params: { factura_id }
+      }
+    );
+
+    console.log('Respuesta factura:', response.data);
+    return response.data;
+  } catch (error:any) {
+    console.log('Respuesta :', error);
     throw new Error();
   }
 };
