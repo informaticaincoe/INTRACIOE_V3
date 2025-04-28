@@ -173,8 +173,8 @@ export const FacturaVisualizacionPage = () => {
 
       // Crear FormData para enviar archivos
       const formData = new FormData();
-      formData.append('archivo_pdf', pdfBlob, `factura_${datosFactura.codigoGeneracion}.pdf`);
-      formData.append('archivo_json', jsonBlob, `factura_${datosFactura.codigoGeneracion}.json`);
+      formData.append('archivo_pdf', pdfBlob, `${datosFactura.codigoGeneracion}.pdf`);
+      formData.append('archivo_json', jsonBlob, `${datosFactura.numeroControl}.json`);
 
       console.log(pdfBlob)
       await enviarFactura(id, formData);
