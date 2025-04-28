@@ -11,6 +11,7 @@ import {
   FacturaDetalleItem,
   FacturaPorCodigoGeneracionResponse,
 } from '../../../../../shared/interfaces/interfaces';
+import { ProductosTabla } from '../FE/productosAgregados/productosData';
 
 interface TablaProductosFacturaNotasDebitoProps {
   facturasAjuste: FacturaPorCodigoGeneracionResponse[];
@@ -93,51 +94,67 @@ export const TablaProductosFacturaNotasDebito: React.FC<
         ...prev,
         [id]: checked,
       };
-      // actualizarListasSeleccionadas(actualizados);
+      actualizarListasSeleccionadas(actualizados);
       return actualizados;
     });
   };
 
-  // const actualizarListasSeleccionadas = (seleccionadosActuales: {
-  //   [key: string]: boolean;
-  // }) => {
-  //   const productosSeleccionados: string[] = [];
-  //   const cantidadesSeleccionadas: string[] = [];
-  //   const productosTabla: ProductosTabla[] = [];
+  const actualizarListasSeleccionadas = (seleccionadosActuales: {
+    [key: string]: boolean;
+  }) => {
+    const productosSeleccionados: string[] = [];
+    const cantidadesSeleccionadas: string[] = [];
+    const productosTabla: ProductosTabla[] = [];
 
-  //   facturasAjuste.forEach((factura) => {
-  //     factura.productos.forEach((producto) => {
-  //       const idStr = producto.producto_id.toString();
-  //       if (seleccionadosActuales[idStr]) {
-  //         productosSeleccionados.push(idStr);
-  //         const cantidadFinal = producto.cantidad_editada ?? producto.cantidad;
-  //         cantidadesSeleccionadas.push(cantidadFinal.toString());
+    facturasAjuste.forEach((factura) => {
+      factura.productos.forEach((producto) => {
+        const idStr = producto.producto_id.toString();
+        if (seleccionadosActuales[idStr]) {
+          productosSeleccionados.push(idStr);
+          const cantidadFinal = producto.cantidad_editada ?? producto.cantidad;
+          cantidadesSeleccionadas.push(cantidadFinal.toString());
 
-  //         // Armar objeto del tipo ProductosTabla
-  //         // productosTabla.push({
-  //         //   id: producto.producto_id,
-  //         //   codigo: producto.codigo,
-  //         //   descripcion: producto.descripcion,
-  //         //   cantidad: cantidadFinal,
-  //         //   preunitario: parseFloat(producto.precio_unitario),
-  //         //   iva_unitario: parseFloat(producto.iva_unitario),
-  //         //   // no_grabado: false,
-  //         //   descuento: null,
-  //         //   total_neto: 0,
-  //         //   total_iva: 0,
-  //         //   total_con_iva: 0,
-  //         //   iva_percibido: 0,
-  //         //   total_tributos: 0,
-  //         //   seleccionar: false,
-  //         // });
-  //       }
-  //     });
-  //   });
+          // Armar objeto del tipo ProductosTabla
+          productosTabla.push({
+            id: producto.producto_id,
+            codigo: producto.codigo,
+            descripcion: producto.descripcion,
+            cantidad: cantidadFinal,
+            preunitario: parseFloat(producto.precio_unitario),
+            iva_unitario: parseFloat(producto.iva_unitario),
+            // no_grabado: false,
+            descuento: null,
+            total_neto: 0,
+            total_iva: 0,
+            total_con_iva: 0,
+            iva_percibido: 0,
+            total_tributos: 0,
+            seleccionar: false,
+            imagen: '',
+            categoria_id: null,
+            tipo_item_id: null,
+            unidad_medida_id: 0,
+            tributo_id: 0,
+            referencia_interna: '',
+            maneja_lotes: false,
+            fecha_vencimiento: null,
+            creado: '',
+            actualizado: '',
+            precio_compra: 0,
+            precio_venta: 0,
+            precio_iva: false,
+            stock: 0,
+            stock_minimo: 0,
+            stock_maximo: 0
+          });
+        }
+      });
+    });
 
-  //   setIdListProducts(productosSeleccionados);
-  //   setCantidadListProducts(cantidadesSeleccionadas);
-  //   setListProducts(productosTabla);
-  // };
+    setIdListProducts(productosSeleccionados);
+    setCantidadListProducts(cantidadesSeleccionadas);
+    setListProducts(productosTabla);
+  };
 
   return (
     <>
