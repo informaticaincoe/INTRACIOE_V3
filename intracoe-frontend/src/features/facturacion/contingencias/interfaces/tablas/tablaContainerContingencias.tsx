@@ -5,7 +5,7 @@ import { FaCheck } from 'react-icons/fa6';
 import { FcCancel } from 'react-icons/fc';
 import { RiSendPlaneFill } from 'react-icons/ri';
 import styles from '../../style/ContingenciasTable.module.css';
-import { Paginator } from 'primereact/paginator';
+import { Paginator, PaginatorPageChangeEvent } from 'primereact/paginator';
 import { enviarEventoContingencia } from '../../services/contingenciaService.';
 import { FaCheckCircle } from 'react-icons/fa';
 import CustomToast, { CustomToastRef, ToastSeverity } from '../../../../../shared/toast/customToast';
@@ -18,6 +18,7 @@ interface TablaContainerContingenciasProps {
     rowExpansionTemplate: any;
     pagination: any;
     setPagination: any;
+    onPageChange: (newPage: number) => void;
 }
 
 export const TablaContainerContingencias: React.FC<
@@ -29,6 +30,8 @@ export const TablaContainerContingencias: React.FC<
     rowExpansionTemplate,
     pagination,
     setPagination,
+    onPageChange
+    
 }) => {
         const toastRef = useRef<CustomToastRef>(null);
 
@@ -45,22 +48,7 @@ export const TablaContainerContingencias: React.FC<
             });
         };
 
-        const onPageChange = (event: { page: number; rows: number }) => {
-            const newPage = event.page + 1;
-            // Avanzar solo si existe siguiente página
-            if (newPage > pagination.currentPage && !pagination.next) {
-                return;
-            }
-            // Retroceder solo si existe página anterior
-            if (newPage < pagination.currentPage && !pagination.previous) {
-                return;
-            }
-            setPagination({
-                ...pagination,
-                currentPage: newPage,
-                pageSize: event.rows,
-            });
-        };
+      
 
 
         const handleEnviarEventoContingencia = async (id: number) => {
@@ -184,7 +172,9 @@ export const TablaContainerContingencias: React.FC<
                         rows={pagination.pageSize}
                         totalRecords={pagination.totalRecords}
                         rowsPerPageOptions={[10, 25, 50]}
-                        onPageChange={onPageChange}
+                        onPageChange={(e: PaginatorPageChangeEvent) =>
+                            onPageChange(e.page! + 1)
+                          }
                     />
                 </div>
                 <CustomToast ref={toastRef} />

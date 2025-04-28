@@ -6,29 +6,32 @@ export const GetAlEventosContingencia = async (
   filters: FilterContingencia
 ): Promise<Contingencias | null> => {
   try {
-    // 1) Construye los params partiendo de la página
     const params: Record<string, any> = { page };
 
-    // 2) Agrega filtros solo si tienen valor
+    // Recibido MH: debe enviarse 'True' o 'False'
     if (filters.recibido_mh !== null) {
-      params.recibido_mh = filters.recibido_mh;
+      params.recibido_mh = filters.recibido_mh ? 'True' : 'False';
     }
+
+    // Sello de recepción (texto)
     if (filters.sello_recepcion) {
       params.sello_recepcion = filters.sello_recepcion;
     }
+
+    // Has sello recepción: debe enviarse 'yes' o 'no'
     if (filters.has_sello_recepcion !== null) {
-      params.has_sello_recepcion = filters.has_sello_recepcion;
+      params.has_sello_recepcion = filters.has_sello_recepcion ? 'yes' : 'no';
     }
+
+    // Tipo DTE (numérico)
     if (filters.tipo_dte !== null) {
       params.tipo_dte = filters.tipo_dte;
     }
 
-    // 3) Llama al endpoint con todos los params
     const response = await api.get<Contingencias>('/contingencia/', {
       params,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     });
-
     console.log('API Contingencias:', response.data);
     return response.data;
   } catch (error) {
