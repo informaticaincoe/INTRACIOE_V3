@@ -52,7 +52,7 @@ from rest_framework.response import Response
 from django.db.models import Count, Sum
 from AUTENTICACION.models import ConfiguracionServidor
 from django.core.mail import EmailMessage
-from intracoe import settings
+from django.conf import settings
 from xhtml2pdf import pisa
 from io import BytesIO
 from django.template.loader import render_to_string
@@ -3982,8 +3982,7 @@ class TopProductosAPIView(generics.ListAPIView):
 class EnviarCorreoIndividualAPIView(APIView):
     def post(self, request, factura_id, format=None):
         
-        print(f"Inicio envio de correos: pdf: {archivo_pdf}, json: {archivo_json}")
-        documento_electronico = get_object_or_404(FacturaElectronica, id=factura_id).order_by('id').first()
+        documento_electronico = get_object_or_404(FacturaElectronica, id=factura_id)
         receptor = get_object_or_404(Receptor_fe, id=documento_electronico.dtereceptor_id)
         emisor = get_object_or_404(Emisor_fe, id=documento_electronico.dteemisor_id)
         #Correo receptor principal: juniorfran@hotmail.es
@@ -3991,10 +3990,11 @@ class EnviarCorreoIndividualAPIView(APIView):
         # 2) Leer parámetros del body
         archivo_pdf = request.data.get('archivo_pdf')
         archivo_json = request.data.get('archivo_json')
+        print(f"Inicio envio de correos: pdf: {archivo_pdf}, json: {archivo_json}")
 
-        # Si no vienen los archivos como parámetro, buscar en las rutas
+        # Buscar archvios
 
-        if not archivo_pdf:
+        if archivo_pdf:
             print("RUTA_COMPROBANTES_PDF", RUTA_COMPROBANTES_PDF)
             ruta_pdf = os.path.join(RUTA_COMPROBANTES_PDF.ruta_archivo, documento_electronico.tipo_dte.codigo, "pdf")
             archivo_pdf = os.path.join(ruta_pdf, f"{documento_electronico.codigo_generacion}.pdf")
@@ -4013,7 +4013,7 @@ class EnviarCorreoIndividualAPIView(APIView):
                 else:
                     print(f"PDF guardado exitosamente en {pdf_signed_path}")
         
-        if not archivo_json:
+        if archivo_json:
             ruta_json = RUTA_COMPROBANTES_JSON.ruta_archivo
             archivo_json = os.path.join(ruta_json, f"{documento_electronico.numero_control}.json")
             if not os.path.exists(archivo_json):
@@ -4049,25 +4049,26 @@ class EnviarCorreoIndividualAPIView(APIView):
             email = EmailMessage(
                 subject="Documento Electrónico "+ documento_electronico.tipo_dte.descripcion,
                 body=email_html_content,
-                from_email=request.settings.EMAIL_HOST_USER_FE,
+                from_email=settings.EMAIL_HOST_USER_FE,
                 to=[receptor.correo],
             )
             email.content_subtype = "html"  # Indicar que el contenido es HTML
             
             # Adjuntar el archivo PDF
-            try:
-                with open(archivo_pdf, 'rb') as pdf_file_to_attach:
-                    email.attach(
-                        f"Documento_Electrónico_{receptor.nombre}.pdf",
-                        pdf_file_to_attach.read(),
-                        'application/pdf'
+            if archivo_pdf:
+                try:
+                    with open(archivo_pdf, 'rb') as pdf_file:
+                        email.attach(
+                            f"Documento_Electrónico_{receptor.nombre}.pdf",
+                            pdf_file.read(),
+                            'application/pdf'
+                        )
+                except Exception as e:
+                    print(f"Error al abrir el archivo PDF: {e}")
+                    return Response(
+                        {"error": "Error al abrir el archivo PDF", "detalle": str(e)},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR
                     )
-            except Exception as e:
-                print(f"Error al abrir el archivo PDF: {e}")
-                return Response(
-                {"error": "Error al abrir el archivo PDF", "detalle": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
             # Adjuntar el archivo JSON
             try:
                 with open(archivo_json, 'rb') as json_file_to_attach:
