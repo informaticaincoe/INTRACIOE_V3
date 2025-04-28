@@ -45,6 +45,7 @@ import CustomToast, {
 import { IoMdCloseCircle } from 'react-icons/io';
 import { TablaProductosAgregados } from '../components/FE/productosAgregados/tablaProductosAgregados';
 import { ExtensionCard } from '../components/Shared/entension/extensionCard';
+import LoadingScreen from "../../../../shared/loading/loadingScreen";
 
 export const GenerateDocuments = () => {
   //lista de datos obtenidas de la api
@@ -100,6 +101,7 @@ export const GenerateDocuments = () => {
   const [docResponsable, setDocResponsable] = useState<string>('');
   const [tipoTransmision, setTipoTransmision] = useState<string>('');
   const [descuentosProducto, setDescuentosProducto] = useState<number[]>([]);
+  const [loading, setLoading] = useState(false)
   const navigate = useNavigate();
   const toastRef = useRef<CustomToastRef>(null);
 
@@ -204,6 +206,7 @@ export const GenerateDocuments = () => {
   }, [tipoDocumentoSelected?.codigo]);
 
   const fetchfacturaData = async () => {
+    setLoading(true)
     try {
       const response = await getFacturaCodigos(tipoDocumentoSelected?.codigo ?? '01');
       setCodigoGeneracion(response.codigo_generacion);
@@ -222,31 +225,34 @@ export const GenerateDocuments = () => {
     } catch (error) {
       console.log(error);
     }
+    finally {
+      setLoading(false)
+    }
   };
 
   const handleClickGenerarFactura = async () => {
-    // if (auxManejoPagos != 0) {
-    //   console.log('errpr pagos');
-    //   setErrorFormasPago(true);
-    //   handleAccion(
-    //     'error',
-    //     <IoMdCloseCircle size={38} />,
-    //     'No se ha realizado el pago completo'
-    //   );
-    // }
+    if (auxManejoPagos != 0) {
+      console.log('errpr pagos');
+      setErrorFormasPago(true);
+      handleAccion(
+        'error',
+        <IoMdCloseCircle size={38} />,
+        'No se ha realizado el pago completo'
+      );
+    }
 
-    // if (receptor.id == '') {
-    //   console.log('errpr receptr');
+    if (receptor.id == '') {
+      console.log('errpr receptr');
 
-    //   setErrorReceptor(true);
-    //   handleAccion(
-    //     'error',
-    //     <IoMdCloseCircle size={38} />,
-    //     'Campo de receptor no debe estar vacio'
-    //   );
-    // } else {
+      setErrorReceptor(true);
+      handleAccion(
+        'error',
+        <IoMdCloseCircle size={38} />,
+        'Campo de receptor no debe estar vacio'
+      );
+    } else {
     generarFactura();
-    // }
+    }
   };
 
   //************************************/
@@ -460,6 +466,7 @@ export const GenerateDocuments = () => {
         </button>
       </div>
       <CustomToast ref={toastRef} />
+      { loading && <LoadingScreen/>}
     </>
   );
 };

@@ -84,6 +84,14 @@ export const TablaLotes: React.FC<TablaLotesProps> = ({ lotes }) => {
                                     )
                                 }
                             />
+                            <Column
+                                header="Enviar Lote"
+                                body={(row: any) =>
+                                    row.mostrar_checkbox_lote && (
+                                        <button>Enviar Lote</button>
+                                    )
+                                }
+                            />
                         </DataTable>
                     </AccordionTab>
                 )
