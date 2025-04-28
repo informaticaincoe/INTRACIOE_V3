@@ -4007,8 +4007,8 @@ class TopProductosAPIView(generics.ListAPIView):
 class EnviarCorreoIndividualAPIView(APIView):
     def post(self, request, factura_id, format=None):
         
-        print(f"Inicio envio de correos: pdf: {archivo_pdf}, json: {archivo_json}")
-        documento_electronico = get_object_or_404(FacturaElectronica, id=factura_id).order_by('id').first()
+        # print(f"Inicio envio de correos: pdf: {archivo_pdf}, json: {archivo_json}")
+        documento_electronico = get_object_or_404(FacturaElectronica, id=factura_id).first()
         receptor = get_object_or_404(Receptor_fe, id=documento_electronico.dtereceptor_id)
         emisor = get_object_or_404(Emisor_fe, id=documento_electronico.dteemisor_id)
         #Correo receptor principal: juniorfran@hotmail.es
@@ -4024,7 +4024,7 @@ class EnviarCorreoIndividualAPIView(APIView):
             ruta_pdf = os.path.join(RUTA_COMPROBANTES_PDF.ruta_archivo, documento_electronico.tipo_dte.codigo, "pdf")
             archivo_pdf = os.path.join(ruta_pdf, f"{documento_electronico.codigo_generacion}.pdf")
             if not os.path.exists(archivo_pdf):
-                print(f"Archivo PDF no encontrado en {archivo_pdf}")
+                # print(f"Archivo PDF no encontrado en {archivo_pdf}")
                 
                 html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": documento_electronico})
                 #Guardar archivo pdf
