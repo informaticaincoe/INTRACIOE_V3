@@ -21,6 +21,7 @@ import {
   ReceptorInterface,
   TipoDocumento,
   TipoGeneracionFactura,
+  TipoDTE,
 } from '../../../../shared/interfaces/interfaces';
 import { ProductosTabla } from '../components/FE/productosAgregados/productosData';
 import { ResumenTotalesCard } from '../components/Shared/resumenTotales/resumenTotalesCard';
@@ -51,7 +52,7 @@ export const GenerarDocumentosAjuste = () => {
     useState<EmisorInterface>(defaultEmisorData); // almcenar informacion del emisor
   const [tipoDocumento, setTipoDocumento] = useState<TipoDocumento[]>([]); // almcenar tipo de dte
   const [tipoDocumentoSelected, setTipoDocumentoSelected] =
-    useState<string>('05'); // almcenar tipo de dte
+    useState<TipoDTE>(); // almcenar tipo de dte
 
   const [descuentos, setDescuentos] = useState<Descuentos>({
     descuentoGeneral: 0,
@@ -132,12 +133,12 @@ export const GenerarDocumentosAjuste = () => {
 
   const generarFactura = async () => {
     const dataNCND = {
-      tipoDocumento: tipoDocumentoSelected,
+      tipoDocumento: tipoDocumentoSelected?.codigo,
       receptor_id: receptor.id,
       observaciones: observaciones,
-      tipo_documento_seleccionado: tipoDocumentoSelected, //tipo DTE
-      tipo_item_select: 1, //TODO: obtener segun la lista de productos de forma dinamica (bien o servicio)
-      documento_seleccionado: tipoGeneracionFactura?.code ?? '',
+      tipo_documento_seleccionado: tipoDocumentoSelected?.codigo ?? '05', //tipo DTE
+      tipo_item_select: 1,
+      documento_seleccionado: 2, // solo manjeo de documento electronico
       documento_relacionado:
         facturasAjuste[0]?.codigo_generacion.toUpperCase() ?? '',
       // descuento_select: descuentos, //TODO: Descuento por item
@@ -212,9 +213,13 @@ export const GenerarDocumentosAjuste = () => {
     fetchfacturaData();
   }, []);
 
+  useEffect(() => {
+    fetchfacturaData();
+  }, [tipoDocumentoSelected?.codigo]);
+
   const fetchfacturaData = async () => {
     try {
-      const response = await generarAjusteService();
+      const response = await generarAjusteService(tipoDocumentoSelected?.codigo ?? '05');
       setCodigoGeneracion(response.codigo_generacion);
       setNumeroControl(response.numero_control);
       setEmisorData(response.emisor);
@@ -223,7 +228,7 @@ export const GenerarDocumentosAjuste = () => {
       setDescuentosList(response.descuentos);
       setListProducts(response.producto);
       setTipoDocumento(response.tipoDocumentos);
-      setTipoDocumentoSelected(response.tipoDocumentos[0].codigo);
+      // setTipoDocumentoSelected(response.tipoDocumentos[0].codigo);
     } catch (error) {
       console.log(error);
     }
