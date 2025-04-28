@@ -10,7 +10,7 @@ from django.urls import reverse
 import pytz
 import requests
 import os, json, uuid
-from django.db import transaction
+from django.db import connection, transaction
 from django.utils import timezone
 from rest_framework import generics, status, permissions
 from rest_framework.views import APIView
@@ -2077,112 +2077,137 @@ class GenerarDocumentoAjusteAPIView(APIView):
 ######################################################
 # FIRMA Y ENVIO DE DOCUMENTOS A MH
 ######################################################
-
 class FirmarFacturaAPIView(APIView):
     """
     POST /api/factura/{factura_id}/firmar/
-    Firma el DTE de la factura y maneja contingencia si falla.
+    - Intenta hasta 3 veces firmar el DTE con el servicio externo.
+    - Cada save() va en su propio bloque atomic para minimizar el tiempo de bloqueo.
+    - En caso de fallo tras 3 intentos, genera contingencia y registra evento.
     """
-    @transaction.atomic
     def post(self, request, factura_id, format=None):
         factura = get_object_or_404(FacturaElectronica, id=factura_id)
         fecha_actual = obtener_fecha_actual()
 
-        contingencia = True
-        mensaje = None
-        motivo_otro = False
-        mostrar_modal = False
-        tipo_contingencia_obj = None
         intentos_max = 3
-        response_data = {}
+        motivo_otro = False
+        tipo_contingencia_obj = None
 
-        # Leer intentos previos de sesión
+        # Leer intentos previos en sesión
         intentos_sesion = request.session.get('intentos_reintento', 0)
 
-        # Ciclo de intentos
+        # Validar certificado
+        if not os.path.exists(CERT_PATH):
+            return Response(
+                {"error": "Certificado no encontrado."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Parsear JSON original
+        try:
+            dte_obj = (
+                factura.json_original
+                if isinstance(factura.json_original, dict)
+                else json.loads(factura.json_original)
+            )
+        except Exception as e:
+            return Response(
+                {"error": "JSON inválido", "detalle": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Ciclo de intentos de firma
         for intento in range(1, intentos_max + 1):
             # Verificar token activo
             token_data = Token_data.objects.filter(activado=True).first()
             if not token_data:
-                return Response({"error": "No hay token activo."}, status=status.HTTP_401_UNAUTHORIZED)
-            # Verificar certificado
-            if not os.path.exists(CERT_PATH):
-                return Response({"error": "Certificado no encontrado."}, status=status.HTTP_400_BAD_REQUEST)
-            # Preparar JSON a firmar
-            try:
-                if isinstance(factura.json_original, dict):
-                    dte_obj = factura.json_original
-                else:
-                    dte_obj = json.loads(factura.json_original)
-            except Exception as e:
-                return Response({"error": "JSON inválido", "detalle": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"error": "No hay token activo."},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
 
             payload = {
                 "nit": str(factura.dteemisor.nit),
                 "activo": True,
                 "passwordPri": str(factura.dteemisor.clave_privada),
-                "dteJson": dte_obj
+                "dteJson": dte_obj,
             }
+
             try:
-                resp = requests.post(FIRMADOR_URL, json=payload, headers={"Content-Type": "application/json"}, timeout=30)
+                resp = requests.post(
+                    FIRMADOR_URL,
+                    json=payload,
+                    headers={"Content-Type": "application/json"},
+                    timeout=30
+                )
                 try:
-                    response_data = resp.json()
+                    data_resp = resp.json()
                 except ValueError:
-                    response_data = {"error": "No se pudo parsear JSON", "detalle": resp.text}
-                # Éxito
-                if resp.status_code == 200 and response_data.get("status") == "OK":
-                    factura.json_firmado = response_data
-                    factura.firmado = True
-                    factura.save()
-                    # Resetear intentos en sesión
+                    data_resp = {"error": "No se pudo parsear JSON", "detalle": resp.text}
+
+                # Éxito en la firma
+                if resp.status_code == 200 and data_resp.get("status") == "OK":
+                    with transaction.atomic():
+                        factura.json_firmado = data_resp
+                        factura.firmado = True
+                        factura.save()
+                    connection.close()
+
+                    # Resetear contador en sesión
                     request.session['intentos_reintento'] = 0
                     request.session.modified = True
-                    contingencia = False
-                    mostrar_modal = False
-                    return Response({
-                        "mensaje": "Firma exitosa",
-                        "detalle": response_data
-                    }, status=status.HTTP_200_OK)
-                # Error transitorio o definitivo
-                if resp.status_code in [500,502,503,504,408]:
-                    tipo_contingencia_obj = TipoContingencia.objects.get(codigo="1")
-                elif resp.status_code in [408,499]:
-                    tipo_contingencia_obj = TipoContingencia.objects.get(codigo="2")
-                elif resp.status_code in [503,504]:
-                    tipo_contingencia_obj = TipoContingencia.objects.get(codigo="4")
-                else:
-                    tipo_contingencia_obj = TipoContingencia.objects.get(codigo="5")
-                    motivo_otro = True
-                    mensaje = f"Error en firma: {resp.status_code}"
-                time.sleep(8)
-            except requests.RequestException as e:
-                tipo_contingencia_obj = TipoContingencia.objects.get(codigo="1")
-                time.sleep(8)
-            # continue next attempt
 
-        # Si tras todos los intentos sigue en contingencia
-        if contingencia:
-            # Crear evento de contingencia si aplica
+                    return Response(
+                        {"mensaje": "Firma exitosa", "detalle": data_resp},
+                        status=status.HTTP_200_OK
+                    )
+
+                # Determinar tipo de contingencia según código HTTP
+                if resp.status_code in [500, 502]:
+                    tipo_codigo = "1"
+                elif resp.status_code in [503, 504, 408, 499]:
+                    tipo_codigo = "2"
+                else:
+                    tipo_codigo = "5"
+                    motivo_otro = True
+
+                tipo_contingencia_obj = TipoContingencia.objects.get(codigo=tipo_codigo)
+
+            except requests.RequestException:
+                # Error de comunicación con el servicio
+                tipo_contingencia_obj = TipoContingencia.objects.get(codigo="1")
+
+            # Esperar antes del siguiente intento (sin mantener transacción abierta)
+            time.sleep(8)
+
+        # Tras agotar todos los intentos, entrar en contingencia
+        with transaction.atomic():
             if intentos_sesion == 0:
                 finalizar_contigencia_view(request)
-                factura.estado = False
-                factura.contingencia = True
-                factura.tipomodelo = Modelofacturacion.objects.get(codigo="2")
-                factura.tipotransmision = TipoTransmision.objects.get(codigo="2")
-                factura.fecha_modificacion = fecha_actual.date()
-                factura.hora_modificacion = fecha_actual.time()
-                factura.save()
-                lote_contingencia_dte_view(request, factura_id, tipo_contingencia_obj)
-            # Actualizar sesión
-            request.session['intentos_reintento'] = intentos_sesion + 1
-            request.session.modified = True
-            return Response({
+
+            factura.estado = False
+            factura.contingencia = True
+            factura.tipomodelo = Modelofacturacion.objects.get(codigo="2")
+            factura.tipotransmision = TipoTransmision.objects.get(codigo="2")
+            factura.fecha_modificacion = fecha_actual.date()
+            factura.hora_modificacion = fecha_actual.time()
+            factura.save()
+
+            lote_contingencia_dte_view(request, factura_id, tipo_contingencia_obj)
+
+        connection.close()
+
+        # Actualizar contador en sesión
+        request.session['intentos_reintento'] = intentos_sesion + 1
+        request.session.modified = True
+
+        return Response(
+            {
                 "error": "No se pudo firmar el DTE después de varios intentos",
                 "motivo_otro": motivo_otro
-            }, status=status.HTTP_400_BAD_REQUEST)
+            },
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
-        # Caso inesperado
-        return Response({"error": "Error inesperado en firma"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class EnviarFacturaHaciendaAPIView(APIView):
     """
