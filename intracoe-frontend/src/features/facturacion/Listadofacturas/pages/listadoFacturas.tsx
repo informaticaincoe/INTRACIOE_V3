@@ -14,7 +14,7 @@ export const ListadoFacturas = () => {
   const [data, setData] = useState<ListResult[]>([]);
   const [pagination, setPagination] = useState<pagination>({
     current_page: 1,
-    page_size: 1,
+    page_size: 10,
     total_pages: 1,
     total_records: 1,
   });
@@ -67,8 +67,8 @@ export const ListadoFacturas = () => {
   };
 
   const updateFacturas = () => {
-    fetchFacturas(pagination.current_page)
-  }
+    fetchFacturas(pagination.current_page);
+  };
   const onPageChange = (event: any) => {
     const page = event.page + 1;
     const limit = event.rows;

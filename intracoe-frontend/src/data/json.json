@@ -1,44 +1,38 @@
 {
-    "numero_control": "DTE-01-0000MOO1-000000000001091",
-    "receptor_id": 1,
-    "nit_receptor": "06142802961066",
-    "nombre_receptor": "Francisco Antonio Flores",
-    "direccion_receptor": "Carretera a Sonsonate, km 27 ½ Zona Industrial Lourdes, Calle Antigua Hda, La Libertad, El Salvador C.A",
-    "telefono_receptor": "604477435",
-    "correo_receptor": "juniorfran@hotmail.es",
-    "tipo_item_select": 1,
-    "descuento_select": [
-        0
-    ],
-    "tipo_documento_seleccionado": "01",
-    "condicion_operacion": "1",
-    "observaciones": "",
-    "productos_ids": [
-        1
-    ],
-    "cantidades": [
-        1
-    ],
-    "monto_fp": 1.4125,
-    "num_ref": null,
-    "no_gravado": false,
-    "retencion_iva": false,
-    "porcentaje_retencion_iva": "0",
-    "formas_pago_id": [
-        {
-            "codigo": "01",
-            "montoPago": 1.41,
-            "referencia": null,
-            "plazo": "01",
-            "periodo": null
-        }
-    ],
-    "saldo_favor_input": "0.00",
-    "descuento_gravado": "0",
-    "descuento_global_input": "0",
-    "porcentaje_retencion_renta": "0",
-    "retencion_renta": false,
-    "nombre_responsable": null,
-    "doc_responsable": null,
-    "tipotransmision": 1
+  "numero_control": "DTE-01-0000MOO1-000000000001091",
+  "receptor_id": 1,
+  "nit_receptor": "06142802961066",
+  "nombre_receptor": "Francisco Antonio Flores",
+  "direccion_receptor": "Carretera a Sonsonate, km 27 ½ Zona Industrial Lourdes, Calle Antigua Hda, La Libertad, El Salvador C.A",
+  "telefono_receptor": "604477435",
+  "correo_receptor": "juniorfran@hotmail.es",
+  "tipo_item_select": 1,
+  "descuento_select": [0],
+  "tipo_documento_seleccionado": "01",
+  "condicion_operacion": "1",
+  "observaciones": "",
+  "productos_ids": [1],
+  "cantidades": [1],
+  "monto_fp": 1.4125,
+  "num_ref": null,
+  "no_gravado": false,
+  "retencion_iva": false,
+  "porcentaje_retencion_iva": "0",
+  "formas_pago_id": [
+    {
+      "codigo": "01",
+      "montoPago": 1.41,
+      "referencia": null,
+      "plazo": "01",
+      "periodo": null
+    }
+  ],
+  "saldo_favor_input": "0.00",
+  "descuento_gravado": "0",
+  "descuento_global_input": "0",
+  "porcentaje_retencion_renta": "0",
+  "retencion_renta": false,
+  "nombre_responsable": null,
+  "doc_responsable": null,
+  "tipotransmision": 1
 }

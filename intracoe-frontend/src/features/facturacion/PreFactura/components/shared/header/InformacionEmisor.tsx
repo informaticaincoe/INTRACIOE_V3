@@ -37,6 +37,7 @@ export const InformacionEmisor: React.FC<InformacionEmisorProps> = ({
         <p>Codigo generacion: {datosFactura.codigoGeneracion.toUpperCase()}</p>
         <p>Numero de control: {datosFactura.numeroControl}</p>
         <p>Sello: {datosFactura.selloRemision}</p>
+        {datosFactura.contingencia && "Estado: contingencia"}
       </span>
       <span className="border-border-color col-start-5 flex w-full flex-col items-center rounded-md border-2 p-2">
         <p>{nombreDte}</p>
