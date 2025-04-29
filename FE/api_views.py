@@ -1512,28 +1512,28 @@ class GenerarFacturaAPIView(APIView):
             if os.path.exists(pdf_signed_path):
                 print("PDF ya existe, devolviendo archivo existente: %s", pdf_signed_path)
                 filename=os.path.basename(pdf_signed_path)
-            else:
-                #1.Crear HTML
-                html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": factura}, request=request)
+            # else:
+            #     #1.Crear HTML
+            #     html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": factura}, request=request)
                 
-                #2.Definir base_url para que {% static %} funcione correctamente, esto asegura que las imágenes estáticas (logos, etc.) se resuelvan bien en el PDF
-                try:
-                    base_url = request.build_absolute_uri('/')
-                except Exception as e:
-                    print("Error obteniendo base_url")
-                    base_url = None  # WeasyPrint usará paths relativos si es None
+            #     #2.Definir base_url para que {% static %} funcione correctamente, esto asegura que las imágenes estáticas (logos, etc.) se resuelvan bien en el PDF
+            #     try:
+            #         base_url = request.build_absolute_uri('/')
+            #     except Exception as e:
+            #         print("Error obteniendo base_url")
+            #         base_url = None  # WeasyPrint usará paths relativos si es None
                 
-                # 3. Preparar lista de CSS
-                stylesheets = [CSS(url='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js') ]
+            #     # 3. Preparar lista de CSS
+            #     stylesheets = [CSS(url='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js') ]
                 
                 #4.Guardar archivo PDF con WeasyPrint
-                try:
-                    html = HTML(string=html_content, base_url=base_url)
-                    html.write_pdf(stylesheets=stylesheets, target=pdf_signed_path)
-                    filename = os.path.basename(pdf_signed_path)
-                    print("Pdf guardado ")
-                except Exception as e:
-                    print("Error generando el PDF con WeasyPrint")
+                # try:
+                #     html = HTML(string=html_content, base_url=base_url)
+                #     html.write_pdf(stylesheets=stylesheets, target=pdf_signed_path)
+                #     filename = os.path.basename(pdf_signed_path)
+                #     print("Pdf guardado ")
+                # except Exception as e:
+                #     print("Error generando el PDF con WeasyPrint")
 
             return Response({
                     "mensaje": "Factura generada correctamente",
@@ -2611,7 +2611,9 @@ class FacturaListAPIView(generics.ListAPIView):
         if recibido and recibido.lower() in ['true', 'false']:
             queryset = queryset.filter(recibido_mh=(recibido.lower() == 'true'))
         if codigo:
-            queryset = queryset.filter(sello_recepcion__icontains=codigo)
+           queryset = queryset.filter(Q(sello_recepcion__icontains=codigo) | Q(numero_control__icontains=codigo) # Busacar por numero de control y sello de recepcion
+        )
+
         if has_codigo and has_codigo.lower() in ['true', 'false']:
             if has_codigo.lower() == 'true':
                 queryset = queryset.exclude(sello_recepcion__isnull=True)
@@ -4111,7 +4113,7 @@ class EnviarCorreoIndividualAPIView(APIView):
         #7.Buscar archivo JSON
         if not os.path.exists(archivo_json):
             print(f"Archivo JSON no encontrado en {archivo_json}")
-            messages.error(request, "Archivo JSON no encontrado.")
+            # messages.error(request, "Archivo JSON no encontrado.")
         print(f"json: {archivo_json} pdf: {archivo_pdf}")
         
         if documento_electronico:

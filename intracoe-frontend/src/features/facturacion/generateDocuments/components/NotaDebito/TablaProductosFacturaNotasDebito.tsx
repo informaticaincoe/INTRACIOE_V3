@@ -145,7 +145,7 @@ export const TablaProductosFacturaNotasDebito: React.FC<
             precio_iva: false,
             stock: 0,
             stock_minimo: 0,
-            stock_maximo: 0
+            stock_maximo: 0,
           });
         }
       });

@@ -1,4 +1,7 @@
-import { Contingencias, FilterContingencia } from '../interfaces/contingenciaInterfaces';
+import {
+  Contingencias,
+  FilterContingencia,
+} from '../interfaces/contingenciaInterfaces';
 import { api } from '../../../../shared/services/api';
 
 export const GetAlEventosContingencia = async (
@@ -44,35 +47,54 @@ export const enviarEventoContingencia = async (
   contingencia_id: number
 ): Promise<any | null> => {
   try {
-    const response = await api.get<any>(
-      '/contingencia/unificado/',
-      {
-        params: { contingencia_id }
-      }
-    );
+    const response = await api.get<any>('/contingencia/unificado/', {
+      params: { contingencia_id },
+    });
 
     console.log('Respuesta unificada:', response.data);
     return response.data;
-  } catch (error:any) {
+  } catch (error: any) {
     console.log('Respuesta :', error);
     throw new Error();
   }
 };
 
 export const enviarFacturaContingencia = async (
-  factura_id: number
+  factura_id: any
 ): Promise<any | null> => {
+  console.log(factura_id);
   try {
-    const response = await api.get<any>(
-      '/dte/envio-unificado/',
-      {
-        params: { factura_id }
-      }
-    );
+    const response = await api.post<any>('/dte/envio-unificado/', factura_id);
 
     console.log('Respuesta factura:', response.data);
     return response.data;
-  } catch (error:any) {
+  } catch (error: any) {
+    console.log('Respuesta :', error);
+    throw new Error();
+  }
+};
+
+export const enviarLoteContingencia = async (
+  factura_ids: any
+): Promise<any | null> => {
+  console.log(factura_ids);
+  try {
+    const response = await api.post<any>('/dte/lotes/', factura_ids);
+
+    console.log('Respuesta factura:', response.data);
+    return response.data;
+  } catch (error: any) {
+    console.log('Respuesta :', error);
+    throw new Error();
+  }
+};
+
+export const eliminarContingenciasFueraDePlazo = async () => {
+  try {
+    const response = await api.get<any>('/contingencia/finalizar/');
+    console.log('Respuesta factura:', response.data);
+    return response.data;
+  } catch (error: any) {
     console.log('Respuesta :', error);
     throw new Error();
   }

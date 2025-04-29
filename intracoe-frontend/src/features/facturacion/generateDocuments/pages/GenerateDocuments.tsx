@@ -1,4 +1,4 @@
-import facturaJson from "../../../../data/factura.json"
+import facturaJson from '../../../../data/factura.json';
 
 import { Divider } from 'primereact/divider';
 import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPage';
@@ -45,7 +45,7 @@ import CustomToast, {
 import { IoMdCloseCircle } from 'react-icons/io';
 import { TablaProductosAgregados } from '../components/FE/productosAgregados/tablaProductosAgregados';
 import { ExtensionCard } from '../components/Shared/entension/extensionCard';
-import LoadingScreen from "../../../../shared/loading/loadingScreen";
+import LoadingScreen from '../../../../shared/loading/loadingScreen';
 
 export const GenerateDocuments = () => {
   //lista de datos obtenidas de la api
@@ -55,8 +55,7 @@ export const GenerateDocuments = () => {
   const [emisorData, setEmisorData] =
     useState<EmisorInterface>(defaultEmisorData); // almcenar informacion del emisor
   const [tipoDocumento, setTipoDocumento] = useState<TipoDocumento[]>([]); // almcenar tipo de dte
-  const [tipoDocumentoSelected, setTipoDocumentoSelected] =
-    useState<TipoDTE>(); // almcenar tipo de dte
+  const [tipoDocumentoSelected, setTipoDocumentoSelected] = useState<TipoDTE>(); // almcenar tipo de dte
 
   const [descuentos, setDescuentos] = useState<Descuentos>({
     descuentoGeneral: 0,
@@ -101,7 +100,7 @@ export const GenerateDocuments = () => {
   const [docResponsable, setDocResponsable] = useState<string>('');
   const [tipoTransmision, setTipoTransmision] = useState<string>('');
   const [descuentosProducto, setDescuentosProducto] = useState<number[]>([]);
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const toastRef = useRef<CustomToastRef>(null);
 
@@ -130,14 +129,11 @@ export const GenerateDocuments = () => {
     setTotalAPagar(aux);
   };
 
-
-
   useEffect(() => {
     const descuentosAux: number[] = selectedProducts.map((producto) => {
       const porcentaje: number = producto.descuento?.porcentaje ?? 0;
       return Math.round(porcentaje * 100) / 100; // Redondea a 2 decimales
     });
-
 
     setDescuentosProducto(descuentosAux);
   }, [selectedProducts]);
@@ -175,11 +171,9 @@ export const GenerateDocuments = () => {
       tipotransmision: tipoTransmision,
     };
 
-
     // const dataFECF = facturaJson
 
-
-    console.log(dataFECF)
+    console.log(dataFECF);
     try {
       const response = await generarFacturaService(dataFECF);
       firmarFactura(response.factura_id);
@@ -206,9 +200,11 @@ export const GenerateDocuments = () => {
   }, [tipoDocumentoSelected?.codigo]);
 
   const fetchfacturaData = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const response = await getFacturaCodigos(tipoDocumentoSelected?.codigo ?? '01');
+      const response = await getFacturaCodigos(
+        tipoDocumentoSelected?.codigo ?? '01'
+      );
       setCodigoGeneracion(response.codigo_generacion);
       setNumeroControl(response.numero_control);
       setEmisorData(response.emisor);
@@ -224,9 +220,8 @@ export const GenerateDocuments = () => {
       );
     } catch (error) {
       console.log(error);
-    }
-    finally {
-      setLoading(false)
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -251,7 +246,7 @@ export const GenerateDocuments = () => {
         'Campo de receptor no debe estar vacio'
       );
     } else {
-    generarFactura();
+      generarFactura();
     }
   };
 
@@ -466,7 +461,7 @@ export const GenerateDocuments = () => {
         </button>
       </div>
       <CustomToast ref={toastRef} />
-      { loading && <LoadingScreen/>}
+      {loading && <LoadingScreen />}
     </>
   );
 };

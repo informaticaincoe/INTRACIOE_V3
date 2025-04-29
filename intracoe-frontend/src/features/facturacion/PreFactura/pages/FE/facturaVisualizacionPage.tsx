@@ -36,7 +36,11 @@ import { IoMdCloseCircle } from 'react-icons/io';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { usePDF } from 'react-to-pdf';
-import { enviarFactura, EnviarHacienda, FirmarFactura } from '../../../generateDocuments/services/factura/facturaServices';
+import {
+  enviarFactura,
+  EnviarHacienda,
+  FirmarFactura,
+} from '../../../generateDocuments/services/factura/facturaServices';
 import CustomToast, {
   CustomToastRef,
   ToastSeverity,
@@ -69,13 +73,11 @@ export const FacturaVisualizacionPage = () => {
 
   const [loading, setLoading] = useState(false);
   const [loadingFirma, setLoadingFirma] = useState(false);
-  
 
   // arriba, junto a tus otros useState
   const [firmaIntentos, setFirmaIntentos] = useState(0);
   const [viewDialog, setViewDiaog] = useState(false);
   const [enviarHaciendLoading, setEnviarHaciendLoading] = useState(false);
-
 
   const handleAccion = (
     severity: ToastSeverity,
@@ -121,14 +123,11 @@ export const FacturaVisualizacionPage = () => {
     fetchDatosFactura();
   }, []);
 
-  
   useEffect(() => {
-    console.log(json)
+    console.log(json);
     if (json !== undefined) {
-      if (json == "OK") {
-        handleAccion('info', <FaCircleCheck size={32} />, 'Factura ya firmada');
-      } else {
-        console.log("error")
+      if (json != 'OK') {
+        console.log('error');
         firmar();
       }
     }
@@ -154,12 +153,15 @@ export const FacturaVisualizacionPage = () => {
         );
         setViewDiaog(true);
       } else {
-        handleAccion('error', <IoMdCloseCircle size={32} />, 'No se pudo firmar tras 3 intentos.');
+        handleAccion(
+          'error',
+          <IoMdCloseCircle size={32} />,
+          'No se pudo firmar tras 3 intentos.'
+        );
         setViewDiaog(false);
       }
     }
   };
-
 
   const fetchCondicionOperacionDescripcion = async (id: number) => {
     const response = await getCondicionDeOperacionById(id);
@@ -171,45 +173,60 @@ export const FacturaVisualizacionPage = () => {
     setEnviarHaciendLoading(true);
     try {
       await EnviarHacienda(id);
-      handleAccion('success', <FaCircleCheck size={32} />, 'Factura publicada correctamente');
+      handleAccion(
+        'success',
+        <FaCircleCheck size={32} />,
+        'Factura publicada correctamente'
+      );
       setTimeout(() => window.location.reload(), 2000);
     } catch (error) {
       console.error(error);
-      handleAccion('error', <IoMdCloseCircle size={32} />, 'Error al publicar la factura');
+      handleAccion(
+        'error',
+        <IoMdCloseCircle size={32} />,
+        'Error al publicar la factura'
+      );
     } finally {
       setEnviarHaciendLoading(false);
     }
   };
 
-
-
   const enviarEmail = async () => {
-
     try {
       const pdfBlob = await generarPdf(); // Puede lanzar un error si no se genera
       if (!pdfBlob) {
         throw new Error('El archivo PDF no se pudo generar');
       }
 
-      const jsonBlob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
+      const jsonBlob = new Blob([JSON.stringify(json, null, 2)], {
+        type: 'application/json',
+      });
 
       // Crear FormData para enviar archivos
       const formData = new FormData();
-      formData.append('archivo_pdf', pdfBlob, `${datosFactura.codigoGeneracion}.pdf`);
-      formData.append('archivo_json', jsonBlob, `${datosFactura.numeroControl}.json`);
+      formData.append(
+        'archivo_pdf',
+        pdfBlob,
+        `${datosFactura.codigoGeneracion}.pdf`
+      );
+      formData.append(
+        'archivo_json',
+        jsonBlob,
+        `${datosFactura.numeroControl}.json`
+      );
 
-      console.log("PDF:npm run dev",pdfBlob)
+      console.log('PDF:npm run dev', pdfBlob);
       await enviarFactura(id, formData);
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
 
   const fetchDatosFactura = async () => {
     try {
       if (id) {
         const response = await generarFacturaService(id);
-        console.log(response)
+        console.log(response);
         setEmisor(response.emisor);
         setDatosFactura(response.datosFactura);
         setReceptor(response.receptor);
@@ -262,7 +279,6 @@ export const FacturaVisualizacionPage = () => {
     console.log(pdfBlob);
     console.log(jsonBlob);
 
-
     // 6) Genera el ZIP y dispara la descarga
     const zipBlob = await zip.generateAsync({ type: 'blob' });
     saveAs(zipBlob, `factura_${datosFactura.codigoGeneracion}.zip`);
@@ -272,7 +288,7 @@ export const FacturaVisualizacionPage = () => {
   return (
     <>
       <Title text="Factura generada con éxito" />
-
+      {loadingFirma && <LoadingScreen text="Firmando documento..." />}
       <div className="flex justify-center gap-5">
         <button
           onClick={downloadZip}
@@ -383,14 +399,14 @@ export const FacturaVisualizacionPage = () => {
             <div className="flex gap-4 pt-2">
               <button
                 onClick={firmar}
-                className="bg-primary-blue text-white px-6 py-2 rounded"
+                className="bg-primary-blue rounded px-6 py-2 text-white"
                 disabled={loadingFirma}
               >
                 {loadingFirma ? 'Cargando...' : 'Reintentar'}
               </button>
               <button
                 onClick={() => setViewDiaog(false)}
-                className="border border-primary-blue text-primary-blue px-6 py-2 rounded"
+                className="border-primary-blue text-primary-blue rounded border px-6 py-2"
               >
                 Cancelar
               </button>
@@ -398,7 +414,6 @@ export const FacturaVisualizacionPage = () => {
           </div>
         </Dialog>
       )}
-
     </>
   );
 };

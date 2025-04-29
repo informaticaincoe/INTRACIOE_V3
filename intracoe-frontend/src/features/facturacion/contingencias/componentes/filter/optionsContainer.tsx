@@ -26,7 +26,7 @@ export const OptionsContainer: React.FC<FilterContainerProps> = ({
     // disparo inmediato del filtro de sello_recepcion:
     setFilters({
       ...filters,
-      sello_recepcion: value.trim()
+      sello_recepcion: value.trim(),
     });
   };
 
@@ -34,7 +34,7 @@ export const OptionsContainer: React.FC<FilterContainerProps> = ({
     <>
       <div className="flex items-center justify-between">
         <p>{total} resultados</p>
-        <span className='flex gap-4'>
+        <span className="flex gap-4">
           <span className="border-border-color flex w-[30vw] items-center rounded-md border">
             <span className="flex pl-4">
               <LuSearch />
