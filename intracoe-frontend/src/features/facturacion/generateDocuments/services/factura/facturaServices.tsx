@@ -86,6 +86,7 @@ export const EnviarHacienda = async (id: string) => {
     const response = await api.post(`/factura/${id}/enviar/`);
     return response;
   } catch (error) {
+    console.log(error)
     throw error;
   }
 };
