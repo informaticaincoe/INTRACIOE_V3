@@ -503,6 +503,7 @@ export interface TableListadoFacturasContainerProps {
   data: any;
   pagination: pagination;
   onPageChange: (event: any) => void;
+  updateFacturas: () => void
 }
 
 export interface Perfil {

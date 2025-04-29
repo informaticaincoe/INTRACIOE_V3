@@ -66,6 +66,9 @@ export const ListadoFacturas = () => {
     }
   };
 
+  const updateFacturas = () => {
+    fetchFacturas(pagination.current_page)
+  }
   const onPageChange = (event: any) => {
     const page = event.page + 1;
     const limit = event.rows;
@@ -86,6 +89,7 @@ export const ListadoFacturas = () => {
             data={data}
             pagination={pagination}
             onPageChange={onPageChange}
+            updateFacturas={updateFacturas}
           />
         </>
       </WhiteSectionsPage>
