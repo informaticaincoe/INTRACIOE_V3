@@ -5117,3 +5117,6 @@ def enviar_correo_individual_view(request, factura_id, archivo_pdf=None, archivo
         print(f"Error general en el proceso de envío: {e}")
         messages.error(request, f"No se encontró un documento electrónico para {receptor.nombre}.")
     return redirect('detalle_factura', factura_id=factura_id)
+
+
+####################################################################################################

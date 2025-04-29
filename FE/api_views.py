@@ -3641,91 +3641,87 @@ class LoteContingenciaDteAPIView(APIView):
 # ENVIO DE LOTES EN CONTINGENCIA UNIFICADO
 class EnvioDteUnificadoAPIView(APIView):
     """
-    Flujo unificado para firmar un DTE, enviarlo a Hacienda y actualizar el lote asociado.
+    POST
+    1) Firma el DTE
+    2) Envía el DTE a Hacienda
+    3) Marca el lote como finalizado si tuvo sello_recepcion
+    (Con prints para debug)
     """
-    def get(self, request, format=None):
-        factura_id = request.query_params.get("factura_id")
+    def post(self, request, factura_id=None, format=None):
+        factura_id = factura_id or request.data.get("factura_id")
+        print(f"[EnvioDteUnificado] Inicio POST, factura_id={factura_id}")
+
         if not factura_id:
+            print("[EnvioDteUnificado] ERROR: falta factura_id")
             return Response(
-                {"error": "Falta parámetro 'factura_id'"},
+                {"error": "Debe proporcionar 'factura_id'"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Fecha actual en zona El Salvador
-        try:
-            fecha_actual = obtener_fecha_actual()
-        except Exception:
-            # Fallback manual
-            tz = pytz.timezone('America/El_Salvador')
-            fecha_actual = datetime.now(tz)
+        # 1) Firma
+        print("[EnvioDteUnificado] Llamando a FirmarFacturaAPIView")
+        firmado_view = FirmarFacturaAPIView()
+        resp_firma = firmado_view.post(request, factura_id, format=format)
+        print(f"[EnvioDteUnificado] Respuesta firma: status={resp_firma.status_code}, data={getattr(resp_firma, 'data', None)}")
 
-        # 1) Firma del DTE
-        try:
-            resp_firma = FirmarFacturaAPIView(request, factura_id)
-            sc_firma = getattr(resp_firma, "status_code", None)
-            # Si no es redirect (302) ni OK (200), devolvemos directamente ese error
-            if sc_firma not in (302, 200):
-                # Intentamos parsear JSON, o devolvemos texto plano
-                content = getattr(resp_firma, "content", b"")
-                try:
-                    data = json.loads(content)
-                except Exception:
-                    data = content.decode(errors="ignore") if isinstance(content, (bytes, str)) else {}
-                return Response(data, status=sc_firma)
-        except Exception as e:
-            return Response(
-                {"error": "Error al firmar la factura", "detalle": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+        if resp_firma.status_code != status.HTTP_200_OK:
+            print(f"[EnvioDteUnificado] Firma fallida, devolviendo código {resp_firma.status_code}")
+            return resp_firma
 
         # 2) Envío a Hacienda
+        print("[EnvioDteUnificado] Llamando a EnviarFacturaHaciendaAPIView")
+        envio_view = EnviarFacturaHaciendaAPIView()
+        resp_envio = envio_view.post(request, factura_id, format=format)
+        print(f"[EnvioDteUnificado] Respuesta envío: status={resp_envio.status_code}, data={getattr(resp_envio, 'data', None)}")
+
+        if resp_envio.status_code != status.HTTP_200_OK:
+            print(f"[EnvioDteUnificado] Envío fallido, devolviendo código {resp_envio.status_code}")
+            return resp_envio
+
+        # 3) Actualizar lote
         try:
-            resp_envio = EnviarFacturaHaciendaAPIView(request, factura_id)
-            sc_envio = getattr(resp_envio, "status_code", None)
-            content_envio = getattr(resp_envio, "content", b"")
+            print("[EnvioDteUnificado] Obteniendo fecha actual en zona America/El_Salvador")
+            try:
+                fecha_actual = obtener_fecha_actual()
+            except Exception as e:
+                print(f"[EnvioDteUnificado] obtener_fecha_actual falló: {e}, usando datetime.now con tz")
+                tz = pytz.timezone('America/El_Salvador')
+                fecha_actual = datetime.now(tz)
+
+            print(f"[EnvioDteUnificado] Iniciando transacción para actualizar lote de factura {factura_id}")
+            with transaction.atomic():
+                factura = get_object_or_404(FacturaElectronica, id=factura_id)
+                print(f"[EnvioDteUnificado] factura.sello_recepcion={factura.sello_recepcion}")
+                if factura.sello_recepcion:
+                    lote = LoteContingencia.objects.filter(factura_id=factura_id).first()
+                    print(f"[EnvioDteUnificado] Lote encontrado: {lote}")
+                    if lote:
+                        lote.finalizado = True
+                        lote.recibido_mh = True
+                        lote.fecha_modificacion = fecha_actual.date()
+                        lote.hora_modificacion = fecha_actual.time()
+                        lote.save()
+                        mensaje = "Factura firmada y recibida con éxito"
+                        print("[EnvioDteUnificado] Lote marcado como finalizado y recibido")
+                    else:
+                        mensaje = "Factura firmada, pero no se encontró lote de contingencia"
+                        print("[EnvioDteUnificado] No se encontró lote de contingencia")
+                else:
+                    mensaje = "Factura firmada, pero sin sello de recepción de MH"
+                    print("[EnvioDteUnificado] Factura sin sello_recepcion")
+            connection.close()
+            print("[EnvioDteUnificado] Conexión cerrada tras actualizar lote")
         except Exception as e:
+            print(f"[EnvioDteUnificado] ERROR actualizando lote: {e}")
             return Response(
-                {"error": "Error al enviar la factura a Hacienda", "detalle": str(e)},
+                {"error": "Error actualizando lote", "detalle": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-        # 3) Verificar en la BD y actualizar lote si corresponde
-        try:
-            factura = FacturaElectronica.objects.filter(id=factura_id).first()
-            if factura and factura.sello_recepcion:
-                # Marcar lote como finalizado
-                lote = LoteContingencia.objects.filter(factura__id=factura_id).first()
-                if lote:
-                    lote.finalizado = True
-                    lote.recibido_mh = True
-                    lote.fecha_modificacion = fecha_actual.date()
-                    lote.hora_modificacion = fecha_actual.time()
-                    lote.save()
-                mensaje = "Factura recibida con éxito"
-            elif factura:
-                mensaje = "No se pudo enviar la factura"
-            else:
-                mensaje = "No se encontró el documento electrónico"
-        except Exception as e:
-            mensaje = "Error al consultar el estado de la factura"
-        
-        # 4) Procesar detalle de la respuesta de envío
-        try:
-            if sc_envio == 200:
-                try:
-                    detalle = json.loads(content_envio)
-                except Exception:
-                    detalle = content_envio.decode(errors="ignore")
-            else:
-                detalle = {
-                    "status_code": sc_envio,
-                    "content": content_envio.decode(errors="ignore")
-                }
-        except Exception as e:
-            detalle = f"Error procesando respuesta de envío: {e}"
-
+        # 4) Devolver resultado combinado
+        print(f"[EnvioDteUnificado] FINAL: {mensaje}")
         return Response(
-            {"mensaje": mensaje, "detalle": detalle},
+            {"mensaje": mensaje, "detalle_envio": resp_envio.data},
             status=status.HTTP_200_OK
         )
 
