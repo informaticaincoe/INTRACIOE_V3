@@ -2137,7 +2137,7 @@ class FirmarFacturaAPIView(APIView):
                     FIRMADOR_URL,
                     json=payload,
                     headers={"Content-Type": "application/json"},
-                    timeout=30
+                    timeout=10
                 )
                 try:
                     data_resp = resp.json()
@@ -2177,7 +2177,7 @@ class FirmarFacturaAPIView(APIView):
                 tipo_contingencia_obj = TipoContingencia.objects.get(codigo="1")
 
             # Esperar antes del siguiente intento (sin mantener transacción abierta)
-            time.sleep(8)
+            time.sleep(1)
 
         # Tras agotar todos los intentos, entrar en contingencia
         with transaction.atomic():
@@ -2236,7 +2236,7 @@ class EnviarFacturaHaciendaAPIView(APIView):
             error_auth = None
             for intento in range(1, 4):
                 try:
-                    resp = requests.post(auth_url, data=auth_data, headers=auth_headers, timeout=30)
+                    resp = requests.post(auth_url, data=auth_data, headers=auth_headers, timeout=10)
                     if resp.status_code == 200:
                         try:
                             resp_data = resp.json()
@@ -2270,7 +2270,7 @@ class EnviarFacturaHaciendaAPIView(APIView):
                         error_auth = f"Auth failed {resp.status_code}"
                 except requests.RequestException as e:
                     error_auth = str(e)
-                time.sleep(8)
+                time.sleep(1)
 
             print("factura_id1: ", factura_id)
             print("datos: ", request)
@@ -2329,7 +2329,7 @@ class EnviarFacturaHaciendaAPIView(APIView):
             error_envio = None
             for intento in range(1, 4):
                 try:
-                    resp = requests.post(envio_url, json=payload, headers=envio_headers, timeout=30)
+                    resp = requests.post(envio_url, json=payload, headers=envio_headers, timeout=10)
                     data = resp.json() if resp.text.strip() else {}
                     print("Response envio mh: data: ", data)
                     if resp.status_code == 200 and data.get("selloRecibido"):
@@ -2367,7 +2367,7 @@ class EnviarFacturaHaciendaAPIView(APIView):
                         error_envio = f"Envio failed {resp.status_code}"
                 except requests.RequestException as e:
                     error_envio = str(e)
-                time.sleep(8)
+                time.sleep(1)
 
             # Si llegó aquí, envió falló repetidamente → contingencia
             factura.estado = False
@@ -2594,7 +2594,7 @@ class EnviarFacturaInvalidacionAPIView(APIView):
                                       "Content-Type": "application/x-www-form-urlencoded",
                                       "User-Agent": "MiAplicacionDjango/1.0"
                                   },
-                                  timeout=30)
+                                  timeout=10)
         try:
             auth_body = auth_resp.json().get("body", {})
         except ValueError:
@@ -2657,7 +2657,7 @@ class EnviarFacturaInvalidacionAPIView(APIView):
             "documento": documento
         }
         try:
-            resp = requests.post(envio_url, json=payload, headers=envio_headers, timeout=30)
+            resp = requests.post(envio_url, json=payload, headers=envio_headers, timeout=10)
             try:
                 data = resp.json()
             except ValueError:
@@ -3195,7 +3195,7 @@ class FirmarContingenciaAPIView(APIView):
             }
 
             try:
-                resp = requests.post(FIRMADOR_URL, json=payload, timeout=30)
+                resp = requests.post(FIRMADOR_URL, json=payload, timeout=10)
                 status_code = resp.status_code
                 try:
                     response_data = resp.json()
@@ -3238,7 +3238,7 @@ class FirmarContingenciaAPIView(APIView):
                 evento.save()
 
                 intento += 1
-                time.sleep(8)
+                time.sleep(1)
 
             except requests.exceptions.RequestException as e:
                 # Errores de red
@@ -3246,7 +3246,7 @@ class FirmarContingenciaAPIView(APIView):
                 evento.save()
                 response_data = {"error": "Error de conexión", "detalle": str(e)}
                 intento += 1
-                time.sleep(8)
+                time.sleep(1)
 
         # 3) Si agotó los intentos sin éxito
         evento.fecha_modificacion = fecha_actual.date()
@@ -3301,7 +3301,7 @@ class EnviarContingenciaHaciendaAPIView(APIView):
 
         for intento in range(1, intentos_max + 1):
             try:
-                resp = requests.post(auth_url, data=auth_data, headers=auth_headers, timeout=30)
+                resp = requests.post(auth_url, data=auth_data, headers=auth_headers, timeout=10)
                 if resp.status_code == 200:
                     body = resp.json().get("body", {})
                     token = body.get("token", "")
@@ -3333,7 +3333,7 @@ class EnviarContingenciaHaciendaAPIView(APIView):
             except requests.RequestException as e:
                 TipoContingencia.objects.filter(codigo="1").update()
                 error_auth = str(e)
-            time.sleep(8)
+            time.sleep(1)
 
         # si tras reintentos no hay token
         if not token:
@@ -3378,7 +3378,7 @@ class EnviarContingenciaHaciendaAPIView(APIView):
 
         for intento in range(1, intentos_max + 1):
             try:
-                resp = requests.post(envio_url, headers=envio_headers, json=payload, timeout=30)
+                resp = requests.post(envio_url, headers=envio_headers, json=payload, timeout=10)
                 status_code = resp.status_code
                 data = resp.json() if resp.text.strip() else {}
 
@@ -3418,7 +3418,7 @@ class EnviarContingenciaHaciendaAPIView(APIView):
             except requests.RequestException as e:
                 TipoContingencia.objects.filter(codigo="1").update()
                 error_envio = str(e)
-            time.sleep(8)
+            time.sleep(1)
 
         # si agotó intentos sin éxito
         evento.fecha_modificacion = fecha_actual.date()
@@ -3600,7 +3600,7 @@ class EnvioDteUnificadoAPIView(APIView):
 
         # 1) Firma del DTE
         try:
-            resp_firma = firmar_factura_view(request, factura_id)
+            resp_firma = FirmarFacturaAPIView(request, factura_id)
             sc_firma = getattr(resp_firma, "status_code", None)
             # Si no es redirect (302) ni OK (200), devolvemos directamente ese error
             if sc_firma not in (302, 200):
@@ -3619,7 +3619,7 @@ class EnvioDteUnificadoAPIView(APIView):
 
         # 2) Envío a Hacienda
         try:
-            resp_envio = enviar_factura_hacienda_view(request, factura_id)
+            resp_envio = EnviarFacturaHaciendaAPIView(request, factura_id)
             sc_envio = getattr(resp_envio, "status_code", None)
             content_envio = getattr(resp_envio, "content", b"")
         except Exception as e:
@@ -3789,7 +3789,7 @@ class EnviarLotesHaciendaAPIView(APIView):
         auth_data = {"user": nit, "pwd": pwd}
 
         try:
-            auth_resp = requests.post(auth_url, data=auth_data, headers=auth_headers, timeout=30)
+            auth_resp = requests.post(auth_url, data=auth_data, headers=auth_headers, timeout=10)
             auth_body = auth_resp.json().get("body", {}) if auth_resp.status_code == 200 else {}
         except requests.RequestException as e:
             return Response(
@@ -3857,7 +3857,7 @@ class EnviarLotesHaciendaAPIView(APIView):
         }
 
         try:
-            envio_resp = requests.post(envio_url, json=envio_json, headers=envio_headers, timeout=30)
+            envio_resp = requests.post(envio_url, json=envio_json, headers=envio_headers, timeout=10)
             try:
                 resp_data = envio_resp.json()
             except ValueError:

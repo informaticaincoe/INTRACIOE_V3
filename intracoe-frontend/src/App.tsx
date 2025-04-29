@@ -7,6 +7,8 @@ import 'primereact/resources/themes/lara-light-blue/theme.css';
 
 import { Login } from './features/login/pages/loginPage';
 import { Layout } from './layout/layout';
+import CustomToast, { CustomToastRef } from './shared/toast/customToast';
+import { useRef } from 'react';
 
 const { Dashboard } = lazily(
   () => import('./features/dashboard/pages/dashboard')
