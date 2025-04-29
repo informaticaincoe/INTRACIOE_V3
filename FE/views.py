@@ -55,6 +55,7 @@ from django.contrib.auth.decorators import login_required
 from xhtml2pdf import pisa
 from django.core.mail import EmailMessage
 from AUTENTICACION.models import ConfiguracionServidor
+from weasyprint import HTML, CSS
 
 FIRMADOR_URL = "http://192.168.2.25:8113/firmardocumento/"
 DJANGO_SERVER_URL = "http://127.0.0.1:8000"
@@ -1837,19 +1838,39 @@ def enviar_factura_hacienda_view(request, factura_id):
         else:
             print(f"No se encontró el archivo JSON para la factura: {factura.numero_control}")
         
-        #Crear HTML
-        html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": factura})
-
-        #Guardar archivo pdf
-        pdf_signed_path = f"{RUTA_COMPROBANTES_PDF.ruta_archivo}{factura.tipo_dte.codigo}/pdf/{factura.codigo_generacion}.pdf"
-        print("guardar pdf: ", pdf_signed_path)
-        with open(pdf_signed_path, "wb") as pdf_file:
-            pisa_status = pisa.CreatePDF(BytesIO(html_content.encode('utf-8')), dest=pdf_file)
-            
-        if pisa_status.err:
-            print(f"Error al crear el PDF en {pdf_signed_path}")
+        # Verificar si el archivo PDF existe
+        pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.ruta_archivo, factura.tipo_dte.codigo, 'pdf', f"{str(factura.codigo_generacion).upper()}.pdf")
+        os.makedirs(os.path.dirname(pdf_signed_path), exist_ok=True)
+        if os.path.exists(pdf_signed_path):
+            print("PDF ya existe, devolviendo archivo existente: %s", pdf_signed_path)
+            try:
+                with open(pdf_signed_path, "rb", encoding="utf-8") as pdf_file:
+                    filename=os.path.basename(pdf_signed_path)
+            except Exception as e:
+                print(f"Error abriendo el archivo PDF existente: {e}")
         else:
-            print(f"PDF guardado exitosamente en {pdf_signed_path}")
+            #1.Crear HTML
+            html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": factura}, request=request)
+
+            #2.Definir base_url para que {% static %} funcione correctamente, esto asegura que las imágenes estáticas (logos, etc.) se resuelvan bien en el PDF
+            try:
+                base_url = request.build_absolute_uri('/')
+            except Exception as e:
+                print("Error obteniendo base_url")
+                base_url = None  # WeasyPrint usará paths relativos si es None
+                
+            #3.Preparar lista de CSS:
+            stylesheets = [CSS(url='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js') ]
+            
+            #4.Guardar archivo PDF con WeasyPrint
+            try:
+                html = HTML(string=html_content, base_url=base_url)
+                html.write_pdf(stylesheets=stylesheets, target=pdf_signed_path)
+                print("Pdf guardado ")
+            except Exception as e:
+                print("Error generando el PDF con WeasyPrint")
+            else:
+                print("No se encontró el archivo PDF para la factura")
         
         #Enviar correo
         if factura:
@@ -2467,14 +2488,16 @@ def enviar_factura_invalidacion_hacienda_view(request, factura_id):
                     cantidad=detalle.cantidad,
                     motivo_detalle="Reingreso automático por invalidación"
                 )
-                almacen = detalle.producto.almacenes.first() or Almacen.objects.first()
-                MovimientoInventario.objects.create(
-                    producto=detalle.producto,
-                    almacen=almacen,
-                    tipo='Entrada',
-                    cantidad=detalle.cantidad,
-                    referencia=f"Invalidación Factura {factura.codigo_generacion}",
-                )
+                if detalle is not None and detalle.producto.almacenes.exists():
+                    almacen = detalle.producto.almacenes.first() or Almacen.objects.first()
+                    MovimientoInventario.objects.create(
+                        producto=detalle.producto,
+                        almacen=almacen,
+                        tipo='Entrada',
+                        cantidad=detalle.cantidad,
+                        referencia=f"Invalidación Factura {factura.codigo_generacion}",
+                    )
+                            
                 # Ajuste de stock atómico
                 Producto.objects.filter(pk=detalle.producto.pk).update(
                     stock=F('stock') + detalle.cantidad
@@ -2554,18 +2577,19 @@ def invalidar_varias_dte_view(request):
                                 cantidad=detalle.cantidad,
                                 motivo_detalle="Reingreso automático por invalidación"
                             )
-                            almacen = detalle.producto.almacenes.first() or Almacen.objects.first()
-                            MovimientoInventario.objects.create(
-                                producto=detalle.producto,
-                                almacen=almacen,
-                                tipo='Entrada',
-                                cantidad=detalle.cantidad,
-                                referencia=f"Reingreso invalidación Factura {factura.numero_control}"
-                            )
-                            # Ajuste de stock atómico
-                            Producto.objects.filter(pk=detalle.producto.pk).update(
-                                stock=F('stock') + detalle.cantidad
-                            )
+                            if detalle is not None and detalle.producto.almacenes.exists():
+                                almacen = detalle.producto.almacenes.first() or Almacen.objects.first()
+                                MovimientoInventario.objects.create(
+                                    producto=detalle.producto,
+                                    almacen=almacen,
+                                    tipo='Entrada',
+                                    cantidad=detalle.cantidad,
+                                    referencia=f"Reingreso invalidación Factura {factura.numero_control}"
+                                )
+                                # Ajuste de stock atómico
+                                Producto.objects.filter(pk=detalle.producto.pk).update(
+                                    stock=F('stock') + detalle.cantidad
+                                )
 
                     else:
                         mensaje = "No se pudo invalidar la factura"
@@ -3428,14 +3452,15 @@ def generar_documento_ajuste_view(request):
                         motivo_detalle="Reingreso automático por NC"
                     )
                     # 2b) Movimiento de inventario de Entrada
-                    almacen = det.producto.almacenes.first() or Almacen.objects.first()
-                    MovimientoInventario.objects.create(
-                        producto=det.producto,
-                        almacen=almacen,
-                        tipo='Entrada',
-                        cantidad=det.cantidad,
-                        referencia=f"Reingreso NC {factura.numero_control}"
-                    )
+                    if det is not None and det.producto.almacenes.exists():
+                        almacen = det.producto.almacenes.first() or Almacen.objects.first()
+                        MovimientoInventario.objects.create(
+                            producto=det.producto,
+                            almacen=almacen,
+                            tipo='Entrada',
+                            cantidad=det.cantidad,
+                            referencia=f"Reingreso NC {factura.numero_control}"
+                        )
                     # 2c) Ajuste de stock atómico
                     Producto.objects.filter(pk=det.producto.pk).update(
                         stock=F('stock') + det.cantidad
@@ -3450,17 +3475,18 @@ def generar_documento_ajuste_view(request):
             elif tipo_dte_obj.codigo == COD_NOTA_DEBITO:
                 # (opcional) si quieres guardar un modelo NotaDebito, créalo aquí
                 for det in factura.detalles.all():
-                    MovimientoInventario.objects.create(
-                        producto=det.producto,
-                        almacen=det.producto.almacenes.first() or Almacen.objects.first(),
-                        tipo='Salida',
-                        cantidad=det.cantidad,
-                        referencia=f"Salida ND {factura.numero_control}"
-                    )
-                    # ajustar stock sin bajar de cero
-                    Producto.objects.filter(pk=det.producto.pk).update(
-                        stock=Greatest(F('stock') - det.cantidad, Value(0))
-                    )
+                    if det is not None and det.producto.almacenes.exists():
+                        MovimientoInventario.objects.create(
+                            producto=det.producto,
+                            almacen=det.producto.almacenes.first() or Almacen.objects.first(),
+                            tipo='Salida',
+                            cantidad=det.cantidad,
+                            referencia=f"Salida ND {factura.numero_control}"
+                        )
+                        # ajustar stock sin bajar de cero
+                        Producto.objects.filter(pk=det.producto.pk).update(
+                            stock=Greatest(F('stock') - det.cantidad, Value(0))
+                        )
 
             # Guardar el JSON en la carpeta "FE/json_facturas"
             json_path = os.path.join("FE/json_facturas", f"{factura.numero_control}.json")
@@ -4807,23 +4833,35 @@ def enviar_lotes_hacienda_view(request, factura_id):
             factura.hora_modificacion = fecha_actual.time()
             
             #Crear HTML
-            html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": factura})
-
-            #Guardar archivo pdf
-            pdf_signed_path = f"{RUTA_COMPROBANTES_PDF.ruta_archivo}{factura.tipo_dte.codigo}/pdf/{factura.codigo_generacion}.pdf"
-            print("guardar pdf: ", pdf_signed_path)
-            with open(pdf_signed_path, "wb") as pdf_file:
-                pisa_status = pisa.CreatePDF(BytesIO(html_content.encode('utf-8')), dest=pdf_file)
-                
-            if pisa_status.err:
-                print(f"Error al crear el PDF en {pdf_signed_path}")
-            else:
-                print(f"PDF guardado exitosamente en {pdf_signed_path}")
+            html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": factura}, request=request)
             
+            #Guardar archivo pdf
+            # Definir ruta de PDF
+            pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.ruta_archivo, factura.tipo_dte.codigo, 'pdf', f"{str(factura.codigo_generacion).upper()}.pdf")
+            
+            print("guardar pdf: ", pdf_signed_path)
+            
+            # Asegurar que el directorio existe
+            os.makedirs(os.path.dirname(pdf_signed_path), exist_ok=True)
+            
+            # Crear y guardar el PDF
+            try:
+                with open(pdf_signed_path, "wb") as pdf_file:
+                    pisa_status = pisa.CreatePDF(BytesIO(html_content.encode('utf-8')), dest=pdf_file)
+                    
+                if pisa_status.err:
+                    print(f"Error al crear el PDF en {pdf_signed_path}")
+                else:
+                    print(f"PDF guardado exitosamente en {pdf_signed_path}")
+            except Exception as e:
+                    print(f"Error guardando el PDF: {e}")
             #Enviar correo
             if factura:
-                enviar_correo_individual_view(request, factura.id, pdf_signed_path, None)
-                factura.envio_correo = True
+                try:
+                    enviar_correo_individual_view(request, factura.id, pdf_signed_path, None)
+                    factura.envio_correo = True
+                except Exception as e:
+                        print(f"Error enviando el correo: {e}")
             
             factura.save()
             return JsonResponse({
@@ -4984,14 +5022,13 @@ def enviar_correo_individual_view(request, factura_id, archivo_pdf=None, archivo
     print(f"Inicio envio de correos: pdf: {archivo_pdf}, json: {archivo_json}")
     
     documento_electronico = FacturaElectronica.objects.filter(id=factura_id).order_by('id').first()
-    receptor = Receptor_fe.objects.filter(id=documento_electronico.dtereceptor_id).order_by('id').first()
-    emisor = Emisor_fe.objects.filter(id=documento_electronico.dteemisor_id).order_by('id').first()
     #Correo receptor principal: juniorfran@hotmail.es
+    
     try:
-        # Si no vienen los archivos como parámetro, buscar en las rutas
+        # Buscar archivos si no se enviaron como parametro
         if not archivo_pdf:
             ruta_pdf = os.path.join(RUTA_COMPROBANTES_PDF.ruta_archivo, documento_electronico.tipo_dte.codigo, "pdf")
-            archivo_pdf = os.path.join(ruta_pdf, f"{documento_electronico.codigo_generacion}.pdf")
+            archivo_pdf = os.path.join(ruta_pdf, f"{str(documento_electronico.codigo_generacion).upper()}.pdf")
             if not os.path.exists(archivo_pdf):
                 print(f"Archivo PDF no encontrado en {archivo_pdf}")
                 messages.error(request, "Archivo PDF no encontrado.")
@@ -5003,7 +5040,11 @@ def enviar_correo_individual_view(request, factura_id, archivo_pdf=None, archivo
                 print(f"Archivo JSON no encontrado en {archivo_json}")
                 messages.error(request, "Archivo JSON no encontrado.")
         print(f"json: {archivo_json} pdf: {archivo_pdf}")
+        
         if documento_electronico:
+            
+            receptor = Receptor_fe.objects.filter(id=documento_electronico.dtereceptor_id).order_by('id').first()
+            emisor = Emisor_fe.objects.filter(id=documento_electronico.dteemisor_id).order_by('id').first()
             
             # Renderizar el HTML del mensaje del correo
             email_html_content = f"""
@@ -5038,27 +5079,27 @@ def enviar_correo_individual_view(request, factura_id, archivo_pdf=None, archivo
             email.content_subtype = "html"  # Indicar que el contenido es HTML
             
             # Adjuntar el archivo PDF
-            try:
-                with open(archivo_pdf, 'rb') as pdf_file_to_attach:
-                    email.attach(
-                        f"Documento_Electrónico_{receptor.nombre}.pdf",
-                        pdf_file_to_attach.read(),
-                        'application/pdf'
-                    )
-            except Exception as e:
-                print(f"Error al abrir el archivo PDF: {e}")
-                messages.error(request, f"Error al abrir el archivo PDF: {e}")
+            if archivo_pdf and os.path.exists(archivo_pdf):
+                try:
+                    with open(archivo_pdf, 'rb') as pdf_file:
+                        email.attach(
+                            f"Documento_Electrónico_{receptor.nombre}.pdf",
+                            pdf_file.read(), 'application/pdf')
+                except Exception as e:
+                    print(f"Error al abrir el archivo PDF: {e}")
+                    messages.error(request, f"Error al abrir el archivo PDF: {e}")
+            
             # Adjuntar el archivo JSON
-            try:
-                with open(archivo_json, 'rb') as json_file_to_attach:
-                    email.attach(
-                        f"Documento_Electrónico_{receptor.nombre}.json",
-                        json_file_to_attach.read(),
-                        'application/json'
-                    )
-            except Exception as e:
-                print(f"Error al abrir el archivo JSON: {e}")
-                messages.error(request, f"Error al abrir el archivo JSON: {e}")
+            if archivo_json and os.path.exists(archivo_json):
+                try:
+                    with open(archivo_json, 'rb') as json_file:
+                        email.attach(
+                            f"Documento_Electrónico_{receptor.nombre}.json",
+                            json_file.read(),
+                            'application/json')
+                except Exception as e:
+                    print(f"Error al abrir el archivo JSON: {e}")
+                    messages.error(request, f"Error al abrir el archivo JSON: {e}")
             
             # Enviar el correo
             try:
@@ -5076,3 +5117,6 @@ def enviar_correo_individual_view(request, factura_id, archivo_pdf=None, archivo
         print(f"Error general en el proceso de envío: {e}")
         messages.error(request, f"No se encontró un documento electrónico para {receptor.nombre}.")
     return redirect('detalle_factura', factura_id=factura_id)
+
+
+####################################################################################################
