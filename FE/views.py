@@ -1671,7 +1671,7 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False):
                 
                 print("Inicio envio response: ")
                 envio_response = requests.post(
-                    "https://api.dtes.mh.gob.sv/fesv/recepciondte1",
+                    "https://api.dtes.mh.gob.sv/fesv/recepciondte",
                     json=envio_json,
                     headers=envio_headers
                 )
