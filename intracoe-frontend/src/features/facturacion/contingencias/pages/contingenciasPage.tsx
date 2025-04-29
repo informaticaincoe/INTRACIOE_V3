@@ -28,7 +28,8 @@ export const ContingenciasPage = () => {
       : null,
   };
 
-  const [contingenciasList, setContingenciasList] = useState<Contingencias | null>(null);
+  const [contingenciasList, setContingenciasList] =
+    useState<Contingencias | null>(null);
   const [expandedRows, setExpandedRows] = useState<any[]>([]);
   const [filters, setFilters] = useState<FilterContingencia>(initialFilters);
 
@@ -59,25 +60,25 @@ export const ContingenciasPage = () => {
     };
 
     setFilters(newFilters);
-    setPagination(p => ({
+    setPagination((p) => ({
       ...p,
       currentPage: page,
     }));
 
-    fetchAllEventos(page, newFilters)
+    fetchAllEventos(page, newFilters);
   }, [searchParams]);
 
   const fetchAllEventos = async (page: any, newFilters: any) => {
-    await GetAlEventosContingencia(page, newFilters).then(response => {
+    await GetAlEventosContingencia(page, newFilters).then((response) => {
       if (!response) return;
       setContingenciasList(response);
-      setPagination(p => ({
+      setPagination((p) => ({
         ...p,
         currentPage: page,
         totalRecords: response.count,
       }));
     });
-  }
+  };
 
   const onFilterChange = (newFilters: FilterContingencia) => {
     // Reconstruyo params y reseteo la página a 1
@@ -103,12 +104,16 @@ export const ContingenciasPage = () => {
 
   const updateContingencias = () => {
     fetchAllEventos(pagination.currentPage, filters);
-  }
+  };
 
   const rowExpansionTemplate = (rowData: any) => {
     return (
       <div className="flex w-full flex-col justify-center px-10">
-        <TablaLotes lotes={rowData.facturas_en_grupos} contingenciaEstado={rowData.recibido_mh} updateContingencias={updateContingencias}/>
+        <TablaLotes
+          lotes={rowData}
+          contingenciaEstado={rowData.recibido_mh}
+          updateContingencias={updateContingencias}
+        />
       </div>
     );
   };
@@ -131,6 +136,7 @@ export const ContingenciasPage = () => {
             pagination={pagination} // Paginación añadida
             setPagination={setPagination} // Función para actualizar la paginación
             onPageChange={onPageChange}
+            updateContingencias={updateContingencias}
           />
         </>
       </WhiteSectionsPage>

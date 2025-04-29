@@ -28,8 +28,7 @@ export const ResumenTotalesCard: React.FC<ResumenTotalesCardProps> = ({
   const [totalConIva, setTotalConIva] = useState('0.00');
   const [descuentoTotal, setDescuentoTotal] = useState('0.00');
 
-  useEffect(() => {
-  }, [listProducts, descuentos, totalAPagar]);
+  useEffect(() => {}, [listProducts, descuentos, totalAPagar]);
 
   useEffect(() => {
     // 1) Suma de importes base

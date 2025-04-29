@@ -20,8 +20,8 @@ api.interceptors.request.use((cfg) => {
 //   response => response,
 //   error => {
 //     // Extraemos el mensaje de error según tu backend
-//     const msg = error.response?.data?.error 
-//              || error.response?.data?.detail 
+//     const msg = error.response?.data?.error
+//              || error.response?.data?.detail
 //              || error.response?.data;
 
 //     // Si es el caso "Error interno del servidor", redirigimos al login

@@ -51,8 +51,7 @@ export const GenerarDocumentosAjuste = () => {
   const [emisorData, setEmisorData] =
     useState<EmisorInterface>(defaultEmisorData); // almcenar informacion del emisor
   const [tipoDocumento, setTipoDocumento] = useState<TipoDocumento[]>([]); // almcenar tipo de dte
-  const [tipoDocumentoSelected, setTipoDocumentoSelected] =
-    useState<TipoDTE>(); // almcenar tipo de dte
+  const [tipoDocumentoSelected, setTipoDocumentoSelected] = useState<TipoDTE>(); // almcenar tipo de dte
 
   const [descuentos, setDescuentos] = useState<Descuentos>({
     descuentoGeneral: 0,
@@ -219,7 +218,9 @@ export const GenerarDocumentosAjuste = () => {
 
   const fetchfacturaData = async () => {
     try {
-      const response = await generarAjusteService(tipoDocumentoSelected?.codigo ?? '05');
+      const response = await generarAjusteService(
+        tipoDocumentoSelected?.codigo ?? '05'
+      );
       setCodigoGeneracion(response.codigo_generacion);
       setNumeroControl(response.numero_control);
       setEmisorData(response.emisor);

@@ -12,18 +12,24 @@ import { FcCancel } from 'react-icons/fc';
 import { invalidarDte } from '../services/listadoFacturasServices';
 import { useNavigate } from 'react-router';
 import { Tooltip } from 'antd';
-import CustomToast, { CustomToastRef, ToastSeverity } from '../../../../shared/toast/customToast';
-import { useRef, useState } from 'react';
+import CustomToast, {
+  CustomToastRef,
+  ToastSeverity,
+} from '../../../../shared/toast/customToast';
+import { useEffect, useRef, useState } from 'react';
 import { IoMdCloseCircle } from 'react-icons/io';
 import LoadingScreen from '../../../../shared/loading/loadingScreen';
 
 export const TableListadoFacturasContainer: React.FC<
   TableListadoFacturasContainerProps
 > = ({ data, pagination, onPageChange, updateFacturas }) => {
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
   const toastRef = useRef<CustomToastRef>(null);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    console.log(data);
+  }, [data]);
   const handleAccion = (
     severity: ToastSeverity,
     icon: any,
@@ -47,22 +53,28 @@ export const TableListadoFacturasContainer: React.FC<
 
   const invalidarFactura = async (id: number) => {
     try {
-      setLoading(true)
-      await invalidarDte(id)
+      setLoading(true);
+      await invalidarDte(id);
       updateFacturas();
-      handleAccion('success', <FaCircleCheck size={32} />, 'Factura invnalidada con exito');
-
+      handleAccion(
+        'success',
+        <FaCircleCheck size={32} />,
+        'Factura invalidada con éxito'
+      );
     } catch (error) {
-      handleAccion('error', <IoMdCloseCircle size={32} />, 'Ah ocurrido un error al invalidar la factura');
-    }
-    finally {
-      setLoading(false)
+      handleAccion(
+        'error',
+        <IoMdCloseCircle size={32} />,
+        'Ah ocurrido un error al invalidar la factura'
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div>
-      { loading && <LoadingScreen /> }
+      {loading && <LoadingScreen />}
       <CustomToast ref={toastRef} />
       <DataTable
         value={data}
@@ -125,7 +137,7 @@ export const TableListadoFacturasContainer: React.FC<
           body={(rowData: any) => (
             <>
               <span className="flex items-center gap-2">
-                {rowData.estado_invalidacion == 'Viva' && (
+                {(rowData.estado_invalidacion == 'Viva' && rowData.sello_recepcion) && (
                   <>
                     <Tooltip title="Anular">
                       <button
