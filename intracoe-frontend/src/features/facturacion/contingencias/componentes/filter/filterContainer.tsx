@@ -46,12 +46,6 @@ export const FilterContainer: React.FC<FilterContainerProps> = ({
     { name: 'No', code: false },
   ];
 
-  const estadoFacturaFilters = [
-    { name: 'Todos', code: null },
-    { name: 'Enviados', code: true },
-    { name: 'invalidados', code: false },
-  ];
-
   const estadoInvalidacionFilters = [
     { name: 'Todos', code: null },
     { name: 'Enviados', code: 'viva' },
@@ -94,26 +88,6 @@ export const FilterContainer: React.FC<FilterContainerProps> = ({
             setFilters({
               ...filters,
               has_sello_recepcion: e.value,
-            })
-          }
-          checkmark={true}
-          highlightOnSelect={false}
-        />
-      </span>
-      <span>
-        <p className="text-start">Estado:</p>
-        <Dropdown
-          value={filters.estado_invalidacion}
-          options={estadoInvalidacionFilters}
-          optionLabel="name"
-          optionValue="code"
-          placeholder=""
-          style={{ width: '10vw' }}
-          className="w-8rem text-start"
-          onChange={(e: DropdownChangeEvent) =>
-            setFilters({
-              ...filters,
-              estado_invalidacion: e.value,
             })
           }
           checkmark={true}

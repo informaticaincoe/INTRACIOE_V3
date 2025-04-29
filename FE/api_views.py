@@ -56,6 +56,7 @@ from django.conf import settings
 from xhtml2pdf import pisa
 from io import BytesIO
 from django.template.loader import render_to_string
+from weasyprint import HTML, CSS
 
 FIRMADOR_URL = "http://192.168.2.25:8113/firmardocumento/"
 DJANGO_SERVER_URL = "http://127.0.0.1:8000"
@@ -1498,11 +1499,41 @@ class GenerarFacturaAPIView(APIView):
             if formas_pago_id:
                 factura.formas_Pago = formas_pago_id
             factura.save()
-
+            
             json_path = os.path.join("FE/json_facturas", f"{factura.numero_control}.json")
             os.makedirs(os.path.dirname(json_path), exist_ok=True)
             with open(json_path, "w", encoding="utf-8") as f:
                 json.dump(factura_json, f, indent=4, ensure_ascii=False)
+            
+            # Verificar si el archivo PDF existe
+            pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.ruta_archivo, factura.tipo_dte.codigo, 'pdf', f"{str(factura.codigo_generacion).upper()}.pdf")
+            
+            os.makedirs(os.path.dirname(pdf_signed_path), exist_ok=True)
+            if os.path.exists(pdf_signed_path):
+                print("PDF ya existe, devolviendo archivo existente: %s", pdf_signed_path)
+                filename=os.path.basename(pdf_signed_path)
+            else:
+                #1.Crear HTML
+                html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": factura}, request=request)
+                
+                #2.Definir base_url para que {% static %} funcione correctamente, esto asegura que las imágenes estáticas (logos, etc.) se resuelvan bien en el PDF
+                try:
+                    base_url = request.build_absolute_uri('/')
+                except Exception as e:
+                    print("Error obteniendo base_url")
+                    base_url = None  # WeasyPrint usará paths relativos si es None
+                
+                # 3. Preparar lista de CSS
+                stylesheets = [CSS(url='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js') ]
+                
+                #4.Guardar archivo PDF con WeasyPrint
+                try:
+                    html = HTML(string=html_content, base_url=base_url)
+                    html.write_pdf(stylesheets=stylesheets, target=pdf_signed_path)
+                    filename = os.path.basename(pdf_signed_path)
+                    print("Pdf guardado ")
+                except Exception as e:
+                    print("Error generando el PDF con WeasyPrint")
 
             return Response({
                     "mensaje": "Factura generada correctamente",
@@ -2063,6 +2094,36 @@ class GenerarDocumentoAjusteAPIView(APIView):
             os.makedirs(os.path.dirname(json_path), exist_ok=True)
             with open(json_path, "w", encoding="utf-8") as f:
                 json.dump(factura_json, f, indent=4, ensure_ascii=False)
+            
+            # Verificar si el archivo PDF existe
+            pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.ruta_archivo, factura.tipo_dte.codigo, 'pdf', f"{str(factura.codigo_generacion).upper()}.pdf")
+            
+            os.makedirs(os.path.dirname(pdf_signed_path), exist_ok=True)
+            if os.path.exists(pdf_signed_path):
+                print("PDF ya existe, devolviendo archivo existente: %s", pdf_signed_path)
+                filename=os.path.basename(pdf_signed_path)
+            else:
+                #1.Crear HTML
+                html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": factura}, request=request)
+                
+                #2.Definir base_url para que {% static %} funcione correctamente, esto asegura que las imágenes estáticas (logos, etc.) se resuelvan bien en el PDF
+                try:
+                    base_url = request.build_absolute_uri('/')
+                except Exception as e:
+                    print("Error obteniendo base_url")
+                    base_url = None  # WeasyPrint usará paths relativos si es None
+                
+                # 3. Preparar lista de CSS
+                stylesheets = [CSS(url='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js') ]
+                
+                #4.Guardar archivo PDF con WeasyPrint
+                try:
+                    html = HTML(string=html_content, base_url=base_url)
+                    html.write_pdf(stylesheets=stylesheets, target=pdf_signed_path)
+                    filename = os.path.basename(pdf_signed_path)
+                    print("Pdf guardado ")
+                except Exception as e:
+                    print("Error generando el PDF con WeasyPrint")
 
                 return Response({
                     "mensaje": "Factura generada correctamente",
@@ -2137,7 +2198,7 @@ class FirmarFacturaAPIView(APIView):
                     FIRMADOR_URL,
                     json=payload,
                     headers={"Content-Type": "application/json"},
-                    timeout=30
+                    timeout=10
                 )
                 try:
                     data_resp = resp.json()
@@ -2177,7 +2238,7 @@ class FirmarFacturaAPIView(APIView):
                 tipo_contingencia_obj = TipoContingencia.objects.get(codigo="1")
 
             # Esperar antes del siguiente intento (sin mantener transacción abierta)
-            time.sleep(8)
+            time.sleep(1)
 
         # Tras agotar todos los intentos, entrar en contingencia
         with transaction.atomic():
@@ -2236,7 +2297,7 @@ class EnviarFacturaHaciendaAPIView(APIView):
             error_auth = None
             for intento in range(1, 4):
                 try:
-                    resp = requests.post(auth_url, data=auth_data, headers=auth_headers, timeout=30)
+                    resp = requests.post(auth_url, data=auth_data, headers=auth_headers, timeout=10)
                     if resp.status_code == 200:
                         try:
                             resp_data = resp.json()
@@ -2270,7 +2331,7 @@ class EnviarFacturaHaciendaAPIView(APIView):
                         error_auth = f"Auth failed {resp.status_code}"
                 except requests.RequestException as e:
                     error_auth = str(e)
-                time.sleep(8)
+                time.sleep(1)
 
             print("factura_id1: ", factura_id)
             print("datos: ", request)
@@ -2329,7 +2390,7 @@ class EnviarFacturaHaciendaAPIView(APIView):
             error_envio = None
             for intento in range(1, 4):
                 try:
-                    resp = requests.post(envio_url, json=payload, headers=envio_headers, timeout=30)
+                    resp = requests.post(envio_url, json=payload, headers=envio_headers, timeout=10)
                     data = resp.json() if resp.text.strip() else {}
                     print("Response envio mh: data: ", data)
                     if resp.status_code == 200 and data.get("selloRecibido"):
@@ -2367,7 +2428,7 @@ class EnviarFacturaHaciendaAPIView(APIView):
                         error_envio = f"Envio failed {resp.status_code}"
                 except requests.RequestException as e:
                     error_envio = str(e)
-                time.sleep(8)
+                time.sleep(1)
 
             # Si llegó aquí, envió falló repetidamente → contingencia
             factura.estado = False
@@ -2594,7 +2655,7 @@ class EnviarFacturaInvalidacionAPIView(APIView):
                                       "Content-Type": "application/x-www-form-urlencoded",
                                       "User-Agent": "MiAplicacionDjango/1.0"
                                   },
-                                  timeout=30)
+                                  timeout=10)
         try:
             auth_body = auth_resp.json().get("body", {})
         except ValueError:
@@ -2657,7 +2718,7 @@ class EnviarFacturaInvalidacionAPIView(APIView):
             "documento": documento
         }
         try:
-            resp = requests.post(envio_url, json=payload, headers=envio_headers, timeout=30)
+            resp = requests.post(envio_url, json=payload, headers=envio_headers, timeout=10)
             try:
                 data = resp.json()
             except ValueError:
@@ -3195,7 +3256,7 @@ class FirmarContingenciaAPIView(APIView):
             }
 
             try:
-                resp = requests.post(FIRMADOR_URL, json=payload, timeout=30)
+                resp = requests.post(FIRMADOR_URL, json=payload, timeout=10)
                 status_code = resp.status_code
                 try:
                     response_data = resp.json()
@@ -3238,7 +3299,7 @@ class FirmarContingenciaAPIView(APIView):
                 evento.save()
 
                 intento += 1
-                time.sleep(8)
+                time.sleep(1)
 
             except requests.exceptions.RequestException as e:
                 # Errores de red
@@ -3246,7 +3307,7 @@ class FirmarContingenciaAPIView(APIView):
                 evento.save()
                 response_data = {"error": "Error de conexión", "detalle": str(e)}
                 intento += 1
-                time.sleep(8)
+                time.sleep(1)
 
         # 3) Si agotó los intentos sin éxito
         evento.fecha_modificacion = fecha_actual.date()
@@ -3301,7 +3362,7 @@ class EnviarContingenciaHaciendaAPIView(APIView):
 
         for intento in range(1, intentos_max + 1):
             try:
-                resp = requests.post(auth_url, data=auth_data, headers=auth_headers, timeout=30)
+                resp = requests.post(auth_url, data=auth_data, headers=auth_headers, timeout=10)
                 if resp.status_code == 200:
                     body = resp.json().get("body", {})
                     token = body.get("token", "")
@@ -3333,7 +3394,7 @@ class EnviarContingenciaHaciendaAPIView(APIView):
             except requests.RequestException as e:
                 TipoContingencia.objects.filter(codigo="1").update()
                 error_auth = str(e)
-            time.sleep(8)
+            time.sleep(1)
 
         # si tras reintentos no hay token
         if not token:
@@ -3378,7 +3439,7 @@ class EnviarContingenciaHaciendaAPIView(APIView):
 
         for intento in range(1, intentos_max + 1):
             try:
-                resp = requests.post(envio_url, headers=envio_headers, json=payload, timeout=30)
+                resp = requests.post(envio_url, headers=envio_headers, json=payload, timeout=10)
                 status_code = resp.status_code
                 data = resp.json() if resp.text.strip() else {}
 
@@ -3418,7 +3479,7 @@ class EnviarContingenciaHaciendaAPIView(APIView):
             except requests.RequestException as e:
                 TipoContingencia.objects.filter(codigo="1").update()
                 error_envio = str(e)
-            time.sleep(8)
+            time.sleep(1)
 
         # si agotó intentos sin éxito
         evento.fecha_modificacion = fecha_actual.date()
@@ -3580,91 +3641,87 @@ class LoteContingenciaDteAPIView(APIView):
 # ENVIO DE LOTES EN CONTINGENCIA UNIFICADO
 class EnvioDteUnificadoAPIView(APIView):
     """
-    Flujo unificado para firmar un DTE, enviarlo a Hacienda y actualizar el lote asociado.
+    POST
+    1) Firma el DTE
+    2) Envía el DTE a Hacienda
+    3) Marca el lote como finalizado si tuvo sello_recepcion
+    (Con prints para debug)
     """
-    def get(self, request, format=None):
-        factura_id = request.query_params.get("factura_id")
+    def post(self, request, factura_id=None, format=None):
+        factura_id = factura_id or request.data.get("factura_id")
+        print(f"[EnvioDteUnificado] Inicio POST, factura_id={factura_id}")
+
         if not factura_id:
+            print("[EnvioDteUnificado] ERROR: falta factura_id")
             return Response(
-                {"error": "Falta parámetro 'factura_id'"},
+                {"error": "Debe proporcionar 'factura_id'"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Fecha actual en zona El Salvador
-        try:
-            fecha_actual = obtener_fecha_actual()
-        except Exception:
-            # Fallback manual
-            tz = pytz.timezone('America/El_Salvador')
-            fecha_actual = datetime.now(tz)
+        # 1) Firma
+        print("[EnvioDteUnificado] Llamando a FirmarFacturaAPIView")
+        firmado_view = FirmarFacturaAPIView()
+        resp_firma = firmado_view.post(request, factura_id, format=format)
+        print(f"[EnvioDteUnificado] Respuesta firma: status={resp_firma.status_code}, data={getattr(resp_firma, 'data', None)}")
 
-        # 1) Firma del DTE
-        try:
-            resp_firma = firmar_factura_view(request, factura_id)
-            sc_firma = getattr(resp_firma, "status_code", None)
-            # Si no es redirect (302) ni OK (200), devolvemos directamente ese error
-            if sc_firma not in (302, 200):
-                # Intentamos parsear JSON, o devolvemos texto plano
-                content = getattr(resp_firma, "content", b"")
-                try:
-                    data = json.loads(content)
-                except Exception:
-                    data = content.decode(errors="ignore") if isinstance(content, (bytes, str)) else {}
-                return Response(data, status=sc_firma)
-        except Exception as e:
-            return Response(
-                {"error": "Error al firmar la factura", "detalle": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+        if resp_firma.status_code != status.HTTP_200_OK:
+            print(f"[EnvioDteUnificado] Firma fallida, devolviendo código {resp_firma.status_code}")
+            return resp_firma
 
         # 2) Envío a Hacienda
+        print("[EnvioDteUnificado] Llamando a EnviarFacturaHaciendaAPIView")
+        envio_view = EnviarFacturaHaciendaAPIView()
+        resp_envio = envio_view.post(request, factura_id, format=format)
+        print(f"[EnvioDteUnificado] Respuesta envío: status={resp_envio.status_code}, data={getattr(resp_envio, 'data', None)}")
+
+        if resp_envio.status_code != status.HTTP_200_OK:
+            print(f"[EnvioDteUnificado] Envío fallido, devolviendo código {resp_envio.status_code}")
+            return resp_envio
+
+        # 3) Actualizar lote
         try:
-            resp_envio = enviar_factura_hacienda_view(request, factura_id)
-            sc_envio = getattr(resp_envio, "status_code", None)
-            content_envio = getattr(resp_envio, "content", b"")
+            print("[EnvioDteUnificado] Obteniendo fecha actual en zona America/El_Salvador")
+            try:
+                fecha_actual = obtener_fecha_actual()
+            except Exception as e:
+                print(f"[EnvioDteUnificado] obtener_fecha_actual falló: {e}, usando datetime.now con tz")
+                tz = pytz.timezone('America/El_Salvador')
+                fecha_actual = datetime.now(tz)
+
+            print(f"[EnvioDteUnificado] Iniciando transacción para actualizar lote de factura {factura_id}")
+            with transaction.atomic():
+                factura = get_object_or_404(FacturaElectronica, id=factura_id)
+                print(f"[EnvioDteUnificado] factura.sello_recepcion={factura.sello_recepcion}")
+                if factura.sello_recepcion:
+                    lote = LoteContingencia.objects.filter(factura_id=factura_id).first()
+                    print(f"[EnvioDteUnificado] Lote encontrado: {lote}")
+                    if lote:
+                        lote.finalizado = True
+                        lote.recibido_mh = True
+                        lote.fecha_modificacion = fecha_actual.date()
+                        lote.hora_modificacion = fecha_actual.time()
+                        lote.save()
+                        mensaje = "Factura firmada y recibida con éxito"
+                        print("[EnvioDteUnificado] Lote marcado como finalizado y recibido")
+                    else:
+                        mensaje = "Factura firmada, pero no se encontró lote de contingencia"
+                        print("[EnvioDteUnificado] No se encontró lote de contingencia")
+                else:
+                    mensaje = "Factura firmada, pero sin sello de recepción de MH"
+                    print("[EnvioDteUnificado] Factura sin sello_recepcion")
+            connection.close()
+            print("[EnvioDteUnificado] Conexión cerrada tras actualizar lote")
         except Exception as e:
+            print(f"[EnvioDteUnificado] ERROR actualizando lote: {e}")
             return Response(
-                {"error": "Error al enviar la factura a Hacienda", "detalle": str(e)},
+                {"error": "Error actualizando lote", "detalle": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-        # 3) Verificar en la BD y actualizar lote si corresponde
-        try:
-            factura = FacturaElectronica.objects.filter(id=factura_id).first()
-            if factura and factura.sello_recepcion:
-                # Marcar lote como finalizado
-                lote = LoteContingencia.objects.filter(factura__id=factura_id).first()
-                if lote:
-                    lote.finalizado = True
-                    lote.recibido_mh = True
-                    lote.fecha_modificacion = fecha_actual.date()
-                    lote.hora_modificacion = fecha_actual.time()
-                    lote.save()
-                mensaje = "Factura recibida con éxito"
-            elif factura:
-                mensaje = "No se pudo enviar la factura"
-            else:
-                mensaje = "No se encontró el documento electrónico"
-        except Exception as e:
-            mensaje = "Error al consultar el estado de la factura"
-        
-        # 4) Procesar detalle de la respuesta de envío
-        try:
-            if sc_envio == 200:
-                try:
-                    detalle = json.loads(content_envio)
-                except Exception:
-                    detalle = content_envio.decode(errors="ignore")
-            else:
-                detalle = {
-                    "status_code": sc_envio,
-                    "content": content_envio.decode(errors="ignore")
-                }
-        except Exception as e:
-            detalle = f"Error procesando respuesta de envío: {e}"
-
+        # 4) Devolver resultado combinado
+        print(f"[EnvioDteUnificado] FINAL: {mensaje}")
         return Response(
-            {"mensaje": mensaje, "detalle": detalle},
+            {"mensaje": mensaje, "detalle_envio": resp_envio.data},
             status=status.HTTP_200_OK
         )
 
@@ -3789,7 +3846,7 @@ class EnviarLotesHaciendaAPIView(APIView):
         auth_data = {"user": nit, "pwd": pwd}
 
         try:
-            auth_resp = requests.post(auth_url, data=auth_data, headers=auth_headers, timeout=30)
+            auth_resp = requests.post(auth_url, data=auth_data, headers=auth_headers, timeout=10)
             auth_body = auth_resp.json().get("body", {}) if auth_resp.status_code == 200 else {}
         except requests.RequestException as e:
             return Response(
@@ -3857,7 +3914,7 @@ class EnviarLotesHaciendaAPIView(APIView):
         }
 
         try:
-            envio_resp = requests.post(envio_url, json=envio_json, headers=envio_headers, timeout=30)
+            envio_resp = requests.post(envio_url, json=envio_json, headers=envio_headers, timeout=10)
             try:
                 resp_data = envio_resp.json()
             except ValueError:
@@ -4006,44 +4063,57 @@ class TopProductosAPIView(generics.ListAPIView):
 #@csrf_exempt
 class EnviarCorreoIndividualAPIView(APIView):
     def post(self, request, factura_id, format=None):
+        #1.Obtener objetos principales
         documento_electronico = get_object_or_404(FacturaElectronica, id=factura_id)
         receptor = get_object_or_404(Receptor_fe, id=documento_electronico.dtereceptor_id)
         emisor = get_object_or_404(Emisor_fe, id=documento_electronico.dteemisor_id)
         #Correo receptor principal: juniorfran@hotmail.es
         
-        # 2) Leer parámetros del body
+        #2.Leer parámetros del body
         archivo_pdf = request.data.get('archivo_pdf')
         archivo_json = request.data.get('archivo_json')
         print(f"Inicio envio de correos: pdf: {archivo_pdf}, json: {archivo_json}")
-
-        # Buscar archvios
-
-        if archivo_pdf:
-            print("RUTA_COMPROBANTES_PDF", RUTA_COMPROBANTES_PDF)
-            ruta_pdf = os.path.join(RUTA_COMPROBANTES_PDF.ruta_archivo, documento_electronico.tipo_dte.codigo, "pdf")
-            archivo_pdf = os.path.join(ruta_pdf, f"{documento_electronico.codigo_generacion}.pdf")
-            if not os.path.exists(archivo_pdf):
-                # print(f"Archivo PDF no encontrado en {archivo_pdf}")
-                
-                html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": documento_electronico})
-                #Guardar archivo pdf
-                pdf_signed_path = f"{RUTA_COMPROBANTES_PDF.ruta_archivo}{documento_electronico.tipo_dte.codigo}/pdf/{documento_electronico.codigo_generacion}.pdf"
-                print("guardar pdf: ", pdf_signed_path)
-                with open(pdf_signed_path, "wb") as pdf_file:
-                    pisa_status = pisa.CreatePDF(BytesIO(html_content.encode('utf-8')), dest=pdf_file)
-                    
-                if pisa_status.err:
-                    print(f"Error al crear el PDF en {pdf_signed_path}")
-                else:
-                    print(f"PDF guardado exitosamente en {pdf_signed_path}")
         
-        if archivo_json:
-            ruta_json = RUTA_COMPROBANTES_JSON.ruta_archivo
-            archivo_json = os.path.join(ruta_json, f"{documento_electronico.numero_control}.json")
-            if not os.path.exists(archivo_json):
-                print(f"Archivo JSON no encontrado en {archivo_json}")
-                messages.error(request, "Archivo JSON no encontrado.")
+        #3.Definir ruta esperada del PDF
+        pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.ruta_archivo, documento_electronico.tipo_dte.codigo, 'pdf', f"{str(documento_electronico.codigo_generacion).upper()}.pdf")
+        
+        #4.Buscar archivo PDF
+        if not os.path.exists(pdf_signed_path):
+            print("Pdf no existe", RUTA_COMPROBANTES_PDF)
+            
+            #1.Crear HTML
+            html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": documento_electronico}, request=request)
+        
+            #2.Definir base_url para que {% static %} funcione correctamente, esto asegura que las imágenes estáticas (logos, etc.) se resuelvan bien en el PDF
+            try:
+                base_url = request.build_absolute_uri('/')
+            except Exception as e:
+                print("Error obteniendo base_url")
+                base_url = None  # WeasyPrint usará paths relativos si es None
+            
+            #3.Preparar lista de CSS:
+            stylesheets = [CSS(url='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js') ]
+            
+            #4.Guardar archivo PDF con WeasyPrint
+            try:
+                html = HTML(string=html_content, base_url=base_url)
+                html.write_pdf(stylesheets=stylesheets, target=pdf_signed_path)
+            except Exception as e:
+                print("Error generando el PDF con WeasyPrint")
+            else:
+                print("No se encontró el archivo PDF para la factura")
+        #5.Confirmar ruta del PDF
+        archivo_pdf = pdf_signed_path
+        
+        #6.Definir ruta esperada del PDF
+        archivo_json = os.path.join(RUTA_COMPROBANTES_JSON.ruta_archivo, f"{documento_electronico.numero_control}.json")
+        
+        #7.Buscar archivo JSON
+        if not os.path.exists(archivo_json):
+            print(f"Archivo JSON no encontrado en {archivo_json}")
+            messages.error(request, "Archivo JSON no encontrado.")
         print(f"json: {archivo_json} pdf: {archivo_pdf}")
+        
         if documento_electronico:
             
             # Renderizar el HTML del mensaje del correo
@@ -4078,32 +4148,24 @@ class EnviarCorreoIndividualAPIView(APIView):
             )
             email.content_subtype = "html"  # Indicar que el contenido es HTML
             
-            # Adjuntar el archivo PDF
-            if archivo_pdf:
-                try:
-                    with open(archivo_pdf, 'rb') as pdf_file:
-                        email.attach(
-                            f"Documento_Electrónico_{receptor.nombre}.pdf",
-                            pdf_file.read(),
-                            'application/pdf'
-                        )
-                except Exception as e:
-                    print(f"Error al abrir el archivo PDF: {e}")
-                    return Response(
-                        {"error": "Error al abrir el archivo PDF", "detalle": str(e)},
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                    )
-            # Adjuntar el archivo JSON
+            # Adjuntar archivos
             try:
-                with open(archivo_json, 'rb') as json_file_to_attach:
+                with open(archivo_pdf, 'rb') as pdf_file:
+                    email.attach(
+                        f"Documento_Electrónico_{receptor.nombre}.pdf",
+                        pdf_file.read(),
+                        'application/pdf'
+                    )
+                with open(archivo_json, 'rb') as json_file:
                     email.attach(
                         f"Documento_Electrónico_{receptor.nombre}.json",
-                        json_file_to_attach.read(),
+                        json_file.read(),
                         'application/json'
                     )
             except Exception as e:
+                print(f"Error adjuntando archivos: {e}")
                 return Response(
-                {"error": "Error al abrir el archivo JSON:", "detalle": str(e)},
+                {"error": "Error adjuntando archivos:", "detalle": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
             
@@ -4114,7 +4176,7 @@ class EnviarCorreoIndividualAPIView(APIView):
                 documento_electronico.save()
                 print(f"Correo enviado a {receptor.correo}")
                 return Response(
-                    {"mensaje": "El correo fue enviado exitosamente a"},
+                    {"mensaje": f"El correo fue enviado exitosamente a {receptor.correo}"},
                     status=status.HTTP_200_OK
                     )
             except Exception as e:
