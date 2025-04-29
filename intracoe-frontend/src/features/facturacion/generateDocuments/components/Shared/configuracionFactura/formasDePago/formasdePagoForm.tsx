@@ -88,13 +88,12 @@ export const FormasdePagoForm: React.FC<FormasdePagoFormProps> = ({
       remaining = totalAPagar;
     }
     setAuxManejoPagos(remaining);
-  
+
     // En lugar de enviar los objetos completos, solo pasamos los idTipoPago
-    const pagosParaApi: number[] = infoPagoLista.map(p => p.idTipoPago); // Solo el id
-  
+    const pagosParaApi: number[] = infoPagoLista.map((p) => p.idTipoPago); // Solo el id
+
     setFormasPagoList(pagosParaApi); // Establece solo el array de ids
   }, [infoPagoLista, totalAPagar]);
-  
 
   const handleChange = (
     e: InputNumberValueChangeEvent | React.ChangeEvent<HTMLInputElement>
