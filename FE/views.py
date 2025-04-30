@@ -1309,7 +1309,7 @@ def generar_json_doc_ajuste(ambiente_obj, tipo_dte_obj, factura, emisor, recepto
             json_resumen["numPagoElectronico"] = None
             print("num pago: ", json_resumen["numPagoElectronico"])
         
-        print("Cuerpo documeneto: ", cuerpo_documento)
+        print("Cuerpo documento: ", cuerpo_documento)
         json_completo = {
             "identificacion": json_identificacion,
             "documentoRelacionado": documentos_relacionados,
@@ -3431,12 +3431,11 @@ def generar_documento_ajuste_view(request):
             print("1. Cuerpo documento: ", cuerpo_documento)
             factura_json = generar_json_doc_ajuste(
                 ambiente_obj, tipo_dte_obj, factura, emisor, receptor,
-                cuerpo_documento, observaciones, base_imponible_checkbox, saldo_favor, documentos_relacionados, contingencia, total_gravada
+                cuerpo_documento, observaciones, documentos_relacionados, contingencia, total_gravada
             )
             
             factura.json_original = factura_json
             factura.save()
-
             
             # Si acabamos de generar una Nota de Crédito, registramos la devolución al cliente:
             if tipo_dte_obj.codigo == COD_NOTA_CREDITO:
