@@ -1501,8 +1501,8 @@ def firmar_factura_view(request, factura_id, interno=False):
             f"&intentos_modal={intentos_modal}"
             f"&motivo_otro={'1' if motivo_otro else '0'}"
             f"&firmado={'1' if factura.firmado else '0'}"
+            f"&recibido_mh=0"
         )
-
 
 @csrf_exempt
 @require_POST
@@ -1528,6 +1528,7 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False):
     
     # Reintentos desde sesión (inicializar si no existe)
     intentos_modal = request.session.get('intentos_reintento', 0)
+    print("Intento modal: ", intentos_modal)
     
     factura = get_object_or_404(FacturaElectronica, id=factura_id)
 
@@ -1546,7 +1547,7 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False):
     envio_response = None
 
     print("Inicio response autenticacion")
-    while intento <= intentos_max and factura.recibido_mh == False:
+    while intento <= intentos_max and not factura.recibido_mh and intentos_modal <=2:
         print(f"Intento {intento} de {intentos_max}")
         try:
             #---Autenticacion
@@ -1577,7 +1578,7 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False):
                 )
                 contingencia = False
                 motivo_otro = False
-                crear_evento = False
+                #crear_evento = False
                 print("Autenticacion exitosa")
                 break
             else:
@@ -1631,7 +1632,7 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False):
     #---Envio del dte
     if contingencia == False:
         intento = 1
-        while intento <= intentos_max and factura.recibido_mh == False:
+        while intento <= intentos_max and not factura.recibido_mh and intentos_modal <=2:
             try:
                 # Paso 2: Enviar la factura firmada a Hacienda
                 token_data_obj = Token_data.objects.filter(activado=True).first()
@@ -1725,7 +1726,7 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False):
                     contingencia = False
                     motivo_otro = False
                     mostrar_modal = False
-                    
+                    crear_evento = False
                     # crear el movimeinto de inventario
                     # Se asume que la factura tiene una relación a sus detalles, 
                     # donde se encuentran los productos y cantidades
@@ -1805,7 +1806,7 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False):
     print(f"error auth: {error_autenticacion}, error envio: {error_envio}, crear evento: {crear_evento}")
     if (error_autenticacion or error_envio or crear_evento):
         # Solo crear contingencia si al menos uno de los flujos falló
-        if not contingencia_creada and crear_evento == True :
+        if not contingencia_creada and crear_evento :
             print("Crear contingencias y lotes(envio mh)")
             #Verificar si existen contingencias activas
             finalizar_contigencia_view(request)
@@ -1833,7 +1834,7 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False):
         
     # Envio factura exitosa
     print("Envio response: ", envio_response)
-    if (envio_response and envio_response.status_code == 200 and response_data and response_data.get("selloRecibido") is not None) or (contingencia and crear_evento == True):
+    if (envio_response and envio_response.status_code == 200 and response_data and response_data.get("selloRecibido") is not None) or (contingencia and crear_evento):
         print("Crear archivos")
         #Buscar json
         # Construir la ruta completa al archivo JSON esperado
@@ -1898,6 +1899,8 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False):
             f"&envio_mh={'1' if envio_mh else '0'}"
             f"&intentos_modal={intentos_modal}"
             f"&motivo_otro={'1' if motivo_otro else '0'}"
+            f"&firmado=0"
+            f"&recibido_mh={'1' if factura.firmado else '0'}"
         )
     return JsonResponse({"mensaje": "Factura procesada con éxito"})
 
@@ -3513,6 +3516,7 @@ def generar_documento_ajuste_view(request):
 #LISTADO DE EVENTOS dte_contingencia_list
 def contingencia_list(request):
     try:
+        request.session['intentos_reintento'] = 0  # Establecemos el contador a 0 al inicio
         #Verificar si existen eventos activos con fecha fuera de plazo y desactivarlos
         finalizar_contigencia_view(request)
         
@@ -4475,6 +4479,7 @@ def lote_contingencia_dte_view(request, factura_id, tipo_contiengencia_obj):
 @csrf_exempt
 def envio_dte_unificado_view(request):
     try:
+        request.session['intentos_reintento'] = 0 
         factura_id = request.GET.get("factura_id")
         print("[uno a uno]Inicio enviar lote view: ", factura_id)
         # Establecer la zona horaria de El Salvador
@@ -4578,6 +4583,7 @@ def envio_dte_unificado_view(request):
 def lotes_dte_view(request):
     if request.method == "POST":
         try:
+            request.session['intentos_reintento'] = 0 
             # Se espera recibir una lista de IDs en el parámetro 'factura_ids'
             factura_ids = request.POST.getlist('factura_ids')
             print("Lote de contingencias: ", factura_ids)
@@ -5002,7 +5008,10 @@ def motivo_contingencia_view(request):
 
         fecha_actual = obtener_fecha_actual()
 
-        evento.motivo_contingencia = motivo
+        if not evento.motivo_contingencia:
+            evento.motivo_contingencia = motivo
+        tipo_contingencia_obj = TipoContingencia.objects.get(codigo="5")
+        evento.tipo_contingencia = tipo_contingencia_obj
         evento.fecha_modificacion = fecha_actual.date()
         evento.hora_modificacion = fecha_actual.time()
         evento.save()
