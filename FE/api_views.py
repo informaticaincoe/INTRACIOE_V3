@@ -92,9 +92,9 @@ RELACIONAR_DOC_FISICO = 1
 RELACIONAR_DOC_ELECTRONICO = 2
 COD_TIPO_CONTINGENCIA = "5"
 DTE_APLICA_CONTINGENCIA = ["01", "03", "04", "05", "06", "11", "14"]
-RUTA_COMPROBANTES_PDF = ConfiguracionServidor.objects.filter(codigo="ruta_comprobantes_dte").first()
-RUTA_COMPROBANTES_JSON = ConfiguracionServidor.objects.filter(codigo="ruta_comprobante_json").first()
-RUTA_JSON_FACTURA = ConfiguracionServidor.objects.filter(codigo="json_factura").first()
+RUTA_COMPROBANTES_PDF = ConfiguracionServidor.objects.filter(clave="ruta_comprobantes_dte").first()
+RUTA_COMPROBANTES_JSON = ConfiguracionServidor.objects.filter(clave="ruta_comprobante_json").first()
+RUTA_JSON_FACTURA = ConfiguracionServidor.objects.filter(clave="json_factura").first()
 
 formas_pago = [] #Asignar formas de pago
 documentos_relacionados = []
@@ -1510,7 +1510,7 @@ class GenerarFacturaAPIView(APIView):
                 json.dump(factura_json, f, indent=4, ensure_ascii=False)
             
             # Verificar si el archivo PDF existe
-            pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.ruta_archivo, factura.tipo_dte.codigo, 'pdf', f"{str(factura.codigo_generacion).upper()}.pdf")
+            pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.url, factura.tipo_dte.codigo, 'pdf', f"{str(factura.codigo_generacion).upper()}.pdf")
             
             os.makedirs(os.path.dirname(pdf_signed_path), exist_ok=True)
             if os.path.exists(pdf_signed_path):
@@ -2179,7 +2179,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
                 json.dump(factura_json, f, indent=4, ensure_ascii=False)
             
             # Verificar si el archivo PDF existe
-            pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.ruta_archivo, factura.tipo_dte.codigo, 'pdf', f"{str(factura.codigo_generacion).upper()}.pdf")
+            pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.url, factura.tipo_dte.codigo, 'pdf', f"{str(factura.codigo_generacion).upper()}.pdf")
             
             os.makedirs(os.path.dirname(pdf_signed_path), exist_ok=True)
             if os.path.exists(pdf_signed_path):
@@ -4160,7 +4160,7 @@ class EnviarCorreoIndividualAPIView(APIView):
         print(f"Inicio envio de correos: pdf: {archivo_pdf}, json: {archivo_json}")
         
         #3.Definir ruta esperada del PDF
-        pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.ruta_archivo, documento_electronico.tipo_dte.codigo, 'pdf', f"{str(documento_electronico.codigo_generacion).upper()}.pdf")
+        pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.url, documento_electronico.tipo_dte.codigo, 'pdf', f"{str(documento_electronico.codigo_generacion).upper()}.pdf")
         
         #4.Buscar archivo PDF
         if not os.path.exists(pdf_signed_path):
@@ -4191,7 +4191,7 @@ class EnviarCorreoIndividualAPIView(APIView):
         archivo_pdf = pdf_signed_path
         
         #6.Definir ruta esperada del PDF
-        archivo_json = os.path.join(RUTA_COMPROBANTES_JSON.ruta_archivo, f"{documento_electronico.numero_control}.json")
+        archivo_json = os.path.join(RUTA_COMPROBANTES_JSON.url, f"{documento_electronico.numero_control}.json")
         
         #7.Buscar archivo JSON
         if not os.path.exists(archivo_json):
