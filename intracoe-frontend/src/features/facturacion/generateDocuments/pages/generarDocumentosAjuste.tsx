@@ -27,6 +27,7 @@ import { ResumenTotalesCard } from '../components/Shared/resumenTotales/resumenT
 import {
   FirmarFactura,
   generarAjusteService,
+  generarNotaCreditoService,
   getFacturaBycodigo,
 } from '../services/factura/facturaServices';
 import { CheckBoxRetencion } from '../components/Shared/configuracionFactura/Retencion/checkBoxRetencion';
@@ -148,13 +149,12 @@ export const GenerarDocumentosAjuste = () => {
     console.log('dataNCND', dataNCND);
     console.log('factura ajuste', facturasAjuste[0]);
 
-
-    // try {
-    //   const response = await generarNotaCreditoService(dataNCND);
-    //   firmarFactura(response.factura_id);
-    // } catch (error) {
-    //   console.log(error);
-    // }
+    try {
+      const response = await generarNotaCreditoService(dataNCND);
+      firmarFactura(response.factura_id);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const firmarFactura = async (id: string) => {
