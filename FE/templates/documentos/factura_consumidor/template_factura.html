@@ -326,6 +326,7 @@
         const envioMH = "{{ envio_mh }}";
         const modalElement = document.getElementById('confirmModal');
         const motivoModalElement = document.getElementById('motivoModal');
+        let urlReintento = "";
 
         if (mostrarModal && modalElement && intentos <= 3) {
             const modal = new bootstrap.Modal(modalElement);
@@ -342,7 +343,7 @@
                     btnReintentar.disabled = true;
 
                     // Seleccionar URL según tipo de error
-                    let urlReintento = "";
+                    //let urlReintento = "";
                     {% if firma == '1' %}
                         urlReintento = "{% url 'firmar_factura' factura.id %}";
                     {% elif envio_mh == '1' %}
@@ -403,9 +404,24 @@
                     if (motivoOtro) {
                         const motivoModal = new bootstrap.Modal(motivoModalElement);
                         motivoModal.show();
-                    } else {
-                        window.location.href = "{% url 'detalle_factura' factura.id %}";
-                    }
+                    } //else {
+                    const continuar_evento = true
+                    //window.location.href = "{% url 'detalle_factura' factura.id %}";
+                    {% if firma == '1' %}
+                        urlReintento = "{% url 'firmar_factura' factura.id %}?crear_evento=" + continuar_evento;//Indicar si queremos crear el evento de contingencia y asignar el dte en lotes
+                    {% elif envio_mh == '1' %}
+                        urlReintento = "{% url 'enviar_factura_hacienda' factura.id %}?crear_evento=" + continuar_evento;//Indicar si queremos crear el evento de contingencia y asignar el dte en lotes
+                    {% endif %}
+                    
+                    fetch(urlReintento, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": "{{ csrf_token }}",
+                        },
+                        body: JSON.stringify({ reintento: true }),
+                    })
+                    //}
                 });
             }
         }

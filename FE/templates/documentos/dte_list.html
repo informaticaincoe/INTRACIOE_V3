@@ -71,6 +71,9 @@
           </tr>
         </thead>
         <tbody>
+
+
+          
           {% for factura in dtelist %}
           <tr>
             <td>
@@ -79,7 +82,7 @@
             <td>
               {% if factura.dte_invalidacion.all|length > 0 %}
                 {% with evento=factura.dte_invalidacion.all.0 %}
-                  {% if evento.estado %}
+                  {% if evento.recibido_mh %}
                     <i class="fa fa-ban text-danger" title="Anulada"></i>
                   {% else %}
                     <i class="fa fa-hourglass-half text-warning" title="En proceso de anulación"></i>
@@ -105,8 +108,10 @@
             <td>{{ factura.total_iva }}</td>
             <td>{% if factura.recibido_mh %}Sí{% else %}No{% endif %}</td>
             <td>
-              <!-- Acción individual (opcional) -->
-              <a href="{% url 'invalidar_dte_unificado' factura.id %}" class="btn btn-sm btn-secondary btn-invalidar" data-factura-id="{{ factura.id }}">Anular</a>
+              {% if factura.recibido_mh %}
+                <!-- Acción individual (opcional) -->
+                <a href="{% url 'invalidar_dte_unificado' factura.id %}" class="btn btn-sm btn-secondary btn-invalidar" data-factura-id="{{ factura.id }}">Anular</a>
+              {% endif %}
             </td>
             <td>{% if factura.envio_correo %}Sí{% else %}No{% endif %}</td>
             <td>
