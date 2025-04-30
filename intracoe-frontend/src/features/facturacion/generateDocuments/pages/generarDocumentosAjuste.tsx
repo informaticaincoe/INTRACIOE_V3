@@ -20,7 +20,6 @@ import {
   FacturaPorCodigoGeneracionResponse,
   ReceptorInterface,
   TipoDocumento,
-  TipoGeneracionFactura,
   TipoDTE,
 } from '../../../../shared/interfaces/interfaces';
 import { ProductosTabla } from '../components/FE/productosAgregados/productosData';
@@ -34,7 +33,6 @@ import {
 import { CheckBoxRetencion } from '../components/Shared/configuracionFactura/Retencion/checkBoxRetencion';
 import { useNavigate } from 'react-router';
 import { Input } from '../../../../shared/forms/input';
-import { DropFownTipoDeDocumentoGeneracion } from '../components/NotaDebito/DropDownTipoDeDocumentoGeneracion';
 import { CheckboxBaseImponible } from '../components/Shared/configuracionFactura/baseImponible/checkboxBaseImponible';
 import CustomToast, {
   CustomToastRef,
@@ -42,14 +40,13 @@ import CustomToast, {
 } from '../../../../shared/toast/customToast';
 import { IoMdCloseCircle } from 'react-icons/io';
 import { ExtensionCard } from '../components/Shared/entension/extensionCard';
+import { ResumenCardNotaAjuste } from '../components/NotaDebito/resumenCardNotaAjuste';
 
 export const GenerarDocumentosAjuste = () => {
   //lista de datos obtenidas de la api
-  const [condicionesOperacionList, setCondicionesOperacionList] =
-    useState<ConfiguracionFacturaInterface>();
+  const [condicionesOperacionList, setCondicionesOperacionList] = useState<ConfiguracionFacturaInterface>();
   const [receptor, setReceptor] = useState<ReceptorInterface>(ReceptorDefault); // almacenar informacion del receptor
-  const [emisorData, setEmisorData] =
-    useState<EmisorInterface>(defaultEmisorData); // almcenar informacion del emisor
+  const [emisorData, setEmisorData] = useState<EmisorInterface>(defaultEmisorData); // almcenar informacion del emisor
   const [tipoDocumento, setTipoDocumento] = useState<TipoDocumento[]>([]); // almcenar tipo de dte
   const [tipoDocumentoSelected, setTipoDocumentoSelected] = useState<TipoDTE>(); // almcenar tipo de dte
 
@@ -60,33 +57,25 @@ export const GenerarDocumentosAjuste = () => {
   const [listProducts, setListProducts] = useState<ProductosTabla[]>([]); //lista que almacena todos los productos
   const [numeroControl, setNumeroControl] = useState('');
   const [codigoGeneracion, setCodigoGeneracion] = useState('');
-  const [tipoGeneracionFactura, setTipoGeneracionFactura] =
-    useState<TipoGeneracionFactura | null>(null);
   const [descuentosList, setDescuentosList] = useState();
+  const [saldoFavor, setSaldoFavor] = useState<number>(0.00)
 
   //datos seleccionados para realizar la factura
-  const [selectedCondicionDeOperacion, setSelectedCondicionDeOperacion] =
-    useState<string>('1'); //id de la condicion de operacion (01 por defecto)
-  const [selectedProducts, setSelectedProducts] = useState<ProductosTabla[]>(
-    []
-  ); //lista de productos que tendra la factura
+  const [selectedCondicionDeOperacion, setSelectedCondicionDeOperacion] = useState<string>('1'); //id de la condicion de operacion (01 por defecto)
+  const [selectedProducts, setSelectedProducts] = useState<ProductosTabla[]>([]); //lista de productos que tendra la factura
   const [idListProducts, setIdListProducts] = useState<string[]>([]); // lista con solo los id de los productos que tendra la factura
-  const [cantidadListProducts, setCantidadListProducts] = useState<string[]>(
-    []
-  );
+  const [cantidadListProducts, setCantidadListProducts] = useState<string[]>([]);
   const [observaciones, setObservaciones] = useState<string>('');
   const [retencionIva, setRetencionIva] = useState<number>(0);
   const [retencionRenta, setRetencionRenta] = useState<number>(0);
   const [tieneRetencionIva, setTieneRetencionIva] = useState<boolean>(false);
-  const [tieneRetencionRenta, setTieneRetencionRenta] =
-    useState<boolean>(false);
+  const [tieneRetencionRenta, setTieneRetencionRenta] = useState<boolean>(false);
 
   //calculos
   const [totalAPagar, setTotalAPagar] = useState<number>(0);
   const [auxManejoPagos, setAuxManejoPagos] = useState<number>(totalAPagar);
   const [facturasAjuste, setFacturasAjuste] = useState<
-    FacturaPorCodigoGeneracionResponse[]
-  >([]);
+    FacturaPorCodigoGeneracionResponse[]>([]);
   const [baseImponible, setBaseImponible] = useState<boolean>(false);
   const [errorReceptor, setErrorReceptor] = useState<boolean>(false);
   const [errorFormasPago, setErrorFormasPago] = useState<boolean>(false);
@@ -94,9 +83,7 @@ export const GenerarDocumentosAjuste = () => {
   const [docResponsable, setDocResponsable] = useState<string>('');
   const [tipoTransmision, setTipoTransmision] = useState<string>('');
 
-  const [formData, setFormData] = useState({
-    codigo: '',
-  });
+  const [formData, setFormData] = useState({ codigo: '' });
 
   const navigate = useNavigate();
   const toastRef = useRef<CustomToastRef>(null);
@@ -160,6 +147,7 @@ export const GenerarDocumentosAjuste = () => {
       // "porcentaje_retencion_renta": 0.00,
     };
     console.log('dataNCND', dataNCND);
+    console.log('factura ajuste', facturasAjuste[0]);
 
     try {
       const response = await generarNotaCreditoService(dataNCND);
@@ -200,10 +188,18 @@ export const GenerarDocumentosAjuste = () => {
 
       setFacturasAjuste((prev) => [...prev, facturaProcesada]);
       setFormData({ codigo: '' }); // Limpiar input
-    } catch (error) {
-      console.log(error);
+    } catch (error:any) {
+      handleAccion(
+        'error',
+        <IoMdCloseCircle size={68} />,
+        error.toString()
+      );
     }
   };
+
+  useEffect(() => {
+    console.log("0000000000000000000",cantidadListProducts);
+  }, [cantidadListProducts, setCantidadListProducts])
 
   /************************************/
   /* OBTENCION DE DATOS              
@@ -227,7 +223,6 @@ export const GenerarDocumentosAjuste = () => {
       setCondicionesOperacionList(response.tipooperaciones);
       setSelectedCondicionDeOperacion(response.tipooperaciones[0].codigo);
       setDescuentosList(response.descuentos);
-      setListProducts(response.producto);
       setTipoDocumento(response.tipoDocumentos);
       // setTipoDocumentoSelected(response.tipoDocumentos[0].codigo);
     } catch (error) {
@@ -408,13 +403,9 @@ export const GenerarDocumentosAjuste = () => {
             <h1 className="text-start text-xl font-bold">Resumen de totales</h1>
           </div>
           <Divider className="m-0 p-0"></Divider>
-          <ResumenTotalesCard
-            setTotalAPagar={setTotalAPagar}
-            totalAPagar={totalAPagar}
-            listProducts={selectedProducts}
-            descuentos={descuentos}
-            setDescuentos={setDescuentos}
-            tipoDocumento={''}
+          <ResumenCardNotaAjuste
+            facturas={facturasAjuste}
+            cantidades={cantidadListProducts}
           />
         </div>
       </WhiteSectionsPage>

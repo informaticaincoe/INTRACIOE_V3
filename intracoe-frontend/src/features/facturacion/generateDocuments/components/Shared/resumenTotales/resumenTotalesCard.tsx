@@ -13,6 +13,8 @@ interface ResumenTotalesCardProps {
   setTotalAPagar: any;
   totalAPagar: number;
   tipoDocumento: string;
+  setSaldoFavor: (saldoFavor:any) => void;
+  saldoFavor: number
 }
 
 export const ResumenTotalesCard: React.FC<ResumenTotalesCardProps> = ({
@@ -22,6 +24,8 @@ export const ResumenTotalesCard: React.FC<ResumenTotalesCardProps> = ({
   setTotalAPagar,
   totalAPagar,
   tipoDocumento,
+  setSaldoFavor,
+  saldoFavor
 }) => {
   const [subtotalNeto, setSubtotalNeto] = useState('0.00');
   const [totalIVA, setTotalIVA] = useState('0.00');
@@ -76,18 +80,6 @@ export const ResumenTotalesCard: React.FC<ResumenTotalesCardProps> = ({
       <p className="opacity-60">SubTotal Neto:</p>
       <p>$ {subtotalNeto}</p>
 
-      <p className="opacity-60">Total con IVA:</p>
-      <p>$ {totalConIva}</p>
-
-      <p className="opacity-60">Monto descuento:</p>
-      <p>$ {descuentoTotal}</p>
-
-      <p className="opacity-60">Total IVA:</p>
-      <p>$ {totalIVA}</p>
-
-      <p className="opacity-60">Total a pagar:</p>
-      <p>$ {totalAPagar.toFixed(2)}</p>
-
       <p className="opacity-60">Descuento general:</p>
       <InputNumber
         prefix="%"
@@ -100,8 +92,10 @@ export const ResumenTotalesCard: React.FC<ResumenTotalesCardProps> = ({
         }
         style={{ padding: 0, height: '2rem' }}
       />
-      <p></p>
-      <p></p>
+
+      <p className="opacity-60">Total con IVA:</p>
+      <p>$ {totalConIva}</p>
+
       <p className="opacity-60">Descuento Ventas grabadas:</p>
       <InputNumber
         prefix="%"
@@ -114,6 +108,32 @@ export const ResumenTotalesCard: React.FC<ResumenTotalesCardProps> = ({
         }
         style={{ padding: 0, height: '2rem' }}
       />
+
+      <p className="opacity-60">Monto descuento:</p>
+      <p>$ {descuentoTotal}</p>
+
+      <p className="opacity-60">Saldo a favor:</p>
+      <InputNumber
+        prefix="$"
+        value={saldoFavor}
+        onValueChange={(e: InputNumberValueChangeEvent) =>
+          setSaldoFavor(e.value)
+        }
+        style={{ padding: 0, height: '2rem' }}
+      />
+
+      <p className="opacity-60">Total IVA:</p>
+      <p>$ {totalIVA}</p>
+      
+      <p></p>
+      <p></p>
+
+      <p className="opacity-60">Total a pagar:</p>
+      <p>$ {totalAPagar.toFixed(2)}</p>
+
+      
+     
+      
     </div>
   );
 };
