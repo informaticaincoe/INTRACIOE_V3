@@ -20,7 +20,6 @@ import {
   FacturaPorCodigoGeneracionResponse,
   ReceptorInterface,
   TipoDocumento,
-  TipoGeneracionFactura,
   TipoDTE,
 } from '../../../../shared/interfaces/interfaces';
 import { ProductosTabla } from '../components/FE/productosAgregados/productosData';
@@ -28,13 +27,11 @@ import { ResumenTotalesCard } from '../components/Shared/resumenTotales/resumenT
 import {
   FirmarFactura,
   generarAjusteService,
-  generarNotaCreditoService,
   getFacturaBycodigo,
 } from '../services/factura/facturaServices';
 import { CheckBoxRetencion } from '../components/Shared/configuracionFactura/Retencion/checkBoxRetencion';
 import { useNavigate } from 'react-router';
 import { Input } from '../../../../shared/forms/input';
-import { DropFownTipoDeDocumentoGeneracion } from '../components/NotaDebito/DropDownTipoDeDocumentoGeneracion';
 import { CheckboxBaseImponible } from '../components/Shared/configuracionFactura/baseImponible/checkboxBaseImponible';
 import CustomToast, {
   CustomToastRef,
@@ -42,6 +39,7 @@ import CustomToast, {
 } from '../../../../shared/toast/customToast';
 import { IoMdCloseCircle } from 'react-icons/io';
 import { ExtensionCard } from '../components/Shared/entension/extensionCard';
+import { ResumenCardNotaAjuste } from '../components/NotaDebito/resumenCardNotaAjuste';
 
 export const GenerarDocumentosAjuste = () => {
   //lista de datos obtenidas de la api
@@ -58,7 +56,6 @@ export const GenerarDocumentosAjuste = () => {
   const [listProducts, setListProducts] = useState<ProductosTabla[]>([]); //lista que almacena todos los productos
   const [numeroControl, setNumeroControl] = useState('');
   const [codigoGeneracion, setCodigoGeneracion] = useState('');
-  const [tipoGeneracionFactura, setTipoGeneracionFactura] = useState<TipoGeneracionFactura | null>(null);
   const [descuentosList, setDescuentosList] = useState();
   const [saldoFavor, setSaldoFavor] = useState<number>(0.00)
 
@@ -149,13 +146,15 @@ export const GenerarDocumentosAjuste = () => {
       // "porcentaje_retencion_renta": 0.00,
     };
     console.log('dataNCND', dataNCND);
+    console.log('factura ajuste', facturasAjuste[0]);
 
-    try {
-      const response = await generarNotaCreditoService(dataNCND);
-      firmarFactura(response.factura_id);
-    } catch (error) {
-      console.log(error);
-    }
+
+    // try {
+    //   const response = await generarNotaCreditoService(dataNCND);
+    //   firmarFactura(response.factura_id);
+    // } catch (error) {
+    //   console.log(error);
+    // }
   };
 
   const firmarFactura = async (id: string) => {
@@ -189,10 +188,18 @@ export const GenerarDocumentosAjuste = () => {
 
       setFacturasAjuste((prev) => [...prev, facturaProcesada]);
       setFormData({ codigo: '' }); // Limpiar input
-    } catch (error) {
-      console.log(error);
+    } catch (error:any) {
+      handleAccion(
+        'error',
+        <IoMdCloseCircle size={68} />,
+        error.toString()
+      );
     }
   };
+
+  useEffect(() => {
+    console.log("0000000000000000000",cantidadListProducts);
+  }, [cantidadListProducts, setCantidadListProducts])
 
   /************************************/
   /* OBTENCION DE DATOS              
@@ -216,7 +223,6 @@ export const GenerarDocumentosAjuste = () => {
       setCondicionesOperacionList(response.tipooperaciones);
       setSelectedCondicionDeOperacion(response.tipooperaciones[0].codigo);
       setDescuentosList(response.descuentos);
-      setListProducts(response.producto);
       setTipoDocumento(response.tipoDocumentos);
       // setTipoDocumentoSelected(response.tipoDocumentos[0].codigo);
     } catch (error) {
@@ -397,15 +403,9 @@ export const GenerarDocumentosAjuste = () => {
             <h1 className="text-start text-xl font-bold">Resumen de totales</h1>
           </div>
           <Divider className="m-0 p-0"></Divider>
-          <ResumenTotalesCard
-            setTotalAPagar={setTotalAPagar}
-            totalAPagar={totalAPagar}
-            listProducts={selectedProducts}
-            descuentos={descuentos}
-            setDescuentos={setDescuentos}
-            tipoDocumento={''}
-            setSaldoFavor={setSaldoFavor}
-            saldoFavor = {saldoFavor}
+          <ResumenCardNotaAjuste
+            facturas={facturasAjuste}
+            cantidades={cantidadListProducts}
           />
         </div>
       </WhiteSectionsPage>

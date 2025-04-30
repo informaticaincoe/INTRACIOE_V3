@@ -2573,7 +2573,14 @@ class FacturaPorCodigoGeneracionAPIView(APIView):
                 "telefono": receptor.telefono,
                 "correo": receptor.correo,
             },
-            "productos": productos
+            "productos": productos,
+            "subtotal_neto": factura.sub_total,
+            "total_iva": factura.total_iva,
+            "descuento": factura.total_descuento,
+            "total": factura.total_pagar,
+            "total_con_iva": factura.total_pagar,
+            "saldo_a_favor": factura.saldo_favor,
+            "total_a_pagar": factura.total_pagar
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
