@@ -317,7 +317,7 @@
 </div>
 {% endif %}
 
-{% if not firmado %}
+{% if not firmado or not recibido_mh %}
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const intentos = parseInt("{{ intentos_modal }}");
@@ -329,10 +329,10 @@
         const motivoModalElement = document.getElementById('motivoModal');
         const btnReintentar = document.getElementById("btnReintentar");
         const firmado = "{{ request.GET.firmado|default:'0' }}";
+        const recibidoMh = "{{ request.GET.recibido_mh|default:'0' }}";
         let urlReintento = "";
         let urlReintentomotivo = "";
         const continuar_evento = true;
-        console.log("Intentos: ", intentos)
 
         if (mostrarModal && modalElement && intentos <= 3) {
             console.log("Intentos: ", intentos)
@@ -372,33 +372,8 @@
                     }).then(response => {
                         if (response.ok) {
                             if (intentos >= 2 && motivoOtro) {
-                                {% if firma == '1' %}
-                                    urlReintento = "{% url 'firmar_factura' factura.id %}?crear_evento=" + continuar_evento;
-                                
-                                {% elif envio_mh == '1' %}
-                                    urlReintento = "{% url 'enviar_factura_hacienda' factura.id %}?crear_evento=" + continuar_evento;
-                                {% endif %}
-                        
-                                fetch(urlReintento, {
-                                    method: "POST",
-                                    headers: {
-                                        "Content-Type": "application/json",
-                                        "X-CSRFToken": "{{ csrf_token }}",
-                                    },
-                                    body: JSON.stringify({ reintento: true }),
-                                }).then(response => {
-                                    if (response.ok) {
-                                        const motivoModal = new bootstrap.Modal(motivoModalElement);
-                                        motivoModal.show();
-                                    } else {
-                                        alert("Hubo un error al intentar reintentar el proceso.");
-                                        btnReintentar.disabled = false;
-                                    }
-                                }).catch(error => {
-                                    console.error("Error en reintento:", error);
-                                    alert("Error de red o en el servidor.");
-                                    btnReintentar.disabled = false;
-                                });
+                                const motivoModal = new bootstrap.Modal(motivoModalElement);
+                                motivoModal.show();
                             } else {
                                 window.location.href = "{% url 'detalle_factura' factura.id %}?mostrar_modal=1&firma={{ firma|default:'0' }}&envio_mh={{ envio_mh|default:'0' }}&intentos_modal=" + (intentos + 1) + "&motivo_otro={{ motivo_otro|yesno:'1,0' }}";
                             }
@@ -414,36 +389,18 @@
                 });
             }
 
-            const btnEnviarMotivo = document.getElementById("btnEnviarMotivo");
-            if (btnEnviarMotivo) {
-                btnEnviarMotivo.addEventListener("click", () => {
-                    const texto = document.getElementById("motivoInput").value.trim();
-                    const facturaId = {{ factura.id }};
-
-                    if (!texto) {
-                        alert("Debe ingresar un motivo antes de continuar.");
-                        return;
-                    }
-
-                    const motivo = encodeURIComponent(texto);
-                    const url = "{% url 'enviar_motivo' %}?factura_id=" + facturaId + "&motivo=" + motivo;
-
-                    // Enviar el motivo y redirigir
-                    window.location.href = url;
-                });
-            }
             // Lógica para el botón "Continuar"
             const btnContinuar = document.getElementById("btnContinuar");
             if (btnContinuar) {
                 btnContinuar.addEventListener("click", () => {
                     const continuar_evento = true;
 
-                    {% if firma == '1' %}
+                    if (firma === "1") {
                         urlContinuar = "{% url 'firmar_factura' factura.id %}?crear_evento=" + continuar_evento;
-                    {% elif envio_mh == '1' %}
+                    } else if (envioMH === "1") {
                         urlContinuar = "{% url 'enviar_factura_hacienda' factura.id %}?crear_evento=" + continuar_evento;
-                    {% endif %}
-
+                    }
+                    
                     fetch(urlContinuar, {
                         method: "POST",
                         headers: {
@@ -469,6 +426,36 @@
                         }
                     });
                 });            
+            }
+
+            const btnEnviarMotivo = document.getElementById("btnEnviarMotivo");
+            if (btnEnviarMotivo) {
+                btnEnviarMotivo.addEventListener("click", () => {
+                    const texto = document.getElementById("motivoInput").value.trim();
+                    const facturaId = {{ factura.id }};
+
+                    if (!texto) {
+                        alert("Debe ingresar un motivo antes de continuar.");
+                        return;
+                    }
+
+                    
+                    // Solo cerrar y redirigir si NO se requiere motivo
+                    modalElement.addEventListener('hidden.bs.modal', () => {
+                        window.location.href = "{% url 'detalle_factura' factura.id %}";
+                    }, { once: true });
+
+                    const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                    if (modalInstance) {
+                        modalInstance.hide();
+                    }
+
+                    const motivo = encodeURIComponent(texto);
+                    const url = "{% url 'enviar_motivo' %}?factura_id=" + facturaId + "&motivo=" + motivo;
+
+                    // Enviar el motivo y redirigir
+                    window.location.href = url;
+                });
             }
         }
     });
