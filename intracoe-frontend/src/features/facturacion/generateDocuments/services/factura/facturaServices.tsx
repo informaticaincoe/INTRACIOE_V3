@@ -101,8 +101,9 @@ export const getFacturaBycodigo = async (codigo_generacion: string) => {
       }
     );
     return response.data;
-  } catch (error) {
-    throw new Error();
+  } catch (error:any) {
+    const msg = error.response.data.error
+    throw new Error(msg);
   }
 };
 

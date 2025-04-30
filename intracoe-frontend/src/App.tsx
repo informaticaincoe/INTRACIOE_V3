@@ -9,6 +9,7 @@ import { Login } from './features/login/pages/loginPage';
 import { Layout } from './layout/layout';
 import CustomToast, { CustomToastRef } from './shared/toast/customToast';
 import { useRef } from 'react';
+import { Card } from './features/card';
 
 const { Dashboard } = lazily(
   () => import('./features/dashboard/pages/dashboard')
@@ -108,6 +109,7 @@ function App() {
           <Route path="/receptor/nuevo" element={<NuevoReceptorPage />} />
           <Route path="/receptor/:id" element={<NuevoReceptorPage />} />
           <Route path="/uploadExcel" element={<UploadExcelPage />} />
+          <Route path="/card" element={<Card />} />
           <Route path="/contingencias" element={<ContingenciasPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

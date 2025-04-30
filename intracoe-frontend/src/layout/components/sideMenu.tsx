@@ -180,6 +180,15 @@ const items: MenuItem[] = [
       },
     ],
   },
+  {
+    key: 'card',
+    icon: <MdDashboard size={20} />,
+    label: (
+      <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+        Card
+      </p>
+    ),
+  },
 ];
 
 export const SideMenu = () => {
@@ -219,6 +228,9 @@ export const SideMenu = () => {
         break;
       case 'proveedor':
         navigate('/proveedor');
+        break;
+      case 'card':
+        navigate('/card');
         break;
       default:
         break;
