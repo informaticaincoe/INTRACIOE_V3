@@ -7,7 +7,7 @@ export interface ProductosTabla {
   descripcion: string;
   imagen: string;
   categoria_id: number | null;
-  tipo_item_id: number | null;
+  tipo_item: number | null;
   unidad_medida_id: number;
   tributo_id: number;
   referencia_interna: string;
@@ -24,7 +24,7 @@ export interface ProductosTabla {
   stock_maximo: number;
   seleccionar: boolean;
 
-  // // Campos calculados / de UI
+  // Campos calculados / de UI
   cantidad: number;
   descuento: Descuento | null;
   iva_unitario: number;
