@@ -2171,7 +2171,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
                         Producto.objects.filter(pk=det.producto.pk).update(
                             stock=Greatest(F('stock') - det.cantidad, Value(0))
                         )
-
+            print("factura.numero_control", factura.numero_control)
             # Guardar el JSON en la carpeta "FE/json_facturas"
             json_path = os.path.join("FE/json_facturas", f"{factura.numero_control}.json")
             os.makedirs(os.path.dirname(json_path), exist_ok=True)
@@ -2179,34 +2179,35 @@ class GenerarDocumentoAjusteAPIView(APIView):
                 json.dump(factura_json, f, indent=4, ensure_ascii=False)
             
             # Verificar si el archivo PDF existe
-            pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.url, factura.tipo_dte.codigo, 'pdf', f"{str(factura.codigo_generacion).upper()}.pdf")
+            # pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.url, factura.tipo_dte.codigo, 'pdf', f"{str(factura.codigo_generacion).upper()}.pdf")
+            # print("factura.numero_control")
             
-            os.makedirs(os.path.dirname(pdf_signed_path), exist_ok=True)
-            if os.path.exists(pdf_signed_path):
-                print("PDF ya existe, devolviendo archivo existente: %s", pdf_signed_path)
-                filename=os.path.basename(pdf_signed_path)
-            else:
-                #1.Crear HTML
-                html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": factura}, request=request)
+            # os.makedirs(os.path.dirname(pdf_signed_path), exist_ok=True)
+            # if os.path.exists(pdf_signed_path):
+            #     print("PDF ya existe, devolviendo archivo existente: %s", pdf_signed_path)
+            #     filename=os.path.basename(pdf_signed_path)
+            # else:
+            #     #1.Crear HTML
+            #     html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": factura}, request=request)
                 
-                #2.Definir base_url para que {% static %} funcione correctamente, esto asegura que las imágenes estáticas (logos, etc.) se resuelvan bien en el PDF
-                try:
-                    base_url = request.build_absolute_uri('/')
-                except Exception as e:
-                    print("Error obteniendo base_url")
-                    base_url = None  # WeasyPrint usará paths relativos si es None
+            #     #2.Definir base_url para que {% static %} funcione correctamente, esto asegura que las imágenes estáticas (logos, etc.) se resuelvan bien en el PDF
+            #     try:
+            #         base_url = request.build_absolute_uri('/')
+            #     except Exception as e:
+            #         print("Error obteniendo base_url")
+            #         base_url = None  # WeasyPrint usará paths relativos si es None
                 
-                # 3. Preparar lista de CSS
-                stylesheets = [CSS(url='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js') ]
+            #     # 3. Preparar lista de CSS
+            #     stylesheets = [CSS(url='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js') ]
                 
-                #4.Guardar archivo PDF con WeasyPrint
-                try:
-                    html = HTML(string=html_content, base_url=base_url)
-                    html.write_pdf(stylesheets=stylesheets, target=pdf_signed_path)
-                    filename = os.path.basename(pdf_signed_path)
-                    print("Pdf guardado ")
-                except Exception as e:
-                    print("Error generando el PDF con WeasyPrint")
+            #     #4.Guardar archivo PDF con WeasyPrint
+            #     try:
+            #         html = HTML(string=html_content, base_url=base_url)
+            #         html.write_pdf(stylesheets=stylesheets, target=pdf_signed_path)
+            #         filename = os.path.basename(pdf_signed_path)
+            #         print("Pdf guardado ")
+            #     except Exception as e:
+            #         print("Error generando el PDF con WeasyPrint")
 
                 return Response({
                     "mensaje": "Factura generada correctamente",
@@ -2485,9 +2486,10 @@ class EnviarFacturaHaciendaAPIView(APIView):
                         factura.json_original = {**factura.json_original, "jsonRespuestaMh": data}
                         
                         #Enviar correo
-                        if factura.recibido_mh == False:
-                            enviar_correo_individual_view(request, factura_id, None, None)
-                            factura.envio_correo = True
+                        # if factura.recibido_mh == False:
+                        #     enviar_correo_individual_view(request, factura_id, None, None)
+                        #     factura.envio_correo = True
+                        print()
                         factura.save()
                         
                         # Registrar movimiento de inventario
@@ -4280,4 +4282,3 @@ class EnviarCorreoIndividualAPIView(APIView):
                     status=status.HTTP_502_BAD_GATEWAY
                 )
     #return redirect('detalle_factura', factura_id=factura_id)
-    

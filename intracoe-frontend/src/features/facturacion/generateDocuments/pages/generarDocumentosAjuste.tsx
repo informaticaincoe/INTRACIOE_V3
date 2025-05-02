@@ -181,8 +181,8 @@ export const GenerarDocumentosAjuste = () => {
         ...response,
         productos: response.productos.map((p) => ({
           ...p,
-          cantidad_editada: p.cantidad,
-          monto_a_aumentar: 0,
+          cantidad_editada: p.cantidad, // **Agregar las cantidades editadas de cada producto
+          monto_a_aumentar: 0, // **nuevo monto a modificar en el producto
         })),
       };
 
@@ -385,7 +385,7 @@ export const GenerarDocumentosAjuste = () => {
             </button>
           </div>
           {facturasAjuste && (
-            <TablaProductosFacturaNotasDebito
+            <TablaProductosFacturaNotasDebito // FIXME: solo para credito, agregar una para debito
               setCantidadListProducts={setCantidadListProducts}
               facturasAjuste={facturasAjuste}
               setFacturasAjuste={setFacturasAjuste}

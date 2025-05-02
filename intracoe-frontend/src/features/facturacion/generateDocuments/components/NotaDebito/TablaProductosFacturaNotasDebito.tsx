@@ -6,12 +6,14 @@ import {
 } from 'primereact/inputnumber';
 import { Checkbox } from 'primereact/checkbox';
 import { Accordion, AccordionTab } from 'primereact/accordion';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   FacturaDetalleItem,
   FacturaPorCodigoGeneracionResponse,
 } from '../../../../../shared/interfaces/interfaces';
 import { ProductosTabla } from '../FE/productosAgregados/productosData';
+import CustomToast, { CustomToastRef, ToastSeverity } from '../../../../../shared/toast/customToast';
+import { IoMdCloseCircle } from 'react-icons/io';
 
 interface Props {
   facturasAjuste: FacturaPorCodigoGeneracionResponse[];
@@ -32,6 +34,24 @@ export const TablaProductosFacturaNotasDebito: React.FC<Props> = ({
 }) => {
   // --- estado local de selección usando clave compuesta
   const [seleccionados, setSeleccionados] = useState<Record<string, boolean>>({});
+  const toastRef = useRef<CustomToastRef>(null);
+
+  const handleAccion = (
+    severity: ToastSeverity,
+    icon: any,
+    summary: string
+  ) => {
+    toastRef.current?.show({
+      severity: severity,
+      summary: summary,
+      icon: icon,
+      life: 2000,
+    });
+  };
+
+  useEffect(() => {
+    console.log("Factura Ajuste en tabla", facturasAjuste)
+  }, [facturasAjuste])
 
   // --- 1) Derivar arrays cada vez que cambien facturasAjuste o seleccionados
   useEffect(() => {
@@ -111,107 +131,151 @@ export const TablaProductosFacturaNotasDebito: React.FC<Props> = ({
     productoId: number,
     value: number | null
   ) => {
-    setFacturasAjuste((prev) =>
-      prev.map((factura) =>
-        factura.codigo_generacion === facturaCodigo
-          ? {
-            ...factura,
-            productos: factura.productos.map((prod) =>
-              prod.producto_id === productoId
-                ? { ...prod, cantidad_editada: value ?? 0 }
-                : prod
-            ),
-          }
-          : factura
-      )
-    );
+    setFacturasAjuste(prev => {
+      // 1) Clonamos todo el array de facturas
+      const facturas = [...prev];
+
+      // 2) Buscamos la factura
+      const fi = facturas.findIndex(f => f.codigo_generacion === facturaCodigo);
+      if (fi < 0) return prev;
+
+      // 3) Clonamos su array de productos
+      const productos = [...facturas[fi].productos];
+
+      // 4) Buscamos el producto dentro de esa factura
+      const pi = productos.findIndex(p => p.producto_id === productoId);
+      if (pi < 0) return prev;
+
+      if (value)
+        if (value < productos[pi].cantidad) { //**nota de credito: la cantidad a anular no puedo ser mayor al de la factura
+          // 5) Actualizamos sólo ese producto
+          productos[pi] = {
+            ...productos[pi],
+            cantidad_editada: value ?? 0
+          };
+
+          // 6) Reemplazamos el array de productos en la factura
+          facturas[fi] = {
+            ...facturas[fi],
+            productos
+          };
+        }
+        else {
+          handleAccion(
+            'error',
+            <IoMdCloseCircle size={68} />,
+            "La cantidad a anular es mayor a la cantidad de la factura"
+          );
+          console.error("error")
+        }
+
+      console.log("cantidad", productos[pi].cantidad)
+      console.log("value", value)
+
+
+
+      return facturas;
+    });
   };
+
+  const eliminarfacturaAdjunta = (codigo:string) => {
+    const facturasFiltradas = facturasAjuste.filter(f => f.codigo_generacion != codigo)
+    console.log(facturasFiltradas)
+    setFacturasAjuste(facturasFiltradas)
+  }
+
 
   // --- 4) Render
   return facturasAjuste.length > 0 ? (
-    <Accordion multiple>
-      {facturasAjuste.map((factura) => (
-        <AccordionTab
-          key={factura.codigo_generacion}
-          header={
-            <div className="grid grid-cols-[auto_1fr] gap-2 text-sm text-start">
-              <span className="font-semibold">Código:</span>
-              <span>{factura.codigo_generacion}</span>
-              <span className="font-semibold">Control:</span>
-              <span>{factura.num_documento}</span>
-              <span className="font-semibold">Emisión:</span>
-              <span>{factura.fecha_emision}</span>
-              <span className="font-semibold">Receptor:</span>
-              <span>{factura.receptor.nombre}</span>
-              <span className="font-semibold">Total:</span>
-              <span>${factura.total}</span>
-            </div>
-          }
-        >
-          <DataTable
-            value={factura.productos}
-            tableStyle={{ minWidth: '50rem' }}
-            paginator
-            rows={5}
-            rowsPerPageOptions={[5, 10, 25, 50]}
+    <>
+      <CustomToast ref={toastRef} />
+      <Accordion multiple>
+        {facturasAjuste.map((factura) => (
+          <AccordionTab
+            key={factura.codigo_generacion}
+            header={
+              <div className='flex justify-between'>
+                <div className="grid grid-cols-[auto_1fr] gap-2 text-sm text-start">
+                  <span className="font-semibold">Código:</span>
+                  <span>{factura.codigo_generacion}</span>
+                  <span className="font-semibold">Control:</span>
+                  <span>{factura.num_documento}</span>
+                  <span className="font-semibold">Emisión:</span>
+                  <span>{factura.fecha_emision}</span>
+                  <span className="font-semibold">Receptor:</span>
+                  <span>{factura.receptor.nombre}</span>
+                  <span className="font-semibold">Total:</span>
+                  <span>${factura.total}</span>
+                </div>
+                <button className='' onClick={()=> eliminarfacturaAdjunta(factura.codigo_generacion)}>eliminar</button>
+              </div>
+            }
           >
-            <Column
-              header="Seleccionar"
-              body={(row: FacturaDetalleItem) => {
-                const key = `${factura.codigo_generacion}-${row.producto_id}`;
-                return (
-                  <Checkbox
-                    checked={!!seleccionados[key]}
-                    onChange={(e) =>
-                      handleSelect(
-                        factura.codigo_generacion,
-                        row.producto_id,
-                        e.checked ?? false
-                      )
-                    }
-                  />
-                );
-              }}
-            />
-            <Column
-              header="Producto"
-              body={(row) => (
-                <>{`${row.codigo} - ${row.descripcion}`}</>
-              )}
-            />
-            <Column
-              header="Precio Unit."
-              body={(row: FacturaDetalleItem) => {
-                // parseamos a número antes de formatear
-                const precio = Number(row.precio_unitario) || 0;
-                return <>${precio.toFixed(2)}</>;
-              }}
-            />
+            <DataTable
+              value={factura.productos}
+              tableStyle={{ minWidth: '50rem' }}
+              paginator
+              rows={5}
+              rowsPerPageOptions={[5, 10, 25, 50]}
+            >
+              <Column
+                header="Seleccionar"
+                body={(row: FacturaDetalleItem) => {
+                  const key = `${factura.codigo_generacion}-${row.producto_id}`;
+                  return (
+                    <Checkbox
+                      checked={!!seleccionados[key]}
+                      onChange={(e) =>
+                        handleSelect(
+                          factura.codigo_generacion,
+                          row.producto_id,
+                          e.checked ?? false
+                        )
+                      }
+                    />
+                  );
+                }}
+              />
+              <Column
+                header="Producto"
+                body={(row) => (
+                  <>{`${row.codigo} - ${row.descripcion}`}</>
+                )}
+              />
+              <Column
+                header="Precio Unit."
+                body={(row: FacturaDetalleItem) => {
+                  // parseamos a número antes de formatear
+                  const precio = Number(row.precio_unitario) || 0;
+                  return <>${precio.toFixed(2)}</>;
+                }}
+              />
 
-            <Column
-              header="Cantidad"
-              body={(row) => {
-                const key = `${factura.codigo_generacion}-${row.producto_id}`;
-                return (
-                  <InputNumber
-                    value={row.cantidad_editada ?? row.cantidad}
-                    onValueChange={(
-                      e: InputNumberValueChangeEvent
-                    ) =>
-                      handleCantidadChange(
-                        factura.codigo_generacion,
-                        row.producto_id,
-                        e.value ?? 1
-                      )
-                    }
-                    disabled={!seleccionados[key]}
-                  />
-                );
-              }}
-            />
-          </DataTable>
-        </AccordionTab>
-      ))}
-    </Accordion>
+              <Column
+                header="Cantidad"
+                body={(row) => {
+                  const key = `${factura.codigo_generacion}-${row.producto_id}`;
+                  return (
+                    <InputNumber
+                      value={row.cantidad_editada ?? row.cantidad}
+                      onValueChange={(
+                        e: InputNumberValueChangeEvent
+                      ) =>
+                        handleCantidadChange(
+                          factura.codigo_generacion,
+                          row.producto_id,
+                          e.value ?? 1
+                        )
+                      }
+                      disabled={!seleccionados[key]}
+                    />
+                  );
+                }}
+              />
+            </DataTable>
+          </AccordionTab>
+        ))}
+      </Accordion>
+    </>
   ) : null;
 };
