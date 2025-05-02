@@ -93,9 +93,9 @@ HTTP_INTERNAL_SERVER_ERROR_MH = [502, 503, 504, 500, 408] #Errores en el servido
 HTTP_INTERNAL_SERVER_ERROR_EMISOR = [400, 404, 500, 503, 504, 408, 429, 599] #Errores en el sistema del emisor 400-499
 HTTP_INTERNAL_SERVER_ERROR_INTERNET_EMISOR = [400, 401, 403, 404, 408, 500, 503] #Falla en el suministro de servicio de Internet del cliente
 HTTP_INTERNAL_SERVER_ERROR_SUMINISTRO_ENERGIA = ["E015", "E019", "503", "504", "E010"] #Falla een el suministro de servicio de energia electrica del cliente que impida la transmision de los documentos electronicos
-RUTA_COMPROBANTES_PDF = ConfiguracionServidor.objects.filter(codigo="ruta_comprobantes_dte").first()
-RUTA_COMPROBANTES_JSON = ConfiguracionServidor.objects.filter(codigo="ruta_comprobante_json").first()
-RUTA_JSON_FACTURA = ConfiguracionServidor.objects.filter(codigo="json_factura").first()
+RUTA_COMPROBANTES_PDF = ConfiguracionServidor.objects.filter(clave="ruta_comprobantes_dte").first()
+RUTA_COMPROBANTES_JSON = ConfiguracionServidor.objects.filter(clave="ruta_comprobante_json").first()#FE\json_facturas
+RUTA_JSON_FACTURA = ConfiguracionServidor.objects.filter(clave="json_factura").first()#FE\dtes\tipo_dte\
 
 formas_pago = [] #Asignar formas de pago
 documentos_relacionados = []
@@ -1838,7 +1838,7 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False):
         print("Crear archivos")
         #Buscar json
         # Construir la ruta completa al archivo JSON esperado
-        json_signed_path = os.path.join(RUTA_JSON_FACTURA.ruta_archivo, f"{factura.numero_control}.json")
+        json_signed_path = os.path.join(RUTA_JSON_FACTURA.url, f"{factura.numero_control}.json")
 
         # Verificar si el archivo JSON existe
         if os.path.exists(json_signed_path):
@@ -1848,7 +1848,7 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False):
             print(f"No se encontró el archivo JSON para la factura: {factura.numero_control}")
         
         # Verificar si el archivo PDF existe
-        pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.ruta_archivo, factura.tipo_dte.codigo, 'pdf', f"{str(factura.codigo_generacion).upper()}.pdf")
+        pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.url, factura.tipo_dte.codigo, 'pdf', f"{str(factura.codigo_generacion).upper()}.pdf")
         os.makedirs(os.path.dirname(pdf_signed_path), exist_ok=True)
         if os.path.exists(pdf_signed_path):
             print("PDF ya existe, devolviendo archivo existente: %s", pdf_signed_path)
@@ -4848,7 +4848,7 @@ def enviar_lotes_hacienda_view(request, factura_id):
             
             #Guardar archivo pdf
             # Definir ruta de PDF
-            pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.ruta_archivo, factura.tipo_dte.codigo, 'pdf', f"{str(factura.codigo_generacion).upper()}.pdf")
+            pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.url, factura.tipo_dte.codigo, 'pdf', f"{str(factura.codigo_generacion).upper()}.pdf")
             
             print("guardar pdf: ", pdf_signed_path)
             
@@ -5041,14 +5041,14 @@ def enviar_correo_individual_view(request, factura_id, archivo_pdf=None, archivo
     try:
         # Buscar archivos si no se enviaron como parametro
         if not archivo_pdf:
-            ruta_pdf = os.path.join(RUTA_COMPROBANTES_PDF.ruta_archivo, documento_electronico.tipo_dte.codigo, "pdf")
+            ruta_pdf = os.path.join(RUTA_COMPROBANTES_PDF.url, documento_electronico.tipo_dte.codigo, "pdf")
             archivo_pdf = os.path.join(ruta_pdf, f"{str(documento_electronico.codigo_generacion).upper()}.pdf")
             if not os.path.exists(archivo_pdf):
                 print(f"Archivo PDF no encontrado en {archivo_pdf}")
                 messages.error(request, "Archivo PDF no encontrado.")
         
         if not archivo_json:
-            ruta_json = RUTA_COMPROBANTES_JSON.ruta_archivo
+            ruta_json = RUTA_COMPROBANTES_JSON.url
             archivo_json = os.path.join(ruta_json, f"{documento_electronico.numero_control}.json")
             if not os.path.exists(archivo_json):
                 print(f"Archivo JSON no encontrado en {archivo_json}")
