@@ -23,7 +23,6 @@ import {
   TipoDTE,
 } from '../../../../shared/interfaces/interfaces';
 import { ProductosTabla } from '../components/FE/productosAgregados/productosData';
-import { ResumenTotalesCard } from '../components/Shared/resumenTotales/resumenTotalesCard';
 import {
   FirmarFactura,
   generarAjusteService,
@@ -31,7 +30,7 @@ import {
   getFacturaBycodigo,
 } from '../services/factura/facturaServices';
 import { CheckBoxRetencion } from '../components/Shared/configuracionFactura/Retencion/checkBoxRetencion';
-import { useNavigate } from 'react-router';
+import { useFetcher, useNavigate } from 'react-router';
 import { Input } from '../../../../shared/forms/input';
 import { CheckboxBaseImponible } from '../components/Shared/configuracionFactura/baseImponible/checkboxBaseImponible';
 import CustomToast, {
@@ -106,17 +105,6 @@ export const GenerarDocumentosAjuste = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleMontoPagar = () => {
-    let aux = 0;
-    selectedProducts.map((pago) => {
-      aux = aux + pago.total_con_iva;
-      console.log(pago);
-    });
-
-    console.log('aux', aux);
-    return aux.toFixed(2);
-  };
-
   const generarFactura = async () => {
     const dataNCND = {
       tipoDocumento: tipoDocumentoSelected?.codigo,
@@ -127,24 +115,21 @@ export const GenerarDocumentosAjuste = () => {
       documento_seleccionado: 2, // solo manjeo de documento electronico
       documento_relacionado:
         facturasAjuste[0]?.codigo_generacion.toUpperCase() ?? '',
-      // descuento_select: descuentos, //TODO: Descuento por item
+      // descuento_select: descuentos,
       condicion_operacion: selectedCondicionDeOperacion, //contado, credito, otros
       porcentaje_retencion_iva: (retencionIva / 100).toString(),
       retencion_iva: retencionIva.toString(),
       productos_retencion_iva: '0.00',
-      porcentaje_retencion_renta: '0.00', //TODO: descuento por item
+      porcentaje_retencion_renta: '0.00', 
       retencion_renta: '0.0',
-      productos_retencion_renta: '0.00', //TODO: descuento por item
-      producto_id: idListProducts[0],
+      productos_retencion_renta: '0.00', 
       num_ref: null,
-      productos_ids: idListProducts,
+      [tipoDocumentoSelected?.codigo === '05' ? 'productos_id_r' : 'productos_ids']: idListProducts,
       cantidades: cantidadListProducts, //cantidad de cada producto de la factura
       descuento_gravado: descuentos.descuentoGravado.toString(),
       descuento_global_input: descuentos.descuentoGeneral.toString(),
       contingencia: false,
       tipotransmision: tipoTransmision,
-      // "retencion_renta": false,
-      // "porcentaje_retencion_renta": 0.00,
     };
     console.log('dataNCND', dataNCND);
     console.log('factura ajuste', facturasAjuste[0]);
@@ -197,9 +182,6 @@ export const GenerarDocumentosAjuste = () => {
     }
   };
 
-  useEffect(() => {
-    console.log("0000000000000000000",cantidadListProducts);
-  }, [cantidadListProducts, setCantidadListProducts])
 
   /************************************/
   /* OBTENCION DE DATOS              
@@ -385,7 +367,8 @@ export const GenerarDocumentosAjuste = () => {
             </button>
           </div>
           {facturasAjuste && (
-            <TablaProductosFacturaNotasDebito // FIXME: solo para credito, agregar una para debito
+            <TablaProductosFacturaNotasDebito 
+              tipoDte={tipoDocumentoSelected?.codigo}
               setCantidadListProducts={setCantidadListProducts}
               facturasAjuste={facturasAjuste}
               setFacturasAjuste={setFacturasAjuste}

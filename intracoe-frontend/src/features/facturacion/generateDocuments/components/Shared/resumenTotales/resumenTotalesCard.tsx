@@ -32,8 +32,6 @@ export const ResumenTotalesCard: React.FC<ResumenTotalesCardProps> = ({
   const [totalConIva, setTotalConIva] = useState('0.00');
   const [descuentoTotal, setDescuentoTotal] = useState('0.00');
 
-  useEffect(() => {}, [listProducts, descuentos, totalAPagar]);
-
   useEffect(() => {
     // 1) Suma de importes base
     let neto = 0; // base gravada (sin IVA)
@@ -45,7 +43,7 @@ export const ResumenTotalesCard: React.FC<ResumenTotalesCardProps> = ({
       neto += item.total_neto;
       iva += item.total_iva;
       totalConIvaAux += item.total_con_iva;
-      descuentosItem += item.descuento?.porcentaje ?? 0;
+      descuentosItem += ((item.descuento?.porcentaje ?? 0) / 100) * item.cantidad;
     });
 
     // 2) Calcula descuentos

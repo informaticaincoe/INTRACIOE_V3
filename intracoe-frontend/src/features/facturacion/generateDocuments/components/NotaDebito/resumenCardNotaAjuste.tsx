@@ -34,7 +34,6 @@ export const ResumenCardNotaAjuste: React.FC<ResumenCardNotaAjusteInterface> = (
             const totalAPagarAux = facturas.reduce((sum, r) => sum + (r.total_a_pagar ?? 0), 0);
             setTotalAPagar(totalAPagarAux);
         }
-        console.log("CCCCCCCCCCCCCCCCCCCCCCCCCC",cantidades)
     }, [facturas]);
 
     return (

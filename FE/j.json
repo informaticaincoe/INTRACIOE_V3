@@ -1,0 +1,28 @@
+{
+    "tipoDocumento": "05",
+    "receptor_id": 2,
+    "observaciones": "",
+    "tipo_documento_seleccionado": "05",
+    "tipo_item_select": 1,
+    "documento_seleccionado": 2,
+    "documento_relacionado": "47C8D7A2-0D4F-4DF8-AD63-0E0FA6364424",
+    "condicion_operacion": "1",
+    "porcentaje_retencion_iva": "0",
+    "retencion_iva": "0",
+    "productos_retencion_iva": "0.00",
+    "porcentaje_retencion_renta": "0.00",
+    "retencion_renta": "0.0",
+    "productos_retencion_renta": "0.00",
+    "producto_id": "1",
+    "num_ref": null,
+    "productos_ids": [
+        "1"
+    ],
+    "cantidades": [
+        "1"
+    ],
+    "descuento_gravado": "0",
+    "descuento_global_input": "0",
+    "contingencia": false,
+    "tipotransmision": 1
+}

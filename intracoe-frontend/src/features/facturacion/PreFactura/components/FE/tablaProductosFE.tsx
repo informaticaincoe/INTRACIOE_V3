@@ -81,6 +81,12 @@ export const TablaProductosFE: React.FC<TablaProductosFEInterface> = ({
                 </>
               )}
               <td className="border-border-color border-t-2 border-r-2 p-2 pl-4">
+                $ 0
+              </td>
+              <td className="border-border-color border-t-2 border-r-2 p-2 pl-4">
+                $ {producto.montoDescu}
+              </td>
+              <td className="border-border-color border-t-2 border-r-2 p-2 pl-4">
                 $ {producto.ventaNoSuj}
               </td>
               <td className="border-border-color border-t-2 border-r-2 p-2 pl-4">
@@ -88,12 +94,6 @@ export const TablaProductosFE: React.FC<TablaProductosFEInterface> = ({
               </td>
               <td className="border-border-color border-t-2 border-r-2 p-2 pl-4">
                 $ {producto.ventaGravada}
-              </td>
-              <td className="border-border-color border-t-2 border-r-2 p-2 pl-4">
-                $ 0.00
-              </td>
-              <td className="border-border-color border-t-2 border-r-2 p-2 pl-4">
-                $ 0.00
               </td>
             </tr>
           ))}

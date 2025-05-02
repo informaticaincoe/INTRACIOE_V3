@@ -23,6 +23,7 @@ interface Props {
   setIdListProducts: React.Dispatch<React.SetStateAction<string[]>>;
   setCantidadListProducts: React.Dispatch<React.SetStateAction<string[]>>;
   setListProducts: React.Dispatch<React.SetStateAction<ProductosTabla[]>>;
+  tipoDte:any
 }
 
 export const TablaProductosFacturaNotasDebito: React.FC<Props> = ({
@@ -31,6 +32,7 @@ export const TablaProductosFacturaNotasDebito: React.FC<Props> = ({
   setIdListProducts,
   setCantidadListProducts,
   setListProducts,
+  tipoDte
 }) => {
   // --- estado local de selección usando clave compuesta
   const [seleccionados, setSeleccionados] = useState<Record<string, boolean>>({});
@@ -147,7 +149,20 @@ export const TablaProductosFacturaNotasDebito: React.FC<Props> = ({
       if (pi < 0) return prev;
 
       if (value)
-        if (value < productos[pi].cantidad) { //**nota de credito: la cantidad a anular no puedo ser mayor al de la factura
+        if (tipoDte == '05' && value < productos[pi].cantidad) { //**nota de credito: la cantidad a anular no puedo ser mayor al de la factura
+          // 5) Actualizamos sólo ese producto
+          productos[pi] = {
+            ...productos[pi],
+            cantidad_editada: value ?? 0
+          };
+
+          // 6) Reemplazamos el array de productos en la factura
+          facturas[fi] = {
+            ...facturas[fi],
+            productos
+          };
+        }
+        else if (tipoDte == '06' ) { //**nota de debito: la cantidad a anular no puedo ser mayor al de la factura
           // 5) Actualizamos sólo ese producto
           productos[pi] = {
             ...productos[pi],

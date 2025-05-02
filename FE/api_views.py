@@ -1322,7 +1322,7 @@ class GenerarFacturaAPIView(APIView):
                 iva_unitario = (precio_incl - precio_neto).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
                 
                 if porcentaje_descuento_producto:
-                    porcentaje_descuento_item = Descuento.objects.get(porcentaje=(porcentaje_descuento_producto * 100))
+                    porcentaje_descuento_item = Descuento.objects.get(id=porcentaje_descuento_producto)
                 else:
                     porcentaje_descuento_item = Descuento.objects.first()
                     
@@ -1703,6 +1703,8 @@ class GenerarDocumentoAjusteAPIView(APIView):
                     
                     cantidades.append(c)
             
+            print(f"productos id relacionado: {productos_ids_r}, cantidades: {cantidades}")
+
             print(f"id productos: {productos_ids}, cantidades: {cantidades}")
             if descuentos_r is not None and len(descuentos_r)>0:
                 for d in descuentos_r:

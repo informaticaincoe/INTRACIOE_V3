@@ -7,9 +7,6 @@ import 'primereact/resources/themes/lara-light-blue/theme.css';
 
 import { Login } from './features/login/pages/loginPage';
 import { Layout } from './layout/layout';
-import CustomToast, { CustomToastRef } from './shared/toast/customToast';
-import { useRef } from 'react';
-import { Card } from './features/card';
 
 const { Dashboard } = lazily(
   () => import('./features/dashboard/pages/dashboard')
@@ -81,6 +78,10 @@ const { CatalogosPage } = lazily(
   () => import('./features/contabilidad/catalogos/pages/catalogosPage')
 );
 
+const { MovimientoInventarioPage } = lazily(
+  () => import('./features/inventario/movimientoInventario/pages/movimientoInventarioPage')
+);
+
 function App() {
   return (
     <BrowserRouter>
@@ -101,6 +102,7 @@ function App() {
           <Route path="/producto/:id" element={<NuevoProductoPage />} />
           <Route path="/listado-facturas" element={<ListadoFacturas />} />
           <Route path="/servicios" element={<ServicioPage />} />
+          <Route path="/inventario" element={<MovimientoInventarioPage />} />
           <Route path="/servicio/nuevo" element={<NuevoServiciopage />} />
           <Route path="/servicio/:id" element={<NuevoServiciopage />} />
           <Route path="/empresa" element={<ConfigBussiness />} />
@@ -109,7 +111,6 @@ function App() {
           <Route path="/receptor/nuevo" element={<NuevoReceptorPage />} />
           <Route path="/receptor/:id" element={<NuevoReceptorPage />} />
           <Route path="/uploadExcel" element={<UploadExcelPage />} />
-          <Route path="/card" element={<Card />} />
           <Route path="/contingencias" element={<ContingenciasPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
