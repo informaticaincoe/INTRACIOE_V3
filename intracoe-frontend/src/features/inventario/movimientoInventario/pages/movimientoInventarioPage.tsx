@@ -2,11 +2,16 @@ import React, { useEffect, useState } from 'react'
 import { getAllMovimientosInventario } from '../services/movimientoInventarioServices'
 import { movimientoInterface } from '../interfaces/movimientoInvetarioInterface'
 import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPage'
-import { DataTable } from 'primereact/datatable'
-import { Column } from 'primereact/column'
+import { Title } from '../../../../shared/text/title'
+import { TablaInventarioHeader } from '../componentes/tablaInventarioHeader'
+import { Divider } from 'primereact/divider'
+import { TablaMovimientoInventario } from '../componentes/tablaMovimientoInventario'
+import { getProductById } from '../../products/services/productsServices'
 
 export const MovimientoInventarioPage = () => {
     const [movimientoList, setMovimientoList] = useState<movimientoInterface[] | undefined>([])
+    const [codigoFiltro, setCodigoFiltro] = useState<string>('');
+
     useEffect(() => {
         fetchMovimientosInventario()
     }, [])
@@ -20,20 +25,21 @@ export const MovimientoInventarioPage = () => {
         }
     }
 
+    const handleSearch = (nuevoCodigo: string) => {
+        setCodigoFiltro(nuevoCodigo.trim());
+    };
+
     return (
-        <WhiteSectionsPage>
-            <>
-                <DataTable value={movimientoList} tableStyle={{ minWidth: '50rem' }}>
-                    <Column  
-                    header="Tipo"
-                    ></Column>
-                    <Column field="producto" header="Producto"></Column>
-                    <Column field="cantidad" header="Cantidad"></Column>
-                    <Column field="fecha" header="Fecha"></Column>
-                    <Column field="almacen" header="Almacen"></Column>
-                    <Column field="referencia" header="Referencia"></Column>
-                </DataTable>
-            </>
-        </WhiteSectionsPage>
+        <>
+            <Title text={'Movimiento de inventario'} />
+
+            <WhiteSectionsPage>
+                <>
+                    <TablaInventarioHeader codigo={codigoFiltro} onSearch={handleSearch}/>
+                    <Divider />
+                    <TablaMovimientoInventario movimientoList={movimientoList}/>
+                </>
+            </WhiteSectionsPage>
+        </>
     )
 }
