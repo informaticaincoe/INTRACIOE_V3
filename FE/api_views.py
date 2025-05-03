@@ -21,7 +21,7 @@ from rest_framework.pagination import PageNumberPagination
 from .views import (
     contingencia_dte_view, enviar_contingencia_hacienda_view, enviar_correo_individual_view, enviar_factura_hacienda_view, enviar_factura_invalidacion_hacienda_view, enviar_lotes_hacienda_view, 
     finalizar_contigencia_view, firmar_contingencia_view, firmar_factura_anulacion_view, firmar_factura_view, 
-    invalidacion_dte_view, generar_json, lote_contingencia_dte_view, num_to_letras, agregar_formas_pago_api, generar_json_contingencia, 
+    invalidacion_dte_view, generar_json, lote_contingencia_dte_view, num_to_letras, agregar_formas_pago_api,
     generar_json_doc_ajuste, obtener_fecha_actual, obtener_listado_productos_view
 )
 
@@ -60,21 +60,21 @@ from weasyprint import HTML, CSS
 from django.db.models import F, Value
 from django.db.models.functions import Greatest
 
-FIRMADOR_URL = "http://192.168.2.25:8113/firmardocumento/"
-DJANGO_SERVER_URL = "http://127.0.0.1:8000"
+FIRMADOR_URL = ConfiguracionServidor.objects.filter(clave="firmador").first()
+DJANGO_SERVER_URL = ConfiguracionServidor.objects.filter(clave="server_url").first()
 
 SCHEMA_PATH_fe_fc_v1 = "FE/json_schemas/fe-fc-v1.json"
 
-CERT_PATH = "FE/cert/06142811001040.crt"  # Ruta al certificado
+CERT_PATH = ConfiguracionServidor.objects.filter(clave="certificado").first().url_endpoint #"FE/cert/06142811001040.crt"  # Ruta al certificado
 
 # URLS de Hacienda (Pruebas y Producción)
-HACIENDA_URL_TEST = "https://apitest.dtes.mh.gob.sv/fesv/recepciondte"
-HACIENDA_URL_PROD = "https://api.dtes.mh.gob.sv/fesv/recepciondte"
+HACIENDA_URL_TEST = ConfiguracionServidor.objects.filter(clave="hacienda_url_test").first().url_endpoint
+HACIENDA_URL_PROD = ConfiguracionServidor.objects.filter(clave="hacienda_url_prod").first().url_endpoint
 #cada endpoint que tenga url quemada agregarlas en una tabla de config, firmador y djangoserver
 #BC 04/03/2025: Constantes
 COD_CONSUMIDOR_FINAL = "01"
 COD_CREDITO_FISCAL = "03"
-VERSION_EVENTO_INVALIDACION = 2
+VERSION_EVENTO_INVALIDACION = ConfiguracionServidor.objects.filter(clave="version_evento_invalidacion").first().valor #2
 AMBIENTE = Ambiente.objects.get(codigo="01")#Hacer dinamico
 #AMBIENTE = "01"
 COD_FACTURA_EXPORTACION = "11"
@@ -95,6 +95,19 @@ DTE_APLICA_CONTINGENCIA = ["01", "03", "04", "05", "06", "11", "14"]
 RUTA_COMPROBANTES_PDF = ConfiguracionServidor.objects.filter(clave="ruta_comprobantes_dte").first()
 RUTA_COMPROBANTES_JSON = ConfiguracionServidor.objects.filter(clave="ruta_comprobante_json").first()
 RUTA_JSON_FACTURA = ConfiguracionServidor.objects.filter(clave="json_factura").first()
+URL_AUTH = ConfiguracionServidor.objects.filter(clave="url_autenticacion").first()
+HEADERS = ConfiguracionServidor.objects.filter(clave="headers").first()
+CONTENT_TYPE = ConfiguracionServidor.objects.filter(clave="content_type").first()
+INVALIDAR_DTE_URL = ConfiguracionServidor.objects.filter(clave="url_invalidar_dte").first()
+VERSION_EVENTO_CONTINGENCIA = ConfiguracionServidor.objects.filter(clave="version_evento_contingencia").first()
+FACTURAS_FIRMADAS_URL = ConfiguracionServidor.objects.filter(clave="json_facturas_firmadas").first()
+HACIENDA_CONTINGENCIA_URL = ConfiguracionServidor.objects.filter(clave="hacienda_contingencia_url").first()
+USER_AGENT = ConfiguracionServidor.objects.filter(clave="user_agent").first()
+CONSULTAR_DTE = ConfiguracionServidor.objects.filter(clave="consulta_dte").first()
+EMAIL_HOST_FE = ConfiguracionServidor.objects.filter(clave="email_host_fe").first()
+
+MONEDA_USD = TipoMoneda.objects.get(codigo="USD")
+UNI_MEDIDA_99 = TipoUnidadMedida.objects.get(codigo="99")
 
 formas_pago = [] #Asignar formas de pago
 documentos_relacionados = []
@@ -132,12 +145,12 @@ class AutenticacionAPIView(APIView):
         pwd = request.data.get("pwd")    # Contraseña enviada desde el cuerpo de la solicitud
 
         # URL de autenticación
-        auth_url = "https://api.dtes.mh.gob.sv/seguridad/auth"
+        auth_url = URL_AUTH.url_endpoint #"https://api.dtes.mh.gob.sv/seguridad/auth"
         
         # Headers para la solicitud
         headers = {
-            "User-Agent": "MiAplicacionDjango/1.0",
-            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": HEADERS.valor,
+            "Content-Type": HEADERS.url_endpoint,
         }
 
         # Datos para el cuerpo de la solicitud
@@ -194,8 +207,8 @@ def autenticacion(request):
         nit_empresa = request.POST.get("user")
         pwd = request.POST.get("pwd")
 
-        auth_url = "https://api.dtes.mh.gob.sv/seguridad/auth"
-        headers = {"User-Agent": "MiAplicacionDjango/1.0"}
+        auth_url = URL_AUTH.url_endpoint
+        headers = {"User-Agent": HEADERS.valor}
         data = {"user": nit_empresa, "pwd": pwd}
 
         try:
@@ -1221,14 +1234,14 @@ class GenerarFacturaAPIView(APIView):
                     }
                 )
 
-            ambiente_obj = Ambiente.objects.get(codigo="01")
+            ambiente_obj = AMBIENTE
             tipo_dte_obj = Tipo_dte.objects.get(codigo=tipo_dte)
             tipo_item_obj = TipoItem.objects.get(codigo=tipo_item)
 
             tipomodelo_obj = Modelofacturacion.objects.get(codigo="1")
             tipotransmision_obj = TipoTransmision.objects.get(codigo="1")
             tipooperacion_obj = CondicionOperacion.objects.get(id=tipooperacion_id) if tipooperacion_id else None
-            tipo_moneda_obj = TipoMoneda.objects.get(codigo="USD")
+            tipo_moneda_obj = MONEDA_USD
 
             factura = FacturaElectronica.objects.create(
                 version="1.0",
@@ -1274,7 +1287,7 @@ class GenerarFacturaAPIView(APIView):
                     continue
 
                 if base_imponible_checkbox is True or tipo_item_obj.codigo == COD_TIPO_ITEM_OTROS:
-                    unidad_medida_obj = TipoUnidadMedida.objects.get(codigo="99")
+                    unidad_medida_obj = UNI_MEDIDA_99
                 else:
                     unidad_medida_obj = TipoUnidadMedida.objects.get(codigo=producto.unidad_medida.codigo)
 
@@ -1504,7 +1517,7 @@ class GenerarFacturaAPIView(APIView):
                 factura.formas_Pago = formas_pago_id
             factura.save()
             
-            json_path = os.path.join("FE/json_facturas", f"{factura.numero_control}.json")
+            json_path = os.path.join(RUTA_JSON_FACTURA.url, f"{factura.numero_control}.json")
             os.makedirs(os.path.dirname(json_path), exist_ok=True)
             with open(json_path, "w", encoding="utf-8") as f:
                 json.dump(factura_json, f, indent=4, ensure_ascii=False)
@@ -1743,14 +1756,14 @@ class GenerarDocumentoAjusteAPIView(APIView):
                 )
 
             # Configuración por defecto de la factura
-            ambiente_obj = Ambiente.objects.get(codigo="01")
+            ambiente_obj = AMBIENTE
             tipo_dte_obj = Tipo_dte.objects.get(codigo=tipo_dte)
             tipo_item_obj = TipoItem.objects.get(codigo=tipo_item)
 
             tipomodelo_obj = Modelofacturacion.objects.get(codigo="1")
             tipotransmision_obj = TipoTransmision.objects.get(codigo="1")
             tipooperacion_obj = CondicionOperacion.objects.get(id=tipooperacion_id) if tipooperacion_id else None
-            tipo_moneda_obj = TipoMoneda.objects.get(codigo="USD")
+            tipo_moneda_obj = MONEDA_USD
 
             factura = FacturaElectronica.objects.create(
                 version="1.0",
@@ -1802,7 +1815,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
                 # Obtener unidad de medida
                 #Unidad de medida = 99 cuando el contribuyente preste un servicio
                 if base_imponible_checkbox is True or tipo_item_obj.codigo == COD_TIPO_ITEM_OTROS:
-                    unidad_medida_obj = TipoUnidadMedida.objects.get(codigo="99")
+                    unidad_medida_obj = UNI_MEDIDA_99
                 else:
                     unidad_medida_obj = TipoUnidadMedida.objects.get(codigo=producto.unidad_medida.codigo)
 
@@ -2175,7 +2188,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
                         )
             print("factura.numero_control", factura.numero_control)
             # Guardar el JSON en la carpeta "FE/json_facturas"
-            json_path = os.path.join("FE/json_facturas", f"{factura.numero_control}.json")
+            json_path = os.path.join(RUTA_JSON_FACTURA.url, f"{factura.numero_control}.json")
             os.makedirs(os.path.dirname(json_path), exist_ok=True)
             with open(json_path, "w", encoding="utf-8") as f:
                 json.dump(factura_json, f, indent=4, ensure_ascii=False)
@@ -2281,9 +2294,9 @@ class FirmarFacturaAPIView(APIView):
 
             try:
                 resp = requests.post(
-                    FIRMADOR_URL,
+                    FIRMADOR_URL.url_endpoint,
                     json=payload,
-                    headers={"Content-Type": "application/json"},
+                    headers={"Content-Type": CONTENT_TYPE.valor},
                     timeout=10
                 )
                 try:
@@ -2372,10 +2385,10 @@ class EnviarFacturaHaciendaAPIView(APIView):
             # Paso 1: Autenticación
             nit = str(emisor_fe.nit)
             pwd = str(emisor_fe.clave_publica)
-            auth_url = "https://api.dtes.mh.gob.sv/seguridad/auth"
+            auth_url = URL_AUTH.url_endpoint
             auth_headers = {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "User-Agent": "MiAplicacionDjango/1.0"
+                "Content-Type": HEADERS.url_endpoint,
+                "User-Agent": HEADERS.valor
             }
             auth_data = {"user": nit, "pwd": pwd}
 
@@ -2461,8 +2474,8 @@ class EnviarFacturaHaciendaAPIView(APIView):
             envio_url = "https://api.dtes.mh.gob.sv/fesv/recepciondte"
             envio_headers = {
                 "Authorization": f"Bearer {token_obj.token}",
-                "User-Agent": "MiAplicacionDjango/1.0",
-                "Content-Type": "application/json"
+                "User-Agent": HEADERS.valor,
+                "Content-Type": CONTENT_TYPE.valor
             }
             payload = {
                 "ambiente": AMBIENTE.codigo,
@@ -2742,14 +2755,14 @@ class EnviarFacturaInvalidacionAPIView(APIView):
     @transaction.atomic
     def post(self, request, factura_id, format=None):
         # 1) Autenticación con MH
-        nit = "06142811001040"
-        pwd = "Q#3P9l5&@aF!gT2sA"
-        auth_url = "https://api.dtes.mh.gob.sv/seguridad/auth"
+        nit = emisor_fe.nit
+        pwd = emisor_fe.clave_publica
+        auth_url = URL_AUTH.url_endpoint
         auth_resp = requests.post(auth_url,
                                   data={"user": nit, "pwd": pwd},
                                   headers={
-                                      "Content-Type": "application/x-www-form-urlencoded",
-                                      "User-Agent": "MiAplicacionDjango/1.0"
+                                      "Content-Type": HEADERS.url_endpoint,
+                                      "User-Agent": HEADERS.valor
                                   },
                                   timeout=10)
         try:
@@ -2801,14 +2814,14 @@ class EnviarFacturaInvalidacionAPIView(APIView):
             )
 
         # 4) Envío de invalidación a Hacienda
-        envio_url = "https://api.dtes.mh.gob.sv/fesv/anulardte"
+        envio_url = INVALIDAR_DTE_URL.url_endpoint
         envio_headers = {
             "Authorization": f"Bearer {token}",
-            "User-Agent": "MiAplicacionDjango/1.0",
-            "Content-Type": "application/json"
+            "User-Agent": HEADERS.valor,
+            "Content-Type": CONTENT_TYPE.valor
         }
         payload = {
-            "ambiente": "01",
+            "ambiente": AMBIENTE.codigo,
             "idEnvio": evento.id,
             "version": int(evento.json_invalidacion["identificacion"]["version"]),
             "documento": documento
@@ -3229,7 +3242,7 @@ class ContingenciaDteAPIView(APIView):
             hTransm = datetime.now().strftime('%H:%M:%S')
 
             json_identificacion = {
-                "version": 3,
+                "version": int(VERSION_EVENTO_CONTINGENCIA.valor),
                 "ambiente": str(AMBIENTE.codigo),
                 "codigoGeneracion": str(evento.codigo_generacion).upper(),
                 "fTransmision": fTransm,
@@ -3352,7 +3365,7 @@ class FirmarContingenciaAPIView(APIView):
             }
 
             try:
-                resp = requests.post(FIRMADOR_URL, json=payload, timeout=10)
+                resp = requests.post(FIRMADOR_URL.url_endpoint, json=payload, timeout=10)
                 status_code = resp.status_code
                 try:
                     response_data = resp.json()
@@ -3369,7 +3382,7 @@ class FirmarContingenciaAPIView(APIView):
 
                     # (Opcional) Guardar archivo local
                     os.makedirs(os.path.dirname(CERT_PATH), exist_ok=True)
-                    path = f"FE/json_facturas_firmadas/{evento.codigo_generacion}.json"
+                    path = f"{FACTURAS_FIRMADAS_URL.url}{evento.codigo_generacion}.json"
                     with open(path, "w", encoding="utf-8") as f:
                         json.dump(response_data, f, indent=4, ensure_ascii=False)
 
@@ -3444,10 +3457,10 @@ class EnviarContingenciaHaciendaAPIView(APIView):
 
         nit = str(emisor_fe.nit)
         pwd = str(emisor_fe.clave_publica)
-        auth_url = "https://api.dtes.mh.gob.sv/seguridad/auth"
+        auth_url = URL_AUTH.url_endpoint
         auth_headers = {
-            "Content-Type": "application/x-www-form-urlencoded",
-            "User-Agent": "MiAplicacionDjango/1.0"
+            "Content-Type": HEADERS.url_endpoint,
+            "User-Agent": HEADERS.valor
         }
         auth_data = {"user": nit, "pwd": pwd}
 
@@ -3506,11 +3519,11 @@ class EnviarContingenciaHaciendaAPIView(APIView):
             )
 
         # 2) Envío del DTE firmado
-        envio_url = "https://api.dtes.mh.gob.sv/fesv/contingencia"
+        envio_url = HACIENDA_CONTINGENCIA_URL.url_endpoint
         envio_headers = {
             "Authorization": f"Bearer {token}",
-            "User-Agent": "MiAplicacionDjango/1.0",
-            "Content-Type": "application/json"
+            "User-Agent": HEADERS.valor,
+            "Content-Type": CONTENT_TYPE.valor
         }
         # Preparar documento firmado
         try:
@@ -3934,10 +3947,10 @@ class EnviarLotesHaciendaAPIView(APIView):
         # 2) Autenticación con MH
         nit = str(emisor_fe.nit)
         pwd = str(emisor_fe.clave_publica)
-        auth_url = "https://api.dtes.mh.gob.sv/seguridad/auth"
+        auth_url = URL_AUTH.url_endpoint
         auth_headers = {
-            "Content-Type": "application/x-www-form-urlencoded",
-            "User-Agent": "MiAplicacionDjango/1.0"
+            "Content-Type": HEADERS.url_endpoint,
+            "User-Agent": HEADERS.valor
         }
         auth_data = {"user": nit, "pwd": pwd}
 
@@ -3992,16 +4005,16 @@ class EnviarLotesHaciendaAPIView(APIView):
                 {"error": "El JSON firmado no contiene 'body' con el token"},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
+            
         # 4) Envío a recepciondte
-        envio_url = "https://api.dtes.mh.gob.sv/fesv/recepciondte"
+        envio_url = HACIENDA_URL_PROD
         envio_headers = {
             "Authorization": f"Bearer {token}",
-            "User-Agent": "DjangoApp",
-            "Content-Type": "application/json"
+            "User-Agent": USER_AGENT.valor,
+            "Content-Type": CONTENT_TYPE.valor
         }
         envio_json = {
-            "ambiente": "01",
+            "ambiente": AMBIENTE,
             "idEnvio": factura.id,
             "version": int(factura.json_original["identificacion"]["version"]),
             "tipoDte": str(factura.json_original["identificacion"]["tipoDte"]),
@@ -4226,7 +4239,7 @@ class EnviarCorreoIndividualAPIView(APIView):
             <p>Adjuntamos el documento en formato PDF y JSON para su respaldo.</p>
             <p>Si tiene alguna consulta, estamos a su disposición.</p>
             
-            Consulte el documento electrónico aquí: https://admin.factura.gob.sv/consultaPublica
+            Consulte el documento electrónico aquí: {CONSULTAR_DTE.url_endpoint}
             <BR>
             <BR>
             
@@ -4239,7 +4252,7 @@ class EnviarCorreoIndividualAPIView(APIView):
             email = EmailMessage(
                 subject="Documento Electrónico "+ documento_electronico.tipo_dte.descripcion,
                 body=email_html_content,
-                from_email=settings.EMAIL_HOST_USER_FE,
+                from_email=EMAIL_HOST_FE.valor, #settings.EMAIL_HOST_USER_FE,
                 to=[receptor.correo],
             )
             email.content_subtype = "html"  # Indicar que el contenido es HTML
