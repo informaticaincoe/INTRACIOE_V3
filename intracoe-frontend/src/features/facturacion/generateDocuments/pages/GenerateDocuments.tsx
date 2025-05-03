@@ -149,27 +149,27 @@ export const GenerateDocuments = () => {
       observaciones: observaciones,
 
       tipo_documento_seleccionado: tipoDocumentoSelected?.codigo ?? '01', //tipo DTE
-      tipo_item_select: tipoItem, //TODO: obtener segun la lista de productos de forma dinamica (bien o servicio)
+      tipo_item_select: tipoItem,
 
       condicion_operacion: selectedCondicionDeOperacion, //contado, credito, otros
-      porcentaje_retencion_iva: (retencionIva / 100).toString(),
+      porcentaje_retencion_iva: (retencionIva).toString(),
       retencion_iva: tieneRetencionIva,
-      // productos_retencion_iva TODO: Agregar productos con retencion de IVA
+      // productos_retencion_iva 
 
-      porcentaje_retencion_renta: (retencionRenta / 100).toString(),
+      porcentaje_retencion_renta: (retencionRenta).toString(),
       retencion_renta: tieneRetencionRenta,
-      // productos_retencion_renta TODO: Agregar productos con retencion de Renta
+      // productos_retencion_renta
       fp_id: formasPagoList,
 
-      descuento_global_input: (descuentos.descuentoGeneral / 100).toString(),
+      descuento_global_input: (descuentos.descuentoGeneral).toString(),
       saldo_favor_input: saldoFavor,
       no_gravado: baseImponible,
 
-      descuento_gravado: (descuentos.descuentoGravado / 100).toString(),
+      descuento_gravado: (descuentos.descuentoGravado).toString(),
 
       productos_ids: idListProducts,
       cantidades: cantidadListProducts, //cantidad de cada producto de la factura
-      descuento_select: descuentosProducto,
+      descuento_select: descuentosProducto, //lista de id de desceun
 
       monto_fp: totalAPagar.toFixed(2),
       num_ref: null,

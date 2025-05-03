@@ -7,6 +7,8 @@ import { FaTruckRampBox } from 'react-icons/fa6';
 import type { MenuProps } from 'antd';
 import { Menu } from 'antd';
 import { useNavigate } from 'react-router';
+import { useState } from 'react';
+import { CardModal } from '../../features/POST/components/cardModal';
 
 type MenuItem = Required<MenuProps>['items'][number];
 
@@ -124,6 +126,14 @@ const items: MenuItem[] = [
           </p>
         ),
       },
+      {
+        key: 'post',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            POST
+          </p>
+        ),
+      },
     ],
   },
   {
@@ -135,6 +145,14 @@ const items: MenuItem[] = [
       </p>
     ),
     children: [
+      {
+        key: 'inventario',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Movimientos de inventario
+          </p>
+        ),
+      },
       {
         key: 'producto',
         label: (
@@ -180,18 +198,10 @@ const items: MenuItem[] = [
       },
     ],
   },
-  {
-    key: 'card',
-    icon: <MdDashboard size={20} />,
-    label: (
-      <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
-        Card
-      </p>
-    ),
-  },
 ];
 
 export const SideMenu = () => {
+  const [visible, setVisible] = useState<boolean>(false);
   const navigate = useNavigate(); // Hook para navegar en React Router
 
   const onClick: MenuProps['onClick'] = (e) => {
@@ -207,6 +217,9 @@ export const SideMenu = () => {
         break;
       case 'catalogo':
         navigate('/catalogos');
+        break;
+      case 'inventario':
+        navigate('/inventario');
         break;
       case 'producto':
         navigate('/productos');
@@ -229,8 +242,8 @@ export const SideMenu = () => {
       case 'proveedor':
         navigate('/proveedor');
         break;
-      case 'card':
-        navigate('/card');
+      case 'post':
+        setVisible(true)
         break;
       default:
         break;
@@ -255,6 +268,7 @@ export const SideMenu = () => {
         mode="inline"
         items={items}
       />
+      <CardModal visible={visible} setVisible={setVisible} />
     </div>
   );
 };

@@ -12,11 +12,12 @@ export const generarFacturaService = async (data: any) => {
   }
 };
 
-export const generarAjusteService = async (tipo_dte: string) => {
+export const generarAjusteService = async (data: string) => {
+  console.log("data", data)
   try {
     const response = await api.get(`/factura_ajuste/generar/`, {
       params: {
-        tipo_dte,
+        data,
       },
     });
 
