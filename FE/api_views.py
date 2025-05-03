@@ -1529,6 +1529,19 @@ class GenerarFacturaAPIView(APIView):
             if os.path.exists(pdf_signed_path):
                 print("PDF ya existe, devolviendo archivo existente: %s", pdf_signed_path)
                 filename=os.path.basename(pdf_signed_path)
+            else:
+                #1.Crear HTML
+                html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": factura}, request=request)
+
+                #Guardar archivo pdf
+                print("guardar pdf: ", pdf_signed_path)
+                with open(pdf_signed_path, "wb") as pdf_file:
+                    pisa_status = pisa.CreatePDF(BytesIO(html_content.encode('utf-8')), dest=pdf_file)
+                    
+                if pisa_status.err:
+                    print(f"Error al crear el PDF en {pdf_signed_path}")
+                else:
+                    print(f"PDF guardado exitosamente en {pdf_signed_path}")
             # else:
             #     #1.Crear HTML
             #     html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": factura}, request=request)
@@ -2201,25 +2214,16 @@ class GenerarDocumentoAjusteAPIView(APIView):
             else:
                 #1.Crear HTML
                 html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": factura}, request=request)
-                
-                #2.Definir base_url para que {% static %} funcione correctamente, esto asegura que las imágenes estáticas (logos, etc.) se resuelvan bien en el PDF
-                try:
-                    base_url = request.build_absolute_uri('/')
-                except Exception as e:
-                    print("Error obteniendo base_url")
-                    base_url = None  # WeasyPrint usará paths relativos si es None
-                
-                # 3. Preparar lista de CSS
-                stylesheets = [CSS(url='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js') ]
-                
-                #4.Guardar archivo PDF con WeasyPrint
-                try:
-                    html = HTML(string=html_content, base_url=base_url)
-                    html.write_pdf(stylesheets=stylesheets, target=pdf_signed_path)
-                    filename = os.path.basename(pdf_signed_path)
-                    print("Pdf guardado ")
-                except Exception as e:
-                    print("Error generando el PDF con WeasyPrint")
+
+                #Guardar archivo pdf
+                print("guardar pdf: ", pdf_signed_path)
+                with open(pdf_signed_path, "wb") as pdf_file:
+                    pisa_status = pisa.CreatePDF(BytesIO(html_content.encode('utf-8')), dest=pdf_file)
+                    
+                if pisa_status.err:
+                    print(f"Error al crear el PDF en {pdf_signed_path}")
+                else:
+                    print(f"PDF guardado exitosamente en {pdf_signed_path}")
 
                 return Response({
                     "mensaje": "Factura generada correctamente",
@@ -4173,38 +4177,31 @@ class EnviarCorreoIndividualAPIView(APIView):
         print(f"Inicio envio de correos: pdf: {archivo_pdf}, json: {archivo_json}")
         
         #3.Definir ruta esperada del PDF
+        print("ruta pdf: ", RUTA_COMPROBANTES_PDF.url)
         pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.url, documento_electronico.tipo_dte.codigo, 'pdf', f"{str(documento_electronico.codigo_generacion).upper()}.pdf")
-        
+        print("pdf path: ", pdf_signed_path)
         #4.Buscar archivo PDF
         if not os.path.exists(pdf_signed_path):
             print("Pdf no existe", RUTA_COMPROBANTES_PDF)
             
             #1.Crear HTML
             html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": documento_electronico}, request=request)
-        
-            #2.Definir base_url para que {% static %} funcione correctamente, esto asegura que las imágenes estáticas (logos, etc.) se resuelvan bien en el PDF
-            try:
-                base_url = request.build_absolute_uri('/')
-            except Exception as e:
-                print("Error obteniendo base_url")
-                base_url = None  # WeasyPrint usará paths relativos si es None
-            
-            #3.Preparar lista de CSS:
-            stylesheets = [CSS(url='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js') ]
-            
-            #4.Guardar archivo PDF con WeasyPrint
-            try:
-                html = HTML(string=html_content, base_url=base_url)
-                html.write_pdf(stylesheets=stylesheets, target=pdf_signed_path)
-            except Exception as e:
-                print("Error generando el PDF con WeasyPrint")
+
+            #Guardar archivo pdf
+            print("guardar pdf: ", pdf_signed_path)
+            with open(pdf_signed_path, "wb") as pdf_file:
+                pisa_status = pisa.CreatePDF(BytesIO(html_content.encode('utf-8')), dest=pdf_file)
+                
+            if pisa_status.err:
+                print(f"Error al crear el PDF en {pdf_signed_path}")
             else:
-                print("No se encontró el archivo PDF para la factura")
+                print(f"PDF guardado exitosamente en {pdf_signed_path}")
+                
         #5.Confirmar ruta del PDF
         archivo_pdf = pdf_signed_path
         
-        #6.Definir ruta esperada del PDF
-        archivo_json = os.path.join(RUTA_COMPROBANTES_JSON.url, f"{documento_electronico.numero_control}.json")
+        #6.Definir ruta esperada del JSON
+        archivo_json = os.path.join(RUTA_JSON_FACTURA.url, f"{documento_electronico.numero_control}.json")
         
         #7.Buscar archivo JSON
         if not os.path.exists(archivo_json):

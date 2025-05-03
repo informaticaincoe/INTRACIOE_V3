@@ -1032,7 +1032,7 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
         if formas_pago is None:
             formas_pago = factura.formas_Pago or []
         
-        montoExtension = Decimal("11428.57")
+        montoExtension = Decimal("25000")
         
         #Resumen tributos
         tributo = Tributo.objects.get(codigo="20")
@@ -1046,6 +1046,8 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
             "codigoGeneracion": str(factura.codigo_generacion),
             "tipoModelo": int(factura.tipomodelo.codigo),
             "tipoOperacion": int(factura.tipotransmision.codigo),
+            "tipoContingencia": None,
+            "motivoContin": None,
             "fecEmi": str(factura.fecha_emision),
             "horEmi": factura.hora_emision.strftime('%H:%M:%S'),
             "tipoMoneda": str(factura.tipomoneda.codigo) if factura.tipomoneda else "USD"
@@ -1229,6 +1231,8 @@ def generar_json_doc_ajuste(ambiente_obj, tipo_dte_obj, factura, emisor, recepto
             "codigoGeneracion": str(factura.codigo_generacion),
             "tipoModelo": int(factura.tipomodelo.codigo),
             "tipoOperacion": int(factura.tipotransmision.codigo),
+            "tipoContingencia": None,
+            "motivoContin": None,
             "fecEmi": str(factura.fecha_emision),
             "horEmi": factura.hora_emision.strftime('%H:%M:%S'),
             "tipoMoneda": str(factura.tipomoneda.codigo) if factura.tipomoneda else "USD"
@@ -1472,6 +1476,8 @@ def firmar_factura_view(request, factura_id, interno=False):
             factura.tipotransmision = TipoTransmision.objects.get(codigo="2")
             factura.fecha_modificacion = fecha_actual.date()
             factura.hora_modificacion = fecha_actual.time()
+            factura.json_original["identificacion"]["tipoModelo"] = int(factura.tipomodelo.codigo)
+            factura.json_original["identificacion"]["tipoOperacion"] = int(factura.tipotransmision.codigo)
             factura.save()
 
             lote_contingencia_dte_view(request, factura_id, tipo_contingencia_obj)
@@ -1828,6 +1834,8 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False):
             factura.tipotransmision = TipoTransmision.objects.get(codigo="2") #Cuando es un evento en contingencia guardar tipo de transmision "2-Transmision por Contingencia"
             factura.fecha_modificacion = fecha_actual.date()
             factura.hora_modificacion = fecha_actual.time()
+            factura.json_original["identificacion"]["tipoModelo"] = int(factura.tipomodelo.codigo)
+            factura.json_original["identificacion"]["tipoOperacion"] = int(factura.tipotransmision.codigo)
             factura.save()
             
             lote_contingencia_dte_view(request, factura_id, tipo_contingencia_obj)
@@ -5024,7 +5032,7 @@ def enviar_correo_individual_view(request, factura_id, archivo_pdf=None, archivo
                 messages.error(request, "Archivo PDF no encontrado.")
         
         if not archivo_json:
-            ruta_json = RUTA_COMPROBANTES_JSON.url
+            ruta_json = RUTA_JSON_FACTURA.url
             archivo_json = os.path.join(ruta_json, f"{documento_electronico.numero_control}.json")
             if not os.path.exists(archivo_json):
                 print(f"Archivo JSON no encontrado en {archivo_json}")
