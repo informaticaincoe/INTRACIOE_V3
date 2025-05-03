@@ -88,6 +88,12 @@ input::file-selector-button {
   z-index: 10;
 }
 
+.p-calendar > button{
+  background-color: transparent!important;
+  border-color: rgba(48, 48, 48, 0.153)!important;
+  border-right: none;
+}
+
 @theme {
   --color-primary-yellow: #fca94e;
   --color-secondary-yellow: #fcc587;
