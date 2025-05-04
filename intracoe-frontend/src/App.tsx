@@ -7,6 +7,7 @@ import 'primereact/resources/themes/lara-light-blue/theme.css';
 
 import { Login } from './features/login/pages/loginPage';
 import { Layout } from './layout/layout';
+import { MovimientoInventarioEdit } from './features/inventario/movimientoInventario/pages/movimientoInventarioEditNew';
 
 const { Dashboard } = lazily(
   () => import('./features/dashboard/pages/dashboard')
@@ -102,7 +103,9 @@ function App() {
           <Route path="/producto/:id" element={<NuevoProductoPage />} />
           <Route path="/listado-facturas" element={<ListadoFacturas />} />
           <Route path="/servicios" element={<ServicioPage />} />
-          <Route path="/inventario" element={<MovimientoInventarioPage />} />
+          <Route path="/movimiento-inventario" element={<MovimientoInventarioPage />} />
+          <Route path="/movimiento-inventario/:id" element={<MovimientoInventarioEdit />} />
+          <Route path="/movimiento-inventario/nuevo" element={<MovimientoInventarioEdit />} />
           <Route path="/servicio/nuevo" element={<NuevoServiciopage />} />
           <Route path="/servicio/:id" element={<NuevoServiciopage />} />
           <Route path="/empresa" element={<ConfigBussiness />} />

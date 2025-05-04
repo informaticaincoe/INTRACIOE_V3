@@ -2,6 +2,7 @@ from django.urls import path
 
 from .api_views import (
         # PRODUCTOS Y SERVICIOS
+    AlmacenesDetailAPIView,
     ProductoListAPIView,
     ProductoDetailAPIView,
     ProductoCreateAPIView,
@@ -123,6 +124,7 @@ urlpatterns = [
 
     ############# ALMACENES #############
     path('api/almacenes/', AlmacenesListAPIView.as_view(), name='almacenes-list'),
+    path('api/almacenes/<int:pk>/', AlmacenesDetailAPIView.as_view(), name='almacene-detail'),
     path('api/almacenes/crear/', AlmacenesCreateAPIView.as_view(), name='almacenes-create'),
     path('api/almacenes/<int:pk>/editar/', AlmacenesUpdateAPIView.as_view(), name='almacenes-update'),
     path('api/almacenes/<int:pk>/eliminar/', AlmacenesDestroyAPIView.as_view(), name='almacenes-destroy'),

@@ -22,8 +22,8 @@ export const TablaInventarioHeader:React.FC<TablaProductosHeaderProps> = ({codig
       onSearch(input);
     };
   
-    const agregarProducto = () => {
-      navigate('/productos/nuevo');
+    const agregarMovimiento = () => {
+      navigate('/movimiento-inventario/nuevo');
     };
   
     return (
@@ -35,7 +35,6 @@ export const TablaInventarioHeader:React.FC<TablaProductosHeaderProps> = ({codig
               <LuSearch />
             </span>
             <input
-              placeholder={'Buscar producto por codigo o nombre'}
               name="codigo"
               value={input}
               onChange={handleChange}
@@ -44,7 +43,7 @@ export const TablaInventarioHeader:React.FC<TablaProductosHeaderProps> = ({codig
             />
           </span>
           <button
-            onClick={agregarProducto}
+            onClick={agregarMovimiento}
             className="bg-primary-blue flex items-center gap-2 rounded-md px-7 py-3 text-white hover:cursor-pointer"
           >
             <FaPlus size={14} />
