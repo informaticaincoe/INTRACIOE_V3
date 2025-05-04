@@ -219,7 +219,7 @@ export const SideMenu = () => {
         navigate('/catalogos');
         break;
       case 'inventario':
-        navigate('/inventario');
+        navigate('/movimiento-inventario');
         break;
       case 'producto':
         navigate('/productos');

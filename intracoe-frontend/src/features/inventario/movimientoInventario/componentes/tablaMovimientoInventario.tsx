@@ -3,8 +3,9 @@ import { DataTable } from 'primereact/datatable'
 import { Column } from 'primereact/column'
 import { FaCaretUp } from 'react-icons/fa6'
 import { movimientoInterface } from '../interfaces/movimientoInvetarioInterface'
-import { getProductById } from '../../products/services/productsServices'
 import { FaCheckCircle } from 'react-icons/fa'
+import { useNavigate } from 'react-router'
+import { deleteMovimientosInventarioById } from '../services/movimientoInventarioServices'
 
 interface TablaMovimientoInventarioProps {
     movimientoList: movimientoInterface[] | undefined
@@ -13,12 +14,15 @@ interface TablaMovimientoInventarioProps {
 export const TablaMovimientoInventario: React.FC<TablaMovimientoInventarioProps> = ({ movimientoList }) => {
     const [rowClick] = useState<boolean>(true);
     const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
+    const navigate = useNavigate()
 
-    const editHandler = () => {  
+    const editHandler = () => {
+        navigate(`/movimiento-inventario/${selectedProducts[0].id}`)  
     }
-    const handleDelete =()=>{
+    
+    const handleDelete = async ()=>{
+        await deleteMovimientosInventarioById(selectedProducts[0].id)
     }
-
 
     return (
         <>
@@ -34,7 +38,7 @@ export const TablaMovimientoInventario: React.FC<TablaMovimientoInventarioProps>
                                 className="border-blue flex items-center gap-2 rounded-md border px-3 py-1 hover:cursor-pointer"
                                 onClick={editHandler}
                             >
-                                <p className="text-blue">Editar producto</p>
+                                <p className="text-blue">Editar movimiento</p>
                             </span>
                         )}
                         {
@@ -64,12 +68,12 @@ export const TablaMovimientoInventario: React.FC<TablaMovimientoInventarioProps>
                         return rowData.tipo === "Salida"
                             ?
                             <span className='flex gap-2 text-red'>
-                                <FaCaretUp className='' />
+                                <FaCaretUp className='rotate-180' />
                                 {rowData.tipo}
                             </span>
                             :
                             <span className='flex gap-2 text-green'>
-                                <FaCaretUp className='rotate-180 ' />
+                                <FaCaretUp className=' ' />
                                 {rowData.tipo}
                             </span>
                     }}
@@ -78,7 +82,7 @@ export const TablaMovimientoInventario: React.FC<TablaMovimientoInventarioProps>
                 <Column field="nombreProducto" header="Producto"></Column>
                 <Column field="cantidad" header="Cantidad"></Column>
                 <Column field="fecha" header="Fecha"></Column>
-                <Column field="almacen" header="Almacen"></Column>
+                <Column field="nombreAlmacen" header="Almacen"></Column>
                 <Column field="referencia" header="Referencia"></Column>
             </DataTable>
         </>
