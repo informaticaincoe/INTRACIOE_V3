@@ -211,6 +211,10 @@ class AlmacenesListAPIView(generics.ListAPIView):
     queryset = Almacen.objects.all()
     serializer_class = AlmacenSerializer
 
+class AlmacenesDetailAPIView(generics.RetrieveAPIView):
+    queryset = Almacen.objects.all()
+    serializer_class = AlmacenSerializer
+
 # crear un nuevo almacen
 class AlmacenesCreateAPIView(generics.CreateAPIView):
     queryset = Almacen.objects.all()

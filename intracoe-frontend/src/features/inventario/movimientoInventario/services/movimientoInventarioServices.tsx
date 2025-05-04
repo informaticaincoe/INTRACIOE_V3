@@ -1,4 +1,5 @@
 import { apiInventory } from '../../../../shared/services/apiInventory';
+import { getAllAlmacenes, getAlmacenById } from '../../../../shared/services/tributos/tributos';
 import { getProductById } from '../../products/services/productsServices';
 import { movimientoInterface } from '../interfaces/movimientoInvetarioInterface';
 
@@ -7,19 +8,58 @@ export const getAllMovimientosInventario = async () => {
     const response = await apiInventory.get<movimientoInterface[]>('/movimientos-inventario/',);
     const movimientos = response.data;
 
-    // Iteramos sobre cada movimiento para obtener el nombre del producto
     const movimientosConNombreProducto = await Promise.all(movimientos.map(async (movimiento) => {
-      // Obtenemos el producto por ID
-      const producto = await getProductById(movimiento.producto); // Supongo que 'productoId' es el campo que relaciona movimiento con producto
-      // Devolvemos el movimiento con el nombre del producto agregado
+      const producto = await getProductById(movimiento.producto);
+      const almacen = await getAlmacenById(movimiento.almacen)
       return {
         ...movimiento,
-        nombreProducto: producto.descripcion // O el campo correspondiente a nombre
+        nombreProducto: producto.descripcion,
+        nombreAlmacen: almacen.nombre
       };
     }));
 
     console.log(movimientosConNombreProducto);
-    return movimientosConNombreProducto; 
+    return movimientosConNombreProducto;
+  } catch (error: any) {
+    console.error(error)
+  }
+};
+
+export const getMovimientosInventarioById = async (id: string) => {
+  try {
+    const response = await apiInventory.get<movimientoInterface>(`/movimientos-inventario/${id}/`,);
+    console.log(response.data)
+    return response.data;
+  } catch (error: any) {
+    console.error(error)
+  }
+};
+
+export const addMovimientoInventario = async (data:any) => {
+  try {
+    const response = await apiInventory.post<movimientoInterface>(`/movimientos-inventario/crear/`,data);
+    console.log(response.data)
+    return response.data;
+  } catch (error: any) {
+    console.error(error)
+  }
+};
+
+export const updateMovimientosInventarioById = async (id: string, data:any) => {
+  try {
+    const response = await apiInventory.put<movimientoInterface>(`/movimientos-inventario/${id}/editar/`,data);
+    console.log(response.data)
+    return response.data;
+  } catch (error: any) {
+    console.error(error)
+  }
+};
+
+export const deleteMovimientosInventarioById = async (id: string) => {
+  try {
+    const response = await apiInventory.delete<movimientoInterface>(`/movimientos-inventario/${id}/eliminar/`,);
+    console.log(response.data)
+    return response.data;
   } catch (error: any) {
     console.error(error)
   }

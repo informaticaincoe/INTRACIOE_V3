@@ -1,3 +1,4 @@
+import { Almacen } from '../../interfaces/interfaces';
 import { apiInventory } from '../apiInventory';
 
 export const getAllTipoTributos = async (): Promise<any[]> => {
@@ -57,6 +58,17 @@ export const getAllTributos = async (): Promise<any[]> => {
 export const getAllAlmacenes = async (): Promise<any[]> => {
   try {
     const response = await apiInventory.get('/almacenes/');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching almacenes:', error);
+    throw new Error('Error fetching almacenes');
+  }
+};
+
+
+export const getAlmacenById = async (id:number)=> {
+  try {
+    const response = await apiInventory.get(`/almacenes/${id}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching almacenes:', error);
