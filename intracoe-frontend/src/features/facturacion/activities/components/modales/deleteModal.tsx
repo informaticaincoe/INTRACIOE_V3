@@ -3,7 +3,8 @@ import React, { useEffect, useRef } from 'react';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { Toast } from 'primereact/toast';
 
-interface DeleteModalProps<T extends { id: any; [key: string]: any }> {
+interface DeleteModalProps<T extends { id: string; [key: string]: any }> {
+
   item: T | null;
   visible: boolean;
   setVisible: (v: boolean) => void;

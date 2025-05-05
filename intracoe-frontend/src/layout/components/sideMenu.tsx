@@ -47,6 +47,14 @@ const items: MenuItem[] = [
           </p>
         ),
       },
+      {
+        key: 'compras',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Compras
+          </p>
+        ),
+      },
     ],
   },
   {
@@ -240,7 +248,10 @@ export const SideMenu = () => {
         navigate('/contingencias');
         break;
       case 'proveedor':
-        navigate('/proveedor');
+        navigate('/proveedores');
+        break;
+      case 'compras':
+        navigate('/compras');
         break;
       case 'post':
         setVisible(true)

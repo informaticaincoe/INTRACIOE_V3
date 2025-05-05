@@ -59,9 +59,8 @@ export const MovimientoInventarioEdit = () => {
       try {
         const response = await getMovimientosInventarioById(params.id);
 
-        // Asegúrate de que la respuesta tiene los campos requeridos
-        if (response && response.id && response.producto && response.almacen) {
-          setFormData(response); // Aquí ya podemos estar seguros de que los datos son correctos
+        if (response && response.id) {
+          setFormData(response); 
         } else {
           // Si la respuesta no es válida, podemos establecer valores predeterminados
           setFormData({
@@ -108,9 +107,15 @@ export const MovimientoInventarioEdit = () => {
   };
 
   const handleSendForm = async () => {
+    // Convertir la fecha a formato ISO con zona horaria  
+    const formattedDate = dayjs(formData.fecha).format('YYYY-MM-DDTHH:mm:ss.SSSSSS-06:00');
+
+    const updatedFormData = { ...formData, fecha: formattedDate };
+
     if (params.id) {
       try {
-        const response = await updateMovimientosInventarioById(params.id, formData)
+        console.log(updatedFormData.fecha)
+        const response = await updateMovimientosInventarioById(params.id, updatedFormData)
         console.log(response)
         handleAccion(
           'success',
@@ -119,7 +124,7 @@ export const MovimientoInventarioEdit = () => {
         );
 
         setTimeout(() => {
-          navigate('/movimiento-inventario/');
+          // navigate('/movimiento-inventario/');
         }, 2000);
       } catch (error) {
         handleAccion(
@@ -189,7 +194,7 @@ export const MovimientoInventarioEdit = () => {
                   name="fecha"
                   value={formData?.fecha ? dayjs(formData.fecha).toDate() : null} // Convertimos el valor a un objeto Date
                   onChange={handleChange}
-                  dateFormat="dd/mm/yy" // Formato de fecha que desees
+                  dateFormat="dd-mm-yy" // Formato de fecha que desees
                   showIcon
                   showTime
                   icon={<CiCalendar size={20} color="rgba(0,0,0,0.5)" />}
