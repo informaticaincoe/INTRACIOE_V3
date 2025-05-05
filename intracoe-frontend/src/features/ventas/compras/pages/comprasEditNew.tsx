@@ -11,11 +11,15 @@ import { RadioButton } from 'primereact/radiobutton'
 import dayjs from 'dayjs'
 import { CiCalendar } from 'react-icons/ci'
 import { Calendar } from 'primereact/calendar'
+import { getAllProveedores } from '../../proveedores/services/proveedoresServices'
+import { ProveedorInterface } from '../../proveedores/interfaces/proveedoresInterfaces'
+import { Dropdown } from 'primereact/dropdown'
 
 export const ComprasNewEdit = () => {
     let params = useParams();
     const toastRef = useRef<CustomToastRef>(null);
     const navigate = useNavigate();
+    const [proveedoresLista, setProveedoresLista] = useState<ProveedorInterface[] | undefined>([])
     const [formData, setFormData] = useState<CompraInterface>({
         id: 0,
         proveedor: 0,
@@ -40,13 +44,13 @@ export const ComprasNewEdit = () => {
     useEffect(() => {
         if (params.id)
             fetchDataEdit()
+        fetchProveedores()
     }, [])
 
     const fetchDataEdit = async () => {
         if (params.id) {
             try {
                 const response = await getComprasById(params.id);
-
                 if (response && response.id) {
                     setFormData(response);
                 } else {
@@ -65,6 +69,16 @@ export const ComprasNewEdit = () => {
             }
         }
     };
+
+    const fetchProveedores = async () => {
+        try {
+            const response = await getAllProveedores();
+            setProveedoresLista(response)
+        }
+        catch {
+
+        }
+    }
 
     const handleChange = (e: any) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -125,11 +139,23 @@ export const ComprasNewEdit = () => {
                     <form action="" className='flex flex-col text-start gap-6'>
                         <span>
                             <label htmlFor="">Proveedor</label>
-                            <Input name="proveedor" value={formData.proveedor.toString()} onChange={handleChange} />
+                            <Dropdown
+                                name="proveedor"
+                                value={formData?.proveedor}
+                                onChange={(e) =>
+                                    handleChange({ target: { name: 'proveedor', value: e.value } })
+                                }
+                                options={proveedoresLista}
+                                optionLabel="nombre"
+                                optionValue="id"
+                                placeholder="Seleccionar proveedor"
+                                className="md:w-14rem w-full text-start"
+                            />
                         </span>
                         <span className='flex flex-col text-start'>
                             <label htmlFor="">Fecha</label>
                             <Calendar
+                                disabled
                                 name="fecha"
                                 value={formData?.fecha ? dayjs(formData.fecha).toDate() : null} // Convertimos el valor a un objeto Date
                                 onChange={handleChange}
@@ -149,23 +175,23 @@ export const ComprasNewEdit = () => {
                             <div className='flex gap-5'>
                                 <div className="flex align-items-center">
                                     <RadioButton
-                                        inputId="Pendiente"
-                                        name="estado"
-                                        value="Pendiente"
-                                        onChange={handleChange}
-                                        checked={formData?.estado === 'Pendiente'}
-                                    />
-                                    <label htmlFor="entrada" className="ml-2">Entrada</label>
-                                </div>
-                                <div className="flex align-items-center">
-                                    <RadioButton
                                         inputId="Pagado"
                                         name="estado"
                                         value="Pagado"
                                         onChange={handleChange}
                                         checked={formData?.estado === 'Pagado'}
                                     />
-                                    <label htmlFor="salida" className="ml-2">Salida</label>
+                                    <label htmlFor="salida" className="ml-2">Pagado</label>
+                                </div>
+                                <div className="flex align-items-center">
+                                    <RadioButton
+                                        inputId="Pendiente"
+                                        name="estado"
+                                        value="Pendiente"
+                                        onChange={handleChange}
+                                        checked={formData?.estado === 'Pendiente'}
+                                    />
+                                    <label htmlFor="entrada" className="ml-2">Pendiente</label>
                                 </div>
                                 <div className="flex align-items-center">
                                     <RadioButton
@@ -175,7 +201,7 @@ export const ComprasNewEdit = () => {
                                         onChange={handleChange}
                                         checked={formData?.estado === 'Cancelado'}
                                     />
-                                    <label htmlFor="salida" className="ml-2">Salida</label>
+                                    <label htmlFor="salida" className="ml-2">Cancelado</label>
                                 </div>
                             </div>
                         </span>

@@ -2256,6 +2256,7 @@ class FirmarFacturaAPIView(APIView):
         intentos_sesion = request.session.get('intentos_reintento', 0)
 
         # Validar certificado
+        print('certificado',CERT_PATH)
         if not os.path.exists(CERT_PATH):
             return Response(
                 {"error": "Certificado no encontrado."},
@@ -4258,42 +4259,42 @@ class EnviarCorreoIndividualAPIView(APIView):
             email.content_subtype = "html"  # Indicar que el contenido es HTML
             
             # Adjuntar archivos
-            try:
-                with open(archivo_pdf, 'rb') as pdf_file:
-                    email.attach(
-                        f"Documento_Electrónico_{receptor.nombre}.pdf",
-                        pdf_file.read(),
-                        'application/pdf'
-                    )
-                with open(archivo_json, 'rb') as json_file:
-                    email.attach(
-                        f"Documento_Electrónico_{receptor.nombre}.json",
-                        json_file.read(),
-                        'application/json'
-                    )
-            except Exception as e:
-                print(f"Error adjuntando archivos: {e}")
-                return Response(
-                {"error": "Error adjuntando archivos:", "detalle": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            # try:
+            #     with open(archivo_pdf, 'rb') as pdf_file:
+            #         email.attach(
+            #             f"Documento_Electrónico_{receptor.nombre}.pdf",
+            #             pdf_file.read(),
+            #             'application/pdf'
+            #         )
+            #     with open(archivo_json, 'rb') as json_file:
+            #         email.attach(
+            #             f"Documento_Electrónico_{receptor.nombre}.json",
+            #             json_file.read(),
+            #             'application/json'
+            #         )
+            # except Exception as e:
+            #     print(f"Error adjuntando archivos: {e}")
+            #     return Response(
+            #     {"error": "Error adjuntando archivos:", "detalle": str(e)},
+            #     status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            # )
             
-            # Enviar el correo
-            try:
-                email.send(fail_silently=False)
-                documento_electronico.envio_correo = True
-                documento_electronico.save()
-                print(f"Correo enviado a {receptor.correo}")
-                return Response(
-                    {"mensaje": f"El correo fue enviado exitosamente a {receptor.correo}"},
-                    status=status.HTTP_200_OK
-                    )
-            except Exception as e:
-                documento_electronico.envio_correo = False
-                documento_electronico.save()
-                print(f"Error al enviar el correo a {receptor.correo}: {e}")
-                return Response(
-                    {"error": "Error al enviar el correo", "detalle": str(e)},
-                    status=status.HTTP_502_BAD_GATEWAY
-                )
+            # # Enviar el correo
+            # try:
+            #     email.send(fail_silently=False)
+            #     documento_electronico.envio_correo = True
+            #     documento_electronico.save()
+            #     print(f"Correo enviado a {receptor.correo}")
+            #     return Response(
+            #         {"mensaje": f"El correo fue enviado exitosamente a {receptor.correo}"},
+            #         status=status.HTTP_200_OK
+            #         )
+            # except Exception as e:
+            #     documento_electronico.envio_correo = False
+            #     documento_electronico.save()
+            #     print(f"Error al enviar el correo a {receptor.correo}: {e}")
+            #     return Response(
+            #         {"error": "Error al enviar el correo", "detalle": str(e)},
+            #         status=status.HTTP_502_BAD_GATEWAY
+            #     )
     #return redirect('detalle_factura', factura_id=factura_id)

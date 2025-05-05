@@ -162,6 +162,14 @@ const items: MenuItem[] = [
         ),
       },
       {
+        key: 'ajusteInventario',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Ajuste de inventario
+          </p>
+        ),
+      },
+      {
         key: 'producto',
         label: (
           <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
@@ -228,6 +236,9 @@ export const SideMenu = () => {
         break;
       case 'inventario':
         navigate('/movimiento-inventario');
+        break;
+      case 'ajusteInventario':
+        navigate('/ajuste-inventario');
         break;
       case 'producto':
         navigate('/productos');
