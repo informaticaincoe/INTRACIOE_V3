@@ -1279,7 +1279,7 @@ function validacionesFormulario(event) {
     console.log("Forma de pago no seleccionada: ", fp_recibida)
     event.preventDefault();
     alert('Agregar pago.');
-  }else if (tipo_dte == "03" && total_pagar >= 11428.57 && !nombre_responsable && !documento_responsable){
+  }else if (tipo_dte == "03" && total_pagar >= 25000 && !nombre_responsable && !documento_responsable){
     console.log("Requerido enviar informacion del responsable: ", nombre_responsable, documento_responsable)
     event.preventDefault();
     alert('Agregar responsable de los documentos electrónicos.');
