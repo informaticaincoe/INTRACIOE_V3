@@ -25,11 +25,22 @@ export const getAllMovimientosInventario = async () => {
   }
 };
 
-export const getMovimientosInventarioById = async (id: string) => {
+export const getMovimientosInventarioById = async (id: string | number) => {
   try {
     const response = await apiInventory.get<movimientoInterface>(`/movimientos-inventario/${id}/`,);
-    console.log(response.data)
-    return response.data;
+
+    const data = response.data
+
+    const nombreProducto = await getProductById(data.producto)
+    const nombreAlmacen = await getAlmacenById(data.almacen)
+
+  
+    return {
+      ...data,
+      nombreProducto: nombreProducto.descripcion,
+      nombreAlmacen: nombreAlmacen.nombre
+
+    };
   } catch (error: any) {
     console.error(error)
   }
@@ -55,7 +66,7 @@ export const updateMovimientosInventarioById = async (id: string, data:any) => {
   }
 };
 
-export const deleteMovimientosInventarioById = async (id: string) => {
+export const deleteMovimientosInventarioById = async (id: string | number) => {
   try {
     const response = await apiInventory.delete<movimientoInterface>(`/movimientos-inventario/${id}/eliminar/`,);
     console.log(response.data)

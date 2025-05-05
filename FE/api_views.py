@@ -1529,6 +1529,19 @@ class GenerarFacturaAPIView(APIView):
             if os.path.exists(pdf_signed_path):
                 print("PDF ya existe, devolviendo archivo existente: %s", pdf_signed_path)
                 filename=os.path.basename(pdf_signed_path)
+            else:
+                #1.Crear HTML
+                html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": factura}, request=request)
+
+                #Guardar archivo pdf
+                print("guardar pdf: ", pdf_signed_path)
+                with open(pdf_signed_path, "wb") as pdf_file:
+                    pisa_status = pisa.CreatePDF(BytesIO(html_content.encode('utf-8')), dest=pdf_file)
+                    
+                if pisa_status.err:
+                    print(f"Error al crear el PDF en {pdf_signed_path}")
+                else:
+                    print(f"PDF guardado exitosamente en {pdf_signed_path}")
             # else:
             #     #1.Crear HTML
             #     html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": factura}, request=request)
@@ -2194,35 +2207,26 @@ class GenerarDocumentoAjusteAPIView(APIView):
                 json.dump(factura_json, f, indent=4, ensure_ascii=False)
             
             # Verificar si el archivo PDF existe
-            # pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.url, factura.tipo_dte.codigo, 'pdf', f"{str(factura.codigo_generacion).upper()}.pdf")
-            # print("factura.numero_control")
+            pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.url, factura.tipo_dte.codigo, 'pdf', f"{str(factura.codigo_generacion).upper()}.pdf")
+
             
-            # os.makedirs(os.path.dirname(pdf_signed_path), exist_ok=True)
-            # if os.path.exists(pdf_signed_path):
-            #     print("PDF ya existe, devolviendo archivo existente: %s", pdf_signed_path)
-            #     filename=os.path.basename(pdf_signed_path)
-            # else:
-            #     #1.Crear HTML
-            #     html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": factura}, request=request)
-                
-            #     #2.Definir base_url para que {% static %} funcione correctamente, esto asegura que las imágenes estáticas (logos, etc.) se resuelvan bien en el PDF
-            #     try:
-            #         base_url = request.build_absolute_uri('/')
-            #     except Exception as e:
-            #         print("Error obteniendo base_url")
-            #         base_url = None  # WeasyPrint usará paths relativos si es None
-                
-            #     # 3. Preparar lista de CSS
-            #     stylesheets = [CSS(url='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js') ]
-                
-            #     #4.Guardar archivo PDF con WeasyPrint
-            #     try:
-            #         html = HTML(string=html_content, base_url=base_url)
-            #         html.write_pdf(stylesheets=stylesheets, target=pdf_signed_path)
-            #         filename = os.path.basename(pdf_signed_path)
-            #         print("Pdf guardado ")
-            #     except Exception as e:
-            #         print("Error generando el PDF con WeasyPrint")
+            os.makedirs(os.path.dirname(pdf_signed_path), exist_ok=True)
+            if os.path.exists(pdf_signed_path):
+                print("PDF ya existe, devolviendo archivo existente: %s", pdf_signed_path)
+                filename=os.path.basename(pdf_signed_path)
+            else:
+                #1.Crear HTML
+                html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": factura}, request=request)
+
+                #Guardar archivo pdf
+                print("guardar pdf: ", pdf_signed_path)
+                with open(pdf_signed_path, "wb") as pdf_file:
+                    pisa_status = pisa.CreatePDF(BytesIO(html_content.encode('utf-8')), dest=pdf_file)
+                    
+                if pisa_status.err:
+                    print(f"Error al crear el PDF en {pdf_signed_path}")
+                else:
+                    print(f"PDF guardado exitosamente en {pdf_signed_path}")
 
                 return Response({
                     "mensaje": "Factura generada correctamente",
@@ -2256,6 +2260,7 @@ class FirmarFacturaAPIView(APIView):
         intentos_sesion = request.session.get('intentos_reintento', 0)
 
         # Validar certificado
+        print('certificado',CERT_PATH)
         if not os.path.exists(CERT_PATH):
             return Response(
                 {"error": "Certificado no encontrado."},
@@ -4184,38 +4189,31 @@ class EnviarCorreoIndividualAPIView(APIView):
         print(f"Inicio envio de correos: pdf: {archivo_pdf}, json: {archivo_json}")
         
         #3.Definir ruta esperada del PDF
+        print("ruta pdf: ", RUTA_COMPROBANTES_PDF.url)
         pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.url, documento_electronico.tipo_dte.codigo, 'pdf', f"{str(documento_electronico.codigo_generacion).upper()}.pdf")
-        
+        print("pdf path: ", pdf_signed_path)
         #4.Buscar archivo PDF
         if not os.path.exists(pdf_signed_path):
             print("Pdf no existe", RUTA_COMPROBANTES_PDF)
             
             #1.Crear HTML
             html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": documento_electronico}, request=request)
-        
-            #2.Definir base_url para que {% static %} funcione correctamente, esto asegura que las imágenes estáticas (logos, etc.) se resuelvan bien en el PDF
-            try:
-                base_url = request.build_absolute_uri('/')
-            except Exception as e:
-                print("Error obteniendo base_url")
-                base_url = None  # WeasyPrint usará paths relativos si es None
-            
-            #3.Preparar lista de CSS:
-            stylesheets = [CSS(url='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js') ]
-            
-            #4.Guardar archivo PDF con WeasyPrint
-            try:
-                html = HTML(string=html_content, base_url=base_url)
-                html.write_pdf(stylesheets=stylesheets, target=pdf_signed_path)
-            except Exception as e:
-                print("Error generando el PDF con WeasyPrint")
+
+            #Guardar archivo pdf
+            print("guardar pdf: ", pdf_signed_path)
+            with open(pdf_signed_path, "wb") as pdf_file:
+                pisa_status = pisa.CreatePDF(BytesIO(html_content.encode('utf-8')), dest=pdf_file)
+                
+            if pisa_status.err:
+                print(f"Error al crear el PDF en {pdf_signed_path}")
             else:
-                print("No se encontró el archivo PDF para la factura")
+                print(f"PDF guardado exitosamente en {pdf_signed_path}")
+                
         #5.Confirmar ruta del PDF
         archivo_pdf = pdf_signed_path
         
-        #6.Definir ruta esperada del PDF
-        archivo_json = os.path.join(RUTA_COMPROBANTES_JSON.url, f"{documento_electronico.numero_control}.json")
+        #6.Definir ruta esperada del JSON
+        archivo_json = os.path.join(RUTA_JSON_FACTURA.url, f"{documento_electronico.numero_control}.json")
         
         #7.Buscar archivo JSON
         if not os.path.exists(archivo_json):
@@ -4258,42 +4256,42 @@ class EnviarCorreoIndividualAPIView(APIView):
             email.content_subtype = "html"  # Indicar que el contenido es HTML
             
             # Adjuntar archivos
-            try:
-                with open(archivo_pdf, 'rb') as pdf_file:
-                    email.attach(
-                        f"Documento_Electrónico_{receptor.nombre}.pdf",
-                        pdf_file.read(),
-                        'application/pdf'
-                    )
-                with open(archivo_json, 'rb') as json_file:
-                    email.attach(
-                        f"Documento_Electrónico_{receptor.nombre}.json",
-                        json_file.read(),
-                        'application/json'
-                    )
-            except Exception as e:
-                print(f"Error adjuntando archivos: {e}")
-                return Response(
-                {"error": "Error adjuntando archivos:", "detalle": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            # try:
+            #     with open(archivo_pdf, 'rb') as pdf_file:
+            #         email.attach(
+            #             f"Documento_Electrónico_{receptor.nombre}.pdf",
+            #             pdf_file.read(),
+            #             'application/pdf'
+            #         )
+            #     with open(archivo_json, 'rb') as json_file:
+            #         email.attach(
+            #             f"Documento_Electrónico_{receptor.nombre}.json",
+            #             json_file.read(),
+            #             'application/json'
+            #         )
+            # except Exception as e:
+            #     print(f"Error adjuntando archivos: {e}")
+            #     return Response(
+            #     {"error": "Error adjuntando archivos:", "detalle": str(e)},
+            #     status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            # )
             
-            # Enviar el correo
-            try:
-                email.send(fail_silently=False)
-                documento_electronico.envio_correo = True
-                documento_electronico.save()
-                print(f"Correo enviado a {receptor.correo}")
-                return Response(
-                    {"mensaje": f"El correo fue enviado exitosamente a {receptor.correo}"},
-                    status=status.HTTP_200_OK
-                    )
-            except Exception as e:
-                documento_electronico.envio_correo = False
-                documento_electronico.save()
-                print(f"Error al enviar el correo a {receptor.correo}: {e}")
-                return Response(
-                    {"error": "Error al enviar el correo", "detalle": str(e)},
-                    status=status.HTTP_502_BAD_GATEWAY
-                )
+            # # Enviar el correo
+            # try:
+            #     email.send(fail_silently=False)
+            #     documento_electronico.envio_correo = True
+            #     documento_electronico.save()
+            #     print(f"Correo enviado a {receptor.correo}")
+            #     return Response(
+            #         {"mensaje": f"El correo fue enviado exitosamente a {receptor.correo}"},
+            #         status=status.HTTP_200_OK
+            #         )
+            # except Exception as e:
+            #     documento_electronico.envio_correo = False
+            #     documento_electronico.save()
+            #     print(f"Error al enviar el correo a {receptor.correo}: {e}")
+            #     return Response(
+            #         {"error": "Error al enviar el correo", "detalle": str(e)},
+            #         status=status.HTTP_502_BAD_GATEWAY
+            #     )
     #return redirect('detalle_factura', factura_id=factura_id)

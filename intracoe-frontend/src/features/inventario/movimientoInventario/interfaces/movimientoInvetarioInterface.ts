@@ -4,6 +4,8 @@ export interface movimientoInterface {
     fecha:Date,
     id:number,
     producto:number,
+    nombreProducto?:string,
+    nombreAlmacen?:string,
     referencia:string,
     tipo: string
 }

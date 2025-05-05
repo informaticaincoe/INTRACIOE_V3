@@ -12,6 +12,8 @@ import { ProveedoresPage } from './features/ventas/proveedores/pages/proveedores
 import { ProveedoresNewEdit } from './features/ventas/proveedores/pages/proveedoresNewEdit';
 import { ComprasPage } from './features/ventas/compras/pages/comprasPage';
 import { ComprasNewEdit } from './features/ventas/compras/pages/comprasEditNew';
+import { AjusteInventarioPage } from './features/inventario/ajusteInventario/pages/ajusteInventarioPage';
+import { AjusteInventarioEditNew } from './features/inventario/ajusteInventario/pages/ajusteInventarioEditNew';
 
 const { Dashboard } = lazily(
   () => import('./features/dashboard/pages/dashboard')
@@ -107,9 +109,14 @@ function App() {
           <Route path="/producto/:id" element={<NuevoProductoPage />} />
           <Route path="/listado-facturas" element={<ListadoFacturas />} />
           <Route path="/servicios" element={<ServicioPage />} />
+
           <Route path="/movimiento-inventario" element={<MovimientoInventarioPage />} />
           <Route path="/movimiento-inventario/:id" element={<MovimientoInventarioEdit />} />
           <Route path="/movimiento-inventario/nuevo" element={<MovimientoInventarioEdit />} />
+          <Route path="/ajuste-inventario" element={<AjusteInventarioPage />} />
+          <Route path="/ajuste-inventario/nuevo" element={<AjusteInventarioEditNew />} />
+          <Route path="/ajuste-inventario/:id" element={<AjusteInventarioEditNew />} />
+          
           <Route path="/servicio/nuevo" element={<NuevoServiciopage />} />
           <Route path="/servicio/:id" element={<NuevoServiciopage />} />
           <Route path="/empresa" element={<ConfigBussiness />} />
