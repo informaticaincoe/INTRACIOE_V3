@@ -11,7 +11,7 @@ export const getAllProveedores = async () => {
   }
 };
 
-export const getProveedoresById = async (id: string) => {
+export const getProveedoresById = async (id: string | number) => {
   try {
     const response = await apiInventory.get<ProveedorInterface>(`/proveedores/${id}/`,);
     console.log(response.data)

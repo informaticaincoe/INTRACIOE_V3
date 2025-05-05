@@ -60,7 +60,7 @@ export const MovimientoInventarioEdit = () => {
         const response = await getMovimientosInventarioById(params.id);
 
         if (response && response.id) {
-          setFormData(response); 
+          setFormData(response);
         } else {
           // Si la respuesta no es válida, podemos establecer valores predeterminados
           setFormData({
@@ -192,14 +192,16 @@ export const MovimientoInventarioEdit = () => {
 
                 <Calendar
                   name="fecha"
-                  value={formData?.fecha ? dayjs(formData.fecha).toDate() : null} // Convertimos el valor a un objeto Date
+                  value={formData?.fecha ? dayjs(formData.fecha).toDate() : null} // Convierte la fecha de `formData` a un objeto Date
                   onChange={handleChange}
-                  dateFormat="dd-mm-yy" // Formato de fecha que desees
+                  dateFormat="dd-mm-yy"  // Formato que quieres mostrar
                   showIcon
                   showTime
                   icon={<CiCalendar size={20} color="rgba(0,0,0,0.5)" />}
                   iconPos="left"
+                  disabled
                 />
+
 
               </span>
             </div>
