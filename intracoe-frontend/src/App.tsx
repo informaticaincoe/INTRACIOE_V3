@@ -8,6 +8,8 @@ import 'primereact/resources/themes/lara-light-blue/theme.css';
 import { Login } from './features/login/pages/loginPage';
 import { Layout } from './layout/layout';
 import { MovimientoInventarioEdit } from './features/inventario/movimientoInventario/pages/movimientoInventarioEditNew';
+import { ProveedoresPage } from './features/ventas/proveedores/pages/proveedoresPage';
+import { ProveedoresNewEdit } from './features/ventas/proveedores/pages/proveedoresNewEdit';
 
 const { Dashboard } = lazily(
   () => import('./features/dashboard/pages/dashboard')
@@ -110,6 +112,10 @@ function App() {
           <Route path="/servicio/:id" element={<NuevoServiciopage />} />
           <Route path="/empresa" element={<ConfigBussiness />} />
           <Route path="/receptores" element={<ReceptoresPage />} />
+          <Route path="/proveedores" element={<ProveedoresPage />} />
+          <Route path="/proveedores/nuevo" element={<ProveedoresNewEdit />} />
+          <Route path="/proveedor/:id" element={<ProveedoresNewEdit />} />
+          
           <Route path="/catalogos" element={<CatalogosPage />} />
           <Route path="/receptor/nuevo" element={<NuevoReceptorPage />} />
           <Route path="/receptor/:id" element={<NuevoReceptorPage />} />

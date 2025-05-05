@@ -240,7 +240,7 @@ export const SideMenu = () => {
         navigate('/contingencias');
         break;
       case 'proveedor':
-        navigate('/proveedor');
+        navigate('/proveedores');
         break;
       case 'post':
         setVisible(true)
