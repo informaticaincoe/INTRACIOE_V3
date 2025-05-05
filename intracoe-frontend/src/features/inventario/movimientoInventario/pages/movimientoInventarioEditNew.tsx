@@ -124,7 +124,7 @@ export const MovimientoInventarioEdit = () => {
         );
 
         setTimeout(() => {
-          // navigate('/movimiento-inventario/');
+          navigate('/movimiento-inventario/');
         }, 2000);
       } catch (error) {
         handleAccion(

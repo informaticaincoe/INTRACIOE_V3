@@ -5,6 +5,7 @@ import { Title } from '../../../../shared/text/title';
 import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPage';
 import { Divider } from 'antd';
 import { TablaAjusteInventario } from '../componentes/tablaAjusteInventario';
+import { TablaInventarioHeader } from '../componentes/tablaAjusteInventarioHeader';
 
 export const AjusteInventarioPage = () => {
   const [ajusteInventario, setAjusteInventario] = useState<AjusteInventarioInterface[] | undefined>([])
@@ -29,11 +30,11 @@ export const AjusteInventarioPage = () => {
 
   return (
     <>
-      <Title text={'Movimiento de inventario'} />
+      <Title text={'Ajuste de moivimiento de inventario'} />
 
       <WhiteSectionsPage>
         <>
-          {/* <TablaInventarioHeader codigo={codigoFiltro} onSearch={handleSearch} /> */}
+          <TablaInventarioHeader results={ajusteInventario?.length ?? 0} codigo={codigoFiltro} onSearch={handleSearch} />
           <Divider />
           <TablaAjusteInventario ajusteInventario={ajusteInventario} />
         </>
