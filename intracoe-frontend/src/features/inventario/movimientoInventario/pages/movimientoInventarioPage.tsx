@@ -6,10 +6,12 @@ import { Title } from '../../../../shared/text/title'
 import { TablaInventarioHeader } from '../componentes/tablaInventarioHeader'
 import { Divider } from 'primereact/divider'
 import { TablaMovimientoInventario } from '../componentes/tablaMovimientoInventario'
+import LoadingScreen from '../../../../shared/loading/loadingScreen'
 
 export const MovimientoInventarioPage = () => {
     const [movimientoList, setMovimientoList] = useState<movimientoInterface[] | undefined>([])
     const [codigoFiltro, setCodigoFiltro] = useState<string>('');
+    const [loading, setLoading] = useState(false)
 
     useEffect(() => {
         fetchMovimientosInventario()
@@ -17,10 +19,14 @@ export const MovimientoInventarioPage = () => {
 
     const fetchMovimientosInventario = async () => {
         try {
+            setLoading(true)
             const response = await getAllMovimientosInventario()
             setMovimientoList(response)
         } catch (error) {
             console.log(error)
+        }
+        finally {
+            setLoading(false)
         }
     }
 
@@ -30,13 +36,14 @@ export const MovimientoInventarioPage = () => {
 
     return (
         <>
+            {loading && <LoadingScreen/>}
             <Title text={'Movimiento de inventario'} />
 
             <WhiteSectionsPage>
                 <>
-                    <TablaInventarioHeader codigo={codigoFiltro} onSearch={handleSearch}/>
+                    <TablaInventarioHeader results={movimientoList?.length ?? 0} codigo={codigoFiltro} onSearch={handleSearch} />
                     <Divider />
-                    <TablaMovimientoInventario movimientoList={movimientoList}/>
+                    <TablaMovimientoInventario movimientoList={movimientoList} />
                 </>
             </WhiteSectionsPage>
         </>

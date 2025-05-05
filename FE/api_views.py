@@ -2207,8 +2207,8 @@ class GenerarDocumentoAjusteAPIView(APIView):
                 json.dump(factura_json, f, indent=4, ensure_ascii=False)
             
             # Verificar si el archivo PDF existe
-            # pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.url, factura.tipo_dte.codigo, 'pdf', f"{str(factura.codigo_generacion).upper()}.pdf")
-            # print("factura.numero_control")
+            pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.url, factura.tipo_dte.codigo, 'pdf', f"{str(factura.codigo_generacion).upper()}.pdf")
+
             
             os.makedirs(os.path.dirname(pdf_signed_path), exist_ok=True)
             if os.path.exists(pdf_signed_path):
