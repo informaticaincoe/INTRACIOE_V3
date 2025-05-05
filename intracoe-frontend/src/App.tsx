@@ -10,6 +10,8 @@ import { Layout } from './layout/layout';
 import { MovimientoInventarioEdit } from './features/inventario/movimientoInventario/pages/movimientoInventarioEditNew';
 import { ProveedoresPage } from './features/ventas/proveedores/pages/proveedoresPage';
 import { ProveedoresNewEdit } from './features/ventas/proveedores/pages/proveedoresNewEdit';
+import { ComprasPage } from './features/ventas/compras/pages/comprasPage';
+import { ComprasNewEdit } from './features/ventas/compras/pages/comprasEditNew';
 
 const { Dashboard } = lazily(
   () => import('./features/dashboard/pages/dashboard')
@@ -116,6 +118,10 @@ function App() {
           <Route path="/proveedores/nuevo" element={<ProveedoresNewEdit />} />
           <Route path="/proveedor/:id" element={<ProveedoresNewEdit />} />
           
+          <Route path="/compras" element={<ComprasPage />} />
+          <Route path="/compras/nuevo" element={<ComprasNewEdit />} />
+          <Route path="/compras/:id" element={<ComprasNewEdit />} />
+
           <Route path="/catalogos" element={<CatalogosPage />} />
           <Route path="/receptor/nuevo" element={<NuevoReceptorPage />} />
           <Route path="/receptor/:id" element={<NuevoReceptorPage />} />
