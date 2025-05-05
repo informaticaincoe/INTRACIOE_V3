@@ -7,6 +7,8 @@ import { FaTruckRampBox } from 'react-icons/fa6';
 import type { MenuProps } from 'antd';
 import { Menu } from 'antd';
 import { useNavigate } from 'react-router';
+import { useState } from 'react';
+import { CardModal } from '../../features/POST/components/cardModal';
 
 type MenuItem = Required<MenuProps>['items'][number];
 
@@ -42,6 +44,14 @@ const items: MenuItem[] = [
         label: (
           <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
             Proveedores
+          </p>
+        ),
+      },
+      {
+        key: 'compras',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Compras
           </p>
         ),
       },
@@ -124,6 +134,14 @@ const items: MenuItem[] = [
           </p>
         ),
       },
+      {
+        key: 'post',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            POST
+          </p>
+        ),
+      },
     ],
   },
   {
@@ -135,6 +153,22 @@ const items: MenuItem[] = [
       </p>
     ),
     children: [
+      {
+        key: 'inventario',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Movimientos de inventario
+          </p>
+        ),
+      },
+      {
+        key: 'ajusteInventario',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Ajuste de inventario
+          </p>
+        ),
+      },
       {
         key: 'producto',
         label: (
@@ -183,6 +217,7 @@ const items: MenuItem[] = [
 ];
 
 export const SideMenu = () => {
+  const [visible, setVisible] = useState<boolean>(false);
   const navigate = useNavigate(); // Hook para navegar en React Router
 
   const onClick: MenuProps['onClick'] = (e) => {
@@ -198,6 +233,12 @@ export const SideMenu = () => {
         break;
       case 'catalogo':
         navigate('/catalogos');
+        break;
+      case 'inventario':
+        navigate('/movimiento-inventario');
+        break;
+      case 'ajusteInventario':
+        navigate('/ajuste-inventario');
         break;
       case 'producto':
         navigate('/productos');
@@ -218,7 +259,13 @@ export const SideMenu = () => {
         navigate('/contingencias');
         break;
       case 'proveedor':
-        navigate('/proveedor');
+        navigate('/proveedores');
+        break;
+      case 'compras':
+        navigate('/compras');
+        break;
+      case 'post':
+        setVisible(true)
         break;
       default:
         break;
@@ -243,6 +290,7 @@ export const SideMenu = () => {
         mode="inline"
         items={items}
       />
+      <CardModal visible={visible} setVisible={setVisible} />
     </div>
   );
 };

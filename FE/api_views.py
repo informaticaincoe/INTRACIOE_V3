@@ -1729,6 +1729,8 @@ class GenerarDocumentoAjusteAPIView(APIView):
                     
                     cantidades.append(c)
             
+            print(f"productos id relacionado: {productos_ids_r}, cantidades: {cantidades}")
+
             print(f"id productos: {productos_ids}, cantidades: {cantidades}")
             if descuentos_r is not None and len(descuentos_r)>0:
                 for d in descuentos_r:
@@ -2197,7 +2199,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
                         Producto.objects.filter(pk=det.producto.pk).update(
                             stock=Greatest(F('stock') - det.cantidad, Value(0))
                         )
-
+            print("factura.numero_control", factura.numero_control)
             # Guardar el JSON en la carpeta "FE/json_facturas"
             json_path = os.path.join(RUTA_JSON_FACTURA.url, f"{factura.numero_control}.json")
             os.makedirs(os.path.dirname(json_path), exist_ok=True)
@@ -2205,7 +2207,8 @@ class GenerarDocumentoAjusteAPIView(APIView):
                 json.dump(factura_json, f, indent=4, ensure_ascii=False)
             
             # Verificar si el archivo PDF existe
-            pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.url, factura.tipo_dte.codigo, 'pdf', f"{str(factura.codigo_generacion).upper()}.pdf")
+            # pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.url, factura.tipo_dte.codigo, 'pdf', f"{str(factura.codigo_generacion).upper()}.pdf")
+            # print("factura.numero_control")
             
             os.makedirs(os.path.dirname(pdf_signed_path), exist_ok=True)
             if os.path.exists(pdf_signed_path):
@@ -2257,6 +2260,7 @@ class FirmarFacturaAPIView(APIView):
         intentos_sesion = request.session.get('intentos_reintento', 0)
 
         # Validar certificado
+        print('certificado',CERT_PATH)
         if not os.path.exists(CERT_PATH):
             return Response(
                 {"error": "Certificado no encontrado."},
@@ -2502,9 +2506,10 @@ class EnviarFacturaHaciendaAPIView(APIView):
                         factura.json_original = {**factura.json_original, "jsonRespuestaMh": data}
                         
                         #Enviar correo
-                        if factura.recibido_mh == False:
-                            enviar_correo_individual_view(request, factura_id, None, None)
-                            factura.envio_correo = True
+                        # if factura.recibido_mh == False:
+                        #     enviar_correo_individual_view(request, factura_id, None, None)
+                        #     factura.envio_correo = True
+                        print()
                         factura.save()
                         
                         # Registrar movimiento de inventario
@@ -2673,7 +2678,14 @@ class FacturaPorCodigoGeneracionAPIView(APIView):
                 "telefono": receptor.telefono,
                 "correo": receptor.correo,
             },
-            "productos": productos
+            "productos": productos,
+            "subtotal_neto": factura.sub_total,
+            "total_iva": factura.total_iva,
+            "descuento": factura.total_descuento,
+            "total": factura.total_pagar,
+            "total_con_iva": factura.total_pagar,
+            "saldo_a_favor": factura.saldo_favor,
+            "total_a_pagar": factura.total_pagar
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -4244,43 +4256,42 @@ class EnviarCorreoIndividualAPIView(APIView):
             email.content_subtype = "html"  # Indicar que el contenido es HTML
             
             # Adjuntar archivos
-            try:
-                with open(archivo_pdf, 'rb') as pdf_file:
-                    email.attach(
-                        f"Documento_Electrónico_{receptor.nombre}.pdf",
-                        pdf_file.read(),
-                        'application/pdf'
-                    )
-                with open(archivo_json, 'rb') as json_file:
-                    email.attach(
-                        f"Documento_Electrónico_{receptor.nombre}.json",
-                        json_file.read(),
-                        'application/json'
-                    )
-            except Exception as e:
-                print(f"Error adjuntando archivos: {e}")
-                return Response(
-                {"error": "Error adjuntando archivos:", "detalle": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            # try:
+            #     with open(archivo_pdf, 'rb') as pdf_file:
+            #         email.attach(
+            #             f"Documento_Electrónico_{receptor.nombre}.pdf",
+            #             pdf_file.read(),
+            #             'application/pdf'
+            #         )
+            #     with open(archivo_json, 'rb') as json_file:
+            #         email.attach(
+            #             f"Documento_Electrónico_{receptor.nombre}.json",
+            #             json_file.read(),
+            #             'application/json'
+            #         )
+            # except Exception as e:
+            #     print(f"Error adjuntando archivos: {e}")
+            #     return Response(
+            #     {"error": "Error adjuntando archivos:", "detalle": str(e)},
+            #     status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            # )
             
-            # Enviar el correo
-            try:
-                email.send(fail_silently=False)
-                documento_electronico.envio_correo = True
-                documento_electronico.save()
-                print(f"Correo enviado a {receptor.correo}")
-                return Response(
-                    {"mensaje": f"El correo fue enviado exitosamente a {receptor.correo}"},
-                    status=status.HTTP_200_OK
-                    )
-            except Exception as e:
-                documento_electronico.envio_correo = False
-                documento_electronico.save()
-                print(f"Error al enviar el correo a {receptor.correo}: {e}")
-                return Response(
-                    {"error": "Error al enviar el correo", "detalle": str(e)},
-                    status=status.HTTP_502_BAD_GATEWAY
-                )
+            # # Enviar el correo
+            # try:
+            #     email.send(fail_silently=False)
+            #     documento_electronico.envio_correo = True
+            #     documento_electronico.save()
+            #     print(f"Correo enviado a {receptor.correo}")
+            #     return Response(
+            #         {"mensaje": f"El correo fue enviado exitosamente a {receptor.correo}"},
+            #         status=status.HTTP_200_OK
+            #         )
+            # except Exception as e:
+            #     documento_electronico.envio_correo = False
+            #     documento_electronico.save()
+            #     print(f"Error al enviar el correo a {receptor.correo}: {e}")
+            #     return Response(
+            #         {"error": "Error al enviar el correo", "detalle": str(e)},
+            #         status=status.HTTP_502_BAD_GATEWAY
+            #     )
     #return redirect('detalle_factura', factura_id=factura_id)
-    

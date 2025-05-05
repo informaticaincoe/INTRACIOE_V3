@@ -1893,13 +1893,13 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False):
         #Enviar correo
         if factura:
             if factura.contingencia == False and factura.envio_correo == False:
-                enviar_correo_individual_view(request, factura_id, pdf_signed_path, json_signed_path)
+                # enviar_correo_individual_view(request, factura_id, pdf_signed_path, json_signed_path)
                 factura.envio_correo = True
             elif factura.contingencia and factura.sello_recepcion is None and factura.envio_correo_contingencia == False :
-                enviar_correo_individual_view(request, factura_id, pdf_signed_path, json_signed_path)
+                # enviar_correo_individual_view(request, factura_id, pdf_signed_path, json_signed_path)
                 factura.envio_correo_contingencia = True
             elif factura.contingencia and factura.sello_recepcion and factura.envio_correo == False:
-                enviar_correo_individual_view(request, factura_id, pdf_signed_path, json_signed_path)
+                # enviar_correo_individual_view(request, factura_id, pdf_signed_path, json_signed_path)
                 factura.envio_correo = True
             factura.save()
         

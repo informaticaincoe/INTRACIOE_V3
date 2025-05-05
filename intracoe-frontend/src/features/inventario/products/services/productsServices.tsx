@@ -33,7 +33,7 @@ export const editProductService = async (id: string, data: any) => {
   }
 };
 
-export const getProductById = async (id: string) => {
+export const getProductById = async (id: string | number) => {
   try {
     const response = await apiInventory.get(`/productos/${id}/`);
     return response.data;

@@ -1,8 +1,16 @@
+import { useEffect } from 'react';
 import { Footer } from '../../../shared/footer/footer';
 import { HeaderMenu } from '../../../shared/header/headerMenu';
 import { LoginForm } from '../components/loginForm';
+import { removeCookie } from 'typescript-cookie';
 
 export const Login = () => {
+  useEffect(() => {
+    removeCookie('authToken');
+    removeCookie('csrftoken');
+    removeCookie('sessionid');
+  }, []);
+
   return (
     <div className="flex h-screen flex-col justify-between gap-10">
       <HeaderMenu />
