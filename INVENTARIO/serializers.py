@@ -71,7 +71,7 @@ class CompraSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Compra
-        fields = ['proveedor', 'estado', 'detalles']
+        fields = ['proveedor', 'estado', 'detalles', 'fecha', 'total']
 
     def create(self, validated_data):
         detalles_data = validated_data.pop('detalles')
@@ -137,7 +137,7 @@ class DevolucionVentaSerializer(serializers.ModelSerializer):
     class Meta:
         model = DevolucionVenta
         # incluimos 'detalles' para escritura; los demás campos según tu modelo
-        fields = ['num_factura', 'motivo', 'estado', 'usuario', 'detalles']
+        fields = ['id','num_factura', 'motivo', 'estado', 'usuario', 'fecha', 'detalles']
 
     def create(self, validated_data):
         detalles_data = validated_data.pop('detalles', [])

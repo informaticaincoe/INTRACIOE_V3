@@ -37,14 +37,13 @@ export const SteppCrearCompra: React.FC<SteppCrearCompraProps> = ({ formData, ha
         fetchProveedores()
     }, [])
 
-
     const fetchProveedores = async () => {
         try {
             const response = await getAllProveedores();
             setProveedoresLista(response)
         }
-        catch {
-
+        catch (error) {
+            console.log(error)
         }
     }
 

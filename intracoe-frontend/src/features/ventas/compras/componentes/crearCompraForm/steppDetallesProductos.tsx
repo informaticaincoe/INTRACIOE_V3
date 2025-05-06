@@ -1,27 +1,21 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router';
-import CustomToast, { CustomToastRef, ToastSeverity } from '../../../../../shared/toast/customToast';
-import { ProveedorInterface } from '../../../proveedores/interfaces/proveedoresInterfaces';
-import { Dropdown } from 'primereact/dropdown';
-import { Calendar } from 'primereact/calendar';
-import { CiCalendar } from 'react-icons/ci';
-import dayjs from 'dayjs';
+import { CustomToastRef, ToastSeverity } from '../../../../../shared/toast/customToast';
 import { Input } from '../../../../../shared/forms/input';
-import { RadioButton } from 'primereact/radiobutton';
-import { getAllProveedores } from '../../../proveedores/services/proveedoresServices';
-import { DetalleCompra } from '../../interfaces/comprasInterfaces';
-import { ProductoResponse } from '../../../../../shared/interfaces/interfaces';
-import { getAllProducts } from '../../../../../shared/services/productos/productosServices';
+import { DetalleCompra, DetalleCompraPayload } from '../../interfaces/comprasInterfaces';
+import { ProductoResponse, TipoUnidadMedida } from '../../../../../shared/interfaces/interfaces';
+import { getAllProducts, getAllUnidadesDeMedida } from '../../../../../shared/services/productos/productosServices';
+import { Dropdown } from 'primereact/dropdown';
 
 interface SteppDetallesProductoProps {
-    formData: DetalleCompra,
-    handleChange: any
+    formData: any,
+    handleChangeDetalle: any
 }
 
-export const SteppDetallesProducto: React.FC<SteppDetallesProductoProps> = ({ formData, handleChange }) => {
-    let params = useParams();
+export const SteppDetallesProducto: React.FC<SteppDetallesProductoProps> = ({ formData, handleChangeDetalle }) => {
     const toastRef = useRef<CustomToastRef>(null);
     const [productosLista, setProductosLista] = useState<ProductoResponse[]>([])
+    const [unidadMedida, setUnidadMedida] = useState<TipoUnidadMedida[]>([])
 
 
     const handleAccion = (
@@ -39,8 +33,8 @@ export const SteppDetallesProducto: React.FC<SteppDetallesProductoProps> = ({ fo
 
     useEffect(() => {
         fetchProducts()
+        fetchUnidadMedida()
     }, [])
-
 
     const fetchProducts = async () => {
         try {
@@ -51,16 +45,27 @@ export const SteppDetallesProducto: React.FC<SteppDetallesProductoProps> = ({ fo
             console.log(error)
         }
     }
+
+
+    const fetchUnidadMedida = async () => {
+        try {
+            const response = await getAllUnidadesDeMedida()
+            setUnidadMedida(response)
+            console.log(response)
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
     return (
         <>
             <form action="" className='text-start flex flex-col gap-4'>
-                <span className=''>
+                {/* <span className=''>
                     <label htmlFor="">Producto</label>
                     <Dropdown
                         name="producto"
                         value={formData?.producto}
-                        onChange={(e) =>
-                            handleChange({ target: { name: 'producto', value: e.value } })
+                        onChange={ handleChange({: { name: 'producto', value: e } })
                         }
                         options={productosLista}
                         optionLabel="descripcion"
@@ -68,20 +73,78 @@ export const SteppDetallesProducto: React.FC<SteppDetallesProductoProps> = ({ fo
                         placeholder="Seleccionar producto"
                         className="md:w-14rem w-full text-start"
                     />
+                </span> */}
+                <span className=''>
+                    <label htmlFor="">Codigo</label>
+                    <Input
+                        name="codigo"
+                        value={formData.codigo}
+                        onChange={handleChangeDetalle}
+                    />
+                    <label htmlFor="">descripcion</label>
+                    <Input
+                        name="descripcion"
+                        value={formData.descripcion}
+                        onChange={handleChangeDetalle}
+                    />
                 </span>
                 <span className=''>
                     <label htmlFor="">Cantidad</label>
-                    <Input type="number" name="cantidad" value={formData.cantidad.toString()} onChange={handleChange} />
+                    <Input
+                        type="number"
+                        name="cantidad"
+                        value={formData.cantidad}
+                        onChange={handleChangeDetalle}
+                    />
                 </span>
                 <span className=''>
                     <label htmlFor="">Precio unitario</label>
-                    <Input type="number" name="precio_unitario" value={formData.precio_unitario.toString()} onChange={handleChange} />
+                    <Input
+                        type="number"
+                        name="precio_unitario"
+                        value={formData.precio_unitario}
+                        onChange={handleChangeDetalle}
+                    />
                 </span>
                 <span className=''>
-                    <label htmlFor="">SubTotal</label>
-                    <Input type="number" name="subtotal" value={formData.subtotal.toString()} onChange={handleChange} />
+                    <label htmlFor="">Precio unitario</label>
+                    <Input
+                        type="number"
+                        name="preunitario"
+                        value={formData.preunitario}
+                        onChange={handleChangeDetalle}
+                    />
                 </span>
+                <span className=''>
+                    <label htmlFor="">Precio venta</label>
+                    <Input
+                        type="number"
+                        name="precio_venta"
+                        value={formData.precio_venta}
+                        onChange={handleChangeDetalle}
+                    />
+                </span>
+                <span className=''>
+                    <label htmlFor="">Unidad de medida</label>
+                    <Dropdown
+                        name="unidad_medida"
+                        value={formData?.unidad_medida}
+                        onChange={(e) =>
+                            handleChangeDetalle({
+                                target: {
+                                    name: "unidad_medida",
+                                    value: e.value,
+                                },
+                            })
+                        }
+                        options={unidadMedida}
+                        optionLabel="descripcion"
+                        optionValue="id"
+                        placeholder="Seleccionar unidad"
+                        className="md:w-14rem w-full text-start"
+                    />
 
+                </span>
             </form>
         </>
     )

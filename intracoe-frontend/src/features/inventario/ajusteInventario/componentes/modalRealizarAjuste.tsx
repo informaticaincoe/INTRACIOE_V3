@@ -27,6 +27,7 @@ export const ModalRealizarAjuste: React.FC<ModalRealizarAjusteoProp> = ({ data, 
     const toastRef = useRef<CustomToastRef>(null);
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
+        movimiento: data.id,
         producto: data.producto ?? 0,
         almacen: data.almacen ?? 0,
         cantidad_ajustada: data.cantidad,

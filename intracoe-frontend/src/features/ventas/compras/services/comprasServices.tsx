@@ -33,6 +33,7 @@ export const getComprasById = async (id: string) => {
 };
 
 export const addCompra = async (data: any) => {
+  console.log("data",data)
   try {
     const response = await apiInventory.post<CompraInterface>(`/compras/crear/`, data);
     console.log(response.data)
@@ -61,4 +62,5 @@ export const deleteComprasById = async (id: string) => {
     console.error(error)
   }
 };
+
 

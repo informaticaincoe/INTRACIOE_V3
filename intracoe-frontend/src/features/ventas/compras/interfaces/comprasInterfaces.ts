@@ -17,17 +17,57 @@ export const comprarDefault = {
 };
 
 export interface DetalleCompra {
-    compra: number,
-    producto: number,
-    cantidad: number
-    precio_unitario: number,
-    subtotal: number,
+    codigo: string;
+    descripcion: string;
+    categoria?: number | null;
+    unidad_medida?: number | null;
+    precio_unitario: string;
+    preunitario: string;
+    precio_venta: string;
+    cantidad: number;
 }
 
-export const DetalleCompraDefailt = {
-    compra: 0,
-    producto: 0,
+export const DetalleCompraDefault = {
+    codigo: "",
+    descripcion: "",
+    categoria: null,
+    unidad_medida: null,
+    precio_venta: "",
     cantidad: 0,
-    precio_unitario: 0,
-    subtotal: 0,
+    precio_unitario: "",
+    preunitario: ""
+}
+
+
+export interface DetalleCompraPayload {
+    codigo: string;
+    descripcion: string;
+    categoria?: number | null;
+    unidad_medida?: number | null;
+    precio_unitario: string;
+    precio_venta: string;
+    preunitario: string;
+    cantidad: number;
+}
+
+export interface CompraPayload {
+    proveedor: number;
+    estado: string;
+    detalles: DetalleCompraPayload[];
+}
+
+
+export const CompraPayloadDeafult = {
+    proveedor: 0,
+    estado: "",
+    detalles: [{
+        codigo: "",
+        descripcion: "",
+        categoria: null,
+        unidad_medida: null,
+        precio_unitario: "",
+        preunitario: "",
+        precio_venta: "",
+        cantidad: 0,
+    }]
 }
