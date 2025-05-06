@@ -225,7 +225,7 @@ class EmisorDeleteView(DeleteView):
 ########################################################################################################
 
 # Cargar el esquema JSON de la factura electrónica
-#schema_path = "FE/json_schemas/fe-fc-v1.json"
+schema_path = "FE/json_schemas/fe-fc-v1.json"
 with open(SCHEMA_JSON.url, "r", encoding="utf-8") as schema_file:
     factura_schema = json.load(schema_file)
 
