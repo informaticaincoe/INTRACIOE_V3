@@ -10,7 +10,11 @@ interface ModalDetallesCompraProp {
 }
 
 export const ModalDetallesCompra: React.FC<ModalDetallesCompraProp> = ({ data, visible, setVisible }) => {
+  const [detalle, setDetalle] = useState()
 
+  useEffect(()=>{
+
+  },[data])
   return (
     <Dialog header="Detalle compra" visible={visible} onHide={() => { if (!visible) return; setVisible(false); }}
       style={{ width: '40vw' }} breakpoints={{ '1679px': '60vw', '1462px': '60vw', }}>
@@ -23,7 +27,7 @@ export const ModalDetallesCompra: React.FC<ModalDetallesCompraProp> = ({ data, v
 
             {/* <strong>Fecha:</strong>
             <span>{data.fecha}</span> */}
-            
+
             <strong>Total:</strong>
             <span>{data.total}</span>
 

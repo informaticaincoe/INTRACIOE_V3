@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CompraInterface, comprarDefault, DetalleCompra, DetalleCompraDefailt } from "../../interfaces/comprasInterfaces";
+import { CompraInterface, CompraPayload, CompraPayloadDeafult, comprarDefault, DetalleCompra, DetalleCompraDefault } from "../../interfaces/comprasInterfaces";
 import CustomToast, { CustomToastRef, ToastSeverity } from "../../../../../shared/toast/customToast";
 import { WhiteSectionsPage } from "../../../../../shared/containers/whiteSectionsPage";
 import { Steps } from "primereact/steps";
@@ -14,13 +14,11 @@ import { SteppDetallesProducto } from "./steppDetallesProductos";
 export const CrearCompraFormContainer = () => {
   // Estado para controlar el paso actual
   const [current, setCurrent] = useState(0);
-  const [formDataCompra, setFormDataCompra] = useState<CompraInterface>(comprarDefault);
-  const [formDataDetalleCompra, setFormDataDetalleCompra] = useState<DetalleCompra>(DetalleCompraDefailt);
+  const [formDataCompra, setFormDataCompra] = useState<CompraPayload>(CompraPayloadDeafult);
+  const [formDataDetalleCompra, setFormDataDetalleCompra] = useState<DetalleCompra>(DetalleCompraDefault);
   const toastRef = useRef<CustomToastRef>(null);
   const [agregarProductos, setAgregarProductos] = useState(false)
-  const [compraId, setCompraId] = useState<string>();
   const navigate = useNavigate();
-  const [subTotal, setSubTotal] = useState()
 
   const handleChangeCompra = (e: any) => {
     setFormDataCompra({ ...formDataCompra, [e.target.name]: e.target.value });
@@ -30,30 +28,33 @@ export const CrearCompraFormContainer = () => {
     setFormDataDetalleCompra({ ...formDataDetalleCompra, [e.target.name]: e.target.value });
   };
 
+  const handleSubmit = async () => {
+    console.log("Se hizo click en CREAR");
 
-  // useEffect(() => {
-  //   fetchCompras();
-  // }, []);
+    const data: CompraPayload = {
+      ...formDataCompra,
+      detalles: [formDataDetalleCompra],
+    };
 
-  // const fetchCompras = async () => {
-  //   try {
-  //     const response = await getAllEmpresas();
-  //     if (response) {
-  //       // Mezcla el objeto default con lo que venga de la API en caso de que algun campo venga vacio
-  //       setFormData({
-  //         ...RequestEmpresaDefault,
-  //         ...response[0],
-  //       });
-  //       setCompraId(response[0].id);
-  //     }
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // };
+    console.log("Data que se enviará:", JSON.stringify(data, null, 2));
 
-  useEffect(()=>{
 
-  },[])
+    try {
+      const response = await addCompra(data); // <-- ENVÍA TODO
+      console.log("Respuesta del backend:", response);
+
+      handleAccion("success", <FaCheckCircle />, "Compra creada correctamente");
+
+      setTimeout(() => {
+        navigate('/compras/');
+      }, 2000);
+
+    } catch (error) {
+      console.error("Error al crear compra:", error);
+      handleAccion("error", <IoMdCloseCircle />, "Error al crear la compra");
+    }
+  };
+
 
   const handleAccion = (
     severity: ToastSeverity,
@@ -68,30 +69,33 @@ export const CrearCompraFormContainer = () => {
     });
   };
 
-  const handleSendFormCompra = async () => {
-    try {
-      setAgregarProductos(true)
-      const response = await addCompra(formDataCompra)
-      console.log(response)
-      handleAccion(
-        'success',
-        <FaCheckCircle size={38} />,
-        'proveedor creado con exito'
-      );
-
-    } catch (error) {
-      setAgregarProductos(false)
-      handleAccion(
-        'error',
-        <IoMdCloseCircle size={38} />,
-        'Error al crear el proveedor'
-      );
-    }
-  }
-
   const steps = [
     {
       title: 'Creación de compra',
+      content: (
+        <>
+          <div>
+            <SteppDetallesProducto
+              formData={formDataDetalleCompra}
+              handleChangeDetalle={handleChangeDetalleCompra}
+            />
+
+          </div>
+          <div className="justify-content-end flex pt-4 gap-3">
+            <button
+              className={`mt-5 rounded-md px-8 py-3 text-white ${!agregarProductos ? 'cursor-not-allowed bg-gray-500' : 'cursor-pointer border border-gray-500 text-gray-500 bg-white'}`}
+              onClick={() => { setCurrent(current + 1) }}
+              disabled={agregarProductos}
+            >
+              Siguiente
+            </button>
+
+          </div>
+        </>
+      ),
+    },
+    {
+      title: 'Detalles de compra',
       content: (
         <>
           <div>
@@ -102,38 +106,14 @@ export const CrearCompraFormContainer = () => {
           </div>
           <div className="justify-content-end flex pt-4 gap-3">
             <button
-              className="bg-primary-blue mt-5 rounded-md px-8 py-3 text-white"
-              onClick={handleSendFormCompra}
+              className={`mt-5 rounded-md px-8 py-3 text-primary-blue `}
+              onClick={() => { setCurrent(current - 1) }}
             >
-              Crear compra
+              Anterior
             </button>
             <button
-              className={`mt-5 rounded-md px-8 py-3 text-white ${!agregarProductos ? 'cursor-not-allowed bg-gray-500' : 'cursor-pointer border border-gray-500 text-gray-500 bg-white'}`}
-              onClick={() => { setCurrent(current + 1) }}
-              disabled={agregarProductos}
-            >
-              Siguiente
-            </button>
-          </div>
-        </>
-      ),
-    },
-    {
-      title: 'Detalles de compra',
-      content: (
-        <>
-          <div>
-            <SteppDetallesProducto
-              formData={formDataDetalleCompra}
-              handleChange={handleChangeDetalleCompra}
-            />
-          </div>
-          <div className="justify-content-end flex pt-4 gap-3">
-
-            <button
-              className={`mt-5 rounded-md px-8 py-3 text-white ${!agregarProductos ? 'cursor-not-allowed bg-gray-500' : 'cursor-pointer border border-gray-500 text-gray-500 bg-white'}`}
-              onClick={() => { setCurrent(current + 1) }}
-              disabled={!agregarProductos}
+              className={`mt-5 rounded-md px-8 py-3 text-primary-blue `}
+              onClick={handleSubmit}
             >
               Crear
             </button>
@@ -156,7 +136,6 @@ export const CrearCompraFormContainer = () => {
             style={{ marginBottom: '5%' }}
             onSelect={(e) => setCurrent(e.index)} // Update the `current` state on step change
           />
-
           <div style={{ marginTop: 24 }}>{steps[current].content}</div>
           <CustomToast ref={toastRef} />
         </>

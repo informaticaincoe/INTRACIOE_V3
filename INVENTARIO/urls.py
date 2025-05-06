@@ -46,7 +46,6 @@ from .api_views import (
     AlmacenesCreateAPIView,
     AlmacenesUpdateAPIView,
     AlmacenesDestroyAPIView,
-
     # Proveedores
     ProveedorListAPIView, ProveedorCreateAPIView, ProveedorRetrieveAPIView,
     ProveedorUpdateAPIView, ProveedorDestroyAPIView,
