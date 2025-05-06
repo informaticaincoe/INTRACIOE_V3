@@ -205,7 +205,7 @@ class DevolucionVenta(models.Model):
     usuario = models.CharField(max_length=100, blank=True, null=True)  # Quién procesa la devolución
 
     def __str__(self):
-        return f"Devolución {self.id} - Venta {self.venta.id} - {self.estado}"
+        return f"Devolución {self.id} - {self.estado}"
 
 
 # MODELO PARA DETALLES DE DEVOLUCIONES DE VENTAS

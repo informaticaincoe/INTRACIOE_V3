@@ -51,6 +51,18 @@ export const SteppDetallesProducto: React.FC<SteppDetallesProductoProps> = ({ fo
             console.log(error)
         }
     }
+
+    const updateField = (name: string, rawValue: string | number) => {
+        const value = Number(rawValue);
+        // 1) actualiza cantidad o precio_unitario
+        handleChange({ target: { name, value } });
+        // 2) toma los valores nuevos de cantidad y precio
+        const cantidad = name === 'cantidad' ? value : formData.cantidad;
+        const precio = name === 'precio_unitario' ? value : formData.precio_unitario;
+        // 3) calcula y actualiza subtotal
+        handleChange({ target: { name: 'subtotal', value: cantidad * precio } });
+    }
+
     return (
         <>
             <form action="" className='text-start flex flex-col gap-4'>
@@ -71,15 +83,31 @@ export const SteppDetallesProducto: React.FC<SteppDetallesProductoProps> = ({ fo
                 </span>
                 <span className=''>
                     <label htmlFor="">Cantidad</label>
-                    <Input type="number" name="cantidad" value={formData.cantidad.toString()} onChange={handleChange} />
+                    <Input
+                        type="number"
+                        name="cantidad"
+                        value={formData.cantidad.toString()}
+                        onChange={e => updateField(e.target.name, e.target.value)}
+                    />
                 </span>
                 <span className=''>
                     <label htmlFor="">Precio unitario</label>
-                    <Input type="number" name="precio_unitario" value={formData.precio_unitario.toString()} onChange={handleChange} />
+                    <Input
+                        type="number"
+                        name="precio_unitario"
+                        value={formData.precio_unitario.toString()}
+                        onChange={e => updateField(e.target.name, e.target.value)}
+                    />
                 </span>
                 <span className=''>
                     <label htmlFor="">SubTotal</label>
-                    <Input type="number" name="subtotal" value={formData.subtotal.toString()} onChange={handleChange} />
+                    <Input
+                        type="number"
+                        name="subtotal"
+                        value={formData.subtotal.toString()}
+                        onChange={handleChange}
+                        disable={true}
+                    />
                 </span>
 
             </form>

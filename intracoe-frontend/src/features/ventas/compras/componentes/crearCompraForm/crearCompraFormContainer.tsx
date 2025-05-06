@@ -20,6 +20,7 @@ export const CrearCompraFormContainer = () => {
   const [agregarProductos, setAgregarProductos] = useState(false)
   const [compraId, setCompraId] = useState<string>();
   const navigate = useNavigate();
+  const [subTotal, setSubTotal] = useState()
 
   const handleChangeCompra = (e: any) => {
     setFormDataCompra({ ...formDataCompra, [e.target.name]: e.target.value });
@@ -49,6 +50,10 @@ export const CrearCompraFormContainer = () => {
   //     console.log(error);
   //   }
   // };
+
+  useEffect(()=>{
+
+  },[])
 
   const handleAccion = (
     severity: ToastSeverity,
@@ -124,7 +129,7 @@ export const CrearCompraFormContainer = () => {
             />
           </div>
           <div className="justify-content-end flex pt-4 gap-3">
-            
+
             <button
               className={`mt-5 rounded-md px-8 py-3 text-white ${!agregarProductos ? 'cursor-not-allowed bg-gray-500' : 'cursor-pointer border border-gray-500 text-gray-500 bg-white'}`}
               onClick={() => { setCurrent(current + 1) }}
