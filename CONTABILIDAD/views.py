@@ -406,32 +406,22 @@ def enviar_quedan_hoy(request):
 
 class AnexoConsumidorFinalCSV(View):
     """
-    CSV Anexo Consumidor Final para dtereceptor__tipo_documento__codigo='CF'.
-    Agrega BOM para que Excel lea bien los acentos.
+    CSV Anexo Consumidor Final para facturas de tipo_dte.codigo = '01'.
+    Agrega BOM para que Excel lea correctamente los acentos.
     """
 
     def get(self, request, *args, **kwargs):
-        # Opcional: filtrar por rango de fechas si lo necesitas
-        # start = request.GET.get('start')
-        # end   = request.GET.get('end')
+        # Solo facturas cuyo tipo_dte.codigo sea '01'
         qs = FacturaElectronica.objects.filter(
-            dtereceptor__tipo_documento__codigo='01'
-        )
-        # if start and end:
-        #     qs = qs.filter(fecha_emision__range=[start, end])
+            tipo_dte__codigo='01'
+        ).order_by('fecha_emision')
 
-        # Depuración: número de filas
-        print(f"[Anexo CSV] facturas: {qs.count()}")
+        print(f"[Anexo CSV] facturas tipo_dte=01: {qs.count()}")
 
-        # Preparamos la respuesta
-        response = HttpResponse(
-            content_type='text/csv; charset=utf-8'
-        )
-        response['Content-Disposition'] = (
+        response = HttpResponse(content_type='text/csv; charset=utf-8')
+        response['Content-Disposition'] = \
             'attachment; filename="anexo_consumidor_final.csv"'
-        )
-        # BOM para Excel
-        response.write('\ufeff')
+        response.write('\ufeff')  # BOM para Excel
 
         writer = csv.writer(response, delimiter=';')
 
@@ -454,7 +444,7 @@ class AnexoConsumidorFinalCSV(View):
             'EXPORTACIONES DENTRO DEL ÁREA DE CENTROAMÉRICA',
             'EXPORTACIONES FUERA DEL ÁREA DE CENTROAMÉRICA',
             'EXPORTACIONES DE SERVICIO',
-            'VENTAS A ZONAS FRANCAS  Y DPA (TASA CERO)',
+            'VENTAS A ZONAS FRANCAS Y DPA (TASA CERO)',
             'VENTAS A CUENTA DE TERCEROS NO DOMICILIADOS',
             'TOTAL DE VENTAS',
             'TIPO DE OPERACIÓN (RENTA)',
@@ -462,43 +452,52 @@ class AnexoConsumidorFinalCSV(View):
             'NÚMERO DEL ANEXO',
         ])
 
-        # Filas
-        for f in qs.order_by('fecha_emision'):
+        for f in qs:
             fecha = f.fecha_emision.strftime('%d/%m/%Y')
-            clase = '4. DOCUMENTO TRIBUTARIO ELECTRÓNICO (DTE)'
-            tipo  = f"{f.tipo_dte.codigo}. {f.tipo_dte.descripcion}"
+            clase = '4'
+            # Usamos la descripción que viene de la BD para el tipo 01
+            tipo = f"{f.tipo_dte.codigo}"
             num_resol = f.numero_control or ''
-            serie     = f.codigo_generacion.hex.upper() if f.codigo_generacion else ''
+            serie = f.codigo_generacion.hex.upper() if f.codigo_generacion else ''
 
-            # Campos internos y máquina vacíos
+            # Campos internos y máquina vacíos (si no aplica)
             ctrl_del = ctrl_al = doc_del = doc_al = num_reg = ''
 
-            # Montos
-            v_exentas      = f.total_exentas      or 0
-            v_no_sujetas   = f.total_no_sujetas   or 0
-            v_gravadas     = f.total_gravadas     or 0
-            total_ventas   = f.total_pagar        or 0
+            # Montos (asegurar no nulos)
+            v_exentas = f.total_exentas or 0
+            v_no_sujetas = f.total_no_sujetas or 0
+            v_gravadas = f.total_gravadas or 0
+            total_ventas = f.total_pagar or 0
 
             # Operación / ingreso
             tipo_oper = (
-                f"01 {f.condicion_operacion.descripcion}"
+                f"{f.condicion_operacion.codigo}"
                 if f.condicion_operacion else ''
             )
-            tipo_ing  = ''  # según tu lógica
+            tipo_ing = ''  # ajustar si lo calculas distinto
 
             num_anexo = '2'
 
-            fila = [
-                fecha, clase, tipo, num_resol, serie,
-                ctrl_del, ctrl_al, doc_del, doc_al, num_reg,
+            writer.writerow([
+                fecha,
+                clase,
+                tipo,
+                num_resol,
+                serie,
+                ctrl_del,
+                ctrl_al,
+                doc_del,
+                doc_al,
+                num_reg,
                 f"{v_exentas:.2f}",
                 '',  # ventas internas exentas no sujetas
                 f"{v_no_sujetas:.2f}",
                 f"{v_gravadas:.2f}",
                 '0.00', '0.00', '0.00', '0.00', '0.00',
                 f"{total_ventas:.2f}",
-                tipo_oper, tipo_ing, num_anexo
-            ]
-            writer.writerow(fila)
+                tipo_oper,
+                tipo_ing,
+                num_anexo,
+            ])
 
         return response
