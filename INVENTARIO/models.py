@@ -217,8 +217,9 @@ class DetalleDevolucionVenta(models.Model):
     def __str__(self):
         return f"{self.cantidad} x {self.producto.descripcion} - Devolución {self.devolucion.id}"
 
-
-# MODELO PARA NOTAS DE CRÉDITO (ASOCIADAS A DEVOLUCIONES DE VENTAS)
+#########################################################################################
+# *** POR EL MOMENTO NO SE USA ***
+# MODELO PARA NOTAS DE CRÉDITO (ASOCIADAS A DEVOLUCIONES DE VENTAS) 
 class NotaCredito(models.Model):
     devolucion = models.ForeignKey(DevolucionVenta, on_delete=models.CASCADE, related_name="nota_credito")
     monto = models.DecimalField(max_digits=12, decimal_places=2)
@@ -231,6 +232,7 @@ class NotaCredito(models.Model):
 
     def __str__(self):
         return f"Nota de Crédito {self.id} - {self.monto} - {self.estado}"
+#########################################################################################
 
 
 # MODELO PARA DEVOLUCIONES A PROVEEDORES

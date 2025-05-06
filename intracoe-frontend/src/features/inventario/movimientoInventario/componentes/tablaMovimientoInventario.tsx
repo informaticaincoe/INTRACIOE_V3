@@ -3,7 +3,6 @@ import { DataTable } from 'primereact/datatable'
 import { Column } from 'primereact/column'
 import { FaCaretUp } from 'react-icons/fa6'
 import { movimientoInterface } from '../interfaces/movimientoInvetarioInterface'
-import { useNavigate } from 'react-router'
 import { ModalDetalleMovimientoInventario } from './modalDetalleMovimientoInventario'
 
 interface TablaMovimientoInventarioProps {
@@ -31,7 +30,6 @@ export const TablaMovimientoInventario: React.FC<TablaMovimientoInventarioProps>
                 onSelectionChange={(e) => setSelectedProducts(e.value ? e.value as movimientoInterface : null)}
                 dataKey="id"
             >
-
                 <Column
                     header="Tipo"
                     body={(rowData: any) => {
@@ -48,7 +46,6 @@ export const TablaMovimientoInventario: React.FC<TablaMovimientoInventarioProps>
                             </span>
                     }}
                 ></Column>
-
                 <Column field="nombreProducto" header="Producto"></Column>
                 <Column field="cantidad" header="Cantidad"></Column>
                 <Column field="fecha" header="Fecha"></Column>

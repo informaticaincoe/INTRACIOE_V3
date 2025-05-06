@@ -73,24 +73,56 @@ class AjusteInventarioSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['fecha']
 
-class DevolucionVentaSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DevolucionVenta
-        fields = '__all__'
-        read_only_fields = ['fecha']
-
 class DetalleDevolucionVentaSerializer(serializers.ModelSerializer):
     class Meta:
         model = DetalleDevolucionVenta
         fields = '__all__'
 
-class DevolucionCompraSerializer(serializers.ModelSerializer):
+class DevolucionVentaSerializer(serializers.ModelSerializer):
+    detalles = DetalleDevolucionVentaSerializer(many=True, write_only=True)
+
     class Meta:
-        model = DevolucionCompra
-        fields = '__all__'
-        read_only_fields = ['fecha']
+        model = DevolucionVenta
+        # incluimos 'detalles' para escritura; los demás campos según tu modelo
+        fields = ['num_factura', 'motivo', 'estado', 'usuario', 'detalles']
+
+    def create(self, validated_data):
+        detalles_data = validated_data.pop('detalles', [])
+        # 1) Creamos la devolución
+        devolucion = DevolucionVenta.objects.create(**validated_data)
+        # 2) Creamos cada detalle con el motivo que venga del frontend
+        for det in detalles_data:
+            DetalleDevolucionVenta.objects.create(
+                devolucion=devolucion,
+                producto=det['producto'],
+                cantidad=det['cantidad'],
+                motivo_detalle=det['motivo_detalle']
+            )
+        return devolucion
 
 class DetalleDevolucionCompraSerializer(serializers.ModelSerializer):
     class Meta:
         model = DetalleDevolucionCompra
         fields = '__all__'
+
+class DevolucionCompraSerializer(serializers.ModelSerializer):
+    detalles = DetalleDevolucionCompraSerializer(many=True, write_only=True)
+
+    class Meta:
+        model = DevolucionCompra
+        # Incluimos 'detalles' para recepción en POST, pero no lo leemos en GET
+        fields = ['compra', 'motivo', 'estado', 'usuario', 'detalles']
+
+    def create(self, validated_data):
+        detalles_data = validated_data.pop('detalles', [])
+        # 1) Creamos la DevolucionCompra
+        devolucion = DevolucionCompra.objects.create(**validated_data)
+        # 2) Creamos automáticamente cada DetalleDevolucionCompra con el motivo que venga
+        for det in detalles_data:
+            DetalleDevolucionCompra.objects.create(
+                devolucion=devolucion,
+                producto=det['producto'],
+                cantidad=det['cantidad'],
+                motivo_detalle=det['motivo_detalle']
+            )
+        return devolucion
