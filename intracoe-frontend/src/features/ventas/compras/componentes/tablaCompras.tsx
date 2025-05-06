@@ -1,15 +1,18 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router';
-import { FaCheckCircle } from 'react-icons/fa';
+import { FaCheckCircle, FaRegCheckCircle } from 'react-icons/fa';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { DeleteModal } from '../../../facturacion/activities/components/modales/deleteModal';
 import { CompraInterface } from '../interfaces/comprasInterfaces';
 import { deleteComprasById } from '../services/comprasServices';
-import { IoIosWarning } from "react-icons/io";
+import { IoIosCloseCircleOutline, IoIosWarning } from "react-icons/io";
 import { MdCancel } from 'react-icons/md';
-import { FaCircleCheck } from 'react-icons/fa6';
+import { FaCircleCheck, FaRegCircleCheck } from 'react-icons/fa6';
 import { ModalDetallesCompra } from './modalDetallesCompra';
+import { CiWarning } from 'react-icons/ci';
+import { IoWarningOutline } from 'react-icons/io5';
+import dayjs from 'dayjs';
 
 interface TablaComprasProps {
     comprasList: CompraInterface[] | undefined
@@ -38,7 +41,12 @@ export const TablaCompras: React.FC<TablaComprasProps> = ({ comprasList, updateL
                 }
             >
                 <Column field="nombreProveedor" header="Proveedor"></Column>
-                <Column field="fecha" header="fecha"></Column>
+                <Column
+                    header="fecha y hora"
+                    body={(rowData: any) => {
+                        return(<p>{dayjs(rowData.fecha).format('DD-MM-YYYY HH:mm:ss')}</p>)
+                    }}
+                />
                 <Column header="Total"
                     body={(rowData: any) => (
                         <p>$ {rowData.total}</p>
@@ -49,7 +57,7 @@ export const TablaCompras: React.FC<TablaComprasProps> = ({ comprasList, updateL
                         if (rowData.estado === "Pendiente") {
                             return (
                                 <span className='flex gap-2 text-primary-yellow'>
-                                    <IoIosWarning size={24} />
+                                    <IoWarningOutline size={20} />
                                     {rowData.estado}
                                 </span>
                             );
@@ -57,7 +65,7 @@ export const TablaCompras: React.FC<TablaComprasProps> = ({ comprasList, updateL
                         if (rowData.estado === "Pagado") {
                             return (
                                 <span className='flex gap-2 text-green'>
-                                    <FaCircleCheck size={20} />
+                                    <FaRegCircleCheck size={18} />
                                     {rowData.estado}
                                 </span>
                             );
@@ -65,18 +73,18 @@ export const TablaCompras: React.FC<TablaComprasProps> = ({ comprasList, updateL
                         if (rowData.estado === "Cancelado") {
                             return (
                                 <span className='flex gap-2 text-red'>
-                                    <MdCancel size={20} />
+                                    <IoIosCloseCircleOutline size={20} />
                                     {rowData.estado}
                                 </span>
                             );
                         }
-                        return null; // in case there's a state that isn't handled
+                        return null;
                     }}
                 />
             </DataTable>
             {selectedCompras && (
                 <ModalDetallesCompra
-                    data={selectedCompras} // Solo pasa un ID válido si hay un producto seleccionado
+                    data={selectedCompras}
                     visible={visibleModal}
                     setVisible={setVisibleModal}
                 />

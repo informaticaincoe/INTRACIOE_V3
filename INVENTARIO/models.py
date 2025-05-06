@@ -180,6 +180,7 @@ class MovimientoInventario(models.Model):
 
 # MODELO PARA AJUSTES DE INVENTARIO
 class AjusteInventario(models.Model):
+    movimiento = models.ForeignKey(MovimientoInventario, on_delete=models.CASCADE)
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
     almacen = models.ForeignKey(Almacen, on_delete=models.CASCADE)
     cantidad_ajustada = models.IntegerField()  # Puede ser positivo o negativo
@@ -204,7 +205,7 @@ class DevolucionVenta(models.Model):
     usuario = models.CharField(max_length=100, blank=True, null=True)  # Quién procesa la devolución
 
     def __str__(self):
-        return f"Devolución {self.id} - Venta {self.venta.id} - {self.estado}"
+        return f"Devolución {self.id} - {self.estado}"
 
 
 # MODELO PARA DETALLES DE DEVOLUCIONES DE VENTAS
