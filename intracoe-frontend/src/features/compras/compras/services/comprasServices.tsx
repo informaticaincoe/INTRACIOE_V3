@@ -84,4 +84,3 @@ export const getDetalleCompras = async (id: string | number) => {
     console.error(error)
   }
 };
-

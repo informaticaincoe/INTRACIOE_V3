@@ -4,6 +4,7 @@ import { Dialog } from 'primereact/dialog'
 import { CompraInterface, detalleCompraInterfaz } from '../interfaces/comprasInterfaces'
 import { getDetalleCompras } from '../services/comprasServices'
 import { Divider } from 'primereact/divider'
+import { createDevolucionesCompra } from '../../devolucionesCompras/services/devolucionesCompraServices'
 
 interface ModalDetallesCompraProp {
   data: CompraInterface,
@@ -36,12 +37,35 @@ export const ModalDetallesCompra: React.FC<ModalDetallesCompraProp> = ({ data, v
       console.log(error)
     }
   }
+
+  const handleRealizarDevolucion = async () => {
+    const data = {
+      compra: 15, //id compra
+      detalles: [{
+        cantidad: 8,
+        producto: 1,
+        
+        motivo_detalle: "Falla técnica"
+      }],
+      motivo: "pruebas",
+      estado:"Pendiente",
+      usuario: "admin"
+    }
+    try {
+      const response = await createDevolucionesCompra(data)
+      console.log("DDDDDDDDDDDDDDDDD", response)
+    }
+    catch (error) {
+      console.log(error)
+    }
+  }
+
   return (
     <Dialog
       header={
         <span className='flex justify-between'>
           <p>Detalle compra</p>
-          <button className='text-sm font-medium border border-primary-blue text-primary-blue rounded-md px-5 py-3 mr-5 hover:bg-primary-blue hover:text-white'>Realizar devolución</button>
+          <button className='text-sm font-medium border border-primary-blue text-primary-blue rounded-md px-5 py-3 mr-5 hover:bg-primary-blue hover:text-white' onClick={handleRealizarDevolucion}>Realizar devolución</button>
         </span>
       }
       visible={visible}

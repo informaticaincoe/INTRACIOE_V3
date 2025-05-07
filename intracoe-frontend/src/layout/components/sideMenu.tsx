@@ -9,6 +9,7 @@ import { Menu } from 'antd';
 import { useNavigate } from 'react-router';
 import { useState } from 'react';
 import { CardModal } from '../../features/POST/components/cardModal';
+import { FaMoneyBill } from "react-icons/fa";
 import { Divider } from 'primereact/divider';
 
 type MenuItem = Required<MenuProps>['items'][number];
@@ -21,7 +22,7 @@ const items: MenuItem[] = [
         <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal text-gray-500">
           Dashboard
         </p>
-        <div className='h-[0.120rem] w-full bg-border-color mt-1'/>
+        <div className='h-[0.120rem] w-full bg-border-color mt-1' />
       </div>
     ),
     disabled: true,
@@ -42,7 +43,7 @@ const items: MenuItem[] = [
         <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal text-gray-500">
           Gestión
         </p>
-        <div className='h-0.5 w-full bg-border-color mt-1'/>
+        <div className='h-0.5 w-full bg-border-color mt-1' />
       </div>
     ),
     disabled: true,
@@ -64,11 +65,19 @@ const items: MenuItem[] = [
           </p>
         ),
       },
+      {
+        key: 'devoluciones-compra',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Listado devolucion de compras
+          </p>
+        ),
+      },
     ],
   },
   {
     key: 'ventas',
-    icon: <HiCurrencyDollar size={20} />,
+    icon: <FaMoneyBill size={20} />,
     label: (
       <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
         Ventas
@@ -199,11 +208,11 @@ const items: MenuItem[] = [
     key: 'group-contabilidad',
     label: (
       <div>
-      <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal text-gray-500">
-        Contabilidad
-      </p>
-      <div className='h-0.5 w-full bg-border-color mt-1'/>
-    </div>
+        <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal text-gray-500">
+          Contabilidad
+        </p>
+        <div className='h-0.5 w-full bg-border-color mt-1' />
+      </div>
     ),
     disabled: true,
   },
@@ -249,7 +258,7 @@ const items: MenuItem[] = [
         <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal text-gray-500">
           Configuración
         </p>
-        <div className='h-0.5 w-full bg-border-color mt-1'/>
+        <div className='h-0.5 w-full bg-border-color mt-1' />
       </div>
     ),
     disabled: true,
@@ -302,7 +311,7 @@ export const SideMenu = () => {
       case 'catalogo':
         navigate('/catalogos');
         break;
-      case 'inventario':
+      case 'inventario-mov':
         navigate('/movimiento-inventario');
         break;
       case 'ajusteInventario':
@@ -331,6 +340,9 @@ export const SideMenu = () => {
         break;
       case 'compras-listado':
         navigate('/compras');
+        break;
+      case 'devoluciones-compra':
+        navigate('/devoluciones-compra');
         break;
       case 'devoluciones-ventas':
         navigate('/devoluciones-ventas');

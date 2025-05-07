@@ -15,6 +15,7 @@ import { ComprasNewEdit } from './features/compras/compras/pages/comprasEditNew'
 import { AjusteInventarioPage } from './features/inventario/ajusteInventario/pages/ajusteInventarioPage';
 import { AjusteInventarioEditNew } from './features/inventario/ajusteInventario/pages/ajusteInventarioEditNew';
 import { DevoluacionesVentaPage } from './features/ventas/devolucioneVentas/pages/devolucionesVentaPage';
+import { DevolucionesCompraPage } from './features/compras/devolucionesCompras/pages/devolucionesCompraPage';
 
 const { Dashboard } = lazily(
   () => import('./features/dashboard/pages/dashboard')
@@ -130,6 +131,7 @@ function App() {
           <Route path="/compras/nuevo" element={<ComprasNewEdit />} />
           <Route path="/compras/:id" element={<ComprasNewEdit />} />
 
+          <Route path="/devoluciones-compra" element={<DevolucionesCompraPage />} />
           <Route path="/devoluciones-ventas" element={<DevoluacionesVentaPage />} />
 
           <Route path="/catalogos" element={<CatalogosPage />} />
