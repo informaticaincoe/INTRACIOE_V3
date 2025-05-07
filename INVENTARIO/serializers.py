@@ -66,12 +66,19 @@ class DetalleCompraSerializer(serializers.Serializer):
     cantidad = serializers.IntegerField(min_value=1)
     precio_unitario = serializers.DecimalField(max_digits=10, decimal_places=2)
 
+
+class DetalleCompraReadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DetalleCompra
+        fields = '__all__'
+        
+
 class CompraSerializer(serializers.ModelSerializer):
     detalles = DetalleCompraSerializer(many=True, write_only=True)
 
     class Meta:
         model = Compra
-        fields = ['proveedor', 'estado', 'detalles', 'fecha', 'total']
+        fields = ['id','proveedor', 'estado', 'detalles', 'fecha', 'total']
 
     def create(self, validated_data):
         detalles_data = validated_data.pop('detalles')

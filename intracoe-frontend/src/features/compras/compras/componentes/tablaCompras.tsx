@@ -29,6 +29,13 @@ export const TablaCompras: React.FC<TablaComprasProps> = ({ comprasList, updateL
             console.log(selectedCompras)
     }, [selectedCompras])
 
+
+    const handleDevolucionSelected = (elemento: any) => {
+        console.log(elemento)
+        setSelectedCompras(elemento)
+        setVisibleModal(true)
+      }
+
     return (
         <>
             <DataTable
@@ -37,14 +44,14 @@ export const TablaCompras: React.FC<TablaComprasProps> = ({ comprasList, updateL
                 selectionMode={'single'}
                 selection={selectedCompras}
                 onSelectionChange={(e) =>
-                    setSelectedCompras(e.value as CompraInterface)
+                    handleDevolucionSelected(e.value as CompraInterface)
                 }
             >
                 <Column field="nombreProveedor" header="Proveedor"></Column>
                 <Column
                     header="fecha y hora"
                     body={(rowData: any) => {
-                        return(<p>{dayjs(rowData.fecha).format('DD-MM-YYYY HH:mm:ss')}</p>)
+                        return (<p>{dayjs(rowData.fecha).format('DD-MM-YYYY HH:mm:ss')}</p>)
                     }}
                 />
                 <Column header="Total"
@@ -80,6 +87,11 @@ export const TablaCompras: React.FC<TablaComprasProps> = ({ comprasList, updateL
                         }
                         return null;
                     }}
+                />
+                <Column header="Acciones"
+                    body={(rowData: any) => (
+                        <p className='text-start underline text-blue' onClick={() =>handleDevolucionSelected(rowData) }>Ver detalles</p>
+                    )}
                 />
             </DataTable>
             {selectedCompras && (
