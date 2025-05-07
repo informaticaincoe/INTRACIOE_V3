@@ -1,6 +1,7 @@
 import { apiInventory } from "../../../../shared/services/apiInventory";
-import { getProveedoresById } from "../../proveedores/services/proveedoresServices";
-import { CompraInterface } from "../interfaces/comprasInterfaces";
+import { getProductById } from "../../../inventario/products/services/productsServices";
+import { getProveedoresById } from "../../../ventas/proveedores/services/proveedoresServices";
+import { CompraInterface, detalleCompraInterfaz } from "../interfaces/comprasInterfaces";
 
 export const getAllCompras = async () => {
   try {
@@ -63,4 +64,23 @@ export const deleteComprasById = async (id: string) => {
   }
 };
 
+export const getDetalleCompras = async (id: string | number) => {
+  try {
+    const response = await apiInventory.get<detalleCompraInterfaz[]>(`/compras/${id}/detalles/`,);
 
+    const data = response.data
+
+    const detallesConNombreProducto = await Promise.all(data.map(async (detalle) => {
+      const producto = await getProductById(detalle.producto);
+      return {
+        ...detalle,
+        nombreProducto: producto.descripcion ?? ""
+      }
+    }))
+
+    return detallesConNombreProducto
+      
+  } catch (error: any) {
+    console.error(error)
+  }
+};

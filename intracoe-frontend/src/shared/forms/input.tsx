@@ -21,13 +21,14 @@ export const Input: React.FC<InputProps> = ({
 }) => {
   return (
     <input
+      min={0}
       disabled={disable}
       type={type}
       name={name}
       placeholder={placeholder}
       value={value}
       onChange={onChange}
-      className={`border-border-color focus:outline-border w-full rounded-sm border px-3 py-3 focus:outline-1 ${className} ${disable ? 'bg-gray-200 cursor-not-allowed' : 'bg-transparent'}`}
+      className={`border-border-color focus:outline-border w-full rounded-sm border px-3 py-3 focus:outline-1 ${className} ${disable ? 'bg-gray-100 cursor-not-allowed text-gray' : 'bg-transparent'}`}
     />
   );
 };

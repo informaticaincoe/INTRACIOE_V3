@@ -9,7 +9,6 @@ export const DevoluacionesVentaPage = () => {
 
     useEffect(() => {
         fetchVentas()
-        fetchDetallesDevolucionesVentas()
     }, [])
 
     const fetchVentas = async () => {
@@ -22,14 +21,6 @@ export const DevoluacionesVentaPage = () => {
         }
     }
 
-    const fetchDetallesDevolucionesVentas = async () => {
-        try {
-            const response = await getAllDevolucionesVentas()
-            console.log("DETALLES DEVOLUCION", response)
-        } catch (error) {
-            console.log(error)
-        }
-    }
 
     return (
         <>
