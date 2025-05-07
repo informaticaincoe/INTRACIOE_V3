@@ -9,10 +9,23 @@ import { Menu } from 'antd';
 import { useNavigate } from 'react-router';
 import { useState } from 'react';
 import { CardModal } from '../../features/POST/components/cardModal';
+import { Divider } from 'primereact/divider';
 
 type MenuItem = Required<MenuProps>['items'][number];
 
 const items: MenuItem[] = [
+  {
+    key: 'group-dashboard',
+    label: (
+      <div>
+        <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal text-gray-500">
+          Dashboard
+        </p>
+        <div className='h-[0.120rem] w-full bg-border-color mt-1'/>
+      </div>
+    ),
+    disabled: true,
+  },
   {
     key: 'dashboard',
     icon: <MdDashboard size={20} />,
@@ -21,6 +34,37 @@ const items: MenuItem[] = [
         Dashboard
       </p>
     ),
+  },
+  {
+    key: 'group-gestion-2',
+    label: (
+      <div>
+        <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal text-gray-500">
+          Gestión
+        </p>
+        <div className='h-0.5 w-full bg-border-color mt-1'/>
+      </div>
+    ),
+    disabled: true,
+  },
+  {
+    key: 'compras',
+    icon: <HiCurrencyDollar size={20} />,
+    label: (
+      <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+        Compras
+      </p>
+    ),
+    children: [
+      {
+        key: 'compras-listado',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Listado de compras
+          </p>
+        ),
+      },
+    ],
   },
   {
     key: 'ventas',
@@ -35,7 +79,7 @@ const items: MenuItem[] = [
         key: 'receptores',
         label: (
           <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
-            clientes
+            Clientes
           </p>
         ),
       },
@@ -44,14 +88,6 @@ const items: MenuItem[] = [
         label: (
           <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
             Proveedores
-          </p>
-        ),
-      },
-      {
-        key: 'compras',
-        label: (
-          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
-            Compras
           </p>
         ),
       },
@@ -66,49 +102,13 @@ const items: MenuItem[] = [
     ],
   },
   {
-    key: 'conta',
-    icon: <FaCalculator size={20} />,
-    label: (
-      <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
-        Contabilidad
-      </p>
-    ),
-    children: [
-      {
-        key: 'anexo',
-        label: (
-          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
-            Anexos
-          </p>
-        ),
-      },
-      {
-        key: 'reportes',
-        label: (
-          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
-            Reportes
-          </p>
-        ),
-      },
-      {
-        key: 'catalogo',
-        label: (
-          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
-            Catalogo
-          </p>
-        ),
-      },
-    ],
-  },
-  {
-    key: 'fact',
+    key: 'facturacion',
     icon: <RiFilePaperFill size={20} />,
     label: (
       <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
         Facturación
       </p>
     ),
-
     children: [
       {
         key: 'documentos',
@@ -122,7 +122,7 @@ const items: MenuItem[] = [
         key: 'correcciones',
         label: (
           <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
-            Generar corecciones
+            Generar correcciones
           </p>
         ),
       },
@@ -162,7 +162,7 @@ const items: MenuItem[] = [
     ),
     children: [
       {
-        key: 'inventario',
+        key: 'inventario-mov',
         label: (
           <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
             Movimientos de inventario
@@ -189,11 +189,70 @@ const items: MenuItem[] = [
         key: 'servicios',
         label: (
           <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
-            Servicios{' '}
+            Servicios
           </p>
         ),
       },
     ],
+  },
+  {
+    key: 'group-contabilidad',
+    label: (
+      <div>
+      <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal text-gray-500">
+        Contabilidad
+      </p>
+      <div className='h-0.5 w-full bg-border-color mt-1'/>
+    </div>
+    ),
+    disabled: true,
+  },
+  {
+    key: 'conta',
+    icon: <FaCalculator size={20} />,
+    label: (
+      <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+        Contabilidad
+      </p>
+    ),
+    children: [
+      {
+        key: 'anexo',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Anexos
+          </p>
+        ),
+      },
+      {
+        key: 'reportes',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Reportes
+          </p>
+        ),
+      },
+      {
+        key: 'catalogo',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Catalogo
+          </p>
+        ),
+      },
+    ],
+  },
+  {
+    key: 'group-configuracion',
+    label: (
+      <div>
+        <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal text-gray-500">
+          Configuración
+        </p>
+        <div className='h-0.5 w-full bg-border-color mt-1'/>
+      </div>
+    ),
+    disabled: true,
   },
   {
     key: 'empresa',
@@ -223,6 +282,7 @@ const items: MenuItem[] = [
     ],
   },
 ];
+
 
 export const SideMenu = () => {
   const [visible, setVisible] = useState<boolean>(false);
@@ -269,7 +329,7 @@ export const SideMenu = () => {
       case 'proveedor':
         navigate('/proveedores');
         break;
-      case 'compras':
+      case 'compras-listado':
         navigate('/compras');
         break;
       case 'devoluciones-ventas':

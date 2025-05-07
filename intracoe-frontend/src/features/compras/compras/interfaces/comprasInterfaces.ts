@@ -2,7 +2,7 @@ export interface CompraInterface {
     id: number;
     proveedor: number;
     nombreProveedor?: string;
-    fecha: Date;
+    fecha: any;
     total: number;
     estado: string;
 }
@@ -13,7 +13,7 @@ export const comprarDefault = {
     nombreProveedor: "Proveedor X",
     fecha: new Date(),
     total: 1000,
-    estado: 'Pagado'
+    estado: 'Pendiente'
 };
 
 export interface DetalleCompra {
@@ -24,7 +24,7 @@ export interface DetalleCompra {
     precio_unitario: string;
     preunitario: string;
     precio_venta: string;
-    cantidad: number;
+    cantidad: string;
 }
 
 export const DetalleCompraDefault = {
@@ -33,9 +33,24 @@ export const DetalleCompraDefault = {
     categoria: null,
     unidad_medida: null,
     precio_venta: "",
-    cantidad: 0,
+    cantidad: "",
     precio_unitario: "",
     preunitario: ""
+}
+
+export const erroresDetalleCompra = {
+    codigo: "",
+    descripcion: "",
+    categoria: "",
+    precio_venta: "",
+    cantidad: "",
+    precio_unitario: "",
+    preunitario: ""
+}
+
+export const erroresCompra = {
+    proveedor: "",
+    estado: ""
 }
 
 
@@ -47,19 +62,22 @@ export interface DetalleCompraPayload {
     precio_unitario: string;
     precio_venta: string;
     preunitario: string;
-    cantidad: number;
+    cantidad: string;
 }
 
 export interface CompraPayload {
     proveedor: number;
     estado: string;
+    total: string,
     detalles: DetalleCompraPayload[];
 }
 
 
 export const CompraPayloadDeafult = {
     proveedor: 0,
-    estado: "",
+    fecha: new Date(),
+    estado: "Pendiente",
+    total: "",
     detalles: [{
         codigo: "",
         descripcion: "",
@@ -68,6 +86,16 @@ export const CompraPayloadDeafult = {
         precio_unitario: "",
         preunitario: "",
         precio_venta: "",
-        cantidad: 0,
+        cantidad: "",
     }]
+}
+
+export interface detalleCompraInterfaz {
+    cantidad: number,
+    compra:number,
+    id: number,
+    precio_unitario:string,
+    subtotal:string,
+    producto:number,
+    nombreProducto?:string
 }

@@ -1,8 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router';
 import { CustomToastRef, ToastSeverity } from '../../../../../shared/toast/customToast';
 import { Input } from '../../../../../shared/forms/input';
-import { DetalleCompra, DetalleCompraPayload } from '../../interfaces/comprasInterfaces';
 import { ProductoResponse, TipoUnidadMedida } from '../../../../../shared/interfaces/interfaces';
 import { getAllProducts, getAllUnidadesDeMedida } from '../../../../../shared/services/productos/productosServices';
 import { Dropdown } from 'primereact/dropdown';
@@ -10,13 +8,13 @@ import { Dropdown } from 'primereact/dropdown';
 interface SteppDetallesProductoProps {
     formData: any,
     handleChangeDetalle: any
+    errorsDetalle: any
 }
 
-export const SteppDetallesProducto: React.FC<SteppDetallesProductoProps> = ({ formData, handleChangeDetalle }) => {
+export const SteppDetallesProducto: React.FC<SteppDetallesProductoProps> = ({ formData, handleChangeDetalle, errorsDetalle }) => {
     const toastRef = useRef<CustomToastRef>(null);
     const [productosLista, setProductosLista] = useState<ProductoResponse[]>([])
     const [unidadMedida, setUnidadMedida] = useState<TipoUnidadMedida[]>([])
-
 
     const handleAccion = (
         severity: ToastSeverity,
@@ -45,7 +43,6 @@ export const SteppDetallesProducto: React.FC<SteppDetallesProductoProps> = ({ fo
             console.log(error)
         }
     }
-
 
     const fetchUnidadMedida = async () => {
         try {
@@ -80,13 +77,23 @@ export const SteppDetallesProducto: React.FC<SteppDetallesProductoProps> = ({ fo
                         name="codigo"
                         value={formData.codigo}
                         onChange={handleChangeDetalle}
+                        className={`${errorsDetalle.codigo ? 'border-red' : 'border-border-color'}`}
                     />
-                    <label htmlFor="">descripcion</label>
+                    {errorsDetalle.codigo && (
+                        <span className="text-sm text-red-500">{errorsDetalle.codigo}</span>
+                    )}
+                </span>
+                <span className=''>
+                    <label htmlFor="">Descripcion</label>
                     <Input
                         name="descripcion"
                         value={formData.descripcion}
                         onChange={handleChangeDetalle}
+                        className={`${errorsDetalle.descripcion ? 'border-red' : 'border-border-color'}`}
                     />
+                    {errorsDetalle.descripcion && (
+                        <span className="text-sm text-red-500">{errorsDetalle.descripcion}</span>
+                    )}
                 </span>
                 <span className=''>
                     <label htmlFor="">Cantidad</label>
@@ -95,7 +102,11 @@ export const SteppDetallesProducto: React.FC<SteppDetallesProductoProps> = ({ fo
                         name="cantidad"
                         value={formData.cantidad}
                         onChange={handleChangeDetalle}
+                        className={`${errorsDetalle.cantidad ? 'border-red' : 'border-border-color'}`}
                     />
+                    {errorsDetalle.descripcion && (
+                        <span className="text-sm text-red-500">{errorsDetalle.cantidad}</span>
+                    )}
                 </span>
                 <span className=''>
                     <label htmlFor="">Precio unitario</label>
@@ -104,16 +115,11 @@ export const SteppDetallesProducto: React.FC<SteppDetallesProductoProps> = ({ fo
                         name="precio_unitario"
                         value={formData.precio_unitario}
                         onChange={handleChangeDetalle}
+                        className={`${errorsDetalle.precio_unitario ? 'border-red' : 'border-border-color'}`}
                     />
-                </span>
-                <span className=''>
-                    <label htmlFor="">Precio unitario</label>
-                    <Input
-                        type="number"
-                        name="preunitario"
-                        value={formData.preunitario}
-                        onChange={handleChangeDetalle}
-                    />
+                    {errorsDetalle.precio_unitario && (
+                        <span className="text-sm text-red-500">{errorsDetalle.precio_unitario}</span>
+                    )}
                 </span>
                 <span className=''>
                     <label htmlFor="">Precio venta</label>
@@ -122,7 +128,11 @@ export const SteppDetallesProducto: React.FC<SteppDetallesProductoProps> = ({ fo
                         name="precio_venta"
                         value={formData.precio_venta}
                         onChange={handleChangeDetalle}
+                        className={`${errorsDetalle.precio_venta ? 'border-red' : 'border-border-color'}`}
                     />
+                    {errorsDetalle.precio_venta && (
+                        <span className="text-sm text-red-500">{errorsDetalle.precio_venta}</span>
+                    )}
                 </span>
                 <span className=''>
                     <label htmlFor="">Unidad de medida</label>
@@ -141,9 +151,8 @@ export const SteppDetallesProducto: React.FC<SteppDetallesProductoProps> = ({ fo
                         optionLabel="descripcion"
                         optionValue="id"
                         placeholder="Seleccionar unidad"
-                        className="md:w-14rem w-full text-start"
+                        className={`md:w-14rem w-full text-start `}
                     />
-
                 </span>
             </form>
         </>

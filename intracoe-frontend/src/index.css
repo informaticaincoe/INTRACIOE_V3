@@ -33,6 +33,15 @@ body {
   width: 40vw !important;
 } */
 
+.ant-menu-item-group-title {
+  font-weight: 600;
+  font-size: 12px;
+  padding: 10px 16px;
+  color: #888;
+  text-align: start;
+}
+
+
 .p-checkbox,
 .p-checkbox-box {
   border-radius: 0.2rem !important;

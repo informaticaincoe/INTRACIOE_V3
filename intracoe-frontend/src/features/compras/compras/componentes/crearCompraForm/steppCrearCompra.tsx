@@ -1,21 +1,23 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router';
 import CustomToast, { CustomToastRef, ToastSeverity } from '../../../../../shared/toast/customToast';
-import { ProveedorInterface } from '../../../proveedores/interfaces/proveedoresInterfaces';
 import { Dropdown } from 'primereact/dropdown';
 import { Calendar } from 'primereact/calendar';
 import { CiCalendar } from 'react-icons/ci';
 import dayjs from 'dayjs';
 import { Input } from '../../../../../shared/forms/input';
 import { RadioButton } from 'primereact/radiobutton';
-import { getAllProveedores } from '../../../proveedores/services/proveedoresServices';
+import { ProveedorInterface } from '../../../../ventas/proveedores/interfaces/proveedoresInterfaces';
+import { getAllProveedores } from '../../../../ventas/proveedores/services/proveedoresServices';
 
 interface SteppCrearCompraProps {
     formData: any,
     handleChange: any
+    errorCompra: any
 }
 
-export const SteppCrearCompra: React.FC<SteppCrearCompraProps> = ({ formData, handleChange }) => {
+export const SteppCrearCompra: React.FC<SteppCrearCompraProps> = ({ formData, handleChange, errorCompra }) => {
+
     let params = useParams();
     const toastRef = useRef<CustomToastRef>(null);
     const [proveedoresLista, setProveedoresLista] = useState<ProveedorInterface[] | undefined>([])
@@ -66,6 +68,9 @@ export const SteppCrearCompra: React.FC<SteppCrearCompraProps> = ({ formData, ha
                             placeholder="Seleccionar proveedor"
                             className="md:w-14rem w-full text-start"
                         />
+                        {errorCompra.proveedor && (
+                            <span className="text-sm text-red-500">{errorCompra.proveedor}</span>
+                        )}
                     </span>
                     <span className='flex flex-col text-start'>
                         <label htmlFor="">Fecha</label>
@@ -79,11 +84,15 @@ export const SteppCrearCompra: React.FC<SteppCrearCompraProps> = ({ formData, ha
                             showTime
                             icon={<CiCalendar size={20} color="rgba(0,0,0,0.5)" />}
                             iconPos="left"
+                            className='bg-gray-200'
                         />
                     </span>
                     <span>
                         <label htmlFor="">Total</label>
-                        <Input type='number' name="total" value={(formData.total ?? 0).toString()} onChange={handleChange} />
+                        <div className="p-inputgroup flex-1">
+                            <span className="p-inputgroup-addon bg-gray-700 text-white">$</span>
+                            <Input type='number' name="total" value={(formData.total ?? 0).toString()} onChange={handleChange} disable />
+                        </div>
                     </span>
                     <span className='flex flex-col text-start w-full'>
                         <label htmlFor="">Estado</label>
@@ -119,6 +128,9 @@ export const SteppCrearCompra: React.FC<SteppCrearCompraProps> = ({ formData, ha
                                 <label htmlFor="salida" className="ml-2">Cancelado</label>
                             </div>
                         </div>
+                        {errorCompra.estado && (
+                            <span className="text-sm text-red-500">{errorCompra.estado}</span>
+                        )}
                     </span>
                 </form>
             </div>
