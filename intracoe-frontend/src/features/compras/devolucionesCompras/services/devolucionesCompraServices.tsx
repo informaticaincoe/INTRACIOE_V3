@@ -28,13 +28,23 @@ export const getDetalleDevolucionCompraById = async (id: string | number) => {
   }
 };
 
-export const createDevolucionesCompra = async (data:any) => {
-    try {
-      const response = await apiInventory.post('/devoluciones-compra/crear/', data);
-      return response.data;
-    } catch (error: any) {
-      console.error(error)
-    }
-  };
+export const createDevolucionesCompra = async (data: any) => {
+  try {
+    const response = await apiInventory.post('/devoluciones-compra/crear/', data);
+    return response.data;
+  } catch (error: any) {
+    console.error(error)
+  }
+};
+
+
+export const getAllDetalleDevolucionesCompra = async () => {
+  try {
+    const response = await apiInventory.get('/detalle-devolucion-compra/',);
+    return response.data;
+  } catch (error: any) {
+    console.error(error)
+  }
+};
 
 

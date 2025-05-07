@@ -4,6 +4,7 @@ import { Input } from '../../../../../shared/forms/input';
 import { ProductoResponse, TipoUnidadMedida } from '../../../../../shared/interfaces/interfaces';
 import { getAllProducts, getAllUnidadesDeMedida } from '../../../../../shared/services/productos/productosServices';
 import { Dropdown } from 'primereact/dropdown';
+import { tipoCompraOptions } from '../../interfaces/comprasInterfaces';
 
 interface SteppDetallesProductoProps {
     formData: any,
@@ -152,6 +153,31 @@ export const SteppDetallesProducto: React.FC<SteppDetallesProductoProps> = ({ fo
                         optionValue="id"
                         placeholder="Seleccionar unidad"
                         className={`md:w-14rem w-full text-start `}
+                    />
+                </span>
+                <span>
+                    <label htmlFor="">Tipo compra</label>
+                    <Dropdown
+                        name="tipo_compra"
+                        value={formData.tipo_compra}
+                        options={tipoCompraOptions}
+                        onChange={e =>
+                            handleChangeDetalle({ target: { name: 'tipo_compra', value: e.value } })
+                        }
+                        optionLabel="label"
+                        optionValue="value"
+                        placeholder="Seleccione tipo de compra"
+                        className="w-full md:w-14rem"
+                    />
+                </span>
+                <span className=''>
+                    <label htmlFor="">Iva</label>
+                    <Input
+                        type='number'
+                        name="iva_item"
+                        value={formData.iva_item}
+                        onChange={handleChangeDetalle}
+                        className={`${errorsDetalle.iva_item ? 'border-red' : 'border-border-color'}`}
                     />
                 </span>
             </form>

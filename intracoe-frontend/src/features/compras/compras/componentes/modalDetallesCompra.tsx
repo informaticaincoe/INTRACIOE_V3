@@ -4,7 +4,7 @@ import { Dialog } from 'primereact/dialog'
 import { CompraInterface, detalleCompraInterfaz } from '../interfaces/comprasInterfaces'
 import { getDetalleCompras } from '../services/comprasServices'
 import { Divider } from 'primereact/divider'
-import { createDevolucionesCompra } from '../../devolucionesCompras/services/devolucionesCompraServices'
+import { createDevolucionesCompra, getAllDetalleDevolucionesCompra } from '../../devolucionesCompras/services/devolucionesCompraServices'
 
 interface ModalDetallesCompraProp {
   data: CompraInterface,
@@ -52,8 +52,10 @@ export const ModalDetallesCompra: React.FC<ModalDetallesCompraProp> = ({ data, v
       usuario: "admin"
     }
     try {
-      const response = await createDevolucionesCompra(data)
-      console.log("DDDDDDDDDDDDDDDDD", response)
+      // const response = await createDevolucionesCompra(data)
+      const response2 = await getAllDetalleDevolucionesCompra()
+      // console.log("DDDDDDDDDDDDDDDDD", response)
+      console.log("RRRRRRRRRRRRRRRRRRR", response2)
     }
     catch (error) {
       console.log(error)

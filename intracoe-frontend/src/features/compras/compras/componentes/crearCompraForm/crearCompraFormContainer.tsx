@@ -1,25 +1,24 @@
 import { useEffect, useRef, useState } from "react";
-import { CompraInterface, CompraPayload, CompraPayloadDeafult, comprarDefault, DetalleCompra, DetalleCompraDefault, erroresCompra, erroresDetalleCompra } from "../../interfaces/comprasInterfaces";
+import { CompraInterface, CompraPayload, CompraPayloadDeafult, DetalleCompraDefault, DetalleCompraPayload, erroresCompra, erroresDetalleCompra } from "../../interfaces/comprasInterfaces";
 import CustomToast, { CustomToastRef, ToastSeverity } from "../../../../../shared/toast/customToast";
 import { WhiteSectionsPage } from "../../../../../shared/containers/whiteSectionsPage";
 import { Steps } from "primereact/steps";
 import { SteppCrearCompra } from "./steppCrearCompra";
+import { useNavigate } from "react-router";
+import { SteppDetallesProducto } from "./steppDetallesProductos";
 import { addCompra } from "../../services/comprasServices";
 import { FaCheckCircle } from "react-icons/fa";
-import { useNavigate } from "react-router";
 import { IoMdCloseCircle } from "react-icons/io";
-import { SteppDetallesProducto } from "./steppDetallesProductos";
 
 
 export const CrearCompraFormContainer = () => {
   // Estado para controlar el paso actual
   const [current, setCurrent] = useState(0);
   const [formDataCompra, setFormDataCompra] = useState<CompraPayload>(CompraPayloadDeafult);
-  const [formDataDetalleCompra, setFormDataDetalleCompra] = useState<DetalleCompra>(DetalleCompraDefault);
+  const [formDataDetalleCompra, setFormDataDetalleCompra] = useState<DetalleCompraPayload>(DetalleCompraDefault);
   const [errorsCompra, setErrorsCompra] = useState(erroresCompra);
   const [errorsDetalle, setErrorsDetalle] = useState(erroresDetalleCompra);
   const toastRef = useRef<CustomToastRef>(null);
-  const [agregarProductos, setAgregarProductos] = useState(false)
   const navigate = useNavigate();
 
   const handleChangeCompra = (e: any) => {
@@ -35,11 +34,11 @@ export const CrearCompraFormContainer = () => {
       setFormDataDetalleCompra({ ...formDataDetalleCompra, [e.target.name]: e.target.value });
   };
 
-  useEffect(()=> {
+  useEffect(() => {
     const total = parseInt(formDataDetalleCompra.cantidad) * parseFloat(formDataDetalleCompra.precio_unitario)
     setFormDataCompra({ ...formDataCompra, "total": total.toString() });
 
-  },[formDataDetalleCompra.cantidad, formDataDetalleCompra.precio_unitario])
+  }, [formDataDetalleCompra.cantidad, formDataDetalleCompra.precio_unitario])
 
   const moveToStepp2 = () => {
     let newErrors = { codigo: "", descripcion: "", categoria: "", precio_venta: "", cantidad: "", precio_unitario: "", preunitario: "" };
@@ -87,20 +86,20 @@ export const CrearCompraFormContainer = () => {
 
       console.log("Data que se enviará:", JSON.stringify(data, null, 2));
 
-      // try {
-      //   const response = await addCompra(data); // <-- ENVÍA TODO
-      //   console.log("Respuesta del backend:", response);
+      try {
+        const response = await addCompra(data); // <-- ENVÍA TODO
+        console.log("Respuesta del backend:", response);
 
-      //   handleAccion("success", <FaCheckCircle />, "Compra creada correctamente");
+        handleAccion("success", <FaCheckCircle />, "Compra creada correctamente");
 
-      //   setTimeout(() => {
-      //     navigate('/compras/');
-      //   }, 2000);
+        setTimeout(() => {
+          navigate('/compras/');
+        }, 2000);
 
-      // } catch (error) {
-      //   console.error("Error al crear compra:", error);
-      //   handleAccion("error", <IoMdCloseCircle />, "Error al crear la compra");
-      // }
+      } catch (error) {
+        console.error("Error al crear compra:", error);
+        handleAccion("error", <IoMdCloseCircle />, "Error al crear la compra");
+      }
     }
   };
 
@@ -133,7 +132,6 @@ export const CrearCompraFormContainer = () => {
             <button
               className={`mt-5 rounded-md px-8 py-3 text-primary-blue cursor-pointer border border-primary-blue bg-white'}`}
               onClick={moveToStepp2}
-              disabled={agregarProductos}
             >
               Siguiente
             </button>

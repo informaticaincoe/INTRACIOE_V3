@@ -9,6 +9,7 @@ import { Input } from '../../../../../shared/forms/input';
 import { RadioButton } from 'primereact/radiobutton';
 import { ProveedorInterface } from '../../../../ventas/proveedores/interfaces/proveedoresInterfaces';
 import { getAllProveedores } from '../../../../ventas/proveedores/services/proveedoresServices';
+import { tipoCompraOptions } from '../../interfaces/comprasInterfaces';
 
 interface SteppCrearCompraProps {
     formData: any,
@@ -131,6 +132,26 @@ export const SteppCrearCompra: React.FC<SteppCrearCompraProps> = ({ formData, ha
                         {errorCompra.estado && (
                             <span className="text-sm text-red-500">{errorCompra.estado}</span>
                         )}
+                    </span>
+                    <span>
+                        <label htmlFor="">Numero documento</label>
+                        <Input name="numero_documento" value={formData.numero_documento} onChange={handleChange} />
+                    </span>
+                    <span>
+                        <label htmlFor="">Tipo operación</label>
+                        <Input name="tipo_operacion" value={formData.tipo_operacion} onChange={handleChange} />
+                    </span>
+                    <span>
+                        <label htmlFor="">clasificacion</label>
+                        <Input name="clasificacion" value={formData.clasificacion} onChange={handleChange} />
+                    </span>
+                    <span>
+                        <label htmlFor="">Sector</label>
+                        <Input name="sector" value={formData.sector} onChange={handleChange} />
+                    </span>
+                    <span>
+                        <label htmlFor="">Tipo de gasto</label>
+                        <Input name="tipo_costo_gasto" value={formData.tipo_costo_gasto} onChange={handleChange} />
                     </span>
                 </form>
             </div>
