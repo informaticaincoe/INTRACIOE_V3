@@ -1,18 +1,20 @@
 import React, { useEffect, useState } from 'react'
 
 import { Dialog } from 'primereact/dialog'
-import { CompraInterface, detalleCompraInterfaz } from '../interfaces/comprasInterfaces'
+import { CompraInterface, compraResult, detalleCompraInterfaz } from '../interfaces/comprasInterfaces'
 import { getDetalleCompras } from '../services/comprasServices'
 import { Divider } from 'primereact/divider'
 import { createDevolucionesCompra, getAllDetalleDevolucionesCompra } from '../../devolucionesCompras/services/devolucionesCompraServices'
 
 interface ModalDetallesCompraProp {
-  data: CompraInterface,
+  data: compraResult,
   visible: boolean,
   setVisible: any
 }
 
 export const ModalDetallesCompra: React.FC<ModalDetallesCompraProp> = ({ data, visible, setVisible }) => {
+  const [compra, setCompra] = useState<CompraInterface>()
+  const [visibleModalAjuste, setVisibleModalAjuste] = useState(false)
   const [detalle, setDetalle] = useState<detalleCompraInterfaz[]>(
     [{
       cantidad: 0,
@@ -25,39 +27,16 @@ export const ModalDetallesCompra: React.FC<ModalDetallesCompraProp> = ({ data, v
   )
 
   useEffect(() => {
-    console.log(data)
     fetchDetalleCompras()
   }, [data])
 
   const fetchDetalleCompras = async () => {
+    console.log("daaaaaaaaaaaaata", data)
     try {
       const response = await getDetalleCompras(data.id)
+      console.log("DETALLE COMPRA",response)
       setDetalle(response ?? [])
     } catch (error) {
-      console.log(error)
-    }
-  }
-
-  const handleRealizarDevolucion = async () => {
-    const data = {
-      compra: 15, //id compra
-      detalles: [{
-        cantidad: 8,
-        producto: 1,
-        
-        motivo_detalle: "Falla técnica"
-      }],
-      motivo: "pruebas",
-      estado:"Pendiente",
-      usuario: "admin"
-    }
-    try {
-      // const response = await createDevolucionesCompra(data)
-      const response2 = await getAllDetalleDevolucionesCompra()
-      // console.log("DDDDDDDDDDDDDDDDD", response)
-      console.log("RRRRRRRRRRRRRRRRRRR", response2)
-    }
-    catch (error) {
       console.log(error)
     }
   }
@@ -67,7 +46,7 @@ export const ModalDetallesCompra: React.FC<ModalDetallesCompraProp> = ({ data, v
       header={
         <span className='flex justify-between'>
           <p>Detalle compra</p>
-          <button className='text-sm font-medium border border-primary-blue text-primary-blue rounded-md px-5 py-3 mr-5 hover:bg-primary-blue hover:text-white' onClick={handleRealizarDevolucion}>Realizar devolución</button>
+          <button className='text-sm font-medium border border-primary-blue text-primary-blue rounded-md px-5 py-3 mr-5 hover:bg-primary-blue hover:text-white' onClick={()=> setVisibleModalAjuste(true)}>Realizar devolución</button>
         </span>
       }
       visible={visible}
@@ -85,7 +64,7 @@ export const ModalDetallesCompra: React.FC<ModalDetallesCompraProp> = ({ data, v
             <span>{data.fecha}</span>
 
             <strong>Total:</strong>
-            <span>{data.total}</span>
+            <span>$ {data.total}</span>
 
             <strong>Estado:</strong>
             <span>{data.estado}</span>
@@ -105,21 +84,29 @@ export const ModalDetallesCompra: React.FC<ModalDetallesCompraProp> = ({ data, v
                   <span>{ele.cantidad}</span>
 
                   <strong>Precio unitario:</strong>
-                  <span>{ele.precio_unitario}</span>
+                  <span>$ {ele.precio_unitario}</span>
 
                   <strong>Subtotal:</strong>
-                  <span>{ele.subtotal}</span>
+                  <span>$ {ele.subtotal}</span>
                 </div>
               ))
             )
           }
+          {/* { //TODO:Pendiente ajuste
+            (visibleModalAjuste && detalle) &&
+              <ModalDevolucionCompra
+                data={data}
+                // productos={detalle}
+                visible={visibleModalAjuste}
+                setVisible={setVisibleModalAjuste}
+            />
+          } */}
         </div>
-
-
       ) : (
         <p>Cargando información del movimiento...</p>
       )
       }
     </Dialog >
+
   )
 }

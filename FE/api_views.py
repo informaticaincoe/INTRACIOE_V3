@@ -129,6 +129,16 @@ class StandardResultsSetPagination(PageNumberPagination):
     # Límite máximo que puede pedir
     max_page_size = 100
 
+    def get_paginated_response(self, data):
+        return Response({
+            'count': self.page.paginator.count,
+            'page_size': self.page.paginator.per_page,
+            'current_page': self.page.number,
+            'has_next': self.page.has_next(),
+            'has_previous': self.page.has_previous(),
+            'results': data
+        })
+
 ######################################################
 # AUTENTICACION CON MH
 ######################################################
@@ -280,6 +290,8 @@ class ActividadEconomicaListAPIView(generics.ListAPIView):
         return queryset
     
     serializer_class = ActividadEconomicaSerializer
+    # pagination_class = StandardResultsSetPagination
+
 
 class ActividadEconomicaCreateAPIView(generics.CreateAPIView):
     queryset = ActividadEconomica.objects.all()
@@ -911,6 +923,7 @@ class ObtenerReceptorAPIView(APIView):
         
 class receptorListAPIView(generics.ListAPIView):
     serializer_class = ReceptorSerializer
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         qs = Receptor_fe.objects.all()

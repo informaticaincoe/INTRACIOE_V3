@@ -3,14 +3,21 @@ import { DataTable } from 'primereact/datatable';
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router';
 import { ModalDetallesDevolucionesVenta } from './modalDetallesDevolucionesVenta';
+import { Pagination } from '../../../../shared/interfaces/interfacesPagination';
+import { DevolucionVentaDetalleInterfaceResult } from '../interface/devolucionVentaInterface';
+import { DevolucionCompraResult } from '../../../compras/devolucionesCompras/interfaces/devolucionCompraInterfaces';
+import { Paginator } from 'primereact/paginator';
 
 interface TablaDevolucionesVentaProps {
-  devolucionesList: any[]
+  devolucionesList: DevolucionVentaDetalleInterfaceResult[];
+  pagination: Pagination;
+  updateList: () => void
+  onPageChange: (event: any) => void;
 }
 
-export const TablaDevolucionesVenta: React.FC<TablaDevolucionesVentaProps> = ({ devolucionesList }) => {
+export const TablaDevolucionesVenta: React.FC<TablaDevolucionesVentaProps> = ({ updateList, devolucionesList, pagination, onPageChange }) => {
   const [rowClick] = useState<boolean>(true);
-  const [selectedDevolucionVenta, setSelectedDevolucionVenta] = useState<any[]>([]);
+  const [selectedDevolucionVenta, setSelectedDevolucionVenta] = useState<DevolucionVentaDetalleInterfaceResult | undefined>();
   const [visibleModal, setVisibleModal] = useState(false)
 
   const navigate = useNavigate()
@@ -22,7 +29,7 @@ export const TablaDevolucionesVenta: React.FC<TablaDevolucionesVentaProps> = ({ 
   }
 
   useEffect(() => {
-    console.log("AAAAAAAAAAAAAAAAAAAA", devolucionesList)
+    console.log("AAAAAAAAAAAAAAAAAAAA", pagination)
   }, [])
 
   return (
@@ -43,18 +50,27 @@ export const TablaDevolucionesVenta: React.FC<TablaDevolucionesVentaProps> = ({ 
         <Column field="usuario" header="Usuario"></Column>
         <Column header="Acciones"
           body={(rowData: any) => (
-            <button className='underline hover:cursor-pointer' onClick={()=>handleDevolucionSelected(rowData)}>Ver detalles</button>
+            <button className='underline hover:cursor-pointer' onClick={() => handleDevolucionSelected(rowData)}>Ver detalles</button>
           )}></Column>
 
       </DataTable>
+      <div className="pt-5">
+        <Paginator
+          first={(pagination.current_page - 1) * pagination.page_size}
+          rows={pagination.page_size}
+          totalRecords={pagination.count}
+          rowsPerPageOptions={[10, 25, 50]}
+          onPageChange={onPageChange}
+        />
+      </div>
 
-      {selectedDevolucionVenta && (
+      {/* {selectedDevolucionVenta && (
         <ModalDetallesDevolucionesVenta
           data={selectedDevolucionVenta} // Solo pasa un ID válido si hay un producto seleccionado
           visible={visibleModal}
           setVisible={setVisibleModal}
         />
-      )}
+      )} */}
     </>
   )
 }

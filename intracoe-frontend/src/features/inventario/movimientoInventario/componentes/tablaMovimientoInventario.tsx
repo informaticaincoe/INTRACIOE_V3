@@ -2,22 +2,25 @@ import React, { useEffect, useState } from 'react'
 import { DataTable } from 'primereact/datatable'
 import { Column } from 'primereact/column'
 import { FaCaretUp } from 'react-icons/fa6'
-import { movimientoInterface } from '../interfaces/movimientoInvetarioInterface'
+import { movimientoInterface, resultsMovimiento } from '../interfaces/movimientoInvetarioInterface'
 import { ModalDetalleMovimientoInventario } from './modalDetalleMovimientoInventario'
+import { Pagination } from '../../../../shared/interfaces/interfacesPagination'
+import { Paginator } from 'primereact/paginator'
 
 interface TablaMovimientoInventarioProps {
-    movimientoList: movimientoInterface[] | undefined
+    movimientoList: resultsMovimiento[] | undefined
+    updateMovimientos: any
+    pagination: Pagination;
+    onPageChange: (event: any) => void;
 }
 
-export const TablaMovimientoInventario: React.FC<TablaMovimientoInventarioProps> = ({ movimientoList }) => {
+export const TablaMovimientoInventario: React.FC<TablaMovimientoInventarioProps> = ({ movimientoList, updateMovimientos, pagination, onPageChange }) => {
     const [visibleModal, setVisibleModal] = useState(false);
-    const [selectedProducts, setSelectedProducts] = useState<movimientoInterface | null>(null);
+    const [selectedProducts, setSelectedProducts] = useState<resultsMovimiento | null>(null);
     const [loading, setLoading] = useState(false)
 
     useEffect(() => {
         setVisibleModal(true)
-        if (selectedProducts)
-            console.log(selectedProducts)
     }, [selectedProducts])
 
     return (
@@ -27,7 +30,7 @@ export const TablaMovimientoInventario: React.FC<TablaMovimientoInventarioProps>
                 tableStyle={{ minWidth: '50rem' }}
                 selectionMode="single"
                 selection={selectedProducts} // Se maneja como un único objeto de tipo movimientoInterface
-                onSelectionChange={(e) => setSelectedProducts(e.value ? e.value as movimientoInterface : null)}
+                onSelectionChange={(e) => setSelectedProducts(e.value ? e.value as any : null)}
                 dataKey="id"
             >
                 <Column
@@ -52,6 +55,15 @@ export const TablaMovimientoInventario: React.FC<TablaMovimientoInventarioProps>
                 <Column field="nombreAlmacen" header="Almacen"></Column>
                 <Column field="referencia" header="Referencia"></Column>
             </DataTable>
+            <div className="pt-5">
+                <Paginator
+                    first={(pagination.current_page - 1) * pagination.page_size}
+                    rows={pagination.page_size}
+                    totalRecords={pagination.count}
+                    rowsPerPageOptions={[10, 25, 50]}
+                    onPageChange={onPageChange}
+                />
+            </div>
 
             {selectedProducts && (
                 <ModalDetalleMovimientoInventario

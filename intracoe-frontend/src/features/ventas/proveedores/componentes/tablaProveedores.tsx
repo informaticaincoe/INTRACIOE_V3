@@ -1,22 +1,26 @@
 import React, { useState } from 'react'
-import { ProveedorInterface } from '../interfaces/proveedoresInterfaces'
+import { ProveedorInterface, ProveedorResultInterface } from '../interfaces/proveedoresInterfaces'
 import { useNavigate } from 'react-router';
 import { FaCheckCircle } from 'react-icons/fa';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { deleteProveedoresById } from '../services/proveedoresServices';
 import { DeleteModal } from '../../../facturacion/activities/components/modales/deleteModal';
+import { Pagination } from '../../../../shared/interfaces/interfacesPagination';
+import { Paginator } from 'primereact/paginator';
 
 interface TablaProveedoresProps {
-    proveedoresList: ProveedorInterface[] | undefined
-    updateList:()=>void
+    pagination: Pagination;
+    onPageChange: (event: any) => void;
+    proveedoresList: ProveedorResultInterface[] | undefined
+    updateList: () => void
 }
 
-export const TablaProveedores: React.FC<TablaProveedoresProps> = ({ proveedoresList,updateList }) => {
+export const TablaProveedores: React.FC<TablaProveedoresProps> = ({ proveedoresList, updateList, pagination, onPageChange }) => {
     const [rowClick] = useState<boolean>(true);
     const [selectedProveedores, setSelectedProveedores] = useState<any[]>([]);
     const [deleteVisible, setDeleteVisible] = useState(false);
-    const [itemToDelete, setItemToDelete] = useState<ProveedorInterface | null>(null);
+    const [itemToDelete, setItemToDelete] = useState<ProveedorResultInterface | null>(null);
 
     const navigate = useNavigate()
 
@@ -76,7 +80,15 @@ export const TablaProveedores: React.FC<TablaProveedoresProps> = ({ proveedoresL
                 <Column field="email" header="Correo"></Column>
                 <Column field="direccion" header="Direccion"></Column>
                 <Column field="condiciones_pago" header="Condiciones de pago"></Column>
-            </DataTable>
+            </DataTable><div className="pt-5">
+                <Paginator
+                    first={(pagination.current_page - 1) * pagination.page_size}
+                    rows={pagination.page_size}
+                    totalRecords={pagination.count}
+                    rowsPerPageOptions={[10, 25, 50]}
+                    onPageChange={onPageChange}
+                />
+            </div>
             <DeleteModal
                 item={itemToDelete}
                 visible={deleteVisible}

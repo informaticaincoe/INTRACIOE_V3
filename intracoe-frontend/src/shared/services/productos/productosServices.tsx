@@ -1,8 +1,9 @@
+import { ProductosInterface } from '../../../features/inventario/products/interfaces/productosInterfaces';
 import {
   Descuento,
   Impuesto,
-  ProductoResponse,
 } from '../../interfaces/interfaces';
+import { ProductosParams } from '../../interfaces/interfacesPagination';
 import { api } from '../api';
 import { apiInventory } from '../apiInventory';
 import { getTributoById } from '../tributos/tributos';
@@ -10,25 +11,39 @@ import { getTributoById } from '../tributos/tributos';
 export const getAllProducts = async ({
   filter,
   tipo,
-}: {
-  filter?: string;
-  tipo?: string | number;
-} = {}) => {
-  try {
-    const params: Record<string, any> = {};
-    if (filter) params.q = filter;
-    if (tipo) params.tipo = tipo;
+  page,
+  limit
+}: ProductosParams = {
+    page: 1,
+    limit: 10,
+  }) => {
+  const queryParams = new URLSearchParams();
 
-    const response = await apiInventory.get<ProductoResponse[]>('/productos/', {
-      params,
+  //paginacion
+  queryParams.append('page', String(page));
+  queryParams.append('page_size', String(limit));
+
+  try {
+    const response = await apiInventory.get<ProductosInterface>('/productos/', {
+      params: { q: filter, tipo: tipo, page: page, page_size: limit }
     });
 
+    const data = response.data.results
+
     await Promise.all(
-      response.data.map(async (data) => {
+      data.map(async (data) => {
         data.tributo = await getTributoById(data.tributo);
       })
     );
-    return response.data;
+    
+    return {
+      results: data,
+      current_page: response.data.current_page,
+      page_size: response.data.page_size,
+      has_next: response.data.has_next,
+      has_previous: response.data.has_previous,
+      count: response.data.count
+    };
   } catch (error) {
     throw new Error('Error fetching products');
   }

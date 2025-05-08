@@ -47,7 +47,7 @@ export interface ListFactura {
   results: ListResult[];
 }
 
-export interface Filters {
+export interface FiltersListadoFacturas {
   recibido_mh: boolean | null;
   sello_recepcion: string | null;
   has_sello_recepcion: boolean | null;

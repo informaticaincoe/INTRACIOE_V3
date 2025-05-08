@@ -6,12 +6,16 @@ import { Steps } from "primereact/steps";
 import { SteppCrearCompra } from "./steppCrearCompra";
 import { useNavigate } from "react-router";
 import { SteppDetallesProducto } from "./steppDetallesProductos";
-import { addCompra } from "../../services/comprasServices";
+import { addCompra, getComprasById } from "../../services/comprasServices";
 import { FaCheckCircle } from "react-icons/fa";
 import { IoMdCloseCircle } from "react-icons/io";
 
+interface CrearCompraFormContainer {
+  id?: string
+}
 
-export const CrearCompraFormContainer = () => {
+export const CrearCompraFormContainer: React.FC<CrearCompraFormContainer> = ({ id }) => {
+
   // Estado para controlar el paso actual
   const [current, setCurrent] = useState(0);
   const [formDataCompra, setFormDataCompra] = useState<CompraPayload>(CompraPayloadDeafult);
@@ -33,6 +37,8 @@ export const CrearCompraFormContainer = () => {
     else
       setFormDataDetalleCompra({ ...formDataDetalleCompra, [e.target.name]: e.target.value });
   };
+
+ 
 
   useEffect(() => {
     const total = parseInt(formDataDetalleCompra.cantidad) * parseFloat(formDataDetalleCompra.precio_unitario)

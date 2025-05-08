@@ -3,11 +3,17 @@ import { AjusteInventarioInterface } from '../interfaces/ajusteInventarioInterfa
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { ModalDetalleAjusteMovimientoInventario } from './modalDetalleAjusteMovimientoInventario';
+import { Pagination } from '../../../../shared/interfaces/interfacesPagination';
+import { Paginator } from 'primereact/paginator';
 
 interface TablaAjusteInventarioProps {
-    ajusteInventario: any
+    ajusteInventario: any;
+    updateList: () => void;
+    pagination: Pagination;
+    onPageChange: (event: any) => void;
 }
-export const TablaAjusteInventario: React.FC<TablaAjusteInventarioProps> = ({ ajusteInventario }) => {
+
+export const TablaAjusteInventario: React.FC<TablaAjusteInventarioProps> = ({ ajusteInventario, updateList, pagination, onPageChange }) => {
     const [visibleModal, setVisibleModal] = useState(false);
     const [selectedAjustesInventario, setSelectedAjustesInventario] = useState<AjusteInventarioInterface | null>(null);
     const [loading, setLoading] = useState(false)
@@ -34,6 +40,16 @@ export const TablaAjusteInventario: React.FC<TablaAjusteInventarioProps> = ({ aj
                 <Column field="nombreAlmacen" header="Almacen"></Column>
                 <Column field="usuario" header="Usuario"></Column>
             </DataTable>
+
+            <div className="pt-5">
+                <Paginator
+                    first={(pagination.current_page - 1) * pagination.page_size}
+                    rows={pagination.page_size}
+                    totalRecords={pagination.count}
+                    rowsPerPageOptions={[10, 25, 50]}
+                    onPageChange={onPageChange}
+                />
+            </div>
 
             {selectedAjustesInventario && (
                 <ModalDetalleAjusteMovimientoInventario

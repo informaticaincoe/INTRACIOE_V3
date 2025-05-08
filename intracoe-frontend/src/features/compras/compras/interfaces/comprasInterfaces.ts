@@ -1,4 +1,13 @@
 export interface CompraInterface {
+    count: number;
+    page_size: number;
+    current_page: number;
+    has_next: boolean;
+    has_previous: boolean;
+    results: compraResult[]
+}
+
+export interface compraResult{
     id: number;
     proveedor: number;
     nombreProveedor?: string;

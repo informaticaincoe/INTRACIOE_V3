@@ -1,40 +1,39 @@
 import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router';
-import { FaCheckCircle, FaRegCheckCircle } from 'react-icons/fa';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
-import { DeleteModal } from '../../../facturacion/activities/components/modales/deleteModal';
-import { CompraInterface } from '../interfaces/comprasInterfaces';
-import { deleteComprasById } from '../services/comprasServices';
-import { IoIosCloseCircleOutline, IoIosWarning } from "react-icons/io";
-import { MdCancel } from 'react-icons/md';
-import { FaCircleCheck, FaRegCircleCheck } from 'react-icons/fa6';
+import { CompraInterface, compraResult } from '../interfaces/comprasInterfaces';
+import { IoIosCloseCircleOutline } from "react-icons/io";
+import { FaRegCircleCheck } from 'react-icons/fa6';
 import { ModalDetallesCompra } from './modalDetallesCompra';
-import { CiWarning } from 'react-icons/ci';
 import { IoWarningOutline } from 'react-icons/io5';
 import dayjs from 'dayjs';
+import { Pagination } from '../../../../shared/interfaces/interfacesPagination';
+import { Paginator } from 'primereact/paginator';
+import { useNavigate } from 'react-router';
 
 interface TablaComprasProps {
-    comprasList: CompraInterface[] | undefined
+    comprasList: compraResult[] | undefined
     updateList: () => void
+    pagination: Pagination;
+    onPageChange: (event: any) => void;
 }
 
-export const TablaCompras: React.FC<TablaComprasProps> = ({ comprasList, updateList }) => {
-    const [selectedCompras, setSelectedCompras] = useState<CompraInterface | undefined>();
+export const TablaCompras: React.FC<TablaComprasProps> = ({ comprasList, updateList, pagination, onPageChange }) => {
+    const [selectedCompras, setSelectedCompras] = useState<compraResult | undefined>();
     const [visibleModal, setVisibleModal] = useState(false);
+    const navigate = useNavigate()
 
     useEffect(() => {
         setVisibleModal(true)
         if (selectedCompras)
-            console.log(selectedCompras)
+            console.log("SELECTED COMPRA",selectedCompras)
     }, [selectedCompras])
-
 
     const handleDevolucionSelected = (elemento: any) => {
         console.log(elemento)
         setSelectedCompras(elemento)
         setVisibleModal(true)
-      }
+    }
 
     return (
         <>
@@ -90,10 +89,22 @@ export const TablaCompras: React.FC<TablaComprasProps> = ({ comprasList, updateL
                 />
                 <Column header="Acciones"
                     body={(rowData: any) => (
-                        <p className='text-start underline text-blue' onClick={() =>handleDevolucionSelected(rowData) }>Ver detalles</p>
+                        <>
+                            <p className='text-start underline text-blue' onClick={() => handleDevolucionSelected(rowData)}>Ver detalles</p>
+                            <p className='text-start underline text-blue' onClick={() => navigate(`/compras/${rowData.id}`)}>Editar</p>
+                        </>
                     )}
                 />
             </DataTable>
+            <div className="pt-5">
+                <Paginator
+                    first={(pagination.current_page - 1) * pagination.page_size}
+                    rows={pagination.page_size}
+                    totalRecords={pagination.count}
+                    rowsPerPageOptions={[10, 25, 50]}
+                    onPageChange={onPageChange}
+                />
+            </div>
             {selectedCompras && (
                 <ModalDetallesCompra
                     data={selectedCompras}
