@@ -6,6 +6,7 @@ from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
 
 from .serializers import (
     AlmacenSerializer, DetalleCompraReadSerializer, ImpuestoSerializer, ProductoSerializer, TipoItemSerializer,
@@ -22,6 +23,13 @@ from .models import (
     )
 from django.db.models import Q
 
+class StandardResultsSetPagination(PageNumberPagination):
+    # Número de ítems por página por defecto
+    page_size = 10
+    # Permitir al cliente cambiar el tamaño de página con ?page_size=
+    page_size_query_param = 'page_size'
+    # Límite máximo que puede pedir
+    max_page_size = 100
      
 ######################################################
 # PRODUCTOS Y SERVICIOS
