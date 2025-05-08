@@ -66,12 +66,19 @@ class DetalleCompraSerializer(serializers.Serializer):
     cantidad = serializers.IntegerField(min_value=1)
     precio_unitario = serializers.DecimalField(max_digits=10, decimal_places=2)
 
+
+class DetalleCompraReadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DetalleCompra
+        fields = '__all__'
+        
+
 class CompraSerializer(serializers.ModelSerializer):
     detalles = DetalleCompraSerializer(many=True, write_only=True)
 
     class Meta:
         model = Compra
-        fields = ['proveedor', 'estado', 'detalles']
+        fields = ['id','proveedor', 'estado', 'detalles', 'fecha', 'total']
 
     def create(self, validated_data):
         detalles_data = validated_data.pop('detalles')
@@ -137,7 +144,7 @@ class DevolucionVentaSerializer(serializers.ModelSerializer):
     class Meta:
         model = DevolucionVenta
         # incluimos 'detalles' para escritura; los demás campos según tu modelo
-        fields = ['num_factura', 'motivo', 'estado', 'usuario', 'detalles']
+        fields = ['id','num_factura', 'motivo', 'estado', 'usuario', 'fecha', 'detalles']
 
     def create(self, validated_data):
         detalles_data = validated_data.pop('detalles', [])
@@ -158,24 +165,46 @@ class DetalleDevolucionCompraSerializer(serializers.ModelSerializer):
         model = DetalleDevolucionCompra
         fields = '__all__'
 
+class DetalleDevolucionCompraNestedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DetalleDevolucionCompra
+        # excluimos 'devolucion' porque lo asignamos en el .create()
+        fields = ['producto', 'cantidad', 'motivo_detalle']
+
 class DevolucionCompraSerializer(serializers.ModelSerializer):
-    detalles = DetalleDevolucionCompraSerializer(many=True, write_only=True)
+    id = serializers.IntegerField(read_only=True)
+    detalles = DetalleDevolucionCompraNestedSerializer(
+        many=True, write_only=True
+    )
+    # para que en GET nos muestre los detalles creados
+    detalles_creados = DetalleDevolucionCompraNestedSerializer(
+        source='detalles', many=True, read_only=True
+    )
 
     class Meta:
         model = DevolucionCompra
-        # Incluimos 'detalles' para recepción en POST, pero no lo leemos en GET
-        fields = ['compra', 'motivo', 'estado', 'usuario', 'detalles']
+        fields = [
+            'id',
+            'compra',
+            'motivo',
+            'estado',
+            'usuario',
+            'detalles',          # para POST
+            'detalles_creados',  # para GET
+        ]
 
     def create(self, validated_data):
         detalles_data = validated_data.pop('detalles', [])
-        # 1) Creamos la DevolucionCompra
+        # 1) Creamos la devolución y ya tenemos su PK en `devolucion.id`
         devolucion = DevolucionCompra.objects.create(**validated_data)
-        # 2) Creamos automáticamente cada DetalleDevolucionCompra con el motivo que venga
+
+        # 2) Creamos cada DetalleDevolucionCompra apuntando a esa devolución
         for det in detalles_data:
             DetalleDevolucionCompra.objects.create(
                 devolucion=devolucion,
                 producto=det['producto'],
                 cantidad=det['cantidad'],
-                motivo_detalle=det['motivo_detalle']
+                motivo_detalle=det.get('motivo_detalle', '')
             )
+
         return devolucion

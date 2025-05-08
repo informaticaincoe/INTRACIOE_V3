@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import models
 
 class Categoria(models.Model):
@@ -117,12 +118,12 @@ class Producto(models.Model):
 # MODELO PARA PROVEEDORES
 class Proveedor(models.Model):
     nombre = models.CharField(max_length=255)
-    ruc_nit = models.CharField(max_length=50, unique=True)  # RUC/NIT del proveedor
+    ruc_nit = models.CharField(max_length=50, unique=True)
     contacto = models.CharField(max_length=100, blank=True, null=True)
     telefono = models.CharField(max_length=20, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     direccion = models.TextField(blank=True, null=True)
-    condiciones_pago = models.CharField(max_length=100, blank=True, null=True)  # Ejemplo: "30 días crédito"
+    condiciones_pago = models.CharField(max_length=100, blank=True, null=True)
 
     def __str__(self):
         return f"{self.nombre} - {self.ruc_nit}"
@@ -132,32 +133,61 @@ class Proveedor(models.Model):
 class Compra(models.Model):
     proveedor = models.ForeignKey(Proveedor, on_delete=models.CASCADE)
     fecha = models.DateTimeField(auto_now_add=True)
-    total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    total = models.DecimalField(max_digits=14, decimal_places=2, default=0.00)
     estado = models.CharField(
         max_length=20,
-        choices=[('Pendiente', 'Pendiente'), ('Pagado', 'Pagado'), ('Cancelado', 'Cancelado')],
+        choices=[('Pendiente','Pendiente'),('Pagado','Pagado'),('Cancelado','Cancelado')],
         default='Pendiente'
     )
+    # Nuevos campos para Anexo de Compras
+    tipo_documento = models.CharField(max_length=10, blank=True, null=True)
+    numero_documento = models.CharField(max_length=100, blank=True, null=True)
+    tipo_operacion = models.CharField(max_length=10, blank=True, null=True)
+    clasificacion = models.CharField(max_length=10, blank=True, null=True)
+    sector = models.CharField(max_length=10, blank=True, null=True)
+    tipo_costo_gasto = models.CharField(max_length=10, blank=True, null=True)
 
     def __str__(self):
-        return f"Compra {self.id} - {self.proveedor.nombre} - {self.total}"
+        return f"Compra {self.id} - {self.proveedor.nombre}"
 
 
 # MODELO PARA DETALLE DE COMPRAS (PRODUCTOS COMPRADOS)
 class DetalleCompra(models.Model):
-    compra = models.ForeignKey(Compra, on_delete=models.CASCADE, related_name="detalles")
+    TIPO_COMPRA_CHOICES = [
+        ('EX_INT','Interna Exenta'),
+        ('EX_INT_NO','Internaciones Exentas/No Sujetas'),
+        ('EX_IMP','Importaciones Exentas/No Sujetas'),
+        ('GR_INT','Interna Gravada'),
+        ('GR_INT_B','Internaciones Grav. Bienes'),
+        ('GR_IMP_B','Importaciones Grav. Bienes'),
+        ('GR_IMP_S','Importaciones Grav. Servicios'),
+    ]
+
+    compra = models.ForeignKey(Compra, on_delete=models.CASCADE, related_name='detalles')
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
     cantidad = models.PositiveIntegerField()
-    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
-    subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    precio_unitario = models.DecimalField(max_digits=12, decimal_places=2)
+    subtotal = models.DecimalField(max_digits=14, decimal_places=2, default=0.00)
+    # Nuevo campo para tipo de compra
+    tipo_compra = models.CharField(
+        max_length=12,
+        choices=TIPO_COMPRA_CHOICES,
+        default='GR_INT'
+    )
+    # Nuevo campo IVA calculado para el detalle
+    iva_item = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
 
     def save(self, *args, **kwargs):
         self.subtotal = self.cantidad * self.precio_unitario
+        # calcular IVA si aplica
+        if self.tipo_compra.startswith('GR'):
+            self.iva_item = (self.subtotal * Decimal('0.13')).quantize(Decimal('0.01'))
+        else:
+            self.iva_item = Decimal('0.00')
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.cantidad} x {self.producto.descripcion} - Compra {self.compra.id}"
-
 
 # MODELO PARA MOVIMIENTOS DE INVENTARIO (KARDEX)
 class MovimientoInventario(models.Model):
@@ -180,6 +210,7 @@ class MovimientoInventario(models.Model):
 
 # MODELO PARA AJUSTES DE INVENTARIO
 class AjusteInventario(models.Model):
+    movimiento = models.ForeignKey(MovimientoInventario, on_delete=models.CASCADE)
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
     almacen = models.ForeignKey(Almacen, on_delete=models.CASCADE)
     cantidad_ajustada = models.IntegerField()  # Puede ser positivo o negativo
@@ -204,7 +235,7 @@ class DevolucionVenta(models.Model):
     usuario = models.CharField(max_length=100, blank=True, null=True)  # Quién procesa la devolución
 
     def __str__(self):
-        return f"Devolución {self.id} - Venta {self.venta.id} - {self.estado}"
+        return f"Devolución {self.id} - {self.estado}"
 
 
 # MODELO PARA DETALLES DE DEVOLUCIONES DE VENTAS

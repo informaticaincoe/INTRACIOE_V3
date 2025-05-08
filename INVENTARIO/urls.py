@@ -3,6 +3,7 @@ from django.urls import path
 from .api_views import (
         # PRODUCTOS Y SERVICIOS
     AlmacenesDetailAPIView,
+    DetallesPorCompraView,
     ProductoListAPIView,
     ProductoDetailAPIView,
     ProductoCreateAPIView,
@@ -46,7 +47,6 @@ from .api_views import (
     AlmacenesCreateAPIView,
     AlmacenesUpdateAPIView,
     AlmacenesDestroyAPIView,
-
     # Proveedores
     ProveedorListAPIView, ProveedorCreateAPIView, ProveedorRetrieveAPIView,
     ProveedorUpdateAPIView, ProveedorDestroyAPIView,
@@ -151,6 +151,7 @@ urlpatterns = [
     # DETALLE DE COMPRAS
     ##############################
     path('api/detalle-compra/', DetalleCompraListAPIView.as_view(), name='detalle-compra-list'),
+    path('api/compras/<int:compra_id>/detalles/', DetallesPorCompraView.as_view(), name='compra-detalles'),
     path('api/detalle-compra/crear/', DetalleCompraCreateAPIView.as_view(), name='detalle-compra-create'),
     path('api/detalle-compra/<int:pk>/', DetalleCompraRetrieveAPIView.as_view(), name='detalle-compra-detail'),
     path('api/detalle-compra/<int:pk>/editar/', DetalleCompraUpdateAPIView.as_view(), name='detalle-compra-update'),

@@ -1,12 +1,15 @@
 
 from gettext import translation
+
+from django.shortcuts import get_object_or_404
 from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
 
 from .serializers import (
-    AlmacenSerializer, ImpuestoSerializer, ProductoSerializer, TipoItemSerializer,
+    AlmacenSerializer, DetalleCompraReadSerializer, ImpuestoSerializer, ProductoSerializer, TipoItemSerializer,
     TipoUnidadMedidaSerializer, TiposTributosSerializer, TributosSerializer, 
     ProveedorSerializer, CompraSerializer, DetalleCompraSerializer,
     MovimientoInventarioSerializer, AjusteInventarioSerializer,
@@ -20,6 +23,13 @@ from .models import (
     )
 from django.db.models import Q
 
+class StandardResultsSetPagination(PageNumberPagination):
+    # Número de ítems por página por defecto
+    page_size = 10
+    # Permitir al cliente cambiar el tamaño de página con ?page_size=
+    page_size_query_param = 'page_size'
+    # Límite máximo que puede pedir
+    max_page_size = 100
      
 ######################################################
 # PRODUCTOS Y SERVICIOS
@@ -284,6 +294,8 @@ class CompraDestroyAPIView(generics.DestroyAPIView):
 class DetalleCompraListAPIView(generics.ListAPIView):
     queryset = DetalleCompra.objects.all()
     serializer_class = DetalleCompraSerializer
+    
+
 
 class DetalleCompraCreateAPIView(generics.CreateAPIView):
     queryset = DetalleCompra.objects.all()
@@ -292,6 +304,13 @@ class DetalleCompraCreateAPIView(generics.CreateAPIView):
 class DetalleCompraRetrieveAPIView(generics.RetrieveAPIView):
     queryset = DetalleCompra.objects.all()
     serializer_class = DetalleCompraSerializer
+
+class DetallesPorCompraView(APIView):
+    def get(self, request, compra_id):
+        compra = get_object_or_404(Compra, id=compra_id)
+        detalles = compra.detalles.all()  # gracias al related_name="detalles"
+        serializer = DetalleCompraReadSerializer(detalles, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class DetalleCompraUpdateAPIView(generics.UpdateAPIView):
     queryset = DetalleCompra.objects.all()

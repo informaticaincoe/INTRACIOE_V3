@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { movimientoInterface } from '../interfaces/movimientoInvetarioInterface'
 import { Dialog } from 'primereact/dialog'
-import { MovimientoInventarioEdit } from '../pages/movimientoInventarioEditNew'
 import { getMovimientosInventarioById } from '../services/movimientoInventarioServices'
 import { ModalRealizarAjuste } from '../../ajusteInventario/componentes/modalRealizarAjuste'
 
@@ -39,22 +38,17 @@ export const ModalDetalleMovimientoInventario: React.FC<ModalDetalleMovimientoIn
             <strong>Tipo:</strong>
             <span>{movimientoInventario.tipo}</span>
 
-
             <strong>Referencia:</strong>
             <span>{movimientoInventario.referencia}</span>
-
 
             <strong>Producto:</strong>
             <span>{movimientoInventario.nombreProducto}</span>
 
-
             <strong>Almacén:</strong>
             <span>{movimientoInventario.nombreAlmacen}</span>
 
-
             <strong>Cantidad:</strong>
             <span>{movimientoInventario.cantidad}</span>
-
 
             <strong>Fecha:</strong>
             <span>{new Date(movimientoInventario.fecha).toLocaleDateString()}</span>
@@ -71,10 +65,8 @@ export const ModalDetalleMovimientoInventario: React.FC<ModalDetalleMovimientoIn
               visible={visibleModalAjuste}
               setVisible={setVisibleModalAjuste}
             />
-
           }
         </div>
-
       ) : (
         <p>Cargando información del movimiento...</p>
       )}

@@ -10,10 +10,12 @@ import { Layout } from './layout/layout';
 import { MovimientoInventarioEdit } from './features/inventario/movimientoInventario/pages/movimientoInventarioEditNew';
 import { ProveedoresPage } from './features/ventas/proveedores/pages/proveedoresPage';
 import { ProveedoresNewEdit } from './features/ventas/proveedores/pages/proveedoresNewEdit';
-import { ComprasPage } from './features/ventas/compras/pages/comprasPage';
-import { ComprasNewEdit } from './features/ventas/compras/pages/comprasEditNew';
+import { ComprasPage } from './features/compras/compras/pages/comprasPage';
+import { ComprasNewEdit } from './features/compras/compras/pages/comprasEditNew';
 import { AjusteInventarioPage } from './features/inventario/ajusteInventario/pages/ajusteInventarioPage';
 import { AjusteInventarioEditNew } from './features/inventario/ajusteInventario/pages/ajusteInventarioEditNew';
+import { DevoluacionesVentaPage } from './features/ventas/devolucioneVentas/pages/devolucionesVentaPage';
+import { DevolucionesCompraPage } from './features/compras/devolucionesCompras/pages/devolucionesCompraPage';
 
 const { Dashboard } = lazily(
   () => import('./features/dashboard/pages/dashboard')
@@ -128,6 +130,9 @@ function App() {
           <Route path="/compras" element={<ComprasPage />} />
           <Route path="/compras/nuevo" element={<ComprasNewEdit />} />
           <Route path="/compras/:id" element={<ComprasNewEdit />} />
+
+          <Route path="/devoluciones-compra" element={<DevolucionesCompraPage />} />
+          <Route path="/devoluciones-ventas" element={<DevoluacionesVentaPage />} />
 
           <Route path="/catalogos" element={<CatalogosPage />} />
           <Route path="/receptor/nuevo" element={<NuevoReceptorPage />} />

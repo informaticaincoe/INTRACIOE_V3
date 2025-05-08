@@ -121,6 +121,14 @@ productos_inventario = None
 
 emisor_fe = Emisor_fe.objects.get(id=1)#Hacer dinamico el id de empresa
 
+class StandardResultsSetPagination(PageNumberPagination):
+    # Número de ítems por página por defecto
+    page_size = 10
+    # Permitir al cliente cambiar el tamaño de página con ?page_size=
+    page_size_query_param = 'page_size'
+    # Límite máximo que puede pedir
+    max_page_size = 100
+
 ######################################################
 # AUTENTICACION CON MH
 ######################################################

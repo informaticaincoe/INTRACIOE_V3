@@ -23,6 +23,7 @@ from django.template.loader import get_template
 import csv
 from django.views import View
 from FE.models import FacturaElectronica
+from INVENTARIO.models import Compra
 
 ###################################################################################################################
 
@@ -402,8 +403,18 @@ def enviar_quedan_hoy(request):
 # ANEXOS DE HACIENDA
 # ---------------------------------
 
-# Anexo de Ventas a Consumidor Final
+# Helpers de formato
+def padr(s: str, width: int, char: str = " ") -> str:
+    return (s or "").ljust(width, char)[:width]
 
+def padl(s: str, width: int, char: str = " ") -> str:
+    return (s or "").rjust(width, char)[-width:]
+
+def format_moneda(v) -> str:
+    # dos decimales sin separador de miles
+    return f"{v:,.2f}".replace(",", "") if v is not None else "0.00"
+
+# Anexo de Ventas a Consumidor Final
 class AnexoConsumidorFinalCSV(View):
     """
     CSV Anexo Consumidor Final para facturas de tipo_dte.codigo = '01'.
@@ -501,3 +512,203 @@ class AnexoConsumidorFinalCSV(View):
             ])
 
         return response
+
+# Anexo de Ventas a Contribuyentes
+class AnexoContribuyentesCSV(View):
+    """
+    Genera el CSV ANEXO CONTRIBUYENTES para FacturaElectronica tipo '01'.
+    """
+
+    def get(self, request, *args, **kwargs):
+        qs = FacturaElectronica.objects.filter(
+            tipo_dte__codigo="01"
+        ).order_by("fecha_emision")
+
+        print(f"[Anexo Contribuyentes] facturas tipo 01: {qs.count()}")
+
+        resp = HttpResponse(content_type="text/csv; charset=utf-8")
+        resp["Content-Disposition"] = 'attachment; filename="anexo_contribuyentes.csv"'
+        resp.write("\ufeff")  # BOM para Excel
+
+        writer = csv.writer(resp, delimiter=";")
+
+        # Cabecera
+        writer.writerow([
+            "FECHA DE EMISIÓN",
+            "CLASE DE DOCUMENTO",
+            "TIPO DE DOCUMENTO",
+            "NÚMERO DE RESOLUCIÓN",
+            "SERIE DEL DOCUMENTO",
+            "NÚMERO DE DOCUMENTO",
+            "NÚMERO DE CONTROL INTERNO",
+            "NIT PROVEEDOR/CLIENTE",
+            "NOMBRE RAZÓN SOCIAL",
+            "VENTAS EXENTAS",
+            "VENTAS NO SUJETAS",
+            "VENTAS GRAVADAS LOCALES",
+            "DÉBITO FISCAL",
+            "VENTAS A TERCEROS NO DOMICILIADOS",
+            "DÉBITO TERCEROS",
+            "TOTAL DE VENTAS",
+            "DUI",
+            "TIPO DE OPERACIÓN",
+            "TIPO DE INGRESO",
+            "NÚMERO DEL ANEXO",
+        ])
+
+        for f in qs:
+            sFECHADOC    = f.fecha_emision.strftime("%d/%m/%Y")
+            sCLASEDOC    = padr("4", 1)   # fijo para DTE
+            sTIPODOC     = padr(f.tipo_dte.codigo, 2)
+            sNUMRESOL    = padl(f.numero_control, 100)
+            sNUMSERIE    = padr(f.codigo_generacion.hex.upper(), 100)
+            sNUMDOC      = padr(f.dtereceptor.num_documento or "", 100)
+            sNUMINTERNO  = padr("", 100)   # no tiene interno
+            sNITPROV     = padl(f.dtereceptor.num_documento or "", 14)
+            sNOMBRE      = padr(f.dtereceptor.nombre, 100)
+
+            sVEXENTAS      = padl(format_moneda(f.total_exentas or 0), 11)
+            sVNOSUJETAS    = padl(format_moneda(f.total_no_sujetas or 0), 11)
+            sVGRAVADAS     = padl(format_moneda(f.total_gravadas or 0), 11)
+            sDEBITOFISCAL  = padl(format_moneda(f.iva_retenido or 0), 11)
+            sVTERCEROS     = padl(format_moneda(0), 11)
+            sDEBITOTERC    = padl(format_moneda(0), 11)
+            sTOTALVENTAS   = padl(format_moneda(f.total_pagar or 0), 11)
+
+            sDUI           = padl("", 9)
+            sTIPOOPER      = padr(f.condicion_operacion.codigo if f.condicion_operacion else "", 2)
+            sTIPOINGRESO   = padr("", 2)
+            sNUMANEXO      = padr("1", 1)
+
+            writer.writerow([
+                sFECHADOC,
+                sCLASEDOC,
+                sTIPODOC,
+                sNUMRESOL,
+                sNUMSERIE,
+                sNUMDOC,
+                sNUMINTERNO,
+                sNITPROV,
+                sNOMBRE,
+                sVEXENTAS,
+                sVNOSUJETAS,
+                sVGRAVADAS,
+                sDEBITOFISCAL,
+                sVTERCEROS,
+                sDEBITOTERC,
+                sTOTALVENTAS,
+                sDUI,
+                sTIPOOPER,
+                sTIPOINGRESO,
+                sNUMANEXO,
+            ])
+
+        return resp
+    
+# Anexo de Compras
+class AnexoComprasCSV(View):
+    """
+    Genera el CSV ANEXO DE COMPRAS (anexo 3).
+    """
+    def get(self, request, *args, **kwargs):
+        qs = Compra.objects.all().order_by('fecha')
+        print(f"[Anexo Compras] compras: {qs.count()}")
+
+        resp = HttpResponse(content_type='text/csv; charset=utf-8')
+        resp['Content-Disposition'] = 'attachment; filename="anexo_compras.csv"'
+        resp.write('\ufeff')  # BOM para Excel
+
+        writer = csv.writer(resp, delimiter=';')
+
+        # Cabecera:
+        writer.writerow([
+            'FECHA DE EMISIÓN',
+            'CLASE DE DOCUMENTO',
+            'TIPO DE DOCUMENTO',
+            'NÚMERO DEL DOCUMENTO',
+            'NIT PROVEEDOR',
+            'NOMBRE PROVEEDOR',
+            'COMPRAS INTERNAS EXENTAS',
+            'INTERNACIONES EXENTAS Y/O NO SUJETAS',
+            'IMPORTACIONES EXENTAS Y/O NO SUJETAS',
+            'COMPRAS INTERNAS GRAVADAS',
+            'INTERNACIONES GRAVADAS BIENES',
+            'IMPORTACIONES GRAVADAS BIENES',
+            'IMPORTACIONES GRAVADAS SERVICIOS',
+            'CRÉDITO FISCAL',
+            'TOTAL DE COMPRAS',
+            'DUI',
+            'TIPO DE OPERACIÓN',
+            'CLASIFICACIÓN',
+            'SECTOR',
+            'TIPO GASTO/COSTO',
+            'NÚMERO DEL ANEXO',
+        ])
+
+        for compra in qs:
+            # 1) Fechas y documentos: (añade los campos a tu modelo si no existen)
+            sFECHADOC    = compra.fecha.strftime('%d/%m/%Y')
+            sCLASEDOC    = padr('4', 1)               # fijo DTE
+            sTIPODOC     = padr(getattr(compra, 'tipo_documento', ''), 2)
+            sNUMDOC      = padr(getattr(compra, 'numero_documento', ''), 100)
+
+            # 2) Proveedor:
+            sNITPROV     = padl(compra.proveedor.ruc_nit, 14)
+            sNOMBRE      = padr(compra.proveedor.nombre, 100)
+
+            # 3) Montos (aquí debes definir la lógica de cálculo según tus categorías):
+            detalles = compra.detalles.all()
+            # Ejemplo: todo como ‘gravado’ salvo producto.precio_iva==False
+            exentas_int = sum(d.subtotal for d in detalles if not d.producto.precio_iva)
+            gravadas_int= sum(d.subtotal for d in detalles if d.producto.precio_iva)
+            # Para los demás campos (importaciones, internaciones, etc.) necesitas
+            # un flag en DetalleCompra o Producto para diferenciarlos; por ahora cero:
+            sCOMPRASEXENTAS     = padl(format_moneda(exentas_int), 11)
+            sINTEREXENTAS       = padl('0.00', 11)
+            sIMPOREXENTAS       = padl('0.00', 11)
+            sCOMPRASGRAVADAS    = padl(format_moneda(gravadas_int), 11)
+            sINTERGRAVBIENES    = padl('0.00', 11)
+            sIMPORGRAVBIENES    = padl('0.00', 11)
+            sIMPORGRAVSERV      = padl('0.00', 11)
+            # Crédito fiscal = suma de IVA en detalles (si lo calculas)
+            credito_fiscal      = sum(
+                (d.subtotal * Decimal('0.13')).quantize(Decimal('0.01'))
+                for d in detalles if d.producto.precio_iva
+            )
+            sCREDITOFISCAL      = padl(format_moneda(credito_fiscal), 11)
+            sTOTALCOMPRAS       = padl(format_moneda(compra.total), 11)
+
+            # 4) Otros campos que el macro usa: añade a tu modelo si no existen
+            sDUI                = padl('', 9)
+            sTIPOOPERACION      = padr(getattr(compra, 'tipo_operacion', ''), 1)
+            sCLASIFICACION      = padr(getattr(compra, 'clasificacion', ''), 1)
+            sSECTOR             = padr(getattr(compra, 'sector', ''), 1)
+            sTIPOCOSTOGASTO     = padr(getattr(compra, 'tipo_costo_gasto', ''), 1)
+
+            sNUMANEXO           = padr('3', 1)
+
+            writer.writerow([
+                sFECHADOC,
+                sCLASEDOC,
+                sTIPODOC,
+                sNUMDOC,
+                sNITPROV,
+                sNOMBRE,
+                sCOMPRASEXENTAS,
+                sINTEREXENTAS,
+                sIMPOREXENTAS,
+                sCOMPRASGRAVADAS,
+                sINTERGRAVBIENES,
+                sIMPORGRAVBIENES,
+                sIMPORGRAVSERV,
+                sCREDITOFISCAL,
+                sTOTALCOMPRAS,
+                sDUI,
+                sTIPOOPERACION,
+                sCLASIFICACION,
+                sSECTOR,
+                sTIPOCOSTOGASTO,
+                sNUMANEXO,
+            ])
+
+        return resp

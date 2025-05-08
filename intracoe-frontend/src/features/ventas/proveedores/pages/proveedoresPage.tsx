@@ -27,9 +27,11 @@ export const ProveedoresPage = () => {
   const updateList = () => {
     fetchProveedores()
   }
+
   const handleSearch = (nuevoCodigo: string) => {
     setCodigoFiltro(nuevoCodigo.trim());
   };
+
   return (
     <>
       <Title text={'Proveedores'} />
