@@ -1,24 +1,25 @@
-import { useEffect, useState } from 'react'
-import { Title } from '../../../../shared/text/title'
-import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPage'
-import { TablaDevolucionesCompra } from '../componentes/tablaDevolucionesCompra'
-import { getAllDevolucionesCompra } from '../services/devolucionesCompraServices'
-import { CompraInterface } from '../../compras/interfaces/comprasInterfaces'
-import { Pagination } from '../../../../shared/interfaces/interfacesPagination'
-import { useSearchParams } from 'react-router'
-import { DevolucionCompra } from '../interfaces/devolucionCompraInterfaces'
+import { useEffect, useState } from 'react';
+import { Title } from '../../../../shared/text/title';
+import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPage';
+import { TablaDevolucionesCompra } from '../componentes/tablaDevolucionesCompra';
+import { getAllDevolucionesCompra } from '../services/devolucionesCompraServices';
+import { CompraInterface } from '../../compras/interfaces/comprasInterfaces';
+import { Pagination } from '../../../../shared/interfaces/interfacesPagination';
+import { useSearchParams } from 'react-router';
+import { DevolucionCompra } from '../interfaces/devolucionCompraInterfaces';
 
 export const DevolucionesCompraPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [loading, setLoading] = useState(false)
-  const [devolucionesCompra, setDevolucionesCompra] = useState<DevolucionCompra>({
-    count: 1,
-    current_page: 1,
-    page_size: 10,
-    has_next: true,
-    has_previous: false,
-    results: []
-  })
+  const [loading, setLoading] = useState(false);
+  const [devolucionesCompra, setDevolucionesCompra] =
+    useState<DevolucionCompra>({
+      count: 1,
+      current_page: 1,
+      page_size: 10,
+      has_next: true,
+      has_previous: false,
+      results: [],
+    });
   const [pagination, setPagination] = useState<Pagination>({
     count: 1,
     current_page: 1,
@@ -28,8 +29,8 @@ export const DevolucionesCompraPage = () => {
   });
 
   useEffect(() => {
-    fetchDevolucionesCompra()
-  }, [])
+    fetchDevolucionesCompra();
+  }, []);
 
   useEffect(() => {
     // Reinicia a la página 1 cada vez que los filtros cambian
@@ -50,17 +51,17 @@ export const DevolucionesCompraPage = () => {
 
   const fetchDevolucionesCompra = async (page = 1, limit = 10) => {
     try {
-      setLoading(true)
-      const response = await getAllDevolucionesCompra({ page, limit })
+      setLoading(true);
+      const response = await getAllDevolucionesCompra({ page, limit });
 
       if (response) {
-        setDevolucionesCompra(response)
+        setDevolucionesCompra(response);
         setPagination({
           count: response.count || 0,
           current_page: response.current_page || 1,
           page_size: response.page_size || limit,
           has_next: response.has_next,
-          has_previous: response.has_previous
+          has_previous: response.has_previous,
         });
 
         const params: Record<string, string> = {
@@ -70,7 +71,6 @@ export const DevolucionesCompraPage = () => {
           // date_to:   initialDateTo,
         };
         setSearchParams(params, { replace: true });
-
       } else {
         setPagination({
           count: 1,
@@ -81,9 +81,9 @@ export const DevolucionesCompraPage = () => {
         });
       }
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
 
   return (
     <>
@@ -102,5 +102,5 @@ export const DevolucionesCompraPage = () => {
         </>
       </WhiteSectionsPage>
     </>
-  )
-}
+  );
+};

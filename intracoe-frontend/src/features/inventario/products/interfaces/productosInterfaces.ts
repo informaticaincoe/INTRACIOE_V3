@@ -1,4 +1,10 @@
-import { Almacen, Categoria, Impuesto, TipoItem, TipoUnidadMedida } from "../../../../shared/interfaces/interfaces";
+import {
+  Almacen,
+  Categoria,
+  Impuesto,
+  TipoItem,
+  TipoUnidadMedida,
+} from '../../../../shared/interfaces/interfaces';
 
 export interface ProductosInterfaceResults {
   id: number;
@@ -30,5 +36,5 @@ export interface ProductosInterface {
   current_page: number;
   has_next: boolean;
   has_previous: boolean;
-  results: ProductosInterfaceResults[]
+  results: ProductosInterfaceResults[];
 }

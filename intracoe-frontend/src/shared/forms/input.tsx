@@ -7,7 +7,9 @@ interface InputProps {
   className?: string;
   required?: boolean;
   icon?: any;
-  disable?:boolean;
+  disable?: boolean;
+  minNum?: number;
+  step?: string;
 }
 
 export const Input: React.FC<InputProps> = ({
@@ -17,18 +19,21 @@ export const Input: React.FC<InputProps> = ({
   value,
   onChange,
   className,
-  disable = false
+  disable = false,
+  minNum = 0,
+  step,
 }) => {
   return (
     <input
-      min={0}
+      min={minNum}
+      step={step}
       disabled={disable}
       type={type}
       name={name}
       placeholder={placeholder}
       value={value}
       onChange={onChange}
-      className={`border-border-color focus:outline-border w-full rounded-sm border px-3 py-3 focus:outline-1 ${className} ${disable ? 'bg-gray-100 cursor-not-allowed text-gray' : 'bg-transparent'}`}
+      className={`border-border-color focus:outline-border w-full rounded-sm border px-3 py-3 focus:outline-1 ${className} ${disable ? 'text-gray cursor-not-allowed bg-gray-100' : 'bg-transparent'}`}
     />
   );
 };

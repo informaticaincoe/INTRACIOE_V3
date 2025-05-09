@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import { FaPlus } from 'react-icons/fa6';
 import { LuSearch } from 'react-icons/lu';
 import { useNavigate } from 'react-router';
@@ -6,10 +6,14 @@ import { useNavigate } from 'react-router';
 interface TablaProductosHeaderProps {
   codigo: string;
   onSearch: (codigo: string) => void;
-  results: number
+  results: number;
 }
 
-export const TablaInventarioHeader: React.FC<TablaProductosHeaderProps> = ({ codigo, onSearch, results }) => {
+export const TablaInventarioHeader: React.FC<TablaProductosHeaderProps> = ({
+  codigo,
+  onSearch,
+  results,
+}) => {
   const [input, setInput] = useState<string>(codigo);
   const navigate = useNavigate();
 
@@ -29,7 +33,7 @@ export const TablaInventarioHeader: React.FC<TablaProductosHeaderProps> = ({ cod
 
   return (
     <span className="flex items-center justify-between">
-      <span className='text-start'>
+      <span className="text-start">
         <h1 className="text-lg font-bold">Lista movimiento de inventario</h1>
         <h1 className="">{results} Resultados</h1>
       </span>

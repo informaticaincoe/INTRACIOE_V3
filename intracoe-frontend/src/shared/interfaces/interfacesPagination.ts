@@ -1,4 +1,4 @@
-import { FiltersListadoFacturas } from "./interfaceFacturaJSON";
+import { FiltersListadoFacturas } from './interfaceFacturaJSON';
 
 export interface pagination2 {
   current_page: number;
@@ -7,8 +7,8 @@ export interface pagination2 {
   total_records: number;
 }
 
-
-export interface Pagination { // **correcto
+export interface Pagination {
+  // **correcto
   count: number;
   page_size: number;
   current_page: number;

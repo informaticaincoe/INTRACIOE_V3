@@ -14,7 +14,7 @@ import { Paginator } from 'primereact/paginator';
 import { ReceptorResult } from '../interfaces/receptorInterfaces';
 
 interface TableReceptoresProps {
-  updateList: () => void
+  updateList: () => void;
   pagination: Pagination;
   onPageChange: (event: any) => void;
   receptores: ReceptorResult[];
@@ -32,7 +32,7 @@ export const TableReceptores: React.FC<TableReceptoresProps> = ({
   onEdit,
   onPageChange,
   pagination,
-  updateList
+  updateList,
 }) => {
   const [rowClick] = useState<boolean>(true);
   const toastRef = useRef<CustomToastRef>(null);

@@ -36,7 +36,7 @@ export interface FacturaResponse {
   base_imponible: boolean;
   tipo_dte: number;
   tipomodelo: number;
-  contingencia:boolean
+  contingencia: boolean;
   tipocontingencia: any; // Según implementación
   tipomoneda: number;
   dteemisor: number;
@@ -289,7 +289,7 @@ export const DatosFacturaDefault = {
   fechaEmision: '',
   horaEmision: '',
   selloRemision: '',
-  contingencia: false
+  contingencia: false,
 };
 export interface DatosFactura {
   tipoDte: string;

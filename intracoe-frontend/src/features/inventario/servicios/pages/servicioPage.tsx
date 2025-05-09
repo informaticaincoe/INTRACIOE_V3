@@ -11,17 +11,15 @@ import { Pagination } from '../../../../shared/interfaces/interfacesPagination';
 
 export const ServicioPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [loading, setLoading] = useState(false)
-  const [servicios, setServicios] = useState<ProductosInterface>(
-    {
-      count: 1,
-      current_page: 1,
-      page_size: 10,
-      has_next: true,
-      has_previous: false,
-      results: []
-    }
-  );
+  const [loading, setLoading] = useState(false);
+  const [servicios, setServicios] = useState<ProductosInterface>({
+    count: 1,
+    current_page: 1,
+    page_size: 10,
+    has_next: true,
+    has_previous: false,
+    results: [],
+  });
   const [pagination, setPagination] = useState<Pagination>({
     count: 1,
     current_page: 1,
@@ -68,7 +66,7 @@ export const ServicioPage = () => {
           current_page: response.current_page || 1,
           page_size: response.page_size || limit,
           has_next: response.has_next,
-          has_previous: response.has_previous
+          has_previous: response.has_previous,
         });
 
         const params: Record<string, string> = {
@@ -78,7 +76,6 @@ export const ServicioPage = () => {
           // date_to:   initialDateTo,
         };
         setSearchParams(params, { replace: true });
-
       } else {
         setPagination({
           count: 1,
@@ -89,9 +86,9 @@ export const ServicioPage = () => {
         });
       }
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
   // Handler que pasamos al header para que active la búsqueda
   const handleSearch = (nuevoCodigo: string) => {
     setCodigoFiltro(nuevoCodigo.trim());

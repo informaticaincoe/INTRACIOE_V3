@@ -42,9 +42,12 @@ export const getAllActivitiesPagination = async (
   queryParams.append('page_size', String(limit));
 
   try {
-    const response = await api.get<ActivitiesInterfacePagination>(`/actividad/`, {
-      params: { page: page, page_size: limit, filtro:filtro }
-    });
+    const response = await api.get<ActivitiesInterfacePagination>(
+      `/actividad/`,
+      {
+        params: { page: page, page_size: limit, filtro: filtro },
+      }
+    );
 
     return {
       results: response.data.results,
@@ -52,7 +55,7 @@ export const getAllActivitiesPagination = async (
       page_size: response.data.page_size,
       has_next: response.data.has_next,
       has_previous: response.data.has_previous,
-      count: response.data.count
+      count: response.data.count,
     };
   } catch (error) {
     console.log('Error en la solicitud:', error);

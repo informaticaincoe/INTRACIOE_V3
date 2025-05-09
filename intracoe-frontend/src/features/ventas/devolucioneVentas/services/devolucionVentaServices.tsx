@@ -1,6 +1,6 @@
-import { aDevolucionVentasParams } from "../../../../shared/interfaces/interfacesPagination";
-import { apiInventory } from "../../../../shared/services/apiInventory";
-import { getProductById } from "../../../inventario/products/services/productsServices";
+import { aDevolucionVentasParams } from '../../../../shared/interfaces/interfacesPagination';
+import { apiInventory } from '../../../../shared/services/apiInventory';
+import { getProductById } from '../../../inventario/products/services/productsServices';
 
 export const getAllDevolucionesVentas = async (
   { page, limit }: aDevolucionVentasParams = {
@@ -16,10 +16,10 @@ export const getAllDevolucionesVentas = async (
 
   try {
     const response = await apiInventory.get('/devoluciones-venta/', {
-      params: { page: page, page_size: limit }
+      params: { page: page, page_size: limit },
     });
 
-    console.log("RES¨PMSE DEVPÑUCIOPNESFd",response.data)
+    console.log('RES¨PMSE DEVPÑUCIOPNESFd', response.data);
 
     return {
       results: response.data.results,
@@ -27,14 +27,17 @@ export const getAllDevolucionesVentas = async (
       page_size: response.data.page_size,
       has_next: response.data.has_next,
       has_previous: response.data.has_previous,
-      count: response.data.count
+      count: response.data.count,
     };
   } catch (error: any) {
-    console.error(error)
+    console.error(error);
   }
 };
-export const getDetalleDevolucionVentaById = async (id: string | number,  page = 1,
-  limit = 10,)  => {
+export const getDetalleDevolucionVentaById = async (
+  id: string | number,
+  page = 1,
+  limit = 10
+) => {
   try {
     const response = await apiInventory.get(`/detalle-devolucion-venta/${id}/`);
     const detalle = response.data;
@@ -45,11 +48,10 @@ export const getDetalleDevolucionVentaById = async (id: string | number,  page =
       nombreProducto: producto.descripcion,
     };
 
-    console.log("DETALLE", detalleConNombre);
+    console.log('DETALLE', detalleConNombre);
     return detalleConNombre;
   } catch (error: any) {
     console.error(error);
     return null;
   }
 };
-

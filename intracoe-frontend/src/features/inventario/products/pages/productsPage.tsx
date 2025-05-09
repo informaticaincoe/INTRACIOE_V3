@@ -13,17 +13,15 @@ import { Pagination } from '../../../../shared/interfaces/interfacesPagination';
 
 export const ProductsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [loading, setLoading] = useState(false)
-  const [productos, setProductos] = useState<ProductosInterface>(
-    {
-      count: 1,
-      current_page: 1,
-      page_size: 10,
-      has_next: true,
-      has_previous: false,
-      results: []
-    }
-  );
+  const [loading, setLoading] = useState(false);
+  const [productos, setProductos] = useState<ProductosInterface>({
+    count: 1,
+    current_page: 1,
+    page_size: 10,
+    has_next: true,
+    has_previous: false,
+    results: [],
+  });
   const [pagination, setPagination] = useState<Pagination>({
     count: 1,
     current_page: 1,
@@ -72,7 +70,7 @@ export const ProductsPage = () => {
           current_page: response.current_page || 1,
           page_size: response.page_size || limit,
           has_next: response.has_next,
-          has_previous: response.has_previous
+          has_previous: response.has_previous,
         });
 
         const params: Record<string, string> = {
@@ -82,7 +80,6 @@ export const ProductsPage = () => {
           // date_to:   initialDateTo,
         };
         setSearchParams(params, { replace: true });
-
       } else {
         setPagination({
           count: 1,
@@ -93,10 +90,10 @@ export const ProductsPage = () => {
         });
       }
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
-  
+  };
+
   // Handler que pasamos al header para que active la búsqueda
   const handleSearch = (nuevoCodigo: string) => {
     setCodigoFiltro(nuevoCodigo.trim());

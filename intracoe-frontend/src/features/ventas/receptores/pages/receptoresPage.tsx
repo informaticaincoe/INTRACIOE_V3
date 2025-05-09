@@ -21,14 +21,14 @@ import { Pagination } from '../../../../shared/interfaces/interfacesPagination';
 
 export const ReceptoresPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
   const [receptores, setReceptores] = useState<ReceptorInterface>({
     count: 1,
     current_page: 1,
     page_size: 10,
     has_next: true,
     has_previous: false,
-    results: []
+    results: [],
   });
   const [codigoFiltro, setCodigoFiltro] = useState<string>('');
   const [selectedReceptores, setSelectedReceptores] = useState<any[]>([]);
@@ -77,21 +77,22 @@ export const ReceptoresPage = () => {
     fetchReceptores(page, limit);
   };
 
-
   const fetchReceptores = async (page = 1, limit = 10) => {
     try {
-      setLoading(true)
+      setLoading(true);
       const response = await getAllReceptor({
-        filter: codigoFiltro || undefined, page, limit
+        filter: codigoFiltro || undefined,
+        page,
+        limit,
       });
       if (response) {
-        setReceptores(response)
+        setReceptores(response);
         setPagination({
           count: response.count || 0,
           current_page: response.current_page || 1,
           page_size: response.page_size || limit,
           has_next: response.has_next,
-          has_previous: response.has_previous
+          has_previous: response.has_previous,
         });
 
         const params: Record<string, string> = {
@@ -101,7 +102,6 @@ export const ReceptoresPage = () => {
           // date_to:   initialDateTo,
         };
         setSearchParams(params, { replace: true });
-
       } else {
         setPagination({
           count: 1,
@@ -112,9 +112,9 @@ export const ReceptoresPage = () => {
         });
       }
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
 
   const handleSearch = (nuevoCodigo: string) => {
     setCodigoFiltro(nuevoCodigo.trim());
@@ -130,7 +130,7 @@ export const ReceptoresPage = () => {
           <FaCheckCircle size={38} />,
           'Receptor eliminado con éxito'
         );
-        updateReceptores()
+        updateReceptores();
       } catch (error) {
         console.error(error);
         handleAccion(

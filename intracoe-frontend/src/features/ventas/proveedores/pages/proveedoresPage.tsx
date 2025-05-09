@@ -1,25 +1,25 @@
-import React, { useEffect, useState } from 'react'
-import { Title } from '../../../../shared/text/title'
-import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPage'
-import { Divider } from 'primereact/divider'
-import { TablaProveedores } from '../componentes/tablaProveedores'
-import { ProveedorInterface } from '../interfaces/proveedoresInterfaces'
-import { getAllProveedores } from '../services/proveedoresServices'
-import { TablaProveedoresHeader } from '../componentes/tablaProveedoresHeader'
-import { useSearchParams } from 'react-router'
-import { Pagination } from '../../../../shared/interfaces/interfacesPagination'
+import React, { useEffect, useState } from 'react';
+import { Title } from '../../../../shared/text/title';
+import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPage';
+import { Divider } from 'primereact/divider';
+import { TablaProveedores } from '../componentes/tablaProveedores';
+import { ProveedorInterface } from '../interfaces/proveedoresInterfaces';
+import { getAllProveedores } from '../services/proveedoresServices';
+import { TablaProveedoresHeader } from '../componentes/tablaProveedoresHeader';
+import { useSearchParams } from 'react-router';
+import { Pagination } from '../../../../shared/interfaces/interfacesPagination';
 
 export const ProveedoresPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
   const [proveedorList, setProveedorList] = useState<ProveedorInterface>({
     count: 1,
     current_page: 1,
     page_size: 10,
     has_next: true,
     has_previous: false,
-    results: []
-  })
+    results: [],
+  });
   const [codigoFiltro, setCodigoFiltro] = useState<string>('');
   const [pagination, setPagination] = useState<Pagination>({
     count: 1,
@@ -30,8 +30,8 @@ export const ProveedoresPage = () => {
   });
 
   useEffect(() => {
-    fetchProveedores()
-  }, [])
+    fetchProveedores();
+  }, []);
 
   useEffect(() => {
     // Reinicia a la página 1 cada vez que los filtros cambian
@@ -50,19 +50,18 @@ export const ProveedoresPage = () => {
     fetchProveedores(page, limit);
   };
 
-
   const fetchProveedores = async (page = 1, limit = 10) => {
     try {
-      setLoading(true)
-      const response = await getAllProveedores({ page, limit })
+      setLoading(true);
+      const response = await getAllProveedores({ page, limit });
       if (response) {
-        setProveedorList(response)
+        setProveedorList(response);
         setPagination({
           count: response.count || 0,
           current_page: response.current_page || 1,
           page_size: response.page_size || limit,
           has_next: response.has_next,
-          has_previous: response.has_previous
+          has_previous: response.has_previous,
         });
 
         const params: Record<string, string> = {
@@ -72,7 +71,6 @@ export const ProveedoresPage = () => {
           // date_to:   initialDateTo,
         };
         setSearchParams(params, { replace: true });
-
       } else {
         setPagination({
           count: 1,
@@ -83,13 +81,13 @@ export const ProveedoresPage = () => {
         });
       }
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
 
   const updateList = () => {
-    fetchProveedores()
-  }
+    fetchProveedores();
+  };
 
   const handleSearch = (nuevoCodigo: string) => {
     setCodigoFiltro(nuevoCodigo.trim());
@@ -101,15 +99,19 @@ export const ProveedoresPage = () => {
 
       <WhiteSectionsPage>
         <>
-          <TablaProveedoresHeader codigo={codigoFiltro} onSearch={handleSearch} />
+          <TablaProveedoresHeader
+            codigo={codigoFiltro}
+            onSearch={handleSearch}
+          />
           <Divider />
           <TablaProveedores
             pagination={pagination}
             onPageChange={onPageChange}
             proveedoresList={proveedorList.results}
-            updateList={updateList} />
+            updateList={updateList}
+          />
         </>
       </WhiteSectionsPage>
     </>
-  )
-}
+  );
+};

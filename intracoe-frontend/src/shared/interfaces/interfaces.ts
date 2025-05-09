@@ -7,33 +7,33 @@ export interface ActivitiesData {
   descripcion: string;
 }
 
-export interface  ActivitiesInterfacePagination {
+export interface ActivitiesInterfacePagination {
   count: number;
   page_size: number;
   current_page: number;
   has_next: boolean;
   has_previous: boolean;
-  results: ActivitiesData[]
+  results: ActivitiesData[];
 }
 
 export interface AjusteInventarioInterfaceResults {
-    producto: number,
-    nombreProducto?: string,
-    almacen: number,
-    nombreAlmacen?: string,
-    cantidad_ajustada: number,
-    motivo: string,
-    fecha: Date,
-    usuario: string
+  producto: number;
+  nombreProducto?: string;
+  almacen: number;
+  nombreAlmacen?: string;
+  cantidad_ajustada: number;
+  motivo: string;
+  fecha: Date;
+  usuario: string;
 }
 
-export interface  AjusteInventarioInterface {
-    count: number;
-    page_size: number;
-    current_page: number;
-    has_next: boolean;
-    has_previous: boolean;
-    results: AjusteInventarioInterfaceResults[]
+export interface AjusteInventarioInterface {
+  count: number;
+  page_size: number;
+  current_page: number;
+  has_next: boolean;
+  has_previous: boolean;
+  results: AjusteInventarioInterfaceResults[];
 }
 
 export interface contingenciaData {
@@ -522,11 +522,12 @@ export interface Descuentos {
   descuentoGravado: number;
 }
 
-export interface paginationInterface { //Interface para paginacion backend
+export interface paginationInterface {
+  //Interface para paginacion backend
   count: number;
   current_page: number;
-  has_next:boolean;
-  has_previous:boolean;
+  has_next: boolean;
+  has_previous: boolean;
 }
 
 export interface TableListadoFacturasContainerProps {
@@ -552,4 +553,3 @@ export interface PagoPayload {
   plazo: number | null;
   periodo: number | null;
 }
-

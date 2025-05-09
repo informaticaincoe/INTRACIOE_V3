@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { ProductoResponse } from '../../../../shared/interfaces/interfaces';
 import { useNavigate } from 'react-router';
-import CustomToast, { CustomToastRef, ToastSeverity } from '../../../../shared/toast/customToast';
+import CustomToast, {
+  CustomToastRef,
+  ToastSeverity,
+} from '../../../../shared/toast/customToast';
 import { deleteProduct } from '../services/productsServices';
 import { FaCheckCircle } from 'react-icons/fa';
 import { IoMdCloseCircle } from 'react-icons/io';

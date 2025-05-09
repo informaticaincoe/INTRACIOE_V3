@@ -1,25 +1,25 @@
-import React, { useEffect, useState } from 'react'
-import { Title } from '../../../../shared/text/title'
-import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPage'
-import { Divider } from 'primereact/divider'
-import { CompraInterface } from '../interfaces/comprasInterfaces'
-import { TablaComprasHeader } from '../componentes/tablaComprasHeader'
-import { TablaCompras } from '../componentes/tablaCompras'
-import { getAllCompras } from '../services/comprasServices'
-import { useSearchParams } from 'react-router'
-import { Pagination } from '../../../../shared/interfaces/interfacesPagination'
+import React, { useEffect, useState } from 'react';
+import { Title } from '../../../../shared/text/title';
+import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPage';
+import { Divider } from 'primereact/divider';
+import { CompraInterface } from '../interfaces/comprasInterfaces';
+import { TablaComprasHeader } from '../componentes/tablaComprasHeader';
+import { TablaCompras } from '../componentes/tablaCompras';
+import { getAllCompras } from '../services/comprasServices';
+import { useSearchParams } from 'react-router';
+import { Pagination } from '../../../../shared/interfaces/interfacesPagination';
 
 export const ComprasPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
   const [comprasList, setComprasList] = useState<CompraInterface>({
     count: 1,
     current_page: 1,
     page_size: 10,
     has_next: true,
     has_previous: false,
-    results: []
-  })
+    results: [],
+  });
   const [codigoFiltro, setCodigoFiltro] = useState<string>('');
   const [pagination, setPagination] = useState<Pagination>({
     count: 1,
@@ -30,8 +30,8 @@ export const ComprasPage = () => {
   });
 
   useEffect(() => {
-    fetchCompras()
-  }, [])
+    fetchCompras();
+  }, []);
 
   useEffect(() => {
     // Reinicia a la página 1 cada vez que los filtros cambian
@@ -52,16 +52,16 @@ export const ComprasPage = () => {
 
   const fetchCompras = async (page = 1, limit = 10) => {
     try {
-      setLoading(true)
-      const response = await getAllCompras({ page, limit })
+      setLoading(true);
+      const response = await getAllCompras({ page, limit });
       if (response) {
-        setComprasList(response)
+        setComprasList(response);
         setPagination({
           count: response.count || 0,
           current_page: response.current_page || 1,
           page_size: response.page_size || limit,
           has_next: response.has_next,
-          has_previous: response.has_previous
+          has_previous: response.has_previous,
         });
 
         const params: Record<string, string> = {
@@ -71,7 +71,6 @@ export const ComprasPage = () => {
           // date_to:   initialDateTo,
         };
         setSearchParams(params, { replace: true });
-
       } else {
         setPagination({
           count: 1,
@@ -82,9 +81,9 @@ export const ComprasPage = () => {
         });
       }
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
 
   const handleSearch = (nuevoCodigo: string) => {
     setCodigoFiltro(nuevoCodigo.trim());
@@ -106,5 +105,5 @@ export const ComprasPage = () => {
         </>
       </WhiteSectionsPage>
     </>
-  )
-}
+  );
+};

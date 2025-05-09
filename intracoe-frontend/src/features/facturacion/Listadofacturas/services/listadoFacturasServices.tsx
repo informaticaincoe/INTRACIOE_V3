@@ -18,7 +18,7 @@ export const getAllFacturas = async (
     const queryParams = new URLSearchParams();
 
     //paginacion
-    queryParams.append('page', String(page)); 
+    queryParams.append('page', String(page));
     queryParams.append('page_size', String(limit));
 
     // Agregar filtros si existen
