@@ -1,7 +1,6 @@
 import { Title } from '../../../../shared/text/title';
 import { useParams } from 'react-router';
 import { CrearCompraFormContainer } from '../componentes/crearCompraForm/crearCompraFormContainer';
-import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPage';
 
 export const ComprasNewEdit = () => {
   let params = useParams();

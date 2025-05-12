@@ -319,7 +319,7 @@ class DetalleCompraRetrieveAPIView(generics.RetrieveAPIView):
 class DetallesPorCompraView(APIView):
     def get(self, request, compra_id):
         compra = get_object_or_404(Compra, id=compra_id)
-        detalles = compra.detalles.all()  # gracias al related_name="detalles"
+        detalles = compra.detalles.all()
         serializer = DetalleCompraReadSerializer(detalles, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 

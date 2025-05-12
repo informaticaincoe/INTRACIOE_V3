@@ -1,9 +1,9 @@
-import { aDevolucionVentasParams } from '../../../../shared/interfaces/interfacesPagination';
+import { DevolucionVentasParams } from '../../../../shared/interfaces/interfacesPagination';
 import { apiInventory } from '../../../../shared/services/apiInventory';
 import { getProductById } from '../../../inventario/products/services/productsServices';
 
 export const getAllDevolucionesVentas = async (
-  { page, limit }: aDevolucionVentasParams = {
+  { page, limit }: DevolucionVentasParams = {
     page: 1,
     limit: 10,
   }
@@ -35,8 +35,6 @@ export const getAllDevolucionesVentas = async (
 };
 export const getDetalleDevolucionVentaById = async (
   id: string | number,
-  page = 1,
-  limit = 10
 ) => {
   try {
     const response = await apiInventory.get(`/detalle-devolucion-venta/${id}/`);

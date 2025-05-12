@@ -3,10 +3,10 @@ import { Title } from '../../../../shared/text/title';
 import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPage';
 import { TablaDevolucionesCompra } from '../componentes/tablaDevolucionesCompra';
 import { getAllDevolucionesCompra } from '../services/devolucionesCompraServices';
-import { CompraInterface } from '../../compras/interfaces/comprasInterfaces';
 import { Pagination } from '../../../../shared/interfaces/interfacesPagination';
 import { useSearchParams } from 'react-router';
 import { DevolucionCompra } from '../interfaces/devolucionCompraInterfaces';
+import LoadingScreen from '../../../../shared/loading/loadingScreen';
 
 export const DevolucionesCompraPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -83,11 +83,17 @@ export const DevolucionesCompraPage = () => {
     } catch (error) {
       console.log(error);
     }
+    finally {
+      setLoading(false);
+    }
   };
+
+
 
   return (
     <>
-      <Title text={'Devoluciones de ventas'} />
+      {loading && <LoadingScreen />}
+      <Title text={'Devoluciones compra'} />
 
       <WhiteSectionsPage>
         <>

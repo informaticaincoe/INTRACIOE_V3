@@ -23,8 +23,20 @@ export const getAllDevolucionesCompra = async (
       }
     );
 
+    const data = response.data.results
+
+    const DevolucionConNombre = await Promise.all(
+      data.map(async (ajustes) => {
+        const detalles = await getDetalleDevolucionCompraById(ajustes.id);
+        return {
+          ...ajustes,
+          detalles
+        };
+      })
+    );
+
     return {
-      results: response.data.results,
+      results: DevolucionConNombre,
       current_page: response.data.current_page,
       page_size: response.data.page_size,
       has_next: response.data.has_next,
@@ -48,6 +60,8 @@ export const getDetalleDevolucionCompraById = async (id: string | number) => {
       ...detalle,
       nombreProducto: producto.descripcion,
     };
+
+    console.log(detalleConNombre)
 
     return detalleConNombre;
   } catch (error: any) {

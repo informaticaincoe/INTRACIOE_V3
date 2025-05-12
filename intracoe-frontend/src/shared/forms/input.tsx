@@ -33,7 +33,7 @@ export const Input: React.FC<InputProps> = ({
       placeholder={placeholder}
       value={value}
       onChange={onChange}
-      className={`border-border-color focus:outline-border w-full rounded-sm border px-3 py-3 focus:outline-1 ${className} ${disable ? 'text-gray cursor-not-allowed bg-gray-100' : 'bg-transparent'}`}
+      className={`border-border-color focus:outline-border w-full rounded-sm border px-3 py-3 focus:outline-1 hover:border-gray-500 duration-200 transition-all ${className} ${disable ? 'text-gray cursor-not-allowed bg-gray-100' : 'bg-transparent'}`}
     />
   );
 };

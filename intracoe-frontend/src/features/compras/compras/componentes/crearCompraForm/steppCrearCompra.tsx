@@ -1,8 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { useParams } from 'react-router';
 import CustomToast, {
   CustomToastRef,
-  ToastSeverity,
 } from '../../../../../shared/toast/customToast';
 import { Calendar } from 'primereact/calendar';
 import { CiCalendar } from 'react-icons/ci';
@@ -24,21 +22,7 @@ export const SteppCrearCompra: React.FC<SteppCrearCompraProps> = ({
 }) => {
   const [selectedProveedores, setSelectedProveedores] = useState<any>();
   const [visible, setVisible] = useState(false);
-  let params = useParams();
   const toastRef = useRef<CustomToastRef>(null);
-
-  const handleAccion = (
-    severity: ToastSeverity,
-    icon: any,
-    summary: string
-  ) => {
-    toastRef.current?.show({
-      severity: severity,
-      summary: summary,
-      icon: icon,
-      life: 2000,
-    });
-  };
 
   return (
     <>
@@ -52,7 +36,7 @@ export const SteppCrearCompra: React.FC<SteppCrearCompraProps> = ({
                 <Input
                   name="proveedor"
                   value={`${selectedProveedores.nombre} - ${selectedProveedores.id}`}
-                  onChange={(e) => {}}
+                  onChange={() => { }}
                   disable
                   placeholder="Selecionar proveedor"
                 ></Input>

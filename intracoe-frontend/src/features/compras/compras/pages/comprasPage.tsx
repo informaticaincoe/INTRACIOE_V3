@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Title } from '../../../../shared/text/title';
 import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPage';
 import { Divider } from 'primereact/divider';
@@ -20,6 +20,7 @@ export const ComprasPage = () => {
     has_previous: false,
     results: [],
   });
+
   const [codigoFiltro, setCodigoFiltro] = useState<string>('');
   const [pagination, setPagination] = useState<Pagination>({
     count: 1,
@@ -88,6 +89,7 @@ export const ComprasPage = () => {
   const handleSearch = (nuevoCodigo: string) => {
     setCodigoFiltro(nuevoCodigo.trim());
   };
+  
   return (
     <>
       <Title text={'Compras'} />

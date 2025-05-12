@@ -65,13 +65,23 @@ class DetalleCompraSerializer(serializers.Serializer):
 
     cantidad = serializers.IntegerField(min_value=1)
     precio_unitario = serializers.DecimalField(max_digits=10, decimal_places=2)
-    tipo_item = serializers.CharField(max_length=50)
-
+    tipo_item = serializers.PrimaryKeyRelatedField(
+        queryset=TipoItem.objects.all(), allow_null=True, required=False
+    )
 
 class DetalleCompraReadSerializer(serializers.ModelSerializer):
+    tipo_item = serializers.SerializerMethodField()
+
     class Meta:
         model = DetalleCompra
-        fields = '__all__'
+        fields = '__all__'  # incluye todos los campos nativos
+        # también incluirá 'tipo_item' gracias a SerializerMethodField
+
+    def get_tipo_item(self, obj):
+        if obj.producto and obj.producto.tipo_item:
+            return obj.producto.tipo_item.id
+        return None
+
         
 
 class CompraSerializer(serializers.ModelSerializer):
@@ -128,6 +138,7 @@ class CompraSerializer(serializers.ModelSerializer):
         return instance
 
     def _crear_o_actualizar_producto(self, det):
+
         prod_data = {
             'codigo': det['codigo'],
             'descripcion': det['descripcion'],
@@ -146,15 +157,12 @@ class CompraSerializer(serializers.ModelSerializer):
             producto.unidad_medida = prod_data['unidad_medida']
             producto.preunitario = prod_data['preunitario']
             producto.precio_venta = prod_data['precio_venta']
+            producto.tipo_item = prod_data['tipo_item']
             producto.save(update_fields=[
                 'descripcion', 'categoria',
-                'unidad_medida', 'preunitario', 'precio_venta'
+                'unidad_medida', 'preunitario', 'precio_venta', 'tipo_item'
             ])
         return producto
-
-    
-
-
 
 class MovimientoInventarioSerializer(serializers.ModelSerializer):
     class Meta:
@@ -226,6 +234,7 @@ class DevolucionCompraSerializer(serializers.ModelSerializer):
             'usuario',
             'detalles',          # para POST
             'detalles_creados',  # para GET
+            'fecha'
         ]
 
     def create(self, validated_data):
