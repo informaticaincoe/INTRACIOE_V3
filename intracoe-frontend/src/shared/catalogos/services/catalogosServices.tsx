@@ -1,3 +1,4 @@
+import { ActivitiesInterfacePagination } from '../../interfaces/interfaces';
 import { api } from '../../services/api';
 
 export const getAllActivities = async (
@@ -26,6 +27,38 @@ export const getAllAmbientes = async () => {
     return response.data;
   } catch (error) {
     console.log(error);
+  }
+};
+
+export const getAllActivitiesPagination = async (
+  page?: number,
+  limit?: number,
+  filtro?: string
+) => {
+  const queryParams = new URLSearchParams();
+
+  //paginacion
+  queryParams.append('page', String(page));
+  queryParams.append('page_size', String(limit));
+
+  try {
+    const response = await api.get<ActivitiesInterfacePagination>(
+      `/actividad/`,
+      {
+        params: { page: page, page_size: limit, filtro: filtro },
+      }
+    );
+
+    return {
+      results: response.data.results,
+      current_page: response.data.current_page,
+      page_size: response.data.page_size,
+      has_next: response.data.has_next,
+      has_previous: response.data.has_previous,
+      count: response.data.count,
+    };
+  } catch (error) {
+    console.log('Error en la solicitud:', error);
   }
 };
 

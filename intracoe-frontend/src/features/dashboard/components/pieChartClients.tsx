@@ -22,9 +22,7 @@ export const PieChartClients = () => {
   // Truncado central con tooltip
   const MAX_NAME = 20;
   const displayName =
-    top.name.length > MAX_NAME
-      ? `${top.name.slice(0, MAX_NAME)}…`
-      : top.name;
+    top.name.length > MAX_NAME ? `${top.name.slice(0, MAX_NAME)}…` : top.name;
 
   return (
     <div style={{ width: '100%', maxWidth: 500, margin: '0 auto' }}>
@@ -45,10 +43,7 @@ export const PieChartClients = () => {
               onMouseEnter={onPieEnter}
             >
               {pieData.map((_, idx) => (
-                <Cell
-                  key={`cell-${idx}`}
-                  fill={COLORS[idx % COLORS.length]}
-                />
+                <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
               ))}
             </Pie>
 

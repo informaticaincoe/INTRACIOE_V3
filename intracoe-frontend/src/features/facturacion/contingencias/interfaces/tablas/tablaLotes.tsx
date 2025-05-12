@@ -15,7 +15,7 @@ import CustomToast, {
   ToastSeverity,
 } from '../../../../../shared/toast/customToast';
 import { IoMdCloseCircle } from 'react-icons/io';
-import { IoIosSend } from "react-icons/io";
+import { IoIosSend } from 'react-icons/io';
 import LoadingScreen from '../../../../../shared/loading/loadingScreen';
 
 interface lotesInterface {
@@ -38,7 +38,7 @@ export const TablaLotes: React.FC<TablaLotesProps> = ({
   contingenciaEstado,
   updateContingencias,
 }) => {
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
   const toastRef = useRef<CustomToastRef>(null);
 
   useEffect(() => {
@@ -67,7 +67,7 @@ export const TablaLotes: React.FC<TablaLotesProps> = ({
       factura_id: id,
     };
     try {
-      setLoading(true)
+      setLoading(true);
       await enviarFacturaContingencia(data);
       handleAccion(
         'success',
@@ -81,9 +81,8 @@ export const TablaLotes: React.FC<TablaLotesProps> = ({
         <IoMdCloseCircle size={32} />,
         'Error al enviar la factura'
       );
-    }
-    finally {
-      setLoading(false)
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -94,7 +93,7 @@ export const TablaLotes: React.FC<TablaLotesProps> = ({
     const data = { factura_ids: facturasListIds };
 
     try {
-      setLoading(true)
+      setLoading(true);
       await enviarLoteContingencia(data);
       handleAccion(
         'success',
@@ -108,9 +107,8 @@ export const TablaLotes: React.FC<TablaLotesProps> = ({
         <IoMdCloseCircle size={32} />,
         'Error al enviar la factura'
       );
-    }
-    finally {
-      setLoading(false)
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -152,8 +150,8 @@ export const TablaLotes: React.FC<TablaLotesProps> = ({
                     <button
                       className="border-primary-blue hover:bg-primary-blue text-primary-blue flex items-center gap-2 rounded-md border px-5 py-2 font-medium hover:cursor-pointer hover:text-white"
                       onClick={(event) => {
-                        handleEnviarLote(id)
-                        event.stopPropagation()
+                        handleEnviarLote(id);
+                        event.stopPropagation();
                       }}
                     >
                       <IoIosSend size={24} />

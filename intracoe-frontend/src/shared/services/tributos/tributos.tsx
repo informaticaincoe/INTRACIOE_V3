@@ -65,8 +65,7 @@ export const getAllAlmacenes = async (): Promise<any[]> => {
   }
 };
 
-
-export const getAlmacenById = async (id:number)=> {
+export const getAlmacenById = async (id: number) => {
   try {
     const response = await apiInventory.get(`/almacenes/${id}`);
     return response.data;

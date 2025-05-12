@@ -88,7 +88,10 @@ const { CatalogosPage } = lazily(
 );
 
 const { MovimientoInventarioPage } = lazily(
-  () => import('./features/inventario/movimientoInventario/pages/movimientoInventarioPage')
+  () =>
+    import(
+      './features/inventario/movimientoInventario/pages/movimientoInventarioPage'
+    )
 );
 
 function App() {
@@ -112,13 +115,28 @@ function App() {
           <Route path="/listado-facturas" element={<ListadoFacturas />} />
           <Route path="/servicios" element={<ServicioPage />} />
 
-          <Route path="/movimiento-inventario" element={<MovimientoInventarioPage />} />
-          <Route path="/movimiento-inventario/:id" element={<MovimientoInventarioEdit />} />
-          <Route path="/movimiento-inventario/nuevo" element={<MovimientoInventarioEdit />} />
+          <Route
+            path="/movimiento-inventario"
+            element={<MovimientoInventarioPage />}
+          />
+          <Route
+            path="/movimiento-inventario/:id"
+            element={<MovimientoInventarioEdit />}
+          />
+          <Route
+            path="/movimiento-inventario/nuevo"
+            element={<MovimientoInventarioEdit />}
+          />
           <Route path="/ajuste-inventario" element={<AjusteInventarioPage />} />
-          <Route path="/ajuste-inventario/nuevo" element={<AjusteInventarioEditNew />} />
-          <Route path="/ajuste-inventario/:id" element={<AjusteInventarioEditNew />} />
-          
+          <Route
+            path="/ajuste-inventario/nuevo"
+            element={<AjusteInventarioEditNew />}
+          />
+          <Route
+            path="/ajuste-inventario/:id"
+            element={<AjusteInventarioEditNew />}
+          />
+
           <Route path="/servicio/nuevo" element={<NuevoServiciopage />} />
           <Route path="/servicio/:id" element={<NuevoServiciopage />} />
           <Route path="/empresa" element={<ConfigBussiness />} />
@@ -126,13 +144,19 @@ function App() {
           <Route path="/proveedores" element={<ProveedoresPage />} />
           <Route path="/proveedores/nuevo" element={<ProveedoresNewEdit />} />
           <Route path="/proveedor/:id" element={<ProveedoresNewEdit />} />
-          
+
           <Route path="/compras" element={<ComprasPage />} />
           <Route path="/compras/nuevo" element={<ComprasNewEdit />} />
           <Route path="/compras/:id" element={<ComprasNewEdit />} />
 
-          <Route path="/devoluciones-compra" element={<DevolucionesCompraPage />} />
-          <Route path="/devoluciones-ventas" element={<DevoluacionesVentaPage />} />
+          <Route
+            path="/devoluciones-compra"
+            element={<DevolucionesCompraPage />}
+          />
+          <Route
+            path="/devoluciones-ventas"
+            element={<DevoluacionesVentaPage />}
+          />
 
           <Route path="/catalogos" element={<CatalogosPage />} />
           <Route path="/receptor/nuevo" element={<NuevoReceptorPage />} />

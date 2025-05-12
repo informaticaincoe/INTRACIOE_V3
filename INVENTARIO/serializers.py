@@ -65,12 +65,23 @@ class DetalleCompraSerializer(serializers.Serializer):
 
     cantidad = serializers.IntegerField(min_value=1)
     precio_unitario = serializers.DecimalField(max_digits=10, decimal_places=2)
-
+    tipo_item = serializers.PrimaryKeyRelatedField(
+        queryset=TipoItem.objects.all(), allow_null=True, required=False
+    )
 
 class DetalleCompraReadSerializer(serializers.ModelSerializer):
+    tipo_item = serializers.SerializerMethodField()
+
     class Meta:
         model = DetalleCompra
-        fields = '__all__'
+        fields = '__all__'  # incluye todos los campos nativos
+        # también incluirá 'tipo_item' gracias a SerializerMethodField
+
+    def get_tipo_item(self, obj):
+        if obj.producto and obj.producto.tipo_item:
+            return obj.producto.tipo_item.id
+        return None
+
         
 
 class CompraSerializer(serializers.ModelSerializer):
@@ -78,7 +89,7 @@ class CompraSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Compra
-        fields = ['id','proveedor', 'estado', 'detalles', 'fecha', 'total']
+        fields = ['id','proveedor', 'estado', 'detalles', 'fecha', 'total', 'tipo_documento', 'numero_documento', 'tipo_operacion', 'clasificacion', 'sector', 'tipo_costo_gasto']
 
     def create(self, validated_data):
         detalles_data = validated_data.pop('detalles')
@@ -86,29 +97,7 @@ class CompraSerializer(serializers.ModelSerializer):
         total = Decimal('0.00')
 
         for det in detalles_data:
-            prod_data = {
-                'codigo': det['codigo'],
-                'descripcion': det['descripcion'],
-                'categoria': det.get('categoria'),
-                'unidad_medida': det.get('unidad_medida'),
-                'preunitario': det['preunitario'],
-                'precio_venta': det['precio_venta'],
-            }
-            producto, created = Producto.objects.get_or_create(
-                codigo=prod_data['codigo'], defaults=prod_data
-            )
-            if not created:
-                # Actualizar campos excepto precio_compra
-                producto.descripcion = prod_data['descripcion']
-                producto.categoria = prod_data['categoria']
-                producto.unidad_medida = prod_data['unidad_medida']
-                producto.preunitario = prod_data['preunitario']
-                producto.precio_venta = prod_data['precio_venta']
-                producto.save(update_fields=[
-                    'descripcion', 'categoria',
-                    'unidad_medida', 'preunitario', 'precio_venta'
-                ])
-
+            producto = self._crear_o_actualizar_producto(det)
             detalle = DetalleCompra.objects.create(
                 compra=compra,
                 producto=producto,
@@ -120,6 +109,60 @@ class CompraSerializer(serializers.ModelSerializer):
         compra.total = total
         compra.save(update_fields=['total'])
         return compra
+
+    def update(self, instance, validated_data):
+        detalles_data = validated_data.pop('detalles', None)
+
+        # Actualizar campos simples del modelo Compra
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        if detalles_data is not None:
+            # Eliminar detalles anteriores
+            instance.detalles.all().delete()
+            total = Decimal('0.00')
+            for det in detalles_data:
+                producto = self._crear_o_actualizar_producto(det)
+                detalle = DetalleCompra.objects.create(
+                    compra=instance,
+                    producto=producto,
+                    cantidad=det['cantidad'],
+                    precio_unitario=det['precio_unitario']
+                )
+                total += detalle.subtotal
+
+            instance.total = total
+            instance.save(update_fields=['total'])
+
+        return instance
+
+    def _crear_o_actualizar_producto(self, det):
+
+        prod_data = {
+            'codigo': det['codigo'],
+            'descripcion': det['descripcion'],
+            'categoria': det.get('categoria'),
+            'unidad_medida': det.get('unidad_medida'),
+            'preunitario': det['preunitario'],
+            'precio_venta': det['precio_venta'],
+            'tipo_item': det.get('tipo_item')
+        }
+        producto, created = Producto.objects.get_or_create(
+            codigo=prod_data['codigo'], defaults=prod_data
+        )
+        if not created:
+            producto.descripcion = prod_data['descripcion']
+            producto.categoria = prod_data['categoria']
+            producto.unidad_medida = prod_data['unidad_medida']
+            producto.preunitario = prod_data['preunitario']
+            producto.precio_venta = prod_data['precio_venta']
+            producto.tipo_item = prod_data['tipo_item']
+            producto.save(update_fields=[
+                'descripcion', 'categoria',
+                'unidad_medida', 'preunitario', 'precio_venta', 'tipo_item'
+            ])
+        return producto
 
 class MovimientoInventarioSerializer(serializers.ModelSerializer):
     class Meta:
@@ -191,6 +234,7 @@ class DevolucionCompraSerializer(serializers.ModelSerializer):
             'usuario',
             'detalles',          # para POST
             'detalles_creados',  # para GET
+            'fecha'
         ]
 
     def create(self, validated_data):

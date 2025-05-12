@@ -3,23 +3,23 @@ import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPa
 import { Title } from '../../../../shared/text/title';
 import { TableListadoFacturasContainer } from '../componentes/TableListadoFacturasContainer';
 import {
-  Filters,
+  FiltersListadoFacturas,
   ListResult,
 } from '../../../../shared/interfaces/interfaceFacturaJSON';
 import { getAllFacturas } from '../services/listadoFacturasServices';
 import { OptionsContainer } from '../componentes/filter/optionsContainer';
-import { pagination } from '../../../../shared/interfaces/interfaces';
+import { pagination2 } from '../../../../shared/interfaces/interfacesPagination';
 
 export const ListadoFacturas = () => {
   const [data, setData] = useState<ListResult[]>([]);
-  const [pagination, setPagination] = useState<pagination>({
+  const [pagination, setPagination] = useState<pagination2>({
     current_page: 1,
     page_size: 10,
     total_pages: 1,
     total_records: 1,
   });
 
-  const [filters, setFilters] = useState<Filters>({
+  const [filters, setFilters] = useState<FiltersListadoFacturas>({
     recibido_mh: null,
     sello_recepcion: null,
     has_sello_recepcion: null,

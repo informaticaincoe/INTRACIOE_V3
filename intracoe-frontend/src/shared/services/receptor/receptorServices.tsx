@@ -1,19 +1,34 @@
 // src/services/receptorService.ts
 
-import { ReceptorInterface } from '../../interfaces/interfaces';
+import { ReceptorInterface } from '../../../features/ventas/receptores/interfaces/receptorInterfaces';
+import { ReceptoresParams } from '../../interfaces/interfacesPagination';
 import { api } from '../api';
 
-export const getAllReceptor = async ({
-  filter,
-}: { filter?: any | null } = {}): Promise<ReceptorInterface[]> => {
+export const getAllReceptor = async (
+  { filter, page, limit }: ReceptoresParams = {
+    page: 1,
+    limit: 10,
+  }
+) => {
   try {
-    const params: Record<string, any> = {};
-    if (filter) params.filtro = filter;
+    const queryParams = new URLSearchParams();
 
-    const response = await api.get<ReceptorInterface[]>('/receptor/', {
-      params,
+    //paginacion
+    queryParams.append('page', String(page));
+    queryParams.append('page_size', String(limit));
+
+    const response = await api.get<ReceptorInterface>('/receptor/', {
+      params: { page: 1, page_size: limit, filter: filter },
     });
-    return response.data;
+
+    return {
+      results: response.data.results,
+      current_page: response.data.current_page,
+      page_size: response.data.page_size,
+      has_next: response.data.has_next,
+      has_previous: response.data.has_previous,
+      count: response.data.count,
+    };
   } catch (error) {
     console.error('Error fetching receptores:', error);
     throw new Error('Error fetching receptores');

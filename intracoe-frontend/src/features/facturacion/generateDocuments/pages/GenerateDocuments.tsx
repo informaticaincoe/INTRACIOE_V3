@@ -25,7 +25,10 @@ import {
 } from '../../../../shared/interfaces/interfaces';
 import { ProductosTabla } from '../components/FE/productosAgregados/productosData';
 import { ResumenTotalesCard } from '../components/Shared/resumenTotales/resumenTotalesCard';
-import { generarFacturaService, getFacturaCodigos } from '../services/factura/facturaServices';
+import {
+  generarFacturaService,
+  getFacturaCodigos,
+} from '../services/factura/facturaServices';
 import { CheckBoxRetencion } from '../components/Shared/configuracionFactura/Retencion/checkBoxRetencion';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { useNavigate } from 'react-router';
@@ -41,9 +44,11 @@ import LoadingScreen from '../../../../shared/loading/loadingScreen';
 
 export const GenerateDocuments = () => {
   //lista de datos obtenidas de la api
-  const [condicionesOperacionList, setCondicionesOperacionList] = useState<ConfiguracionFacturaInterface>();
+  const [condicionesOperacionList, setCondicionesOperacionList] =
+    useState<ConfiguracionFacturaInterface>();
   const [receptor, setReceptor] = useState<ReceptorInterface>(ReceptorDefault); // almacenar informacion del receptor
-  const [emisorData, setEmisorData] = useState<EmisorInterface>(defaultEmisorData); // almcenar informacion del emisor
+  const [emisorData, setEmisorData] =
+    useState<EmisorInterface>(defaultEmisorData); // almcenar informacion del emisor
   const [tipoDocumento, setTipoDocumento] = useState<TipoDocumento[]>([]); // almcenar tipo de dte
   const [tipoDocumentoSelected, setTipoDocumentoSelected] = useState<TipoDTE>(); // almcenar tipo de dte
 
@@ -60,21 +65,27 @@ export const GenerateDocuments = () => {
 
   //variables para mostrar modales
   const [showProductsModal, setShowProductsModal] = useState(false); //mostrar modal con lista de productos
-  // const [visibleDocumentoRelacionadomodal, setVisibleDocumentoRelacionadomodal] = useState(false); 
+  // const [visibleDocumentoRelacionadomodal, setVisibleDocumentoRelacionadomodal] = useState(false);
 
   //datos seleccionados para realizar la factura
-  const [selectedCondicionDeOperacion, setSelectedCondicionDeOperacion] = useState<string>('1'); //id de la condicion de operacion (01 por defecto)
-  const [selectedProducts, setSelectedProducts] = useState<ProductosTabla[]>([]);
-  const [saldoFavor, setSaldoFavor] = useState<number>(0.00)
+  const [selectedCondicionDeOperacion, setSelectedCondicionDeOperacion] =
+    useState<string>('1'); //id de la condicion de operacion (01 por defecto)
+  const [selectedProducts, setSelectedProducts] = useState<ProductosTabla[]>(
+    []
+  );
+  const [saldoFavor, setSaldoFavor] = useState<number>(0.0);
 
   //lista de productos que tendra la factura
   const [idListProducts, setIdListProducts] = useState<string[]>([]); // lista con solo los id de los productos que tendra la factura
-  const [cantidadListProducts, setCantidadListProducts] = useState<string[]>([]);
+  const [cantidadListProducts, setCantidadListProducts] = useState<string[]>(
+    []
+  );
   const [observaciones, setObservaciones] = useState<string>('');
   const [retencionIva, setRetencionIva] = useState<number>(0);
   const [retencionRenta, setRetencionRenta] = useState<number>(0);
   const [tieneRetencionIva, setTieneRetencionIva] = useState<boolean>(false);
-  const [tieneRetencionRenta, setTieneRetencionRenta] = useState<boolean>(false);
+  const [tieneRetencionRenta, setTieneRetencionRenta] =
+    useState<boolean>(false);
   const [tipoItem, setTipoItem] = useState<number | null>(null);
 
   //calculos
@@ -123,7 +134,9 @@ export const GenerateDocuments = () => {
       return Math.round(porcentaje * 100) / 100; // Redondea a 2 decimales
     });
 
-    const tipoItemsList = selectedProducts.map((producto) => producto.tipo_item);
+    const tipoItemsList = selectedProducts.map(
+      (producto) => producto.tipo_item
+    );
     // Crear un set de los valores únicos
     const tipoItemsUnicos = new Set(tipoItemsList);
     if (tipoItemsUnicos.size === 1) {
@@ -152,20 +165,20 @@ export const GenerateDocuments = () => {
       tipo_item_select: tipoItem,
 
       condicion_operacion: selectedCondicionDeOperacion, //contado, credito, otros
-      porcentaje_retencion_iva: (retencionIva).toString(),
+      porcentaje_retencion_iva: retencionIva.toString(),
       retencion_iva: tieneRetencionIva,
-      // productos_retencion_iva 
+      // productos_retencion_iva
 
-      porcentaje_retencion_renta: (retencionRenta).toString(),
+      porcentaje_retencion_renta: retencionRenta.toString(),
       retencion_renta: tieneRetencionRenta,
       // productos_retencion_renta
       fp_id: formasPagoList,
 
-      descuento_global_input: (descuentos.descuentoGeneral).toString(),
+      descuento_global_input: descuentos.descuentoGeneral.toString(),
       saldo_favor_input: saldoFavor,
       no_gravado: baseImponible,
 
-      descuento_gravado: (descuentos.descuentoGravado).toString(),
+      descuento_gravado: descuentos.descuentoGravado.toString(),
 
       productos_ids: idListProducts,
       cantidades: cantidadListProducts, //cantidad de cada producto de la factura

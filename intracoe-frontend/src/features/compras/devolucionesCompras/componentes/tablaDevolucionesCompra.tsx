@@ -1,52 +1,70 @@
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router';
+import React, { useEffect, useState } from 'react';
+import { DevolucionCompraResult } from '../interfaces/devolucionCompraInterfaces';
+import { Pagination } from '../../../../shared/interfaces/interfacesPagination';
+import { Paginator } from 'primereact/paginator';
+import { ModalDetallesCompraDevuelta } from './modalDetallesCompraDevuelta';
+import { LuExternalLink } from 'react-icons/lu';
 
 interface TablaDevolucionesCompraProps {
-    devolucionesList: any[]
+  devolucionesList: DevolucionCompraResult[] | undefined;
+  updateList: () => void;
+  pagination: Pagination;
+  onPageChange: (event: any) => void;
 }
 
-export const TablaDevolucionesCompra: React.FC<TablaDevolucionesCompraProps> = ({ devolucionesList }) => {
-    const [selectedDevolucionVenta, setSelectedDevolucionVenta] = useState<any[]>([]);
-    const [visibleModal, setVisibleModal] = useState(false)
+export const TablaDevolucionesCompra: React.FC<
+  TablaDevolucionesCompraProps
+> = ({ devolucionesList, pagination, onPageChange }) => {
+  const [selectedDevolucionVenta, setSelectedDevolucionVenta] = useState<DevolucionCompraResult>();
+  const [visibleModal, setVisibleModal] = useState(false);
 
-    const handleDevolucionSelected = (elemento: any) => {
-        console.log(elemento)
-        setSelectedDevolucionVenta(elemento)
-        setVisibleModal(true)
-    }
+  useEffect(() => {
+  }, [selectedDevolucionVenta])
 
-    return (
-        <>
-            <DataTable
-                value={devolucionesList}
-                tableStyle={{ minWidth: '50rem' }}
-                selectionMode={'single'}
-                selection={selectedDevolucionVenta}
-                onSelectionChange={(e) =>
-                    handleDevolucionSelected(e.value)
-                }
-            >
-                <Column field="num_factura" header="Factura"></Column>
-                <Column field="fecha" header="Fecha"></Column>
-                <Column field="motivo" header="Motivo"></Column>
-                <Column field="estado" header="Estado"></Column>
-                <Column field="usuario" header="Usuario"></Column>
-                <Column header="Acciones"
-                    body={(rowData: any) => (
-                        <button className='underline hover:cursor-pointer' onClick={() => handleDevolucionSelected(rowData)}>Ver detalles</button>
-                    )}></Column>
+  const handleDevolucionSelected = (elemento: any) => {
+    setSelectedDevolucionVenta(elemento);
+    setVisibleModal(true)
+  };
 
-            </DataTable>
+  return (
+    <>
+      <DataTable
+        value={devolucionesList}
+        tableStyle={{ minWidth: '50rem' }}
+      >
+        <Column header="Compra"
+          body={(rowData: any) => (
+            <button className='flex gap-2 items-center text-blue underline hover:cursor-pointer' onClick={()=>handleDevolucionSelected(rowData)}>
+              <LuExternalLink />
+              {rowData.compra}
+            </button>
+          )}
+        ></Column>
+        <Column field="fecha" header="Fecha"></Column>
+        <Column field="motivo" header="Motivo"></Column>
+        <Column field="estado" header="Estado"></Column>
+        <Column field="usuario" header="Usuario"></Column>
+      </DataTable>
 
-            {/* {selectedDevolucionVenta && (
-                <ModalDetallesDevolucionesVenta
-                    data={selectedDevolucionVenta} // Solo pasa un ID válido si hay un producto seleccionado
-                    visible={visibleModal}
-                    setVisible={setVisibleModal}
-                />
-            )} */}
-        </>
-    )
-}
+      <div className="pt-5">
+        <Paginator
+          first={(pagination.current_page - 1) * pagination.page_size}
+          rows={pagination.page_size}
+          totalRecords={pagination.count}
+          rowsPerPageOptions={[10, 25, 50]}
+          onPageChange={onPageChange}
+        />
+      </div>
+
+      {selectedDevolucionVenta && (
+        <ModalDetallesCompraDevuelta
+          id={(selectedDevolucionVenta.compra).toString()}
+          visible={visibleModal}
+          setVisible={setVisibleModal}
+        />
+      )}
+    </>
+  );
+};

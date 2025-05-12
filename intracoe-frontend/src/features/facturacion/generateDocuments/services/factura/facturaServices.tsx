@@ -13,7 +13,7 @@ export const generarFacturaService = async (data: any) => {
 };
 
 export const generarAjusteService = async (data: string) => {
-  console.log("data", data)
+  console.log('data', data);
   try {
     const response = await api.get(`/factura_ajuste/generar/`, {
       params: {
@@ -102,8 +102,8 @@ export const getFacturaBycodigo = async (codigo_generacion: string) => {
       }
     );
     return response.data;
-  } catch (error:any) {
-    const msg = error.response.data.error
+  } catch (error: any) {
+    const msg = error.response.data.error;
     throw new Error(msg);
   }
 };
