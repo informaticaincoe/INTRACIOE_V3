@@ -1,22 +1,23 @@
-import { Filters } from '../../../../shared/interfaces/interfaceFacturaJSON';
+import { FiltersListadoFacturas } from '../../../../shared/interfaces/interfaceFacturaJSON';
 import { api } from '../../../../shared/services/api';
 
-interface FacturaParams {
+export interface FacturaParams {
   page?: number;
   limit?: number;
-  filters?: Filters;
+  filters?: FiltersListadoFacturas;
 }
 
 export const getAllFacturas = async (
   { page, limit, filters }: FacturaParams = {
     page: 1,
-    limit: 999999,
+    limit: 100,
     filters: undefined,
   }
 ) => {
   try {
     const queryParams = new URLSearchParams();
 
+    //paginacion
     queryParams.append('page', String(page));
     queryParams.append('page_size', String(limit));
 

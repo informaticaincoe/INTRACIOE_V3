@@ -1,71 +1,89 @@
-import { useEffect, useRef, useState } from "react";
-import { CompraInterface, CompraPayload, CompraPayloadDeafult, DetalleCompraDefault, DetalleCompraPayload, erroresCompra, erroresDetalleCompra } from "../../interfaces/comprasInterfaces";
-import CustomToast, { CustomToastRef, ToastSeverity } from "../../../../../shared/toast/customToast";
-import { WhiteSectionsPage } from "../../../../../shared/containers/whiteSectionsPage";
-import { Steps } from "primereact/steps";
-import { SteppCrearCompra } from "./steppCrearCompra";
-import { useNavigate } from "react-router";
-import { SteppDetallesProducto } from "./steppDetallesProductos";
-import { addCompra } from "../../services/comprasServices";
-import { FaCheckCircle } from "react-icons/fa";
-import { IoMdCloseCircle } from "react-icons/io";
-
+import { useEffect, useRef, useState } from 'react';
+import {
+  CompraPayload,
+  CompraPayloadDeafult,
+  DetalleCompraPayload,
+  erroresCompra,
+} from '../../interfaces/comprasInterfaces';
+import CustomToast, {
+  CustomToastRef,
+  ToastSeverity,
+} from '../../../../../shared/toast/customToast';
+import { Steps } from 'primereact/steps';
+import { SteppCrearCompra } from './steppCrearCompra';
+import { useNavigate, useParams } from 'react-router';
+import { SteppListaProducto } from './steppListaProductos';
+import {
+  addCompra,
+  getComprasById,
+  getDetalleCompras,
+  updateComprasById,
+} from '../../services/comprasServices';
+import { FaCheckCircle } from 'react-icons/fa';
+import { IoMdCloseCircle } from 'react-icons/io';
 
 export const CrearCompraFormContainer = () => {
+  let { id } = useParams();
   // Estado para controlar el paso actual
   const [current, setCurrent] = useState(0);
-  const [formDataCompra, setFormDataCompra] = useState<CompraPayload>(CompraPayloadDeafult);
-  const [formDataDetalleCompra, setFormDataDetalleCompra] = useState<DetalleCompraPayload>(DetalleCompraDefault);
+  const [formDataCompra, setFormDataCompra] =
+    useState<CompraPayload>(CompraPayloadDeafult);
+  const [detallesCompra, setDetallesCompra] = useState<DetalleCompraPayload[]>(
+    []
+  );
   const [errorsCompra, setErrorsCompra] = useState(erroresCompra);
-  const [errorsDetalle, setErrorsDetalle] = useState(erroresDetalleCompra);
   const toastRef = useRef<CustomToastRef>(null);
   const navigate = useNavigate();
 
   const handleChangeCompra = (e: any) => {
+    console.log('EEEEEEEEEEEEE', e);
     setFormDataCompra({ ...formDataCompra, [e.target.name]: e.target.value });
   };
 
-  const handleChangeDetalleCompra = (e: any) => {
-    if (e.target.name == "precio_unitario") {
-      console.log("precio_unitario")
-      setFormDataDetalleCompra({ ...formDataDetalleCompra, [e.target.name]: e.target.value, 'preunitario': e.target.value });
+  useEffect(() => {
+    if (id) {
+      fetchEditData();
     }
-    else
-      setFormDataDetalleCompra({ ...formDataDetalleCompra, [e.target.name]: e.target.value });
+  }, []);
+
+  const fetchEditData = async () => {
+    if (id) {
+      try {
+        const response = await getComprasById(id);
+        console.log('COMPAS', response);
+        setFormDataCompra(response);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    if (id) {
+      try {
+        const response = await getDetalleCompras(id);
+        console.log('DETALLES', response);
+        setDetallesCompra(response);
+        if (response) {
+          const detallesConPre = response.map(det => ({
+            ...det,
+            preunitario: det.precio_unitario
+          }));
+          setDetallesCompra(detallesConPre);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    }
   };
 
   useEffect(() => {
-    const total = parseInt(formDataDetalleCompra.cantidad) * parseFloat(formDataDetalleCompra.precio_unitario)
-    setFormDataCompra({ ...formDataCompra, "total": total.toString() });
-
-  }, [formDataDetalleCompra.cantidad, formDataDetalleCompra.precio_unitario])
+    setFormDataCompra({ ...formDataCompra, total: '0' });
+  }, [detallesCompra]);
 
   const moveToStepp2 = () => {
-    let newErrors = { codigo: "", descripcion: "", categoria: "", precio_venta: "", cantidad: "", precio_unitario: "", preunitario: "" };
-
-
-    if (!formDataDetalleCompra.codigo) {
-      newErrors.codigo = 'Codigo es un campo requerido';
-    }
-    if (!formDataDetalleCompra.descripcion) {
-      newErrors.descripcion = 'Descripcion es un campo requerido';
-    }
-    if (!formDataDetalleCompra.cantidad) {
-      newErrors.cantidad = 'Cantidad es un campo requerido';
-    }
-    if (!formDataDetalleCompra.precio_unitario) {
-      newErrors.precio_unitario = 'Precio unitario es un campo requerido';
-    }
-    if (!formDataDetalleCompra.precio_venta) {
-      newErrors.precio_venta = 'Precio es un campo requerido';
-    }
-    setErrorsDetalle(newErrors);
-    if (!newErrors.codigo && !newErrors.descripcion && !newErrors.categoria && !newErrors.precio_venta && !newErrors.cantidad && !newErrors.precio_unitario)
-      setCurrent(current + 1)
-  }
+    setCurrent(current + 1);
+  };
 
   const handleSubmit = async () => {
-    let newErrors = { proveedor: "", estado: "" };
+    let newErrors = { proveedor: '', estado: '' };
 
     if (!formDataCompra.proveedor) {
       newErrors.proveedor = 'Proveedor es un campo requerido';
@@ -74,32 +92,53 @@ export const CrearCompraFormContainer = () => {
       newErrors.estado = 'Estado es un campo requerido';
     }
 
-    console.log("errores compra", newErrors)
-
     setErrorsCompra(newErrors);
 
     if (!newErrors.proveedor && !newErrors.estado) {
       const data: CompraPayload = {
         ...formDataCompra,
-        detalles: [formDataDetalleCompra],
+        detalles: detallesCompra,
       };
 
-      console.log("Data que se enviará:", JSON.stringify(data, null, 2));
+      console.log('Data que se enviará:', JSON.stringify(data, null, 2));
 
-      try {
-        const response = await addCompra(data); // <-- ENVÍA TODO
-        console.log("Respuesta del backend:", response);
+      // if (id) {
+      //   try {
+      //     const response = await updateComprasById(id, data);
+      //     console.log('Respuesta del backend:', response);
 
-        handleAccion("success", <FaCheckCircle />, "Compra creada correctamente");
+      //     handleAccion(
+      //       'success',
+      //       <FaCheckCircle />,
+      //       'Compra editada correctamente'
+      //     );
 
-        setTimeout(() => {
-          navigate('/compras/');
-        }, 2000);
+      //     setTimeout(() => {
+      //       navigate('/compras/');
+      //     }, 2000);
+      //   } catch (error) {
+      //     console.error('Error al editar compra:', error);
+      //     handleAccion('error', <IoMdCloseCircle />, 'Error al editar la compra');
+      //   }
+      // } else {
+      //   try {
+      //     const response = await addCompra(data);
+      //     console.log('Respuesta del backend:', response);
 
-      } catch (error) {
-        console.error("Error al crear compra:", error);
-        handleAccion("error", <IoMdCloseCircle />, "Error al crear la compra");
-      }
+      //     handleAccion(
+      //       'success',
+      //       <FaCheckCircle />,
+      //       'Compra creada correctamente'
+      //     );
+
+      //     setTimeout(() => {
+      //       navigate('/compras/');
+      //     }, 2000);
+      //   } catch (error) {
+      //     console.error('Error al crear compra:', error);
+      //     handleAccion('error', <IoMdCloseCircle />, 'Error al crear la compra');
+      //   }
+      // }
     }
   };
 
@@ -122,15 +161,14 @@ export const CrearCompraFormContainer = () => {
       content: (
         <>
           <div>
-            <SteppDetallesProducto
-              formData={formDataDetalleCompra}
-              handleChangeDetalle={handleChangeDetalleCompra}
-              errorsDetalle={errorsDetalle}
+            <SteppListaProducto
+              detalles={detallesCompra}
+              setDetalles={setDetallesCompra}
             />
           </div>
-          <div className="justify-content-end flex pt-4 gap-3">
+          <div className="justify-content-end flex gap-3 pt-4">
             <button
-              className={`mt-5 rounded-md px-8 py-3 text-primary-blue cursor-pointer border border-primary-blue bg-white'}`}
+              className={`text-primary-blue border-primary-blue bg-white'} mt-5 cursor-pointer rounded-md border px-8 py-3`}
               onClick={moveToStepp2}
             >
               Siguiente
@@ -150,15 +188,17 @@ export const CrearCompraFormContainer = () => {
               errorCompra={errorsCompra}
             />
           </div>
-          <div className="justify-content-end flex pt-4 gap-3">
+          <div className="justify-content-end flex gap-3 pt-4">
             <button
-              className={`mt-5 rounded-md px-8 py-3 text-primary-blue border border-primary-blue `}
-              onClick={() => { setCurrent(current - 1) }}
+              className={`text-primary-blue border-primary-blue mt-5 rounded-md border px-8 py-3`}
+              onClick={() => {
+                setCurrent(current - 1);
+              }}
             >
               Anterior
             </button>
             <button
-              className={`mt-5 rounded-md px-8 py-3 bg-primary-blue text-white`}
+              className={`bg-primary-blue mt-5 rounded-md px-8 py-3 text-white`}
               onClick={handleSubmit}
             >
               Crear Compra
@@ -171,21 +211,19 @@ export const CrearCompraFormContainer = () => {
 
   return (
     <>
-      <WhiteSectionsPage >
-        <>
-          <Steps
-            activeIndex={current}
-            model={steps.map((item) => ({
-              label: item.title,
-              key: item.title,
-            }))}
-            style={{ marginBottom: '5%' }}
-            onSelect={(e) => setCurrent(e.index)} // Update the `current` state on step change
-          />
-          <div style={{ marginTop: 24 }}>{steps[current].content}</div>
-          <CustomToast ref={toastRef} />
-        </>
-      </WhiteSectionsPage>
+      <>
+        <Steps
+          activeIndex={current}
+          model={steps.map((item) => ({
+            label: item.title,
+            key: item.title,
+          }))}
+          style={{ marginBottom: '5%' }}
+          onSelect={(e) => setCurrent(e.index)} // Update the `current` state on step change
+        />
+        <div style={{ marginTop: 24 }}>{steps[current].content}</div>
+        <CustomToast ref={toastRef} />
+      </>
     </>
   );
 };

@@ -1,0 +1,20 @@
+ let newErrors = { codigo: "", descripcion: "", categoria: "", precio_venta: "", cantidad: "", precio_unitario: "", preunitario: "" };
+
+
+    if (!formDataDetalleCompra.codigo) {
+      newErrors.codigo = 'Codigo es un campo requerido';
+    }
+    if (!formDataDetalleCompra.descripcion) {
+      newErrors.descripcion = 'Descripcion es un campo requerido';
+    }
+    if (!formDataDetalleCompra.cantidad) {
+      newErrors.cantidad = 'Cantidad es un campo requerido';
+    }
+    if (!formDataDetalleCompra.precio_unitario) {
+      newErrors.precio_unitario = 'Precio unitario es un campo requerido';
+    }
+    if (!formDataDetalleCompra.precio_venta) {
+      newErrors.precio_venta = 'Precio es un campo requerido';
+    }
+    setErrorsDetalle(newErrors);
+    if (!newErrors.codigo && !newErrors.descripcion && !newErrors.categoria && !newErrors.precio_venta && !newErrors.cantidad && !newErrors.precio_unitario)

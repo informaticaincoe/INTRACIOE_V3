@@ -1,17 +1,21 @@
-import CustomToast, { CustomToastRef, ToastSeverity } from '../../../../shared/toast/customToast'
-import { Title } from '../../../../shared/text/title'
+import { Title } from '../../../../shared/text/title';
 import { useParams } from 'react-router';
 import { CrearCompraFormContainer } from '../componentes/crearCompraForm/crearCompraFormContainer';
+import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPage';
 
 export const ComprasNewEdit = () => {
-    let params = useParams();
+  let params = useParams();
 
-    return (
+  return (
+    <>
+      <Title text={`${params.id ? 'Compra' : 'Nueva Compra'} `} />
+      <div className="mx-[5%] my-10 rounded-md bg-white">
         <>
-            <Title text={`${params.id ? 'Compra' : 'Nueva Compra'} `} />
-            <div className='bg-white rounded-md  my-10 mx-[20%]'>
-                <CrearCompraFormContainer />
-            </div>
+          <div className="rounded-md bg-white px-10 py-5">
+            <CrearCompraFormContainer />
+          </div>
         </>
-    )
-}
+      </div>
+    </>
+  );
+};

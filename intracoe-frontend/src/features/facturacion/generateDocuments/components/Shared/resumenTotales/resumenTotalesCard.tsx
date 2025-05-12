@@ -13,8 +13,8 @@ interface ResumenTotalesCardProps {
   setTotalAPagar: any;
   totalAPagar: number;
   tipoDocumento: string;
-  setSaldoFavor: (saldoFavor:any) => void;
-  saldoFavor: number
+  setSaldoFavor: (saldoFavor: any) => void;
+  saldoFavor: number;
 }
 
 export const ResumenTotalesCard: React.FC<ResumenTotalesCardProps> = ({
@@ -25,7 +25,7 @@ export const ResumenTotalesCard: React.FC<ResumenTotalesCardProps> = ({
   totalAPagar,
   tipoDocumento,
   setSaldoFavor,
-  saldoFavor
+  saldoFavor,
 }) => {
   const [subtotalNeto, setSubtotalNeto] = useState('0.00');
   const [totalIVA, setTotalIVA] = useState('0.00');
@@ -43,7 +43,8 @@ export const ResumenTotalesCard: React.FC<ResumenTotalesCardProps> = ({
       neto += item.total_neto;
       iva += item.total_iva;
       totalConIvaAux += item.total_con_iva;
-      descuentosItem += ((item.descuento?.porcentaje ?? 0) / 100) * item.cantidad;
+      descuentosItem +=
+        ((item.descuento?.porcentaje ?? 0) / 100) * item.cantidad;
     });
 
     // 2) Calcula descuentos
@@ -122,16 +123,12 @@ export const ResumenTotalesCard: React.FC<ResumenTotalesCardProps> = ({
 
       <p className="opacity-60">Total IVA:</p>
       <p>$ {totalIVA}</p>
-      
+
       <p></p>
       <p></p>
 
       <p className="opacity-60">Total a pagar:</p>
       <p>$ {totalAPagar.toFixed(2)}</p>
-
-      
-     
-      
     </div>
   );
 };

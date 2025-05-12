@@ -1,9 +1,39 @@
 import { Nullable } from 'primereact/ts-helpers';
+import { pagination2 } from './interfacesPagination';
 
 export interface ActivitiesData {
   id: number;
   codigo: string;
   descripcion: string;
+}
+
+export interface ActivitiesInterfacePagination {
+  count: number;
+  page_size: number;
+  current_page: number;
+  has_next: boolean;
+  has_previous: boolean;
+  results: ActivitiesData[];
+}
+
+export interface AjusteInventarioInterfaceResults {
+  producto: number;
+  nombreProducto?: string;
+  almacen: number;
+  nombreAlmacen?: string;
+  cantidad_ajustada: number;
+  motivo: string;
+  fecha: Date;
+  usuario: string;
+}
+
+export interface AjusteInventarioInterface {
+  count: number;
+  page_size: number;
+  current_page: number;
+  has_next: boolean;
+  has_previous: boolean;
+  results: AjusteInventarioInterfaceResults[];
 }
 
 export interface contingenciaData {
@@ -492,16 +522,17 @@ export interface Descuentos {
   descuentoGravado: number;
 }
 
-export interface pagination {
+export interface paginationInterface {
+  //Interface para paginacion backend
+  count: number;
   current_page: number;
-  page_size: number;
-  total_pages: number;
-  total_records: number;
+  has_next: boolean;
+  has_previous: boolean;
 }
 
 export interface TableListadoFacturasContainerProps {
   data: any;
-  pagination: pagination;
+  pagination: pagination2;
   onPageChange: (event: any) => void;
   updateFacturas: () => void;
 }

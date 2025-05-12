@@ -12,7 +12,10 @@ import {
   FacturaPorCodigoGeneracionResponse,
 } from '../../../../../shared/interfaces/interfaces';
 import { ProductosTabla } from '../FE/productosAgregados/productosData';
-import CustomToast, { CustomToastRef, ToastSeverity } from '../../../../../shared/toast/customToast';
+import CustomToast, {
+  CustomToastRef,
+  ToastSeverity,
+} from '../../../../../shared/toast/customToast';
 import { IoMdCloseCircle } from 'react-icons/io';
 
 interface Props {
@@ -23,7 +26,7 @@ interface Props {
   setIdListProducts: React.Dispatch<React.SetStateAction<string[]>>;
   setCantidadListProducts: React.Dispatch<React.SetStateAction<string[]>>;
   setListProducts: React.Dispatch<React.SetStateAction<ProductosTabla[]>>;
-  tipoDte:any
+  tipoDte: any;
 }
 
 export const TablaProductosFacturaNotasDebito: React.FC<Props> = ({
@@ -32,10 +35,12 @@ export const TablaProductosFacturaNotasDebito: React.FC<Props> = ({
   setIdListProducts,
   setCantidadListProducts,
   setListProducts,
-  tipoDte
+  tipoDte,
 }) => {
   // --- estado local de selección usando clave compuesta
-  const [seleccionados, setSeleccionados] = useState<Record<string, boolean>>({});
+  const [seleccionados, setSeleccionados] = useState<Record<string, boolean>>(
+    {}
+  );
   const toastRef = useRef<CustomToastRef>(null);
 
   const handleAccion = (
@@ -52,18 +57,17 @@ export const TablaProductosFacturaNotasDebito: React.FC<Props> = ({
   };
 
   useEffect(() => {
-    console.log("Factura Ajuste en tabla", facturasAjuste)
-  }, [facturasAjuste])
+    console.log('Factura Ajuste en tabla', facturasAjuste);
+  }, [facturasAjuste]);
 
   // --- 1) Derivar arrays cada vez que cambien facturasAjuste o seleccionados
   useEffect(() => {
     // Filtramos y aplanamos todos los productos seleccionados
     const seleccion = facturasAjuste.flatMap((factura) =>
       factura.productos
-        .filter((prod) =>
-          seleccionados[
-          `${factura.codigo_generacion}-${prod.producto_id}`
-          ]
+        .filter(
+          (prod) =>
+            seleccionados[`${factura.codigo_generacion}-${prod.producto_id}`]
         )
         .map((prod) => ({
           facturaCodigo: factura.codigo_generacion,
@@ -72,9 +76,7 @@ export const TablaProductosFacturaNotasDebito: React.FC<Props> = ({
     );
 
     // Extraemos ids y cantidades
-    const ids = seleccion.map((item) =>
-      item.producto_id.toString()
-    );
+    const ids = seleccion.map((item) => item.producto_id.toString());
     const cantidades = seleccion.map((item) =>
       (item.cantidad_editada ?? item.cantidad).toString()
     );
@@ -115,7 +117,13 @@ export const TablaProductosFacturaNotasDebito: React.FC<Props> = ({
     setIdListProducts(ids);
     setCantidadListProducts(cantidades);
     setListProducts(productosTabla);
-  }, [facturasAjuste, seleccionados, setIdListProducts, setCantidadListProducts, setListProducts]);
+  }, [
+    facturasAjuste,
+    seleccionados,
+    setIdListProducts,
+    setCantidadListProducts,
+    setListProducts,
+  ]);
 
   // --- 2) Manejador de selección
   const handleSelect = (
@@ -133,72 +141,73 @@ export const TablaProductosFacturaNotasDebito: React.FC<Props> = ({
     productoId: number,
     value: number | null
   ) => {
-    setFacturasAjuste(prev => {
+    setFacturasAjuste((prev) => {
       // 1) Clonamos todo el array de facturas
       const facturas = [...prev];
 
       // 2) Buscamos la factura
-      const fi = facturas.findIndex(f => f.codigo_generacion === facturaCodigo);
+      const fi = facturas.findIndex(
+        (f) => f.codigo_generacion === facturaCodigo
+      );
       if (fi < 0) return prev;
 
       // 3) Clonamos su array de productos
       const productos = [...facturas[fi].productos];
 
       // 4) Buscamos el producto dentro de esa factura
-      const pi = productos.findIndex(p => p.producto_id === productoId);
+      const pi = productos.findIndex((p) => p.producto_id === productoId);
       if (pi < 0) return prev;
 
       if (value)
-        if (tipoDte == '05' && value < productos[pi].cantidad) { //**nota de credito: la cantidad a anular no puedo ser mayor al de la factura
+        if (tipoDte == '05' && value < productos[pi].cantidad) {
+          //**nota de credito: la cantidad a anular no puedo ser mayor al de la factura
           // 5) Actualizamos sólo ese producto
           productos[pi] = {
             ...productos[pi],
-            cantidad_editada: value ?? 0
+            cantidad_editada: value ?? 0,
           };
 
           // 6) Reemplazamos el array de productos en la factura
           facturas[fi] = {
             ...facturas[fi],
-            productos
+            productos,
           };
-        }
-        else if (tipoDte == '06' ) { //**nota de debito: la cantidad a anular no puedo ser mayor al de la factura
+        } else if (tipoDte == '06') {
+          //**nota de debito: la cantidad a anular no puedo ser mayor al de la factura
           // 5) Actualizamos sólo ese producto
           productos[pi] = {
             ...productos[pi],
-            cantidad_editada: value ?? 0
+            cantidad_editada: value ?? 0,
           };
 
           // 6) Reemplazamos el array de productos en la factura
           facturas[fi] = {
             ...facturas[fi],
-            productos
+            productos,
           };
-        }
-        else {
+        } else {
           handleAccion(
             'error',
             <IoMdCloseCircle size={68} />,
-            "La cantidad a anular es mayor a la cantidad de la factura"
+            'La cantidad a anular es mayor a la cantidad de la factura'
           );
-          console.error("error")
+          console.error('error');
         }
 
-      console.log("cantidad", productos[pi].cantidad)
-      console.log("value", value)
-
-
+      console.log('cantidad', productos[pi].cantidad);
+      console.log('value', value);
 
       return facturas;
     });
   };
 
-  const eliminarfacturaAdjunta = (codigo:string) => {
-    const facturasFiltradas = facturasAjuste.filter(f => f.codigo_generacion != codigo)
-    console.log(facturasFiltradas)
-    setFacturasAjuste(facturasFiltradas)
-  }
-
+  const eliminarfacturaAdjunta = (codigo: string) => {
+    const facturasFiltradas = facturasAjuste.filter(
+      (f) => f.codigo_generacion != codigo
+    );
+    console.log(facturasFiltradas);
+    setFacturasAjuste(facturasFiltradas);
+  };
 
   // --- 4) Render
   return facturasAjuste.length > 0 ? (
@@ -209,8 +218,8 @@ export const TablaProductosFacturaNotasDebito: React.FC<Props> = ({
           <AccordionTab
             key={factura.codigo_generacion}
             header={
-              <div className='flex justify-between'>
-                <div className="grid grid-cols-[auto_1fr] gap-2 text-sm text-start">
+              <div className="flex justify-between">
+                <div className="grid grid-cols-[auto_1fr] gap-2 text-start text-sm">
                   <span className="font-semibold">Código:</span>
                   <span>{factura.codigo_generacion}</span>
                   <span className="font-semibold">Control:</span>
@@ -222,7 +231,14 @@ export const TablaProductosFacturaNotasDebito: React.FC<Props> = ({
                   <span className="font-semibold">Total:</span>
                   <span>${factura.total}</span>
                 </div>
-                <button className='' onClick={()=> eliminarfacturaAdjunta(factura.codigo_generacion)}>eliminar</button>
+                <button
+                  className=""
+                  onClick={() =>
+                    eliminarfacturaAdjunta(factura.codigo_generacion)
+                  }
+                >
+                  eliminar
+                </button>
               </div>
             }
           >
@@ -253,9 +269,7 @@ export const TablaProductosFacturaNotasDebito: React.FC<Props> = ({
               />
               <Column
                 header="Producto"
-                body={(row) => (
-                  <>{`${row.codigo} - ${row.descripcion}`}</>
-                )}
+                body={(row) => <>{`${row.codigo} - ${row.descripcion}`}</>}
               />
               <Column
                 header="Precio Unit."
@@ -273,9 +287,7 @@ export const TablaProductosFacturaNotasDebito: React.FC<Props> = ({
                   return (
                     <InputNumber
                       value={row.cantidad_editada ?? row.cantidad}
-                      onValueChange={(
-                        e: InputNumberValueChangeEvent
-                      ) =>
+                      onValueChange={(e: InputNumberValueChangeEvent) =>
                         handleCantidadChange(
                           factura.codigo_generacion,
                           row.producto_id,

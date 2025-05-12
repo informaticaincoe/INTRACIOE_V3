@@ -17,7 +17,7 @@ export const OptionsContainer: React.FC<FilterContainerProps> = ({
   filters,
 }) => {
   const [showFilters, setShowFilters] = useState(false);
-    const [input, setInput] = useState<string>(filters.sello_recepcion);
+  const [input, setInput] = useState<string>(filters.sello_recepcion);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;

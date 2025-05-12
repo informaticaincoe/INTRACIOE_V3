@@ -109,14 +109,14 @@ export const TableListadoFacturasContainer: React.FC<
                 )}
                 {rowData.estado_invalidacion ==
                   'En proceso de invalidación' && ( //estado en proceso de invalidacion (en proceso)
-                    <>
-                      <BsHourglassSplit
-                        className="text-primary-yellow"
-                        size={24}
-                      />
-                      <p className="text-primary-yellow">Invalidando</p>
-                    </>
-                  )}
+                  <>
+                    <BsHourglassSplit
+                      className="text-primary-yellow"
+                      size={24}
+                    />
+                    <p className="text-primary-yellow">Invalidando</p>
+                  </>
+                )}
                 {/* !estado && !sello no enviado */}
               </div>
             </>
@@ -137,18 +137,19 @@ export const TableListadoFacturasContainer: React.FC<
           body={(rowData: any) => (
             <>
               <span className="flex items-center gap-2">
-                {(rowData.estado_invalidacion == 'Viva' && rowData.sello_recepcion) && (
-                  <>
-                    <Tooltip title="Anular">
-                      <button
-                        className="flex w-full cursor-pointer items-center gap-1 text-red-500"
-                        onClick={() => invalidarFactura(rowData.id)}
-                      >
-                        <FcCancel size={22} />
-                      </button>
-                    </Tooltip>
-                  </>
-                )}
+                {rowData.estado_invalidacion == 'Viva' &&
+                  rowData.sello_recepcion && (
+                    <>
+                      <Tooltip title="Anular">
+                        <button
+                          className="flex w-full cursor-pointer items-center gap-1 text-red-500"
+                          onClick={() => invalidarFactura(rowData.id)}
+                        >
+                          <FcCancel size={22} />
+                        </button>
+                      </Tooltip>
+                    </>
+                  )}
                 <Tooltip className="visualizar">
                   <button
                     className="flex w-full cursor-pointer items-center gap-1 rounded-md text-gray-700"
