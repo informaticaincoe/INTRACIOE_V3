@@ -61,9 +61,10 @@ export const FilterContainer: React.FC<FilterContainerProps> = ({
   ];
 
   return (
-    <div className="flex gap-10 pt-5 pb-10">
-      <span>
-        <p>Recibidos por hacienda:</p>
+    <div className="flex gap-10 pt-5 pb-10 bg-blue-50 mb-5 px-10 ">
+      
+      <span className='w-full'>
+        <p className='text-start text-gray-600'>Recibidos mh:</p>
         <Dropdown
           value={filters.recibido_mh}
           options={booleanOptions}
@@ -81,8 +82,8 @@ export const FilterContainer: React.FC<FilterContainerProps> = ({
           highlightOnSelect={false}
         />
       </span>
-      <span>
-        <p>Tiene sello de recepción:</p>
+      <span className='w-full'>
+        <p className='text-start text-gray-600'>Sello recepción:</p>
         <Dropdown
           value={filters.has_sello_recepcion}
           options={booleanOptions}
@@ -100,15 +101,15 @@ export const FilterContainer: React.FC<FilterContainerProps> = ({
           highlightOnSelect={false}
         />
       </span>
-      <span>
-        <p className="text-start">Estado:</p>
+      <span className='w-full'>
+        <p className="text-start text-gray-600">Estado:</p>
         <Dropdown
           value={filters.estado_invalidacion}
           options={estadoInvalidacionFilters}
           optionLabel="name"
           optionValue="code"
           placeholder=""
-          style={{ width: '10vw' }}
+          style={{ width: '100%' }}
           className="w-8rem text-start"
           onChange={(e: DropdownChangeEvent) =>
             setFilters({
@@ -120,15 +121,15 @@ export const FilterContainer: React.FC<FilterContainerProps> = ({
           highlightOnSelect={false}
         />
       </span>
-      <span>
-        <p className="text-start">Tipo de factura:</p>
+      <span className='w-full'>
+        <p className="text-start text-gray-600">Tipo factura:</p>
         <Dropdown
           value={filters.tipo_dte}
           options={tipoDocumento}
           optionLabel="name"
           optionValue="code"
           placeholder=""
-          className="w-5rem text-start"
+          className="w-full text-start"
           onChange={(e: DropdownChangeEvent) =>
             setFilters({
               ...filters,

@@ -5,7 +5,7 @@ import { getProveedoresById } from '../../../ventas/proveedores/services/proveed
 import {
   CompraInterface,
   compraResult,
-  detalleCompraInterfaz,
+  DetalleCompraInterfaz,
 } from '../interfaces/comprasInterfaces';
 
 export const getAllCompras = async (
@@ -102,17 +102,18 @@ export const deleteComprasById = async (id: string) => {
 
 export const getDetalleCompras = async (id: string | number) => {
   try {
-    const response = await apiInventory.get<detalleCompraInterfaz[]>(
-      `/compras/${id}/detalles/`,
-      {
-        params: {},
-      }
+    const response = await apiInventory.get<DetalleCompraInterfaz[]>(
+      `/compras/${id}/detalles/`
     );
 
     const data = response.data;
 
     const detallesConNombreProducto = await Promise.all(
-      data.map(async (detalle) => {
+      data.map(async detalle => {
+        if (!detalle.producto) {
+          // devolvemos el objeto detalle tal cual, no el array completo
+          return detalle;
+        }
         const producto = await getProductById(detalle.producto);
         return {
           ...detalle,
@@ -123,9 +124,11 @@ export const getDetalleCompras = async (id: string | number) => {
         };
       })
     );
-
+    console.log("DATAAAA GETDETALLECOMPRA",data)
     return detallesConNombreProducto;
-  } catch (error: any) {
+  } catch (error) {
     console.error(error);
+    // en caso de fallo devolvemos siempre un array vacío
+    return [];
   }
 };

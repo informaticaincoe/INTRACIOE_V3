@@ -36,7 +36,6 @@ export const CrearCompraFormContainer = () => {
   const navigate = useNavigate();
 
   const handleChangeCompra = (e: any) => {
-    console.log('EEEEEEEEEEEEE', e);
     setFormDataCompra({ ...formDataCompra, [e.target.name]: e.target.value });
   };
 
@@ -47,35 +46,52 @@ export const CrearCompraFormContainer = () => {
   }, []);
 
   const fetchEditData = async () => {
-    if (id) {
-      try {
-        const response = await getComprasById(id);
-        console.log('COMPAS', response);
-        setFormDataCompra(response);
-      } catch (error) {
-        console.log(error);
+    if (!id) return;
+
+    try {
+      // 1) Trae la cabecera
+      const header = await getComprasById(id);
+      if (!header) {
+        console.error('No se encontró la compra con id', id);
+        return;
       }
-    }
-    if (id) {
-      try {
-        const response = await getDetalleCompras(id);
-        console.log('DETALLES', response);
-        setDetallesCompra(response);
-        if (response) {
-          const detallesConPre = response.map(det => ({
-            ...det,
-            preunitario: det.precio_unitario
-          }));
-          setDetallesCompra(detallesConPre);
-        }
-      } catch (error) {
-        console.log(error);
-      }
+
+      // 2) Trae y mapea los detalles
+      const response: any = await getDetalleCompras(id); //************************************************************************************TODO:: */
+      const rawDetalles = Array.isArray(response) ? response as any[] : [];
+      const detallesFormateados: DetalleCompraPayload[] = rawDetalles.map(raw => ({
+        id: raw.id,
+        producto: raw.producto,
+        codigo: raw.codigo,
+        descripcion: raw.nombreProducto ?? raw.descripcion,
+        categoria: raw.categoria ?? null,
+        unidad_medida: raw.unidad_medida ?? null,
+        precio_unitario: String(raw.precio_unitario),
+        preunitario: raw.precio_unitario,
+        precio_venta: String(raw.precio_venta),
+        cantidad: String(raw.cantidad),
+        tipo_compra: raw.tipo_compra,
+        iva_item: raw.iva_item,
+        tipo_item: raw.tipo_item
+      }));
+
+      // 3) Sólo aquí actualizas tu estado; header + el array de detalles
+      setDetallesCompra(detallesFormateados);
+      setFormDataCompra({
+        ...header,
+        detalles: detallesFormateados,
+        total: header.total ?? 0
+      });
+    } catch (error) {
+      console.error('Error cargando datos para edición:', error);
     }
   };
 
   useEffect(() => {
-    setFormDataCompra({ ...formDataCompra, total: '0' });
+    let total = 0
+    detallesCompra.map((element) => { total += (parseInt(element.cantidad) * parseFloat((element.precio_unitario).toString())) })
+    console.log(total)
+    setFormDataCompra({ ...formDataCompra, total });
   }, [detallesCompra]);
 
   const moveToStepp2 = () => {
@@ -102,43 +118,43 @@ export const CrearCompraFormContainer = () => {
 
       console.log('Data que se enviará:', JSON.stringify(data, null, 2));
 
-      // if (id) {
-      //   try {
-      //     const response = await updateComprasById(id, data);
-      //     console.log('Respuesta del backend:', response);
+      if (id) {
+        try {
+          const response = await updateComprasById(id, data);
+          console.log('Respuesta del backend:', response);
 
-      //     handleAccion(
-      //       'success',
-      //       <FaCheckCircle />,
-      //       'Compra editada correctamente'
-      //     );
+          handleAccion(
+            'success',
+            <FaCheckCircle />,
+            'Compra editada correctamente'
+          );
 
-      //     setTimeout(() => {
-      //       navigate('/compras/');
-      //     }, 2000);
-      //   } catch (error) {
-      //     console.error('Error al editar compra:', error);
-      //     handleAccion('error', <IoMdCloseCircle />, 'Error al editar la compra');
-      //   }
-      // } else {
-      //   try {
-      //     const response = await addCompra(data);
-      //     console.log('Respuesta del backend:', response);
+          setTimeout(() => {
+            navigate('/compras/');
+          }, 2000);
+        } catch (error) {
+          console.error('Error al editar compra:', error);
+          handleAccion('error', <IoMdCloseCircle />, 'Error al editar la compra');
+        }
+      } else {
+        try {
+          const response = await addCompra(data);
+          console.log('Respuesta del backend:', response);
 
-      //     handleAccion(
-      //       'success',
-      //       <FaCheckCircle />,
-      //       'Compra creada correctamente'
-      //     );
+          handleAccion(
+            'success',
+            <FaCheckCircle />,
+            'Compra creada correctamente'
+          );
 
-      //     setTimeout(() => {
-      //       navigate('/compras/');
-      //     }, 2000);
-      //   } catch (error) {
-      //     console.error('Error al crear compra:', error);
-      //     handleAccion('error', <IoMdCloseCircle />, 'Error al crear la compra');
-      //   }
-      // }
+          setTimeout(() => {
+            navigate('/compras/');
+          }, 2000);
+        } catch (error) {
+          console.error('Error al crear compra:', error);
+          handleAccion('error', <IoMdCloseCircle />, 'Error al crear la compra');
+        }
+      }
     }
   };
 

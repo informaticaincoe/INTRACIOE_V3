@@ -1,11 +1,11 @@
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router';
+import React, { useEffect, useState } from 'react';
 import { DevolucionCompraResult } from '../interfaces/devolucionCompraInterfaces';
 import { Pagination } from '../../../../shared/interfaces/interfacesPagination';
-import { ModalDetallesDevolucionesVenta } from '../../../ventas/devolucioneVentas/componentes/modalDetallesDevolucionesVenta';
 import { Paginator } from 'primereact/paginator';
+import { ModalDetallesCompraDevuelta } from './modalDetallesCompraDevuelta';
+import { LuExternalLink } from 'react-icons/lu';
 
 interface TablaDevolucionesCompraProps {
   devolucionesList: DevolucionCompraResult[] | undefined;
@@ -16,16 +16,16 @@ interface TablaDevolucionesCompraProps {
 
 export const TablaDevolucionesCompra: React.FC<
   TablaDevolucionesCompraProps
-> = ({ devolucionesList, updateList, pagination, onPageChange }) => {
-  const [selectedDevolucionVenta, setSelectedDevolucionVenta] = useState<any[]>(
-    []
-  );
+> = ({ devolucionesList, pagination, onPageChange }) => {
+  const [selectedDevolucionVenta, setSelectedDevolucionVenta] = useState<DevolucionCompraResult>();
   const [visibleModal, setVisibleModal] = useState(false);
 
+  useEffect(() => {
+  }, [selectedDevolucionVenta])
+
   const handleDevolucionSelected = (elemento: any) => {
-    console.log(elemento);
     setSelectedDevolucionVenta(elemento);
-    setVisibleModal(true);
+    setVisibleModal(true)
   };
 
   return (
@@ -33,26 +33,19 @@ export const TablaDevolucionesCompra: React.FC<
       <DataTable
         value={devolucionesList}
         tableStyle={{ minWidth: '50rem' }}
-        selectionMode={'single'}
-        selection={selectedDevolucionVenta}
-        onSelectionChange={(e) => handleDevolucionSelected(e.value)}
       >
-        <Column field="num_factura" header="Factura"></Column>
+        <Column header="Compra"
+          body={(rowData: any) => (
+            <button className='flex gap-2 items-center text-blue underline hover:cursor-pointer' onClick={()=>handleDevolucionSelected(rowData)}>
+              <LuExternalLink />
+              {rowData.compra}
+            </button>
+          )}
+        ></Column>
         <Column field="fecha" header="Fecha"></Column>
         <Column field="motivo" header="Motivo"></Column>
         <Column field="estado" header="Estado"></Column>
         <Column field="usuario" header="Usuario"></Column>
-        <Column
-          header="Acciones"
-          body={(rowData: any) => (
-            <button
-              className="underline hover:cursor-pointer"
-              onClick={() => handleDevolucionSelected(rowData)}
-            >
-              Ver detalles
-            </button>
-          )}
-        ></Column>
       </DataTable>
 
       <div className="pt-5">
@@ -66,8 +59,8 @@ export const TablaDevolucionesCompra: React.FC<
       </div>
 
       {selectedDevolucionVenta && (
-        <ModalDetallesDevolucionesVenta
-          data={selectedDevolucionVenta} // Solo pasa un ID válido si hay un producto seleccionado
+        <ModalDetallesCompraDevuelta
+          id={(selectedDevolucionVenta.compra).toString()}
           visible={visibleModal}
           setVisible={setVisibleModal}
         />

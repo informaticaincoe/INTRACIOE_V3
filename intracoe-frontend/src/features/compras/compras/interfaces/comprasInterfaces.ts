@@ -14,10 +14,12 @@ export interface compraResult {
   fecha: any;
   total: number;
   estado: string;
+  numero_documento?:string;
 }
 
 export interface DetalleCompraPayload {
   id: string | number;
+  producto?: string | number;
   codigo: string;
   descripcion: string;
   categoria?: number | null;
@@ -34,8 +36,8 @@ export interface DetalleCompraPayload {
 export interface CompraPayload {
   proveedor: any;
   estado: string;
-  total: string;
-  detalles: DetalleCompraPayload[];
+  total: number;
+  detalles?: DetalleCompraPayload[];
   numero_documento?: string;
   tipo_operacion?: string;
   clasificacion?: string;
@@ -56,7 +58,7 @@ export const CompraPayloadDeafult = {
   proveedor: 0,
   fecha: new Date(),
   estado: 'Pendiente',
-  total: '',
+  total: 0,
   detalles: [
     {
       id: '0',
@@ -68,7 +70,7 @@ export const CompraPayloadDeafult = {
       preunitario: '',
       precio_venta: '',
       cantidad: '',
-      tipo_item:'1'
+      tipo_item:''
     },
   ],
 };
@@ -85,7 +87,7 @@ export const DetalleCompraDefault = {
   preunitario: '',
   tipo_compra: '',
   iva_item: 0.0,
-  tipo_item:"1"
+  tipo_item:""
 };
 
 export interface Option {
@@ -118,7 +120,18 @@ export const erroresCompra = {
   estado: '',
 };
 
-export interface detalleCompraInterfaz {
+export const errorProductoModalCompra = {
+ codigo: "",
+ descripcion: "",
+ categoria: "",
+ precio_venta: "",
+ cantidad: "",
+ precio_unitario: "",
+ preunitario: "",
+ tipo_item:"",
+}
+
+export interface DetalleCompraInterfaz {
   cantidad: number;
   compra: number;
   id: number;
@@ -129,4 +142,7 @@ export interface detalleCompraInterfaz {
   descripcion?: string;
   codigo?: string;
   precio_venta: string;
+  iva_item: string;
+  tipo_item:string | number;
+  tipo_compra:string;
 }

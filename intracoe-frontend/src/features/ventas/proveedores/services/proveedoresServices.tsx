@@ -40,7 +40,6 @@ export const getProveedoresById = async (id: string | number) => {
     const response = await apiInventory.get<ProveedorResultInterface>(
       `/proveedores/${id}/`
     );
-    console.log(response.data);
     return response.data;
   } catch (error: any) {
     console.error(error);
@@ -53,7 +52,6 @@ export const addProveedor = async (data: any) => {
       `/proveedores/crear/`,
       data
     );
-    console.log(response.data);
     return response.data;
   } catch (error: any) {
     console.error(error);
@@ -66,7 +64,6 @@ export const updateProveedoresById = async (id: string, data: any) => {
       `/proveedores/${id}/editar/`,
       data
     );
-    console.log(response.data);
     return response.data;
   } catch (error: any) {
     console.error(error);
@@ -78,7 +75,6 @@ export const deleteProveedoresById = async (id: string) => {
     const response = await apiInventory.delete<ProveedorInterface>(
       `/proveedores/${id}/eliminar/`
     );
-    console.log(response.data);
     return response.data;
   } catch (error: any) {
     console.error(error);

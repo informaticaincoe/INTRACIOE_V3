@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { getDetalleDevolucionVentaById } from '../services/devolucionVentaServices';
 import { Divider } from 'primereact/divider';
-import { DevolucionVentaDetalleInterface } from '../interface/devolucionVentaInterface';
+import { DevolucionVentaDetalleInterfaceResult } from '../interface/devolucionVentaInterface';
 
 interface ModalDetallesDevolucionesVentaProp {
   data: any;
@@ -14,7 +14,7 @@ interface ModalDetallesDevolucionesVentaProp {
 export const ModalDetallesDevolucionesVenta: React.FC<
   ModalDetallesDevolucionesVentaProp
 > = ({ data, visible, setVisible }) => {
-  const [detalle, setDetalle] = useState<DevolucionVentaDetalleInterface>();
+  const [detalle, setDetalle] = useState<DevolucionVentaDetalleInterfaceResult>();
   useEffect(() => {
     fetchDetallesDevolucion();
   }, [data]);

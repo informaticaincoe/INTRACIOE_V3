@@ -47,7 +47,7 @@ export const OptionsContainer: React.FC<FilterContainerProps> = ({
             />
           </span>
           <button
-            className={`flex gap-2 rounded-full px-4 py-2 hover:cursor-pointer ${showFilters ? 'bg-border-color' : 'bg-white'} `}
+            className={`flex gap-2 rounded-full px-4 py-2 hover:cursor-pointer ${showFilters ? 'bg-blue-100' : 'bg-white'} `}
             onClick={() => setShowFilters(!showFilters)}
           >
             <GoFilter size={24} />
