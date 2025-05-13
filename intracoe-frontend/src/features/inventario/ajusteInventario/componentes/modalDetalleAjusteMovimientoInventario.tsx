@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 
 import { Dialog } from 'primereact/dialog';
-import { AjusteInventarioInterface } from '../interfaces/ajusteInventarioInterfaces';
+import { AjusteInventarioInterfaceResults } from '../interfaces/ajusteInventarioInterfaces';
 
 interface ModalDetalleAjusteMovimientoInventarioProp {
-  data: AjusteInventarioInterface;
+  data: AjusteInventarioInterfaceResults;
   visible: boolean;
   setVisible: any;
 }
