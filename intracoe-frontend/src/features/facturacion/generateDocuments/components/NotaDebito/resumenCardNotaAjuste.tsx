@@ -3,22 +3,23 @@ import { useEffect, useState } from 'react';
 interface ResumenCardNotaAjusteInterface {
   facturas?: any[];
   cantidades: any;
+  totalAPagar: number;
 }
 
 export const ResumenCardNotaAjuste: React.FC<
   ResumenCardNotaAjusteInterface
-> = ({ facturas, cantidades }) => {
+> = ({ facturas, cantidades, totalAPagar }) => {
   const [subtotalNeto, setSubtotalNeto] = useState<number>(0);
   const [descuento, setDescuento] = useState<number>(0);
   const [totalIva, setTotalIva] = useState<number>(0);
   const [totalConIva, setTotalConIva] = useState<number>(0);
   const [saldoFavor, setSaldoFavor] = useState<number>(0);
-  const [totalAPagar, setTotalAPagar] = useState<number>(0);
 
   useEffect(() => {
     if (facturas) {
+      console.log(cantidades)
       const subtotalNetoAux = facturas.reduce(
-        (sum, r) => sum + (r.subtotal_neto ?? 0),
+        (sum, r, index) => sum + (((r.preunitario) * cantidades[index])),
         0
       );
       setSubtotalNeto(subtotalNetoAux);
@@ -30,28 +31,24 @@ export const ResumenCardNotaAjuste: React.FC<
       setDescuento(descuentoAux);
 
       const totalIvaAux = facturas.reduce(
-        (sum, r) => sum + (r.total_iva ?? 0),
+        (sum, r, index) => sum + (r.iva_unitario * cantidades[index]),
         0
       );
-      setTotalIva(totalIvaAux);
+      setTotalIva(totalIvaAux.toFixed(2));
 
       const totalConIvaAux = facturas.reduce(
-        (sum, r) => sum + (r.total_con_iva ?? 0),
+        (sum, r, index) => sum + (Math.round(((parseFloat(r.iva_unitario) + parseFloat(r.preunitario)) * parseFloat(cantidades[index]))*100)/100),
         0
       );
       setTotalConIva(totalConIvaAux);
+
+      console.log("TIPO", typeof(totalConIvaAux))
 
       const saldoFavorAux = facturas.reduce(
         (sum, r) => sum + (r.saldo_a_favor ?? 0),
         0
       );
       setSaldoFavor(saldoFavorAux);
-
-      const totalAPagarAux = facturas.reduce(
-        (sum, r) => sum + (r.total_a_pagar ?? 0),
-        0
-      );
-      setTotalAPagar(totalAPagarAux);
     }
   }, [facturas]);
 
@@ -76,7 +73,7 @@ export const ResumenCardNotaAjuste: React.FC<
       <p></p>
 
       <p className="opacity-60">Total a Pagar:</p>
-      <p>$ {totalAPagar}</p>
+      <p>$ {totalAPagar.toFixed(2)}</p>
 
       {/*
             <p className="opacity-60">Descuento Ventas grabadas:</p>

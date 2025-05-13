@@ -213,16 +213,34 @@ export const GenerateDocuments = () => {
   /************************************/
   /* OBTENCION DE DATOS              
   /************************************/
-  useEffect(() => {
-    fetchfacturaData();
-  }, [tipoDocumentoSelected?.codigo]);
 
-  const fetchfacturaData = async () => {
+  useEffect(() => {
+    const fetchTiposDocumento = async () => {
+      try {
+        const response = await getFacturaCodigos('01');
+
+        setTipoDocumento(response.tipoDocumentos);
+
+        // Establecer por defecto el primero si aún no está definido
+        if (!tipoDocumentoSelected && response.tipoDocumentos.length > 0) {
+          setTipoDocumentoSelected(response.tipoDocumentos[0]);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    fetchTiposDocumento();
+  }, []);
+
+  useEffect(() => {
+  if (!tipoDocumentoSelected) return;
+
+  const fetchFacturaData = async () => {
     setLoading(true);
     try {
-      const response = await getFacturaCodigos(
-        tipoDocumentoSelected?.codigo ?? '01'
-      );
+      const response = await getFacturaCodigos(tipoDocumentoSelected.codigo);
+
       setCodigoGeneracion(response.codigo_generacion);
       setNumeroControl(response.numero_control);
       setEmisorData(response.emisor);
@@ -230,18 +248,15 @@ export const GenerateDocuments = () => {
       setSelectedCondicionDeOperacion(response.tipooperaciones[0].codigo);
       setDescuentosList(response.descuentos);
       setListProducts(response.producto);
-      setTipoDocumento(
-        response.tipoDocumentos.filter(
-          (doc: { codigo: string }) =>
-            doc.codigo === '01' || doc.codigo === '03'
-        )
-      );
     } catch (error) {
       console.log(error);
     } finally {
       setLoading(false);
     }
   };
+
+  fetchFacturaData();
+}, [tipoDocumentoSelected]);
 
   const handleClickGenerarFactura = async () => {
     if (auxManejoPagos != 0) {
@@ -388,6 +403,7 @@ export const GenerateDocuments = () => {
             descuentosList={descuentosList}
             tipoDte={tipoDocumentoSelected}
           />
+
           <ModalListaProdcutos
             tipoDte={tipoDocumentoSelected?.codigo ?? '01'}
             visible={showProductsModal}

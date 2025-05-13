@@ -73,7 +73,9 @@ export const TablaProductosFacturaNotasDebito: React.FC<Props> = ({
           facturaCodigo: factura.codigo_generacion,
           ...prod,
         }))
+
     );
+    console.log("FACTURA PRODCUTOS QUE DAN ERROR", seleccion)
 
     // Extraemos ids y cantidades
     const ids = seleccion.map((item) => item.producto_id.toString());
@@ -82,7 +84,7 @@ export const TablaProductosFacturaNotasDebito: React.FC<Props> = ({
     );
 
     // Construimos la lista de ProductosTabla
-    const productosTabla: ProductosTabla[] = seleccion.map((item) => ({
+    const productosTabla: any[] = seleccion.map((item) => ({
       id: item.producto_id,
       codigo: item.codigo,
       descripcion: item.descripcion,
@@ -91,8 +93,8 @@ export const TablaProductosFacturaNotasDebito: React.FC<Props> = ({
       iva_unitario: parseFloat(item.iva_unitario),
       descuento: null,
       total_neto: 0,
-      total_iva: 0,
-      total_con_iva: 0,
+      total_iva: item.total_iva,
+      total_con_iva: ((parseFloat(item.total_incl)) * item.cantidad),
       iva_percibido: 0,
       total_tributos: 0,
       seleccionar: true,
@@ -113,7 +115,7 @@ export const TablaProductosFacturaNotasDebito: React.FC<Props> = ({
       stock_minimo: 0,
       stock_maximo: 0,
     }));
-
+    console.log(seleccion)
     setIdListProducts(ids);
     setCantidadListProducts(cantidades);
     setListProducts(productosTabla);
@@ -279,7 +281,14 @@ export const TablaProductosFacturaNotasDebito: React.FC<Props> = ({
                   return <>${precio.toFixed(2)}</>;
                 }}
               />
-
+              <Column
+                header="IVA Unit."
+                body={(row: FacturaDetalleItem) => {
+                  // parseamos a número antes de formatear
+                  const precio = Number(row.iva_unitario) || 0;
+                  return <>${precio.toFixed(2)}</>;
+                }}
+              />
               <Column
                 header="Cantidad"
                 body={(row) => {

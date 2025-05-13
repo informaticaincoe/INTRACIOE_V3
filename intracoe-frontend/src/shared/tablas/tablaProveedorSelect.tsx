@@ -46,7 +46,6 @@ export const TablaProveedorSelect: React.FC<TableProveedorselectInterface> = ({
   });
 
   useEffect(() => {
-    console.log("SSSSSSSSSSSSSSSSSSS", selectedProducts)
   }, [selectedProducts]);
 
 

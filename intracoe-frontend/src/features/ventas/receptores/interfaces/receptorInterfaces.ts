@@ -3,7 +3,6 @@ import {
   Ambiente,
   Departamento,
   Municipio,
-  ReceptorRequestDefault,
   TipoDocumento,
   TipoEstablecimiento,
 } from '../../../../shared/interfaces/interfaces';
@@ -36,4 +35,3 @@ export interface ReceptorResult {
   actividades_economicas: ActivitiesData[];
 }
 
-ReceptorRequestDefault;
