@@ -15,24 +15,17 @@ api.interceptors.request.use((cfg) => {
   return cfg;
 });
 
-// **Nuevo** interceptor de respuestas
-// api.interceptors.response.use(
-//   response => response,
-//   error => {
-//     // Extraemos el mensaje de error según tu backend
-//     const msg = error.response?.data?.error
-//              || error.response?.data?.detail
-//              || error.response?.data;
+// Redirige a /login si no hay token o si hay error 401 o 403
+api.interceptors.response.use(
+  response => response,
+  error => {
+    const status = error.response?.status;
 
-//     // Si es el caso "Error interno del servidor", redirigimos al login
-//     if (msg === 'Error interno del servidor' || error.response?.status === 500) {
-//       // Limpiar token/cookies si fuera necesario
-//       document.cookie = 'authToken=; max-age=0; path=/';
-//       // Redirige a la ruta de login
-//       window.location.href = '/login';
-//     }
+    if (status === 401 || status === 403) {
+      document.cookie = 'authToken=; max-age=0; path=/';
+      window.location.href = '/login';
+    }
 
-//     // Siempre rechaza la promesa para que los catch sigan funcionando
-//     return Promise.reject(error);
-//   }
-// );
+    return Promise.reject(error);
+  }
+);

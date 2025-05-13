@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { ReceptorRequestInterface } from '../../../../../shared/interfaces/interfaces';
 import { Input } from '../../../../../shared/forms/input';
 import { SelectDepartmentComponent } from '../../../../../shared/Select/selectDepartmentComponent';
 import { SelectMunicipios } from '../../../../../shared/Select/selectMunicipios';
 import { getMunicipiosById } from '../../../../bussiness/configBussiness/services/ubicacionService';
+import { ReceptorInterface } from '../../../../../shared/interfaces/interfaces';
 
 interface StepperFormInfoContactoReceptorProps {
-  formData: ReceptorRequestInterface;
+  formData: ReceptorInterface;
   handleChange: any;
 }
 
@@ -21,7 +21,7 @@ export const StepperFormInfoContactoReceptor: React.FC<
 
   const fetchDepartamento = async () => {
     try {
-      const response = await getMunicipiosById(formData.municipio);
+      const response = await getMunicipiosById(formData.municipio.id);
       console.log('Departamento', response);
       setDepartamentoSelect(response.departamento);
     } catch (error) {

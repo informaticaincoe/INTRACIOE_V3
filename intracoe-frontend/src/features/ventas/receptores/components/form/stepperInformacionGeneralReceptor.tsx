@@ -1,12 +1,12 @@
 import React from 'react';
-import { ReceptorRequestInterface } from '../../../../../shared/interfaces/interfaces';
+import { ReceptorInterface } from '../../../../../shared/interfaces/interfaces';
 import { SelectTipoIdDocumento } from '../../../../../shared/Select/selectTipoIdDocumento';
 import { Input } from '../../../../../shared/forms/input';
 import { SelectActividadesEconomicas } from '../../../../../shared/Select/selectActividadesEconomicas';
 import { RadioButton } from 'primereact/radiobutton';
 
 interface StepperInformacionGeneralProps {
-  formData: ReceptorRequestInterface;
+  formData: ReceptorInterface;
   handleChange: any;
 }
 
@@ -62,7 +62,7 @@ export const StepperInformacionGeneralReceptor: React.FC<
               name="tipo_receptor"
               value="Natural"
               onChange={handleChange}
-              checked={formData.tipo_receptor === 'Natural'}
+              // checked={formData.tipo_receptor === 'Natural'}
             />
             <label htmlFor="tipoReceptor1" className="ml-2">
               Natural
@@ -74,7 +74,7 @@ export const StepperInformacionGeneralReceptor: React.FC<
               name="tipo_receptor"
               value="Juridica"
               onChange={handleChange}
-              checked={formData.tipo_receptor === 'Juridica'}
+              // checked={formData.tipo_receptor === 'Juridica'}
             />
             <label htmlFor="tipoReceptor2" className="ml-2">
               Juridica

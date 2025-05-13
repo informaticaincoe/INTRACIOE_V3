@@ -279,10 +279,10 @@ export const TablaProductosAgregados: React.FC<
             />
           )}
         />
-        <Column
+        {/* <Column
           body={(rowData: ProductosTabla) => <p>$ {rowData.total_tributos}</p>}
           header={<p className="text-sm uppercase">TOTAL TRIBUTOS</p>}
-        ></Column>
+        ></Column> */}
 
         {tipoDte && tipoDte.codigo == '01' && (
           <Column

@@ -32,6 +32,7 @@ export const ModalDetallesCompra: React.FC<ModalDetallesCompraProp> = ({
       precio_venta: "",
       iva_item: "",
       tipo_compra: "",
+      tipo_item: ""
     },
   ]);
 
@@ -61,6 +62,7 @@ export const ModalDetallesCompra: React.FC<ModalDetallesCompraProp> = ({
           precio_venta: raw.precio_venta,
           iva_item: raw.iva_item,
           tipo_compra: raw.tipo_compra,
+          tipo_item: raw.tipo_item
         }
       ));
 
