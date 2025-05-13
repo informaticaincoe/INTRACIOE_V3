@@ -6,6 +6,7 @@ import { Pagination } from '../../../../shared/interfaces/interfacesPagination';
 import { Paginator } from 'primereact/paginator';
 import { ModalDetallesCompraDevuelta } from './modalDetallesCompraDevuelta';
 import { LuExternalLink } from 'react-icons/lu';
+import { ModalDetalleDevolucionVenta } from './modalDetalleDevolucionVenta';
 
 interface TablaDevolucionesCompraProps {
   devolucionesList: DevolucionCompraResult[] | undefined;
@@ -19,6 +20,8 @@ export const TablaDevolucionesCompra: React.FC<
 > = ({ devolucionesList, pagination, onPageChange }) => {
   const [selectedDevolucionVenta, setSelectedDevolucionVenta] = useState<DevolucionCompraResult>();
   const [visibleModal, setVisibleModal] = useState(false);
+  const [visibleDetallesModal, setVisibleDetalleModal] = useState(false);
+  const [detallesData, setDetallesData] = useState()
 
   useEffect(() => {
   }, [selectedDevolucionVenta])
@@ -28,15 +31,22 @@ export const TablaDevolucionesCompra: React.FC<
     setVisibleModal(true)
   };
 
+  const handleDetallesData = (data: any) => {
+    console.log("dat5a", data)
+    setDetallesData(data.detalles_creados)
+    setVisibleDetalleModal(true)
+  }
+
   return (
     <>
       <DataTable
         value={devolucionesList}
         tableStyle={{ minWidth: '50rem' }}
       >
-        <Column header="Compra"
+        <Column
+          header="Compra"
           body={(rowData: any) => (
-            <button className='flex gap-2 items-center text-blue underline hover:cursor-pointer' onClick={()=>handleDevolucionSelected(rowData)}>
+            <button className='flex gap-2 items-center text-blue underline hover:cursor-pointer' onClick={() => handleDevolucionSelected(rowData)}>
               <LuExternalLink />
               {rowData.compra}
             </button>
@@ -46,6 +56,14 @@ export const TablaDevolucionesCompra: React.FC<
         <Column field="motivo" header="Motivo"></Column>
         <Column field="estado" header="Estado"></Column>
         <Column field="usuario" header="Usuario"></Column>
+        <Column
+          header="Acciones"
+          body={(rowData: any) => (
+            <button className='flex gap-2 items-center text-blue underline hover:cursor-pointer' onClick={() => handleDetallesData(rowData)}>
+              Ver detalles
+            </button>
+          )}
+        ></Column>
       </DataTable>
 
       <div className="pt-5">
@@ -65,6 +83,16 @@ export const TablaDevolucionesCompra: React.FC<
           setVisible={setVisibleModal}
         />
       )}
+
+      {
+        detallesData && visibleDetallesModal && (
+          <ModalDetalleDevolucionVenta
+            data={detallesData}
+            visible={visibleDetallesModal}
+            setVisible={setVisibleDetalleModal}
+          />
+        )
+      }
     </>
   );
 };
