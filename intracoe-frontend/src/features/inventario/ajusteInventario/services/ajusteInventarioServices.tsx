@@ -40,7 +40,7 @@ export const getAllAjusteInventario = async (
         };
       })
     );
-
+console.log("AJUSTE DETALLE DATA", ajusteConNombreProducto)
     return {
       results: ajusteConNombreProducto,
       current_page: response.data.current_page,

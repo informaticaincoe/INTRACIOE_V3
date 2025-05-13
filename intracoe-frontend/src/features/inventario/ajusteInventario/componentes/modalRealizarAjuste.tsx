@@ -1,7 +1,7 @@
 import { Dialog } from 'primereact/dialog';
 import React, { useEffect, useRef, useState } from 'react';
 import { addAjusteMovimientoInventario } from '../services/ajusteInventarioServices';
-import { movimientoInterface } from '../../movimientoInventario/interfaces/movimientoInvetarioInterface';
+import { movimientoInterface, resultsMovimiento } from '../../movimientoInventario/interfaces/movimientoInvetarioInterface';
 import { Input } from '../../../../shared/forms/input';
 import {
   Almacen,
@@ -20,9 +20,10 @@ import CustomToast, {
 import { useNavigate } from 'react-router';
 import { FaCheckCircle } from 'react-icons/fa';
 import { IoMdCloseCircle } from 'react-icons/io';
+import { ProductosInterface, ProductosInterfaceResults } from '../../products/interfaces/productosInterfaces';
 
 interface ModalRealizarAjusteoProp {
-  data: movimientoInterface;
+  data: resultsMovimiento;
   visible: boolean;
   setVisible: any;
 }
@@ -32,7 +33,7 @@ export const ModalRealizarAjuste: React.FC<ModalRealizarAjusteoProp> = ({
   visible,
   setVisible,
 }) => {
-  const [productosLista, setProductosLista] = useState<ProductoResponse[]>([]);
+  const [productosLista, setProductosLista] = useState<ProductosInterfaceResults[]>([]);
   const [almacenLista, setAlmacenLista] = useState<Almacen[]>([]);
   const toastRef = useRef<CustomToastRef>(null);
   const navigate = useNavigate();
@@ -64,18 +65,18 @@ export const ModalRealizarAjuste: React.FC<ModalRealizarAjusteoProp> = ({
   };
 
   useEffect(() => {
-    fetchProductos();
+    // fetchProductos();
     fetchAlmacenes();
   }, []);
 
-  const fetchProductos = async () => {
-    try {
-      const response = await getAllProducts();
-      setProductosLista(response);
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  // const fetchProductos = async () => {
+  //   try {
+  //     const response = await getAllProducts();
+  //     setProductosLista(response);
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // };
 
   const fetchAlmacenes = async () => {
     try {

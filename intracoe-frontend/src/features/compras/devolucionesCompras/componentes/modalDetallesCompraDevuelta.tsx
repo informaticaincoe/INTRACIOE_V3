@@ -69,7 +69,6 @@ export const ModalDetallesCompraDevuelta: React.FC<ModalDetallesCompraProp> = ({
     setProveedor(undefined);
   };
 
-
   return (
     <>
       {loading && <LoadingScreen />}

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { movimientoInterface } from '../interfaces/movimientoInvetarioInterface';
+import { movimientoInterface, resultsMovimiento } from '../interfaces/movimientoInvetarioInterface';
 import { Dialog } from 'primereact/dialog';
 import { getMovimientosInventarioById } from '../services/movimientoInventarioServices';
 import { ModalRealizarAjuste } from '../../ajusteInventario/componentes/modalRealizarAjuste';
@@ -14,7 +14,7 @@ export const ModalDetalleMovimientoInventario: React.FC<
   ModalDetalleMovimientoInventarioProp
 > = ({ id, visible, setVisible }) => {
   const [movimientoInventario, setMovimientoInvetario] =
-    useState<movimientoInterface>();
+    useState<resultsMovimiento>();
   const [visibleModalAjuste, setVisibleModalAjuste] = useState(false);
 
   useEffect(() => {
@@ -24,6 +24,7 @@ export const ModalDetalleMovimientoInventario: React.FC<
   const fetchMovimientoInventarioById = async () => {
     try {
       const response = await getMovimientosInventarioById(id);
+      console.log("dddddddddddddddddd", response)
       setMovimientoInvetario(response);
     } catch (error) {
       console.log(error);

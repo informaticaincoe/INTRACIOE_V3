@@ -3,40 +3,47 @@ import { apiInventory } from '../../../../shared/services/apiInventory';
 import { getProductById } from '../../../inventario/products/services/productsServices';
 import { DevolucionCompra } from '../interfaces/devolucionCompraInterfaces';
 
+interface PaginatedResponse<T> {
+  results: T[];
+  current_page: number;
+  page_size: number;
+  has_next: boolean;
+  has_previous: boolean;
+  count: number;
+}
+
 export const getAllDevolucionesCompra = async (
-  { page, limit }: DevolucionComprasParams = {
-    page: 1,
-    limit: 10,
-  }
-) => {
-  const queryParams = new URLSearchParams();
-
-  //paginacion
-  queryParams.append('page', String(page));
-  queryParams.append('page_size', String(limit));
-
+  { page, limit }: DevolucionComprasParams = { page: 1, limit: 10 }
+): Promise<PaginatedResponse<DevolucionCompra>> => {
   try {
-    const response = await apiInventory.get<DevolucionCompra>(
+    const response = await apiInventory.get<PaginatedResponse<DevolucionCompra>>(
       '/devoluciones-compra/',
-      {
-        params: { page: page, page_size: limit },
-      }
+      { params: { page, page_size: limit } }
     );
-
     const data = response.data.results
-
-    const DevolucionConNombre = await Promise.all(
-      data.map(async (ajustes) => {
-        const detalles = await getDetalleDevolucionCompraById(ajustes.id);
+    // por cada devolución, recorremos sus detalles y traemos el nombre del producto
+    const resultsWithNames = await Promise.all(
+      data.map(async (devolucion: any) => {
+        const detallesConNombre = await Promise.all(
+          devolucion.detalles_creados.map(async (detalle: any) => {
+            // suponiendo que tu endpoint de producto a detalle es /productos/:id/
+            const prodResp = await getProductById(detalle.producto)
+            console.log(prodResp)
+            return {
+              ...detalle,
+              nombreProducto: prodResp.descripcion, // o el campo que uses para el nombre
+            };
+          })
+        );
         return {
-          ...ajustes,
-          detalles
+          ...devolucion,
+          detalles_creados: detallesConNombre,
         };
       })
     );
-
+    console.log("resultsWithNames", resultsWithNames)
     return {
-      results: DevolucionConNombre,
+      results: resultsWithNames,
       current_page: response.data.current_page,
       page_size: response.data.page_size,
       has_next: response.data.has_next,
@@ -44,7 +51,8 @@ export const getAllDevolucionesCompra = async (
       count: response.data.count,
     };
   } catch (error: any) {
-    console.error(error);
+    console.error('Error fetching devoluciones:', error);
+    throw error;
   }
 };
 
