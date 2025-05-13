@@ -131,24 +131,24 @@ export const ReceptorDefault: ReceptorInterface = {
   nombre_comercial: '',
 };
 
-export const ReceptorRequestDefault: ReceptorRequestInterface = {
-  id: '',
-  tipo_documento: {
-    id: '',
-    descripcion: '',
-    code: '',
-  },
-  num_documento: '',
-  nrc: '',
-  nombre: '',
-  actividades_economicas: [],
-  municipio: '',
-  direccion: '',
-  telefono: '',
-  correo: '',
-  nombre_comercial: '',
-  tipo_receptor: '',
-};
+// export const ReceptorRequestDefault: ReceptorRequestInterface = {
+//   id: '',
+//   tipo_documento: {
+//     id: '',
+//     descripcion: '',
+//     code: '',
+//   },
+//   num_documento: '',
+//   nrc: '',
+//   nombre: '',
+//   actividades_economicas: [],
+//   municipio: '',
+//   direccion: '',
+//   telefono: '',
+//   correo: '',
+//   nombre_comercial: '',
+//   tipo_receptor: '',
+// };
 
 export interface ReceptorInterface {
   id: string;
@@ -164,20 +164,20 @@ export interface ReceptorInterface {
   nombre_comercial: string;
 }
 
-export interface ReceptorRequestInterface {
-  id: string;
-  tipo_documento: TipoDocumento;
-  num_documento: string;
-  tipo_receptor: string;
-  nrc: string;
-  nombre: string;
-  actividades_economicas: ActivitiesData[];
-  municipio: string;
-  direccion: string;
-  telefono: string;
-  correo: string;
-  nombre_comercial: string;
-}
+// export interface ReceptorRequestInterface {
+//   id: string;
+//   tipo_documento: TipoDocumento;
+//   num_documento: string;
+//   tipo_receptor: string;
+//   nrc: string;
+//   nombre: string;
+//   actividades_economicas: ActivitiesData[];
+//   municipio: string;
+//   direccion: string;
+//   telefono: string;
+//   correo: string;
+//   nombre_comercial: string;
+// }
 
 export interface TipoDocumento {
   id: string;

@@ -40,6 +40,8 @@ import CustomToast, {
 import { IoMdCloseCircle } from 'react-icons/io';
 import { ExtensionCard } from '../components/Shared/entension/extensionCard';
 import { ResumenCardNotaAjuste } from '../components/NotaDebito/resumenCardNotaAjuste';
+import { InputTextarea } from 'primereact/inputtextarea';
+import { FormasdePagoForm } from '../components/Shared/configuracionFactura/formasDePago/formasdePagoForm';
 
 export const GenerarDocumentosAjuste = () => {
   //lista de datos obtenidas de la api
@@ -90,6 +92,8 @@ export const GenerarDocumentosAjuste = () => {
   const [nombreResponsable, setNombreResponsable] = useState<string>('');
   const [docResponsable, setDocResponsable] = useState<string>('');
   const [tipoTransmision, setTipoTransmision] = useState<string>('');
+  const [formasPagoList, setFormasPagoList] = useState<number[]>([]);
+
 
   const [formData, setFormData] = useState({ codigo: '' });
 
@@ -187,6 +191,21 @@ export const GenerarDocumentosAjuste = () => {
     } catch (error: any) {
       handleAccion('error', <IoMdCloseCircle size={68} />, error.toString());
     }
+  };
+
+  useEffect(() => {
+    handleMontoPagar();
+    console.log("LIST PRODUCTPS", listProducts)
+  }, [listProducts, idListProducts, cantidadListProducts]);
+
+  const handleMontoPagar = () => {
+    let aux = 0;
+    listProducts.map((pago) => {
+      aux = + ((pago.preunitario + pago.iva_unitario) * pago.cantidad);
+    });
+    console.log("AUUUUUX", aux)
+    console.log("AUUUUUX", listProducts[0])
+    setTotalAPagar(aux);
   };
 
   /************************************/
@@ -385,16 +404,50 @@ export const GenerarDocumentosAjuste = () => {
         </div>
       </WhiteSectionsPage>
 
+      {/*Seccion para pagos*/}
+      {tipoDocumentoSelected?.codigo == '06' &&
+        <WhiteSectionsPage>
+          <>
+            <h1 className="text-start text-xl font-bold text-nowrap">
+              Formas de pago
+            </h1>
+            <Divider />
+            <FormasdePagoForm
+              setFormasPagoList={setFormasPagoList}
+              totalAPagar={totalAPagar}
+              setErrorFormasPago={setErrorFormasPago}
+              errorFormasPago={errorFormasPago}
+              setAuxManejoPagos={setAuxManejoPagos}
+              auxManejoPagos={auxManejoPagos}
+            />
+            <span className="flex flex-col items-start justify-start py-5 pt-10">
+              <p className="opacity-70">Observaciones</p>
+              <div className="justify-content-center flex w-full">
+                <InputTextarea
+                  autoResize
+                  value={observaciones}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                    setObservaciones(e.target.value)
+                  }
+                  rows={3}
+                  style={{ width: '100%' }}
+                />
+              </div>
+            </span>
+          </>
+        </WhiteSectionsPage>}
+
       {/*Seccion totales resumen*/}
       <WhiteSectionsPage>
         <div className="pt-2 pb-5">
           <div className="flex justify-between">
-            <h1 className="text-start text-xl font-bold">Resumen de totales</h1>
+            <h1 className="text-start text-xl font-bold">Resumen nuevo total</h1>
           </div>
           <Divider className="m-0 p-0"></Divider>
           <ResumenCardNotaAjuste
-            facturas={facturasAjuste}
+            facturas={listProducts}
             cantidades={cantidadListProducts}
+            totalAPagar={totalAPagar}
           />
         </div>
       </WhiteSectionsPage>

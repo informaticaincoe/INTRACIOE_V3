@@ -325,7 +325,6 @@ export const FacturaVisualizacionPage = () => {
         >
           Realizar otra factura
         </button>
-        <button onClick={enviarEmail}>ENviar email</button>
       </div>
       <div
         id="content-id"

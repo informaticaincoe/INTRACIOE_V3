@@ -1,8 +1,7 @@
-// src/services/receptorService.ts
-
-import { ReceptorInterface } from '../../../features/ventas/receptores/interfaces/receptorInterfaces';
+import { ReceptorInterface, ReceptorResult } from '../../../features/ventas/receptores/interfaces/receptorInterfaces';
 import { ReceptoresParams } from '../../interfaces/interfacesPagination';
 import { api } from '../api';
+import {ReceptorInterface as ReceptorInterfaceEnFormulario} from "../../../shared/interfaces/interfaces"
 
 export const getAllReceptor = async (
   { filter, page, limit }: ReceptoresParams = {
@@ -18,7 +17,7 @@ export const getAllReceptor = async (
     queryParams.append('page_size', String(limit));
 
     const response = await api.get<ReceptorInterface>('/receptor/', {
-      params: { page: 1, page_size: limit, filter: filter },
+      params: { page: page, page_size: limit, filter: filter },
     });
 
     return {
@@ -37,9 +36,9 @@ export const getAllReceptor = async (
 
 export const getReceptorById = async (
   id: string
-): Promise<ReceptorInterface> => {
+): Promise<ReceptorInterfaceEnFormulario> => {
   try {
-    const response = await api.get<ReceptorInterface>(`/receptor/${id}/`);
+    const response = await api.get<ReceptorInterfaceEnFormulario>(`/receptor/${id}/`);
     return response.data;
   } catch (error) {
     console.error(`Error fetching receptor ${id}:`, error);
@@ -68,10 +67,10 @@ export const deleteReceptor = async (receptor_id: string): Promise<any> => {
 };
 
 export const createReceptor = async (
-  data: ReceptorInterface
-): Promise<ReceptorInterface> => {
+  data: ReceptorInterfaceEnFormulario
+): Promise<ReceptorInterfaceEnFormulario> => {
   try {
-    const response = await api.post<ReceptorInterface>(
+    const response = await api.post<ReceptorInterfaceEnFormulario>(
       '/receptor/crear/',
       data
     );
@@ -84,10 +83,10 @@ export const createReceptor = async (
 
 export const editReceptor = async (
   id: string,
-  data: ReceptorInterface
-): Promise<ReceptorInterface> => {
+  data: ReceptorInterfaceEnFormulario
+): Promise<ReceptorInterfaceEnFormulario> => {
   try {
-    const response = await api.put<ReceptorInterface>(
+    const response = await api.put<ReceptorInterfaceEnFormulario>(
       `/receptor/actualizar/${id}/`,
       data
     );
