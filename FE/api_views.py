@@ -20,7 +20,7 @@ from rest_framework.pagination import PageNumberPagination
 
 from .views import (
     contingencia_dte_view, enviar_contingencia_hacienda_view, enviar_correo_individual_view, enviar_factura_hacienda_view, enviar_factura_invalidacion_hacienda_view, enviar_lotes_hacienda_view, 
-    finalizar_contigencia_view, firmar_contingencia_view, firmar_factura_anulacion_view, firmar_factura_view, 
+    finalizar_contigencia_view, firmar_contingencia_view, firmar_factura_anulacion_view, firmar_factura_view, generar_json_sujeto, 
     invalidacion_dte_view, generar_json, lote_contingencia_dte_view, num_to_letras, agregar_formas_pago_api,
     generar_json_doc_ajuste, obtener_fecha_actual, obtener_listado_productos_view
 )
@@ -1104,7 +1104,7 @@ class GenerarFacturaAPIView(APIView):
         documentos_relacionados = []
         descuentos_r = []
         
-        tipo_dte = request.query_params.get('tipo_dte', '01')
+        tipo_dte = '14' # codigo de documento rpar sujeto excluido
 
         emisor_obj = Emisor_fe.objects.first()
         if emisor_obj:
@@ -1298,7 +1298,8 @@ class GenerarFacturaAPIView(APIView):
             descuento_gravado = Decimal("0.00")
             neto_unitario = Decimal("0.00")
             sub_total_item = Decimal("0")
-            
+            IVA_RATE=0.13
+
             tributo_valor = None
 
             for index, prod_id in enumerate(productos_ids):
@@ -1339,7 +1340,7 @@ class GenerarFacturaAPIView(APIView):
                     else:
                         neto_unitario = (precio_incl * Decimal("1.13")).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
                         precio_inc_neto = (precio_incl * Decimal("1.13")).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
-                    precio_neto = (neto_unitario * cantidad).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+
                 else:
                     if producto.precio_iva:
                         neto_unitario = (precio_incl / Decimal("1.13")).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
@@ -1469,6 +1470,7 @@ class GenerarFacturaAPIView(APIView):
             factura.iva_percibido = float(DecimalIvaPerci)
             factura.tipo_documento_relacionar = tipo_doc_relacionar
             factura.documento_relacionado = documento_relacionado
+            factura.sub_total = factura.sub_total_ventas
             factura.save()
             
             cuerpo_documento = []
@@ -2260,6 +2262,568 @@ class GenerarDocumentoAjusteAPIView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 ######################################################
+# GENERACION DE SUJETO EXCLUIDO
+######################################################
+
+class GenerarFacturaSujetoAPIView(APIView):
+    """
+    Vista API para generar facturas.
+    En GET se retornan los datos para armar el formulario (en vez de renderizar una plantilla)  
+    y en POST se procesa la generación de la factura.
+    """
+    cod_generacion = str(uuid.uuid4()).upper()
+    global productos_ids_r
+    productos_ids_r = []
+    global cantidades_prod_r
+    cantidades_prod_r = []
+    global documentos_relacionados
+    documentos_relacionados = []
+    global descuentos_r
+    descuentos_r = []
+    global emisor_fe
+    
+    # Puedes agregar permisos o autenticación según tus necesidades:
+    # permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, format=None):
+        
+        # Inicializamos las variables globales (aunque es recomendable evitar globals)
+        global productos_ids_r, cantidades_prod_r, documentos_relacionados, descuentos_r
+        productos_ids_r = []
+        cantidades_prod_r = []
+        documentos_relacionados = []
+        descuentos_r = []
+        
+        tipo_dte = request.query_params.get('tipo_dte', '01')
+        print("TIPO DTE:", tipo_dte)
+
+        emisor_obj = Emisor_fe.objects.first()
+        if emisor_obj:
+            nuevo_numero = NumeroControl.preview_numero_control(tipo_dte)
+        else:
+            nuevo_numero = ""
+        print("Numero de control: ", nuevo_numero)
+        codigo_generacion = str(uuid.uuid4()).upper()#self.cod_generacion
+        fecha_generacion = timezone.now().date()
+        hora_generacion = timezone.now().strftime('%H:%M:%S')
+
+        emisor_data = {
+            "nit": emisor_obj.nit if emisor_obj else "",
+            "nombre_razon_social": emisor_obj.nombre_razon_social if emisor_obj else "",
+            "direccion_comercial": emisor_obj.direccion_comercial if emisor_obj else "",
+            "telefono": emisor_obj.telefono if emisor_obj else "",
+            "email": emisor_obj.email if emisor_obj else "",
+        } if emisor_obj else None
+
+        receptores = list(Receptor_fe.objects.values("id", "num_documento", "nombre"))
+
+        # Se convierten los querysets a listas de diccionarios
+        #productos = list(Producto.objects.all().values())
+        
+        #1.Llamar al listado de productos(simular un request GET), 2.Crear una instancia de APIRequestFactory(para solicitudes http), enviar parametros
+        # request = APIRequestFactory().get('/api/productos/', {'documento_ajuste': 'False', 'tipo_documento_dte': '01'})
+        # vista = ProductoListAPIView.as_view() #Obtener instancia para manejar la solicitud http, obtener productos
+        # response = vista(request) #Simular la solicitud http (request) usando una vista
+        # productos = response.data #Obtener los datos de la respuesta
+        
+        productos_qs = Producto.objects.all()
+        productos = ProductoSerializer(productos_qs, many=True).data
+        
+        tipooperaciones = list(CondicionOperacion.objects.all().values())
+        tipoDocumentos = list(
+            Tipo_dte.objects.exclude(Q(codigo=COD_NOTA_CREDITO) | Q(codigo=COD_NOTA_DEBITO)).values()
+        )
+        tipoItems = list(TipoItem.objects.all().values())
+        descuentos = list(Descuento.objects.all().values())
+        formasPago = list(FormasPago.objects.all().values())
+        tipoGeneracionDocumentos = list(TipoGeneracionDocumento.objects.all().values())
+
+        context = {
+            "numero_control": nuevo_numero,
+            "codigo_generacion": codigo_generacion,
+            "fecha_generacion": fecha_generacion,
+            "hora_generacion": hora_generacion,
+            "emisor": emisor_data,
+            "receptores": receptores,
+            "productos": productos,
+            "tipooperaciones": tipooperaciones,
+            "tipoDocumentos": tipoDocumentos,
+            "tipoItems": tipoItems,
+            "descuentos": descuentos,
+            "formasPago": formasPago,
+            "tipoGenDocumentos": tipoGeneracionDocumentos
+        }
+        return Response(context, status=status.HTTP_200_OK)
+
+    def post(self, request, format=None):
+        try:
+            items_permitidos = 2000
+            data = request.data 
+            docsRelacionados = []#Acumular los documentos relacionados
+            contingencia = False
+            # Datos básicos
+            numero_control = data.get('numero_control', '')
+            codigo_generacion = data.get('codigo_generacion', '')
+            receptor_id = data.get('receptor_id', None)
+            
+            nit_receptor = data.get('nit_receptor', '')
+            nombre_receptor = data.get('nombre_receptor', '')
+            direccion_receptor = data.get('direccion_receptor', '')
+            telefono_receptor = data.get('telefono_receptor', '')
+            correo_receptor = data.get('correo_receptor', '')
+            observaciones = data.get('observaciones', '')
+            tipo_dte = data.get("tipo_documento_seleccionado", None)
+            tipo_item = data.get("tipo_item_select", None)
+            
+            # tipo_doc_relacionar = data.get("documento_seleccionado", None)
+            # documento_relacionado = data.get("documento_relacionado", [])
+            #porcentaje_descuento = data.get("descuento_select", "0")
+            #porcentaje_descuento_producto = porcentaje_descuento.replace(",", ".")
+
+            # Configuración adicional
+            tipooperacion_id = data.get("condicion_operacion", 1)
+            porcentaje_retencion_iva = Decimal(data.get("porcentaje_retencion_iva", "0"))
+            retencion_iva = data.get("retencion_iva", False)
+            productos_retencion_iva = data.get("productos_retencion_iva", [])
+            porcentaje_retencion_renta = Decimal(data.get("porcentaje_retencion_renta", "0"))
+            retencion_renta = data.get("retencion_renta", False)
+            productos_retencion_renta = data.get("productos_retencion_renta", [])
+            formas_pago_id = agregar_formas_pago_api(request)
+            
+            descuento_global = data.get("descuento_global_input", "0")
+
+            base_imponible_checkbox = data.get("no_gravado", False)
+            
+            monto_descuento = data.get("monto_descuento", "0")
+            
+            productos_ids = data.get('productos_ids', [])
+            cantidades = data.get('cantidades', [])
+            descuentos_aplicados = data.get("descuento_select", [])
+            
+            nombre_responsable = data.get("nombre_responsable", None)
+            documento_responsable = data.get("documento_responsable", None)
+            
+            print(f"parametro num control: {numero_control}, tipo dte: {tipo_dte}")
+            if not numero_control:
+                numero_control = NumeroControl.obtener_numero_control(tipo_dte)
+                print("Numero control asignado: ", numero_control)
+            if not codigo_generacion:
+                codigo_generacion = str(uuid.uuid4()).upper()
+
+            # Emisor
+            emisor_obj = Emisor_fe.objects.first()
+            if not emisor_obj:
+                return Response({"error": "No hay emisores registrados en la base de datos"}, status=status.HTTP_400_BAD_REQUEST)
+            emisor = emisor_obj
+
+            # Receptor
+            if receptor_id and receptor_id != "nuevo":
+                receptor = Receptor_fe.objects.get(id=receptor_id)
+            else:
+                tipo_doc, _ = TiposDocIDReceptor.objects.get_or_create(
+                    codigo='13', defaults={"descripcion": "DUI/NIT"}
+                )
+                receptor, _ = Receptor_fe.objects.update_or_create(
+                    num_documento=nit_receptor,
+                    defaults={
+                        'nombre': nombre_receptor,
+                        'tipo_documento': tipo_doc,
+                        'direccion': direccion_receptor,
+                        'telefono': telefono_receptor,
+                        'correo': correo_receptor
+                    }
+                )
+            print("RECEPTOR",receptor)
+            ambiente_obj = AMBIENTE
+            tipo_dte_obj = Tipo_dte.objects.get(codigo=tipo_dte)
+            tipo_item_obj = TipoItem.objects.get(codigo=tipo_item)
+
+            tipomodelo_obj = Modelofacturacion.objects.get(codigo="1")
+            tipotransmision_obj = TipoTransmision.objects.get(codigo="1")
+            tipooperacion_obj = CondicionOperacion.objects.get(id=tipooperacion_id) if tipooperacion_id else None
+            tipo_moneda_obj = MONEDA_USD
+
+            
+            factura = FacturaElectronica.objects.create(
+                version="2.0",
+                tipo_dte=tipo_dte_obj,
+                numero_control=numero_control,
+                codigo_generacion=codigo_generacion,
+                tipomodelo=tipomodelo_obj,
+                tipocontingencia=None,
+                motivocontin=None,
+                tipomoneda=tipo_moneda_obj,
+                dteemisor=emisor,
+                dtereceptor=receptor,
+                json_original={},
+                firmado=False,
+                base_imponible=base_imponible_checkbox,
+                tipotransmision=tipotransmision_obj
+            )
+
+            # Inicialización de acumuladores
+            # total_gravada = Decimal("0.00")
+            # total_iva = Decimal("0.00")
+            # total_pagar = Decimal("0.00")
+            # DecimalRetIva = Decimal("0.00")
+            # DecimalRetRenta = Decimal("0.00")
+            # DecimalIvaPerci = Decimal("0.00")
+            # total_operaciones = Decimal("0.00")
+            # descuento_item = Decimal("0.00")
+            # total_no_gravado = Decimal("0.00")
+            # sub_total = Decimal("0.00")
+            # porc_descuento_global = Decimal("0.00")
+            # total_iva_item = Decimal("0.00")
+            # precio_inc_neto = Decimal("0.00")
+            # descuento_gravado = Decimal("0.00")
+            # neto_unitario = Decimal("0.00")
+            # sub_total_item = Decimal("0")
+            total_compra =  Decimal("0.00") # Suma de todas las operaciones realizadas
+            descuento =  Decimal("0.00") # descuento global
+            total_descuento =  Decimal("0.00") # sumatorio de todos los decuentos (globales y por item)
+            subtotal =  Decimal("0.00") # suma de total de operaciones
+            ivaRete1 =  Decimal("0.00") # impuesto de iva retenido
+            reteRenta =  Decimal("0.00") # retencion de renta
+            totalPagar =  Decimal("0.00") # subtotal - retencion renta -retencion iva
+            DecimalIvaPerci = Decimal("0.00")
+            total_gravadas    = Decimal("0.00")
+            total_iva         = Decimal("0.00")
+            total_descuento   = Decimal("0.00")
+            total_operaciones = Decimal("0.00")
+            tributo_valor = None
+            IVA_RATE = Decimal("0.13")
+
+            for index, prod_id in enumerate(productos_ids):
+                try:
+                    producto = Producto.objects.get(id=prod_id)
+                except Producto.DoesNotExist:
+                    continue
+
+                if base_imponible_checkbox is True or tipo_item_obj.codigo == COD_TIPO_ITEM_OTROS:
+                    unidad_medida_obj = UNI_MEDIDA_99
+                else:
+                    unidad_medida_obj = TipoUnidadMedida.objects.get(codigo=producto.unidad_medida.codigo)
+
+                if base_imponible_checkbox is True or tipo_item_obj.codigo == COD_TIPO_ITEM_OTROS:
+                    cantidad = 1
+                else:
+                    cantidad = int(cantidades[index]) if index < len(cantidades) else 1
+                    
+                porcentaje_descuento_producto = descuentos_aplicados[index] if index < len(descuentos_aplicados) else 1
+                precio_incl = producto.preunitario
+
+                if (base_imponible_checkbox is False and tipo_item_obj.codigo == COD_TIPO_ITEM_OTROS) or tipo_dte_obj.codigo != COD_CONSUMIDOR_FINAL:
+                    tributoIva = Tributo.objects.get(codigo="20")
+                    tributo_valor = tributoIva.valor_tributo
+                    tributos = [str(tributoIva.codigo)]
+                else:
+                    tributos = None
+                
+                if tributo_valor is None:
+                    tributo_valor = Decimal("0.00")
+                
+                if base_imponible_checkbox is True:
+                    precio_neto = Decimal("0.00")
+                elif base_imponible_checkbox is False and tipo_dte_obj.codigo == COD_CONSUMIDOR_FINAL:
+                    if producto.precio_iva:
+                        neto_unitario = precio_incl.quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+                        precio_inc_neto = neto_unitario
+                    else:
+                        neto_unitario = (precio_incl * Decimal("1.13")).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+                        precio_inc_neto = (precio_incl * Decimal("1.13")).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+                    precio_neto = (neto_unitario * cantidad).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+                else:
+                    if producto.precio_iva:
+                        neto_unitario = (precio_incl / Decimal("1.13")).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+                        precio_inc_neto = neto_unitario
+                    else:
+                        neto_unitario = precio_incl.quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+                        precio_inc_neto = neto_unitario
+                    precio_neto = (neto_unitario * cantidad).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+                
+                if tipo_item_obj.codigo == COD_TIPO_ITEM_OTROS:
+                    precio_neto = (precio_neto * Decimal(tributo_valor)).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+                    
+                precio_neto = Decimal(precio_neto)          
+
+                if porcentaje_descuento_producto:
+                    porcentaje_descuento_item = Descuento.objects.get(id=porcentaje_descuento_producto)
+                else:
+                    porcentaje_descuento_item = Descuento.objects.first()
+                    
+                descuento_porcentaje = (porcentaje_descuento_item.porcentaje / 100).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+                descuento_aplicado = True if porcentaje_descuento_item.porcentaje > Decimal("0.00") else False
+                
+                if monto_descuento:
+                    monto_descuento = Decimal(monto_descuento).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                else:
+                    monto_descuento = Decimal("0.00")
+                
+                descuento_item = (precio_neto * descuento_porcentaje).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                total_neto = (precio_neto - descuento_item).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+                
+                total_iva_item = ( total_neto * Decimal("0.13") ).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+                
+                cuerpo_documento_tributos = []
+                if producto.tributo is None:
+                    return Response({"error": "Seleccionar tributo para el producto"}, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    if tipo_item_obj.codigo == COD_TIPO_ITEM_OTROS:
+                        tributo = Tributo.objects.get(codigo=producto.tributo.codigo)
+                        precio_neto = (precio_neto * Decimal(tributo.valor_tributo)).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+                # --- Cálculo línea a línea ---
+                quantity = Decimal(cantidad)
+                # Precio neto sin IVA
+                if producto.precio_iva:
+                    # preunitario ya trae IVA
+                    unit_with_iva = producto.preunitario
+                else:
+                    # hay que añadirle el 13%
+                    unit_with_iva = (producto.preunitario * (1 + IVA_RATE)).quantize(Decimal("0.000001"), ROUND_HALF_UP)
+
+                
+                # 2) Descuento sobre precio CON IVA
+                line_discount = (unit_with_iva * cantidad * descuento_porcentaje) \
+                                    .quantize(Decimal("0.01"), ROUND_HALF_UP)
+
+                # 3) Total línea CON IVA
+                line_total = (unit_with_iva * cantidad - line_discount) \
+                                    .quantize(Decimal("0.01"), ROUND_HALF_UP)
+
+                # 4) Desglosar NETO e IVA de este total línea
+                line_net = (line_total / (1 + IVA_RATE)) \
+                                    .quantize(Decimal("0.01"), ROUND_HALF_UP)
+                line_tax = (line_total - line_net) \
+                                    .quantize(Decimal("0.01"), ROUND_HALF_UP)
+            
+                # Acumular
+                total_descuento   += line_discount
+                total_gravadas    += line_net
+                total_iva         += line_tax
+                total_operaciones += line_total
+
+                detalle = DetalleFactura.objects.create(
+                    factura=factura,
+                    producto=producto,
+                    cantidad=cantidad,
+                    unidad_medida=unidad_medida_obj,
+                    precio_unitario=precio_inc_neto,
+                    descuento=porcentaje_descuento_item,
+                    tiene_descuento=descuento_aplicado,
+                    ventas_no_sujetas=Decimal("0.00"),
+                    ventas_exentas=Decimal("0.00"),
+                    ventas_gravadas=total_neto,
+                    pre_sug_venta=precio_inc_neto,
+                    no_gravado=Decimal("0.00"),
+                    # saldo_favor=saldo_favor
+                )
+
+                # Actualizar DetalleFactura
+                detalle.ventas_gravadas = line_net
+                detalle.iva            = line_tax
+                detalle.total_con_iva  = line_total
+                detalle.descuento      = porcentaje_descuento_item
+                detalle.tiene_descuento= line_discount > 0
+                detalle.save()
+                
+            # --- Calcular retenciones ---
+                ret_iv    = (total_gravadas * porcentaje_retencion_iva / 100).quantize(Decimal("0.01"), ROUND_HALF_UP) if retencion_iva else Decimal("0.00")
+                ret_renta = (total_gravadas * porcentaje_retencion_renta / 100).quantize(Decimal("0.01"), ROUND_HALF_UP) if retencion_renta else Decimal("0.00")
+                total_pagar = (total_operaciones)
+
+            total_iva = total_iva.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            total_pagar = (total_operaciones - ret_iv - ret_renta).quantize(Decimal("0.01"), ROUND_HALF_UP)
+            
+            print("factura 2")
+
+
+            # if tipo_doc_relacionar is COD_DOCUMENTO_RELACIONADO_NO_SELEC:
+            #     tipo_doc_relacionar = None
+            #     documento_relacionado = None
+                
+            print("factura")
+            
+            # --- Asignar campos a la factura ---
+            factura.total_gravadas    = total_gravadas
+            factura.sub_total_ventas  = total_gravadas
+            factura.descuento_gravado = total_descuento
+            factura.total_descuento   = total_descuento
+            factura.iva_retenido      = ret_iv
+            factura.retencion_renta   = ret_renta
+            factura.total_operaciones = total_operaciones
+            factura.total_iva         = total_iva
+            factura.total_pagar       = total_pagar
+            factura.total_letras      = num_to_letras(total_pagar)
+            factura.condicion_operacion = tipooperacion_obj
+            
+
+            factura.total_no_sujetas = Decimal("0.00")
+            factura.total_exentas = Decimal("0.00")
+            factura.descuen_no_sujeto = Decimal("0.00")
+            factura.descuento_exento = Decimal("0.00")
+            factura.por_descuento = Decimal("0.00")
+            factura.sub_total = total_gravadas
+            factura.total_no_gravado = Decimal("0.00")
+            factura.condicion_operacion = tipooperacion_obj
+            factura.iva_percibido = float(DecimalIvaPerci)
+            factura.tipo_documento_relacionar = None
+            factura.documento_relacionado = None
+            factura.sub_total = total_gravadas
+            factura.save()
+            print("factura")
+            print("factura", factura)
+
+            cuerpo_documento = []
+            for idx, det in enumerate(factura.detalles.all(), start=1):
+                unit_price = det.precio_unitario
+                
+                if idx > items_permitidos:
+                    return Response({"error": "Cantidad máxima de ítems permitidos"}, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    codTributo = None 
+                    cuerpo_documento_tributos = []
+                    if det.producto.tributo is None:
+                        return Response({"error": "Seleccionar tributo para el producto"}, status=status.HTTP_400_BAD_REQUEST)
+                    else:
+                        if tipo_item_obj.codigo == COD_TIPO_ITEM_OTROS:
+                            codTributo = tributo.codigo
+                            if tributo.tipo_tributo.codigo == COD_TRIBUTOS_SECCION_2:
+                                cuerpo_documento_tributos.append({
+                                    "numItem": idx+1,
+                                    "tipoItem": int(tipo_item_obj.codigo),
+                                    "numeroDocumento": None,
+                                    "codigo": str(det.producto.codigo),
+                                    "codTributo": codTributo,
+                                    "descripcion": str(tributo.descripcion),
+                                    "cantidad": float(det.cantidad),
+                                    "uniMedida": int(det.unidad_medida.codigo),
+                                    "precioUni": float(det.precio_unitario.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)),
+                                    "montoDescu": float(((det.precio_unitario * det.cantidad) * (Decimal(det.descuento.porcentaje) / Decimal("100"))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)),
+                                    "ventaNoSuj": 0.0,
+                                    "ventaExenta": 0.0,
+                                    "ventaGravada": float(det.ventas_gravadas.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)),
+                                    "tributos": tributos,
+                                    "psv": float(det.precio_unitario.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)),
+                                    "noGravado": 0.0
+                                })
+                    print("cuerpo codigo")
+                    if not det.producto.precio_iva:
+                        unit_price = (unit_price * (1 + IVA_RATE)).quantize(Decimal("0.01"), ROUND_HALF_UP)
+
+                    discount_pct = Decimal(det.descuento.porcentaje) / 100
+                    monto_descu = (unit_price * det.cantidad * discount_pct).quantize(Decimal("0.01"), ROUND_HALF_UP)
+                    
+                    total_line = (unit_price * det.cantidad - monto_descu).quantize(Decimal("0.01"), ROUND_HALF_UP)
+
+                    cuerpo_documento.append({
+                        "numItem": idx,
+                        "tipoItem": int(tipo_item_obj.codigo),
+                        "codigo": det.producto.codigo,
+                        "descripcion": det.producto.descripcion,
+                        "cantidad": float(det.cantidad),
+                        "uniMedida": int(det.unidad_medida.codigo),
+                        # precio unitario CON IVA si corresponde
+                        "precioUni": float(unit_price),
+                        # descuento sobre el total de la línea
+                        "montoDescu": float(monto_descu),
+                        # aquí “compra” o “ventaGravada” es el subtotal LÍNEA – descuento (ya con IVA)
+                        "compra": float(total_line),
+                        # si necesitas separar neto/IVA:
+                        # "ventaGravada": float((total_line / (1 + IVA_RATE)).quantize(Decimal("0.01"), ROUND_HALF_UP)),
+                        # "ivaItem": float((total_line - (total_line / (1 + IVA_RATE))).quantize(Decimal("0.01"), ROUND_HALF_UP)),
+                    })
+                    print("cuerpo codigo despues")
+                    
+
+            factura_json = generar_json_sujeto(
+                ambiente_obj,
+                tipo_dte_obj,
+                factura,
+                emisor,
+                receptor,
+                cuerpo_documento,
+                observaciones,
+                Decimal(str(total_iva_item)),
+                base_imponible_checkbox,
+                documentos_relacionados,
+                contingencia,
+                total_gravada=total_gravadas,
+                nombre_responsable=nombre_responsable,
+                doc_responsable=documento_responsable,
+                total_operaciones=total_operaciones,
+                total_descuento=total_descuento,
+                total_pagar=total_pagar,
+                formas_pago=formas_pago_id,
+            )
+            print("FACTURA JSON",factura_json)
+            
+            factura.json_original = factura_json
+            if formas_pago_id:
+                factura.formas_Pago = formas_pago_id
+            factura.save()
+            
+            json_path = os.path.join(RUTA_JSON_FACTURA.url, f"{factura.numero_control}.json")
+            os.makedirs(os.path.dirname(json_path), exist_ok=True)
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(factura_json, f, indent=4, ensure_ascii=False)
+            
+            print("PDF antes")
+            # Verificar si el archivo PDF existe
+            pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.url, factura.tipo_dte.codigo, 'pdf', f"{str(factura.codigo_generacion).upper()}.pdf")
+            print("PDF antdespues")
+            
+            os.makedirs(os.path.dirname(pdf_signed_path), exist_ok=True)
+            if os.path.exists(pdf_signed_path):
+                print("PDF ya existe, devolviendo archivo existente: %s", pdf_signed_path)
+                filename=os.path.basename(pdf_signed_path)
+            else:
+                #1.Crear HTML
+                html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": factura}, request=request)
+
+                #Guardar archivo pdf
+                print("guardar pdf: ", pdf_signed_path)
+                with open(pdf_signed_path, "wb") as pdf_file:
+                    pisa_status = pisa.CreatePDF(BytesIO(html_content.encode('utf-8')), dest=pdf_file)
+                    
+                if pisa_status.err:
+                    print(f"Error al crear el PDF en {pdf_signed_path}")
+                else:
+                    print(f"PDF guardado exitosamente en {pdf_signed_path}")
+            # else:
+            #     #1.Crear HTML
+            #     html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": factura}, request=request)
+                
+            #     #2.Definir base_url para que {% static %} funcione correctamente, esto asegura que las imágenes estáticas (logos, etc.) se resuelvan bien en el PDF
+            #     try:
+            #         base_url = request.build_absolute_uri('/')
+            #     except Exception as e:
+            #         print("Error obteniendo base_url")
+            #         base_url = None  # WeasyPrint usará paths relativos si es None
+                
+            #     # 3. Preparar lista de CSS
+            #     stylesheets = [CSS(url='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js') ]
+                
+                #4.Guardar archivo PDF con WeasyPrint
+                # try:
+                #     html = HTML(string=html_content, base_url=base_url)
+                #     html.write_pdf(stylesheets=stylesheets, target=pdf_signed_path)
+                #     filename = os.path.basename(pdf_signed_path)
+                #     print("Pdf guardado ")
+                # except Exception as e:
+                #     print("Error generando el PDF con WeasyPrint")
+            print(json.dumps(factura_json, indent=2, ensure_ascii=False))
+
+            return Response({
+                    "mensaje": "Factura generada correctamente",
+                    "factura_id": factura.id,
+                    "numero_control": factura.numero_control,
+                    "redirect": reverse('detalle_factura', args=[factura.id])
+                }, status=status.HTTP_200_OK)
+                
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+######################################################
 # FIRMA Y ENVIO DE DOCUMENTOS A MH
 ######################################################
 class FirmarFacturaAPIView(APIView):
@@ -2418,7 +2982,7 @@ class EnviarFacturaHaciendaAPIView(APIView):
             }
             auth_data = {"user": nit, "pwd": pwd}
 
-            contingencia = True
+            contingencia = False
             error_auth = None
             for intento in range(1, 4):
                 try:
@@ -2503,6 +3067,15 @@ class EnviarFacturaHaciendaAPIView(APIView):
                 "User-Agent": HEADERS.valor,
                 "Content-Type": CONTENT_TYPE.valor
             }
+            
+            print("factura id: ", factura.id)
+            print("factura: ", factura)
+            print("despues AMBIENTE: ", AMBIENTE.codigo)
+            print("despues version: ", int(factura.json_original["identificacion"]["version"]))
+            print("despues tipoDte: ", str(factura.json_original["identificacion"]["tipoDte"]))
+            print("despues codigo_generacion: ", str(factura.codigo_generacion))
+
+
             payload = {
                 "ambiente": AMBIENTE.codigo,
                 "idEnvio": factura.id,
@@ -2512,8 +3085,13 @@ class EnviarFacturaHaciendaAPIView(APIView):
                 "codigoGeneracion": str(factura.codigo_generacion)
             }
 
+            print("payload: ")
+            print("payload: ", payload)
+
             error_envio = None
             for intento in range(1, 4):
+                print("intentos", intento)
+
                 try:
                     resp = requests.post(envio_url, json=payload, headers=envio_headers, timeout=10)
                     data = resp.json() if resp.text.strip() else {}
@@ -2553,17 +3131,19 @@ class EnviarFacturaHaciendaAPIView(APIView):
                     else:
                         error_envio = f"Envio failed {resp.status_code}"
                 except requests.RequestException as e:
+                    print("error", e)
+
                     error_envio = str(e)
                 time.sleep(1)
 
             # Si llegó aquí, envió falló repetidamente → contingencia
             factura.estado = False
-            factura.contingencia = True
+            factura.contingencia = False
             
             #Enviar correo
             if factura:
                 enviar_correo_individual_view(request, factura_id, None, None)
-                factura.envio_correo_contingencia = True
+                factura.envio_correo_contingencia = False
             
             factura.save()
             return Response(

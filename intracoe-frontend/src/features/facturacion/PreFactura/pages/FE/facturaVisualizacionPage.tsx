@@ -308,6 +308,7 @@ export const FacturaVisualizacionPage = () => {
             )}
           </span>
         </button>
+        
         {datosFactura.selloRemision == null && (
           <button
             onClick={enviarHacienda}
@@ -326,6 +327,7 @@ export const FacturaVisualizacionPage = () => {
           Realizar otra factura
         </button>
       </div>
+      {/* 
       <div
         id="content-id"
         style={{
@@ -412,7 +414,7 @@ export const FacturaVisualizacionPage = () => {
             </div>
           </div>
         </Dialog>
-      )}
+      )} */}
     </>
   );
 };

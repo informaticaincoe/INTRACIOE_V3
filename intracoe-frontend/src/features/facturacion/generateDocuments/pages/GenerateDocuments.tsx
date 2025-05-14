@@ -27,6 +27,7 @@ import { ProductosTabla } from '../components/FE/productosAgregados/productosDat
 import { ResumenTotalesCard } from '../components/Shared/resumenTotales/resumenTotalesCard';
 import {
   generarFacturaService,
+  generarSujetoExcluidoService,
   getFacturaCodigos,
 } from '../services/factura/facturaServices';
 import { CheckBoxRetencion } from '../components/Shared/configuracionFactura/Retencion/checkBoxRetencion';
@@ -151,6 +152,45 @@ export const GenerateDocuments = () => {
   }, [selectedProducts]);
 
   const generarFactura = async () => {
+    const dataSujetoExcl = {
+      receptor_id: receptor.id,
+      nit_receptor: receptor.num_documento,
+      nombre_receptor: receptor.nombre,
+      direccion_receptor: receptor.direccion,
+      telefono_receptor: receptor.telefono,
+      correo_receptor: receptor.correo,
+      observaciones: observaciones,
+
+      tipo_documento_seleccionado: tipoDocumentoSelected?.codigo ?? '01', //tipo DTE
+      tipo_item_select: tipoItem,
+
+      condicion_operacion: selectedCondicionDeOperacion, //contado, credito, otros
+      porcentaje_retencion_iva: retencionIva.toString(),
+      retencion_iva: tieneRetencionIva,
+      // productos_retencion_iva
+
+      porcentaje_retencion_renta: retencionRenta.toString(),
+      retencion_renta: tieneRetencionRenta,
+      // productos_retencion_renta
+      fp_id: formasPagoList,
+
+      descuento_global_input: descuentos.descuentoGeneral.toString(),
+      saldo_favor_input: saldoFavor,
+      no_gravado: baseImponible,
+
+      descuento_gravado: descuentos.descuentoGravado.toString(),
+
+      productos_ids: idListProducts,
+      cantidades: cantidadListProducts, //cantidad de cada producto de la factura
+      descuento_select: descuentosProducto, //lista de id de desceun
+
+      monto_fp: totalAPagar.toFixed(2),
+      num_ref: null,
+      nombre_responsable: nombreResponsable || null,
+      doc_responsable: docResponsable || null,
+      tipotransmision: tipoTransmision,
+    }
+
     const dataFECF = {
       // numero_control: numeroControl,
       receptor_id: receptor.id,
@@ -192,12 +232,24 @@ export const GenerateDocuments = () => {
     };
 
     console.log(dataFECF);
-    try {
-      const response = await generarFacturaService(dataFECF);
-      firmarFactura(response.factura_id);
-    } catch (error) {
-      console.log(error);
+    console.log(dataSujetoExcl);
+
+    if (tipoDocumentoSelected && tipoDocumentoSelected.codigo == "14") {
+      try {
+        const response = await generarSujetoExcluidoService(dataSujetoExcl);
+        // firmarFactura(response.factura_id);
+      } catch (error) {
+        console.log(error);
+      }
+    } else {
+      try {
+        const response = await generarFacturaService(dataFECF);
+        firmarFactura(response.factura_id);
+      } catch (error) {
+        console.log(error);
+      }
     }
+
   };
 
   const firmarFactura = async (id: string) => {
@@ -234,29 +286,29 @@ export const GenerateDocuments = () => {
   }, []);
 
   useEffect(() => {
-  if (!tipoDocumentoSelected) return;
+    if (!tipoDocumentoSelected) return;
 
-  const fetchFacturaData = async () => {
-    setLoading(true);
-    try {
-      const response = await getFacturaCodigos(tipoDocumentoSelected.codigo);
+    const fetchFacturaData = async () => {
+      setLoading(true);
+      try {
+        const response = await getFacturaCodigos(tipoDocumentoSelected.codigo);
 
-      setCodigoGeneracion(response.codigo_generacion);
-      setNumeroControl(response.numero_control);
-      setEmisorData(response.emisor);
-      setCondicionesOperacionList(response.tipooperaciones);
-      setSelectedCondicionDeOperacion(response.tipooperaciones[0].codigo);
-      setDescuentosList(response.descuentos);
-      setListProducts(response.producto);
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+        setCodigoGeneracion(response.codigo_generacion);
+        setNumeroControl(response.numero_control);
+        setEmisorData(response.emisor);
+        setCondicionesOperacionList(response.tipooperaciones);
+        setSelectedCondicionDeOperacion(response.tipooperaciones[0].codigo);
+        setDescuentosList(response.descuentos);
+        setListProducts(response.producto);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  fetchFacturaData();
-}, [tipoDocumentoSelected]);
+    fetchFacturaData();
+  }, [tipoDocumentoSelected]);
 
   const handleClickGenerarFactura = async () => {
     if (auxManejoPagos != 0) {
