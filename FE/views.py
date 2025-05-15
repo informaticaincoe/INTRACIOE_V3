@@ -1094,6 +1094,8 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
         json_otros_documentos = None
         pagos = formas_pago
         
+        print("IVA RETENCIA",float(factura.iva_retenido)) #En retencion debe ser el total compra * el porccentaje de renta 
+        
         json_resumen = {
             "totalNoSuj": float(factura.total_no_sujetas),
             "totalExenta": float(factura.total_exentas),

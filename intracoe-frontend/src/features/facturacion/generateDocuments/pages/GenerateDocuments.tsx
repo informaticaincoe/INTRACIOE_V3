@@ -237,7 +237,7 @@ export const GenerateDocuments = () => {
     if (tipoDocumentoSelected && tipoDocumentoSelected.codigo == "14") {
       try {
         const response = await generarSujetoExcluidoService(dataSujetoExcl);
-        firmarFactura(response.factura_id);
+        // firmarFactura(response.factura_id);
       } catch (error) {
         console.log(error);
       }
@@ -249,7 +249,6 @@ export const GenerateDocuments = () => {
         console.log(error);
       }
     }
-
   };
 
   const firmarFactura = async (id: string) => {
