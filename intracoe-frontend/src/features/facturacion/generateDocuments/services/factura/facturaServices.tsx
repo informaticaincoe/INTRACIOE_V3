@@ -29,6 +29,38 @@ export const generarAjusteService = async (data: string) => {
   }
 };
 
+
+export const obtenerSujetoExcluidoService = async () => {
+  // console.log('data', data);
+  try {
+    const response = await api.get(`/factura/generar_sujeto_excluido/`, {
+      // params: {
+      //   data,
+      // },
+    });
+
+    return response.data;
+  } catch (error: any) {
+    console.log('ERROR:', error.response.data);
+
+    throw new Error();
+  }
+};
+
+
+export const generarSujetoExcluidoService = async (data:any) => {
+  // console.log('data', data);
+  try {
+    const response = await api.post(`/factura/generar_sujeto_excluido/`, data);
+    console.log(response.data)
+    return response.data;
+  } catch (error: any) {
+    console.log('ERROR:', error.response.data);
+
+    throw new Error();
+  }
+};
+
 export const generarNotaCreditoService = async (data: any) => {
   try {
     const response = await api.post(`/factura_ajuste/generar/`, data);

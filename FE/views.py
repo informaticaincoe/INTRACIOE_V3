@@ -76,6 +76,7 @@ VERSION_EVENTO_INVALIDACION =  ConfiguracionServidor.objects.filter(clave="versi
 AMBIENTE = Ambiente.objects.get(codigo="01")#Hacer dinamico
 #AMBIENTE = "01"
 COD_FACTURA_EXPORTACION = "11"
+COD_SUJETO_EXCLUIDO = "14"
 COD_TIPO_INVALIDACION_RESCINDIR = 2
 COD_NOTA_CREDITO = "05"
 COD_NOTA_DEBITO = "06"
@@ -1335,6 +1336,147 @@ def generar_json_doc_ajuste(ambiente_obj, tipo_dte_obj, factura, emisor, recepto
             "apendice": json_apendice
         }
         print("Json ajuste: ", json.dumps(json_completo))
+        return json_completo
+    except Exception as e:
+            print(f"Error al generar el json de la factura: {e}")
+            return JsonResponse({"error": str(e)}, status=400)
+
+def generar_json_sujeto(
+        ambiente_obj, 
+        tipo_dte_obj, 
+        factura, 
+        emisor, 
+        receptor, 
+        cuerpo_documento, 
+        observaciones, 
+        iva_item_total, 
+        base_imponible_checkbox, 
+        documentos_relacionados, 
+        contingencia, 
+        total_gravada, 
+        nombre_responsable, 
+        doc_responsable, 
+        total_operaciones, 
+        total_descuento, 
+        total_pagar, 
+        formas_pago=None
+    ):
+    print("-Inicio llenar json sujeto")
+    try:
+        # if saldo_favor is None or saldo_favor == "":
+        #     saldo_favor = Decimal("0.00")
+
+        if formas_pago is None:
+            formas_pago = factura.formas_Pago or []
+
+        montoExtension = Decimal("25000")
+        
+        #Llenar json
+        json_identificacion = {
+            "version": tipo_dte_obj.version,
+            "ambiente":  ambiente_obj.codigo,
+            "tipoDte": str(tipo_dte_obj.codigo),
+            "numeroControl": str(factura.numero_control),
+            "codigoGeneracion": str(factura.codigo_generacion),
+            "tipoModelo": int(factura.tipomodelo.codigo),
+            "tipoOperacion": int(factura.tipotransmision.codigo),
+            "tipoContingencia": None,
+            "motivoContin": None,
+            "fecEmi": str(factura.fecha_emision),
+            "horEmi": factura.hora_emision.strftime('%H:%M:%S'),
+            "tipoMoneda": str(factura.tipomoneda.codigo) if factura.tipomoneda else "USD"
+        }
+        
+        json_documento_relacionado = None
+        
+        json_emisor = {
+            "nit": str(emisor.nit),
+            "nrc": str(emisor.nrc),
+            "nombre": str(emisor.nombre_razon_social),
+            "codActividad": str(emisor.actividades_economicas.first().codigo) if emisor.actividades_economicas.exists() else "",
+            "descActividad": str(emisor.actividades_economicas.first().descripcion) if emisor.actividades_economicas.exists() else "",
+            # "nombreComercial": str(emisor.nombre_comercial),
+            # "tipoEstablecimiento": str(emisor.tipoestablecimiento.codigo) if emisor.tipoestablecimiento else "",
+            "direccion": {
+                "departamento": str(emisor.municipio.departamento.codigo), #"05",
+                "municipio": str(emisor.municipio.codigo), #"19",
+                "complemento": emisor.direccion_comercial
+            },
+            "telefono": str(emisor.telefono),
+            "correo": str(emisor.email),
+            "codEstableMH": str(emisor.codigo_establecimiento or "M001"),
+            "codEstable": "0001",
+            "codPuntoVentaMH": str(emisor.codigo_punto_venta or "P001"),
+            "codPuntoVenta": "0001",
+        }
+        
+        total_ops = Decimal(total_operaciones).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+        json_sujeto_excluido = {
+            "tipoDocumento": str(receptor.tipo_documento.codigo),
+            "numDocumento": str(str(receptor.num_documento)),
+            "nombre": str(receptor.nombre),
+            "codActividad": str(receptor.actividades_economicas.first().codigo) if receptor.actividades_economicas.exists() else "", #"24310",
+            "descActividad": str(receptor.actividades_economicas.first().descripcion) if receptor.actividades_economicas.exists() else "", #"undición de hierro y acero",
+            "direccion": {
+                "departamento": str(receptor.municipio.departamento.codigo), #"05",
+                "municipio": str(receptor.municipio.codigo), #"19",
+                "complemento": receptor.direccion or ""
+            },
+            "telefono": receptor.telefono or "",
+            "correo": receptor.correo or "",
+        }
+
+        print("json_sujeto_excluido ---", json_sujeto_excluido)
+        
+        # json_otros_documentos = None
+        pagos = formas_pago
+
+        print("formas_pago ---", formas_pago)
+
+        subtotal_con_iva = Decimal(total_operaciones).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        
+        json_resumen = {
+            "totalCompra": float(total_ops),
+            "descu":       float(Decimal(total_descuento).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)),
+            "totalDescu":  float(Decimal(total_descuento).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)),
+            "totalPagar":  float(Decimal(total_pagar).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)),
+            "subTotal":    float(subtotal_con_iva),
+            "ivaRete1":    float(Decimal(factura.iva_retenido).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)),
+            "reteRenta":   float(Decimal(factura.retencion_renta).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)),
+            "totalLetras": factura.total_letras,
+            "condicionOperacion": int(factura.condicion_operacion.codigo) if factura.condicion_operacion and factura.condicion_operacion.codigo.isdigit() else 1,
+            "pagos":       formas_pago,
+            "observaciones": None,
+        }                
+        
+        json_apendice = None
+        
+        subTotalVentas = total_gravada
+
+        #Verificar que el monto consolidado de formas de pago aplique para el total a pagar
+        f_pagos = json_resumen["pagos"]
+        total_pagar_resumen = Decimal(str(json_resumen["totalPagar"]))
+        monto_total_fp = Decimal("0.00")
+        print("pagos")
+        
+        for fp in f_pagos:
+            monto_total_fp += Decimal(fp["montoPago"]).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            
+        if monto_total_fp.compare(Decimal("0.00")) > 0 and monto_total_fp.compare(total_pagar_resumen) < 0:
+            errorFormaPago = JsonResponse({"error": "El pago parcial es inferior al pago total", "Pago recibido": monto_total_fp})
+        
+        json_completo = {
+                "identificacion": json_identificacion,
+                # "documentoRelacionado": json_documento_relacionado,
+                "emisor": json_emisor,
+                "sujetoExcluido": json_sujeto_excluido,
+                # "otrosDocumentos": json_otros_documentos,
+                # "ventaTercero": None,
+                "cuerpoDocumento": cuerpo_documento,
+                "resumen": json_resumen,
+                "apendice": json_apendice
+            }
         return json_completo
     except Exception as e:
             print(f"Error al generar el json de la factura: {e}")

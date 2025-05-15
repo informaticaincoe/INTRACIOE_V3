@@ -1,7 +1,7 @@
 export interface FacturaResponse {
   id: number;
   detalles: number[];
-  version: string;
+  version: number;
   numero_control: string;
   codigo_generacion: string;
   motivocontin: string | null;
@@ -28,14 +28,14 @@ export interface FacturaResponse {
   saldo_favor: string | null;
   formas_Pago: any; // Puede reemplazarse con una interfaz concreta si se conoce
   firmado: boolean;
-  json_original: JsonOriginal;
+  json_original: JsonOriginalBase;
   json_firmado: any; // Según implementación
   sello_recepcion: any; // Según implementación
   recibido_mh: boolean;
   estado: boolean;
   base_imponible: boolean;
   tipo_dte: number;
-  tipomodelo: number;
+  tipoModelo: number;
   contingencia: boolean;
   tipocontingencia: any; // Según implementación
   tipomoneda: number;
@@ -49,7 +49,7 @@ export interface TipoIdentificacion {
   codigo: string;
   descripcion: string;
 }
-export interface JsonOriginal {
+export interface JsonOriginalBase {
   identificacion: Identificacion;
   documentoRelacionado: any;
   emisor: Emisor;
@@ -170,7 +170,7 @@ export const CuerpoDocumentoDefault = [
     ivaItem: 0,
   },
 ];
-export interface CuerpoDocumento {
+export interface CuerpoDocumento { /* Para FE y CCF */
   numItem: number;
   tipoItem: number;
   numeroDocumento: string | null;
@@ -188,6 +188,30 @@ export interface CuerpoDocumento {
   psv: number;
   noGravado: number;
   ivaItem: number;
+}
+
+export interface CuerpoDocumentoSujetoExcluido {
+  cantidad: number,
+  codigo: string,
+  compra: number
+  descripcion: string,
+  montoDescu:number,
+  numItem: number,
+  precioUni: number,
+  tipoItem: number,
+  uniMedida: number
+}
+
+export const CuerpoDocumentoSujetoExcluidoDefault = {
+  cantidad: 0,
+  codigo: "",
+  compra: 0,
+  descripcion: "",
+  montoDescu:0,
+  numItem: 0,
+  precioUni: 0,
+  tipoItem: 0,
+  uniMedida: 0,
 }
 
 export const ResumenDefalt = {
@@ -290,6 +314,8 @@ export const DatosFacturaDefault = {
   horaEmision: '',
   selloRemision: '',
   contingencia: false,
+  version: 0,
+  tipoModelo: 1
 };
 export interface DatosFactura {
   tipoDte: string;
@@ -299,4 +325,6 @@ export interface DatosFactura {
   horaEmision: string;
   selloRemision: string;
   contingencia: boolean;
+  version: number;
+  tipoModelo: number
 }
