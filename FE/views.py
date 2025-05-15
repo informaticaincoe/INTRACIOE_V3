@@ -1366,15 +1366,10 @@ def generar_json_sujeto(
         # if saldo_favor is None or saldo_favor == "":
         #     saldo_favor = Decimal("0.00")
 
-        print("AQUI")
-
         if formas_pago is None:
             formas_pago = factura.formas_Pago or []
-        
-        print("AQUI2")
 
         montoExtension = Decimal("25000")
-        
         
         #Llenar json
         json_identificacion = {
@@ -1453,23 +1448,11 @@ def generar_json_sujeto(
             "condicionOperacion": int(factura.condicion_operacion.codigo) if factura.condicion_operacion and factura.condicion_operacion.codigo.isdigit() else 1,
             "pagos":       formas_pago,
             "observaciones": None,
-        }
-        print("DESPUES JSON RESUMEN")
-                
+        }                
         
         json_apendice = None
         
         subTotalVentas = total_gravada
-    
-        print("tipo_documento_dte", tipo_dte_obj.codigo)
-        print("despues tributo 2", COD_SUJETO_EXCLUIDO)
-
-        print("DESOUES RECEPTOR", json_sujeto_excluido)
-
-        print("NATES CONDICION OPERACION")
-        
-        print("despues CONDICION OPERACION")
-
 
         #Verificar que el monto consolidado de formas de pago aplique para el total a pagar
         f_pagos = json_resumen["pagos"]

@@ -108,7 +108,7 @@ function App() {
             path="/generar-documentos-ajuste"
             element={<GenerarDocumentosAjuste />}
           />
-          <Route path="/factura/:id" element={<FacturaVisualizacionPage />} />
+          <Route path="/factura/:codigo/:id" element={<FacturaVisualizacionPage />} />
           <Route path="/productos" element={<ProductsPage />} />
           <Route path="/productos/nuevo" element={<NuevoProductoPage />} />
           <Route path="/producto/:id" element={<NuevoProductoPage />} />

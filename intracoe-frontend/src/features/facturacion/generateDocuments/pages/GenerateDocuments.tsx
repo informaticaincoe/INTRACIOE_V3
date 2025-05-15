@@ -161,7 +161,7 @@ export const GenerateDocuments = () => {
       correo_receptor: receptor.correo,
       observaciones: observaciones,
 
-      tipo_documento_seleccionado: tipoDocumentoSelected?.codigo ?? '01', //tipo DTE
+      tipo_documento_seleccionado: tipoDocumentoSelected?.codigo ?? '14', //tipo DTE
       tipo_item_select: tipoItem,
 
       condicion_operacion: selectedCondicionDeOperacion, //contado, credito, otros
@@ -237,7 +237,7 @@ export const GenerateDocuments = () => {
     if (tipoDocumentoSelected && tipoDocumentoSelected.codigo == "14") {
       try {
         const response = await generarSujetoExcluidoService(dataSujetoExcl);
-        // firmarFactura(response.factura_id);
+        firmarFactura(response.factura_id);
       } catch (error) {
         console.log(error);
       }
@@ -255,7 +255,7 @@ export const GenerateDocuments = () => {
   const firmarFactura = async (id: string) => {
     try {
       if (id) {
-        navigate(`/factura/${id}`);
+        navigate(`/factura/${tipoDocumentoSelected?.codigo}/${id}`);
       }
     } catch (error) {
       console.log(error);
@@ -286,8 +286,9 @@ export const GenerateDocuments = () => {
   }, []);
 
   useEffect(() => {
+    console.log("fuera", tipoDocumentoSelected)
     if (!tipoDocumentoSelected) return;
-
+    console.log("dentro", tipoDocumentoSelected)
     const fetchFacturaData = async () => {
       setLoading(true);
       try {
@@ -300,6 +301,8 @@ export const GenerateDocuments = () => {
         setSelectedCondicionDeOperacion(response.tipooperaciones[0].codigo);
         setDescuentosList(response.descuentos);
         setListProducts(response.producto);
+
+        console.log("tipo dte selecionado", response)
       } catch (error) {
         console.log(error);
       } finally {

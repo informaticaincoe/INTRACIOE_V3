@@ -1104,7 +1104,7 @@ class GenerarFacturaAPIView(APIView):
         documentos_relacionados = []
         descuentos_r = []
         
-        tipo_dte = '14' # codigo de documento rpar sujeto excluido
+        tipo_dte = request.query_params.get('tipo_dte', '01')
 
         emisor_obj = Emisor_fe.objects.first()
         if emisor_obj:
@@ -1340,7 +1340,7 @@ class GenerarFacturaAPIView(APIView):
                     else:
                         neto_unitario = (precio_incl * Decimal("1.13")).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
                         precio_inc_neto = (precio_incl * Decimal("1.13")).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
-
+                    precio_neto = (neto_unitario * cantidad).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
                 else:
                     if producto.precio_iva:
                         neto_unitario = (precio_incl / Decimal("1.13")).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
@@ -1349,11 +1349,14 @@ class GenerarFacturaAPIView(APIView):
                         neto_unitario = precio_incl.quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
                         precio_inc_neto = neto_unitario
                     precio_neto = (neto_unitario * cantidad).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
-                
+                    print("PRECIO NETO", precio_neto)
                 if tipo_item_obj.codigo == COD_TIPO_ITEM_OTROS:
                     precio_neto = (precio_neto * Decimal(tributo_valor)).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
                     
-                precio_neto = Decimal(precio_neto)          
+                print("PRECIO NETO", precio_neto)
+                precio_neto = Decimal(precio_neto) 
+                print("PRECIO NETO", precio_neto)
+
                 iva_unitario = (precio_incl - precio_neto).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
                 
                 if porcentaje_descuento_producto:
@@ -1470,7 +1473,7 @@ class GenerarFacturaAPIView(APIView):
             factura.iva_percibido = float(DecimalIvaPerci)
             factura.tipo_documento_relacionar = tipo_doc_relacionar
             factura.documento_relacionado = documento_relacionado
-            factura.sub_total = factura.sub_total_ventas
+            
             factura.save()
             
             cuerpo_documento = []
@@ -2633,17 +2636,12 @@ class GenerarFacturaSujetoAPIView(APIView):
 
             total_iva = total_iva.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
             total_pagar = (total_operaciones - ret_iv - ret_renta).quantize(Decimal("0.01"), ROUND_HALF_UP)
-            
-            print("factura 2")
-
 
             # if tipo_doc_relacionar is COD_DOCUMENTO_RELACIONADO_NO_SELEC:
             #     tipo_doc_relacionar = None
             #     documento_relacionado = None
-                
-            print("factura")
-            
             # --- Asignar campos a la factura ---
+
             factura.total_gravadas    = total_gravadas
             factura.sub_total_ventas  = total_gravadas
             factura.descuento_gravado = total_descuento
@@ -2670,8 +2668,6 @@ class GenerarFacturaSujetoAPIView(APIView):
             factura.documento_relacionado = None
             factura.sub_total = total_gravadas
             factura.save()
-            print("factura")
-            print("factura", factura)
 
             cuerpo_documento = []
             for idx, det in enumerate(factura.detalles.all(), start=1):
@@ -2706,7 +2702,6 @@ class GenerarFacturaSujetoAPIView(APIView):
                                     "psv": float(det.precio_unitario.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)),
                                     "noGravado": 0.0
                                 })
-                    print("cuerpo codigo")
                     if not det.producto.precio_iva:
                         unit_price = (unit_price * (1 + IVA_RATE)).quantize(Decimal("0.01"), ROUND_HALF_UP)
 
@@ -2731,9 +2726,7 @@ class GenerarFacturaSujetoAPIView(APIView):
                         # si necesitas separar neto/IVA:
                         # "ventaGravada": float((total_line / (1 + IVA_RATE)).quantize(Decimal("0.01"), ROUND_HALF_UP)),
                         # "ivaItem": float((total_line - (total_line / (1 + IVA_RATE))).quantize(Decimal("0.01"), ROUND_HALF_UP)),
-                    })
-                    print("cuerpo codigo despues")
-                    
+                    })                    
 
             factura_json = generar_json_sujeto(
                 ambiente_obj,
