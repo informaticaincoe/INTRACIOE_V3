@@ -8,7 +8,7 @@ interface ContactosProps {
 
 export const Contactos: React.FC<ContactosProps> = ({ emisor }) => {
   return (
-    <div className="flex w-full justify-end gap-10 pt-3">
+    <div className="flex w-full justify-end gap-10">
       <p>Contactanos:</p>
       <span className="flex items-center justify-center gap-2">
         <TfiEmail />

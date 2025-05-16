@@ -3,7 +3,7 @@ from django.urls import path
 from FE.api_views import (
 
     CondicionOperacionDetailAPIView, ContingenciaDteAPIView, ContingenciaDteUnificadoAPIView, ContingenciaListAPIView, EmisorCreateAPIView, EmisorUpdateAPIView, EnviarContingenciaHaciendaAPIView, EnviarFacturaHaciendaAPIView, EnviarFacturaInvalidacionAPIView, EnviarLotesHaciendaAPIView, EnvioDteUnificadoAPIView, FacturaDetailAPIView, FacturaListAPIView, FacturaPorCodigoGeneracionAPIView, FinalizarContingenciaAPIView, FirmarContingenciaAPIView, FirmarFacturaAPIView, 
-    GenerarFacturaAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, InvalidarVariasDteAPIView, LoteContingenciaDteAPIView, LotesDteAPIView, MotivoContingenciaAPIView, MunicipioByDepartamentoAPIView, TopClientes, TopProductosAPIView, TotalVentasAPIView, TotalesPorTipoDTE, autenticacion, EmisorListAPIView, receptorCreateAPIView, receptorDeleteAPIView, receptorDetailAPIView, 
+    GenerarFacturaAPIView, GenerarFacturaSujetoAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, InvalidarVariasDteAPIView, LoteContingenciaDteAPIView, LotesDteAPIView, MotivoContingenciaAPIView, MunicipioByDepartamentoAPIView, TopClientes, TopProductosAPIView, TotalVentasAPIView, TotalesPorTipoDTE, autenticacion, EmisorListAPIView, receptorCreateAPIView, receptorDeleteAPIView, receptorDetailAPIView, 
 
     receptorListAPIView, receptorUpdateAPIView, GenerarDocumentoAjusteAPIView,
 
@@ -298,6 +298,7 @@ urlpatterns = [
     path('api/facturas/', FacturaListAPIView.as_view(), name='api_factura_list'),
     path("api/factura-por-codigo/", FacturaPorCodigoGeneracionAPIView.as_view(), name="factura_por_codigo"),
     path('api/factura/generar/', GenerarFacturaAPIView.as_view(), name='generar_factura_api'),
+    path('api/factura/generar_sujeto_excluido/', GenerarFacturaSujetoAPIView.as_view(), name='generar_factura_api'),
     path('api/factura_pdf/<int:pk>/', FacturaDetailAPIView.as_view(), name='factura_pdf_api'),
     path('api/factura/firmar/<int:factura_id>/', FirmarFacturaAPIView.as_view(), name='firmar_factura_api'),
     path('api/factura/<int:factura_id>/enviar/',EnviarFacturaHaciendaAPIView.as_view(),name='api-factura-enviar-factura'),
