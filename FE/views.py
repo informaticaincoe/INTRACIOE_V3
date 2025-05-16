@@ -1351,9 +1351,7 @@ def generar_json_sujeto(
         receptor, 
         cuerpo_documento, 
         observaciones, 
-        iva_item_total, 
-        base_imponible_checkbox, 
-        documentos_relacionados, 
+        iva_item_total,   
         contingencia, 
         total_gravada, 
         nombre_responsable, 
@@ -1361,6 +1359,8 @@ def generar_json_sujeto(
         total_operaciones, 
         total_descuento, 
         total_pagar, 
+        descuento_global,
+        sub_total,
         formas_pago=None
     ):
     print("-Inicio llenar json sujeto")
@@ -1388,8 +1388,6 @@ def generar_json_sujeto(
             "horEmi": factura.hora_emision.strftime('%H:%M:%S'),
             "tipoMoneda": str(factura.tipomoneda.codigo) if factura.tipomoneda else "USD"
         }
-        
-        json_documento_relacionado = None
         
         json_emisor = {
             "nit": str(emisor.nit),
@@ -1436,31 +1434,48 @@ def generar_json_sujeto(
 
         print("formas_pago ---", formas_pago)
 
-        subtotal_con_iva = Decimal(total_operaciones).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-        
+        # 5) Retenciones
+        ret_iva   = Decimal(factura.iva_retenido).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        ret_renta = Decimal(factura.retencion_renta).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
         json_resumen = {
             "totalCompra": float(total_ops),
-            "descu":       float(Decimal(total_descuento).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)),
-            "totalDescu":  float(Decimal(total_descuento).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)),
-            "totalPagar":  float(Decimal(total_pagar).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)),
-            "subTotal":    float(subtotal_con_iva),
-            "ivaRete1":    float(Decimal(factura.iva_retenido).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)),
-            "reteRenta":   float(Decimal(factura.retencion_renta).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)),
+            "descu":       float(descuento_global),
+            "totalDescu":  float(total_descuento),
+            "subTotal":    float(sub_total),
+            "ivaRete1":    float(ret_iva),     # si aplica; si no, queda 0.00
+            "reteRenta":   float(ret_renta),
+            "totalPagar":  float(sub_total),
             "totalLetras": factura.total_letras,
             "condicionOperacion": int(factura.condicion_operacion.codigo) if factura.condicion_operacion and factura.condicion_operacion.codigo.isdigit() else 1,
             "pagos":       formas_pago,
-            "observaciones": None,
-        }                
+            "observaciones": observaciones,
+        }
+    
+        # json_resumen = {
+        #     "totalCompra": float(total_ops),
+        #     "descu":       float(Decimal(descuento_global).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)),
+        #     "totalDescu":  float(Decimal(total_descuento).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)),
+        #     "totalPagar":  float(Decimal(total_pagar).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)),
+        #     "subTotal":    float(subtotal_con_iva),
+        #     "ivaRete1":    0.00, # retencion de iva no aplica
+        #     "reteRenta":   float(Decimal(factura.retencion_renta).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)),
+        #     "totalLetras": factura.total_letras,
+        #     "condicionOperacion": int(factura.condicion_operacion.codigo) if factura.condicion_operacion and factura.condicion_operacion.codigo.isdigit() else 1,
+        #     "pagos":       formas_pago,
+        #     "observaciones": observaciones,
+        # }                
+        print("json resumen:", json_resumen)
         
         json_apendice = None
-        
         subTotalVentas = total_gravada
 
         #Verificar que el monto consolidado de formas de pago aplique para el total a pagar
         f_pagos = json_resumen["pagos"]
         total_pagar_resumen = Decimal(str(json_resumen["totalPagar"]))
         monto_total_fp = Decimal("0.00")
-        print("pagos")
+        print("pagos", f_pagos)
         
         for fp in f_pagos:
             monto_total_fp += Decimal(fp["montoPago"]).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
@@ -1470,11 +1485,8 @@ def generar_json_sujeto(
         
         json_completo = {
                 "identificacion": json_identificacion,
-                # "documentoRelacionado": json_documento_relacionado,
                 "emisor": json_emisor,
                 "sujetoExcluido": json_sujeto_excluido,
-                # "otrosDocumentos": json_otros_documentos,
-                # "ventaTercero": None,
                 "cuerpoDocumento": cuerpo_documento,
                 "resumen": json_resumen,
                 "apendice": json_apendice

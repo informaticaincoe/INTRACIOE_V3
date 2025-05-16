@@ -165,16 +165,17 @@ export const GenerateDocuments = () => {
       tipo_item_select: tipoItem,
 
       condicion_operacion: selectedCondicionDeOperacion, //contado, credito, otros
-      porcentaje_retencion_iva: retencionIva.toString(),
-      retencion_iva: tieneRetencionIva,
-      // productos_retencion_iva
+
+      /*** Sujeto excluido no aplica la retencion de IVA ***/
+      // porcentaje_retencion_iva: retencionIva.toString(),
+      // retencion_iva: tieneRetencionIva,
 
       porcentaje_retencion_renta: retencionRenta.toString(),
       retencion_renta: tieneRetencionRenta,
       // productos_retencion_renta
       fp_id: formasPagoList,
 
-      descuento_global_input: descuentos.descuentoGeneral.toString(),
+      descuento_global: descuentos.descuentoGeneral.toString(),
       saldo_favor_input: saldoFavor,
       no_gravado: baseImponible,
 
@@ -182,7 +183,7 @@ export const GenerateDocuments = () => {
 
       productos_ids: idListProducts,
       cantidades: cantidadListProducts, //cantidad de cada producto de la factura
-      descuento_select: descuentosProducto, //lista de id de desceun
+      descuento_select: descuentosProducto, //lista de id de descuen
 
       monto_fp: totalAPagar.toFixed(2),
       num_ref: null,
@@ -237,7 +238,7 @@ export const GenerateDocuments = () => {
     if (tipoDocumentoSelected && tipoDocumentoSelected.codigo == "14") {
       try {
         const response = await generarSujetoExcluidoService(dataSujetoExcl);
-        // firmarFactura(response.factura_id);
+        firmarFactura(response.factura_id);
       } catch (error) {
         console.log(error);
       }
@@ -377,8 +378,9 @@ export const GenerateDocuments = () => {
               setTipoTransmision={setTipoTransmision}
               tipoTransmision={tipoTransmision}
             />
-            <CheckBoxVentaTerceros />
+            {tipoDocumentoSelected?.codigo != "14" && <CheckBoxVentaTerceros /> /* Sujeto excluido no incluye venta a terceros */} 
             <CheckBoxRetencion
+              tipoDocumentoSelected={tipoDocumentoSelected}
               setTieneRetencionIva={setTieneRetencionIva}
               tieneRetencionIva={tieneRetencionIva}
               setRetencionIva={setRetencionIva}
@@ -388,10 +390,11 @@ export const GenerateDocuments = () => {
               retencionRenta={retencionRenta}
               setRetencionRenta={setRetencionRenta}
             />
-            <CheckboxBaseImponible
-              baseImponible={baseImponible}
-              setBaseImponible={setBaseImponible}
-            />
+            {tipoDocumentoSelected?.codigo != "14" && //Sujeto excluido no tiene base imponible
+              <CheckboxBaseImponible
+                baseImponible={baseImponible}
+                setBaseImponible={setBaseImponible}
+              />}
           </div>
         </div>
       </WhiteSectionsPage>
