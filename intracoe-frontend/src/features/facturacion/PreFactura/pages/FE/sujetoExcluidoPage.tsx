@@ -236,52 +236,50 @@ export const SujetoExcluidoPage: React.FC<SujetoExcluidoPageProps> = ({ id }) =>
     }
   };
 
-  // … dentro de tu componente FacturaVisualizacionPage:
+  const downloadZip = async () => {
+    setLoading(true);
 
-  // const downloadZip = async () => {
-  //   setLoading(true);
+    const element = document.getElementById('content-id');
+    if (!element) return;
 
-  //   const element = document.getElementById('content-id');
-  //   if (!element) return;
+    // 1) Render a canvas
+    const canvas = await html2canvas(element, { useCORS: true, scale: 3 });
+    const imgData = canvas.toDataURL('image/png');
 
-  //   // 1) Render a canvas
-  //   const canvas = await html2canvas(element, { useCORS: true, scale: 3 });
-  //   const imgData = canvas.toDataURL('image/png');
+    // 2) Genera el PDF en memoria
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'px' });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const ratio = canvas.height / canvas.width;
+    const imgHeight = pageWidth * ratio;
+    pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, imgHeight);
 
-  //   // 2) Genera el PDF en memoria
-  //   const pdf = new jsPDF({ orientation: 'portrait', unit: 'px' });
-  //   const pageWidth = pdf.internal.pageSize.getWidth();
-  //   const ratio = canvas.height / canvas.width;
-  //   const imgHeight = pageWidth * ratio;
-  //   pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, imgHeight);
+    // 3) Obtén el Blob del PDF
+    const pdfBlob = pdf.output('blob');
 
-  //   // 3) Obtén el Blob del PDF
-  //   const pdfBlob = pdf.output('blob');
+    // 4) Crea el Blob del JSON
+    //    Asume que lo tienes en el estado `json`
+    const jsonString = JSON.stringify(json, null, 2);
+    const jsonBlob = new Blob([jsonString], { type: 'application/json' });
 
-  //   // 4) Crea el Blob del JSON
-  //   //    Asume que lo tienes en el estado `json`
-  //   const jsonString = JSON.stringify(json, null, 2);
-  //   const jsonBlob = new Blob([jsonString], { type: 'application/json' });
+    // 5) Empaqueta todo en un ZIP
+    const zip = new JSZip();
+    zip.file(`factura_${datosFactura.codigoGeneracion}.pdf`, pdfBlob);
+    zip.file(`factura_${datosFactura.codigoGeneracion}.json`, jsonBlob);
+    console.log(pdfBlob);
+    console.log(jsonBlob);
 
-  //   // 5) Empaqueta todo en un ZIP
-  //   const zip = new JSZip();
-  //   zip.file(`factura_${datosFactura.codigoGeneracion}.pdf`, pdfBlob);
-  //   zip.file(`factura_${datosFactura.codigoGeneracion}.json`, jsonBlob);
-  //   console.log(pdfBlob);
-  //   console.log(jsonBlob);
-
-  //   // 6) Genera el ZIP y dispara la descarga
-  //   const zipBlob = await zip.generateAsync({ type: 'blob' });
-  //   saveAs(zipBlob, `factura_${datosFactura.codigoGeneracion}.zip`);
-  //   setLoading(false);
-  // };
+    // 6) Genera el ZIP y dispara la descarga
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    saveAs(zipBlob, `factura_${datosFactura.codigoGeneracion}.zip`);
+    setLoading(false);
+  };
 
   return (
     <>
       <Title text="Factura generada con éxito" />
       {loadingFirma && <LoadingScreen text="Firmando documento..." />}
       <div className="flex justify-center gap-5">
-        {/* <button
+        <button
           onClick={downloadZip}
           className="mt-5 mb-7 rounded-md bg-red-700 px-8 py-3 text-white"
         >
@@ -298,7 +296,7 @@ export const SujetoExcluidoPage: React.FC<SujetoExcluidoPageProps> = ({ id }) =>
               </span>
             )}
           </span>
-        </button> */}
+        </button>
 
         {datosFactura.selloRemision == null && (
           <button

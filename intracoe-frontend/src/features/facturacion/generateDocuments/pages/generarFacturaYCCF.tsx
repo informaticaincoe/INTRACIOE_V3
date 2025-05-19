@@ -43,34 +43,38 @@ import { TablaProductosAgregados } from '../components/FE/productosAgregados/tab
 import { ExtensionCard } from '../components/Shared/entension/extensionCard';
 import LoadingScreen from '../../../../shared/loading/loadingScreen';
 
-export const GenerateDocuments = () => {
+interface GenerarFacturaYCCProps {
+  tipoDocumentoSelected: any
+  codigoGeneracion: any
+  numeroControl: any
+  condicionesOperacionList: any
+  descuentosList: any
+  listProducts: any
+  tipoContibuyente:string
+}
+
+export const GenerarFacturaYCCF: React.FC<GenerarFacturaYCCProps> = ({ tipoDocumentoSelected, codigoGeneracion, numeroControl, condicionesOperacionList, descuentosList, listProducts, tipoContibuyente }) => {
   //lista de datos obtenidas de la api
-  const [condicionesOperacionList, setCondicionesOperacionList] =
-    useState<ConfiguracionFacturaInterface>();
+
   const [receptor, setReceptor] = useState<ReceptorInterface>(ReceptorDefault); // almacenar informacion del receptor
   const [emisorData, setEmisorData] =
     useState<EmisorInterface>(defaultEmisorData); // almcenar informacion del emisor
   const [tipoDocumento, setTipoDocumento] = useState<TipoDocumento[]>([]); // almcenar tipo de dte
-  const [tipoDocumentoSelected, setTipoDocumentoSelected] = useState<TipoDTE>(); // almcenar tipo de dte
+
 
   const [descuentos, setDescuentos] = useState<Descuentos>({
     descuentoGeneral: 0,
     descuentoGravado: 0,
   });
-  const [listProducts, setListProducts] = useState<ProductosTabla[]>([]); //lista que almacena todos los productos
-  const [formasPagoList, setFormasPagoList] = useState<number[]>([]);
 
-  const [numeroControl, setNumeroControl] = useState('');
-  const [codigoGeneracion, setCodigoGeneracion] = useState('');
-  const [descuentosList, setDescuentosList] = useState();
+  const [formasPagoList, setFormasPagoList] = useState<number[]>([]);
 
   //variables para mostrar modales
   const [showProductsModal, setShowProductsModal] = useState(false); //mostrar modal con lista de productos
   // const [visibleDocumentoRelacionadomodal, setVisibleDocumentoRelacionadomodal] = useState(false);
 
   //datos seleccionados para realizar la factura
-  const [selectedCondicionDeOperacion, setSelectedCondicionDeOperacion] =
-    useState<string>('1'); //id de la condicion de operacion (01 por defecto)
+
   const [selectedProducts, setSelectedProducts] = useState<ProductosTabla[]>(
     []
   );
@@ -100,6 +104,9 @@ export const GenerateDocuments = () => {
   const [docResponsable, setDocResponsable] = useState<string>('');
   const [tipoTransmision, setTipoTransmision] = useState<string>('');
   const [descuentosProducto, setDescuentosProducto] = useState<number[]>([]);
+  const [selectedCondicionDeOperacion, setSelectedCondicionDeOperacion] =
+    useState<string>('1');
+
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const toastRef = useRef<CustomToastRef>(null);
@@ -165,16 +172,17 @@ export const GenerateDocuments = () => {
       tipo_item_select: tipoItem,
 
       condicion_operacion: selectedCondicionDeOperacion, //contado, credito, otros
-      porcentaje_retencion_iva: retencionIva.toString(),
-      retencion_iva: tieneRetencionIva,
-      // productos_retencion_iva
+
+      /*** Sujeto excluido no aplica la retencion de IVA ***/
+      // porcentaje_retencion_iva: retencionIva.toString(),
+      // retencion_iva: tieneRetencionIva,
 
       porcentaje_retencion_renta: retencionRenta.toString(),
       retencion_renta: tieneRetencionRenta,
       // productos_retencion_renta
       fp_id: formasPagoList,
 
-      descuento_global_input: descuentos.descuentoGeneral.toString(),
+      descuento_global: descuentos.descuentoGeneral.toString(),
       saldo_favor_input: saldoFavor,
       no_gravado: baseImponible,
 
@@ -182,7 +190,7 @@ export const GenerateDocuments = () => {
 
       productos_ids: idListProducts,
       cantidades: cantidadListProducts, //cantidad de cada producto de la factura
-      descuento_select: descuentosProducto, //lista de id de desceun
+      descuento_select: descuentosProducto, //lista de id de descuen
 
       monto_fp: totalAPagar.toFixed(2),
       num_ref: null,
@@ -249,7 +257,6 @@ export const GenerateDocuments = () => {
         console.log(error);
       }
     }
-
   };
 
   const firmarFactura = async (id: string) => {
@@ -265,53 +272,6 @@ export const GenerateDocuments = () => {
   /************************************/
   /* OBTENCION DE DATOS              
   /************************************/
-
-  useEffect(() => {
-    const fetchTiposDocumento = async () => {
-      try {
-        const response = await getFacturaCodigos('01');
-
-        setTipoDocumento(response.tipoDocumentos);
-
-        // Establecer por defecto el primero si aún no está definido
-        if (!tipoDocumentoSelected && response.tipoDocumentos.length > 0) {
-          setTipoDocumentoSelected(response.tipoDocumentos[0]);
-        }
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-    fetchTiposDocumento();
-  }, []);
-
-  useEffect(() => {
-    console.log("fuera", tipoDocumentoSelected)
-    if (!tipoDocumentoSelected) return;
-    console.log("dentro", tipoDocumentoSelected)
-    const fetchFacturaData = async () => {
-      setLoading(true);
-      try {
-        const response = await getFacturaCodigos(tipoDocumentoSelected.codigo);
-
-        setCodigoGeneracion(response.codigo_generacion);
-        setNumeroControl(response.numero_control);
-        setEmisorData(response.emisor);
-        setCondicionesOperacionList(response.tipooperaciones);
-        setSelectedCondicionDeOperacion(response.tipooperaciones[0].codigo);
-        setDescuentosList(response.descuentos);
-        setListProducts(response.producto);
-
-        console.log("tipo dte selecionado", response)
-      } catch (error) {
-        console.log(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchFacturaData();
-  }, [tipoDocumentoSelected]);
 
   const handleClickGenerarFactura = async () => {
     if (auxManejoPagos != 0) {
@@ -341,15 +301,6 @@ export const GenerateDocuments = () => {
   //************************************/
   return (
     <>
-      <Title text="Generar documentos" />
-      {/* Seccion datos del emisor */}
-      <WhiteSectionsPage>
-        <div className="pt2 pb-5">
-          <h1 className="text-start text-xl font-bold">Datos del emisor</h1>
-          <Divider className="m-0 p-0"></Divider>
-          <DatosEmisorCard emisorData={emisorData} />
-        </div>
-      </WhiteSectionsPage>
 
       {/*Seccion configuración de factura*/}
       <WhiteSectionsPage>
@@ -359,15 +310,6 @@ export const GenerateDocuments = () => {
           </h1>
           <Divider className="m-0 p-0"></Divider>
           <div className="flex flex-col gap-8">
-            <div className="flex flex-col items-start gap-1">
-              <label className="opacity-70">Tipo de documento</label>
-              <DropDownTipoDte
-                tipoDocumento={tipoDocumento}
-                setTipoDocumento={setTipoDocumento}
-                setTipoDocumentoSelected={setTipoDocumentoSelected}
-                tipoDocumentoSelected={tipoDocumentoSelected}
-              />
-            </div>
             <SelectCondicionOperacion
               condicionesOperacionList={condicionesOperacionList}
               selectedCondicionDeOperacion={selectedCondicionDeOperacion}
@@ -378,8 +320,9 @@ export const GenerateDocuments = () => {
               setTipoTransmision={setTipoTransmision}
               tipoTransmision={tipoTransmision}
             />
-            <CheckBoxVentaTerceros />
+            {tipoDocumentoSelected?.codigo != "14" && <CheckBoxVentaTerceros /> /* Sujeto excluido no incluye venta a terceros */}
             <CheckBoxRetencion
+              tipoDocumentoSelected={tipoDocumentoSelected}
               setTieneRetencionIva={setTieneRetencionIva}
               tieneRetencionIva={tieneRetencionIva}
               setRetencionIva={setRetencionIva}
@@ -388,11 +331,13 @@ export const GenerateDocuments = () => {
               tieneRetencionRenta={tieneRetencionRenta}
               retencionRenta={retencionRenta}
               setRetencionRenta={setRetencionRenta}
+              tipoContibuyente={tipoContibuyente}
             />
-            <CheckboxBaseImponible
-              baseImponible={baseImponible}
-              setBaseImponible={setBaseImponible}
-            />
+            {tipoDocumentoSelected?.codigo != "14" && //Sujeto excluido no tiene base imponible
+              <CheckboxBaseImponible
+                baseImponible={baseImponible}
+                setBaseImponible={setBaseImponible}
+              />}
           </div>
         </div>
       </WhiteSectionsPage>
@@ -412,16 +357,18 @@ export const GenerateDocuments = () => {
       {/*Seccion receptor*/}
       <WhiteSectionsPage>
         <div className="pt2 pb-5">
-          <h1 className="text-start text-xl font-bold">
-            Seleccione el receptor
-          </h1>
-          <Divider className="m-0 p-0"></Divider>
-          <SelectReceptor
-            receptor={receptor}
-            setReceptor={setReceptor}
-            errorReceptor={errorReceptor}
-            setErrorReceptor={setErrorReceptor}
-          />
+          <>
+            <h1 className="text-start text-xl font-bold">
+              Seleccione el receptor
+            </h1>
+            <Divider className="m-0 p-0"></Divider>
+            <SelectReceptor
+              receptor={receptor}
+              setReceptor={setReceptor}
+              errorReceptor={errorReceptor}
+              setErrorReceptor={setErrorReceptor}
+            />
+          </>
         </div>
       </WhiteSectionsPage>
 
@@ -552,7 +499,6 @@ export const GenerateDocuments = () => {
         </button>
       </div>
       <CustomToast ref={toastRef} />
-      {loading && <LoadingScreen />}
     </>
   );
 };

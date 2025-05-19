@@ -66,6 +66,7 @@ export const defaultEmisorData: EmisorInterface = {
   codigo_punto_venta: '', //codigo
   codigo_establecimiento: '',
   nombre_establecimiento: null,
+  tipoContibuyente:'',
   tipoestablecimiento: {
     id: '',
     descripcion: '',
@@ -110,6 +111,7 @@ export interface EmisorInterface {
   municipio: Municipio;
   ambiente: Ambiente;
   tipo_documento: TipoDocumento;
+  tipoContibuyente: string;
   actividades_economicas: ActivitiesData[]; // Array de IDs de actividades económicas
 }
 
@@ -245,6 +247,7 @@ export const RequestEmpresaDefault = {
   actividades_economicas: [],
   clave_privada: '',
   clave_publica: '',
+  tipoContribuyente: ''
 };
 
 export interface RequestEmpresa {
@@ -267,6 +270,7 @@ export interface RequestEmpresa {
   actividades_economicas: string[]; // Array de IDs de actividades económicas
   clave_privada: string;
   clave_publica: string;
+  tipoContribuyente: string;
 }
 
 export interface Product {

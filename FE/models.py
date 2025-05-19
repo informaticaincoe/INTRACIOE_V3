@@ -240,11 +240,23 @@ class Emisor_fe(models.Model):
     clave_privada = models.CharField(max_length=255, null=True, blank=True)
     clave_publica = models.CharField(max_length=255, null=True, blank=True)
     representante = models.ForeignKey(representanteEmisor, on_delete=models.CASCADE, null=True, blank=True)
+    tipoContribuyente = models.CharField(
+        max_length=40,
+        choices=[
+            ('Gran Contribuyente', 'Gran Contribuyente'),
+            ('Mediano Contribuyente', 'Mediano Contribuyente'),
+            ('Pequeño Contribuyente', 'Pequeño Contribuyente'),
+            ('Emprendedor', 'Emprendedor')
+        ],
+        default='Pequeño Contribuyente'
+    )
     
     def __str__(self):
         return f"{self.nombre_razon_social} ({self.nit})"
 
 # Modelo para manejar la numeración de control por año
+
+
 class NumeroControl(models.Model):
     anio = models.IntegerField()
     secuencia = models.IntegerField(default=1)
@@ -285,7 +297,6 @@ class NumeroControl(models.Model):
 
 # Modelo de Factura Electrónica
 class FacturaElectronica(models.Model):
-
     #IDENTIFICACION
     version = models.CharField(max_length=50)
     #ambiente = models.ForeignKey(Ambiente, on_delete=models.CASCADE, null=True)

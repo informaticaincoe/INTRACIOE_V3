@@ -1,0 +1,27 @@
+# Retencion
+- Retener 13% de IVA cuando es gran o mediano contribuyente y se realicen las actividades economicas que aplican a retención
+- Cuando se adquiere un servicio se retiene el 10% de renta (solo en servicios)
+- Compra de un bien no aplica renta ni IVA
+- persona no es aplicable el iva no se retiene nada
+- total a calcular final, se coloca un bien sin retenciones 
+- agregar checkbox para indicar la retencion y el tipo de retencion para servicio o bienes
+- Retencion se aplica al subtotal
+
+# ACTIVIDADES ECONOMICAS DE RETENCIONs 13%
+
+De acuerdo al artículo 162 inciso 7° solo debes retener el 13% cuando eres gran o mediano contribuyente y realizas operaciones relacionadas a
+
+- Compras de caña de Azúcar 
+    * 01140 - Cultivo de caña de azucar
+- Compra de Café
+    * 01271 - Cultivo de café
+    * 46294 - Venta al por mayor de cafe oro y uva
+- Compra de Leche en estado natural
+    * 46375 - Venta al por mayor de productos lacteos
+- Compra de carne en pie o en canal
+- Prestatarios de servicios financieros que generen intereses por mutuo, préstamos u otro tipo de financiamiento
+- Servicios de arrendamiento
+- Servicios de transporte de carga
+- Dietas o cualquier otro emolumento de igual o similar naturaleza prestados por personas naturales no inscritos como contribuyentes al IVA
+
+
