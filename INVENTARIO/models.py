@@ -124,6 +124,7 @@ class Proveedor(models.Model):
     email = models.EmailField(blank=True, null=True)
     direccion = models.TextField(blank=True, null=True)
     condiciones_pago = models.CharField(max_length=100, blank=True, null=True)
+    #pais: si es extranjero se aplica 20% de retención
 
     def __str__(self):
         return f"{self.nombre} - {self.ruc_nit}"

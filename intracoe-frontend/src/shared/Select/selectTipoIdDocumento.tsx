@@ -28,7 +28,7 @@ export const SelectTipoIdDocumento: React.FC<
   };
 
   return (
-    <div className="justify-content-center flex">
+    <div className="justify-content-center flex w-full text-start">
       <Dropdown
         value={value}
         onChange={(e) => onChange({ target: { name: name, value: e.value } })}
@@ -37,6 +37,7 @@ export const SelectTipoIdDocumento: React.FC<
         optionValue="id"
         placeholder="Seleccionar tipo de documento"
         className="md:w-14rem font-display w-full"
+        style={{width:'100%'}}
       />
     </div>
   );

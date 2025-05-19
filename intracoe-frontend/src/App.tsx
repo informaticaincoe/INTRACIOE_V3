@@ -29,9 +29,9 @@ const { ActivitiesPage } = lazily(
   () => import('./features/facturacion/activities/pages/activitiesPage')
 );
 
-const { GenerateDocuments } = lazily(
+const { ContenedorGenerarDocumentos } = lazily(
   () =>
-    import('./features/facturacion/generateDocuments/pages/GenerateDocuments')
+    import('./features/facturacion/generateDocuments/pages/contenedorGenerarDocumentos')
 );
 
 const { UploadExcelPage } = lazily(
@@ -103,7 +103,7 @@ function App() {
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/actividades-economicas" element={<ActivitiesPage />} />
-          <Route path="/generar-documentos" element={<GenerateDocuments />} />
+          <Route path="/generar-documentos" element={<ContenedorGenerarDocumentos />} />
           <Route
             path="/generar-documentos-ajuste"
             element={<GenerarDocumentosAjuste />}

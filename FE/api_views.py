@@ -1123,6 +1123,7 @@ class GenerarFacturaAPIView(APIView):
             "direccion_comercial": emisor_obj.direccion_comercial if emisor_obj else "",
             "telefono": emisor_obj.telefono if emisor_obj else "",
             "email": emisor_obj.email if emisor_obj else "",
+            "tipoContibuyente": emisor_obj.tipoContribuyente if emisor_obj else ""
         } if emisor_obj else None
 
         receptores = list(Receptor_fe.objects.values("id", "num_documento", "nombre"))
@@ -2311,9 +2312,9 @@ class GenerarFacturaSujetoAPIView(APIView):
             
             # --- Configuración adicional del documento ---
             tipooperacion_id = data.get("condicion_operacion", 1)
-            porcentaje_retencion_iva = Decimal(data.get("porcentaje_retencion_iva", "0"))
+            porcentaje_retencion_iva = Decimal(data.get("porcentaje_retencion_iva", "10"))
             retencion_iva = data.get("retencion_iva", False)
-            porcentaje_retencion_renta = Decimal(data.get("porcentaje_retencion_renta", "0"))
+            porcentaje_retencion_renta = Decimal(data.get("porcentaje_retencion_renta", "10")) #retencion de renta es solo para servicios y es siempre del 10%
             retencion_renta = data.get("retencion_renta", False)
             formas_pago_id = agregar_formas_pago_api(request)
             base_imponible_checkbox = data.get("no_gravado", False)
@@ -2398,15 +2399,24 @@ class GenerarFacturaSujetoAPIView(APIView):
             total_descuento   = Decimal("0.00") #  -- suma de todos los descuentos (globales y por item)
             total_operaciones = Decimal("0.00")
             IVA_RATE = Decimal("0.13") # -- porcenta de IVA 13%
+            
+            print("antes productos" )
+            print(productos_ids)
+            
 
             # --- Procesar productos e ítems de factura ---s
             for index, prod_id in enumerate(productos_ids):
+                print("dentro productos" )
+                print(prod_id)
                 
                 try:
                     producto = Producto.objects.get(id=prod_id) # -- Buscar el producto según el id que recibe la API
                 except Producto.DoesNotExist:
                     continue
-
+                print(producto)
+                print(tipo_item_obj.codigo)
+                print(COD_TIPO_ITEM_SERVICIOS)
+                
                 if tipo_item_obj.codigo == COD_TIPO_ITEM_SERVICIOS: 
                     unidad_medida_obj = UNI_MEDIDA_99 # -- si el tipo del item es servicios automaticamente su unidad de medida es "Otra" - codigo 99
                 else:
@@ -2503,45 +2513,48 @@ class GenerarFacturaSujetoAPIView(APIView):
                 detalle.tiene_descuento= descuento_por_item > 0
                 detalle.save()
                 
-            # Calcular retenciones                
+            # Calcular descuento total                
             global_discount_amount = (total_operaciones * (Decimal(descuento_global) / Decimal("100"))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
             
             print("descuento  global",global_discount_amount)
 
-            # 2) totalCompra es total_operaciones:
+            # totalCompra
             total_compra = total_operaciones.quantize(Decimal("0.01"), ROUND_HALF_UP)
             print("total_compra",total_compra  )
 
-            # 3) totalDescu = descuentos por ítem + descuento global
+            # totalDescu = descuentos por ítem + descuento global
             totalDescu = (
                 total_descuento + global_discount_amount
             ).quantize(Decimal("0.01"), ROUND_HALF_UP)
 
             print("totalDescu",totalDescu  )
 
-            # 4) subTotal = totalCompra - descuento global (no restas los ítem porque ya los descontaste en line_total)
+            # subTotal = totalCompra - descuento global (no restas los ítem porque ya los descontaste en line_total)
             sub_total = (
                 total_compra - global_discount_amount
             ).quantize(Decimal("0.01"), ROUND_HALF_UP)
             print("sub_total",sub_total  )
 
-            # 5) Retenciones sobre ese subTotal
-            ret_iv    = (
-                sub_total * porcentaje_retencion_iva / Decimal("100")
-            ).quantize(Decimal("0.01"), ROUND_HALF_UP) if retencion_iva else Decimal("0.00")
-            ret_renta = (
-                sub_total * porcentaje_retencion_renta / Decimal("100")
-            ).quantize(Decimal("0.01"), ROUND_HALF_UP) if retencion_renta else Decimal("0.00")
+            # Retenciones sobre ese subTotal
+            ret_iv = Decimal("0.00")
+            ret_renta = Decimal("0.00")
 
-            print("ret_iv",ret_iv  )
+            # Aplica retención de IVA automáticamente al 10% si está activada y el emisor es GC o MC
+            if retencion_iva and emisor.tipoContribuyente in ('Gran Contribuyente', 'Mediano Contribuyente'):
+                porcentaje_retencion_iva = Decimal("10.00")  # forzar 10%
+                ret_iv = (sub_total * porcentaje_retencion_iva / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
-            print("ret_renta",ret_renta  )
+            # Aplica retención de renta automáticamente al 10% si está activada
+            if retencion_renta:
+                porcentaje_retencion_renta = Decimal("10.00")  # forzar 10%
+                ret_renta = (sub_total * porcentaje_retencion_renta / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
-            # 6) totalPagar final
-            total_pagar = (
-                sub_total - ret_iv - ret_renta
-            ).quantize(Decimal("0.01"), ROUND_HALF_UP)
-            
+            print("ret_iv", ret_iv)
+            print("ret_renta", ret_renta)
+
+
+            # totalPagar final
+            total_pagar = (sub_total - ret_iv - ret_renta).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
             print("porcentaje despues 8" )
 
@@ -2563,7 +2576,7 @@ class GenerarFacturaSujetoAPIView(APIView):
             factura.retencion_renta   = ret_renta
             factura.total_operaciones = total_operaciones
             factura.total_iva         = total_iva
-            factura.total_pagar       = sub_total
+            factura.total_pagar       = total_pagar
             factura.total_letras      = num_to_letras(total_pagar)
             factura.condicion_operacion = tipooperacion_obj
             factura.total_no_sujetas = Decimal("0.00")
@@ -2578,8 +2591,7 @@ class GenerarFacturaSujetoAPIView(APIView):
             factura.tipo_documento_relacionar = None
             factura.documento_relacionado = None
             factura.save()
-
-            
+    
             # --- Generar cuerpo del documento para el JSON ---
             cuerpo_documento = []
             for idx, det in enumerate(factura.detalles.all(), start=1):
@@ -2617,7 +2629,7 @@ class GenerarFacturaSujetoAPIView(APIView):
                 doc_responsable=documento_responsable,
                 total_operaciones=total_operaciones,
                 total_descuento=totalDescu,
-                total_pagar=sub_total,
+                total_pagar=total_pagar,
                 descuento_global=global_discount_amount,
                 sub_total = sub_total,
                 formas_pago=formas_pago_id,
@@ -2691,7 +2703,7 @@ class GenerarFacturaSujetoAPIView(APIView):
                 }, status=status.HTTP_200_OK)
                 
         except Exception as e:
-            transaction.savepoint_rollback(sid)
+            # transaction.savepoint_rollback(sid)
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
 ######################################################

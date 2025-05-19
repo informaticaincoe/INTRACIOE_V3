@@ -39,7 +39,7 @@ export const SelectMunicipios: React.FC<SelectMunicipiosInterface> = ({
   };
 
   return (
-    <div className="justify-content-center flex">
+    <div className="justify-content-center flex text-start">
       <Dropdown
         name={name}
         value={value}

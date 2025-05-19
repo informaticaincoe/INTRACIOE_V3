@@ -832,7 +832,7 @@ def generar_factura_view(request):
                 if descuento_global:
                     porc_descuento_global = (total_gravada * Decimal(descuento_global) / 100).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 sub_total_item = (total_gravada - descuento_gravado - porc_descuento_global).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
-                print(f"IVA Item = {total_iva_item}, iva unitario = {iva_unitario}, cantidad = {cantidad}, total neto = {total_neto} ")
+                print(f"IVA Item = {total_iva_item}, iva unitario = {iva_unitario}, cantidad = {cantidad}, total neto = {total_neto} descuento:  {porc_descuento_global}")
                 
                 sub_total = sub_total_item
                 
@@ -1426,8 +1426,6 @@ def generar_json_sujeto(
             "telefono": receptor.telefono or "",
             "correo": receptor.correo or "",
         }
-
-        print("json_sujeto_excluido ---", json_sujeto_excluido)
         
         # json_otros_documentos = None
         pagos = formas_pago
@@ -1446,7 +1444,7 @@ def generar_json_sujeto(
             "subTotal":    float(sub_total),
             "ivaRete1":    float(ret_iva),     # si aplica; si no, queda 0.00
             "reteRenta":   float(ret_renta),
-            "totalPagar":  float(sub_total),
+            "totalPagar":  float(total_pagar),
             "totalLetras": factura.total_letras,
             "condicionOperacion": int(factura.condicion_operacion.codigo) if factura.condicion_operacion and factura.condicion_operacion.codigo.isdigit() else 1,
             "pagos":       formas_pago,
