@@ -2,8 +2,8 @@
 from django.urls import path
 from FE.api_views import (
 
-    CondicionOperacionDetailAPIView, ContingenciaDteAPIView, ContingenciaDteUnificadoAPIView, ContingenciaListAPIView, EmisorCreateAPIView, EmisorUpdateAPIView, EnviarContingenciaHaciendaAPIView, EnviarFacturaHaciendaAPIView, EnviarFacturaInvalidacionAPIView, EnviarLotesHaciendaAPIView, EnvioDteUnificadoAPIView, FacturaDetailAPIView, FacturaListAPIView, FacturaPorCodigoGeneracionAPIView, FinalizarContingenciaAPIView, FirmarContingenciaAPIView, FirmarFacturaAPIView, 
-    GenerarFacturaAPIView, GenerarFacturaSujetoAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, InvalidarVariasDteAPIView, LoteContingenciaDteAPIView, LotesDteAPIView, MotivoContingenciaAPIView, MunicipioByDepartamentoAPIView, TopClientes, TopProductosAPIView, TotalVentasAPIView, TotalesPorTipoDTE, autenticacion, EmisorListAPIView, receptorCreateAPIView, receptorDeleteAPIView, receptorDetailAPIView, 
+    CondicionOperacionDetailAPIView, ContingenciaDteAPIView, ContingenciaDteUnificadoAPIView, ContingenciaListAPIView, EmisorCreateAPIView, EmisorUpdateAPIView, EnviarContingenciaHaciendaAPIView, EnviarFacturaHaciendaAPIView, EnviarFacturaInvalidacionAPIView, EnviarFacturaSujetoExcluidoHaciendaAPIView, EnviarLotesHaciendaAPIView, EnvioDteUnificadoAPIView, FacturaDetailAPIView, FacturaListAPIView, FacturaPorCodigoGeneracionAPIView, FacturaSujetoExcluidoDetailAPIView, FacturaSujetoExcluidoListAPIView, FinalizarContingenciaAPIView, FirmarContingenciaAPIView, FirmarFacturaAPIView, FirmarFacturaSujetoExcluidoAPIView, 
+    GenerarFacturaAPIView, GenerarFacturaSujetoAPIView, InvalidarDteSujetoExcluidoUnificadoAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, InvalidarVariasDteAPIView, LoteContingenciaDteAPIView, LotesDteAPIView, MotivoContingenciaAPIView, MunicipioByDepartamentoAPIView, TopClientes, TopProductosAPIView, TotalVentasAPIView, TotalesPorTipoDTE, autenticacion, EmisorListAPIView, receptorCreateAPIView, receptorDeleteAPIView, receptorDetailAPIView, 
 
     receptorListAPIView, receptorUpdateAPIView, GenerarDocumentoAjusteAPIView,
 
@@ -298,17 +298,19 @@ urlpatterns = [
     path('api/facturas/', FacturaListAPIView.as_view(), name='api_factura_list'),
     path("api/factura-por-codigo/", FacturaPorCodigoGeneracionAPIView.as_view(), name="factura_por_codigo"),
     path('api/factura/generar/', GenerarFacturaAPIView.as_view(), name='generar_factura_api'),
-    path('api/factura/generar_sujeto_excluido/', GenerarFacturaSujetoAPIView.as_view(), name='generar_factura_api'),
     path('api/factura_pdf/<int:pk>/', FacturaDetailAPIView.as_view(), name='factura_pdf_api'),
     path('api/factura/firmar/<int:factura_id>/', FirmarFacturaAPIView.as_view(), name='firmar_factura_api'),
     path('api/factura/<int:factura_id>/enviar/',EnviarFacturaHaciendaAPIView.as_view(),name='api-factura-enviar-factura'),
-    #path('api/factura/enviar_hacienda/<int:factura_id>/', EnviarFacturaHaciendaAPIView.as_view(), name='enviar_factura_hacienda_api'),
-    path('api/factura_ajuste/generar/', GenerarDocumentoAjusteAPIView.as_view(), name='generar_factura_ajuste_api'), #Nota de credito y nota de debito
-    # path('api/facturas/totales-por-tipo/', TotalesPorTipoDTE.as_view(), name='totales-por-tipo'),
-    # path('api/facturas/totales-ventas/', TotalVentasAPIView.as_view(), name='total-ventas'),
-    # path('api/facturas/clientes/', TopClientes.as_view(), name='Top-clientes'),
-    # path('api/facturas/productos/', TopProductosAPIView.as_view(), name='Top-productos'),
-
+    
+    ###Nota de credito y nota de debito
+    path('api/factura_ajuste/generar/', GenerarDocumentoAjusteAPIView.as_view(), name='generar_factura_ajuste_api'), 
+    
+    #### Sujeto excluido
+    path('api/facturas-sujeto-excluido/', FacturaSujetoExcluidoListAPIView.as_view(), name='api_factura_list'),
+    path('api/factura/generar_sujeto_excluido/', GenerarFacturaSujetoAPIView.as_view(), name='generar_factura_api'),
+    path('api/factura-sujeto-excluido/<int:pk>/', FacturaSujetoExcluidoDetailAPIView.as_view(), name='factura_sujeto_excluido_detail'),
+    path('api/factura-sujeto-excluido/<int:factura_id>/enviar/', EnviarFacturaSujetoExcluidoHaciendaAPIView.as_view(), name='enviar_sujeto_excluido_hacienda'),
+    path('api/factura-sujeto-excluido/firmar/<int:factura_id>/', FirmarFacturaSujetoExcluidoAPIView.as_view(), name='firmar_factura_sujeto_excluido_api'),
 
     ##################################################################
     # URLS INVALIDACION
@@ -316,6 +318,11 @@ urlpatterns = [
     path('api/invalidar_dte/<int:factura_id>/', InvalidarDteUnificadoAPIView.as_view(), name='api_invalidar_firmar_enviar'),
     path('api/factura/<int:factura_id>/invalidar/',EnviarFacturaInvalidacionAPIView.as_view(),name='api-factura-invalidar'),
     path('api/dte/invalidar-lote/',InvalidarVariasDteAPIView.as_view(),name='api-invalidar-lote'),
+    
+    ##################################################################
+    # URLS INVALIDACION SUJETO EXCLUIDO
+    ##################################################################
+    path('api/invalidar_dte_sujeto_excluido/<int:factura_id>/', InvalidarDteSujetoExcluidoUnificadoAPIView.as_view(), name='api_invalidar_firmar_enviar_sujeto'),
     
     ##################################################################
     # URLS RECEPTOR --- EMISOR

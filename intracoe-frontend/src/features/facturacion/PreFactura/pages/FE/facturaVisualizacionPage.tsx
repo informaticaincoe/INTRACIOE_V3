@@ -10,7 +10,7 @@ export const FacturaVisualizacionPage = () => {
     console.log({ id, codigo });
   }, []);
 
-  if (id && (codigo === '01' || codigo === '03')) {
+  if (id && (codigo === '1' || codigo === '3')) {
     return <FacturaConsumirdorFinalPage id={id} />;
   }
 

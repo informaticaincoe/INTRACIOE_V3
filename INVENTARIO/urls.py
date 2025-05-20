@@ -7,8 +7,14 @@ from .api_views import (
     ProductoListAPIView,
     ProductoDetailAPIView,
     ProductoCreateAPIView,
+    ProductoProveedorCreateAPIView,
+    ProductoProveedorDestroyAPIView,
+    ProductoProveedorRetrieveAPIView,
+    ProductoProveedorUpdateAPIView,
     ProductoUpdateAPIView,
     ProductoDestroyAPIView,
+    ProductosPorIdProveedorListAPIView,
+    ProductosProveedorListAPIView,
 
     # TIPO TRIBUTOS
     TiposTributosListAPIView,
@@ -88,6 +94,14 @@ urlpatterns = [
     path('api/productos/<int:pk>/', ProductoDetailAPIView.as_view(), name='producto-detail'),
     path('api/productos/<int:pk>/editar/', ProductoUpdateAPIView.as_view(), name='producto-update'),
     path('api/productos/<int:pk>/eliminar/', ProductoDestroyAPIView.as_view(), name='producto-destroy'),
+    
+    ############# PRODUCTOS Y SERVICIOS PARA SUJETO EXCLUIDO #############
+    path('api/productos-proveedor/', ProductosProveedorListAPIView.as_view(), name='producto-proveedor-list'),
+    path('api/proveedor/<int:proveedor_id>/productos/', ProductosPorIdProveedorListAPIView.as_view(), name='productos-por-proveedor-list'),
+    path('api/productos-proveedor/crear/', ProductoProveedorCreateAPIView.as_view(), name='producto-proveedor-create'),
+    path('api/productos-proveedor/<int:pk>/', ProductoProveedorRetrieveAPIView.as_view(), name='producto-proveedor-detail'),
+    path('api/productos-proveedor/<int:pk>/editar/', ProductoProveedorUpdateAPIView.as_view(), name='producto-proveedor-update'),
+    path('api/productos-proveedor/<int:pk>/eliminar/', ProductoProveedorDestroyAPIView.as_view(), name='producto-proveedor-destroy'),
 
     ############# TIPO TRIBUTOS #############
     path('api/tipo-tributos/', TiposTributosListAPIView.as_view(), name='tipos-tributos-list'),

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import AjusteInventario, Compra, DetalleCompra, DetalleDevolucionCompra, DetalleDevolucionVenta, DevolucionCompra, DevolucionVenta, NotaCredito, Producto, Proveedor
+from .models import AjusteInventario, Compra, DetalleCompra, DetalleDevolucionCompra, DetalleDevolucionVenta, DevolucionCompra, DevolucionVenta, NotaCredito, Producto, ProductoProveedor, Proveedor
 from .models import TipoItem
 from .models import TipoValor, Tributo, TipoTributo, Impuesto, Almacen, MovimientoInventario
 # Register your models here.
@@ -41,8 +41,13 @@ class TipoTributo(admin.ModelAdmin):
 
 @admin.register(Proveedor)
 class ProveedorAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'ruc_nit', 'contacto', 'telefono', 'email')
-    search_fields = ('nombre', 'ruc_nit')
+    list_display = ('nombre', 'num_documento', 'contacto', 'telefono', 'email')
+    search_fields = ('nombre', 'num_documento')
+
+@admin.register(ProductoProveedor)
+class ProductoProveedorAdmin(admin.ModelAdmin):
+    list_display = ('codigo', 'descripcion', 'unidad_medida', 'preunitario')
+    search_fields = ('codigo', 'descripcion')
 
 @admin.register(Compra)
 class CompraAdmin(admin.ModelAdmin):

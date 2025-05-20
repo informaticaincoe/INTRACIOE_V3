@@ -4,7 +4,7 @@ import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPa
 import { Divider } from 'primereact/divider'
 import { DatosEmisorCard } from '../components/Shared/datosEmisor/datosEmisorCard'
 import { ConfiguracionFacturaInterface, defaultEmisorData, EmisorInterface, TipoDocumento, TipoDTE } from '../../../../shared/interfaces/interfaces'
-import { getFacturaCodigos } from '../services/factura/facturaServices'
+import { getFacturaCodigos, getFacturaCodigosSujetoExcluido } from '../services/factura/facturaServices'
 import { ProductosTabla } from '../components/FE/productosAgregados/productosData'
 import { useNavigate } from 'react-router'
 import { CustomToastRef } from '../../../../shared/toast/customToast'
@@ -12,6 +12,7 @@ import { DropDownTipoDte } from '../components/Shared/configuracionFactura/tipoD
 import { GenerarFacturaYCCF } from './generarFacturaYCCF'
 import LoadingScreen from '../../../../shared/loading/loadingScreen'
 import { GenerarFacturaSujetoExcluido } from './generarFacturaSujetoExcluido'
+import { Proveedores } from '../../../../shared/interfaces/interfacesPagination'
 
 export const ContenedorGenerarDocumentos = () => {
     //lista de datos obtenidas de la api
@@ -20,6 +21,7 @@ export const ContenedorGenerarDocumentos = () => {
     const [tipoDocumento, setTipoDocumento] = useState<TipoDocumento[]>([]); // almcenar tipo de dte
     const [tipoDocumentoSelected, setTipoDocumentoSelected] = useState<TipoDTE>(); // almcenar tipo de dte
     const [listProducts, setListProducts] = useState<ProductosTabla[]>([]); //lista que almacena todos los productos
+    const [listProveedores, setListProveedores] = useState<Proveedores[]>([]); //lista que almacena todos los productos
 
     const [numeroControl, setNumeroControl] = useState('');
     const [codigoGeneracion, setCodigoGeneracion] = useState('');
@@ -58,6 +60,9 @@ export const ContenedorGenerarDocumentos = () => {
 
     useEffect(() => {
         if (!tipoDocumentoSelected) return;
+        if (tipoDocumentoSelected.codigo == '14') {
+            fetchFacturaDataSujeto()
+        }
         const fetchFacturaData = async () => {
             setLoading(true);
             try {
@@ -81,6 +86,27 @@ export const ContenedorGenerarDocumentos = () => {
 
         fetchFacturaData();
     }, [tipoDocumentoSelected]);
+
+    const fetchFacturaDataSujeto = async () => {
+        setLoading(true);
+        try {
+            const response = await getFacturaCodigosSujetoExcluido();
+
+            setCodigoGeneracion(response.codigo_generacion);
+            setNumeroControl(response.numero_control);
+            setEmisorData(response.emisor);
+            setCondicionesOperacionList(response.tipooperaciones);
+            setSelectedCondicionDeOperacion(response.tipooperaciones[0].codigo);
+            setDescuentosList(response.descuentos);
+            setListProveedores(response.proveedores)
+
+            console.log("tipo dte selecionado", response)
+        } catch (error) {
+            console.log(error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <>
@@ -137,9 +163,7 @@ export const ContenedorGenerarDocumentos = () => {
                     numeroControl={numeroControl}
                     condicionesOperacionList={condicionesOperacionList}
                     descuentosList={descuentosList}
-                    listProducts={listProducts}
                     tipoContibuyente={emisorData.tipoContibuyente}
-
                 />
             }
         </>

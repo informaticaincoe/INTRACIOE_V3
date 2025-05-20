@@ -25,7 +25,9 @@ import { usePDF } from 'react-to-pdf';
 import {
   enviarFactura,
   EnviarHacienda,
+  EnviarHaciendaSujetoExcluido,
   FirmarFactura,
+  FirmarFacturaSujetoExcluido,
 } from '../../../generateDocuments/services/factura/facturaServices';
 import CustomToast, {
   CustomToastRef,
@@ -126,7 +128,7 @@ export const SujetoExcluidoPage: React.FC<SujetoExcluidoPageProps> = ({ id }) =>
   const firmar = async () => {
     setLoadingFirma(true);
     try {
-      await FirmarFactura(id!);
+      await FirmarFacturaSujetoExcluido(id!);
       setLoadingFirma(false);
       handleAccion('success', <FaCircleCheck size={32} />, 'Firma exitosa');
       setViewDiaog(false);
@@ -162,7 +164,7 @@ export const SujetoExcluidoPage: React.FC<SujetoExcluidoPageProps> = ({ id }) =>
     if (!id) return;
     setEnviarHaciendLoading(true);
     try {
-      await EnviarHacienda(id);
+      await EnviarHaciendaSujetoExcluido(id);
       handleAccion(
         'success',
         <FaCircleCheck size={32} />,
@@ -225,7 +227,10 @@ export const SujetoExcluidoPage: React.FC<SujetoExcluidoPageProps> = ({ id }) =>
         setProductos(response.productos);
         setResumen(response.resumen);
         setPagoEnLetras(response.pagoEnLetras);
-        fetchCondicionOperacionDescripcion(response.condicionOpeacion);
+        const idCondicionOperacion = response.condicionOpeacion.toString()[0]
+
+        fetchCondicionOperacionDescripcion(parseInt(idCondicionOperacion));
+        console.log("RESPONSe CONDICION", idCondicionOperacion)
         setJson(response.jsonFirmadoStatus);
         setQrCode(
           `https://admin.factura.gob.sv/consultaPublica?ambiente=${response.ambiente}&codGen=${response.datosFactura.codigoGeneracion.toUpperCase()}&fechaEmi=${response.datosFactura.fechaEmision}`

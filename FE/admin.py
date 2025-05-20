@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Token_data
+from .models import DetalleFacturaSujetoExcluido, FacturaSujetoExcluidoElectronica, Token_data
 from django import forms
 from django.shortcuts import render, redirect
 from django.urls import path
@@ -41,6 +41,10 @@ class DetalleFacturaAdmin(admin.ModelAdmin):
     list_display = ('id', 'factura', 'producto', 'cantidad', 'precio_unitario')
     search_fields = ('factura__numero_factura', 'producto__nombre')
     
+@admin.register(DetalleFacturaSujetoExcluido)
+class DetalleFacturaSujetoExcluidoAdmin(admin.ModelAdmin):
+    list_display = ('id', 'factura', 'producto', 'cantidad', 'precio_unitario')
+    search_fields = ('factura__numero_factura', 'producto__nombre')
 
 @admin.register(NumeroControl)
 class NumeroControlAdmin(admin.ModelAdmin):
@@ -63,6 +67,21 @@ class FacturaElectronicaAdmin(admin.ModelAdmin):
     readonly_fields = ('numero_control', 'codigo_generacion', 'fecha_emision', 'hora_emision', 'fecha_modificacion', 'hora_modificacion')
     # Excluir el campo 'id' ya que no es editable y no forma parte del formulario
     fields = [f.name for f in FacturaElectronica._meta.fields if f.name != "id"]
+
+@admin.register(FacturaSujetoExcluidoElectronica)
+class FacturaSujetoExcluidoElectronicaAdmin(admin.ModelAdmin):
+    list_display = (
+        'numero_control',
+        'codigo_generacion',
+        'fecha_emision',
+        'hora_emision',
+        'firmado',
+    )
+    list_filter = ('firmado', 'fecha_emision')
+    search_fields = ('numero_control', 'codigo_generacion')
+    readonly_fields = ('numero_control', 'codigo_generacion', 'fecha_emision', 'hora_emision', 'fecha_modificacion', 'hora_modificacion')
+
+    fields = [f.name for f in FacturaSujetoExcluidoElectronica._meta.fields if f.name != "id"]
 
     
 class ActividadEconomicaAdmin(admin.ModelAdmin):
