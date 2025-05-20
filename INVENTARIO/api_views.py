@@ -9,7 +9,7 @@ from rest_framework import status
 from rest_framework.pagination import PageNumberPagination
 
 from .serializers import (
-    AlmacenSerializer, DetalleCompraReadSerializer, ImpuestoSerializer, ProductoSerializer, TipoItemSerializer,
+    AlmacenSerializer, DetalleCompraReadSerializer, ImpuestoSerializer, ProductoSerializer, ProductosProveedorSerializer, TipoItemSerializer,
     TipoUnidadMedidaSerializer, TiposTributosSerializer, TributosSerializer, 
     ProveedorSerializer, CompraSerializer, DetalleCompraSerializer,
     MovimientoInventarioSerializer, AjusteInventarioSerializer,
@@ -17,7 +17,7 @@ from .serializers import (
     DevolucionCompraSerializer, DetalleDevolucionCompraSerializer
     )
 from .models import (
-    Almacen, Impuesto, Producto, TipoItem, TipoTributo, TipoUnidadMedida, Tributo,
+    Almacen, Impuesto, Producto, ProductoProveedor, TipoItem, TipoTributo, TipoUnidadMedida, Tributo,
     Proveedor, Compra, DetalleCompra, MovimientoInventario, AjusteInventario,
     DevolucionVenta, DetalleDevolucionVenta, DevolucionCompra, DetalleDevolucionCompra
     )
@@ -87,7 +87,6 @@ class ProductoUpdateAPIView(generics.UpdateAPIView):
 class ProductoDestroyAPIView(generics.DestroyAPIView):
     queryset = Producto.objects.all()
     serializer_class = ProductoSerializer
-
 
 ######################################################
 #  TIPO TRIBUTOS
@@ -276,6 +275,40 @@ class ProveedorUpdateAPIView(generics.UpdateAPIView):
 class ProveedorDestroyAPIView(generics.DestroyAPIView):
     queryset = Proveedor.objects.all()
     serializer_class = ProveedorSerializer
+    
+######################################################
+# VISTAS PARA PRODUCTOS DE SUJETO EXCLUIDO
+######################################################
+class ProductosProveedorListAPIView(generics.ListAPIView):
+    queryset = ProductoProveedor.objects.all()
+    serializer_class = ProductosProveedorSerializer
+    pagination_class = StandardResultsSetPagination
+    
+class ProductosPorIdProveedorListAPIView(generics.ListAPIView):
+    serializer_class = ProductosProveedorSerializer
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        # Obtener el departamento a partir del id que pasamos en la URL
+        provedor_id = self.kwargs['proveedor_id']
+        # Filtramos los municipios que pertenecen a ese departamento
+        return ProductoProveedor.objects.filter(proveedor__id=provedor_id)
+
+class ProductoProveedorCreateAPIView(generics.CreateAPIView):
+    queryset = ProductoProveedor.objects.all()
+    serializer_class = ProductosProveedorSerializer
+
+class ProductoProveedorRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = ProductoProveedor.objects.all()
+    serializer_class = ProductosProveedorSerializer
+
+class ProductoProveedorUpdateAPIView(generics.UpdateAPIView):
+    queryset = ProductoProveedor.objects.all()
+    serializer_class = ProductosProveedorSerializer
+
+class ProductoProveedorDestroyAPIView(generics.DestroyAPIView):
+    queryset = ProductoProveedor.objects.all()
+    serializer_class = ProductosProveedorSerializer
 
 ######################################################
 # VISTAS PARA COMPRAS

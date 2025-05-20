@@ -9,6 +9,7 @@ import { TablaProveedoresHeader } from '../componentes/tablaProveedoresHeader';
 import { useSearchParams } from 'react-router';
 import { Pagination } from '../../../../shared/interfaces/interfacesPagination';
 
+
 export const ProveedoresPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -34,9 +35,7 @@ export const ProveedoresPage = () => {
   }, []);
 
   useEffect(() => {
-    // Reinicia a la página 1 cada vez que los filtros cambian
     setPagination((prev) => ({ ...prev, current_page: 1 }));
-    // Se utiliza el page_size actual para la consulta
     fetchProveedores(1, pagination.page_size); //enviar el numero de pagina actual 1 por defecto, enviar la cantidad de elementos en pagina
   }, []);
 

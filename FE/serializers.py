@@ -1,8 +1,10 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+
+from INVENTARIO.serializers import ProductosProveedorSerializer
 from .models import (
-    INCOTERMS, Departamento, Descuento, EventoContingencia, FormasPago, LoteContingencia, OtrosDicumentosAsociado, Pais, Plazo, TipoContingencia,
+    INCOTERMS, Departamento, Descuento, DetalleFacturaSujetoExcluido, EventoContingencia, FacturaSujetoExcluidoElectronica, FormasPago, LoteContingencia, OtrosDicumentosAsociado, Pais, Plazo, TipoContingencia,
     TipoDocContingencia, TipoDomicilioFiscal, TipoDonacion, TipoPersona, TipoRetencionIVAMH, TipoTransmision, TipoTransporte, TiposServicio_Medico,
     Token_data, Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica,
     Receptor_fe, Tipo_dte, TipoMoneda, TipoUnidadMedida, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos,
@@ -65,6 +67,54 @@ class FacturaListSerializer(serializers.ModelSerializer):
 
     def get_estado_invalidacion(self, obj):
         evento = obj.dte_invalidacion.first()
+        if evento:
+            return "Invalidada" if evento.estado else "En proceso de invalidación"
+        return "Viva"
+
+# LISTADO FACTURAS SUJETO EXCLUIDO
+class FacturaSujetoExcluidoListSerializer(serializers.ModelSerializer):
+    tipo_dte = serializers.SlugRelatedField(
+        read_only=True,
+        slug_field='codigo'
+    )
+    
+    estado_invalidacion = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FacturaSujetoExcluidoElectronica
+        fields = [
+            'id',
+            'tipo_dte',
+            'numero_control',
+            'estado', 
+            'codigo_generacion',
+            'sello_recepcion',
+            'fecha_emision',
+            'total_pagar',
+            'recibido_mh',
+            'estado_invalidacion',  # Campo calculado a partir de dte_invalidacion.
+        ]
+
+    def get_estado_invalidacion(self, obj):
+        tipo_codigo = None
+        if obj.tipo_dte:
+            try:
+                tipo_codigo = int(obj.tipo_dte.codigo)
+            except (TypeError, ValueError):
+                tipo_codigo = None
+        print("**************TIPO_CODIGO", tipo_codigo)
+        if tipo_codigo == '14':
+            # notas de crédito/debito de sujeto excluido
+            eventos = obj.dte_invalidacion_sujeto_excluido
+        else:
+            # facturas "normales"
+            eventos = getattr(obj, 'dte_invalidacion_sujeto_excluido', None)
+
+        # Si no existe la relación (o es None), devolvemos "Viva"
+        if not eventos:
+            return "Viva"
+
+        evento = eventos.first()
         if evento:
             return "Invalidada" if evento.estado else "En proceso de invalidación"
         return "Viva"
@@ -263,4 +313,30 @@ class EventoContingenciaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = EventoContingencia
+        fields = '__all__'
+        
+        
+##############################################################################
+# SERIALIZER PARA FACTURA SUJETO EXCLUIDO 
+##############################################################################
+class DetalleFacturaSujetoExcluidoSerializer(serializers.ModelSerializer):
+    producto = ProductosProveedorSerializer(read_only=True)
+
+    class Meta:
+        model = DetalleFacturaSujetoExcluido
+        fields = [
+            'id', 'producto', 'cantidad', 'unidad_medida',
+            'precio_unitario', 'tiene_descuento', 'descuento'
+        ]
+
+class FacturaSujetoExcluidoSerializer(serializers.ModelSerializer):
+    detalles = DetalleFacturaSujetoExcluidoSerializer(
+        source='detallesSujetoExcluido', many=True, read_only=True
+    )
+    dtesujetoexcluido = serializers.StringRelatedField()
+    tipo_dte = serializers.StringRelatedField()
+    condicion_operacion = serializers.StringRelatedField()
+
+    class Meta:
+        model = FacturaSujetoExcluidoElectronica
         fields = '__all__'

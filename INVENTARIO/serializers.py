@@ -1,7 +1,7 @@
 from decimal import Decimal
 from rest_framework import serializers
 from FE.models import Descuento
-from .models import Almacen, Categoria, Impuesto, Producto, TipoItem, TipoTributo, TipoUnidadMedida, Tributo, Proveedor, Compra, DetalleCompra, MovimientoInventario, AjusteInventario, DevolucionCompra, DevolucionVenta, DetalleDevolucionCompra, DetalleDevolucionVenta
+from .models import Almacen, Categoria, Impuesto, Producto, ProductoProveedor, TipoItem, TipoTributo, TipoUnidadMedida, Tributo, Proveedor, Compra, DetalleCompra, MovimientoInventario, AjusteInventario, DevolucionCompra, DevolucionVenta, DetalleDevolucionCompra, DetalleDevolucionVenta
 
 
 class ProductoSerializer(serializers.ModelSerializer):
@@ -49,6 +49,11 @@ class AlmacenSerializer(serializers.ModelSerializer):
 class ProveedorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Proveedor
+        fields = '__all__'
+        
+class ProductosProveedorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductoProveedor
         fields = '__all__'
 
 class DetalleCompraSerializer(serializers.Serializer):

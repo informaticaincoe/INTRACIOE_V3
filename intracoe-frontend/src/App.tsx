@@ -29,9 +29,9 @@ const { ActivitiesPage } = lazily(
   () => import('./features/facturacion/activities/pages/activitiesPage')
 );
 
-const { GenerateDocuments } = lazily(
+const { ContenedorGenerarDocumentos } = lazily(
   () =>
-    import('./features/facturacion/generateDocuments/pages/GenerateDocuments')
+    import('./features/facturacion/generateDocuments/pages/contenedorGenerarDocumentos')
 );
 
 const { UploadExcelPage } = lazily(
@@ -50,6 +50,10 @@ const { FacturaVisualizacionPage } = lazily(
 
 const { ListadoFacturas } = lazily(
   () => import('./features/facturacion/Listadofacturas/pages/listadoFacturas')
+);
+
+const { ListadoFacturasSujetoExcluido } = lazily(
+  () => import('./features/facturacion/Listadofacturas/pages/listadoFacturasSujetoExcluido')
 );
 
 const { GenerarDocumentosAjuste } = lazily(
@@ -103,7 +107,7 @@ function App() {
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/actividades-economicas" element={<ActivitiesPage />} />
-          <Route path="/generar-documentos" element={<GenerateDocuments />} />
+          <Route path="/generar-documentos" element={<ContenedorGenerarDocumentos />} />
           <Route
             path="/generar-documentos-ajuste"
             element={<GenerarDocumentosAjuste />}
@@ -113,6 +117,7 @@ function App() {
           <Route path="/productos/nuevo" element={<NuevoProductoPage />} />
           <Route path="/producto/:id" element={<NuevoProductoPage />} />
           <Route path="/listado-facturas" element={<ListadoFacturas />} />
+          <Route path="/listado-facturas-sujeto-excluido" element={<ListadoFacturasSujetoExcluido />} />
           <Route path="/servicios" element={<ServicioPage />} />
 
           <Route

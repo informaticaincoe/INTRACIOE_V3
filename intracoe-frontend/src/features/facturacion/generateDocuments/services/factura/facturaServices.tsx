@@ -1,5 +1,6 @@
 import { FacturaPorCodigoGeneracionResponse } from '../../../../../shared/interfaces/interfaces';
 import { api } from '../../../../../shared/services/api';
+import { apiInventory } from '../../../../../shared/services/apiInventory';
 import { ProductosTabla } from '../../components/FE/productosAgregados/productosData';
 
 export const generarFacturaService = async (data: any) => {
@@ -48,7 +49,7 @@ export const obtenerSujetoExcluidoService = async () => {
 };
 
 
-export const generarSujetoExcluidoService = async (data:any) => {
+export const generarSujetoExcluidoService = async (data: any) => {
   // console.log('data', data);
   try {
     const response = await api.post(`/factura/generar_sujeto_excluido/`, data);
@@ -104,9 +105,33 @@ export const getFacturaCodigos = async (tipo_dte: string) => {
   }
 };
 
+
+export const getFacturaCodigosSujetoExcluido = async () => {
+  try {
+    const response = await api.get(`/factura/generar_sujeto_excluido/`);
+
+    console.log("DATA TIPO 14", response.data)
+
+    return response.data
+
+  } catch (error) {
+    console.log(error);
+    throw new Error();
+  }
+};
+
 export const FirmarFactura = async (id: string | undefined) => {
   try {
     await api.post(`/factura/firmar/${id}/`);
+  } catch (error) {
+    console.log(error);
+    throw new Error();
+  }
+};
+
+export const FirmarFacturaSujetoExcluido = async (id: string | undefined) => {
+  try {
+    await api.post(`/factura-sujeto-excluido/firmar/${id}/`);
   } catch (error) {
     console.log(error);
     throw new Error();
@@ -122,6 +147,17 @@ export const EnviarHacienda = async (id: string) => {
     throw error;
   }
 };
+
+export const EnviarHaciendaSujetoExcluido = async (id: string) => {
+  try {
+    const response = await api.post(`/factura-sujeto-excluido/${id}/enviar/`);
+    return response;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
 
 export const getFacturaBycodigo = async (codigo_generacion: string) => {
   try {
@@ -152,3 +188,5 @@ export const enviarFactura = async (id: any, formData: any) => {
     throw new Error();
   }
 };
+
+

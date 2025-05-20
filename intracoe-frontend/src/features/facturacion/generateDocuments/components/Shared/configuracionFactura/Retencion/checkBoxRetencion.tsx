@@ -14,6 +14,8 @@ interface CheckBoxRetencionProps {
   tieneRetencionRenta: boolean;
   retencionRenta: number;
   setRetencionRenta: any;
+  tipoDocumentoSelected:any
+  tipoContibuyente: string;
 }
 export const CheckBoxRetencion: React.FC<CheckBoxRetencionProps> = ({
   setTieneRetencionIva,
@@ -24,6 +26,8 @@ export const CheckBoxRetencion: React.FC<CheckBoxRetencionProps> = ({
   tieneRetencionRenta,
   retencionRenta,
   setRetencionRenta,
+  tipoDocumentoSelected,
+  tipoContibuyente
 }) => {
   let total = 0;
 
@@ -69,6 +73,7 @@ export const CheckBoxRetencion: React.FC<CheckBoxRetencionProps> = ({
           className="w-full"
         />
       )}
+      {(tipoContibuyente == "Mediano Contribuyente" ) &&// Factura sujeto excluido no lleva Retencion de IVA a menos que sea gran contribuyente
       <div className="flex gap-3 text-start">
         <Checkbox
           inputId="iva"
@@ -78,7 +83,7 @@ export const CheckBoxRetencion: React.FC<CheckBoxRetencionProps> = ({
         <label htmlFor="iva" className="opacity-70">
           Retención de IVA
         </label>
-      </div>
+      </div>}
       {tieneRetencionIva && (
         <InputNumber
           prefix="%"

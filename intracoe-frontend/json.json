@@ -1,0 +1,94 @@
+{
+    "identificacion": {
+        "version": 1,
+        "ambiente": "01",
+        "tipoDte": "14",
+        "numeroControl": "DTE-14-0000MOO1-000000000000058",
+        "codigoGeneracion": "6D0396FA-5A5F-4C49-B24C-1E3BA85817E4",
+        "tipoModelo": 1,
+        "tipoOperacion": 1,
+        "tipoContingencia": null,
+        "motivoContin": null,
+        "fecEmi": "2025-05-15",
+        "horEmi": "14:04:16",
+        "tipoMoneda": "USD"
+    },
+    "emisor": {
+        "nit": "06142811001040",
+        "nrc": "1278913",
+        "nombre": "Inversiones Comerciales Escobar SA de CV",
+        "codActividad": "46375",
+        "descActividad": "Venta al por mayor de productos lacteos",
+        "direccion": {
+            "departamento": "05",
+            "municipio": "25",
+            "complemento": "Carretera a Sonsonate, km 27 ½ Zona Industrial Lourdes, Calle Antigua Hda, La Libertad, El Salvador C.A"
+        },
+        "telefono": "77462310",
+        "correo": "informatica@grupoincoe.com",
+        "codEstableMH": "M001",
+        "codEstable": "0001",
+        "codPuntoVentaMH": "P001",
+        "codPuntoVenta": "0001"
+    },
+    "sujetoExcluido": {
+        "tipoDocumento": "36",
+        "numDocumento": "062280967",
+        "nombre": "Dominick Norberto Hernandez Alfaro",
+        "codActividad": "47816",
+        "descActividad": "Venta al por menor de bebidas",
+        "direccion": {
+            "departamento": "05",
+            "municipio": "25",
+            "complemento": "final 2 calle pte p´sj 4 block o urb el sauce"
+        },
+        "telefono": "60447435",
+        "correo": "karen.burgos@grupoincoe.com"
+    },
+    "cuerpoDocumento": [
+        {
+            "numItem": 1,
+            "tipoItem": 1,
+            "codigo": "PCH456",
+            "descripcion": "Leche entera de 250g",
+            "cantidad": 2.0,
+            "uniMedida": 59,
+            "precioUni": 1.41,
+            "montoDescu": 0.28,
+            "compra": 2.54
+        },
+        {
+            "numItem": 2,
+            "tipoItem": 1,
+            "codigo": "PCH010",
+            "descripcion": "caja entera de leche, 30 tiras de 26 g",
+            "cantidad": 1.0,
+            "uniMedida": 99,
+            "precioUni": 0.884956,
+            "montoDescu": 0.09,
+            "compra": 0.79
+        }
+    ],
+    "resumen": {
+        "totalCompra": 3.45,
+        "descu": 0.38,
+        "totalDescu": 0.38,
+        "totalPagar": 3.45,
+        "subTotal": 3.45,
+        "ivaRete1": 0.0,
+        "reteRenta": 0.0,
+        "totalLetras": "Tres con 45/100 USD",
+        "condicionOperacion": 1,
+        "pagos": [
+            {
+                "codigo": "01",
+                "montoPago": 3.44,
+                "referencia": null,
+                "plazo": null,
+                "periodo": null
+            }
+        ],
+        "observaciones": null
+    },
+    "apendice": null
+}

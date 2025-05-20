@@ -139,7 +139,15 @@ const items: MenuItem[] = [
         key: 'listado-facturas',
         label: (
           <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
-            Listado Facturas
+            Listado facturas
+          </p>
+        ),
+      },
+      {
+        key: 'listado-facturas-sujeto',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Listado facturas sujeto excluido
           </p>
         ),
       },
@@ -330,6 +338,9 @@ export const SideMenu = () => {
         break;
       case 'listado-facturas':
         navigate('/listado-facturas');
+        break;
+      case 'listado-facturas-sujeto':
+        navigate('/listado-facturas-sujeto-excluido');
         break;
       case 'listado-contingencias':
         navigate('/contingencias');

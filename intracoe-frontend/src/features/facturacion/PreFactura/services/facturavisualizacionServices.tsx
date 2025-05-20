@@ -5,6 +5,7 @@ import { FacturaResponseSujetoExcluido } from '../interfaces/sujetoExcluidoInter
 export const generarFacturaService = async (id: string) => {
   try {
     const response = await api.get<FacturaResponse>(`/factura_pdf/${id}/`);
+    console.log(response.data)
     return {
       emisor: response.data.json_original.emisor,
       receptor: response.data.json_original.receptor,
@@ -60,7 +61,7 @@ export const generarFacturaService = async (id: string) => {
 
 export const generarFacturaSujetoExcluidoService = async (id: string) => {
   try {
-    const response = await api.get<FacturaResponseSujetoExcluido>(`/factura_pdf/${id}/`);
+    const response = await api.get<FacturaResponseSujetoExcluido>(`/factura-sujeto-excluido/${id}/`);
     console.log(response.data)
 
     return {

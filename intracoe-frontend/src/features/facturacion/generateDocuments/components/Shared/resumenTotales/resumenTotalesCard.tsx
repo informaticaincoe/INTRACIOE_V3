@@ -95,22 +95,6 @@ export const ResumenTotalesCard: React.FC<ResumenTotalesCardProps> = ({
       <p className="opacity-60">Total con IVA:</p>
       <p>$ {totalConIva}</p>
 
-      <p className="opacity-60">Descuento Ventas grabadas:</p>
-      <InputNumber
-        prefix="%"
-        value={descuentos.descuentoGravado}
-        onValueChange={(e: InputNumberValueChangeEvent) =>
-          setDescuentos((prev: any) => ({
-            ...prev,
-            descuentoGravado: e.value ?? 0,
-          }))
-        }
-        style={{ padding: 0, height: '2rem' }}
-      />
-
-      <p className="opacity-60">Monto descuento:</p>
-      <p>$ {descuentoTotal}</p>
-
       <p className="opacity-60">Saldo a favor:</p>
       <InputNumber
         prefix="$"
@@ -121,6 +105,12 @@ export const ResumenTotalesCard: React.FC<ResumenTotalesCardProps> = ({
         style={{ padding: 0, height: '2rem' }}
       />
 
+      <p className="opacity-60">Monto descuento:</p>
+      <p>$ {descuentoTotal}</p>
+
+      <p></p>
+      <p></p>
+
       <p className="opacity-60">Total IVA:</p>
       <p>$ {totalIVA}</p>
 
@@ -129,6 +119,7 @@ export const ResumenTotalesCard: React.FC<ResumenTotalesCardProps> = ({
 
       <p className="opacity-60">Total a pagar:</p>
       <p>$ {totalAPagar.toFixed(2)}</p>
+
     </div>
   );
 };
