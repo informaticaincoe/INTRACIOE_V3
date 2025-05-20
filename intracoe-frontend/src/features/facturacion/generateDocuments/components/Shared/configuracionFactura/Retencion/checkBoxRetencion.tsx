@@ -14,7 +14,6 @@ interface CheckBoxRetencionProps {
   tieneRetencionRenta: boolean;
   retencionRenta: number;
   setRetencionRenta: any;
-  tipoDocumentoSelected:any
   tipoContibuyente: string;
 }
 export const CheckBoxRetencion: React.FC<CheckBoxRetencionProps> = ({
@@ -26,7 +25,6 @@ export const CheckBoxRetencion: React.FC<CheckBoxRetencionProps> = ({
   tieneRetencionRenta,
   retencionRenta,
   setRetencionRenta,
-  tipoDocumentoSelected,
   tipoContibuyente
 }) => {
   let total = 0;

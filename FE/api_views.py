@@ -2691,6 +2691,110 @@ class GenerarFacturaSujetoAPIView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
 ######################################################
+# GENERACION DE EXPORTACION
+######################################################
+
+class GenerarFacturaExportacionAPIView(APIView):
+    """
+    Vista API para generar facturas de sujeto excluyente.
+    POST rocesa la generación de la factura.
+    """
+
+    cod_generacion = str(uuid.uuid4()).upper()
+    global productos_ids_r
+    productos_ids_r = []
+    global cantidades_prod_r
+    cantidades_prod_r = []
+    global descuentos_r
+    descuentos_r = []
+    global emisor_fe
+
+    # @transaction.atomic
+    def post(self, request, format=None):
+        # sid = transaction.savepoint()
+        try:
+            items_permitidos = 2000 # Límite de ítems permitido por documento
+            data = request.data 
+            contingencia = False
+            
+            print("Datos recibidos:", request.data)
+            
+            # --- Datos del encabezado del documento ---
+            numero_control = data.get('numero_control', '')
+            codigo_generacion = data.get('codigo_generacion', '')
+            tipo_dte = data.get("tipo_documento_seleccionado", None)
+            tipo_item = data.get("tipo_item_select", None)
+            modelo_facturacion_codigo = data.get("modelo_facturacion_codigo", "1")
+            tipo_transmision_codigo = data.get("tipo_transmision_codigo", "1")
+            tipo_contingencia_codigo = data.get("tipo_contingencia_codigo", None)
+            motivo_contingencia = data.get("motivo_contingencia", None)
+                        
+            print(f"parametro num control recibido: {numero_control}, tipo dte: {tipo_dte}")
+            
+            # Generar número de control si no se envía desde el frontend
+            if not numero_control:
+                numero_control = NumeroControl.obtener_numero_control(14)
+                print("Numero control asignado: ", numero_control)
+                
+            # Generar código de generación si no se proporciona
+            if not codigo_generacion:
+                codigo_generacion = str(uuid.uuid4()).upper()
+                print("codigo de generacion: ", codigo_generacion)
+                
+            
+            # --- Inicializar objetos relacionados con tipo de documento ---
+            ambiente_obj = AMBIENTE
+            tipo_dte_obj = Tipo_dte.objects.get(codigo=tipo_dte)
+            tipo_item_obj = TipoItem.objects.get(codigo=tipo_item)
+            tipomodelo_obj = Modelofacturacion.objects.get(codigo=modelo_facturacion_codigo)
+            tipotransmision_obj = TipoTransmision.objects.get(codigo=tipo_transmision_codigo)
+            #contingencia si se envia el codigo
+            if tipo_contingencia_codigo:
+                tipoContingencia_obj = TipoContingencia.objects.get(codigo=tipo_contingencia_codigo)
+            else:
+                tipoContingencia_obj = None
+            tipo_moneda_obj = MONEDA_USD
+
+            
+            # --- Crear objeto factura ---
+            # factura = FacturaSujetoExcluidoElectronica.objects.create(
+            #     version="2.0",
+            #     tipo_dte=tipo_dte_obj,
+            #     numero_control=numero_control,
+            #     codigo_generacion=codigo_generacion,
+            #     tipomodelo=tipomodelo_obj,
+            #     tipocontingencia=None,
+            #     motivocontin=None,
+            #     tipomoneda=tipo_moneda_obj,
+            #     dteemisor=emisor_obj,
+            #     dtesujetoexcluido=receptor,
+            #     json_original={},
+            #     firmado=False,
+            #     tipotransmision=tipotransmision_obj
+            # )
+
+            print("ambiente_obj:", )
+            print("tipo_dte_obj:", tipo_dte_obj)
+            print("tipo_item_obj:", tipo_item_obj)
+            print("tipomodelo_obj:", tipomodelo_obj)
+            print("tipotransmision_obj:", tipotransmision_obj)
+            print("tipoContingencia_obj:", tipoContingencia_obj)
+            print("tipo_moneda_obj:", tipo_moneda_obj)
+            
+            # --- Inicializar totales de factura ---
+            # DecimalIvaPerci = Decimal("0.00") 
+            # total_gravadas    = Decimal("0.00") # -- Total de ventas gravadas
+            # total_iva         = Decimal("0.00") # -- Total calculo de iva
+            total_descuento   = Decimal("0.00") #  -- suma de todos los descuentos (globales y por item)
+            total_operaciones = Decimal("0.00")
+            # IVA_RATE = Decimal("0.13") # -- porcenta de IVA 13%
+            
+                
+        except Exception as e:
+            # transaction.savepoint_rollback(sid)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+######################################################
 # FIRMA Y ENVIO DE DOCUMENTOS A MH
 ######################################################
 class FirmarFacturaAPIView(APIView):

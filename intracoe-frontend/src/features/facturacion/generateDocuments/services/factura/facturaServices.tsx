@@ -31,7 +31,25 @@ export const generarAjusteService = async (data: string) => {
 };
 
 
-export const obtenerSujetoExcluidoService = async () => {
+export const generarExportacionService = async (data: any) => {
+  console.log('data', data);
+  try {
+    const response = await api.get(`/factura_ajuste/generar/`, {
+      params: {
+        data,
+      },
+    });
+
+    return response.data;
+  } catch (error: any) {
+    console.log('ERROR:', error.response.data);
+
+    throw new Error();
+  }
+};
+
+
+export const generarDocumentoExportacionService = async (data: any) => {
   // console.log('data', data);
   try {
     const response = await api.get(`/factura/generar_sujeto_excluido/`, {
@@ -47,7 +65,6 @@ export const obtenerSujetoExcluidoService = async () => {
     throw new Error();
   }
 };
-
 
 export const generarSujetoExcluidoService = async (data: any) => {
   // console.log('data', data);

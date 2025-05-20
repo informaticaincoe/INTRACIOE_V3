@@ -43,6 +43,7 @@ import { ResumenCardNotaAjuste } from '../components/NotaDebito/resumenCardNotaA
 import { InputTextarea } from 'primereact/inputtextarea';
 import { FormasdePagoForm } from '../components/Shared/configuracionFactura/formasDePago/formasdePagoForm';
 
+
 export const GenerarDocumentosAjuste = () => {
   //lista de datos obtenidas de la api
   const [condicionesOperacionList, setCondicionesOperacionList] =
@@ -313,7 +314,8 @@ export const GenerarDocumentosAjuste = () => {
                 setTieneRetencionRenta={setTieneRetencionRenta}
                 tieneRetencionRenta={tieneRetencionRenta}
                 retencionRenta={retencionRenta}
-                setRetencionRenta={setRetencionRenta}
+                setRetencionRenta={setRetencionRenta} 
+                tipoContibuyente={emisorData.tipoContibuyente}              
               />
               <CheckboxBaseImponible
                 baseImponible={baseImponible}

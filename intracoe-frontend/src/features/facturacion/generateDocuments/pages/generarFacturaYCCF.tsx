@@ -322,7 +322,6 @@ export const GenerarFacturaYCCF: React.FC<GenerarFacturaYCCProps> = ({ tipoDocum
             />
             {tipoDocumentoSelected?.codigo != "14" && <CheckBoxVentaTerceros /> /* Sujeto excluido no incluye venta a terceros */}
             <CheckBoxRetencion
-              tipoDocumentoSelected={tipoDocumentoSelected}
               setTieneRetencionIva={setTieneRetencionIva}
               tieneRetencionIva={tieneRetencionIva}
               setRetencionIva={setRetencionIva}
