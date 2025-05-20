@@ -422,6 +422,8 @@ class FacturaSujetoExcluidoElectronica(models.Model):
     hora_emision = models.TimeField(auto_now_add=True) 
     tipomoneda = models.ForeignKey(TipoMoneda, on_delete=models.CASCADE, null=True)
     
+    #EMISOR
+    dteemisor = models.ForeignKey(Emisor_fe, on_delete=models.CASCADE, related_name='facturas_emisor_sujeto_excluido_FE')
     #SUJETO EXCLUIDO
     dtesujetoexcluido = models.ForeignKey(Proveedor, on_delete=models.CASCADE, related_name='facturas_sujeto_excluido_FE')
     
@@ -485,11 +487,11 @@ class DetalleFacturaSujetoExcluido(models.Model):
     def __str__(self):
         return f"Factura {self.factura.numero_control} - {self.descripcion} ({self.cantidad} x {self.precio_unitario})"
     
-class EventoInvalidacion(models.Model):
-    
+class EventoInvalidacion(models.Model):    
     #Identificacion
     #si una factura esta relacionada indica que tiene un evento de invalidacion
-    factura = models.ForeignKey(FacturaElectronica, on_delete=models.CASCADE, related_name='dte_invalidacion', help_text="Evento de invalidacion a la que pertenece la Factura")
+    factura = models.ForeignKey(FacturaElectronica, blank=True, null=True, on_delete=models.CASCADE, related_name='dte_invalidacion', help_text="Evento de invalidacion a la que pertenece la Factura")
+    facturaSujetoExcluido = models.ForeignKey(FacturaSujetoExcluidoElectronica,  blank=True, null=True, on_delete=models.CASCADE, related_name='dte_invalidacion_sujeto_excluido', help_text="Evento de invalidacion solo para sujeto exclusivo")
     codigo_generacion = models.UUIDField(default=uuid.uuid4, unique=True)
     fecha_anulacion = models.DateField(auto_now_add=True, null=True)
     hora_anulacion = models.TimeField(auto_now_add=True, null=True)

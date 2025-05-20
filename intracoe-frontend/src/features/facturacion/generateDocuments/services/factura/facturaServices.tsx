@@ -129,6 +129,15 @@ export const FirmarFactura = async (id: string | undefined) => {
   }
 };
 
+export const FirmarFacturaSujetoExcluido = async (id: string | undefined) => {
+  try {
+    await api.post(`/factura-sujeto-excluido/firmar/${id}/`);
+  } catch (error) {
+    console.log(error);
+    throw new Error();
+  }
+};
+
 export const EnviarHacienda = async (id: string) => {
   try {
     const response = await api.post(`/factura/${id}/enviar/`);

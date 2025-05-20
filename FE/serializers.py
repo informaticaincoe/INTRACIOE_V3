@@ -71,6 +71,54 @@ class FacturaListSerializer(serializers.ModelSerializer):
             return "Invalidada" if evento.estado else "En proceso de invalidación"
         return "Viva"
 
+# LISTADO FACTURAS SUJETO EXCLUIDO
+class FacturaSujetoExcluidoListSerializer(serializers.ModelSerializer):
+    tipo_dte = serializers.SlugRelatedField(
+        read_only=True,
+        slug_field='codigo'
+    )
+    
+    estado_invalidacion = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FacturaSujetoExcluidoElectronica
+        fields = [
+            'id',
+            'tipo_dte',
+            'numero_control',
+            'estado', 
+            'codigo_generacion',
+            'sello_recepcion',
+            'fecha_emision',
+            'total_pagar',
+            'recibido_mh',
+            'estado_invalidacion',  # Campo calculado a partir de dte_invalidacion.
+        ]
+
+    def get_estado_invalidacion(self, obj):
+        tipo_codigo = None
+        if obj.tipo_dte:
+            try:
+                tipo_codigo = int(obj.tipo_dte.codigo)
+            except (TypeError, ValueError):
+                tipo_codigo = None
+        print("**************TIPO_CODIGO", tipo_codigo)
+        if tipo_codigo == '14':
+            # notas de crédito/debito de sujeto excluido
+            eventos = obj.dte_invalidacion_sujeto_excluido
+        else:
+            # facturas "normales"
+            eventos = getattr(obj, 'dte_invalidacion_sujeto_excluido', None)
+
+        # Si no existe la relación (o es None), devolvemos "Viva"
+        if not eventos:
+            return "Viva"
+
+        evento = eventos.first()
+        if evento:
+            return "Invalidada" if evento.estado else "En proceso de invalidación"
+        return "Viva"
+
 
 class FacturaElectronicaSerializer(serializers.ModelSerializer):
     # Si deseas incluir los detalles de factura, podrías anidar el serializer

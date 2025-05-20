@@ -52,6 +52,10 @@ const { ListadoFacturas } = lazily(
   () => import('./features/facturacion/Listadofacturas/pages/listadoFacturas')
 );
 
+const { ListadoFacturasSujetoExcluido } = lazily(
+  () => import('./features/facturacion/Listadofacturas/pages/listadoFacturasSujetoExcluido')
+);
+
 const { GenerarDocumentosAjuste } = lazily(
   () =>
     import(
@@ -113,6 +117,7 @@ function App() {
           <Route path="/productos/nuevo" element={<NuevoProductoPage />} />
           <Route path="/producto/:id" element={<NuevoProductoPage />} />
           <Route path="/listado-facturas" element={<ListadoFacturas />} />
+          <Route path="/listado-facturas-sujeto-excluido" element={<ListadoFacturasSujetoExcluido />} />
           <Route path="/servicios" element={<ServicioPage />} />
 
           <Route

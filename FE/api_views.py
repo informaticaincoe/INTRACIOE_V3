@@ -19,8 +19,8 @@ from rest_framework.authtoken.models import Token
 from rest_framework.pagination import PageNumberPagination
 
 from .views import (
-    contingencia_dte_view, enviar_contingencia_hacienda_view, enviar_correo_individual_view, enviar_factura_hacienda_view, enviar_factura_invalidacion_hacienda_view, enviar_lotes_hacienda_view, 
-    finalizar_contigencia_view, firmar_contingencia_view, firmar_factura_anulacion_view, firmar_factura_view, generar_json_sujeto, 
+    contingencia_dte_view, enviar_contingencia_hacienda_view, enviar_correo_individual_view, enviar_factura_hacienda_view, enviar_factura_invalidacion_hacienda_view, enviar_factura_sujeto_excluido_invalidacion_hacienda_view, enviar_lotes_hacienda_view, 
+    finalizar_contigencia_view, firmar_contingencia_view, firmar_factura_anulacion_view, firmar_factura_sujeto_excluido_anulacion_view, firmar_factura_view, generar_json_sujeto, invalidacion_dte_sujeto_excluido_view, 
     invalidacion_dte_view, generar_json, lote_contingencia_dte_view, num_to_letras, agregar_formas_pago_api,
     generar_json_doc_ajuste, obtener_fecha_actual, obtener_listado_productos_view
 )
@@ -28,7 +28,7 @@ from .views import (
 from INVENTARIO.serializers import DescuentoSerializer, ProductoSerializer
 
 from .serializers import (
-    AmbienteSerializer, EventoContingenciaSerializer, FacturaListSerializer, FacturaSujetoExcluidoSerializer, 
+    AmbienteSerializer, EventoContingenciaSerializer, FacturaListSerializer, FacturaSujetoExcluidoListSerializer, FacturaSujetoExcluidoSerializer, 
     FormasPagosSerializer, LoteContingenciaSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, 
     TipoDteSerializer, TiposGeneracionDocumentoSerializer, ActividadEconomicaSerializer, ModelofacturacionSerializer,
     TipoTransmisionSerializer, TipoContingenciaSerializer, TipoRetencionIVAMHSerializer, TiposEstablecimientosSerializer, TiposServicio_MedicoSerializer,
@@ -2400,6 +2400,9 @@ class GenerarFacturaSujetoAPIView(APIView):
             if not emisor_obj:
                 return Response({"error": "No hay emisores registrados en la base de datos"}, status=status.HTTP_400_BAD_REQUEST)
             emisor = emisor_obj
+            
+            print("emisor", emisor)
+            print("emisor Id", emisor.id)
 
             # Obtener datos receptor
             if receptor_id and receptor_id != "nuevo":
@@ -2440,6 +2443,7 @@ class GenerarFacturaSujetoAPIView(APIView):
                 tipocontingencia=None,
                 motivocontin=None,
                 tipomoneda=tipo_moneda_obj,
+                dteemisor=emisor_obj,
                 dtesujetoexcluido=receptor,
                 json_original={},
                 firmado=False,
@@ -3021,6 +3025,137 @@ class EnviarFacturaHaciendaAPIView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+class FirmarFacturaSujetoExcluidoAPIView(APIView):
+    """
+    POST /api/factura/{factura_id}/firmar/
+    - Intenta hasta 3 veces firmar el DTE con el servicio externo.
+    - Cada save() va en su propio bloque atomic para minimizar el tiempo de bloqueo.
+    - En caso de fallo tras 3 intentos, genera contingencia y registra evento.
+    """
+    def post(self, request, factura_id, format=None):
+        factura = get_object_or_404(FacturaSujetoExcluidoElectronica, id=factura_id)
+        fecha_actual = obtener_fecha_actual()
+
+        intentos_max = 3
+        motivo_otro = False
+        tipo_contingencia_obj = None
+
+        # Leer intentos previos en sesión
+        intentos_sesion = request.session.get('intentos_reintento', 0)
+
+        # Validar certificado
+        print('certificado',CERT_PATH)
+        if not os.path.exists(CERT_PATH):
+            return Response(
+                {"error": "Certificado no encontrado."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Parsear JSON original
+        try:
+            dte_obj = (
+                factura.json_original
+                if isinstance(factura.json_original, dict)
+                else json.loads(factura.json_original)
+            )
+        except Exception as e:
+            return Response(
+                {"error": "JSON inválido", "detalle": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Ciclo de intentos de firma
+        for intento in range(1, intentos_max + 1):
+            # Verificar token activo
+            token_data = Token_data.objects.filter(activado=True).first()
+            if not token_data:
+                return Response(
+                    {"error": "No hay token activo."},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+
+            payload = {
+                "nit": str(factura.dteemisor.nit),
+                "activo": True,
+                "passwordPri": str(factura.dteemisor.clave_privada),
+                "dteJson": dte_obj,
+            }
+
+            try:
+                resp = requests.post(
+                    FIRMADOR_URL.url_endpoint,
+                    json=payload,
+                    headers={"Content-Type": CONTENT_TYPE.valor},
+                    timeout=10
+                )
+                try:
+                    data_resp = resp.json()
+                except ValueError:
+                    data_resp = {"error": "No se pudo parsear JSON", "detalle": resp.text}
+
+                # Éxito en la firma
+                if resp.status_code == 200 and data_resp.get("status") == "OK":
+                    with transaction.atomic():
+                        factura.json_firmado = data_resp
+                        factura.firmado = True
+                        factura.save()
+                    connection.close()
+
+                    # Resetear contador en sesión
+                    request.session['intentos_reintento'] = 0
+                    request.session.modified = True
+
+                    return Response(
+                        {"mensaje": "Firma exitosa", "detalle": data_resp},
+                        status=status.HTTP_200_OK
+                    )
+
+                # Determinar tipo de contingencia según código HTTP
+                if resp.status_code in [500, 502]:
+                    tipo_codigo = "1"
+                elif resp.status_code in [503, 504, 408, 499]:
+                    tipo_codigo = "2"
+                else:
+                    tipo_codigo = "5"
+                    motivo_otro = True
+
+                tipo_contingencia_obj = TipoContingencia.objects.get(codigo=tipo_codigo)
+
+            except requests.RequestException:
+                # Error de comunicación con el servicio
+                tipo_contingencia_obj = TipoContingencia.objects.get(codigo="1")
+
+            # Esperar antes del siguiente intento (sin mantener transacción abierta)
+            time.sleep(1)
+
+        # Tras agotar todos los intentos, entrar en contingencia
+        with transaction.atomic():
+            if intentos_sesion == 0:
+                finalizar_contigencia_view(request)
+
+            factura.estado = False
+            factura.contingencia = True
+            factura.tipomodelo = Modelofacturacion.objects.get(codigo="2")
+            factura.tipotransmision = TipoTransmision.objects.get(codigo="2")
+            factura.fecha_modificacion = fecha_actual.date()
+            factura.hora_modificacion = fecha_actual.time()
+            factura.save()
+
+            lote_contingencia_dte_view(request, factura_id, tipo_contingencia_obj)
+
+        connection.close()
+
+        # Actualizar contador en sesión
+        request.session['intentos_reintento'] = intentos_sesion + 1
+        request.session.modified = True
+
+        return Response(
+            {
+                "error": "No se pudo firmar el DTE después de varios intentos",
+                "motivo_otro": motivo_otro
+            },
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 class EnviarFacturaSujetoExcluidoHaciendaAPIView(APIView):
     """
@@ -3029,10 +3164,9 @@ class EnviarFacturaSujetoExcluidoHaciendaAPIView(APIView):
     """
     @transaction.atomic
     def post(self, request, factura_id, format=None):
-        # 1) recuperamos exclusivamente del modelo SujetoExcluido
         factura = get_object_or_404(FacturaSujetoExcluidoElectronica, pk=factura_id)
-
-        # 2) autenticación (idéntico al tuyo)… guardas el token en Token_data
+        print("FACTURA", factura)
+        
         # Paso 1: Autenticación
         nit = str(emisor_fe.nit)
         pwd = str(emisor_fe.clave_publica)
@@ -3052,6 +3186,8 @@ class EnviarFacturaSujetoExcluidoHaciendaAPIView(APIView):
                     try:
                         resp_data = resp.json()
                         body = resp_data.get("body", {})
+                        print("resp_data", resp_data)
+                        
                         if not isinstance(body, dict):
                             body = {}
                     except ValueError as e:
@@ -3074,17 +3210,16 @@ class EnviarFacturaSujetoExcluidoHaciendaAPIView(APIView):
                         }
                     )
                     contingencia = False
-                    print("Fin token")
                     error_auth = None  # Éxito, no hay error
                     break
                 else:
                     error_auth = f"Auth failed {resp.status_code}"
+            
             except requests.RequestException as e:
                 error_auth = str(e)
+                
             time.sleep(1)
 
-            print("factura_id1: ", factura_id)
-            print("datos: ", request)
             if error_auth:
                 print("Error autenticacion: ", error_auth)
             else:
@@ -3129,6 +3264,10 @@ class EnviarFacturaSujetoExcluidoHaciendaAPIView(APIView):
         }
 
         resp = requests.post(envio_url, json=payload, headers=envio_headers, timeout=10)
+        
+        print("Envio response status code:", resp.status_code)
+        print("Envio response text:", resp.text)
+        
         data = resp.json() if resp.status_code == 200 else {}
         if resp.status_code == 200 and data.get("selloRecibido"):
             # actualizas sólo la SujetoExcluido
@@ -3162,10 +3301,12 @@ class InvalidarDteUnificadoAPIView(APIView):
     Se espera que se realice una petición POST a:
       /api/invalidar-firmar-enviar/<factura_id>/
     """
-    def post(self, request, factura_id):
+    def post(self, request, factura_id ):
         try:
             # Paso 1: Llamar a la función de invalidación
             response_evento = invalidacion_dte_view(request, factura_id)
+            print("response_evento", response_evento)
+            
             if response_evento.status_code != 302:
                 # Si el proceso de invalidación falla, retorna el error
                 return Response(json.loads(response_evento.content),
@@ -3199,6 +3340,59 @@ class InvalidarDteUnificadoAPIView(APIView):
         
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+# EVENTO DE INVALIDACION SUJETO EXCLUIDO UNIFICADO
+class InvalidarDteSujetoExcluidoUnificadoAPIView(APIView):
+    """
+    Vista API unificada que realiza en un solo paso:
+      1. Genera el DTE de invalidación (llama a invalidacion_dte_view)
+      2. Firma el DTE de invalidación (llama a firmar_factura_anulacion_view)
+      3. Envía el DTE firmado a Hacienda (llama a enviar_factura_invalidacion_hacienda_view)
+    
+    Se espera que se realice una petición POST a:
+      /api/invalidar-firmar-enviar/<factura_id>/
+    """
+    def post(self, request, factura_id):
+        try:
+            # Paso 1: Llamar a la función de invalidación
+            response_evento = invalidacion_dte_sujeto_excluido_view(request, factura_id)
+            print("response_evento", response_evento)
+            
+            if response_evento.status_code != 302:
+                # Si el proceso de invalidación falla, retorna el error
+                return Response(json.loads(response_evento.content),
+                                status=response_evento.status_code)
+            
+            # Paso 2: Llamar a la función de firma de la factura de invalidación
+            response_firma = firmar_factura_sujeto_excluido_anulacion_view(request, factura_id)
+            if response_firma.status_code != 302:
+                return Response(json.loads(response_firma.content),
+                                status=response_firma.status_code)
+            
+            # Paso 3: Llamar a la función que envía la factura firmada a Hacienda
+            response_envio = enviar_factura_sujeto_excluido_invalidacion_hacienda_view(request, factura_id)
+            
+            # Consultar el estado final del evento
+            evento = EventoInvalidacion.objects.filter(factura__id=factura_id).first()
+            if evento:
+                mensaje = "Factura invalidada con éxito" if evento.estado else "No se pudo invalidar la factura"
+            else:
+                mensaje = "No se encontró el evento de invalidación para la factura"
+            
+            try:
+                detalle = json.loads(response_envio.content)
+            except Exception:
+                detalle = response_envio.content.decode()
+            
+            return Response({
+                "mensaje": mensaje,
+                "detalle": detalle
+            }, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
         
 # OBTRENER FACTURA POR CODIGO DE GENERACION
 class FacturaPorCodigoGeneracionAPIView(APIView):
@@ -3322,7 +3516,7 @@ class FacturaListAPIView(generics.ListAPIView):
             else:
                 queryset = queryset.filter(sello_recepcion__isnull=True)
         if tipo_dte:
-            queryset = queryset.filter(tipo_dte__id=tipo_dte)
+            queryset = queryset.filter(tipo_dte__codigo=tipo_dte)
         if estado and estado.lower() in ['true', 'false']:
             queryset = queryset.filter(estado=(estado.lower() == 'true'))
         if estado_invalidacion:
@@ -3339,6 +3533,53 @@ class FacturaListAPIView(generics.ListAPIView):
                 
 
         return queryset
+
+
+# LISTAR FACTURAS SUJETO EXCLUIDO
+class FacturaSujetoExcluidoListAPIView(generics.ListAPIView):
+    serializer_class = FacturaSujetoExcluidoListSerializer
+    pagination_class = FacturaPagination
+
+    def get_queryset(self):
+        queryset = FacturaSujetoExcluidoElectronica .objects.all()
+
+        recibido = self.request.GET.get('recibido_mh')
+        codigo = self.request.GET.get('sello_recepcion')
+        has_codigo = self.request.GET.get('has_sello_recepcion')
+        tipo_dte = self.request.GET.get('tipo_dte')
+        estado = self.request.GET.get('estado')  # Estado normal, por ejemplo "true" o "false"
+        estado_invalidacion = self.request.GET.get('estado_invalidacion')  # Para filtrar el estado de invalidación
+
+        if recibido and recibido.lower() in ['true', 'false']:
+            queryset = queryset.filter(recibido_mh=(recibido.lower() == 'true'))
+        if codigo:
+           queryset = queryset.filter(Q(sello_recepcion__icontains=codigo) | Q(numero_control__icontains=codigo) # Busacar por numero de control y sello de recepcion
+        )
+
+        if has_codigo and has_codigo.lower() in ['true', 'false']:
+            if has_codigo.lower() == 'true':
+                queryset = queryset.exclude(sello_recepcion__isnull=True)
+            else:
+                queryset = queryset.filter(sello_recepcion__isnull=True)
+        if tipo_dte:
+            queryset = queryset.filter(tipo_dte__codigo=tipo_dte)
+        if estado and estado.lower() in ['true', 'false']:
+            queryset = queryset.filter(estado=(estado.lower() == 'true'))
+        if estado_invalidacion:
+            estado_inv_lower = estado_invalidacion.lower()
+            if estado_inv_lower == "invalidada":
+                queryset = queryset.filter(dte_invalidacion__estado=True)
+            elif estado_inv_lower == "firmar":
+                # Filtra facturas sin evento de invalidación y con recibido_mh == False (Firma pendiente).
+                queryset = queryset.filter(dte_invalidacion__isnull=True, recibido_mh=False)
+            elif estado_inv_lower == "enproceso":
+                queryset = queryset.filter(dte_invalidacion__estado=False)
+            elif estado_inv_lower == "viva":
+                queryset = queryset.filter(dte_invalidacion__isnull=True)
+                
+
+        return queryset
+
 
 # ENVIAR FACTURA INVALIDACION HACIENDA
 class EnviarFacturaInvalidacionAPIView(APIView):

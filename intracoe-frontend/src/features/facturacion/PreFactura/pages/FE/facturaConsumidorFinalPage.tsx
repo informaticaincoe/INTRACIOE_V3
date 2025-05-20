@@ -77,7 +77,6 @@ export const FacturaConsumirdorFinalPage: React.FC<FacturaConsumirdorFinalPagePr
     const [loading, setLoading] = useState(false);
     const [loadingFirma, setLoadingFirma] = useState(false);
 
-    // arriba, junto a tus otros useState
     const [firmaIntentos, setFirmaIntentos] = useState(0);
     const [viewDialog, setViewDiaog] = useState(false);
     const [enviarHaciendLoading, setEnviarHaciendLoading] = useState(false);
