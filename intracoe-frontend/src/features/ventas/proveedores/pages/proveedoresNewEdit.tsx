@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Input } from '../../../../shared/forms/input';
-import { ProveedorInterface } from '../interfaces/proveedoresInterfaces';
+import { ProveedorInterface, ProveedorResultInterface } from '../interfaces/proveedoresInterfaces';
 import CustomToast, {
   CustomToastRef,
   ToastSeverity,
@@ -19,7 +19,7 @@ export const ProveedoresNewEdit = () => {
   let params = useParams();
   const toastRef = useRef<CustomToastRef>(null);
   const navigate = useNavigate();
-  const [formData, setFormData] = useState<ProveedorInterface>({
+  const [formData, setFormData] = useState<ProveedorResultInterface>({
     id: 0,
     nombre: '',
     ruc_nit: '',
@@ -128,7 +128,7 @@ export const ProveedoresNewEdit = () => {
       <CustomToast ref={toastRef} />
 
       <Title
-        text={`${params.id ? ' Editar movimiento' : 'Nuevo movimiento'} `}
+        text={`${params.id ? ' Editar Proveedor' : 'Nuevo proveedor'} `}
       />
       <div className="mx-[20%] my-10 rounded-md bg-white p-10">
         <div>

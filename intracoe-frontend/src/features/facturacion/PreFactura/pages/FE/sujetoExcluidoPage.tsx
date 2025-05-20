@@ -25,6 +25,7 @@ import { usePDF } from 'react-to-pdf';
 import {
   enviarFactura,
   EnviarHacienda,
+  EnviarHaciendaSujetoExcluido,
   FirmarFactura,
 } from '../../../generateDocuments/services/factura/facturaServices';
 import CustomToast, {
@@ -162,7 +163,7 @@ export const SujetoExcluidoPage: React.FC<SujetoExcluidoPageProps> = ({ id }) =>
     if (!id) return;
     setEnviarHaciendLoading(true);
     try {
-      await EnviarHacienda(id);
+      await EnviarHaciendaSujetoExcluido(id);
       handleAccion(
         'success',
         <FaCircleCheck size={32} />,

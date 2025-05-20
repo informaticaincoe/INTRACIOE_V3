@@ -24,4 +24,13 @@ De acuerdo al artículo 162 inciso 7° solo debes retener el 13% cuando eres gra
 - Servicios de transporte de carga
 - Dietas o cualquier otro emolumento de igual o similar naturaleza prestados por personas naturales no inscritos como contribuyentes al IVA
 
+* Sujeto excluido
+- no tiene total gravadas: Siempre cero (no hay montos gravados con IVA)
+- saldo_favor	No aplica
+- total_no_gravado	Redundante si no hay gravados
 
+
+# TODO
+**Sujeto excluido**
+* Buscar por nombre
+* Añadir uno nuevo y que se agregue automaticamente

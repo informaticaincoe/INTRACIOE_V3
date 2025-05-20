@@ -1351,11 +1351,7 @@ def generar_json_sujeto(
         receptor, 
         cuerpo_documento, 
         observaciones, 
-        iva_item_total,   
-        contingencia, 
-        total_gravada, 
-        nombre_responsable, 
-        doc_responsable, 
+        contingencia,
         total_operaciones, 
         total_descuento, 
         total_pagar, 
@@ -1363,6 +1359,15 @@ def generar_json_sujeto(
         sub_total,
         formas_pago=None
     ):
+    
+    cod_act_receptor  = ""
+    desc_act_receptor = ""
+    
+    actividades = getattr(receptor, "actividades_economicas", None)
+    if actividades and hasattr(actividades, "exists") and actividades.exists():
+        primera = actividades.first()
+        cod_act_receptor  = str(primera.codigo)
+        desc_act_receptor = str(primera.descripcion)
     print("-Inicio llenar json sujeto")
     try:
         # if saldo_favor is None or saldo_favor == "":
@@ -1370,8 +1375,6 @@ def generar_json_sujeto(
 
         if formas_pago is None:
             formas_pago = factura.formas_Pago or []
-
-        montoExtension = Decimal("25000")
         
         #Llenar json
         json_identificacion = {
@@ -1395,8 +1398,6 @@ def generar_json_sujeto(
             "nombre": str(emisor.nombre_razon_social),
             "codActividad": str(emisor.actividades_economicas.first().codigo) if emisor.actividades_economicas.exists() else "",
             "descActividad": str(emisor.actividades_economicas.first().descripcion) if emisor.actividades_economicas.exists() else "",
-            # "nombreComercial": str(emisor.nombre_comercial),
-            # "tipoEstablecimiento": str(emisor.tipoestablecimiento.codigo) if emisor.tipoestablecimiento else "",
             "direccion": {
                 "departamento": str(emisor.municipio.departamento.codigo), #"05",
                 "municipio": str(emisor.municipio.codigo), #"19",
@@ -1416,19 +1417,16 @@ def generar_json_sujeto(
             "tipoDocumento": str(receptor.tipo_documento.codigo),
             "numDocumento": str(str(receptor.num_documento)),
             "nombre": str(receptor.nombre),
-            "codActividad": str(receptor.actividades_economicas.first().codigo) if receptor.actividades_economicas.exists() else "", #"24310",
-            "descActividad": str(receptor.actividades_economicas.first().descripcion) if receptor.actividades_economicas.exists() else "", #"undición de hierro y acero",
+            "codActividad":  cod_act_receptor,   # código de la primera actividad
+            "descActividad": desc_act_receptor, 
             "direccion": {
                 "departamento": str(receptor.municipio.departamento.codigo), #"05",
                 "municipio": str(receptor.municipio.codigo), #"19",
                 "complemento": receptor.direccion or ""
             },
             "telefono": receptor.telefono or "",
-            "correo": receptor.correo or "",
+            "correo": receptor.email or "",
         }
-        
-        # json_otros_documentos = None
-        pagos = formas_pago
 
         print("formas_pago ---", formas_pago)
 
@@ -1443,7 +1441,7 @@ def generar_json_sujeto(
             "totalDescu":  float(total_descuento),
             "subTotal":    float(sub_total),
             "ivaRete1":    float(ret_iva),     # si aplica; si no, queda 0.00
-            "reteRenta":   float(ret_renta),
+            "reteRenta":   float(ret_renta),   # si aplica; si no, queda 0.00
             "totalPagar":  float(total_pagar),
             "totalLetras": factura.total_letras,
             "condicionOperacion": int(factura.condicion_operacion.codigo) if factura.condicion_operacion and factura.condicion_operacion.codigo.isdigit() else 1,
@@ -1451,23 +1449,9 @@ def generar_json_sujeto(
             "observaciones": observaciones,
         }
     
-        # json_resumen = {
-        #     "totalCompra": float(total_ops),
-        #     "descu":       float(Decimal(descuento_global).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)),
-        #     "totalDescu":  float(Decimal(total_descuento).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)),
-        #     "totalPagar":  float(Decimal(total_pagar).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)),
-        #     "subTotal":    float(subtotal_con_iva),
-        #     "ivaRete1":    0.00, # retencion de iva no aplica
-        #     "reteRenta":   float(Decimal(factura.retencion_renta).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)),
-        #     "totalLetras": factura.total_letras,
-        #     "condicionOperacion": int(factura.condicion_operacion.codigo) if factura.condicion_operacion and factura.condicion_operacion.codigo.isdigit() else 1,
-        #     "pagos":       formas_pago,
-        #     "observaciones": observaciones,
-        # }                
         print("json resumen:", json_resumen)
         
         json_apendice = None
-        subTotalVentas = total_gravada
 
         #Verificar que el monto consolidado de formas de pago aplique para el total a pagar
         f_pagos = json_resumen["pagos"]

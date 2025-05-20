@@ -60,7 +60,7 @@ export const generarFacturaService = async (id: string) => {
 
 export const generarFacturaSujetoExcluidoService = async (id: string) => {
   try {
-    const response = await api.get<FacturaResponseSujetoExcluido>(`/factura_pdf/${id}/`);
+    const response = await api.get<FacturaResponseSujetoExcluido>(`/factura-sujeto-excluido/${id}/`);
     console.log(response.data)
 
     return {

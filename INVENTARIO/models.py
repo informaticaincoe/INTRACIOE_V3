@@ -114,20 +114,70 @@ class Producto(models.Model):
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
 
-
 # MODELO PARA PROVEEDORES
 class Proveedor(models.Model):
     nombre = models.CharField(max_length=255)
-    ruc_nit = models.CharField(max_length=50, unique=True)
+    num_documento = models.CharField(max_length=50, unique=True)
+    tipo_documento = models.ForeignKey(
+        "FE.TiposDocIDReceptor",       # <-- app_label.ModelName en lugar de import
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        help_text="DUI, NIT, etc."
+    )
+    actividades_economicas = models.ManyToManyField(
+        "FE.ActividadEconomica",
+        blank=True,
+    )
+    departamento = models.ForeignKey(
+        "FE.Departamento",  # Modelo que contiene los departamentos
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="Departamento del proveedor"
+    )
+    municipio = models.ForeignKey(
+        "FE.Municipio",  # Modelo que contiene los municipios
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="Municipio del proveedor"
+    )
     contacto = models.CharField(max_length=100, blank=True, null=True)
     telefono = models.CharField(max_length=20, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     direccion = models.TextField(blank=True, null=True)
     condiciones_pago = models.CharField(max_length=100, blank=True, null=True)
+    
     #pais: si es extranjero se aplica 20% de retención
 
     def __str__(self):
-        return f"{self.nombre} - {self.ruc_nit}"
+        return f"{self.nombre} - {self.num_documento}"
+
+class ProductoProveedor(models.Model):
+    proveedor = models.ForeignKey(Proveedor, on_delete=models.CASCADE, related_name='proveedor')
+    codigo = models.CharField(max_length=50, unique=True)  # SKU único
+    descripcion = models.CharField(max_length=255)
+    unidad_medida = models.ForeignKey(TipoUnidadMedida, on_delete=models.SET_NULL, null=True, blank=True)
+    preunitario = models.DecimalField(max_digits=5, decimal_places=2)
+    tipo_item = models.ForeignKey(TipoItem, on_delete=models.SET_NULL, null=True, blank=True)
+    referencia_interna = models.CharField(max_length=50, null=True, editable=True, default=None)
+    fecha_vencimiento = models.DateField(null=True, blank=True)  
+    # Imagen del producto (Opcional)
+    imagen = models.ImageField(upload_to='media/productos/', null=True, blank=True)
+
+    # Auditoría
+    creado = models.DateTimeField(auto_now_add=True)
+    actualizado = models.DateTimeField(auto_now=True)
+    
+    #impuestos = models.ManyToManyField(Impuesto, blank=True)  # Soporte para múltiples impuestos
+    # tiene_descuento = models.BooleanField(default=False)
+    # descuento = models.ForeignKey(Descuento, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    #tributo = models.ForeignKey(Tributo, on_delete=models.CASCADE, null=False, default=1)
+
+    def __str__(self):
+        return f"{self.codigo} - {self.descripcion}"
 
 
 # MODELO PARA COMPRAS
@@ -294,5 +344,3 @@ class DetalleDevolucionCompra(models.Model):
         return f"{self.cantidad} x {self.producto.descripcion} - Devolución {self.devolucion.id}"
 
 
-
-import INVENTARIO.signals

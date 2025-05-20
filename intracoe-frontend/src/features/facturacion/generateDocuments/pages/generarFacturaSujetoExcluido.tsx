@@ -3,39 +3,30 @@ import { WhiteSectionsPage } from '../../../../shared/containers/whiteSectionsPa
 import { useEffect, useRef, useState } from 'react';
 import { SelectCondicionOperacion } from '../components/Shared/configuracionFactura/condicionOperacion/selectCondicionOperacion';
 import { SelectTipoTransmision } from '../components/Shared/configuracionFactura/tipoTransmision/selectTipoTransmisión';
-import { CheckBoxVentaTerceros } from '../components/Shared/configuracionFactura/ventaTerceros/checkboxVentaTerceros';
 import { IdentifcacionSeccion } from '../components/Shared/identificacion.tsx/identifcacionSeccion';
-import { SelectReceptor } from '../components/Shared/receptor/SelectReceptor';
-import { ModalListaProdcutos } from '../components/FE/productosAgregados/modalListaProdcutos';
 import { FormasdePagoForm } from '../components/Shared/configuracionFactura/formasDePago/formasdePagoForm';
 import { SelectModeloFactura } from '../components/Shared/configuracionFactura/modeloDeFacturacion/selectModeloFactura';
 import { SendFormButton } from '../../../../shared/buttons/sendFormButton';
 import {
-    defaultEmisorData,
     Descuentos,
-    EmisorInterface,
-    ReceptorDefault,
-    ReceptorInterface,
-    TipoDocumento,
 } from '../../../../shared/interfaces/interfaces';
 import { ProductosTabla } from '../components/FE/productosAgregados/productosData';
 import { ResumenTotalesCard } from '../components/Shared/resumenTotales/resumenTotalesCard';
-import {
-    generarFacturaService,
-    generarSujetoExcluidoService,
-} from '../services/factura/facturaServices';
+import { generarSujetoExcluidoService } from '../services/factura/facturaServices';
 import { CheckBoxRetencion } from '../components/Shared/configuracionFactura/Retencion/checkBoxRetencion';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { useNavigate } from 'react-router';
-import { CheckboxBaseImponible } from '../components/Shared/configuracionFactura/baseImponible/checkboxBaseImponible';
 import CustomToast, {
     CustomToastRef,
     ToastSeverity,
 } from '../../../../shared/toast/customToast';
 import { IoMdCloseCircle } from 'react-icons/io';
-import { TablaProductosAgregados } from '../components/FE/productosAgregados/tablaProductosAgregados';
 import { ExtensionCard } from '../components/Shared/entension/extensionCard';
-import { FormularioSujetoExcluido } from '../components/sujetoExcluido/formularioSujetoExcluido';
+import { ProveedorResultInterface } from '../../../ventas/proveedores/interfaces/proveedoresInterfaces';
+import { ContenedorTablaProveedores } from '../components/sujetoExcluido/proveedores/contenedorTablaProveedores';
+import { ProductosProveedoresResults } from '../../../../shared/interfaces/interfaceFacturaJSON';
+import { ContenedorTablaProductosPorProveedores } from '../components/sujetoExcluido/productosProveedor/contendorTablaProductosPorProveedor';
+import { TablaTotalesSujetoExcluido } from '../components/sujetoExcluido/tablaResumen/tablaTotales';
 
 interface GenerarFacturaSujetoExcluidoProps {
     tipoDocumentoSelected: any
@@ -43,19 +34,14 @@ interface GenerarFacturaSujetoExcluidoProps {
     numeroControl: any
     condicionesOperacionList: any
     descuentosList: any
-    listProducts: any
     tipoContibuyente: string
 }
 
-export const GenerarFacturaSujetoExcluido: React.FC<GenerarFacturaSujetoExcluidoProps> = ({ tipoDocumentoSelected, codigoGeneracion, numeroControl, condicionesOperacionList, descuentosList, listProducts, tipoContibuyente }) => {
+export const GenerarFacturaSujetoExcluido: React.FC<GenerarFacturaSujetoExcluidoProps> = ({ tipoDocumentoSelected, codigoGeneracion, numeroControl, condicionesOperacionList, tipoContibuyente }) => {
     //lista de datos obtenidas de la api
+    const [selectedProveedores, setSelectedProveedores] = useState<ProveedorResultInterface>() // Varibale con proveedorSeleccionado
 
-    const [receptor, setReceptor] = useState<ReceptorInterface>(ReceptorDefault); // almacenar informacion del receptor
-
-    const [descuentos, setDescuentos] = useState<Descuentos>({
-        descuentoGeneral: 0,
-        descuentoGravado: 0,
-    });
+    const [descuentoGeneral, setDescuentoGeneral] = useState<number>(0);
 
     const [formasPagoList, setFormasPagoList] = useState<number[]>([]);
 
@@ -100,24 +86,6 @@ export const GenerarFacturaSujetoExcluido: React.FC<GenerarFacturaSujetoExcluido
     const navigate = useNavigate();
     const toastRef = useRef<CustomToastRef>(null);
 
-    // const [formSujetoData, setFormSujetoData] = useState({
-    //     tipoDocumento: "",
-    //     numDocumento: "",
-    //     nombre: "",
-    //     codActividad: "",
-    //     descActividad: "",
-    //     direccion: "",
-    //     departamento: "",
-    //     municipio: "",
-    //     complemento:"",
-    //     telefono:"",
-    //     correo:""
-    // })
-
-    // const handleFormSujetoData = (e:any) => {
-    //     setFormSujetoData({...formSujetoData, [e.target.name]: e.target.value})
-    // }
-
     const handleAccion = (
         severity: ToastSeverity,
         icon: any,
@@ -132,33 +100,52 @@ export const GenerarFacturaSujetoExcluido: React.FC<GenerarFacturaSujetoExcluido
     };
 
     useEffect(() => {
+        console.log("selectedProducts", selectedProducts)
+        selectedProducts.map((producto) => {
+
+        })
+    }, [selectedProducts])
+
+    useEffect(() => {
         handleMontoPagar();
-    }, [selectedProducts, idListProducts, tieneRetencionIva, tieneRetencionRenta, descuentos]);
+    }, [selectedProducts, idListProducts, cantidadListProducts, tieneRetencionIva, tieneRetencionRenta, descuentoGeneral]);
+
+    // ...
+    useEffect(() => {
+        handleMontoPagar();
+    }, [
+        selectedProducts,
+        cantidadListProducts,
+        descuentoGeneral,
+        tieneRetencionIva,
+        tieneRetencionRenta,
+    ]);
 
     const handleMontoPagar = () => {
-        const descuentosAux = totalAPagar * (descuentos.descuentoGeneral / 100);
+        // 1) Calcula el subtotal: suma (precio × cantidad) – descuento por línea
+        const subtotal = selectedProducts.reduce<number>((sum, prod, idx) => {
+            const qty = parseFloat(cantidadListProducts[idx]) || 0;
+            const baseLinea = prod.preunitario * qty;
+            // Aquí usamos directamente el número que el usuario escribió en el input
+            const descuentoLinea = prod.descuento?.id ?? 0;
+            const totalLinea = baseLinea - descuentoLinea;
+            return sum + totalLinea;
+        }, 0);
 
-        let aux = 0;
-        selectedProducts.map((pago) => {
-            aux = aux + pago.total_con_iva - descuentosAux
-        });
-        let retRenta = 0;
-        let retIva = 0;
+        // 2) Aplica descuento general (si lo tienes)
+        const montoDescuentoGeneral = subtotal * (descuentoGeneral / 100);
+        const neto = subtotal - montoDescuentoGeneral;
 
-        if (tieneRetencionRenta) {
-            retRenta = aux * (0.10); // ejemplo: si retencionRenta = 10, calcula 10%
-        }
+        // 3) Retenciones
+        const retRenta = tieneRetencionRenta ? neto * 0.10 : 0;
+        const retIva = tieneRetencionIva ? neto * 0.13 : 0;
 
-        if (tieneRetencionIva) {
-            retIva = aux * 0.10;
-        }
-
-        aux = parseFloat((aux - retRenta - retIva).toFixed(2));
-        console.log(aux)
-        console.log(retencionRenta)
-
-        setTotalAPagar(aux);
+        // 4) Total final
+        const total = parseFloat((neto - retRenta - retIva).toFixed(2));
+        setTotalAPagar(total);
     };
+
+    // ...
 
     useEffect(() => {
         const descuentosAux: number[] = selectedProducts.map((producto) => {
@@ -184,12 +171,12 @@ export const GenerarFacturaSujetoExcluido: React.FC<GenerarFacturaSujetoExcluido
 
     const generarFactura = async () => {
         const dataSujetoExcl = {
-            receptor_id: receptor.id,
-            nit_receptor: receptor.num_documento,
-            nombre_receptor: receptor.nombre,
-            direccion_receptor: receptor.direccion,
-            telefono_receptor: receptor.telefono,
-            correo_receptor: receptor.correo,
+            receptor_id: selectedProveedores?.id,
+            nit_receptor: selectedProveedores?.ruc_nit,
+            nombre_receptor: selectedProveedores?.nombre,
+            direccion_receptor: selectedProveedores?.direccion,
+            telefono_receptor: selectedProveedores?.telefono,
+            correo_receptor: selectedProveedores?.email,
             observaciones: observaciones,
 
             tipo_documento_seleccionado: tipoDocumentoSelected?.codigo ?? '14', //tipo DTE
@@ -206,13 +193,13 @@ export const GenerarFacturaSujetoExcluido: React.FC<GenerarFacturaSujetoExcluido
             // productos_retencion_renta
             fp_id: formasPagoList,
 
-            descuento_global: descuentos.descuentoGeneral.toString(),
+            descuento_global: descuentoGeneral.toString(),
             saldo_favor_input: saldoFavor,
             no_gravado: baseImponible,
 
             productos_ids: idListProducts,
             cantidades: cantidadListProducts, //cantidad de cada producto de la factura
-            descuento_select: descuentosProducto, //lista de id de descuen
+            descuento_select: descuentosProducto, //lista de id de descuento
 
             monto_fp: totalAPagar.toFixed(2),
             num_ref: null,
@@ -255,7 +242,7 @@ export const GenerarFacturaSujetoExcluido: React.FC<GenerarFacturaSujetoExcluido
             );
         }
 
-        if (receptor.id == '') {
+        if (!selectedProveedores) {
             console.log('errpr receptr');
 
             setErrorReceptor(true);
@@ -343,15 +330,12 @@ export const GenerarFacturaSujetoExcluido: React.FC<GenerarFacturaSujetoExcluido
                 <div className="pt2 pb-5">
                     <>
                         <h1 className="text-start text-xl font-bold">
-                            Seleccione el receptor
+                            Seleccione el sujeto excluido
                         </h1>
                         <Divider className="m-0 p-0"></Divider>
-                        <SelectReceptor
-                            receptor={receptor}
-                            setReceptor={setReceptor}
-                            errorReceptor={errorReceptor}
-                            setErrorReceptor={setErrorReceptor}
-                        />
+                        {/* <ProveedoresPage mostrarTitulo={false} /> */}
+                        <ContenedorTablaProveedores setSelectedProveedores={setSelectedProveedores} selectedProveedores={selectedProveedores} />
+
                     </>
                 </div>
             </WhiteSectionsPage>
@@ -362,7 +346,7 @@ export const GenerarFacturaSujetoExcluido: React.FC<GenerarFacturaSujetoExcluido
                 <div className="pt-2 pb-5">
                     <div className="flex items-center justify-between">
                         <h1 className="text-start text-xl font-bold">
-                            Productos agregados
+                            Agregar producto o servicio
                         </h1>
                         <span className="flex gap-4">
                             <SendFormButton
@@ -374,26 +358,25 @@ export const GenerarFacturaSujetoExcluido: React.FC<GenerarFacturaSujetoExcluido
                     </div>
 
                     <Divider />
-                    <TablaProductosAgregados
-                        // setSelectedProducts={setSelectedProducts}
-                        setListProducts={setSelectedProducts}
-                        listProducts={selectedProducts}
-                        setCantidadListProducts={setCantidadListProducts}
-                        setIdListProducts={setIdListProducts}
-                        setDescuentoItem={setDescuentoItem}
-                        descuentoItem={descuentoItem}
-                        descuentosList={descuentosList}
-                        tipoDte={tipoDocumentoSelected}
-                    />
+                    <div className='text-start text-gray'>
+                        {!selectedProveedores && (
+                            <p>Seleccionar un proveedor</p>
+                        )
+                        }
 
-                    <ModalListaProdcutos
-                        tipoDte={tipoDocumentoSelected?.codigo ?? '01'}
-                        visible={showProductsModal}
-                        setVisible={setShowProductsModal}
-                        listProducts={listProducts}
-                        setSelectedProducts={setSelectedProducts}
-                        selectedProducts={selectedProducts}
-                    />
+                        {selectedProveedores && (
+                            <ContenedorTablaProductosPorProveedores
+                                selectedProveedores={selectedProveedores}
+                                setSelectedProducts={setSelectedProducts}
+                                selectedProducts={selectedProducts}
+                                setCantidadListProducts={setCantidadListProducts}
+                                setIdListProducts={setIdListProducts}
+                                setDescuentoItem={setDescuentoItem}
+                            />
+                        )}
+
+
+                    </div>
                 </div>
             </WhiteSectionsPage>
 
@@ -436,7 +419,7 @@ export const GenerarFacturaSujetoExcluido: React.FC<GenerarFacturaSujetoExcluido
                         <h1 className="text-start text-xl font-bold">Resumen de totales</h1>
                     </div>
                     <Divider className="m-0 p-0"></Divider>
-                    <ResumenTotalesCard
+                    {/* <ResumenTotalesCard
                         tipoDocumento={tipoDocumentoSelected?.codigo ?? '01'}
                         setTotalAPagar={setTotalAPagar}
                         totalAPagar={totalAPagar}
@@ -445,6 +428,15 @@ export const GenerarFacturaSujetoExcluido: React.FC<GenerarFacturaSujetoExcluido
                         setDescuentos={setDescuentos}
                         setSaldoFavor={setSaldoFavor}
                         saldoFavor={saldoFavor}
+                    /> */}
+                    <TablaTotalesSujetoExcluido
+                        selectedProducts={selectedProducts}
+                        cantidadListProducts={cantidadListProducts}
+                        idListProducts={idListProducts}
+                        descuentoGeneral={descuentoGeneral}
+                        setDescuentoGeneral={setDescuentoGeneral}
+                        totalAPagar={totalAPagar}
+                        setTotalAPagar={setTotalAPagar}
                     />
                 </div>
             </WhiteSectionsPage>

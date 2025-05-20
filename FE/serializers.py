@@ -1,8 +1,10 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+
+from INVENTARIO.serializers import ProductosProveedorSerializer
 from .models import (
-    INCOTERMS, Departamento, Descuento, EventoContingencia, FormasPago, LoteContingencia, OtrosDicumentosAsociado, Pais, Plazo, TipoContingencia,
+    INCOTERMS, Departamento, Descuento, DetalleFacturaSujetoExcluido, EventoContingencia, FacturaSujetoExcluidoElectronica, FormasPago, LoteContingencia, OtrosDicumentosAsociado, Pais, Plazo, TipoContingencia,
     TipoDocContingencia, TipoDomicilioFiscal, TipoDonacion, TipoPersona, TipoRetencionIVAMH, TipoTransmision, TipoTransporte, TiposServicio_Medico,
     Token_data, Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica,
     Receptor_fe, Tipo_dte, TipoMoneda, TipoUnidadMedida, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos,
@@ -263,4 +265,30 @@ class EventoContingenciaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = EventoContingencia
+        fields = '__all__'
+        
+        
+##############################################################################
+# SERIALIZER PARA FACTURA SUJETO EXCLUIDO 
+##############################################################################
+class DetalleFacturaSujetoExcluidoSerializer(serializers.ModelSerializer):
+    producto = ProductosProveedorSerializer(read_only=True)
+
+    class Meta:
+        model = DetalleFacturaSujetoExcluido
+        fields = [
+            'id', 'producto', 'cantidad', 'unidad_medida',
+            'precio_unitario', 'tiene_descuento', 'descuento'
+        ]
+
+class FacturaSujetoExcluidoSerializer(serializers.ModelSerializer):
+    detalles = DetalleFacturaSujetoExcluidoSerializer(
+        source='detallesSujetoExcluido', many=True, read_only=True
+    )
+    dtesujetoexcluido = serializers.StringRelatedField()
+    tipo_dte = serializers.StringRelatedField()
+    condicion_operacion = serializers.StringRelatedField()
+
+    class Meta:
+        model = FacturaSujetoExcluidoElectronica
         fields = '__all__'
