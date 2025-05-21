@@ -14,21 +14,15 @@ import { FormasdePagoForm } from '../components/Shared/configuracionFactura/form
 import { SelectModeloFactura } from '../components/Shared/configuracionFactura/modeloDeFacturacion/selectModeloFactura';
 import { SendFormButton } from '../../../../shared/buttons/sendFormButton';
 import {
-  ConfiguracionFacturaInterface,
-  defaultEmisorData,
   Descuentos,
-  EmisorInterface,
   ReceptorDefault,
   ReceptorInterface,
-  TipoDocumento,
-  TipoDTE,
 } from '../../../../shared/interfaces/interfaces';
 import { ProductosTabla } from '../components/FE/productosAgregados/productosData';
 import { ResumenTotalesCard } from '../components/Shared/resumenTotales/resumenTotalesCard';
 import {
   generarFacturaService,
   generarSujetoExcluidoService,
-  getFacturaCodigos,
 } from '../services/factura/facturaServices';
 import { CheckBoxRetencion } from '../components/Shared/configuracionFactura/Retencion/checkBoxRetencion';
 import { InputTextarea } from 'primereact/inputtextarea';
@@ -57,9 +51,6 @@ export const GenerarFacturaYCCF: React.FC<GenerarFacturaYCCProps> = ({ tipoDocum
   //lista de datos obtenidas de la api
 
   const [receptor, setReceptor] = useState<ReceptorInterface>(ReceptorDefault); // almacenar informacion del receptor
-  const [emisorData, setEmisorData] =
-    useState<EmisorInterface>(defaultEmisorData); // almcenar informacion del emisor
-  const [tipoDocumento, setTipoDocumento] = useState<TipoDocumento[]>([]); // almcenar tipo de dte
 
 
   const [descuentos, setDescuentos] = useState<Descuentos>({
@@ -320,7 +311,7 @@ export const GenerarFacturaYCCF: React.FC<GenerarFacturaYCCProps> = ({ tipoDocum
               setTipoTransmision={setTipoTransmision}
               tipoTransmision={tipoTransmision}
             />
-            {tipoDocumentoSelected?.codigo != "14" && <CheckBoxVentaTerceros /> /* Sujeto excluido no incluye venta a terceros */}
+            <CheckBoxVentaTerceros />
             <CheckBoxRetencion
               setTieneRetencionIva={setTieneRetencionIva}
               tieneRetencionIva={tieneRetencionIva}
@@ -332,11 +323,10 @@ export const GenerarFacturaYCCF: React.FC<GenerarFacturaYCCProps> = ({ tipoDocum
               setRetencionRenta={setRetencionRenta}
               tipoContibuyente={tipoContibuyente}
             />
-            {tipoDocumentoSelected?.codigo != "14" && //Sujeto excluido no tiene base imponible
               <CheckboxBaseImponible
                 baseImponible={baseImponible}
                 setBaseImponible={setBaseImponible}
-              />}
+              />
           </div>
         </div>
       </WhiteSectionsPage>

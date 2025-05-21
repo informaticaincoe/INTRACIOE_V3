@@ -39,7 +39,6 @@ export const ContenedorGenerarDocumentos = () => {
 
     const [emisorData, setEmisorData] = useState<EmisorInterface>(defaultEmisorData); // almcenar informacion del emisor
 
-
     useEffect(() => {
         const fetchTiposDocumento = async () => {
             try {
@@ -55,7 +54,6 @@ export const ContenedorGenerarDocumentos = () => {
                 console.log(error);
             }
         };
-
         fetchTiposDocumento();
     }, []);
 
