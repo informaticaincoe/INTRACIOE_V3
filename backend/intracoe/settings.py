@@ -28,11 +28,12 @@ DEBUG = True
 
 ALLOWED_HOSTS=['*']               
 
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',  # Asegúrate de que esta URL esté incluida
-    'http://localhost:5174',  # Asegúrate de que esta URL esté incluida
-    
-]
+# CORS_ALLOWED_ORIGINS = [
+#     'http://localhost:5173',  # Asegúrate de que esta URL esté incluida
+#     'http://localhost:5174',  # Asegúrate de que esta URL esté incluida
+# ]
+
+CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_CREDENTIALS = True
 
