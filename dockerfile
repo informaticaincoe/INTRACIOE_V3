@@ -47,10 +47,10 @@ WORKDIR /app/intracoe-frontend
 RUN npm install
 
 # Exponer puertos
-EXPOSE 8000 5173
+EXPOSE 8787 5173
 
 # Comando para ejecutar ambos procesos en paralelo
 WORKDIR /app
-CMD bash -c "python3 manage.py runserver 0.0.0.0:8000 & cd intracoe-frontend && npm run dev"
+CMD bash -c "python3 manage.py runserver 0.0.0.0:8787 & cd intracoe-frontend && npm run dev"
 
 
