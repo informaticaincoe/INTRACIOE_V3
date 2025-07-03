@@ -57,24 +57,49 @@ from django.core.mail import EmailMessage
 from AUTENTICACION.models import ConfiguracionServidor
 from weasyprint import HTML, CSS
 
-FIRMADOR_URL = ConfiguracionServidor.objects.filter(clave="firmador").first() #"http://192.168.2.25:8113/firmardocumento/"
-DJANGO_SERVER_URL = ConfiguracionServidor.objects.filter(clave="server_url").first() #"http://127.0.0.1:8000"
+from django.db.utils import OperationalError
+from django.core.exceptions import ObjectDoesNotExist
+
+try:
+    FIRMADOR_URL = ConfiguracionServidor.objects.filter(clave="firmador").first()
+except (OperationalError, ObjectDoesNotExist):
+    FIRMADOR_URL = None
+
+try:
+    DJANGO_SERVER_URL = ConfiguracionServidor.objects.filter(clave="server_url").first()
+except (OperationalError, ObjectDoesNotExist):
+    DJANGO_SERVER_URL = None
 
 SCHEMA_PATH_fe_fc_v1 = "FE/json_schemas/fe-fc-v1.json"
 
-CERT_PATH = ConfiguracionServidor.objects.filter(clave="certificado").first().url_endpoint #"FE/cert/06142811001040.crt"  # Ruta al certificado
+try:
+    CERT_PATH = ConfiguracionServidor.objects.filter(clave="certificado").first().url_endpoint
+except (AttributeError, OperationalError, ObjectDoesNotExist):
+    CERT_PATH = None
 
-# URLS de Hacienda (Pruebas y Producción)
-HACIENDA_URL_TEST = ConfiguracionServidor.objects.filter(clave="hacienda_url_test").first().url_endpoint #"https://apitest.dtes.mh.gob.sv/fesv/recepciondte"
-HACIENDA_URL_PROD = ConfiguracionServidor.objects.filter(clave="hacienda_url_prod").first().url_endpoint #"https://api.dtes.mh.gob.sv/fesv/recepciondte"
+try:
+    HACIENDA_URL_TEST = ConfiguracionServidor.objects.filter(clave="hacienda_url_test").first().url_endpoint
+except (AttributeError, OperationalError, ObjectDoesNotExist):
+    HACIENDA_URL_TEST = None
 
-#cada endpoint que tenga url quemada agregarlas en una tabla de config, firmador y djangoserver
-#BC 04/03/2025: Constantes
+try:
+    HACIENDA_URL_PROD = ConfiguracionServidor.objects.filter(clave="hacienda_url_prod").first().url_endpoint
+except (AttributeError, OperationalError, ObjectDoesNotExist):
+    HACIENDA_URL_PROD = None
+
 COD_CONSUMIDOR_FINAL = "01"
 COD_CREDITO_FISCAL = "03"
-VERSION_EVENTO_INVALIDACION =  ConfiguracionServidor.objects.filter(clave="version_evento_invalidacion").first().valor #2
-AMBIENTE = Ambiente.objects.get(codigo="01")#Hacer dinamico
-#AMBIENTE = "01"
+
+try:
+    VERSION_EVENTO_INVALIDACION = ConfiguracionServidor.objects.filter(clave="version_evento_invalidacion").first().valor
+except (AttributeError, OperationalError, ObjectDoesNotExist):
+    VERSION_EVENTO_INVALIDACION = None
+
+try:
+    AMBIENTE = Ambiente.objects.get(codigo="01")
+except (OperationalError, ObjectDoesNotExist):
+    AMBIENTE = None
+
 COD_FACTURA_EXPORTACION = "11"
 COD_SUJETO_EXCLUIDO = "14"
 COD_TIPO_INVALIDACION_RESCINDIR = 2
@@ -92,26 +117,88 @@ RELACIONAR_DOC_ELECTRONICO = 2
 COD_TIPO_CONTINGENCIA = "5"
 DTE_APLICA_CONTINGENCIA = ["01", "03", "04", "05", "06", "11", "14"]
 TIPO_TRANSMISION_CONTINGENCIA = 2
-RUTA_COMPROBANTES_PDF = ConfiguracionServidor.objects.filter(clave="ruta_comprobantes_dte").first()
-RUTA_COMPROBANTES_JSON = ConfiguracionServidor.objects.filter(clave="ruta_comprobante_json").first()#FE\json_facturas
-RUTA_JSON_FACTURA = ConfiguracionServidor.objects.filter(clave="json_factura").first()#FE\dtes\tipo_dte\
-URL_AUTH = ConfiguracionServidor.objects.filter(clave="url_autenticacion").first()
-HEADERS = ConfiguracionServidor.objects.filter(clave="headers").first()
-CONTENT_TYPE = ConfiguracionServidor.objects.filter(clave="content_type").first()
-INVALIDAR_DTE_URL = ConfiguracionServidor.objects.filter(clave="url_invalidar_dte").first()
-VERSION_EVENTO_CONTINGENCIA = ConfiguracionServidor.objects.filter(clave="version_evento_contingencia").first()
-FACTURAS_FIRMADAS_URL = ConfiguracionServidor.objects.filter(clave="json_facturas_firmadas").first()
-HACIENDA_CONTINGENCIA_URL = ConfiguracionServidor.objects.filter(clave="hacienda_contingencia_url").first()
-USER_AGENT = ConfiguracionServidor.objects.filter(clave="user_agent").first()
-SCHEMA_JSON = ConfiguracionServidor.objects.filter(clave="schema_json").first()
-CONSULTAR_DTE = ConfiguracionServidor.objects.filter(clave="consulta_dte").first()
-EMAIL_HOST_FE = ConfiguracionServidor.objects.filter(clave="email_host_fe").first()
 
-MONEDA_USD = TipoMoneda.objects.get(codigo="USD")
-UNI_MEDIDA_99 = TipoUnidadMedida.objects.get(codigo="99")
-RUTA_JSON_FACTURA = ConfiguracionServidor.objects.filter(clave="json_factura").first()
+try:
+    RUTA_COMPROBANTES_PDF = ConfiguracionServidor.objects.filter(clave="ruta_comprobantes_dte").first()
+except (OperationalError, ObjectDoesNotExist):
+    RUTA_COMPROBANTES_PDF = None
 
-formas_pago = [] #Asignar formas de pago
+try:
+    RUTA_COMPROBANTES_JSON = ConfiguracionServidor.objects.filter(clave="ruta_comprobante_json").first()
+except (OperationalError, ObjectDoesNotExist):
+    RUTA_COMPROBANTES_JSON = None
+
+try:
+    RUTA_JSON_FACTURA = ConfiguracionServidor.objects.filter(clave="json_factura").first()
+except (OperationalError, ObjectDoesNotExist):
+    RUTA_JSON_FACTURA = None
+
+try:
+    URL_AUTH = ConfiguracionServidor.objects.filter(clave="url_autenticacion").first()
+except (OperationalError, ObjectDoesNotExist):
+    URL_AUTH = None
+
+try:
+    HEADERS = ConfiguracionServidor.objects.filter(clave="headers").first()
+except (OperationalError, ObjectDoesNotExist):
+    HEADERS = None
+
+try:
+    CONTENT_TYPE = ConfiguracionServidor.objects.filter(clave="content_type").first()
+except (OperationalError, ObjectDoesNotExist):
+    CONTENT_TYPE = None
+
+try:
+    INVALIDAR_DTE_URL = ConfiguracionServidor.objects.filter(clave="url_invalidar_dte").first()
+except (OperationalError, ObjectDoesNotExist):
+    INVALIDAR_DTE_URL = None
+
+try:
+    VERSION_EVENTO_CONTINGENCIA = ConfiguracionServidor.objects.filter(clave="version_evento_contingencia").first()
+except (OperationalError, ObjectDoesNotExist):
+    VERSION_EVENTO_CONTINGENCIA = None
+
+try:
+    FACTURAS_FIRMADAS_URL = ConfiguracionServidor.objects.filter(clave="json_facturas_firmadas").first()
+except (OperationalError, ObjectDoesNotExist):
+    FACTURAS_FIRMADAS_URL = None
+
+try:
+    HACIENDA_CONTINGENCIA_URL = ConfiguracionServidor.objects.filter(clave="hacienda_contingencia_url").first()
+except (OperationalError, ObjectDoesNotExist):
+    HACIENDA_CONTINGENCIA_URL = None
+
+try:
+    USER_AGENT = ConfiguracionServidor.objects.filter(clave="user_agent").first()
+except (OperationalError, ObjectDoesNotExist):
+    USER_AGENT = None
+
+try:
+    SCHEMA_JSON = ConfiguracionServidor.objects.filter(clave="schema_json").first()
+except (OperationalError, ObjectDoesNotExist):
+    SCHEMA_JSON = None
+
+try:
+    CONSULTAR_DTE = ConfiguracionServidor.objects.filter(clave="consulta_dte").first()
+except (OperationalError, ObjectDoesNotExist):
+    CONSULTAR_DTE = None
+
+try:
+    EMAIL_HOST_FE = ConfiguracionServidor.objects.filter(clave="email_host_fe").first()
+except (OperationalError, ObjectDoesNotExist):
+    EMAIL_HOST_FE = None
+
+try:
+    MONEDA_USD = TipoMoneda.objects.get(codigo="USD")
+except (OperationalError, ObjectDoesNotExist):
+    MONEDA_USD = None
+
+try:
+    UNI_MEDIDA_99 = TipoUnidadMedida.objects.get(codigo="99")
+except (OperationalError, ObjectDoesNotExist):
+    UNI_MEDIDA_99 = None
+
+formas_pago = []
 documentos_relacionados = []
 tipo_dte_doc_relacionar = None
 documento_relacionado = False
@@ -121,7 +208,11 @@ descuentos_r = []
 tipo_documento_dte = "01"
 productos_inventario = None
 
-emisor_fe = Emisor_fe.objects.get(id=1)#Hacer dinamico el id de empresa
+try:
+    emisor_fe = Emisor_fe.objects.get(id=1)
+except (OperationalError, ObjectDoesNotExist):
+    emisor_fe = None
+
 
 #vistas para actividad economica
 def cargar_actividades(request):
@@ -225,20 +316,29 @@ class EmisorDeleteView(DeleteView):
 
 ########################################################################################################
 
-# Cargar el esquema JSON de la factura electrónica
 schema_path = "FE/json_schemas/fe-fc-v1.json"
-with open(SCHEMA_JSON.url, "r", encoding="utf-8") as schema_file:
-    factura_schema = json.load(schema_file)
 
-# Extraer los campos obligatorios del esquema JSON
-required_fields = factura_schema.get("required", [])
-properties = factura_schema.get("properties", {})
+if SCHEMA_JSON and SCHEMA_JSON.url:
+    try:
+        with open(SCHEMA_JSON.url, "r", encoding="utf-8") as schema_file:
+            factura_schema = json.load(schema_file)
 
-# Obtener etiquetas y tipos de datos
-form_fields = []
-for field in required_fields:
-    field_type = properties.get(field, {}).get("type", "text")
-    form_fields.append({"name": field, "type": field_type})
+        required_fields = factura_schema.get("required", [])
+        properties = factura_schema.get("properties", {})
+
+        form_fields = []
+        for field in required_fields:
+            field_type = properties.get(field, {}).get("type", "text")
+            form_fields.append({"name": field, "type": field_type})
+
+    except (FileNotFoundError, json.JSONDecodeError):
+        factura_schema = {}
+        form_fields = []
+
+else:
+    factura_schema = {}
+    form_fields = []
+
 
 ##################################################################################################
 
