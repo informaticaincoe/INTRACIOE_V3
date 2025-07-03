@@ -5,9 +5,6 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 
-# Instalar dependencias de desarrollo
-RUN npm audit fix
-
 COPY . .
 
 EXPOSE 5173
