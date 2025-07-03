@@ -49,7 +49,7 @@ from django.core.paginator import Paginator  # esta sigue igual
 from rest_framework.test import APIRequestFactory
 from django.forms.models import model_to_dict
 from rest_framework.response import Response
-from django.db.models import Count, Sum
+from django.db.models import Sum, F, ExpressionWrapper, DecimalField, Count
 from AUTENTICACION.models import ConfiguracionServidor
 from django.core.mail import EmailMessage
 from django.conf import settings
@@ -5102,8 +5102,13 @@ class TopProductosAPIView(generics.ListAPIView):
     def get(self, request):
         data = (
             DetalleFactura.objects
-          .values('producto', 'producto__descripcion')  # Agrupamos por producto
-            .annotate(total_vendido=Sum('cantidad'))  # Sumar cantidades
+            .values('producto', 'producto__descripcion')  # Agrupamos por producto
+            .annotate(
+                total_vendido=Sum('cantidad'),
+                total_ventas=Sum(
+                    ExpressionWrapper(F('cantidad') * F('producto__precio_venta'), output_field=DecimalField(max_digits=10, decimal_places=2))
+                )
+            )
              .order_by('-total_vendido')[:3]  # Top 3
         )
  

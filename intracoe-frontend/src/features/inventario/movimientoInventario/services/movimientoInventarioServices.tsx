@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { MovimientoInventarioParams } from '../../../../shared/interfaces/interfacesPagination';
 import { apiInventory } from '../../../../shared/services/apiInventory';
 import {
@@ -14,7 +15,8 @@ export const getAllMovimientosInventario = async (
   { page, limit }: MovimientoInventarioParams = {
     page: 1,
     limit: 10,
-  }
+  },
+  signal?: AbortSignal
 ) => {
   const queryParams = new URLSearchParams();
 
@@ -27,6 +29,7 @@ export const getAllMovimientosInventario = async (
       '/movimientos-inventario/',
       {
         params: { page, page_size: limit },
+        signal,
       }
     );
     const movimientos = response.data.results;
@@ -55,7 +58,11 @@ export const getAllMovimientosInventario = async (
       count: response.data.count,
     };
   } catch (error: any) {
-    console.error(error);
+    if (axios.isCancel(error)) {
+      console.log("Petición cancelada");
+    } else {
+      console.error(error);
+    }
   }
 };
 

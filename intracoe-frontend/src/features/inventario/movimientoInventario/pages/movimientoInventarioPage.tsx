@@ -31,7 +31,10 @@ export const MovimientoInventarioPage = () => {
   });
 
   useEffect(() => {
-    fetchMovimientosInventario();
+  const controller = new AbortController();
+  fetchMovimientosInventario(1, 10, controller.signal);
+
+  return () => controller.abort();
   }, []);
 
   useEffect(() => {
@@ -51,10 +54,10 @@ export const MovimientoInventarioPage = () => {
     fetchMovimientosInventario(page, limit);
   };
 
-  const fetchMovimientosInventario = async (page = 1, limit = 10) => {
+  const fetchMovimientosInventario = async (page = 1, limit = 10, signal?: AbortSignal) => {
     try {
       setLoading(true);
-      const response = await getAllMovimientosInventario({ page, limit });
+      const response = await getAllMovimientosInventario({ page, limit }, signal);
       if (response) {
         setMovimientoList(response);
         setPagination({

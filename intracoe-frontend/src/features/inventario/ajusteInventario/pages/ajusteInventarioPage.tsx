@@ -8,6 +8,8 @@ import { TablaAjusteInventario } from '../componentes/tablaAjusteInventario';
 import { TablaInventarioHeader } from '../componentes/tablaAjusteInventarioHeader';
 import { useSearchParams } from 'react-router';
 import { Pagination } from '../../../../shared/interfaces/interfacesPagination';
+import LoadingScreen from '../../../../shared/loading/loadingScreen';
+import axios from 'axios';
 
 export const AjusteInventarioPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -32,8 +34,14 @@ export const AjusteInventarioPage = () => {
   const [codigoFiltro, setCodigoFiltro] = useState<string>('');
 
   useEffect(() => {
-    fetchAjusteInventario();
+    const controller = new AbortController();
+    fetchAjusteInventario(1, 10, controller.signal);
+
+    return () => {
+      controller.abort();
+    };
   }, []);
+
 
   useEffect(() => {
     // Reinicia a la página 1 cada vez que los filtros cambian
@@ -52,9 +60,10 @@ export const AjusteInventarioPage = () => {
     fetchAjusteInventario(page, limit);
   };
 
-  const fetchAjusteInventario = async (page = 1, limit = 10) => {
+  const fetchAjusteInventario = async (page = 1, limit = 10, signal?: AbortSignal) => {
     try {
-      const response = await getAllAjusteInventario({ page, limit });
+      setLoading(true);
+      const response = await getAllAjusteInventario({ page, limit, signal });
       if (response) {
         setAjusteInventario(response);
         setPagination({
@@ -68,8 +77,6 @@ export const AjusteInventarioPage = () => {
         const params: Record<string, string> = {
           page: String(response.current_page),
           page_size: String(response.page_size),
-          // date_from: initialDateFrom,        // <-- futuro: filtro fecha
-          // date_to:   initialDateTo,
         };
         setSearchParams(params, { replace: true });
       } else {
@@ -81,10 +88,17 @@ export const AjusteInventarioPage = () => {
           has_previous: false,
         });
       }
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      if (axios.isCancel(error)) {
+        console.log('Petición cancelada Ajuste Inventario');
+      } else {
+        console.log(error);
+      }
+    } finally {
+      setLoading(false);
     }
   };
+
 
   const handleSearch = (nuevoCodigo: string) => {
     setCodigoFiltro(nuevoCodigo.trim());
@@ -92,7 +106,8 @@ export const AjusteInventarioPage = () => {
 
   return (
     <>
-      <Title text={'Ajuste de moivimiento de inventario'} />
+      {loading && <LoadingScreen />}
+      <Title text={'Ajuste de movimiento de inventario'} />
 
       <WhiteSectionsPage>
         <>
