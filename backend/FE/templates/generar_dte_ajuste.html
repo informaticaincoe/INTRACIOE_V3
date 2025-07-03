@@ -1,0 +1,1303 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+  .form-section { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+  .form-group { margin-bottom: 15px; }
+  .btn-primary, .btn-secondary, .btn-danger { font-size: 1.1em; }
+  select, input, textarea { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+  table, th, td { border: 1px solid #ccc; }
+  th, td { padding: 8px; text-align: center; }
+  .resumen { background: #e9ecef; padding: 10px; border-radius: 8px; margin-top: 20px; }
+
+  .subtable-header {
+    background-color: #d9edf7; 
+    text-align: left; 
+    padding: 10px; 
+    border: 2px solid #ccc; 
+    border-radius: 4px;
+  }
+  .subtable-header-content {
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+  }
+  .subtable-info {
+    line-height: 1.4; /* Ajusta la separación de líneas */
+  }
+</style>
+
+<div class="container mt-5">
+  <div class="card shadow p-4">
+    <h2 class="text-center mb-4">Generar Documento de Ajuste</h2>
+    
+    <!-- Sección Datos del Emisor -->
+    {% if emisor %}
+    <div class="mb-4">
+      <h4>Datos del Emisor</h4>
+      <p><strong>NIT:</strong> {{ emisor.nit }}</p>
+      {% comment %} Se muestra ambiente que ahora forma parte del emisor {% endcomment %}
+      <p><strong>Ambiente:</strong> {{ emisor.ambiente.descripcion }}</p>
+      <p><strong>Dirección Comercial:</strong> {{ emisor.direccion_comercial }}</p>
+      <p><strong>Teléfono:</strong> {{ emisor.telefono }}</p>
+      <p><strong>Email:</strong> {{ emisor.email }}</p>
+    </div>
+    {% endif %}
+    
+    <form onsubmit="validacionesFormulario(event)">
+      <!-- Sección de Configuración Adicional -->
+      <div class="form-section">
+        <h4>Configuración de Factura</h4>
+        <div class="row">
+          <!-- Condición de Operación -->
+          <div class="col-md-4">
+            <div class="form-group">
+              <label>Condición de Operación:</label>
+              <select id="condicion_op" name="condicion_operacion" class="form-control">
+                {% for tipo in tipooperaciones %}
+                  <option value="{{ tipo.id }}">{{ tipo.descripcion }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <!-- Tipo de Documento -->
+          <div class="col-md-4">
+            <div class="form-group">
+              <label>Tipo de Documento:</label>
+              <select name="tipo_documento_seleccionado" class="form-control" id="tipo_documento_select" onchange="actualizarProductos()">
+                <!-- <option value="">Seleccione Tipo de Documento</option> -->
+                {% for dte in tipoDocumentos %}
+                  <option value="{{ dte.codigo }}" {% if dte.codigo == documento_seleccionado %}selected{% endif %}>{{ dte.descripcion }}</option>
+                {% endfor %}
+            </select>            
+            </div>
+          </div>
+          <!-- Retención de IVA -->
+          <div class="col-md-4">
+            <div class="form-group">
+              <label>
+                <input type="checkbox" name="retencion_iva" id="retencion_iva_checkbox"> Retención de IVA
+              </label>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-retencion-iva" style="display:none;" data-toggle="modal" data-target="#retencionIvaModal">
+                Configurar Retención de IVA
+              </button>
+            </div>
+          </div>
+          <!-- Retención de Renta -->
+          <div class="col-md-4">
+            <div class="form-group">
+              <label>
+                <input type="checkbox" name="retencion_renta" id="retencion_renta_checkbox"> Retención de Renta
+              </label>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-retencion-renta" style="display:none;" data-toggle="modal" data-target="#retencionRentaModal">
+                Configurar Retención de Renta
+              </button>
+            </div>
+          </div>
+          <!--  No gravados (cargos/abonos que afectan la base imponible) -->
+          <div class="col-md-4">
+            <div class="form-group">
+              <label>
+                <input type="checkbox" name="no_gravado" id="no_gravado_checkbox"> Base imponible
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección Identificación -->
+      <div class="form-section">
+        <h4>Identificación</h4>
+        <div class="form-group">
+          <label>Número de Control:</label>
+          <input type="text" name="numero_control" class="form-control" readonly id="numero_control_input" value="{{ numero_control }}">
+        </div>
+        <div class="form-group">
+          <label>Código de Generación:</label>
+          <input type="text" name="codigo_generacion" class="form-control" readonly value="{{ codigo_generacion }}">
+        </div>
+        <div class="form-group">
+          <label>Fecha de Generación:</label>
+          <input type="date" name="fecha_generacion" class="form-control" readonly value="{{ fecha_generacion|date:'Y-m-d' }}">
+        </div>
+        <div class="form-group">
+          <label>Hora de Generación:</label>
+          <input type="time" name="hora_generacion" class="form-control" readonly value="{{ hora_generacion }}">
+        </div>
+
+      <!-- Sección Receptor -->
+      <div class="form-section">
+        <h4>Seleccione el Receptor</h4>
+        <div class="form-group">
+          <label>Receptor:</label>
+          <select class="form-control" id="receptor-select" name="receptor_id">
+            <option value="">Seleccione un receptor</option>
+            {% for receptor in receptores %}
+              <option value="{{ receptor.id }}">{{ receptor.num_documento }} - {{ receptor.nombre }}</option>
+            {% endfor %}
+            <option value="nuevo">Añadir nuevo receptor</option>
+          </select>
+        </div>
+        <div id="nuevo-receptor" style="display: none;">
+          <h5>Nuevo Receptor</h5>
+          <div class="form-group">
+            <label>NIT:</label>
+            <input type="text" name="nit_receptor" class="form-control" placeholder="NIT">
+          </div>
+          <div class="form-group">
+            <label>Nombre o Razón Social:</label>
+            <input type="text" name="nombre_receptor" class="form-control" placeholder="Nombre o Razón Social">
+          </div>
+          <div class="form-group">
+            <label>NRC:</label>
+            <input type="text" name="nrc_receptor" class="form-control" placeholder="NRC">
+          </div>
+          <div class="form-group">
+            <label>Dirección:</label>
+            <textarea name="direccion_receptor" class="form-control" placeholder="Dirección"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Teléfono:</label>
+            <input type="text" name="telefono_receptor" class="form-control" placeholder="Teléfono">
+          </div>
+          <div class="form-group">
+            <label>Correo Electrónico:</label>
+            <input type="email" name="correo_receptor" class="form-control" placeholder="Correo Electrónico">
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección Documento a Relacionar -->
+      <div class="form-group">
+        <div class="row">
+          <div class="col-md-5">
+            <label>Tipo de documento a relacionar:</label>
+            <select name="documento_seleccionado" class="form-control" id="documento_select">
+              <option value="S">Seleccione el tipo de documento a relacionar</option>
+              {% for tipo in tipoGenDocumentos %}
+                <option value="{{ tipo.codigo }}">{{ tipo.descripcion }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <!-- Aquí se mostrará según el tipo relacionado -->
+          <div class="col-md-4" id="div-electronic" style="display: none;">
+            <label>Documento (Electronico):</label>
+            <input type="text" name="documento_relacionado" class="form-control" id="documento_relacionado_input">
+          </div>
+          <div class="col-md-4" id="div-physical" style="display: none;">
+            <label>Documento (Físico):</label>
+            <button type="button" class="btn btn-secondary" onclick="abrirModalDocFisico()">+ Físico</button>
+          </div>
+          <div class="col-md-3">
+            <br/>
+            <button type="button" class="btn btn-secondary" id="btn_add_relacion" onclick="cargarFacturaRelacionada()">Agregar</button>
+          </div>
+          <div class="col-md-12 mt-2">
+            <p><strong>Total Pagar documento relacionado:</strong> <span id="total_doc_relacionado"></span>{{ total_pagar_doc_r }}</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Botón para abrir el modal de productos -->
+      <!--<div class="form-section">
+        <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#productosModal">
+          + Productos
+        </button>
+      </div> -->
+      
+      <!-- Sección Tabla de Productos Agregados -->
+      <div class="form-section">
+        <h4>Productos Agregados</h4>
+        <table id="tabla-productos">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Precio Unitario (Neto)</th>
+              <th>IVA Unitario</th>
+              <th>Cantidad</th>
+              <th>Total Neto</th>
+              <th>Descuento por ítem</th>
+              <th>Ventas Gravadas</th>
+              <th>IVA por ítem</th>
+              <th>Aplica IVA</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Se llenará dinámicamente -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="container mt-4">
+        <h4>Facturas Relacionadas</h4>
+        <!-- Contenedor con alto máximo y scroll vertical -->
+        <div id="facturasAccordion" class="accordion" style="max-height: 400px; overflow-y: auto;">
+          <!-- Los ítems del acordeón se agregarán aquí dinámicamente -->
+        </div>
+      </div>
+      
+      <!-- Sección Resumen y Descuento Global -->
+      <div class="resumen">
+        <h4>Resumen de Totales</h4>
+        <div class="row">
+          <div class="col-md-4">
+            <p><strong>SubTotal Neto:</strong> $<span id="subtotal-neto">0.00</span></p>
+          </div>
+          <div class="col-md-4">
+            <p><strong>Total IVA:</strong> $<span id="total-iva">0.00</span></p>
+          </div>
+          <div class="col-md-4">
+            <p><strong>Sumatoria de ventas:</strong> $<span id="total-incl">0.00</span></p>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label>Descuento (%)</label>
+              <input type="number" id="descuento_global" name="descuento_global_input" class="form-control" value="0" min="0" max="100" oninput="actualizarResumen()">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label>Descuento (Ventas g.)</label>
+              <input type="number" id="descuento_gravado" name="descuento_gravado_input" class="form-control" value="0" min="0" max="100" oninput="actualizarResumen()">
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            <p><strong>Monto Descuento:</strong> $<span id="monto_descuento" name="monto_descuento_input">0.00</span></p>
+          </div>
+          <div class="col-md-6">
+            <strong>Saldo a Favor:</strong><input name="saldo_favor" id="saldo_favor_input" class="saldo-favor-input" value="0">
+          </div>
+          <div class="col-md-6">
+            <p><strong>Sub Total:</strong> $<span id="sub-total-resumen">0.00</span></p>
+          </div>
+          <div class="col-md-6" id="tributo_id">
+            <p><strong>Valor tributo:</strong> $<span id="monto_tributo" name="tributo_input" class="tributo-input">0.00</span></p>
+          </div>
+          <div class="col-md-6">
+            <p><strong>Monto Total Op:</strong> $<span id="total-operacion">0.00</span></p>
+          </div>
+          <div class="col-md-6">
+            <p><strong>Total a Pagar:</strong> $<span id="total-pagar">0.00</span></p>
+          </div>
+      </div>
+
+      <div class="extension">
+        <h4>Extensión</h4>
+        <div class="form-group">
+          <label>Nombre responsable:</label>
+          <input type="text" id="nombre_responsable" name="resp_nombre_input" class="form-control" placeholder="Nombre del Responsable">
+        </div>
+        <div class="form-group">
+          <label>Número de documento del responsable:</label>
+          <input type="text" id="documento_responsable" name="resp_documento_input" class="form-control" placeholder="Número de Identificación">
+        </div>
+      </div>
+      
+      <!-- Botón de Envío -->
+      <button type="submit" id="btnGenerar" class="btn btn-primary mt-3">Generar Factura</button>
+    </form>
+  </div>
+</div>
+
+
+<!-- Modal para seleccionar productos (sin descuento en el modal) -->
+<div class="modal fade" id="productosModal" tabindex="-1" role="dialog" aria-labelledby="productosModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="productosModalLabel">Seleccionar Productos</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <table id="tabla-productos-modal" class="table">
+          <thead>
+            <tr>
+              <th>Seleccionar</th>
+              <th>Producto</th>
+              <th>Precio Unitario (IVA incluido)</th>
+              <th>Cantidad</th>
+              <th>Tipo de ítem</th>
+              <th>Descuento</th>
+              <th>P. IVA</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for producto in productos %}
+            <tr data-id="{{ producto.id }}">
+              <td><input type="checkbox" class="producto-checkbox"></td>
+              <td>{{ producto.codigo }} - {{ producto.descripcion }}</td>
+              <!-- Se guarda el precio con IVA en data-precio -->
+              <td class="precio-unitario" data-precio="{{ producto.preunitario|floatformat:'6' }}">{{ producto.preunitario|floatformat:'2' }}</td>
+              <td><input type="number" class="cantidad-input" value="1" min="1" style="width: 80px;"></td>
+              <td class="tipo-item" >
+                <select name="tipo_item_seleccionado" class="form-control" id="tipo_item_select">
+                  {% for item in tipoItems %}
+                    <option value="{{ item.id }}">{{ item.descripcion }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td><input type="hidden" class="cantidad-input" min="1" style="width: 80px;"></td>
+              <td>
+                <select name="descuento_seleccionado" class="descuento-input" id="descuento_select" onchange="seleccionarDescuento(this)">
+                  <option value="0">Sin descuento</option>
+                  {% for descuento in descuentos %}
+                    <option class="descuento-item" data-descuento="{{descuento.porcentaje}}" value="{{ descuento.porcentaje }}"> {{ descuento.porcentaje }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td class="producto-con-iva" data-prod-iva="{{producto.precio_iva}}">{{ producto.precio_iva }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="cargarProductosModal()">Cargar Productos</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para Documento Físico -->
+<div class="modal fade" id="modalDocFisico" tabindex="-1" aria-labelledby="modalDocFisicoLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalDocFisicoLabel">Documento Físico</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Campos que se enviarán para el documento físico -->
+        <div class="mb-3">
+          <label for="fisico-numero-control" class="form-label">Número de Control</label>
+          <input type="text" id="fisico-numero-control" class="form-control">
+        </div>
+        <div class="mb-3">
+          <label for="fisico-codigo-generacion" class="form-label">Código de Generación</label>
+          <input type="text" id="fisico-codigo-generacion" class="form-control">
+        </div>
+        <div class="mb-3">
+          <label for="fisico-fecha" class="form-label">Fecha</label>
+          <input type="date" id="fisico-fecha" class="form-control">
+        </div>
+        <div class="mb-3">
+          <label for="fisico-hora" class="form-label">Hora</label>
+          <input type="time" id="fisico-hora" class="form-control">
+        </div>
+        <!-- Puedes agregar más campos si es necesario -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="guardarDocFisico()">Guardar Documento</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para seleccionar formas de pago -->
+<div class="modal fade" id="formasPagoModal" tabindex="-1" role="dialog" aria-labelledby="formasPagoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="formaPagoModalLabel">Seleccionar Forma de Pago</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <p><strong>Total a Pagar:</strong> $<span id="total-pagar-fp">0.00</span></p>
+      <p><strong>Recibido:</strong> $<span id="recibido">0.00</span></p>
+
+      <div class="modal-body">
+        <table id="tabla-formaspago-modal" class="table">
+          <thead>
+            <tr>
+              <th>Codigo</th>
+              <th>Forma de Pago</th>
+              <th>Monto</th>
+              <th>Periodo de plazo</th>
+              <th># Referencia</th>
+              <th>Seleccionar</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for fp in formasPago %}
+            <tr data-id="{{ fp.id }}">
+              <td >{{ fp.codigo }}</td>
+              <td>{{ fp.descripcion }}</td>
+              <td><input type="number" id="monto_input" class="monto-input" style="width: 90px;" min="0" max="100" value="0"></td>
+              <td><input type="number" id="periodo_input" class="periodo-input" style="width: 90px;" min="0" value="0"></td>
+              <td><input id="referencia_input" class="referencia-input" style="width: 90px;"></td>
+              <td><input type="checkbox" id="checkbox_fp" class="formapago-checkbox" onclick="cargarFormasPagoModal({{fp.id}})"></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal para retención de IVA -->
+<div class="modal fade" id="retencionIvaModal" tabindex="-1" role="dialog" aria-labelledby="retencionIvaModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="retencionIvaModalLabel">Configurar Retención de IVA</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Porcentaje de Retención de IVA:</label>
+          <input type="number" id="porcentaje_retencion_iva" class="form-control" min="0" max="100" value="0">
+        </div>
+        <div class="form-group">
+          <label>Seleccione los productos a los que se aplicará la retención:</label>
+          <div id="productos-retencion-iva">
+            <!-- Se cargarán dinámicamente -->
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="guardarRetencionIVA()">Guardar</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para retención de Renta -->
+<div class="modal fade" id="retencionRentaModal" tabindex="-1" role="dialog" aria-labelledby="retencionRentaModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="retencionRentaModalLabel">Configurar Retención de Renta</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Porcentaje de Retención de Renta:</label>
+          <input type="number" id="porcentaje_retencion_renta" class="form-control" min="0" max="100" value="0">
+        </div>
+        <div class="form-group">
+          <label>Seleccione los productos a los que se aplicará la retención:</label>
+          <div id="productos-retencion-renta">
+            <!-- Se cargarán dinámicamente -->
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="guardarRetencionRenta()">Guardar</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap 5 y jQuery (si lo usas) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.js"
+        integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
+        crossorigin="anonymous"></script>
+
+<script>
+
+  var facturasRelacionadas = [];
+
+  // Función para abrir el modal de Documento Físico
+  function abrirModalDocFisico() {
+    var modal = new bootstrap.Modal(document.getElementById('modalDocFisico'));
+    modal.show();
+  }
+
+    // Mostrar campo o botón según el tipo de documento relacionado
+    document.getElementById("documento_select").addEventListener("change", function(){
+      if(this.value === "2") { // Electrónico
+        document.getElementById("div-electronic").style.display = "block";
+        document.getElementById("div-physical").style.display = "none";
+        document.getElementById("btn_add_relacion").style.display = "block";
+      } else if(this.value === "1") { // Físico
+        document.getElementById("div-electronic").style.display = "none";
+        document.getElementById("div-physical").style.display = "none";
+        document.getElementById("btn_add_relacion").style.display = "none";
+        abrirModalDocFisico();
+      } else {
+        document.getElementById("div-electronic").style.display = "none";
+        document.getElementById("div-physical").style.display = "none";
+      }
+    });
+
+  // Mostrar u ocultar botones de retención según checkbox
+  document.getElementById("retencion_iva_checkbox").addEventListener("change", function () {
+      document.getElementById("btn-retencion-iva").style.display = this.checked ? "inline-block" : "none";
+  });
+  document.getElementById("retencion_renta_checkbox").addEventListener("change", function () {
+      document.getElementById("btn-retencion-renta").style.display = this.checked ? "inline-block" : "none";
+  });
+
+  // Mostrar u ocultar formulario para receptor nuevo
+  document.addEventListener("DOMContentLoaded", function () {
+      document.getElementById("receptor-select").addEventListener("change", function () {
+          let nuevoReceptorDiv = document.getElementById("nuevo-receptor");
+          nuevoReceptorDiv.style.display = this.value === "nuevo" ? "block" : "none";
+      });
+  });
+
+  //Obtener seleccion del descuento
+  let descuento_sel_item = 0
+  function seleccionarDescuento(porcentajeSelect) {
+    let porcentaje = parseFloat(porcentajeSelect.value);
+    descuento_sel_item = porcentaje;
+  }
+
+  let totalCompletado = false
+  // Función para cargar formas depago desde el modal
+  function cargarFormasPagoModal(fpId) {
+    const checkboxs = document.querySelectorAll('.formapago-checkbox');
+    const condicion_operacion = document.getElementById('condicion_op').value;
+    const saldo_favor = document.getElementById('saldo_favor_input').value
+    const total_pagar = document.getElementById("total-pagar").textContent;
+    var modalRows = document.querySelectorAll('#tabla-formaspago-modal tbody tr');
+    var recibido_fp = 0
+
+      modalRows.forEach(function(row) {
+          var checkbox = row.querySelector('.formapago-checkbox');
+          if (checkbox.checked) {
+              //var fpId = row.getAttribute('data-id');
+              var fpDescripcion = row.cells[1].textContent.trim();
+              var monto = 0
+              var sumatoria_recibido_fp = 0
+              var total_pagar_resumen = 0
+
+              //campos adicionales
+              const fila = checkbox.closest('tr');  // Obtener la fila seleccionada
+              const fpId = fila.getAttribute('data-id');
+              const num_referencia_fp = fila.querySelector('.referencia-input').value;
+              const monto_fp = fila.querySelector('.monto-input').value;
+              const periodo_plazo = fila.querySelector('.periodo-input').value
+              monto = parseFloat(monto_fp)
+
+              console.log("total completado = ", totalCompletado, "sumatoria_recibido = ", sumatoria_recibido_fp, "total pagar = ", total_pagar_resumen)
+              //Si el pago recibido coincide con el total a pagar no permitir agregar mas formas de pago
+              if (totalCompletado) {
+                checkbox.checked = false;  // Desmarcar el checkbox si ya se selecciono
+                return;
+              }
+              
+              if(totalCompletado==false && sumatoria_recibido_fp < total_pagar_resumen){
+                console.log("total no aplica = ", recibido_fp)
+                recibido_fp += monto
+                total_pagar_resumen = document.getElementById("total-pagar").textContent
+
+                sumatoria_recibido_fp = parseFloat(recibido_fp).toFixed(2)
+                document.getElementById("recibido").textContent = sumatoria_recibido_fp;
+                checkbox.checked = true;
+                checkbox.disabled = false; 
+                totalCompletado = false; 
+              }else if(sumatoria_recibido_fp > total_pagar_resumen){
+                console.log("total recibido mayor= ", recibido_fp)
+                if (checkbox.checked) {
+                  totalCompletado = true; 
+                  checkbox.disabled = true;
+                  monto_fp -= 0;
+                  document.getElementById("recibido").textContent = parseFloat(recibido_fp).toFixed(2);
+                  alert("El monto total ya ha sido alcanzado, no puedes seleccionar más.");
+                  return;
+                }
+              }else{
+                recibido_fp += monto
+                document.getElementById("recibido").textContent = parseFloat(recibido_fp).toFixed(2);
+              }
+              console.log("total recibido = ", recibido_fp)
+
+              fetch(`/fe/obtener-forma-pago/?fp_id=${fpId}&num_ref=${num_referencia_fp}&monto_fp=${monto_fp}&periodo=${periodo_plazo}&saldo_favor_r=${saldo_favor}&condicion_op=${condicion_operacion}&total_pagar=${total_pagar}`)
+                  .then(response => {
+                    if (!response.ok) {  // Verifica si la respuesta fue exitosa (200-299)
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();  // Intenta convertir la respuesta a JSON
+                  })
+                  .catch(error => console.error('Error:', error));
+          }
+      });
+      console.log('Fila:', modalRows);
+  }
+
+  // Función para cargar productos desde el modal
+  function cargarProductosModal() {
+    const documentoRelacionado = document.getElementById('documento_relacionado_input').value;
+    const dte_seleccionado = document.getElementById('tipo_documento_select').value;
+
+      var modalRows = document.querySelectorAll('#tabla-productos-modal tbody tr');
+      modalRows.forEach(function(row) {
+          var checkbox = row.querySelector('.producto-checkbox');
+          if (checkbox.checked) {
+              var productoId = row.getAttribute('data-id');
+              var productoText = row.cells[1].textContent.trim();
+              var precio_con_iva = row.querySelector('.producto-con-iva').getAttribute('data-prod-iva');
+
+              //PRECIO Unitario
+              var precio_incl = roundHalfUp( row.querySelector('.precio-unitario').getAttribute('data-precio').replace(',', '.'), 6);
+              var precioStr = row.querySelector('.precio-unitario').getAttribute('data-precio');
+              var precio = parseFloat(precioStr.replace(',', '.'));
+              var cantidad = row.querySelector('.cantidad-input').value;
+              var tipoItem = row.querySelector('.tipo_item_select');
+              var numero_relacionado = documentoRelacionado;
+              //Obtener seleccion del descuento
+              //var descuentoSeleccionado = document.getElementById('descuento_select'); //row.querySelector('.descuento_select');
+              agregarProductoFilaTabla(productoId, productoText, precio_incl, cantidad, precio_con_iva);
+          }
+      });
+      actualizarResumen();
+      $('#productosModal').modal('hide');
+  }
+
+  // Función para agregar una fila a la tabla de productos
+  function agregarProductoFilaTabla(productoId, productoText, precio_incl, cantidad, aplica_iva) {
+    const tipo_dte = document.getElementById('tipo_documento_select').value;
+      // Calcular precio neto y IVA unitario
+      let neto_unitario = 0;
+      let iva_unitario = 0;
+      let qty = 0;
+      let total_neto = 0;
+      let total_iva = 0;
+      let total_incl = 0;
+      let monto_descuento = 0;
+      let porcentaje_descu = 0;
+      let total_precio_inc = 0;
+
+      porcentaje_descu = descuento_sel_item.toFixed(2);
+      porcentaje_descu = roundHalfUp( (porcentaje_descu / 100), 6);
+
+      //Si es consumidor final ("01") el precio debe mostrarse con iva
+      qty = parseFloat(cantidad);
+      //total_precio_inc = roundHalfUp( (precio_incl * qty) , 6);
+      neto_unitario = roundHalfUp(precio_incl, 6);
+      
+      iva_unitario = roundHalfUp((neto_unitario * 0.13), 6);
+      total_neto = roundHalfUp((neto_unitario * qty), 6);
+      monto_descuento = roundHalfUp( (total_neto * porcentaje_descu), 6);
+      let pre_unitario_iva = roundHalfUp(total_neto, 6);
+      total_incl = roundHalfUp( (pre_unitario_iva - roundHalfUp(monto_descuento, 2)), 6) ;
+      total_iva = roundHalfUp((total_incl * 0.13), 6);
+
+      // Verificar si el producto ya está agregado (sumar cantidad si es el caso)
+      var tableBody = document.querySelector('#tabla-productos tbody');
+      var existe = false;
+      tableBody.querySelectorAll('tr').forEach(function(row) {
+          if (row.getAttribute('data-id') === productoId) {
+              var inputCantidad = row.querySelector('.cantidad-input');
+              let nuevaCantidad = parseFloat(inputCantidad.value) + qty;
+              inputCantidad.value = nuevaCantidad;
+              actualizarFila(inputCantidad);
+              existe = true;
+          }
+      });
+      
+      if (existe) return;
+      var row = document.createElement('tr');
+      row.setAttribute('data-id', productoId);
+      row.innerHTML = `
+          <td>${productoText}</td>
+          <td class="precio-neto" data-precio-neto="${neto_unitario}">${parseFloat(neto_unitario).toFixed(2)}</td>
+          <td class="iva-unitario" data-iva-unitario="${iva_unitario}">${parseFloat(iva_unitario).toFixed(2)}</td>
+          <td><input type="number" class="cantidad-input" value="${qty}" min="1" oninput="actualizarFila(this)"></td>
+          <td class="total-neto" data-total-neto="${total_neto}">${parseFloat(total_neto).toFixed(2)}</td>
+          <td class="descuento-item">${parseFloat(porcentaje_descu * 100)}%</td>
+          <td class="total-incl" data-total-incl="${total_incl}">${parseFloat(total_incl).toFixed(2)}</td>
+          <td class="total-iva">${parseFloat(total_iva).toFixed(2)}</td>
+          <td class="aplica-iva">${aplica_iva}</td>
+          <td><button type="button" class="btn btn-danger btn-sm" onclick="eliminarProductoFila(this)">Eliminar</button></td>
+      `;
+      tableBody.appendChild(row);
+      descuento_sel_item = 0;
+      porcentaje_descu = 0;
+  }
+
+  //redondeo hacia arriba ROUND_HALF_UP
+  function roundHalfUp(value, decimals) {
+    var multiplier = Math.pow(10, decimals);
+    return Math.round(value * multiplier) / multiplier;
+  }
+
+  // Actualizar los valores de una fila cuando cambia la cantidad
+  function actualizarFila(input) {
+    const tipo_dte = document.getElementById('tipo_documento_select').value;
+
+      let row = input.closest('tr');
+      let precio_neto = roundHalfUp(row.querySelector('.precio-neto').getAttribute('data-precio-neto'), 6);
+      let iva_unitario = roundHalfUp(row.querySelector('.iva-unitario').getAttribute('data-iva-unitario'), 6);
+      let cantidad = parseFloat(input.value) || 0;
+      let total_neto = roundHalfUp( (precio_neto * cantidad), 6);
+      let descuento_item = parseFloat( (row.querySelector('.descuento-item').textContent).replace('%', '') / 100 );
+      let monto_descuento_item = roundHalfUp( (total_neto * descuento_item), 6);
+      //Cuando es FE el precio unitario ya incluye iva por lo que al total con iva no debe sumarle el iva unitario
+      let total_incl = roundHalfUp( (total_neto - roundHalfUp(monto_descuento_item, 2)), 6);
+      let total_iva = roundHalfUp( (total_incl * 0.13), 6);
+      
+      row.querySelector('.total-neto').textContent = roundHalfUp(total_neto, 2);
+      row.querySelector('.total-iva').textContent = parseFloat(total_iva).toFixed(2);
+      row.querySelector('.total-incl').textContent = parseFloat(total_incl).toFixed(2);
+      actualizarResumen();
+  }
+
+  // Eliminar una fila de producto
+  function eliminarProductoFila(btn) {
+      var row = btn.closest('tr');
+      row.parentNode.removeChild(row);
+      actualizarResumen();
+      window.onload = actualizarProductos;
+  }
+
+
+  // Actualiza el resumen global sumando la tabla principal y todas las facturas relacionadas
+  function actualizarResumen() {
+    const tipo_dte = document.getElementById('tipo_documento_select').value;
+
+    let sumNeto = 0, sumIVA = 0, sumIncl = 0, porcentajeDescu = 0, sumMontoDescu = 0, sumIncIva = 0;
+    let descu_gravado = 0, suma_descuentos = 0, montoNeto = 0, montoDescu = 0;
+    let valorTributo = 0, montoTotalOperacion = 0;
+
+    // Sumatoria descuento por item
+    //porcentajeDescu = descuento_sel_item;
+
+    // Sumar productos de la tabla principal
+    const mainRows = document.querySelectorAll('#tabla-productos tbody tr:not([data-skip-sum])');
+    mainRows.forEach(function(row) {
+      let netoCell = row.querySelector('.total-neto').getAttribute('data-total-neto');
+      if (netoCell) {
+        sumNeto += parseFloat(netoCell) || 0;
+        sumIVA += parseFloat(row.querySelector('.total-iva').textContent) || 0;
+        sumIncl += roundHalfUp( ((row.querySelector('.total-incl').textContent) || 0), 6);
+        sumIncIva += roundHalfUp( ((row.querySelector('.total-incl').getAttribute('data-total-incl')) || 0), 6);
+
+        montoNeto = parseFloat(netoCell) || 0;
+        porcentajeDescu = ( (parseFloat(row.querySelector('.descuento-item')) || 0) / 100);
+        montoDescu = roundHalfUp( (montoNeto * porcentajeDescu), 6);
+        sumMontoDescu += roundHalfUp( montoDescu, 2);
+      }
+    });
+    
+    // Sumar productos de las facturas relacionadas en el acordeón
+    const invoiceRows = document.querySelectorAll('#facturasAccordion .accordion-body table tbody tr');
+    invoiceRows.forEach(function(row) {
+      let netoCell = row.querySelector('.total-neto').getAttribute('data-total-neto');
+      if (netoCell) {
+        sumNeto += parseFloat(netoCell) || 0;
+        sumIVA += parseFloat(row.querySelector('.total-iva').textContent) || 0;
+        //sumIncl += parseFloat(row.querySelector('.total-incl').getAttribute('data-total-incl')) || 0;
+        sumIncl += roundHalfUp( ((row.querySelector('.total-incl').textContent) || 0), 6);
+        sumIncIva += roundHalfUp( ((row.querySelector('.total-incl').getAttribute('data-total-incl')) || 0), 6);
+
+        montoNeto = parseFloat(netoCell) || 0;
+        porcentajeDescu = ( (parseFloat(row.querySelector('.descuento-item').textContent) || 0) / 100);
+        montoDescu = roundHalfUp( (montoNeto * porcentajeDescu), 6);
+        sumMontoDescu += roundHalfUp( montoDescu, 2);
+      }
+    });
+    
+    document.getElementById("subtotal-neto").textContent = roundHalfUp(sumNeto, 2);
+    document.getElementById("total-iva").textContent = sumIVA.toFixed(2);
+    document.getElementById("total-incl").textContent = sumIncl.toFixed(2);
+
+    //Monto global y monto a ventas gravadas
+    //descu_gravado = parseFloat(document.getElementById("descuento_gravado").value) || 0;
+    monto_porc_gravado = parseFloat(document.getElementById("descuento_gravado").value / 100) || 0;
+    descu_gravado = roundHalfUp( (sumIncl * monto_porc_gravado), 6);
+    suma_descuentos = roundHalfUp( (sumMontoDescu + descu_gravado), 6);
+
+    let descuentoPorc = parseFloat(document.getElementById("descuento_global").value) || 0;
+    let montoDescuento = (sumIncl * descuentoPorc / 100).toFixed(2);
+    let porcDescuento = (parseFloat(descuentoPorc / sumIncl).toFixed(2)) * 100;
+
+    //Descuento global de ventas gravadas
+    let descuentoPorcGravado = parseFloat(document.getElementById("descuento_gravado").value) || 0;
+    let montoDescuGravado = (sumIncl * descuentoPorcGravado / 100).toFixed(2);
+    let subTotal = (sumIncl - montoDescuGravado - montoDescuento);
+    
+    valorTributo = roundHalfUp(sumIVA, 2);
+    montoTotalOperacion = (subTotal + valorTributo );
+    let totalPagar = montoTotalOperacion ;
+
+    console.log("sum inc= ", sumIncl, "tributo= ", valorTributo)
+    
+    // Es la sumatoria de descuentos por item, monto global de descuento a ventas no sujetas, exenta y gravadas
+    document.getElementById("monto_descuento").textContent = parseFloat(suma_descuentos).toFixed(2);
+    document.getElementById("total-pagar").textContent = parseFloat(totalPagar).toFixed(2);
+    document.getElementById("total-pagar-fp").textContent = parseFloat(totalPagar).toFixed(2);
+    document.getElementById("sub-total-resumen").textContent = parseFloat(subTotal).toFixed(2);
+    document.getElementById("monto_tributo").textContent = parseFloat(valorTributo).toFixed(2);
+    document.getElementById('total-operacion').textContent = parseFloat(montoTotalOperacion).toFixed(2);
+    
+    let btnGenerar = document.getElementById("btnGenerar")
+    //let tipo_dte = document.getElementById('tipo_documento_select').value;
+
+    if (document.getElementById("total-pagar").textContent > total_ccf && tipo_dte=="05") {
+      alert("La nota de crédito no debe superar el saldo adeudado del crédito fiscal. ",)
+      btnGenerar.disabled  = true;
+      return;
+    }if (document.getElementById("total-pagar").textContent < total_ccf && tipo_dte=="06") {
+      alert("La nota de débito no debe ser menor del saldo adeudado en el crédito fiscal. ", )
+      btnGenerar.disabled  = true;
+      return;
+    }else{
+      btnGenerar.disabled  = false;
+      return;
+    }
+  }
+
+
+  function guardarRetencionIVA() {
+      $('#retencionIvaModal').modal('hide');
+  }
+  function guardarRetencionRenta() {
+      $('#retencionRentaModal').modal('hide');
+  }
+
+  async function enviarFormulario(event) {
+      event.preventDefault();
+      
+      // Recopilar datos del formulario
+      let formData = new FormData(event.target);
+      let jsonData = {};
+      formData.forEach((value, key) => {
+          jsonData[key] = value;
+      });
+      // Agregar el valor del select "tipo_documento"
+      jsonData["tipo_documento_select"] = document.querySelector('select[name="tipo_documento_seleccionado"]').value;
+
+      // Agregar el valor del numero de documento a relacionar
+      jsonData["documento_select"] = document.getElementById("documento_seleccionado");
+      jsonData["documento_relacionado_input"] = document.getElementById("documento_relacionado");
+
+      jsonData["descuento_select"] = document.querySelector('select[name="descuento_seleccionado"]').value;
+      // Agregar el valor del select "tipo_item"
+      jsonData["tipo_item_select"] = document.querySelector('select[name="tipo_item_seleccionado"]').value;
+      jsonData["monto_descuento"] = document.getElementById("monto_descuento").textContent;
+      jsonData["descuento_gravado"] = parseFloat(document.getElementById("descuento_gravado").value) || 0;
+
+      jsonData["nombre_responsable"] = document.getElementById("nombre_responsable").value;
+      jsonData["documento_responsable"] = document.getElementById("documento_responsable").value;
+      
+      // Recopilar datos de productos
+      let productos_ids = [];
+      let cantidades = [];
+      let totales_incl = [];
+      let descuentos = [];
+      document.querySelectorAll('#tabla-productos tbody tr').forEach(function(row) {
+          productos_ids.push(row.getAttribute('data-id')) || 0;
+          cantidades.push(row.querySelector('.cantidad-input').value);
+          totales_incl.push(row.querySelector('.total-incl').textContent);
+          descuentos.push( (row.querySelector('.descuento-item').textContent.replace('%', '') / 100));
+      });
+
+      jsonData["productos_ids"] = productos_ids;
+      jsonData["cantidades"] = cantidades;
+      jsonData["montos_totales"] = totales_incl;
+      jsonData["saldo_favor_input"] = document.getElementById("saldo_favor_input").value;
+      jsonData["descuento_select"] = descuentos;
+
+      let formas_pago_id = [];
+      document.querySelectorAll('#tabla-formaspago-modal tbody tr').forEach(function(row) {
+        formas_pago_id.push(row.getAttribute('data-id'));
+      });
+      jsonData["formas_pago_ids"] = formas_pago_id;
+      
+      // Envío de retenciones
+      jsonData["retencion_iva"] = document.getElementById("retencion_iva_checkbox").checked;
+      jsonData["porcentaje_retencion_iva"] = document.getElementById("porcentaje_retencion_iva").value;
+      let retencionIvaProducts = [];
+      document.querySelectorAll('.retencion-iva-checkbox:checked').forEach(function(checkbox) {
+          retencionIvaProducts.push(checkbox.value);
+      });
+      jsonData["productos_retencion_iva"] = retencionIvaProducts;
+      
+      jsonData["retencion_renta"] = document.getElementById("retencion_renta_checkbox").checked;
+      jsonData["porcentaje_retencion_renta"] = document.getElementById("porcentaje_retencion_renta").value;
+      let retencionRentaProducts = [];
+      document.querySelectorAll('.retencion-renta-checkbox:checked').forEach(function(checkbox) {
+          retencionRentaProducts.push(checkbox.value);
+      });
+      jsonData["productos_retencion_renta"] = retencionRentaProducts;
+
+      jsonData["no_gravado"] = document.getElementById("no_gravado_checkbox").checked;
+
+      // Aquí incluimos el arreglo de facturas relacionadas
+      jsonData["facturas_relacionadas"] = facturasRelacionadas;
+      
+      try {
+          let response = await fetch('/fe/generar_ajuste/', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(jsonData)
+          });
+          if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(`Error ${response.status}: ${errorText}`);
+          }
+          let data = await response.json();
+          if (data.redirect) {
+              window.location.href = data.redirect;
+          } else {
+              alert("Factura generada con éxito. ID: " + data.factura_id);
+              document.querySelector("input[name='numero_control_input']").value = data.numero_control;
+          }
+      } catch (error) {
+          console.error("Error de conexión:", error);
+          alert("Error de conexión: " + error.message);
+      }
+  }
+
+document.addEventListener('DOMContentLoaded', function () {
+    const tipoDocumentoSelect = document.getElementById('tipo_documento_select');
+    const numeroControlInput = document.getElementById('numero_control_input');
+
+    tipoDocumentoSelect.addEventListener('change', function () {
+        const tipo_dte = this.value;
+        // Realizar la petición AJAX para obtener el nuevo número de control
+        fetch(`/fe/obtener-numero-control/?tipo_dte=${tipo_dte}`)
+            .then(response => response.json())
+            .then(data => {
+                numeroControlInput.value = data.numero_control;
+            })
+            .catch(error => console.error('Error:', error));
+    });
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+  const tipoDocumentoSelect = document.getElementById('tipo_documento_select');
+  const numeroControlInput = document.getElementById('numero_control_input');
+
+  tipoDocumentoSelect.addEventListener('change', function () {
+      const tipo_dte = this.value;
+      // Realizar la petición AJAX para obtener el nuevo número de control
+      fetch(`/fe/obtener-numero-control/?tipo_dte=${tipo_dte}`)
+          .then(response => response.json())
+          .then(data => {
+              numeroControlInput.value = data.numero_control;
+          })
+          .catch(error => console.error('Error:', error));
+  });
+});
+
+  document.getElementById("retencion_iva_checkbox").addEventListener("change", function () {
+  document.getElementById("btn-retencion-iva").style.display = this.checked ? "inline-block" : "none";
+});
+
+let total_ccf
+// Función para cargar la factura relacionada y sus productos en una subtabla
+function cargarFacturaRelacionada() {
+  const codigoGeneracion = document.getElementById('documento_relacionado_input').value.trim();
+  if (!codigoGeneracion) {
+    alert("Por favor, ingresa el código de generación.");
+    return;
+  }
+  fetch(`/fe/documento-relacionado/?codigo_generacion=${codigoGeneracion}`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.error) {
+        alert(data.error);
+        return;
+      }
+      console.log("Factura recibida:", data);
+      total_ccf = data.total;
+      document.getElementById("total_doc_relacionado").innerText = total_ccf;
+      agregarFacturaAccordion(data);
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert("Error al obtener la factura.");
+    });
+    actualizarResumen();
+}
+
+  // Función para agregar una factura electrónica al acordeón y al arreglo global
+  function agregarFacturaAccordion(factura) {
+    const facturaId = factura.codigo_generacion;
+    const accordion = document.getElementById('facturasAccordion');
+
+    const accordionItem = document.createElement('div');
+    accordionItem.classList.add('accordion-item');
+    accordionItem.setAttribute('data-factura-id', facturaId);
+
+    accordionItem.innerHTML = `
+      <h2 class="accordion-header" id="heading-${facturaId}">
+        <div class="d-flex justify-content-between align-items-center w-100">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${facturaId}" aria-expanded="false" aria-controls="collapse-${facturaId}">
+            Factura: ${factura.codigo_generacion} | Fecha: ${factura.fecha_emision} | Total: ${factura.total}
+          </button>
+          <button type="button" class="btn btn-danger btn-sm ms-2" onclick="eliminarFacturaAccordion('${facturaId}')">
+            Eliminar
+          </button>
+        </div>
+      </h2>
+      <div id="collapse-${facturaId}" class="accordion-collapse collapse" aria-labelledby="heading-${facturaId}" data-bs-parent="#facturasAccordion">
+        <div class="accordion-body">
+          ${crearTablaDetalles(factura.detalles)}
+        </div>
+      </div>
+    `;
+
+    //Convertir monto porcentaje global a porcentaje
+    let sumIncl = factura.total_gravadas;
+    let porcDescuento = (parseFloat(factura.descuento_global / sumIncl).toFixed(2)) * 100;
+    let porcDescGravado = (parseFloat(factura.descuento_gravado / sumIncl).toFixed(2) * 100);
+    //let totalDescuento = factura.monto_descuento;
+    
+    document.getElementById("descuento_gravado").value = parseFloat(porcDescGravado).toFixed(2);
+    document.getElementById("descuento_global").value = parseFloat(porcDescuento).toFixed(2);
+    //document.getElementById("monto_descuento").textContent = totalDescuento;
+
+    accordion.appendChild(accordionItem);
+    actualizarResumen();
+    // Agregamos la factura al arreglo global
+    facturasRelacionadas.push(factura);
+  }
+
+let prod_id_relacionado = 0;
+let cantidad_prod_relacionado = 0;
+ // Genera la tabla de detalles (productos) para una factura
+function crearTablaDetalles(detalles) {
+  const tipo_dte = document.getElementById('tipo_documento_select').value;
+  // Filtra detalles que no sean productos reales (si hay alguna línea TOTAL, por ejemplo)
+  let detallesFiltrados = detalles.filter(item => !item.producto.toUpperCase().includes("TOTAL"));
+  prod_id_relacionado = 0, cantidad_prod_relacionado = 0;
+
+  let tablaHTML = `
+    <table class="table table-bordered" id="tabla-productos-relacionados">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Precio Unitario (Neto)</th>
+          <th>IVA Unitario</th>
+          <th>Cantidad</th>
+          <th>Total Neto</th>
+          <th>Descuento</th>
+          <th>Ventas Gravadas</th>
+          <th>Total IVA</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+  detallesFiltrados.forEach(function(prod) {
+    // Suponemos que el precio_unitario incluye IVA a 13%
+    let precioIncl = roundHalfUp(prod.precio_unitario, 6);
+    let neto = roundHalfUp(precioIncl, 6);
+    let cantidad = parseFloat(prod.cantidad);
+    let iva = roundHalfUp((precioIncl * 0.13), 6);
+    let totalNeto = roundHalfUp( (neto * cantidad), 6);
+    let porcDescu = roundHalfUp( (prod.descuento / 100), 6);
+    let montoDescu = roundHalfUp( (totalNeto * porcDescu), 6);
+    let totalIncl = roundHalfUp( (totalNeto - roundHalfUp(montoDescu, 2)), 6);
+    let totalIVA = roundHalfUp( (totalIncl * 0.13), 6);
+
+    let idProducto = prod.id;
+    prod_id_relacionado = prod.id;
+    cantidad_prod_relacionado = prod.cantidad;
+
+    tablaHTML += `
+      <tr data-id="${prod.id}">
+        <td>${prod.producto}</td>
+        <td data-precio-neto="${neto}">${parseFloat(neto).toFixed(2)}</td>
+        <td data-iva-unitario="${iva}">${parseFloat(iva).toFixed(2)}</td>
+        <td>
+          <input type="number" class="form-control form-control-sm cantidad-input-invoice" value="${cantidad}" min="1" onchange="actualizarFilaInvoice(this)">
+        </td>
+        <td class="total-neto" data-total-neto="${totalNeto}">${parseFloat(totalNeto).toFixed(2)}</td>
+        <td class="descuento-item">${parseFloat(prod.descuento || 0)}%</td>
+        <td class="total-incl" data-total-incl="${totalIncl}">${parseFloat(totalIncl).toFixed(2)}</td>
+        <td class="total-iva">${parseFloat(totalIVA).toFixed(2)}</td>
+        <td>
+          <button type="button" class="btn btn-danger btn-sm" onclick="eliminarProductoInvoice(this)">Eliminar</button>
+        </td>
+      </tr>
+    `;
+
+    console.log("desc item= ", parseFloat(prod.descuento || ''))
+  });
+  tablaHTML += `
+      </tbody>
+    </table>
+  `;
+  let tabla = document.getElementById('tabla-productos-relacionados');
+  return tablaHTML;
+  actualizarResumen();
+}
+
+// Actualiza una fila de la factura en el acordeón cuando cambia la cantidad
+function actualizarFilaInvoice(input) {
+  let row = input.closest('tr');
+  let precioUnitario = roundHalfUp(row.cells[1].textContent, 6);
+  let ivaUnitario = roundHalfUp(precioUnitario * 0.13, 6);
+  let cantidad = parseFloat(input.value) || 0;
+  
+  let totalNeto = roundHalfUp( (precioUnitario * cantidad), 6);
+  let descuento_item = parseFloat(row.cells[5].textContent.replace('%', '') / 100 );
+  let monto_descuento_item = roundHalfUp( (totalNeto * descuento_item), 6);
+  let totalIncl = roundHalfUp( (totalNeto - roundHalfUp(monto_descuento_item, 2)), 6);
+  let totalIVA = roundHalfUp( (totalIncl * 0.13), 6);
+
+  row.querySelector('.total-neto').textContent = roundHalfUp(totalNeto, 2);
+  row.querySelector('.total-iva').textContent = parseFloat(totalIVA).toFixed(2);
+  row.querySelector('.total-incl').textContent = parseFloat(totalIncl).toFixed(2);
+  actualizarResumen();
+}
+
+// Elimina un producto dentro de la factura (acordeón)
+function eliminarProductoInvoice(btn) {
+  let row = btn.closest('tr');
+  row.parentNode.removeChild(row);
+  actualizarResumen();
+}
+
+// Función para eliminar un ítem del acordeón (la factura relacionada)
+function eliminarFacturaAccordion(facturaId) {
+  const accordion = document.getElementById('facturasAccordion');
+  const item = accordion.querySelector(`[data-factura-id="${facturaId}"]`);
+  if (item) {
+    accordion.removeChild(item);
+    actualizarResumen();
+  }
+
+  // Quitar del arreglo global
+  facturasRelacionadas = facturasRelacionadas.filter(function(factura) {
+    return factura.codigo_generacion !== facturaId;
+  });
+}
+
+  // Función para guardar el Documento Físico y agregarlo al acordeón
+  function guardarDocFisico() {
+    const docFisico = {
+      numero_control: document.getElementById('fisico-numero-control').value,
+      codigo_generacion: document.getElementById('fisico-codigo-generacion').value,
+      fecha: document.getElementById('fisico-fecha').value,
+      hora: document.getElementById('fisico-hora').value,
+      // Aquí puedes agregar otros campos que necesites
+      total: "0.00", // Si tienes cálculo para total, ajústalo aquí
+      detalles: []   // Si hay detalles predefinidos o se ingresan luego, puedes dejarlo vacío
+    };
+    console.log("Documento físico guardado:", docFisico);
+    agregarFacturaAccordionFisica(docFisico);
+    var myModalEl = document.getElementById('modalDocFisico');
+    var modalInstance = bootstrap.Modal.getInstance(myModalEl);
+    modalInstance.hide();
+  }
+
+  // Agrega el documento físico al acordeón
+  function agregarFacturaAccordionFisica(doc) {
+    const docId = doc.codigo_generacion;
+    const accordion = document.getElementById('facturasAccordion');
+
+    const accordionItem = document.createElement('div');
+    accordionItem.classList.add('accordion-item');
+    accordionItem.setAttribute('data-factura-id', docId);
+
+    accordionItem.innerHTML = `
+      <h2 class="accordion-header" id="heading-${docId}">
+        <div class="d-flex justify-content-between align-items-center w-100">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${docId}" aria-expanded="false" aria-controls="collapse-${docId}">
+            Documento Físico: ${doc.codigo_generacion} | Fecha: ${doc.fecha} | Total: ${doc.total}
+          </button>
+          <button type="button" class="btn btn-danger btn-sm ms-2" onclick="eliminarFacturaAccordion('${docId}')">
+            Eliminar
+          </button>
+        </div>
+      </h2>
+      <div id="collapse-${docId}" class="accordion-collapse collapse" aria-labelledby="heading-${docId}" data-bs-parent="#facturasAccordion">
+        <div class="accordion-body">
+          ${crearTablaDetalles(doc.detalles)}
+        </div>
+      </div>
+    `;
+    accordion.appendChild(accordionItem);
+    actualizarResumen();
+
+    // Agregamos la factura al arreglo global
+  facturasRelacionadas.push(factura);
+  }
+
+// Llamamos a actualizarResumen() al cargar la página para inicializar el resumen
+document.addEventListener('DOMContentLoaded', function () {
+  actualizarResumen();
+
+  // Agregamos el documento físico al arreglo global
+  facturasRelacionadas.push(doc);
+});
+
+async function actualizarProductos() {
+  // Obtener el valor del tipo de DTE seleccionado
+  //const tipoDTE = document.getElementById('tipo_documento_select').value || "01";
+  const tipo_dte = document.getElementById('tipo_documento_select').value;
+  console.log("tipo dte: ", tipo_dte)
+
+  try {
+      const response = await fetch(`{% url 'obtener_listado_productos_view' %}?tipo_documento_dte=${tipo_dte}`, {
+          method: 'GET',  // Usamos GET ya que estamos obteniendo datos
+          headers: {
+              'X-Requested-With': 'XMLHttpRequest',  // Indicar que es una solicitud AJAX
+          }
+      });
+
+      if (response.ok) {
+          const html = await response.text();  // Obtener la respuesta como texto (HTML)
+
+          // Reemplazar el contenido de la tabla con los nuevos productos
+          document.querySelector('#tabla-productos-modal tbody').innerHTML = new DOMParser().parseFromString(html, 'text/html').querySelector('#tabla-productos-modal tbody').innerHTML;
+      } else {
+          console.error('Hubo un error al obtener los productos');
+      }
+  } catch (error) {
+      console.error('Error al realizar la solicitud:', error);
+  }
+}
+
+function validacionesFormulario(event) {
+  const tipo_dte = document.getElementById('tipo_documento_select').value;
+  const receptor = document.getElementById('receptor-select').value;
+  const total_pagar = parseFloat(document.getElementById('total-pagar').textContent.trim());
+  const fp_recibida = parseFloat(document.getElementById('recibido').textContent.trim());
+
+  console.log("receptor: ", receptor, "total: ", total_pagar, "fp: ", fp_recibida)
+  if (!receptor) {
+    console.log("Receptor no seleccionado: ", receptor)
+    event.preventDefault();
+    alert('Por favor, seleccione un receptor.');
+  }else if (total_pagar <= 0) {
+    console.log("Total a pagar no definido: ", total_pagar)
+    event.preventDefault();
+    alert('Total a pagar debe ser mayor a 0.');
+  }else if (tipo_dte == "03" && total_pagar >= 11428.57 && !nombre_responsable && !documento_responsable){
+    console.log("Requerido enviar informacion del responsable: ", nombre_responsable, documento_responsable)
+    event.preventDefault();
+    alert('Agregar responsable de los documentos electrónicos.');
+  }else{
+    console.log("Informacion completa")
+    enviarFormulario(event)
+  }
+}
+
+window.onload = actualizarProductos;
+
+</script>
+
+{% endblock %}
+
+

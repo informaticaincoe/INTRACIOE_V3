@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Detalle del Emisor: {{ emisor.nombre_razon_social }}</h2>
+<ul>
+    <li>NIT: {{ emisor.nit }}</li>
+    <li>Dirección: {{ emisor.direccion_comercial }}</li>
+    <li>Teléfono: {{ emisor.telefono }}</li>
+    <li>Email: {{ emisor.email }}</li>
+</ul>
+<a href="{% url 'emisor_update' emisor.pk %}" class="btn btn-primary">Editar</a>
+<a href="{% url 'emisor_delete' emisor.pk %}" class="btn btn-danger">Eliminar</a>
+{% endblock %}

@@ -1,0 +1,11 @@
+<!-- templates/actividad_economica/update.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Actualizar Actividad Económica</h2>
+  <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="btn btn-primary">Actualizar</button>
+  </form>
+{% endblock %}

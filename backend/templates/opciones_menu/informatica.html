@@ -1,0 +1,62 @@
+<ul class="list-unstyled components mb-5">
+    <!--  -->
+    <li class="nav-item">
+        <a class="nav-link active" data-bs-toggle="collapse" href="#collapsePuntoVenta" role="button" aria-expanded="false" aria-controls="collapsePuntoVenta">
+            Base de Datos
+        </a>
+        <div class="collapse" id="collapsePuntoVenta">
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><a href="{% url "listar_bases_datos" %}" class="text-dark">Lista de DB'S</a></li>
+                <li class="list-group-item"><a href="#" class="text-dark">2</a></li>
+                <li class="list-group-item"><a href="#" class="text-dark">3</a></li>
+            </ul>
+        </div>
+    </li>
+    
+    <!--  -->
+    <li class="nav-item">
+        <a class="nav-link active" data-bs-toggle="collapse" href="#collapsePromocionesDescuentos" role="button" aria-expanded="false" aria-controls="collapsePromocionesDescuentos">
+            FE_DTE
+        </a>
+        <div class="collapse" id="collapsePromocionesDescuentos">
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><a href="{% url "actividad_economica_list" %}" class="text-dark">Actividades Economicas</a></li>
+                <li class="list-group-item"><a href="{% url "autenticacion" %}" class="text-dark">Autenticacion-TOKEN</a></li>
+                {% comment %} <li class="list-group-item"><a href="{% url "autenticacion-api" %}" class="text-dark">Autenticacion-API</a></li> {% endcomment %}
+                <li class="list-group-item"><a href="{% url "generar_factura" %}" class="text-dark">Generar documentos</a></li>
+                <li class="list-group-item"><a href="#" class="text-dark">2</a></li>
+                <li class="list-group-item"><a href="#" class="text-dark">2</a></li>
+            </ul>
+        </div>
+    </li>
+
+    <!--  -->
+    <li class="nav-item">
+        <a class="nav-link active" data-bs-toggle="collapse" href="#collapseFormasPago" role="button" aria-expanded="false" aria-controls="collapseFormasPago">
+            Emisores
+        </a>
+        <div class="collapse" id="collapseFormasPago">
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><a href="{% url "emisor_list" %}" class="text-dark">Emisores o Empresas</a></li>
+                <li class="list-group-item"><a href="#" class="text-dark">2</a></li>
+                <li class="list-group-item"><a href="#" class="text-dark">2</a></li>
+                <li class="list-group-item"><a href="#" class="text-dark">2</a></li>
+            </ul>
+        </div>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link active" data-bs-toggle="collapse" href="#collapseReptores" role="button" aria-expanded="false" aria-controls="collapseReptores">
+            Receptores
+        </a>
+        <div class="collapse" id="collapseReptores">
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><a href="#" class="text-dark">1</a></li>
+                <li class="list-group-item"><a href="#" class="text-dark">2</a></li>
+                <li class="list-group-item"><a href="#" class="text-dark">2</a></li>
+                <li class="list-group-item"><a href="#" class="text-dark">2</a></li>
+                <li class="list-group-item"><a href="#" class="text-dark">2</a></li>
+            </ul>
+        </div>
+    </li>
+</ul>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Quedan PDF</title>
+    {% comment %} <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"> {% endcomment %}
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 12px }
+        .header { text-align: center; margin-bottom: 20px; }
+        .table { width: 100%; border-collapse: collapse; }
+        .table th, .table td { 
+            border: 1px solid black; 
+            padding: 6px; 
+            text-align: right; /* Alineación a la derecha */
+            white-space: nowrap; /* Evitar saltos de línea dentro de las celdas */
+        }
+        
+        /* Estilos para evitar el corte de página dentro de la tabla */
+        tr, td, th { page-break-inside: avoid; }
+
+        .table-container {
+            overflow: hidden;
+            page-break-after: always;
+        }
+        @page {
+            size: letter landscape;
+            margin: 2cm;
+        }
+
+        /* Encabezado */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .header img.logo {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 250px;
+        }
+        .header-content {
+            margin-left: 250px; /* Para dejar espacio al logo */
+            text-align: center;
+        }
+        .header-content h2 {
+            margin: 0;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <!-- Imagen del logo en la esquina superior izquierda -->
+        <img src="https://static.wixstatic.com/media/8c690e_1e3ca6e8009845ae962ba0f6278cdbf8~mv2.png/v1/fill/w_149,h_41,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/8c690e_1e3ca6e8009845ae962ba0f6278cdbf8~mv2.png" alt="Logo" class="logo" width="100">
+
+        <!-- Contenido del encabezado centrado -->
+        <div class="header-content">
+            <h2>Quedan: <strong>{{ quedan.0 }}</strong></h2>
+            <p>Fecha de Quedan: <strong>{{ quedan.1|date:"d F Y" }}</strong> | Fecha de Pago: <strong>{{ quedan.2|date:"d F Y" }}</strong></p>
+        </div>
+    </div>
+    <div class="mb-3">
+        <p><strong>Proveedor:</strong> {{ proveedor.0 }}</p>
+        <p><strong>Observaciones:</strong> {{ quedan.3 }}</p>
+    </div>
+
+    <hr>
+
+    <p><strong>Quedan en nuestro poder para su correspondiente revisión los siguientes documentos:</strong></p>
+    
+    <div class="table-container">
+        <table class="table table-sm table-striped">
+            <thead class="table table-primary">
+                <tr>
+                    <th scope="col">Tipo</th>
+                    <th scope="col">Número</th>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">Sumas</th>
+                    <th scope="col">Retención</th>
+                    <th scope="col">IVA</th>
+                    <th scope="col">Percepción</th>
+                    <th scope="col">Total</th>
+                </tr>
+            </thead>
+            <tbody class="table-group-divider">
+                {% for detalle in detalles %}
+                <tr>
+                    <td>{{ detalle.tipo_doc }}</td>
+                    <td style="width: 220;">{{ detalle.num_doc }}</td>
+                    <td>{{ detalle.fecha|date:"d/m/Y" }}</td>
+                    <td>${{ detalle.suma_afecto|floatformat:2 }}</td>
+                    <td>${{ detalle.retencion|floatformat:2 }}</td>
+                    <td>${{ detalle.iva|floatformat:2 }}</td>
+                    <td>${{ detalle.percep|floatformat:2 }}</td>
+                    <td> <strong>${{ detalle.total|floatformat:2 }}</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <br>
+        <hr>
+        <div class="card" style="width: 18rem;">
+            <div class="card-header">
+                Totales
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><strong>IVA Total:</strong> ${{ iva_total|floatformat:2 }}</li>
+                <li class="list-group-item"><strong>Percepción Total:</strong> ${{ percep_total|floatformat:2 }}</li>
+                <li class="list-group-item"><strong>Total a Pagar:</strong> ${{ total_pago|floatformat:2 }}</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

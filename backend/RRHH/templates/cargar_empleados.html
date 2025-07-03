@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<h2>Cargar Empleados</h2>
+<form action="{% url 'cargar_empleados_desde_xlsx' %}" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Cargar Empleados</button>
+</form>
+{% endblock content %}
+

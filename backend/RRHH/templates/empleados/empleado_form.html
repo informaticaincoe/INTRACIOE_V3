@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<head>
+    <meta charset="UTF-8">
+    <title>{% if form.instance.pk %}Editar Empleado{% else %}Crear Empleado{% endif %}</title>
+</head>
+<a href="{% url 'empleado_list' %}" class="btn btn-warning">Volver a la lista de empleados</a>
+
+    <h2>{% if form.instance.pk %}Editar Empleado{% else %}Crear Empleado{% endif %}</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">{% if form.instance.pk %}Actualizar{% else %}Crear{% endif %}</button>
+    </form>
+    <br>
+    
+
+{% endblock content %}

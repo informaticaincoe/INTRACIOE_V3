@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<head>
+    <meta charset="UTF-8">
+    <title>Estructura de la Tabla: {{ nombre_tabla }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+</head>
+
+<div class="container mt-5">
+    <h1>Estructura de la Tabla: {{ nombre_tabla }}</h1>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                {% for columna in columnas %}
+                    <th>{{ columna }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for fila in page_obj %}
+                <tr>
+                    {% for celda in fila %}
+                        <td>{{ celda }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+        </table>
+        
+        <!-- Controles de paginación -->
+        <div class="pagination">
+            <span class="step-links">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1">&laquo; primero</a>
+                    <a href="?page={{ page_obj.previous_page_number }}">anterior</a>
+                {% endif %}
+        
+                <span class="current">
+                    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                </span>
+        
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}">siguiente</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}">último &raquo;</a>
+                {% endif %}
+            </span>
+        </div>
+    <!-- Regresar a la estructura de la base de datos -->
+    {% comment %} <a href="{% url 'ver_estructura_base_datos' nombre_db %}" class="btn btn-secondary mt-3">Regresar a la Estructura de la Base de Datos</a> {% endcomment %}
+</div>
+
+{% endblock content %}

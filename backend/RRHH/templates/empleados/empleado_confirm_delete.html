@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card border-danger">
+        <div class="card-header bg-danger text-white">
+            <h2 class="mb-0">Eliminar Empleado</h2>
+        </div>
+        <div class="card-body">
+            <p class="lead">¿Estás seguro de que deseas eliminar al empleado 
+                <strong>{{ empleado.nombre }} {{ empleado.apellido }}</strong> 
+                con código "<strong>{{ empleado.codigo_empleado }}</strong>"?
+            </p>
+            <form method="post" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-trash-fill"></i> Confirmar Eliminación
+                </button>
+            </form>
+            <a href="{% url 'empleado_list' %}" class="btn btn-secondary ms-2">
+                <i class="bi bi-arrow-left"></i> Cancelar y Volver a la Lista
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock content %}

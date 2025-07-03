@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% load static %}
+
+
+{% block content %}
+
+<head>
+    <meta charset="UTF-8">
+    <title>Estructura de {{ nombre_db }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+</head>
+
+<!-- ver_estructura_base_datos.html -->
+<div class="container mt-5">
+    <h1>Estructura de la Base de Datos: {{ nombre_db }}</h1>
+    
+    <!-- Campo de búsqueda -->
+    <input type="text" id="buscar-tabla" class="form-control mb-3" placeholder="Buscar tabla por nombre">
+    
+    <!-- Contenedor para la lista de tablas -->
+    <table class="table table-striped" id="tabla-lista">
+        <thead>
+            <tr>
+                <th>Nombre de la Tabla</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="tabla-datos">
+            {% for tabla in tablas %}
+                <tr>
+                    <td>{{ tabla.0 }}</td>
+                    <td>
+                        <a href="{% url 'ver_estructura_tabla' nombre_db tabla.0 %}" class="btn btn-primary btn-sm">Ver Tabla</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{% url 'listar_bases_datos' %}" class="btn btn-secondary">Regresar</a>
+</div>
+
+<!-- Script AJAX para búsqueda dinámica -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#buscar-tabla').on('keyup', function() {
+            var query = $(this).val();
+            $.ajax({
+                url: "{% url 'buscar_tablas' nombre_db %}",
+                data: {'q': query},
+                success: function(data) {
+                    var tbody = $('#tabla-datos');
+                    tbody.empty();  // Limpia los resultados anteriores
+                    // Itera sobre los resultados y los agrega a la tabla
+                    data.forEach(function(tabla) {
+                        tbody.append(`
+                            <tr>
+                                <td>${tabla.nombre}</td>
+                                <td>
+                                    <a href="{% url 'ver_estructura_tabla' nombre_db='${nombre_db}' nombre_tabla='${tabla.nombre}' %}" class="btn btn-primary btn-sm">Ver Tabla</a>
+                                </td>
+                            </tr>
+                        `);
+                    });
+                }
+            });
+        });
+    });
+</script>
+
+
+
+{% endblock content %}
