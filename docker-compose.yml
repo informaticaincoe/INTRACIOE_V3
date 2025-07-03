@@ -6,7 +6,7 @@ services:
     volumes:
       - .:/app
     ports:
-      - "8787:8787"
+      - "8787:8000"
       - "5173:5173"
     environment:
       - DEBUG=1
