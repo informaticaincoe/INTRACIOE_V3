@@ -5,8 +5,9 @@ services:
     build: ./backend
     volumes:
       - ./backend:/app
+      - ./backend/db.sqlite3:/app/db.sqlite3
     ports:
-      - "8080:8000"
+      - "8787:8000"
     environment:
       - DEBUG=1
 
