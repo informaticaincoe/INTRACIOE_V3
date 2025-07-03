@@ -20,7 +20,11 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --upgrade pip setuptools && \
     pip install --no-cache-dir -r requirements.txt
-    
+
+# Ejecutar el comando collectstatic durante la construcción
+RUN python3 manage.py collectstatic --noinput
+RUN python3 manage.py makemigrations
+RUN python3 manage.py migrate
 
 COPY . .
 
