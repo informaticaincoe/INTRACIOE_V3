@@ -28,7 +28,7 @@ class ConfiguracionServidor(models.Model):
     def __str__(self):
         return f"{self.clave}"
     
-class Perfilusuario(models.model):
+class Perfilusuario(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     nombre = models.CharField(max_length=100, null=True, blank=True)
     apellido = models.CharField(max_length=100, null=True, blank=True)
