@@ -143,6 +143,11 @@ class Proveedor(models.Model):
         blank=True,
         help_text="Municipio del proveedor"
     )
+    # tipo_documento = models.IntegerField(blank=True, null=True)
+    # actividades_economicas = models.TextField(blank=True, null=True)
+    # departamento = models.IntegerField(blank=True, null=True)
+    # municipio = models.IntegerField(blank=True, null=True)
+
     contacto = models.CharField(max_length=100, blank=True, null=True)
     telefono = models.CharField(max_length=20, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
