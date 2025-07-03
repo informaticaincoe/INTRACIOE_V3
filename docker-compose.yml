@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  backend:
+    build: ./backend
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8080:8000"
+    environment:
+      - DEBUG=1
+
+  frontend:
+    build: ./intracoe-frontend
+    volumes:
+      - ./intracoe-frontend:/app
+    ports:
+      - "5173:5173"
