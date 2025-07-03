@@ -45,9 +45,11 @@ COPY . .
 # Instalar dependencias del frontend
 WORKDIR /app/intracoe-frontend
 RUN npm install
+RUN npm install vite --save-dev
+
 
 # Exponer puertos
-EXPOSE 8787 5173
+EXPOSE 8000 5173
 
 # Comando para ejecutar ambos procesos en paralelo
 WORKDIR /app
