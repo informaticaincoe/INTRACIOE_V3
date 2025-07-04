@@ -60,23 +60,53 @@ from weasyprint import HTML, CSS
 from django.db.models import F, Value
 from django.db.models.functions import Greatest
 
-FIRMADOR_URL = ConfiguracionServidor.objects.filter(clave="firmador").first()
-DJANGO_SERVER_URL = ConfiguracionServidor.objects.filter(clave="server_url").first()
+from django.db.utils import OperationalError
+from django.core.exceptions import ObjectDoesNotExist
+
+try:
+    FIRMADOR_URL = ConfiguracionServidor.objects.filter(clave="firmador").first()
+except (OperationalError, ObjectDoesNotExist):
+    FIRMADOR_URL = None
+
+try:
+    DJANGO_SERVER_URL = ConfiguracionServidor.objects.filter(clave="server_url").first()
+except (OperationalError, ObjectDoesNotExist):
+    DJANGO_SERVER_URL = None
 
 SCHEMA_PATH_fe_fc_v1 = "FE/json_schemas/fe-fc-v1.json"
 
-CERT_PATH = ConfiguracionServidor.objects.filter(clave="certificado").first().url_endpoint #"FE/cert/06142811001040.crt"  # Ruta al certificado
+try:
+    CERT_PATH = ConfiguracionServidor.objects.filter(clave="certificado").first()
+    CERT_PATH = CERT_PATH.url_endpoint if CERT_PATH else None
+except (OperationalError, ObjectDoesNotExist, AttributeError):
+    CERT_PATH = None
 
-# URLS de Hacienda (Pruebas y Producción)
-HACIENDA_URL_TEST = ConfiguracionServidor.objects.filter(clave="hacienda_url_test").first().url_endpoint
-HACIENDA_URL_PROD = ConfiguracionServidor.objects.filter(clave="hacienda_url_prod").first().url_endpoint
-#cada endpoint que tenga url quemada agregarlas en una tabla de config, firmador y djangoserver
-#BC 04/03/2025: Constantes
+try:
+    hacienda_test_obj = ConfiguracionServidor.objects.filter(clave="hacienda_url_test").first()
+    HACIENDA_URL_TEST = hacienda_test_obj.url_endpoint if hacienda_test_obj else None
+except (OperationalError, ObjectDoesNotExist, AttributeError):
+    HACIENDA_URL_TEST = None
+
+try:
+    hacienda_prod_obj = ConfiguracionServidor.objects.filter(clave="hacienda_url_prod").first()
+    HACIENDA_URL_PROD = hacienda_prod_obj.url_endpoint if hacienda_prod_obj else None
+except (OperationalError, ObjectDoesNotExist, AttributeError):
+    HACIENDA_URL_PROD = None
+
 COD_CONSUMIDOR_FINAL = "01"
 COD_CREDITO_FISCAL = "03"
-VERSION_EVENTO_INVALIDACION = ConfiguracionServidor.objects.filter(clave="version_evento_invalidacion").first().valor #2
-AMBIENTE = Ambiente.objects.get(codigo="01")#Hacer dinamico
-#AMBIENTE = "01"
+
+try:
+    version_obj = ConfiguracionServidor.objects.filter(clave="version_evento_invalidacion").first()
+    VERSION_EVENTO_INVALIDACION = version_obj.valor if version_obj else None
+except (OperationalError, ObjectDoesNotExist, AttributeError):
+    VERSION_EVENTO_INVALIDACION = None
+
+try:
+    AMBIENTE = Ambiente.objects.get(codigo="01")
+except (OperationalError, ObjectDoesNotExist):
+    AMBIENTE = None
+
 COD_FACTURA_EXPORTACION = "11"
 COD_TIPO_INVALIDACION_RESCINDIR = 2
 COD_NOTA_CREDITO = "05"
@@ -93,24 +123,38 @@ RELACIONAR_DOC_FISICO = 1
 RELACIONAR_DOC_ELECTRONICO = 2
 COD_TIPO_CONTINGENCIA = "5"
 DTE_APLICA_CONTINGENCIA = ["01", "03", "04", "05", "06", "11", "14"]
-RUTA_COMPROBANTES_PDF = ConfiguracionServidor.objects.filter(clave="ruta_comprobantes_dte").first()
-RUTA_COMPROBANTES_JSON = ConfiguracionServidor.objects.filter(clave="ruta_comprobante_json").first()
-RUTA_JSON_FACTURA = ConfiguracionServidor.objects.filter(clave="json_factura").first()
-URL_AUTH = ConfiguracionServidor.objects.filter(clave="url_autenticacion").first()
-HEADERS = ConfiguracionServidor.objects.filter(clave="headers").first()
-CONTENT_TYPE = ConfiguracionServidor.objects.filter(clave="content_type").first()
-INVALIDAR_DTE_URL = ConfiguracionServidor.objects.filter(clave="url_invalidar_dte").first()
-VERSION_EVENTO_CONTINGENCIA = ConfiguracionServidor.objects.filter(clave="version_evento_contingencia").first()
-FACTURAS_FIRMADAS_URL = ConfiguracionServidor.objects.filter(clave="json_facturas_firmadas").first()
-HACIENDA_CONTINGENCIA_URL = ConfiguracionServidor.objects.filter(clave="hacienda_contingencia_url").first()
-USER_AGENT = ConfiguracionServidor.objects.filter(clave="user_agent").first()
-CONSULTAR_DTE = ConfiguracionServidor.objects.filter(clave="consulta_dte").first()
-EMAIL_HOST_FE = ConfiguracionServidor.objects.filter(clave="email_host_fe").first()
 
-MONEDA_USD = TipoMoneda.objects.get(codigo="USD")
-UNI_MEDIDA_99 = TipoUnidadMedida.objects.get(codigo="99")
+def safe_conf(clave):
+    try:
+        return ConfiguracionServidor.objects.filter(clave=clave).first()
+    except (OperationalError, ObjectDoesNotExist):
+        return None
 
-formas_pago = [] #Asignar formas de pago
+RUTA_COMPROBANTES_PDF = safe_conf("ruta_comprobantes_dte")
+RUTA_COMPROBANTES_JSON = safe_conf("ruta_comprobante_json")
+RUTA_JSON_FACTURA = safe_conf("json_factura")
+URL_AUTH = safe_conf("url_autenticacion")
+HEADERS = safe_conf("headers")
+CONTENT_TYPE = safe_conf("content_type")
+INVALIDAR_DTE_URL = safe_conf("url_invalidar_dte")
+VERSION_EVENTO_CONTINGENCIA = safe_conf("version_evento_contingencia")
+FACTURAS_FIRMADAS_URL = safe_conf("json_facturas_firmadas")
+HACIENDA_CONTINGENCIA_URL = safe_conf("hacienda_contingencia_url")
+USER_AGENT = safe_conf("user_agent")
+CONSULTAR_DTE = safe_conf("consulta_dte")
+EMAIL_HOST_FE = safe_conf("email_host_fe")
+
+try:
+    MONEDA_USD = TipoMoneda.objects.get(codigo="USD")
+except (OperationalError, ObjectDoesNotExist):
+    MONEDA_USD = None
+
+try:
+    UNI_MEDIDA_99 = TipoUnidadMedida.objects.get(codigo="99")
+except (OperationalError, ObjectDoesNotExist):
+    UNI_MEDIDA_99 = None
+
+formas_pago = []
 documentos_relacionados = []
 tipo_dte_doc_relacionar = None
 documento_relacionado = False
@@ -120,7 +164,11 @@ descuentos_r = []
 tipo_documento_dte = "01"
 productos_inventario = None
 
-emisor_fe = Emisor_fe.objects.get(id=1)#Hacer dinamico el id de empresa
+try:
+    emisor_fe = Emisor_fe.objects.get(id=1)
+except (OperationalError, ObjectDoesNotExist):
+    emisor_fe = None
+
 
 class StandardResultsSetPagination(PageNumberPagination):
     # Número de ítems por página por defecto
