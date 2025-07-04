@@ -1,8 +1,8 @@
 import React, { HTMLProps, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import {
-  ReceptorRequestDefault,
-  ReceptorRequestInterface,
+  ReceptorDefault,
+  ReceptorInterface,
 } from '../../../../../shared/interfaces/interfaces';
 import CustomToast, {
   CustomToastRef,
@@ -33,9 +33,7 @@ export const FormReceptoresContainer: React.FC<
 
   // Estado para controlar el paso actual
   const [current, setCurrent] = useState(0);
-  const [formData, setFormData] = useState<ReceptorRequestInterface>(
-    ReceptorRequestDefault
-  );
+  const [formData, setFormData] = useState<ReceptorInterface>(ReceptorDefault);
   const toastRef = useRef<CustomToastRef>(null);
   const navigate = useNavigate();
   useEffect(() => {
@@ -46,7 +44,6 @@ export const FormReceptoresContainer: React.FC<
     try {
       if (params.id) {
         const data = await getReceptorById(params.id);
-        console.log(data);
         setFormData(data);
       }
     } catch (error) {
@@ -75,7 +72,7 @@ export const FormReceptoresContainer: React.FC<
     e.preventDefault();
 
     console.log(formData);
-    if (params.id) {
+    if (params.id && formData) {
       try {
         const response = await editReceptor(params.id, formData);
         console.log(response);
@@ -93,12 +90,14 @@ export const FormReceptoresContainer: React.FC<
       }
     } else {
       try {
-        const response = await createReceptor(formData);
-        handleAccion(
-          'success',
-          <FaCheckCircle size={38} />,
-          'configuracion creada con exito'
-        );
+        if (formData) {
+          const response = await createReceptor(formData);
+          handleAccion(
+            'success',
+            <FaCheckCircle size={38} />,
+            'configuracion creada con exito'
+          );
+        }
       } catch (error) {
         handleAccion(
           'error',
@@ -161,7 +160,7 @@ export const FormReceptoresContainer: React.FC<
   return (
     <>
       <Title text="Nuevo receptor" className="text-center" />
-      <WhiteSectionsPage className={`mx-[10%] px-[5%] py-[3%] ${className}`}>
+      <WhiteSectionsPage className={`mx-5 my-3 px-[5%] py-[3%] ${className}`}>
         <>
           <Steps
             current={current}
@@ -171,7 +170,7 @@ export const FormReceptoresContainer: React.FC<
             }))}
             style={{ marginBottom: '5%' }}
           />
-          <div style={{ marginTop: 24 }}>{steps[current].content}</div>
+          <div style={{ marginTop: 0 }}>{steps[current].content}</div>
           <CustomToast ref={toastRef} />
         </>
       </WhiteSectionsPage>

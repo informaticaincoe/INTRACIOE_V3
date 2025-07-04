@@ -1,10 +1,11 @@
 import { FacturaResponse } from '../interfaces/facturaPdfInterfaces';
 import { api } from '../../../../shared/services/api';
+import { FacturaResponseSujetoExcluido } from '../interfaces/sujetoExcluidoInterfaces';
 
 export const generarFacturaService = async (id: string) => {
   try {
     const response = await api.get<FacturaResponse>(`/factura_pdf/${id}/`);
-    console.log("FACTURAAAAAA", response)
+    console.log(response.data)
     return {
       emisor: response.data.json_original.emisor,
       receptor: response.data.json_original.receptor,
@@ -15,7 +16,9 @@ export const generarFacturaService = async (id: string) => {
         fechaEmision: response.data.fecha_emision,
         horaEmision: response.data.hora_emision,
         selloRemision: response.data.sello_recepcion,
-        contingencia: response.data.contingencia
+        contingencia: response.data.contingencia,
+        version: response.data.version,
+        tipoModelo: response.data.json_original.identificacion.tipoModelo
       },
       productos: response.data.json_original.cuerpoDocumento,
       resumen: {
@@ -54,3 +57,46 @@ export const generarFacturaService = async (id: string) => {
     throw new Error();
   }
 };
+
+
+export const generarFacturaSujetoExcluidoService = async (id: string) => {
+  try {
+    const response = await api.get<FacturaResponseSujetoExcluido>(`/factura-sujeto-excluido/${id}/`);
+    console.log(response.data)
+
+    return {
+      sujetoExcluido: response.data.json_original.sujetoExcluido,
+      emisor: response.data.json_original.emisor,
+      datosFactura: {
+        tipoDte: response.data.json_original.identificacion.tipoDte,
+        codigoGeneracion: response.data.codigo_generacion,
+        numeroControl: response.data.numero_control,
+        fechaEmision: response.data.fecha_emision,
+        horaEmision: response.data.hora_emision,
+        selloRemision: response.data.sello_recepcion,
+        contingencia: response.data.contingencia,
+        version: response.data.version,
+        tipoModelo: response.data.json_original.identificacion.tipoModelo
+      },
+      productos: response.data.json_original.cuerpoDocumento,
+      resumen: response.data.json_original.resumen,
+      pagoEnLetras: response.data.total_letras,
+      condicionOpeacion: response.data.condicion_operacion,
+      ambiente: response.data.json_original.identificacion.ambiente,
+      jsonFirmadoStatus: response.data.json_firmado?.status ?? null,
+    };
+  } catch (error) {
+    console.log(error);
+    throw new Error();
+  }
+};
+
+export const gethTipoModeloById = async (id: number) => {
+  try {
+    const response = await api.get(`modelo-facturacion/${id}`)
+    console.log(response.data)
+    return response.data
+  } catch (error) {
+    console.log(error)
+  }
+}

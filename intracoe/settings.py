@@ -28,11 +28,12 @@ DEBUG = True
 
 ALLOWED_HOSTS=['*']               
 
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',  # Asegúrate de que esta URL esté incluida
-    'http://localhost:5174',  # Asegúrate de que esta URL esté incluida
-    
-]
+# CORS_ALLOWED_ORIGINS = [
+#     'http://localhost:5173',  # Asegúrate de que esta URL esté incluida
+#     'http://localhost:5174',  # Asegúrate de que esta URL esté incluida
+# ]
+
+CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -108,8 +109,8 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10,
+    # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    # 'PAGE_SIZE': 10,
 }
 
 # Caducidad de la cookie de sesión: 5 minutos
@@ -186,7 +187,7 @@ WSGI_APPLICATION = 'intracoe.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': BASE_DIR / 'db1.sqlite3',
     },
 
     'default111': {

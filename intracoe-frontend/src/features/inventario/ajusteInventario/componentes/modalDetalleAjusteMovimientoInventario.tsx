@@ -1,24 +1,31 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react';
 
-import { Dialog } from 'primereact/dialog'
-import { AjusteInventarioInterface } from '../interfaces/ajusteInventarioInterfaces'
+import { Dialog } from 'primereact/dialog';
+import { AjusteInventarioInterfaceResults } from '../interfaces/ajusteInventarioInterfaces';
 
 interface ModalDetalleAjusteMovimientoInventarioProp {
-  data: AjusteInventarioInterface,
-  visible: boolean,
-  setVisible: any
+  data: AjusteInventarioInterfaceResults;
+  visible: boolean;
+  setVisible: any;
 }
 
-export const ModalDetalleAjusteMovimientoInventario: React.FC<ModalDetalleAjusteMovimientoInventarioProp> = ({ data, visible, setVisible }) => {
-
-
+export const ModalDetalleAjusteMovimientoInventario: React.FC<
+  ModalDetalleAjusteMovimientoInventarioProp
+> = ({ data, visible, setVisible }) => {
   return (
-    <Dialog header="Detalle Ajuste de inventario" visible={visible} onHide={() => { if (!visible) return; setVisible(false); }}
-      style={{ width: '40vw' }} breakpoints={{ '1679px': '60vw', '1462px': '60vw', }}>
+    <Dialog
+      header="Detalle Ajuste de inventario"
+      visible={visible}
+      onHide={() => {
+        if (!visible) return;
+        setVisible(false);
+      }}
+      style={{ width: '40vw' }}
+      breakpoints={{ '1679px': '60vw', '1462px': '60vw' }}
+    >
       {data ? (
         <div>
-          <div className="p-4 gap-y-3 gap-x-5 grid grid-cols-[auto_1fr]">
-
+          <div className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-3 p-4">
             <strong>Producto:</strong>
             <span>{data.nombreProducto}</span>
 
@@ -36,13 +43,11 @@ export const ModalDetalleAjusteMovimientoInventario: React.FC<ModalDetalleAjuste
 
             <strong>Almacen:</strong>
             <span>{data.nombreAlmacen}</span>
-
           </div>
         </div>
-
       ) : (
         <p>Cargando información del movimiento...</p>
       )}
     </Dialog>
-  )
-}
+  );
+};

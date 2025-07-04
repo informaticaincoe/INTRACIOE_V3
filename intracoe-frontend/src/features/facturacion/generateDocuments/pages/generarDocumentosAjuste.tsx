@@ -40,12 +40,16 @@ import CustomToast, {
 import { IoMdCloseCircle } from 'react-icons/io';
 import { ExtensionCard } from '../components/Shared/entension/extensionCard';
 import { ResumenCardNotaAjuste } from '../components/NotaDebito/resumenCardNotaAjuste';
+import { InputTextarea } from 'primereact/inputtextarea';
+import { FormasdePagoForm } from '../components/Shared/configuracionFactura/formasDePago/formasdePagoForm';
 
 export const GenerarDocumentosAjuste = () => {
   //lista de datos obtenidas de la api
-  const [condicionesOperacionList, setCondicionesOperacionList] = useState<ConfiguracionFacturaInterface>();
+  const [condicionesOperacionList, setCondicionesOperacionList] =
+    useState<ConfiguracionFacturaInterface>();
   const [receptor, setReceptor] = useState<ReceptorInterface>(ReceptorDefault); // almacenar informacion del receptor
-  const [emisorData, setEmisorData] = useState<EmisorInterface>(defaultEmisorData); // almcenar informacion del emisor
+  const [emisorData, setEmisorData] =
+    useState<EmisorInterface>(defaultEmisorData); // almcenar informacion del emisor
   const [tipoDocumento, setTipoDocumento] = useState<TipoDocumento[]>([]); // almcenar tipo de dte
   const [tipoDocumentoSelected, setTipoDocumentoSelected] = useState<TipoDTE>(); // almcenar tipo de dte
 
@@ -57,30 +61,39 @@ export const GenerarDocumentosAjuste = () => {
   const [numeroControl, setNumeroControl] = useState('');
   const [codigoGeneracion, setCodigoGeneracion] = useState('');
   const [descuentosList, setDescuentosList] = useState();
-  const [saldoFavor, setSaldoFavor] = useState<number>(0.00)
+  const [saldoFavor, setSaldoFavor] = useState<number>(0.0);
 
   //datos seleccionados para realizar la factura
-  const [selectedCondicionDeOperacion, setSelectedCondicionDeOperacion] = useState<string>('1'); //id de la condicion de operacion (01 por defecto)
-  const [selectedProducts, setSelectedProducts] = useState<ProductosTabla[]>([]); //lista de productos que tendra la factura
+  const [selectedCondicionDeOperacion, setSelectedCondicionDeOperacion] =
+    useState<string>('1'); //id de la condicion de operacion (01 por defecto)
+  const [selectedProducts, setSelectedProducts] = useState<ProductosTabla[]>(
+    []
+  ); //lista de productos que tendra la factura
   const [idListProducts, setIdListProducts] = useState<string[]>([]); // lista con solo los id de los productos que tendra la factura
-  const [cantidadListProducts, setCantidadListProducts] = useState<string[]>([]);
+  const [cantidadListProducts, setCantidadListProducts] = useState<string[]>(
+    []
+  );
   const [observaciones, setObservaciones] = useState<string>('');
   const [retencionIva, setRetencionIva] = useState<number>(0);
   const [retencionRenta, setRetencionRenta] = useState<number>(0);
   const [tieneRetencionIva, setTieneRetencionIva] = useState<boolean>(false);
-  const [tieneRetencionRenta, setTieneRetencionRenta] = useState<boolean>(false);
+  const [tieneRetencionRenta, setTieneRetencionRenta] =
+    useState<boolean>(false);
 
   //calculos
   const [totalAPagar, setTotalAPagar] = useState<number>(0);
   const [auxManejoPagos, setAuxManejoPagos] = useState<number>(totalAPagar);
   const [facturasAjuste, setFacturasAjuste] = useState<
-    FacturaPorCodigoGeneracionResponse[]>([]);
+    FacturaPorCodigoGeneracionResponse[]
+  >([]);
   const [baseImponible, setBaseImponible] = useState<boolean>(false);
   const [errorReceptor, setErrorReceptor] = useState<boolean>(false);
   const [errorFormasPago, setErrorFormasPago] = useState<boolean>(false);
   const [nombreResponsable, setNombreResponsable] = useState<string>('');
   const [docResponsable, setDocResponsable] = useState<string>('');
   const [tipoTransmision, setTipoTransmision] = useState<string>('');
+  const [formasPagoList, setFormasPagoList] = useState<number[]>([]);
+
 
   const [formData, setFormData] = useState({ codigo: '' });
 
@@ -120,11 +133,13 @@ export const GenerarDocumentosAjuste = () => {
       porcentaje_retencion_iva: (retencionIva / 100).toString(),
       retencion_iva: retencionIva.toString(),
       productos_retencion_iva: '0.00',
-      porcentaje_retencion_renta: '0.00', 
+      porcentaje_retencion_renta: '0.00',
       retencion_renta: '0.0',
-      productos_retencion_renta: '0.00', 
+      productos_retencion_renta: '0.00',
       num_ref: null,
-      [tipoDocumentoSelected?.codigo === '05' ? 'productos_id_r' : 'productos_ids']: idListProducts,
+      [tipoDocumentoSelected?.codigo === '05'
+        ? 'productos_id_r'
+        : 'productos_ids']: idListProducts,
       cantidades: cantidadListProducts, //cantidad de cada producto de la factura
       descuento_gravado: descuentos.descuentoGravado.toString(),
       descuento_global_input: descuentos.descuentoGeneral.toString(),
@@ -173,15 +188,25 @@ export const GenerarDocumentosAjuste = () => {
 
       setFacturasAjuste((prev) => [...prev, facturaProcesada]);
       setFormData({ codigo: '' }); // Limpiar input
-    } catch (error:any) {
-      handleAccion(
-        'error',
-        <IoMdCloseCircle size={68} />,
-        error.toString()
-      );
+    } catch (error: any) {
+      handleAccion('error', <IoMdCloseCircle size={68} />, error.toString());
     }
   };
 
+  useEffect(() => {
+    handleMontoPagar();
+    console.log("LIST PRODUCTPS", listProducts)
+  }, [listProducts, idListProducts, cantidadListProducts]);
+
+  const handleMontoPagar = () => {
+    let aux = 0;
+    listProducts.map((pago) => {
+      aux = + ((pago.preunitario + pago.iva_unitario) * pago.cantidad);
+    });
+    console.log("AUUUUUX", aux)
+    console.log("AUUUUUX", listProducts[0])
+    setTotalAPagar(aux);
+  };
 
   /************************************/
   /* OBTENCION DE DATOS              
@@ -367,7 +392,7 @@ export const GenerarDocumentosAjuste = () => {
             </button>
           </div>
           {facturasAjuste && (
-            <TablaProductosFacturaNotasDebito 
+            <TablaProductosFacturaNotasDebito
               tipoDte={tipoDocumentoSelected?.codigo}
               setCantidadListProducts={setCantidadListProducts}
               facturasAjuste={facturasAjuste}
@@ -379,16 +404,50 @@ export const GenerarDocumentosAjuste = () => {
         </div>
       </WhiteSectionsPage>
 
+      {/*Seccion para pagos*/}
+      {tipoDocumentoSelected?.codigo == '06' &&
+        <WhiteSectionsPage>
+          <>
+            <h1 className="text-start text-xl font-bold text-nowrap">
+              Formas de pago
+            </h1>
+            <Divider />
+            <FormasdePagoForm
+              setFormasPagoList={setFormasPagoList}
+              totalAPagar={totalAPagar}
+              setErrorFormasPago={setErrorFormasPago}
+              errorFormasPago={errorFormasPago}
+              setAuxManejoPagos={setAuxManejoPagos}
+              auxManejoPagos={auxManejoPagos}
+            />
+            <span className="flex flex-col items-start justify-start py-5 pt-10">
+              <p className="opacity-70">Observaciones</p>
+              <div className="justify-content-center flex w-full">
+                <InputTextarea
+                  autoResize
+                  value={observaciones}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                    setObservaciones(e.target.value)
+                  }
+                  rows={3}
+                  style={{ width: '100%' }}
+                />
+              </div>
+            </span>
+          </>
+        </WhiteSectionsPage>}
+
       {/*Seccion totales resumen*/}
       <WhiteSectionsPage>
         <div className="pt-2 pb-5">
           <div className="flex justify-between">
-            <h1 className="text-start text-xl font-bold">Resumen de totales</h1>
+            <h1 className="text-start text-xl font-bold">Resumen nuevo total</h1>
           </div>
           <Divider className="m-0 p-0"></Divider>
           <ResumenCardNotaAjuste
-            facturas={facturasAjuste}
+            facturas={listProducts}
             cantidades={cantidadListProducts}
+            totalAPagar={totalAPagar}
           />
         </div>
       </WhiteSectionsPage>

@@ -9,7 +9,7 @@ import { Menu } from 'antd';
 import { useNavigate } from 'react-router';
 import { useState } from 'react';
 import { CardModal } from '../../features/POST/components/cardModal';
-import { FaMoneyBill } from "react-icons/fa";
+import { FaMoneyBill } from 'react-icons/fa';
 import { Divider } from 'primereact/divider';
 
 type MenuItem = Required<MenuProps>['items'][number];
@@ -22,7 +22,7 @@ const items: MenuItem[] = [
         <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal text-gray-500">
           Dashboard
         </p>
-        <div className='h-[0.120rem] w-full bg-border-color mt-1' />
+        <div className="bg-border-color mt-1 h-[0.120rem] w-full" />
       </div>
     ),
     disabled: true,
@@ -43,7 +43,7 @@ const items: MenuItem[] = [
         <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal text-gray-500">
           Gestión
         </p>
-        <div className='h-0.5 w-full bg-border-color mt-1' />
+        <div className="bg-border-color mt-1 h-0.5 w-full" />
       </div>
     ),
     disabled: true,
@@ -139,7 +139,15 @@ const items: MenuItem[] = [
         key: 'listado-facturas',
         label: (
           <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
-            Listado Facturas
+            Listado facturas
+          </p>
+        ),
+      },
+      {
+        key: 'listado-facturas-sujeto',
+        label: (
+          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+            Listado facturas sujeto excluido
           </p>
         ),
       },
@@ -211,7 +219,7 @@ const items: MenuItem[] = [
         <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal text-gray-500">
           Contabilidad
         </p>
-        <div className='h-0.5 w-full bg-border-color mt-1' />
+        <div className="bg-border-color mt-1 h-0.5 w-full" />
       </div>
     ),
     disabled: true,
@@ -258,7 +266,7 @@ const items: MenuItem[] = [
         <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal text-gray-500">
           Configuración
         </p>
-        <div className='h-0.5 w-full bg-border-color mt-1' />
+        <div className="bg-border-color mt-1 h-0.5 w-full" />
       </div>
     ),
     disabled: true,
@@ -291,7 +299,6 @@ const items: MenuItem[] = [
     ],
   },
 ];
-
 
 export const SideMenu = () => {
   const [visible, setVisible] = useState<boolean>(false);
@@ -332,6 +339,9 @@ export const SideMenu = () => {
       case 'listado-facturas':
         navigate('/listado-facturas');
         break;
+      case 'listado-facturas-sujeto':
+        navigate('/listado-facturas-sujeto-excluido');
+        break;
       case 'listado-contingencias':
         navigate('/contingencias');
         break;
@@ -348,7 +358,7 @@ export const SideMenu = () => {
         navigate('/devoluciones-ventas');
         break;
       case 'post':
-        setVisible(true)
+        setVisible(true);
         break;
       default:
         break;

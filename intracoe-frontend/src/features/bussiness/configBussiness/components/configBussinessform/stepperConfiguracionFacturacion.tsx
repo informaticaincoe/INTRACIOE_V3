@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { RequestEmpresa } from '../../../../../shared/interfaces/interfaces';
 import { Input } from '../../../../../shared/forms/input';
 import { SelectTipoIdDocumento } from '../../../../../shared/Select/selectTipoIdDocumento';
@@ -6,6 +6,7 @@ import { SelectActividadesEconomicas } from '../../../../../shared/Select/select
 import { SelectAmbienteComponent } from '../../../../../shared/Select/selectAmbienteComponent';
 import { SelectTipoEstablecimiento } from '../../../../../shared/Select/selectTipoEstablecimiento';
 import { Password } from 'primereact/password';
+import { Dropdown, DropdownChangeEvent } from 'primereact/dropdown';
 
 interface StepperConfiguracionFacturacionProp {
   formData: RequestEmpresa;
@@ -15,9 +16,30 @@ interface StepperConfiguracionFacturacionProp {
 export const StepperConfiguracionFacturacion: React.FC<
   StepperConfiguracionFacturacionProp
 > = ({ formData, handleChange }) => {
+  const tipoContribuyenteLista = [
+    {
+      'id': 1,
+      'tipo': 'Gran Contribuyente'
+    },
+    {
+      'id': 2,
+      'tipo': 'Mediano Contribuyente'
+    },
+    {
+      'id': 3,
+      'tipo': 'Pequeño Contribuyente'
+    },
+    {
+      'id': 4,
+      'tipo': 'Emprendedor'
+    },
+
+  ]
+
   useEffect(() => {
-    console.log('ttttttttttttt', formData.tipo_documento);
-  });
+
+  }, []);
+
   return (
     <div className="flex flex-col gap-10 text-start">
       <span>
@@ -131,6 +153,23 @@ export const StepperConfiguracionFacturacion: React.FC<
           }}
           toggleMask
         />
+      </span>
+      <span>
+        <label htmlFor="tipoContribuyente">Tipo contribuyente</label>
+        <Dropdown
+          value={formData.tipoContribuyente}
+          onChange={(e: DropdownChangeEvent) => handleChange({
+              target: {
+                name: 'tipoContribuyente', // Aquí deberías usar 'name' en lugar de una clave directamente
+                value: e.target.value,
+              },
+            })
+          }
+          options={tipoContribuyenteLista}
+          optionLabel="tipo"
+          optionValue="tipo"
+          placeholder="Selecionar tipo contribuyente"
+          className="w-full md:w-14rem" />
       </span>
     </div>
   );

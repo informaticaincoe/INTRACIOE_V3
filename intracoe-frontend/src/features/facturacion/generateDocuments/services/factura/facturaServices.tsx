@@ -1,5 +1,6 @@
 import { FacturaPorCodigoGeneracionResponse } from '../../../../../shared/interfaces/interfaces';
 import { api } from '../../../../../shared/services/api';
+import { apiInventory } from '../../../../../shared/services/apiInventory';
 import { ProductosTabla } from '../../components/FE/productosAgregados/productosData';
 
 export const generarFacturaService = async (data: any) => {
@@ -13,7 +14,7 @@ export const generarFacturaService = async (data: any) => {
 };
 
 export const generarAjusteService = async (data: string) => {
-  console.log("data", data)
+  console.log('data', data);
   try {
     const response = await api.get(`/factura_ajuste/generar/`, {
       params: {
@@ -21,6 +22,38 @@ export const generarAjusteService = async (data: string) => {
       },
     });
 
+    return response.data;
+  } catch (error: any) {
+    console.log('ERROR:', error.response.data);
+
+    throw new Error();
+  }
+};
+
+
+export const obtenerSujetoExcluidoService = async () => {
+  // console.log('data', data);
+  try {
+    const response = await api.get(`/factura/generar_sujeto_excluido/`, {
+      // params: {
+      //   data,
+      // },
+    });
+
+    return response.data;
+  } catch (error: any) {
+    console.log('ERROR:', error.response.data);
+
+    throw new Error();
+  }
+};
+
+
+export const generarSujetoExcluidoService = async (data: any) => {
+  // console.log('data', data);
+  try {
+    const response = await api.post(`/factura/generar_sujeto_excluido/`, data);
+    console.log(response.data)
     return response.data;
   } catch (error: any) {
     console.log('ERROR:', error.response.data);
@@ -72,9 +105,33 @@ export const getFacturaCodigos = async (tipo_dte: string) => {
   }
 };
 
+
+export const getFacturaCodigosSujetoExcluido = async () => {
+  try {
+    const response = await api.get(`/factura/generar_sujeto_excluido/`);
+
+    console.log("DATA TIPO 14", response.data)
+
+    return response.data
+
+  } catch (error) {
+    console.log(error);
+    throw new Error();
+  }
+};
+
 export const FirmarFactura = async (id: string | undefined) => {
   try {
     await api.post(`/factura/firmar/${id}/`);
+  } catch (error) {
+    console.log(error);
+    throw new Error();
+  }
+};
+
+export const FirmarFacturaSujetoExcluido = async (id: string | undefined) => {
+  try {
+    await api.post(`/factura-sujeto-excluido/firmar/${id}/`);
   } catch (error) {
     console.log(error);
     throw new Error();
@@ -91,6 +148,17 @@ export const EnviarHacienda = async (id: string) => {
   }
 };
 
+export const EnviarHaciendaSujetoExcluido = async (id: string) => {
+  try {
+    const response = await api.post(`/factura-sujeto-excluido/${id}/enviar/`);
+    return response;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+
 export const getFacturaBycodigo = async (codigo_generacion: string) => {
   try {
     const response = await api.get<FacturaPorCodigoGeneracionResponse>(
@@ -102,8 +170,8 @@ export const getFacturaBycodigo = async (codigo_generacion: string) => {
       }
     );
     return response.data;
-  } catch (error:any) {
-    const msg = error.response.data.error
+  } catch (error: any) {
+    const msg = error.response.data.error;
     throw new Error(msg);
   }
 };
@@ -120,3 +188,5 @@ export const enviarFactura = async (id: any, formData: any) => {
     throw new Error();
   }
 };
+
+
