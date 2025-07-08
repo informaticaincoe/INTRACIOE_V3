@@ -150,7 +150,7 @@ export const ReceptoresPage = () => {
 
   return (
     <>
-      <Title text="Receptores" />
+      <Title text="Clientes" />
       <WhiteSectionsPage>
         <div>
           <HeaderReceptoresOptions

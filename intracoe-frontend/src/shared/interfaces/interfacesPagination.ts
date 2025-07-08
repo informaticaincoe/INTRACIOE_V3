@@ -25,6 +25,7 @@ export interface Proveedores {
 export interface MovimientoInventarioParams {
   page?: number;
   limit?: number;
+  signal?:any
   //filters
 }
 
@@ -61,6 +62,7 @@ export interface ProveedoressParams {
 export interface AjusteInventarioParams {
   page?: number;
   limit?: number;
+  signal?:any
   //filters
 }
 

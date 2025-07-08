@@ -2,7 +2,12 @@ import { Dropdown } from 'primereact/dropdown';
 import { useEffect, useState } from 'react';
 import { getAllModelosDeFacturacion } from '../../../../../../../shared/catalogos/services/catalogosServices';
 
-export const SelectModeloFactura = () => {
+interface SelectModeloFacturaProps {
+  setTipoModeloFacturacionSeleccionado?: any
+  tipoModeloFacturacionSeleccionado?: any
+}
+
+export const SelectModeloFactura:React.FC<SelectModeloFacturaProps> = ({setTipoModeloFacturacionSeleccionado, tipoModeloFacturacionSeleccionado}) => {
   const [selectedModeloFacturacion, setSelectedModeloFacturacion] =
     useState<any>(''); // valor seleccionado
   const [tipoModeloFacturacion, setTipoModeloFacturacion] = useState<any[]>([]); // Lista de tipos de documentos
@@ -15,6 +20,7 @@ export const SelectModeloFactura = () => {
     const response = await getAllModelosDeFacturacion();
     setTipoModeloFacturacion(response);
     setSelectedModeloFacturacion(response[0].codigo);
+    setTipoModeloFacturacionSeleccionado(response[0].codigo)
   };
 
   return (
@@ -25,7 +31,7 @@ export const SelectModeloFactura = () => {
       <Dropdown
         id={selectedModeloFacturacion.codigo}
         value={selectedModeloFacturacion}
-        onChange={(e: { value: any }) => setSelectedModeloFacturacion(e.value)}
+        onChange={(e: { value: any }) => {setSelectedModeloFacturacion(e.value), setTipoModeloFacturacionSeleccionado(e.value)}}
         options={tipoModeloFacturacion}
         optionLabel="descripcion"
         optionValue="codigo"

@@ -8,6 +8,7 @@ import { getAllProducts } from '../../../../shared/services/productos/productosS
 import { useSearchParams } from 'react-router';
 import { ProductosInterface } from '../../products/interfaces/productosInterfaces';
 import { Pagination } from '../../../../shared/interfaces/interfacesPagination';
+import LoadingScreen from '../../../../shared/loading/loadingScreen';
 
 export const ServicioPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -53,6 +54,7 @@ export const ServicioPage = () => {
 
   const fetchServicios = async (page = 1, limit = 10) => {
     try {
+      setLoading(true);
       const response = await getAllProducts({
         page,
         limit,
@@ -87,6 +89,8 @@ export const ServicioPage = () => {
       }
     } catch (error) {
       console.log(error);
+    } finally {
+      setLoading(false);
     }
   };
   // Handler que pasamos al header para que active la búsqueda
@@ -96,6 +100,7 @@ export const ServicioPage = () => {
 
   return (
     <>
+      {loading && <LoadingScreen />}
       <Title text="Servicios" />
       <WhiteSectionsPage>
         <div>

@@ -278,7 +278,6 @@ export const GenerarFacturaSujetoExcluido: React.FC<GenerarFacturaSujetoExcluido
                         />
 
                         <CheckBoxRetencion
-                            tipoDocumentoSelected={tipoDocumentoSelected}
                             setTieneRetencionIva={setTieneRetencionIva}
                             tieneRetencionIva={tieneRetencionIva}
                             setRetencionIva={setRetencionIva}

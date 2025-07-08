@@ -10,6 +10,7 @@ export const ChartDTE = () => {
     '03': 'Credito fiscal',
     '05': 'Nota de credito',
     '06': 'Nota de debito',
+    '14': 'Sujeto excluido',
   };
 
   const chartData = [

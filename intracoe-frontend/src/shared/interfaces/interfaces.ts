@@ -557,3 +557,13 @@ export interface PagoPayload {
   plazo: number | null;
   periodo: number | null;
 }
+
+export interface OtrosDocumentosAsociados {
+  codDocAsociado: any,
+  descDocumento?: any,
+  detalleDocumento?:any,
+  modoTransp?:any,
+  placaTrans?: any,
+  numConductor?:any,
+  nombreConductor?:any,
+}

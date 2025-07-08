@@ -13,6 +13,7 @@ import { GenerarFacturaYCCF } from './generarFacturaYCCF'
 import LoadingScreen from '../../../../shared/loading/loadingScreen'
 import { GenerarFacturaSujetoExcluido } from './generarFacturaSujetoExcluido'
 import { Proveedores } from '../../../../shared/interfaces/interfacesPagination'
+import { GenerarFacturaExportacion } from './generarFacturaExportacion'
 
 export const ContenedorGenerarDocumentos = () => {
     //lista de datos obtenidas de la api
@@ -38,7 +39,6 @@ export const ContenedorGenerarDocumentos = () => {
 
     const [emisorData, setEmisorData] = useState<EmisorInterface>(defaultEmisorData); // almcenar informacion del emisor
 
-
     useEffect(() => {
         const fetchTiposDocumento = async () => {
             try {
@@ -54,15 +54,21 @@ export const ContenedorGenerarDocumentos = () => {
                 console.log(error);
             }
         };
-
         fetchTiposDocumento();
     }, []);
 
     useEffect(() => {
+        console.log("tipo item codigo",tipoDocumentoSelected?.codigo)
         if (!tipoDocumentoSelected) return;
+        
+        console.log("otro")
+        
         if (tipoDocumentoSelected.codigo == '14') {
             fetchFacturaDataSujeto()
         }
+
+        console.log("otro")
+
         const fetchFacturaData = async () => {
             setLoading(true);
             try {
@@ -158,6 +164,17 @@ export const ContenedorGenerarDocumentos = () => {
             {
                 (tipoDocumentoSelected?.codigo == '14') &&
                 <GenerarFacturaSujetoExcluido
+                    tipoDocumentoSelected={tipoDocumentoSelected}
+                    codigoGeneracion={codigoGeneracion}
+                    numeroControl={numeroControl}
+                    condicionesOperacionList={condicionesOperacionList}
+                    descuentosList={descuentosList}
+                    tipoContibuyente={emisorData.tipoContibuyente}
+                />
+            }
+            {
+                (tipoDocumentoSelected?.codigo == '11') &&
+                <GenerarFacturaExportacion
                     tipoDocumentoSelected={tipoDocumentoSelected}
                     codigoGeneracion={codigoGeneracion}
                     numeroControl={numeroControl}

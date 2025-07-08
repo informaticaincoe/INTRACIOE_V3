@@ -10,6 +10,7 @@ import { getAllProducts } from '../../../../shared/services/productos/productosS
 import { useSearchParams } from 'react-router';
 import { ProductosInterface } from '../interfaces/productosInterfaces';
 import { Pagination } from '../../../../shared/interfaces/interfacesPagination';
+import LoadingScreen from '../../../../shared/loading/loadingScreen';
 
 export const ProductsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -56,6 +57,7 @@ export const ProductsPage = () => {
 
   const fetchProductos = async (page = 1, limit = 10) => {
     try {
+      setLoading(true);
       // Pasamos tipo=1 (productos) y, si hay código, también filter
       const response = await getAllProducts({
         page,
@@ -91,6 +93,8 @@ export const ProductsPage = () => {
       }
     } catch (error) {
       console.log(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -101,6 +105,7 @@ export const ProductsPage = () => {
 
   return (
     <>
+      {loading && <LoadingScreen />}
       <Title text="productos" />
       <WhiteSectionsPage>
         <div>
