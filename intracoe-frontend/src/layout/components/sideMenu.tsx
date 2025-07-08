@@ -159,14 +159,14 @@ const items: MenuItem[] = [
           </p>
         ),
       },
-      {
-        key: 'post',
-        label: (
-          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
-            POST
-          </p>
-        ),
-      },
+      // {
+      //   key: 'post',
+      //   label: (
+      //     <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+      //       POST
+      //     </p>
+      //   ),
+      // },
     ],
   },
   {
@@ -233,22 +233,22 @@ const items: MenuItem[] = [
       </p>
     ),
     children: [
-      {
-        key: 'anexo',
-        label: (
-          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
-            Anexos
-          </p>
-        ),
-      },
-      {
-        key: 'reportes',
-        label: (
-          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
-            Reportes
-          </p>
-        ),
-      },
+      // {
+      //   key: 'anexo',
+      //   label: (
+      //     <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+      //       Anexos
+      //     </p>
+      //   ),
+      // },
+      // {
+      //   key: 'reportes',
+      //   label: (
+      //     <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+      //       Reportes
+      //     </p>
+      //   ),
+      // },
       {
         key: 'catalogo',
         label: (
@@ -288,14 +288,14 @@ const items: MenuItem[] = [
           </p>
         ),
       },
-      {
-        key: 'server',
-        label: (
-          <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
-            Configurar servidor
-          </p>
-        ),
-      },
+      // {
+      //   key: 'server',
+      //   label: (
+      //     <p className="m-0 text-start text-[0.9em] leading-tight break-words whitespace-normal">
+      //       Configurar servidor
+      //     </p>
+      //   ),
+      // },
     ],
   },
 ];

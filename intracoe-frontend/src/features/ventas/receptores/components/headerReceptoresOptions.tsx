@@ -31,7 +31,7 @@ export const HeaderReceptoresOptions: React.FC<
 
   return (
     <span className="flex items-center justify-between">
-      <h1 className="text-lg font-bold">Lista receptores</h1>
+      <h1 className="text-lg font-bold">Lista clientes</h1>
       <div className="flex gap-5">
         <span className="border-border-color flex w-[30vw] items-center gap-2 rounded-md border">
           <span className="pl-5">

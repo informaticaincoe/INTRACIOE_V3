@@ -1,15 +1,16 @@
 import { WhiteCard } from '../whiteCard';
-import { PiTag } from 'react-icons/pi';
 import { Carousel } from 'primereact/carousel';
 import { useEffect, useState } from 'react';
 import { getProductos } from '../../services/dashboardServices';
 import { IoMdOpen } from 'react-icons/io';
 import { Dialog } from 'primereact/dialog';
+import { FaCrown } from 'react-icons/fa6';
 
 interface Producto {
   producto: number;
   producto__descripcion: string;
   total_vendido: number;
+  total_ventas: number;
 }
 
 export const ProductosMasVendidosCard = () => {
@@ -20,11 +21,17 @@ export const ProductosMasVendidosCard = () => {
   useEffect(() => {
     const fetch = async () => {
       const result = await getProductos();
-      console.log(result);
+      console.log("result productos", result);
       setProductos(result);
     };
     fetch();
   }, []);
+
+  const colors= [ // colores para los iconos de corona
+    '#FFD700',
+    '#c0c0c0',
+    '#CD7F32'
+  ]
 
   // Solo mostramos el nombre
   const productoTemplate = (producto: Producto) => {
@@ -74,14 +81,39 @@ export const ProductosMasVendidosCard = () => {
       {productsModalInfo && (
         <div>
           <Dialog
-            header="Header"
+            header={
+              <div className='px-5 pt-2'>
+                <h1>Top 3 productos</h1>
+                <p className='font-normal text-lg text-gray'>Detalles de venta</p>
+              </div>}
             visible={productsModalInfo}
             style={{ width: '50vw' }}
             onHide={() => {
               if (!productsModalInfo) return;
               setProductsModalInfo(false);
             }}
-          ></Dialog>
+          >
+            <div className='pb-5 px-5'>
+              <table className="table-auto w-full text-left">
+                <thead>
+                  <tr className="border-y border-gray bg-gray-100">
+                    <th className="px-4 py-3 text-lg">Producto</th>
+                    <th className="px-4 py-3 text-lg">Unidades Vendidas</th>
+                    <th className="px-4 py-3 text-lg">Ventas Totales</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {productos.map((producto, index) => (
+                    <tr key={index} className="border-b border-gray-400">
+                      <td className="px-4 py-3 flex gap-2 items-center"><FaCrown size={20} color={colors[index]}/> {producto.producto__descripcion}</td>
+                      <td className="px-4 py-3">{producto.total_vendido}</td>
+                      <td className="px-4 py-3">{`$ ${producto.total_ventas.toFixed(2)}`}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Dialog>
         </div>
       )}
     </>

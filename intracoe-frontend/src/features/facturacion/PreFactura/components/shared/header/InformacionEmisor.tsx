@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { DTEByCode } from '../../../../../../shared/services/DTEServices';
 import { QRCode } from 'antd';
 import { gethTipoModeloById } from '../../../services/facturavisualizacionServices';
+
 interface InformacionEmisorProps {
   emisor: Emisor;
   datosFactura: DatosFactura;

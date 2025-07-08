@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { Almacen } from '../../interfaces/interfaces';
 import { apiInventory } from '../apiInventory';
 
@@ -65,12 +66,19 @@ export const getAllAlmacenes = async (): Promise<any[]> => {
   }
 };
 
-export const getAlmacenById = async (id: number) => {
+export const getAlmacenById = async (
+  id: string | number,
+  signal?: AbortSignal
+) => {
   try {
-    const response = await apiInventory.get(`/almacenes/${id}`);
+    const response = await apiInventory.get(`/almacenes/${id}/`, { signal });
     return response.data;
-  } catch (error) {
-    console.error('Error fetching almacenes:', error);
-    throw new Error('Error fetching almacenes');
+  } catch (error: any) {
+    if (axios.isCancel(error)) {
+      console.log('Petición cancelada (almacén)', error.message);
+      return null;
+    }
+    throw new Error('Error obteniendo el almacén');
   }
 };
+

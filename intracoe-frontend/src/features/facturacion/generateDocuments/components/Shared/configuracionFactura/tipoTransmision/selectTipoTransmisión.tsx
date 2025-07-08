@@ -11,7 +11,7 @@ export const SelectTipoTransmision: React.FC<SelectTipoTransmisionProp> = ({
   setTipoTransmision,
   tipoTransmision,
 }) => {
-  const [tipoTransmisionTempLista, setTipoTransmisionTempLista] = useState<
+  const [tipoTransmisionLista, setTipoTransmisionLista] = useState<
     any[]
   >([]); // Lista de tipos de documentos
 
@@ -21,8 +21,8 @@ export const SelectTipoTransmision: React.FC<SelectTipoTransmisionProp> = ({
 
   const fetchTipoDte = async () => {
     const response = await getAllTipoTransmision();
-    setTipoTransmisionTempLista(response);
-    setTipoTransmision(response[0].id);
+    setTipoTransmisionLista(response);
+    setTipoTransmision(response[0].codigo);
   };
 
   return (
@@ -34,9 +34,9 @@ export const SelectTipoTransmision: React.FC<SelectTipoTransmisionProp> = ({
         id={tipoTransmision}
         value={tipoTransmision}
         onChange={(e: { value: any }) => setTipoTransmision(e.value)}
-        options={tipoTransmisionTempLista}
+        options={tipoTransmisionLista}
         optionLabel="descripcion"
-        optionValue="id"
+        optionValue="codigo"
         placeholder="Seleccionar tipo de documento"
         className="md:w-14rem font-display w-full text-start"
       />
