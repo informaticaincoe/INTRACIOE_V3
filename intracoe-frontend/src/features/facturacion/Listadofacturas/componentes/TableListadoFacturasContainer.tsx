@@ -9,7 +9,7 @@ import { BsHourglassSplit } from 'react-icons/bs';
 import { AiFillSignature } from 'react-icons/ai';
 import { FcCancel } from 'react-icons/fc';
 
-import { invalidarDte } from '../services/listadoFacturasServices';
+import { invalidarDte, invalidarDteSujetoExcluido } from '../services/listadoFacturasServices';
 import { useNavigate } from 'react-router';
 import { Tooltip } from 'antd';
 import CustomToast, {
@@ -43,33 +43,55 @@ export const TableListadoFacturasContainer: React.FC<
     });
   };
 
-  const visualizarFactura = async (id: number) => {
+  const visualizarFactura = async (id: number, tipo_dte: number) => {
     try {
-      navigate(`/factura/${id}`);
+      navigate(`/factura/${tipo_dte}/${id}`);
     } catch (error) {
       console.log(error);
     }
   };
 
-  const invalidarFactura = async (id: number) => {
-    try {
-      setLoading(true);
-      await invalidarDte(id);
-      updateFacturas();
-      handleAccion(
-        'success',
-        <FaCircleCheck size={32} />,
-        'Factura invalidada con éxito'
-      );
-    } catch (error) {
-      handleAccion(
-        'error',
-        <IoMdCloseCircle size={32} />,
-        'Ah ocurrido un error al invalidar la factura'
-      );
-    } finally {
-      setLoading(false);
+  const invalidarFactura = async (id: number, tipo_dte: string) => {
+    if (tipo_dte == '14') {
+      try {
+        setLoading(true);
+        await invalidarDteSujetoExcluido(id);
+        updateFacturas();
+        handleAccion(
+          'success',
+          <FaCircleCheck size={32} />,
+          'Factura invalidada con éxito'
+        );
+      } catch (error) {
+        handleAccion(
+          'error',
+          <IoMdCloseCircle size={32} />,
+          'Ah ocurrido un error al invalidar la factura'
+        );
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      try {
+        setLoading(true);
+        await invalidarDte(id);
+        updateFacturas();
+        handleAccion(
+          'success',
+          <FaCircleCheck size={32} />,
+          'Factura invalidada con éxito'
+        );
+      } catch (error) {
+        handleAccion(
+          'error',
+          <IoMdCloseCircle size={32} />,
+          'Ah ocurrido un error al invalidar la factura'
+        );
+      } finally {
+        setLoading(false);
+      }
     }
+
   };
 
   return (
@@ -137,22 +159,23 @@ export const TableListadoFacturasContainer: React.FC<
           body={(rowData: any) => (
             <>
               <span className="flex items-center gap-2">
-                {(rowData.estado_invalidacion == 'Viva' && rowData.sello_recepcion) && (
-                  <>
-                    <Tooltip title="Anular">
-                      <button
-                        className="flex w-full cursor-pointer items-center gap-1 text-red-500"
-                        onClick={() => invalidarFactura(rowData.id)}
-                      >
-                        <FcCancel size={22} />
-                      </button>
-                    </Tooltip>
-                  </>
-                )}
+                {rowData.estado_invalidacion == 'Viva' &&
+                  rowData.sello_recepcion && (
+                    <>
+                      <Tooltip title="Anular">
+                        <button
+                          className="flex w-full cursor-pointer items-center gap-1 text-red-500"
+                          onClick={() => invalidarFactura(rowData.id, rowData.tipo_dte)}
+                        >
+                          <FcCancel size={22} />
+                        </button>
+                      </Tooltip>
+                    </>
+                  )}
                 <Tooltip className="visualizar">
                   <button
                     className="flex w-full cursor-pointer items-center gap-1 rounded-md text-gray-700"
-                    onClick={() => visualizarFactura(rowData.id)}
+                    onClick={() => visualizarFactura(rowData.id, rowData.tipo_dte)}
                   >
                     <RiBillLine size={22} />
                   </button>

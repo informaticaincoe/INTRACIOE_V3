@@ -9,9 +9,15 @@ import { FaCheckCircle } from 'react-icons/fa';
 import { IoMdCloseCircle } from 'react-icons/io';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
+import { Pagination } from '../../../../shared/interfaces/interfacesPagination';
+import { Paginator } from 'primereact/paginator';
+import { ReceptorResult } from '../interfaces/receptorInterfaces';
 
 interface TableReceptoresProps {
-  receptores: any;
+  updateList: () => void;
+  pagination: Pagination;
+  onPageChange: (event: any) => void;
+  receptores: ReceptorResult[];
   setSelectedReceptores: any;
   selectedReceptores: any;
   onDelete: () => void;
@@ -24,6 +30,9 @@ export const TableReceptores: React.FC<TableReceptoresProps> = ({
   selectedReceptores,
   setSelectedReceptores,
   onEdit,
+  onPageChange,
+  pagination,
+  updateList,
 }) => {
   const [rowClick] = useState<boolean>(true);
   const toastRef = useRef<CustomToastRef>(null);
@@ -65,7 +74,6 @@ export const TableReceptores: React.FC<TableReceptoresProps> = ({
         onSelectionChange={(e: { value: React.SetStateAction<any[]> }) =>
           setSelectedReceptores(e.value)
         }
-        paginator
         rows={5}
         rowsPerPageOptions={[5, 10, 25, 50]}
       >
@@ -77,6 +85,15 @@ export const TableReceptores: React.FC<TableReceptoresProps> = ({
         <Column field="correo" header="Correo" />
         <Column field="num_documento" header="Documento de identificacion" />
       </DataTable>
+      <div className="pt-5">
+        <Paginator
+          first={(pagination.current_page - 1) * pagination.page_size}
+          rows={pagination.page_size}
+          totalRecords={pagination.count}
+          rowsPerPageOptions={[10, 25, 50]}
+          onPageChange={onPageChange}
+        />
+      </div>
       <CustomToast ref={toastRef} />
     </div>
   );

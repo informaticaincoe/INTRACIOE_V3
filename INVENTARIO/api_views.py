@@ -1,11 +1,15 @@
 
+from gettext import translation
+
+from django.shortcuts import get_object_or_404
 from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
 
 from .serializers import (
-    AlmacenSerializer, ImpuestoSerializer, ProductoSerializer, TipoItemSerializer,
+    AlmacenSerializer, DetalleCompraReadSerializer, ImpuestoSerializer, ProductoSerializer, ProductosProveedorSerializer, TipoItemSerializer,
     TipoUnidadMedidaSerializer, TiposTributosSerializer, TributosSerializer, 
     ProveedorSerializer, CompraSerializer, DetalleCompraSerializer,
     MovimientoInventarioSerializer, AjusteInventarioSerializer,
@@ -13,12 +17,29 @@ from .serializers import (
     DevolucionCompraSerializer, DetalleDevolucionCompraSerializer
     )
 from .models import (
-    Almacen, Impuesto, Producto, TipoItem, TipoTributo, TipoUnidadMedida, Tributo,
+    Almacen, Impuesto, Producto, ProductoProveedor, TipoItem, TipoTributo, TipoUnidadMedida, Tributo,
     Proveedor, Compra, DetalleCompra, MovimientoInventario, AjusteInventario,
     DevolucionVenta, DetalleDevolucionVenta, DevolucionCompra, DetalleDevolucionCompra
     )
 from django.db.models import Q
 
+class StandardResultsSetPagination(PageNumberPagination):
+    # Número de ítems por página por defecto
+    page_size = 10
+    # Permitir al cliente cambiar el tamaño de página con ?page_size=
+    page_size_query_param = 'page_size'
+    # Límite máximo que puede pedir
+    max_page_size = 100
+
+    def get_paginated_response(self, data):
+        return Response({
+            'count': self.page.paginator.count,
+            'page_size': self.page.paginator.per_page,
+            'current_page': self.page.number,
+            'has_next': self.page.has_next(),
+            'has_previous': self.page.has_previous(),
+            'results': data
+        })
      
 ######################################################
 # PRODUCTOS Y SERVICIOS
@@ -27,6 +48,7 @@ from django.db.models import Q
 # Listar productos con filtrado por código o descripción
 class ProductoListAPIView(generics.ListAPIView):
     serializer_class = ProductoSerializer
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         qs = Producto.objects.all()
@@ -65,7 +87,6 @@ class ProductoUpdateAPIView(generics.UpdateAPIView):
 class ProductoDestroyAPIView(generics.DestroyAPIView):
     queryset = Producto.objects.all()
     serializer_class = ProductoSerializer
-
 
 ######################################################
 #  TIPO TRIBUTOS
@@ -211,6 +232,10 @@ class AlmacenesListAPIView(generics.ListAPIView):
     queryset = Almacen.objects.all()
     serializer_class = AlmacenSerializer
 
+class AlmacenesDetailAPIView(generics.RetrieveAPIView):
+    queryset = Almacen.objects.all()
+    serializer_class = AlmacenSerializer
+
 # crear un nuevo almacen
 class AlmacenesCreateAPIView(generics.CreateAPIView):
     queryset = Almacen.objects.all()
@@ -233,6 +258,7 @@ class AlmacenesDestroyAPIView(generics.DestroyAPIView):
 class ProveedorListAPIView(generics.ListAPIView):
     queryset = Proveedor.objects.all()
     serializer_class = ProveedorSerializer
+    pagination_class = StandardResultsSetPagination
 
 class ProveedorCreateAPIView(generics.CreateAPIView):
     queryset = Proveedor.objects.all()
@@ -249,6 +275,40 @@ class ProveedorUpdateAPIView(generics.UpdateAPIView):
 class ProveedorDestroyAPIView(generics.DestroyAPIView):
     queryset = Proveedor.objects.all()
     serializer_class = ProveedorSerializer
+    
+######################################################
+# VISTAS PARA PRODUCTOS DE SUJETO EXCLUIDO
+######################################################
+class ProductosProveedorListAPIView(generics.ListAPIView):
+    queryset = ProductoProveedor.objects.all()
+    serializer_class = ProductosProveedorSerializer
+    pagination_class = StandardResultsSetPagination
+    
+class ProductosPorIdProveedorListAPIView(generics.ListAPIView):
+    serializer_class = ProductosProveedorSerializer
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        # Obtener el departamento a partir del id que pasamos en la URL
+        provedor_id = self.kwargs['proveedor_id']
+        # Filtramos los municipios que pertenecen a ese departamento
+        return ProductoProveedor.objects.filter(proveedor__id=provedor_id)
+
+class ProductoProveedorCreateAPIView(generics.CreateAPIView):
+    queryset = ProductoProveedor.objects.all()
+    serializer_class = ProductosProveedorSerializer
+
+class ProductoProveedorRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = ProductoProveedor.objects.all()
+    serializer_class = ProductosProveedorSerializer
+
+class ProductoProveedorUpdateAPIView(generics.UpdateAPIView):
+    queryset = ProductoProveedor.objects.all()
+    serializer_class = ProductosProveedorSerializer
+
+class ProductoProveedorDestroyAPIView(generics.DestroyAPIView):
+    queryset = ProductoProveedor.objects.all()
+    serializer_class = ProductosProveedorSerializer
 
 ######################################################
 # VISTAS PARA COMPRAS
@@ -256,6 +316,7 @@ class ProveedorDestroyAPIView(generics.DestroyAPIView):
 class CompraListAPIView(generics.ListAPIView):
     queryset = Compra.objects.all()
     serializer_class = CompraSerializer
+    pagination_class = StandardResultsSetPagination
 
 class CompraCreateAPIView(generics.CreateAPIView):
     queryset = Compra.objects.all()
@@ -288,6 +349,13 @@ class DetalleCompraRetrieveAPIView(generics.RetrieveAPIView):
     queryset = DetalleCompra.objects.all()
     serializer_class = DetalleCompraSerializer
 
+class DetallesPorCompraView(APIView):
+    def get(self, request, compra_id):
+        compra = get_object_or_404(Compra, id=compra_id)
+        detalles = compra.detalles.all()
+        serializer = DetalleCompraReadSerializer(detalles, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 class DetalleCompraUpdateAPIView(generics.UpdateAPIView):
     queryset = DetalleCompra.objects.all()
     serializer_class = DetalleCompraSerializer
@@ -302,6 +370,7 @@ class DetalleCompraDestroyAPIView(generics.DestroyAPIView):
 class MovimientoInventarioListAPIView(generics.ListAPIView):
     queryset = MovimientoInventario.objects.all()
     serializer_class = MovimientoInventarioSerializer
+    pagination_class = StandardResultsSetPagination
 
 class MovimientoInventarioCreateAPIView(generics.CreateAPIView):
     queryset = MovimientoInventario.objects.all()
@@ -325,6 +394,7 @@ class MovimientoInventarioDestroyAPIView(generics.DestroyAPIView):
 class AjusteInventarioListAPIView(generics.ListAPIView):
     queryset = AjusteInventario.objects.all()
     serializer_class = AjusteInventarioSerializer
+    pagination_class = StandardResultsSetPagination
 
 class AjusteInventarioCreateAPIView(generics.CreateAPIView):
     queryset = AjusteInventario.objects.all()
@@ -348,6 +418,7 @@ class AjusteInventarioDestroyAPIView(generics.DestroyAPIView):
 class DevolucionVentaListAPIView(generics.ListAPIView):
     queryset = DevolucionVenta.objects.all()
     serializer_class = DevolucionVentaSerializer
+    pagination_class = StandardResultsSetPagination
 
 class DevolucionVentaCreateAPIView(generics.CreateAPIView):
     queryset = DevolucionVenta.objects.all()
@@ -394,6 +465,7 @@ class DetalleDevolucionVentaDestroyAPIView(generics.DestroyAPIView):
 class DevolucionCompraListAPIView(generics.ListAPIView):
     queryset = DevolucionCompra.objects.all()
     serializer_class = DevolucionCompraSerializer
+    pagination_class = StandardResultsSetPagination
 
 class DevolucionCompraCreateAPIView(generics.CreateAPIView):
     queryset = DevolucionCompra.objects.all()

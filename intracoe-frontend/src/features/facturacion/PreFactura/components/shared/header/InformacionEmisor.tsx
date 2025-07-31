@@ -3,6 +3,8 @@ import logo from '../../../../../../assets/logo.png';
 import React, { useEffect, useState } from 'react';
 import { DTEByCode } from '../../../../../../shared/services/DTEServices';
 import { QRCode } from 'antd';
+import { gethTipoModeloById } from '../../../services/facturavisualizacionServices';
+
 interface InformacionEmisorProps {
   emisor: Emisor;
   datosFactura: DatosFactura;
@@ -15,15 +17,22 @@ export const InformacionEmisor: React.FC<InformacionEmisorProps> = ({
   qrCode,
 }) => {
   const [nombreDte, setNombreDte] = useState<string>('');
+  const [nombreTipoModelo, setNombreTipoModelo] = useState<string>('')
+
   useEffect(() => {
     if (datosFactura.tipoDte) fetchTipoDTE();
-    console.log(qrCode);
+    fetchNombreTipoModelo()
   }, [datosFactura.tipoDte]);
 
   const fetchTipoDTE = async () => {
     const response = await DTEByCode(datosFactura.tipoDte);
     setNombreDte(response.descripcion);
   };
+
+  const fetchNombreTipoModelo = async() => {
+    const response = await gethTipoModeloById(datosFactura.tipoModelo)
+    setNombreTipoModelo(response.descripcion)
+  }
 
   return (
     <div className="grid grid-cols-5">
@@ -36,8 +45,9 @@ export const InformacionEmisor: React.FC<InformacionEmisorProps> = ({
         <p>{emisor.direccion.complemento}</p>
         <p>Codigo generacion: {datosFactura.codigoGeneracion.toUpperCase()}</p>
         <p>Numero de control: {datosFactura.numeroControl}</p>
-        <p>Sello: {datosFactura.selloRemision}</p>
-        {datosFactura.contingencia && "Estado: contingencia"}
+        {datosFactura.selloRemision && <p>Sello: {datosFactura.selloRemision}</p>}
+        {datosFactura.contingencia && 'Estado: contingencia'}
+        <p>Tipo Modelo: {nombreTipoModelo}</p>
       </span>
       <span className="border-border-color col-start-5 flex w-full flex-col items-center rounded-md border-2 p-2">
         <p>{nombreDte}</p>

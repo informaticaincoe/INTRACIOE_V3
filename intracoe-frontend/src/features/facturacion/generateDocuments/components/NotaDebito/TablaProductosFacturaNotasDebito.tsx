@@ -6,239 +6,312 @@ import {
 } from 'primereact/inputnumber';
 import { Checkbox } from 'primereact/checkbox';
 import { Accordion, AccordionTab } from 'primereact/accordion';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   FacturaDetalleItem,
   FacturaPorCodigoGeneracionResponse,
 } from '../../../../../shared/interfaces/interfaces';
 import { ProductosTabla } from '../FE/productosAgregados/productosData';
+import CustomToast, {
+  CustomToastRef,
+  ToastSeverity,
+} from '../../../../../shared/toast/customToast';
+import { IoMdCloseCircle } from 'react-icons/io';
 
-interface TablaProductosFacturaNotasDebitoProps {
+interface Props {
   facturasAjuste: FacturaPorCodigoGeneracionResponse[];
-  setFacturasAjuste: any;
-  setIdListProducts: any;
-  setCantidadListProducts: any;
-  setListProducts: any;
+  setFacturasAjuste: React.Dispatch<
+    React.SetStateAction<FacturaPorCodigoGeneracionResponse[]>
+  >;
+  setIdListProducts: React.Dispatch<React.SetStateAction<string[]>>;
+  setCantidadListProducts: React.Dispatch<React.SetStateAction<string[]>>;
+  setListProducts: React.Dispatch<React.SetStateAction<ProductosTabla[]>>;
+  tipoDte: any;
 }
 
-export const TablaProductosFacturaNotasDebito: React.FC<
-  TablaProductosFacturaNotasDebitoProps
-> = ({
+export const TablaProductosFacturaNotasDebito: React.FC<Props> = ({
   facturasAjuste,
   setFacturasAjuste,
   setIdListProducts,
   setCantidadListProducts,
   setListProducts,
+  tipoDte,
 }) => {
-  const [seleccionados, setSeleccionados] = useState<{
-    [key: string]: boolean;
-  }>({});
+  // --- estado local de selección usando clave compuesta
+  const [seleccionados, setSeleccionados] = useState<Record<string, boolean>>(
+    {}
+  );
+  const toastRef = useRef<CustomToastRef>(null);
+
+  const handleAccion = (
+    severity: ToastSeverity,
+    icon: any,
+    summary: string
+  ) => {
+    toastRef.current?.show({
+      severity: severity,
+      summary: summary,
+      icon: icon,
+      life: 2000,
+    });
+  };
 
   useEffect(() => {
-    // actualizarListasSeleccionadas(seleccionados);
-  }, [facturasAjuste, seleccionados]);
-
-  useEffect(() => {
-    console.log('facturasAjuste', facturasAjuste);
-    if (facturasAjuste) {
-    }
+    console.log('Factura Ajuste en tabla', facturasAjuste);
   }, [facturasAjuste]);
 
-  const handleCantidadChange = (
-    value: number | null,
-    facturaCodigo: string,
-    productoId: number
-  ) => {
-    const nuevaLista = facturasAjuste.map((factura) => {
-      if (factura.codigo_generacion === facturaCodigo) {
-        return {
-          ...factura,
-          productos: factura.productos.map((producto) =>
-            producto.producto_id === productoId
-              ? { ...producto, cantidad_editada: value ?? 0 }
-              : producto
-          ),
-        };
-      }
-      return factura;
-    });
+  // --- 1) Derivar arrays cada vez que cambien facturasAjuste o seleccionados
+  useEffect(() => {
+    // Filtramos y aplanamos todos los productos seleccionados
+    const seleccion = facturasAjuste.flatMap((factura) =>
+      factura.productos
+        .filter(
+          (prod) =>
+            seleccionados[`${factura.codigo_generacion}-${prod.producto_id}`]
+        )
+        .map((prod) => ({
+          facturaCodigo: factura.codigo_generacion,
+          ...prod,
+        }))
 
-    setFacturasAjuste(nuevaLista);
-  };
+    );
+    console.log("FACTURA PRODCUTOS QUE DAN ERROR", seleccion)
 
-  const handleMontoAumentarChange = (
-    value: number | null,
-    facturaCodigo: string,
-    productoId: number
-  ) => {
-    const nuevaLista = facturasAjuste.map((factura) => {
-      if (factura.codigo_generacion === facturaCodigo) {
-        return {
-          ...factura,
-          productos: factura.productos.map((producto) =>
-            producto.producto_id === productoId
-              ? { ...producto, monto_a_aumentar: value ?? 0 }
-              : producto
-          ),
-        };
-      }
-      return factura;
-    });
+    // Extraemos ids y cantidades
+    const ids = seleccion.map((item) => item.producto_id.toString());
+    const cantidades = seleccion.map((item) =>
+      (item.cantidad_editada ?? item.cantidad).toString()
+    );
 
-    setFacturasAjuste(nuevaLista);
-  };
-
-  const handleSelectChange = (checked: boolean, id: string) => {
-    setSeleccionados((prev) => {
-      const actualizados = {
-        ...prev,
-        [id]: checked,
-      };
-      actualizarListasSeleccionadas(actualizados);
-      return actualizados;
-    });
-  };
-
-  const actualizarListasSeleccionadas = (seleccionadosActuales: {
-    [key: string]: boolean;
-  }) => {
-    const productosSeleccionados: string[] = [];
-    const cantidadesSeleccionadas: string[] = [];
-    const productosTabla: ProductosTabla[] = [];
-
-    facturasAjuste.forEach((factura) => {
-      factura.productos.forEach((producto) => {
-        const idStr = producto.producto_id.toString();
-        if (seleccionadosActuales[idStr]) {
-          productosSeleccionados.push(idStr);
-          const cantidadFinal = producto.cantidad_editada ?? producto.cantidad;
-          cantidadesSeleccionadas.push(cantidadFinal.toString());
-
-          // Armar objeto del tipo ProductosTabla
-          productosTabla.push({
-            id: producto.producto_id,
-            codigo: producto.codigo,
-            descripcion: producto.descripcion,
-            cantidad: cantidadFinal,
-            preunitario: parseFloat(producto.precio_unitario),
-            iva_unitario: parseFloat(producto.iva_unitario),
-            // no_grabado: false,
-            descuento: null,
-            total_neto: 0,
-            total_iva: 0,
-            total_con_iva: 0,
-            iva_percibido: 0,
-            total_tributos: 0,
-            seleccionar: false,
-            imagen: '',
-            categoria_id: null,
-            tipo_item_id: null,
-            unidad_medida_id: 0,
-            tributo_id: 0,
-            referencia_interna: '',
-            maneja_lotes: false,
-            fecha_vencimiento: null,
-            creado: '',
-            actualizado: '',
-            precio_compra: 0,
-            precio_venta: 0,
-            precio_iva: false,
-            stock: 0,
-            stock_minimo: 0,
-            stock_maximo: 0,
-          });
-        }
-      });
-    });
-
-    setIdListProducts(productosSeleccionados);
-    setCantidadListProducts(cantidadesSeleccionadas);
+    // Construimos la lista de ProductosTabla
+    const productosTabla: any[] = seleccion.map((item) => ({
+      id: item.producto_id,
+      codigo: item.codigo,
+      descripcion: item.descripcion,
+      cantidad: item.cantidad_editada ?? item.cantidad,
+      preunitario: parseFloat(item.precio_unitario),
+      iva_unitario: parseFloat(item.iva_unitario),
+      descuento: null,
+      total_neto: 0,
+      total_iva: item.total_iva,
+      total_con_iva: ((parseFloat(item.total_incl)) * item.cantidad),
+      iva_percibido: 0,
+      total_tributos: 0,
+      seleccionar: true,
+      imagen: '',
+      categoria_id: null,
+      tipo_item: null,
+      unidad_medida_id: 0,
+      tributo_id: 0,
+      referencia_interna: '',
+      maneja_lotes: false,
+      fecha_vencimiento: null,
+      creado: '',
+      actualizado: '',
+      precio_compra: 0,
+      precio_venta: 0,
+      precio_iva: false,
+      stock: 0,
+      stock_minimo: 0,
+      stock_maximo: 0,
+    }));
+    console.log(seleccion)
+    setIdListProducts(ids);
+    setCantidadListProducts(cantidades);
     setListProducts(productosTabla);
+  }, [
+    facturasAjuste,
+    seleccionados,
+    setIdListProducts,
+    setCantidadListProducts,
+    setListProducts,
+  ]);
+
+  // --- 2) Manejador de selección
+  const handleSelect = (
+    facturaCodigo: string,
+    productoId: number,
+    checked: boolean
+  ) => {
+    const key = `${facturaCodigo}-${productoId}`;
+    setSeleccionados((prev) => ({ ...prev, [key]: checked }));
   };
 
-  return (
-    <>
-      {facturasAjuste.length > 0 && (
-        <Accordion multiple>
-          {facturasAjuste.map((factura) => {
-            const header = (
-              <div className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 text-start text-sm">
-                <p className="font-semibold text-black">
-                  Código de generación:
-                </p>
-                <p className="text-gray-700">{factura.codigo_generacion}</p>
-                <p className="font-semibold text-black">Número de control:</p>
-                <p className="text-gray-700">{factura.num_documento}</p>
-                <p className="font-semibold text-black">Fecha emisión:</p>
-                <p className="text-gray-700">{factura.fecha_emision}</p>
-                <p className="font-semibold text-black">Receptor:</p>
-                <p className="text-gray-700">{factura.receptor.nombre}</p>
-                <p className="font-semibold text-black">Monto total:</p>
-                <p className="text-gray-700">${factura.total}</p>
-              </div>
-            );
+  // --- 3) Manejador de cambio de cantidad
+  const handleCantidadChange = (
+    facturaCodigo: string,
+    productoId: number,
+    value: number | null
+  ) => {
+    setFacturasAjuste((prev) => {
+      // 1) Clonamos todo el array de facturas
+      const facturas = [...prev];
 
-            return (
-              <AccordionTab key={factura.codigo_generacion} header={header}>
-                <DataTable
-                  value={factura.productos}
-                  tableStyle={{ minWidth: '50rem' }}
-                  paginator
-                  rows={5}
-                  rowsPerPageOptions={[5, 10, 25, 50]}
+      // 2) Buscamos la factura
+      const fi = facturas.findIndex(
+        (f) => f.codigo_generacion === facturaCodigo
+      );
+      if (fi < 0) return prev;
+
+      // 3) Clonamos su array de productos
+      const productos = [...facturas[fi].productos];
+
+      // 4) Buscamos el producto dentro de esa factura
+      const pi = productos.findIndex((p) => p.producto_id === productoId);
+      if (pi < 0) return prev;
+
+      if (value)
+        if (tipoDte == '05' && value < productos[pi].cantidad) {
+          //**nota de credito: la cantidad a anular no puedo ser mayor al de la factura
+          // 5) Actualizamos sólo ese producto
+          productos[pi] = {
+            ...productos[pi],
+            cantidad_editada: value ?? 0,
+          };
+
+          // 6) Reemplazamos el array de productos en la factura
+          facturas[fi] = {
+            ...facturas[fi],
+            productos,
+          };
+        } else if (tipoDte == '06') {
+          //**nota de debito: la cantidad a anular no puedo ser mayor al de la factura
+          // 5) Actualizamos sólo ese producto
+          productos[pi] = {
+            ...productos[pi],
+            cantidad_editada: value ?? 0,
+          };
+
+          // 6) Reemplazamos el array de productos en la factura
+          facturas[fi] = {
+            ...facturas[fi],
+            productos,
+          };
+        } else {
+          handleAccion(
+            'error',
+            <IoMdCloseCircle size={68} />,
+            'La cantidad a anular es mayor a la cantidad de la factura'
+          );
+          console.error('error');
+        }
+
+      console.log('cantidad', productos[pi].cantidad);
+      console.log('value', value);
+
+      return facturas;
+    });
+  };
+
+  const eliminarfacturaAdjunta = (codigo: string) => {
+    const facturasFiltradas = facturasAjuste.filter(
+      (f) => f.codigo_generacion != codigo
+    );
+    console.log(facturasFiltradas);
+    setFacturasAjuste(facturasFiltradas);
+  };
+
+  // --- 4) Render
+  return facturasAjuste.length > 0 ? (
+    <>
+      <CustomToast ref={toastRef} />
+      <Accordion multiple>
+        {facturasAjuste.map((factura) => (
+          <AccordionTab
+            key={factura.codigo_generacion}
+            header={
+              <div className="flex justify-between">
+                <div className="grid grid-cols-[auto_1fr] gap-2 text-start text-sm">
+                  <span className="font-semibold">Código:</span>
+                  <span>{factura.codigo_generacion}</span>
+                  <span className="font-semibold">Control:</span>
+                  <span>{factura.num_documento}</span>
+                  <span className="font-semibold">Emisión:</span>
+                  <span>{factura.fecha_emision}</span>
+                  <span className="font-semibold">Receptor:</span>
+                  <span>{factura.receptor.nombre}</span>
+                  <span className="font-semibold">Total:</span>
+                  <span>${factura.total}</span>
+                </div>
+                <button
+                  className=""
+                  onClick={() =>
+                    eliminarfacturaAdjunta(factura.codigo_generacion)
+                  }
                 >
-                  <Column
-                    header={<p className="text-sm">SELECCIONAR</p>}
-                    body={(rowData: FacturaDetalleItem) => (
-                      <Checkbox
-                        checked={!!seleccionados[rowData.producto_id]}
-                        onChange={(e) =>
-                          handleSelectChange(
-                            !!e.checked,
-                            rowData.producto_id.toString()
-                          )
-                        }
-                      />
-                    )}
-                  />
-                  <Column
-                    header={<p className="text-sm">PRODUCTO</p>}
-                    body={(rowData: FacturaDetalleItem) => (
-                      <p>
-                        {rowData.codigo} - {rowData.descripcion}
-                      </p>
-                    )}
-                  />
-                  <Column
-                    header={<p className="text-sm">PRECIO UNITARIO</p>}
-                    body={(rowData: FacturaDetalleItem) => (
-                      <p>${rowData.precio_unitario}</p>
-                    )}
-                  />
-                  <Column
-                    header={<p className="text-sm">CANTIDAD</p>}
-                    body={(rowData: FacturaDetalleItem) => (
-                      <InputNumber
-                        value={rowData.cantidad_editada ?? rowData.cantidad}
-                        onValueChange={(e: InputNumberValueChangeEvent) =>
-                          handleCantidadChange(
-                            e.value ?? null,
-                            factura.codigo_generacion,
-                            rowData.producto_id
-                          )
-                        }
-                        disabled={
-                          !seleccionados[rowData.producto_id.toString()]
-                        }
-                      />
-                    )}
-                  />
-                </DataTable>
-              </AccordionTab>
-            );
-          })}
-        </Accordion>
-      )}
+                  eliminar
+                </button>
+              </div>
+            }
+          >
+            <DataTable
+              value={factura.productos}
+              tableStyle={{ minWidth: '50rem' }}
+              paginator
+              rows={5}
+              rowsPerPageOptions={[5, 10, 25, 50]}
+            >
+              <Column
+                header="Seleccionar"
+                body={(row: FacturaDetalleItem) => {
+                  const key = `${factura.codigo_generacion}-${row.producto_id}`;
+                  return (
+                    <Checkbox
+                      checked={!!seleccionados[key]}
+                      onChange={(e) =>
+                        handleSelect(
+                          factura.codigo_generacion,
+                          row.producto_id,
+                          e.checked ?? false
+                        )
+                      }
+                    />
+                  );
+                }}
+              />
+              <Column
+                header="Producto"
+                body={(row) => <>{`${row.codigo} - ${row.descripcion}`}</>}
+              />
+              <Column
+                header="Precio Unit."
+                body={(row: FacturaDetalleItem) => {
+                  // parseamos a número antes de formatear
+                  const precio = Number(row.precio_unitario) || 0;
+                  return <>${precio.toFixed(2)}</>;
+                }}
+              />
+              <Column
+                header="IVA Unit."
+                body={(row: FacturaDetalleItem) => {
+                  // parseamos a número antes de formatear
+                  const precio = Number(row.iva_unitario) || 0;
+                  return <>${precio.toFixed(2)}</>;
+                }}
+              />
+              <Column
+                header="Cantidad"
+                body={(row) => {
+                  const key = `${factura.codigo_generacion}-${row.producto_id}`;
+                  return (
+                    <InputNumber
+                      value={row.cantidad_editada ?? row.cantidad}
+                      onValueChange={(e: InputNumberValueChangeEvent) =>
+                        handleCantidadChange(
+                          factura.codigo_generacion,
+                          row.producto_id,
+                          e.value ?? 1
+                        )
+                      }
+                      disabled={!seleccionados[key]}
+                    />
+                  );
+                }}
+              />
+            </DataTable>
+          </AccordionTab>
+        ))}
+      </Accordion>
     </>
-  );
+  ) : null;
 };

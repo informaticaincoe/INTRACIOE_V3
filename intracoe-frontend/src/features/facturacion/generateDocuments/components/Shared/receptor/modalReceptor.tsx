@@ -1,3 +1,5 @@
+/* ESTE NO SE OCUPA */
+
 import { Stepper } from 'primereact/stepper';
 import React, { useRef, useState } from 'react';
 import {
@@ -28,7 +30,7 @@ export const ModalReceptor: React.FC<ModalReceptorinterfaceProp> = ({
   const [tipoReceptor, setTipoReceptor] = useState<string>('');
   const [visibleModal, setVisibleModal] = useState(false);
 
-  const stepperRef = useRef<Stepper | null>(null); // TODO: Tipar correctamente el ref
+  const stepperRef = useRef<Stepper | null>(null);
 
   const handleSelectActividadesEconomicas = (value: ActivitiesData[]) => {
     setReceptoreLists({ ...receptoresList, actividades_economicas: value });
@@ -53,14 +55,15 @@ export const ModalReceptor: React.FC<ModalReceptorinterfaceProp> = ({
   };
 
   return (
-    <div className="card justify-content-center flex">
+    <div className="justify-content-center flex">
       <StepperPanel header="información general">
         <div className="flex flex-col gap-8">
           <span>
             <label htmlFor="">Tipo de documento de identificacion</label>
             <SelectTipoIdDocumento
-              tipoIdDocumento={tipoIdDocumento}
-              setTipoIdDocumento={setTipoIdDocumento}
+              name="tipo_documento"
+              value={receptoresList.tipo_documento?.id || ''}
+              onChange={handleTipoDocId}
             />
           </span>
           <span>
@@ -79,10 +82,19 @@ export const ModalReceptor: React.FC<ModalReceptorinterfaceProp> = ({
           <span>
             <label htmlFor="">Actividad economica</label>
             <SelectActividadesEconomicas
-              actividades={receptoresList.actividades_economicas}
-              setActividades={handleSelectActividadesEconomicas}
-              className={'selectActReceptor'}
+              value={receptoresList.actividades_economicas.map((a: { id: any; }) => a.id)} // o el campo identificador adecuado
+              onChange={(e) =>
+                setReceptoreLists({
+                  ...receptoresList,
+                  actividades_economicas: e.target.value.map((id) => ({
+                    id, descripcion: '' // puedes llenar luego si hace falta
+                  })),
+                })
+              }
+              name="actividades_economicas"
+              className="selectActReceptor"
             />
+
           </span>
           <span className="flex flex-col gap-2">
             <label htmlFor="">Tipo de receptoresList</label>
@@ -141,12 +153,19 @@ export const ModalReceptor: React.FC<ModalReceptorinterfaceProp> = ({
                   /> */}
           </span>
           <span>
-            <label htmlFor="">Municipio</label>
+            {/* <label htmlFor="">Municipio</label>
             <SelectMunicipios
-              department={receptoresList.municipio}
-              municipio={receptoresList.municipio}
-              setMunicipio={handleMunicipio}
-            />
+              name="department"
+              value={receptoresList.municipio || ''}
+              handle={handleMunicipio}
+            /> */}
+            {/* name="tipo_documento"
+              value={receptoresList.tipo_documento?.id || ''}
+              onChange={handleTipoDocId} */}
+            {/* name,
+  department,
+  value,
+  onChange, */}
           </span>
           <span>
             <label htmlFor="direccion">Direccion</label>

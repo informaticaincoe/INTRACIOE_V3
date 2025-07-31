@@ -2,11 +2,19 @@ from django.urls import path
 
 from .api_views import (
         # PRODUCTOS Y SERVICIOS
+    AlmacenesDetailAPIView,
+    DetallesPorCompraView,
     ProductoListAPIView,
     ProductoDetailAPIView,
     ProductoCreateAPIView,
+    ProductoProveedorCreateAPIView,
+    ProductoProveedorDestroyAPIView,
+    ProductoProveedorRetrieveAPIView,
+    ProductoProveedorUpdateAPIView,
     ProductoUpdateAPIView,
     ProductoDestroyAPIView,
+    ProductosPorIdProveedorListAPIView,
+    ProductosProveedorListAPIView,
 
     # TIPO TRIBUTOS
     TiposTributosListAPIView,
@@ -45,7 +53,6 @@ from .api_views import (
     AlmacenesCreateAPIView,
     AlmacenesUpdateAPIView,
     AlmacenesDestroyAPIView,
-
     # Proveedores
     ProveedorListAPIView, ProveedorCreateAPIView, ProveedorRetrieveAPIView,
     ProveedorUpdateAPIView, ProveedorDestroyAPIView,
@@ -87,6 +94,14 @@ urlpatterns = [
     path('api/productos/<int:pk>/', ProductoDetailAPIView.as_view(), name='producto-detail'),
     path('api/productos/<int:pk>/editar/', ProductoUpdateAPIView.as_view(), name='producto-update'),
     path('api/productos/<int:pk>/eliminar/', ProductoDestroyAPIView.as_view(), name='producto-destroy'),
+    
+    ############# PRODUCTOS Y SERVICIOS PARA SUJETO EXCLUIDO #############
+    path('api/productos-proveedor/', ProductosProveedorListAPIView.as_view(), name='producto-proveedor-list'),
+    path('api/proveedor/<int:proveedor_id>/productos/', ProductosPorIdProveedorListAPIView.as_view(), name='productos-por-proveedor-list'),
+    path('api/productos-proveedor/crear/', ProductoProveedorCreateAPIView.as_view(), name='producto-proveedor-create'),
+    path('api/productos-proveedor/<int:pk>/', ProductoProveedorRetrieveAPIView.as_view(), name='producto-proveedor-detail'),
+    path('api/productos-proveedor/<int:pk>/editar/', ProductoProveedorUpdateAPIView.as_view(), name='producto-proveedor-update'),
+    path('api/productos-proveedor/<int:pk>/eliminar/', ProductoProveedorDestroyAPIView.as_view(), name='producto-proveedor-destroy'),
 
     ############# TIPO TRIBUTOS #############
     path('api/tipo-tributos/', TiposTributosListAPIView.as_view(), name='tipos-tributos-list'),
@@ -123,6 +138,7 @@ urlpatterns = [
 
     ############# ALMACENES #############
     path('api/almacenes/', AlmacenesListAPIView.as_view(), name='almacenes-list'),
+    path('api/almacenes/<int:pk>/', AlmacenesDetailAPIView.as_view(), name='almacene-detail'),
     path('api/almacenes/crear/', AlmacenesCreateAPIView.as_view(), name='almacenes-create'),
     path('api/almacenes/<int:pk>/editar/', AlmacenesUpdateAPIView.as_view(), name='almacenes-update'),
     path('api/almacenes/<int:pk>/eliminar/', AlmacenesDestroyAPIView.as_view(), name='almacenes-destroy'),
@@ -149,6 +165,7 @@ urlpatterns = [
     # DETALLE DE COMPRAS
     ##############################
     path('api/detalle-compra/', DetalleCompraListAPIView.as_view(), name='detalle-compra-list'),
+    path('api/compras/<int:compra_id>/detalles/', DetallesPorCompraView.as_view(), name='compra-detalles'),
     path('api/detalle-compra/crear/', DetalleCompraCreateAPIView.as_view(), name='detalle-compra-create'),
     path('api/detalle-compra/<int:pk>/', DetalleCompraRetrieveAPIView.as_view(), name='detalle-compra-detail'),
     path('api/detalle-compra/<int:pk>/editar/', DetalleCompraUpdateAPIView.as_view(), name='detalle-compra-update'),

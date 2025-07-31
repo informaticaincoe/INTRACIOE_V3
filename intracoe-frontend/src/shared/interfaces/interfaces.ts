@@ -1,9 +1,39 @@
 import { Nullable } from 'primereact/ts-helpers';
+import { pagination2 } from './interfacesPagination';
 
 export interface ActivitiesData {
   id: number;
   codigo: string;
   descripcion: string;
+}
+
+export interface ActivitiesInterfacePagination {
+  count: number;
+  page_size: number;
+  current_page: number;
+  has_next: boolean;
+  has_previous: boolean;
+  results: ActivitiesData[];
+}
+
+export interface AjusteInventarioInterfaceResults {
+  producto: number;
+  nombreProducto?: string;
+  almacen: number;
+  nombreAlmacen?: string;
+  cantidad_ajustada: number;
+  motivo: string;
+  fecha: Date;
+  usuario: string;
+}
+
+export interface AjusteInventarioInterface {
+  count: number;
+  page_size: number;
+  current_page: number;
+  has_next: boolean;
+  has_previous: boolean;
+  results: AjusteInventarioInterfaceResults[];
 }
 
 export interface contingenciaData {
@@ -36,6 +66,7 @@ export const defaultEmisorData: EmisorInterface = {
   codigo_punto_venta: '', //codigo
   codigo_establecimiento: '',
   nombre_establecimiento: null,
+  tipoContibuyente:'',
   tipoestablecimiento: {
     id: '',
     descripcion: '',
@@ -80,6 +111,7 @@ export interface EmisorInterface {
   municipio: Municipio;
   ambiente: Ambiente;
   tipo_documento: TipoDocumento;
+  tipoContibuyente: string;
   actividades_economicas: ActivitiesData[]; // Array de IDs de actividades económicas
 }
 
@@ -101,24 +133,24 @@ export const ReceptorDefault: ReceptorInterface = {
   nombre_comercial: '',
 };
 
-export const ReceptorRequestDefault: ReceptorRequestInterface = {
-  id: '',
-  tipo_documento: {
-    id: '',
-    descripcion: '',
-    code: '',
-  },
-  num_documento: '',
-  nrc: '',
-  nombre: '',
-  actividades_economicas: [],
-  municipio: '',
-  direccion: '',
-  telefono: '',
-  correo: '',
-  nombre_comercial: '',
-  tipo_receptor: '',
-};
+// export const ReceptorRequestDefault: ReceptorRequestInterface = {
+//   id: '',
+//   tipo_documento: {
+//     id: '',
+//     descripcion: '',
+//     code: '',
+//   },
+//   num_documento: '',
+//   nrc: '',
+//   nombre: '',
+//   actividades_economicas: [],
+//   municipio: '',
+//   direccion: '',
+//   telefono: '',
+//   correo: '',
+//   nombre_comercial: '',
+//   tipo_receptor: '',
+// };
 
 export interface ReceptorInterface {
   id: string;
@@ -134,20 +166,20 @@ export interface ReceptorInterface {
   nombre_comercial: string;
 }
 
-export interface ReceptorRequestInterface {
-  id: string;
-  tipo_documento: TipoDocumento;
-  num_documento: string;
-  tipo_receptor: string;
-  nrc: string;
-  nombre: string;
-  actividades_economicas: ActivitiesData[];
-  municipio: string;
-  direccion: string;
-  telefono: string;
-  correo: string;
-  nombre_comercial: string;
-}
+// export interface ReceptorRequestInterface {
+//   id: string;
+//   tipo_documento: TipoDocumento;
+//   num_documento: string;
+//   tipo_receptor: string;
+//   nrc: string;
+//   nombre: string;
+//   actividades_economicas: ActivitiesData[];
+//   municipio: string;
+//   direccion: string;
+//   telefono: string;
+//   correo: string;
+//   nombre_comercial: string;
+// }
 
 export interface TipoDocumento {
   id: string;
@@ -215,6 +247,7 @@ export const RequestEmpresaDefault = {
   actividades_economicas: [],
   clave_privada: '',
   clave_publica: '',
+  tipoContribuyente: ''
 };
 
 export interface RequestEmpresa {
@@ -237,6 +270,7 @@ export interface RequestEmpresa {
   actividades_economicas: string[]; // Array de IDs de actividades económicas
   clave_privada: string;
   clave_publica: string;
+  tipoContribuyente: string;
 }
 
 export interface Product {
@@ -492,16 +526,17 @@ export interface Descuentos {
   descuentoGravado: number;
 }
 
-export interface pagination {
+export interface paginationInterface {
+  //Interface para paginacion backend
+  count: number;
   current_page: number;
-  page_size: number;
-  total_pages: number;
-  total_records: number;
+  has_next: boolean;
+  has_previous: boolean;
 }
 
 export interface TableListadoFacturasContainerProps {
   data: any;
-  pagination: pagination;
+  pagination: pagination2;
   onPageChange: (event: any) => void;
   updateFacturas: () => void;
 }
@@ -521,4 +556,14 @@ export interface PagoPayload {
   referencia: string | null;
   plazo: number | null;
   periodo: number | null;
+}
+
+export interface OtrosDocumentosAsociados {
+  codDocAsociado: any,
+  descDocumento?: any,
+  detalleDocumento?:any,
+  modoTransp?:any,
+  placaTrans?: any,
+  numConductor?:any,
+  nombreConductor?:any,
 }

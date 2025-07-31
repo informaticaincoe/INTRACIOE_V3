@@ -7,8 +7,15 @@ import 'primereact/resources/themes/lara-light-blue/theme.css';
 
 import { Login } from './features/login/pages/loginPage';
 import { Layout } from './layout/layout';
-import CustomToast, { CustomToastRef } from './shared/toast/customToast';
-import { useRef } from 'react';
+import { MovimientoInventarioEdit } from './features/inventario/movimientoInventario/pages/movimientoInventarioEditNew';
+import { ProveedoresPage } from './features/ventas/proveedores/pages/proveedoresPage';
+import { ProveedoresNewEdit } from './features/ventas/proveedores/pages/proveedoresNewEdit';
+import { ComprasPage } from './features/compras/compras/pages/comprasPage';
+import { ComprasNewEdit } from './features/compras/compras/pages/comprasEditNew';
+import { AjusteInventarioPage } from './features/inventario/ajusteInventario/pages/ajusteInventarioPage';
+import { AjusteInventarioEditNew } from './features/inventario/ajusteInventario/pages/ajusteInventarioEditNew';
+import { DevoluacionesVentaPage } from './features/ventas/devolucioneVentas/pages/devolucionesVentaPage';
+import { DevolucionesCompraPage } from './features/compras/devolucionesCompras/pages/devolucionesCompraPage';
 
 const { Dashboard } = lazily(
   () => import('./features/dashboard/pages/dashboard')
@@ -22,9 +29,9 @@ const { ActivitiesPage } = lazily(
   () => import('./features/facturacion/activities/pages/activitiesPage')
 );
 
-const { GenerateDocuments } = lazily(
+const { ContenedorGenerarDocumentos } = lazily(
   () =>
-    import('./features/facturacion/generateDocuments/pages/GenerateDocuments')
+    import('./features/facturacion/generateDocuments/pages/contenedorGenerarDocumentos')
 );
 
 const { UploadExcelPage } = lazily(
@@ -43,6 +50,10 @@ const { FacturaVisualizacionPage } = lazily(
 
 const { ListadoFacturas } = lazily(
   () => import('./features/facturacion/Listadofacturas/pages/listadoFacturas')
+);
+
+const { ListadoFacturasSujetoExcluido } = lazily(
+  () => import('./features/facturacion/Listadofacturas/pages/listadoFacturasSujetoExcluido')
 );
 
 const { GenerarDocumentosAjuste } = lazily(
@@ -80,6 +91,13 @@ const { CatalogosPage } = lazily(
   () => import('./features/contabilidad/catalogos/pages/catalogosPage')
 );
 
+const { MovimientoInventarioPage } = lazily(
+  () =>
+    import(
+      './features/inventario/movimientoInventario/pages/movimientoInventarioPage'
+    )
+);
+
 function App() {
   return (
     <BrowserRouter>
@@ -89,21 +107,62 @@ function App() {
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/actividades-economicas" element={<ActivitiesPage />} />
-          <Route path="/generar-documentos" element={<GenerateDocuments />} />
+          <Route path="/generar-documentos" element={<ContenedorGenerarDocumentos />} />
           <Route
             path="/generar-documentos-ajuste"
             element={<GenerarDocumentosAjuste />}
           />
-          <Route path="/factura/:id" element={<FacturaVisualizacionPage />} />
+          <Route path="/factura/:codigo/:id" element={<FacturaVisualizacionPage />} />
           <Route path="/productos" element={<ProductsPage />} />
           <Route path="/productos/nuevo" element={<NuevoProductoPage />} />
           <Route path="/producto/:id" element={<NuevoProductoPage />} />
           <Route path="/listado-facturas" element={<ListadoFacturas />} />
+          <Route path="/listado-facturas-sujeto-excluido" element={<ListadoFacturasSujetoExcluido />} />
           <Route path="/servicios" element={<ServicioPage />} />
+
+          <Route
+            path="/movimiento-inventario"
+            element={<MovimientoInventarioPage />}
+          />
+          <Route
+            path="/movimiento-inventario/:id"
+            element={<MovimientoInventarioEdit />}
+          />
+          <Route
+            path="/movimiento-inventario/nuevo"
+            element={<MovimientoInventarioEdit />}
+          />
+          <Route path="/ajuste-inventario" element={<AjusteInventarioPage />} />
+          <Route
+            path="/ajuste-inventario/nuevo"
+            element={<AjusteInventarioEditNew />}
+          />
+          <Route
+            path="/ajuste-inventario/:id"
+            element={<AjusteInventarioEditNew />}
+          />
+
           <Route path="/servicio/nuevo" element={<NuevoServiciopage />} />
           <Route path="/servicio/:id" element={<NuevoServiciopage />} />
           <Route path="/empresa" element={<ConfigBussiness />} />
           <Route path="/receptores" element={<ReceptoresPage />} />
+          <Route path="/proveedores" element={<ProveedoresPage />} />
+          <Route path="/proveedores/nuevo" element={<ProveedoresNewEdit />} />
+          <Route path="/proveedor/:id" element={<ProveedoresNewEdit />} />
+
+          <Route path="/compras" element={<ComprasPage />} />
+          <Route path="/compras/nuevo" element={<ComprasNewEdit />} />
+          <Route path="/compras/:id" element={<ComprasNewEdit />} />
+
+          <Route
+            path="/devoluciones-compra"
+            element={<DevolucionesCompraPage />}
+          />
+          <Route
+            path="/devoluciones-ventas"
+            element={<DevoluacionesVentaPage />}
+          />
+
           <Route path="/catalogos" element={<CatalogosPage />} />
           <Route path="/receptor/nuevo" element={<NuevoReceptorPage />} />
           <Route path="/receptor/:id" element={<NuevoReceptorPage />} />

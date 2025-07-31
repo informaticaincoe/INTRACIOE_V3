@@ -1,3 +1,5 @@
+import axios from 'axios';
+import { Almacen } from '../../interfaces/interfaces';
 import { apiInventory } from '../apiInventory';
 
 export const getAllTipoTributos = async (): Promise<any[]> => {
@@ -63,3 +65,20 @@ export const getAllAlmacenes = async (): Promise<any[]> => {
     throw new Error('Error fetching almacenes');
   }
 };
+
+export const getAlmacenById = async (
+  id: string | number,
+  signal?: AbortSignal
+) => {
+  try {
+    const response = await apiInventory.get(`/almacenes/${id}/`, { signal });
+    return response.data;
+  } catch (error: any) {
+    if (axios.isCancel(error)) {
+      console.log('Petición cancelada (almacén)', error.message);
+      return null;
+    }
+    throw new Error('Error obteniendo el almacén');
+  }
+};
+

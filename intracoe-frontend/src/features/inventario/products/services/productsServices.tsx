@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { apiInventory } from '../../../../shared/services/apiInventory';
 
 export const createProductService = async (data: any) => {
@@ -33,13 +34,21 @@ export const editProductService = async (id: string, data: any) => {
   }
 };
 
-export const getProductById = async (id: string) => {
+export const getProductById = async (
+  id: string | number,
+  signal?: AbortSignal
+) => {
   try {
-    const response = await apiInventory.get(`/productos/${id}/`);
+    const response = await apiInventory.get(`/productos/${id}/`, { signal });
     return response.data;
   } catch (error: any) {
+    if (axios.isCancel(error)) {
+      console.log('Petición cancelada (producto)');
+      return null;  // para evitar que el Promise.all falle
+    }
     const msg =
       error.response?.data?.codigo?.[0] ?? 'Error obteniendo el producto';
     throw new Error(msg);
   }
 };
+

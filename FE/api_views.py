@@ -19,8 +19,8 @@ from rest_framework.authtoken.models import Token
 from rest_framework.pagination import PageNumberPagination
 
 from .views import (
-    contingencia_dte_view, enviar_contingencia_hacienda_view, enviar_correo_individual_view, enviar_factura_hacienda_view, enviar_factura_invalidacion_hacienda_view, enviar_lotes_hacienda_view, 
-    finalizar_contigencia_view, firmar_contingencia_view, firmar_factura_anulacion_view, firmar_factura_view, 
+    contingencia_dte_view, enviar_contingencia_hacienda_view, enviar_correo_individual_view, enviar_factura_hacienda_view, enviar_factura_invalidacion_hacienda_view, enviar_factura_sujeto_excluido_invalidacion_hacienda_view, enviar_lotes_hacienda_view, 
+    finalizar_contigencia_view, firmar_contingencia_view, firmar_factura_anulacion_view, firmar_factura_sujeto_excluido_anulacion_view, firmar_factura_view, generar_json_sujeto, invalidacion_dte_sujeto_excluido_view, 
     invalidacion_dte_view, generar_json, lote_contingencia_dte_view, num_to_letras, agregar_formas_pago_api,
     generar_json_doc_ajuste, obtener_fecha_actual, obtener_listado_productos_view
 )
@@ -28,7 +28,7 @@ from .views import (
 from INVENTARIO.serializers import DescuentoSerializer, ProductoSerializer
 
 from .serializers import (
-    AmbienteSerializer, EventoContingenciaSerializer, FacturaListSerializer, 
+    AmbienteSerializer, EventoContingenciaSerializer, FacturaListSerializer, FacturaSujetoExcluidoListSerializer, FacturaSujetoExcluidoSerializer, 
     FormasPagosSerializer, LoteContingenciaSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, 
     TipoDteSerializer, TiposGeneracionDocumentoSerializer, ActividadEconomicaSerializer, ModelofacturacionSerializer,
     TipoTransmisionSerializer, TipoContingenciaSerializer, TipoRetencionIVAMHSerializer, TiposEstablecimientosSerializer, TiposServicio_MedicoSerializer,
@@ -37,19 +37,19 @@ from .serializers import (
     TipoDomicilioFiscalSerializer, TipoMonedaSerializer, DescuentoSerializer
     )
 from .models import (
-    INCOTERMS, ActividadEconomica, Departamento, Emisor_fe, EventoContingencia, LoteContingencia, Municipio, OtrosDicumentosAsociado, Pais, Receptor_fe, FacturaElectronica, DetalleFactura,
+    INCOTERMS, ActividadEconomica, Departamento, DetalleFacturaSujetoExcluido, Emisor_fe, EventoContingencia, FacturaSujetoExcluidoElectronica, LoteContingencia, Municipio, OtrosDicumentosAsociado, Pais, Receptor_fe, FacturaElectronica, DetalleFactura,
     Ambiente, CondicionOperacion, Modelofacturacion, NumeroControl, Tipo_dte, TipoContingencia, TipoDocContingencia, TipoDomicilioFiscal, TipoDonacion, TipoGeneracionDocumento, 
     TipoMoneda, TipoPersona, TipoRetencionIVAMH, TipoTransmision, TipoTransporte, TipoUnidadMedida, TiposDocIDReceptor, EventoInvalidacion, 
     Receptor_fe, TipoInvalidacion, TiposEstablecimientos, TiposServicio_Medico, Token_data, Descuento, FormasPago, TipoGeneracionDocumento, Plazo
 )
-from INVENTARIO.models import Almacen, DetalleDevolucionVenta, DevolucionVenta, MovimientoInventario, Producto, TipoItem, TipoTributo, Tributo, UnidadMedida, NotaCredito
+from INVENTARIO.models import Almacen, DetalleDevolucionVenta, DevolucionVenta, MovimientoInventario, Producto, ProductoProveedor, Proveedor, TipoItem, TipoTributo, Tributo, UnidadMedida, NotaCredito
 from django.db.models import Q
 from django.core.paginator import Paginator  # esta sigue igual
 
 from rest_framework.test import APIRequestFactory
 from django.forms.models import model_to_dict
 from rest_framework.response import Response
-from django.db.models import Count, Sum
+from django.db.models import Sum, F, ExpressionWrapper, DecimalField, Count
 from AUTENTICACION.models import ConfiguracionServidor
 from django.core.mail import EmailMessage
 from django.conf import settings
@@ -60,23 +60,53 @@ from weasyprint import HTML, CSS
 from django.db.models import F, Value
 from django.db.models.functions import Greatest
 
-FIRMADOR_URL = ConfiguracionServidor.objects.filter(clave="firmador").first()
-DJANGO_SERVER_URL = ConfiguracionServidor.objects.filter(clave="server_url").first()
+from django.db.utils import OperationalError
+from django.core.exceptions import ObjectDoesNotExist
+
+# try:
+#     FIRMADOR_URL = ConfiguracionServidor.objects.filter(clave="firmador").first()
+# except (OperationalError, ObjectDoesNotExist):
+#     FIRMADOR_URL = None
+
+# try:
+#     DJANGO_SERVER_URL = ConfiguracionServidor.objects.filter(clave="server_url").first()
+# except (OperationalError, ObjectDoesNotExist):
+#     DJANGO_SERVER_URL = None
 
 SCHEMA_PATH_fe_fc_v1 = "FE/json_schemas/fe-fc-v1.json"
 
-CERT_PATH = ConfiguracionServidor.objects.filter(clave="certificado").first().url_endpoint #"FE/cert/06142811001040.crt"  # Ruta al certificado
+# try:
+#     CERT_PATH = ConfiguracionServidor.objects.filter(clave="certificado").first()
+#     CERT_PATH = CERT_PATH.url_endpoint if CERT_PATH else None
+# except (OperationalError, ObjectDoesNotExist, AttributeError):
+#     CERT_PATH = None
 
-# URLS de Hacienda (Pruebas y Producción)
-HACIENDA_URL_TEST = ConfiguracionServidor.objects.filter(clave="hacienda_url_test").first().url_endpoint
-HACIENDA_URL_PROD = ConfiguracionServidor.objects.filter(clave="hacienda_url_prod").first().url_endpoint
-#cada endpoint que tenga url quemada agregarlas en una tabla de config, firmador y djangoserver
-#BC 04/03/2025: Constantes
+# try:
+#     hacienda_test_obj = ConfiguracionServidor.objects.filter(clave="hacienda_url_test").first()
+#     HACIENDA_URL_TEST = hacienda_test_obj.url_endpoint if hacienda_test_obj else None
+# except (OperationalError, ObjectDoesNotExist, AttributeError):
+#     HACIENDA_URL_TEST = None
+
+# try:
+#     hacienda_prod_obj = ConfiguracionServidor.objects.filter(clave="hacienda_url_prod").first()
+#     HACIENDA_URL_PROD = hacienda_prod_obj.url_endpoint if hacienda_prod_obj else None
+# except (OperationalError, ObjectDoesNotExist, AttributeError):
+#     HACIENDA_URL_PROD = None
+
 COD_CONSUMIDOR_FINAL = "01"
 COD_CREDITO_FISCAL = "03"
-VERSION_EVENTO_INVALIDACION = ConfiguracionServidor.objects.filter(clave="version_evento_invalidacion").first().valor #2
-AMBIENTE = Ambiente.objects.get(codigo="01")#Hacer dinamico
-#AMBIENTE = "01"
+
+# try:
+#     version_obj = ConfiguracionServidor.objects.filter(clave="version_evento_invalidacion").first()
+#     VERSION_EVENTO_INVALIDACION = version_obj.valor if version_obj else None
+# except (OperationalError, ObjectDoesNotExist, AttributeError):
+#     VERSION_EVENTO_INVALIDACION = None
+
+# try:
+#     AMBIENTE = Ambiente.objects.get(codigo="01")
+# except (OperationalError, ObjectDoesNotExist):
+#     AMBIENTE = None
+
 COD_FACTURA_EXPORTACION = "11"
 COD_TIPO_INVALIDACION_RESCINDIR = 2
 COD_NOTA_CREDITO = "05"
@@ -85,6 +115,7 @@ COD_COMPROBANTE_LIQUIDACION = "08"
 EMI_SOLICITA_INVALIDAR_DTE = "emisor"
 REC_SOLICITA_INVALIDAR_DTE = "receptor"
 COD_TIPO_ITEM_OTROS = "4"
+COD_TIPO_ITEM_SERVICIOS = "2"
 COD_TRIBUTOS_SECCION_2 = "2"
 COD_DOCUMENTO_RELACIONADO_NO_SELEC = "S"
 ID_CONDICION_OPERACION = 2
@@ -92,24 +123,38 @@ RELACIONAR_DOC_FISICO = 1
 RELACIONAR_DOC_ELECTRONICO = 2
 COD_TIPO_CONTINGENCIA = "5"
 DTE_APLICA_CONTINGENCIA = ["01", "03", "04", "05", "06", "11", "14"]
-RUTA_COMPROBANTES_PDF = ConfiguracionServidor.objects.filter(clave="ruta_comprobantes_dte").first()
-RUTA_COMPROBANTES_JSON = ConfiguracionServidor.objects.filter(clave="ruta_comprobante_json").first()
-RUTA_JSON_FACTURA = ConfiguracionServidor.objects.filter(clave="json_factura").first()
-URL_AUTH = ConfiguracionServidor.objects.filter(clave="url_autenticacion").first()
-HEADERS = ConfiguracionServidor.objects.filter(clave="headers").first()
-CONTENT_TYPE = ConfiguracionServidor.objects.filter(clave="content_type").first()
-INVALIDAR_DTE_URL = ConfiguracionServidor.objects.filter(clave="url_invalidar_dte").first()
-VERSION_EVENTO_CONTINGENCIA = ConfiguracionServidor.objects.filter(clave="version_evento_contingencia").first()
-FACTURAS_FIRMADAS_URL = ConfiguracionServidor.objects.filter(clave="json_facturas_firmadas").first()
-HACIENDA_CONTINGENCIA_URL = ConfiguracionServidor.objects.filter(clave="hacienda_contingencia_url").first()
-USER_AGENT = ConfiguracionServidor.objects.filter(clave="user_agent").first()
-CONSULTAR_DTE = ConfiguracionServidor.objects.filter(clave="consulta_dte").first()
-EMAIL_HOST_FE = ConfiguracionServidor.objects.filter(clave="email_host_fe").first()
 
-MONEDA_USD = TipoMoneda.objects.get(codigo="USD")
-UNI_MEDIDA_99 = TipoUnidadMedida.objects.get(codigo="99")
+# def safe_conf(clave):
+#     try:
+#         return ConfiguracionServidor.objects.filter(clave=clave).first()
+#     except (OperationalError, ObjectDoesNotExist):
+#         return None
 
-formas_pago = [] #Asignar formas de pago
+# RUTA_COMPROBANTES_PDF = safe_conf("ruta_comprobantes_dte")
+# RUTA_COMPROBANTES_JSON = safe_conf("ruta_comprobante_json")
+# RUTA_JSON_FACTURA = safe_conf("json_factura")
+# URL_AUTH = safe_conf("url_autenticacion")
+# HEADERS = safe_conf("headers")
+# CONTENT_TYPE = safe_conf("content_type")
+# INVALIDAR_DTE_URL = safe_conf("url_invalidar_dte")
+# VERSION_EVENTO_CONTINGENCIA = safe_conf("version_evento_contingencia")
+# FACTURAS_FIRMADAS_URL = safe_conf("json_facturas_firmadas")
+# HACIENDA_CONTINGENCIA_URL = safe_conf("hacienda_contingencia_url")
+# USER_AGENT = safe_conf("user_agent")
+# CONSULTAR_DTE = safe_conf("consulta_dte")
+# EMAIL_HOST_FE = safe_conf("email_host_fe")
+
+# try:
+#     MONEDA_USD = TipoMoneda.objects.get(codigo="USD")
+# except (OperationalError, ObjectDoesNotExist):
+#     MONEDA_USD = None
+
+# try:
+#     UNI_MEDIDA_99 = TipoUnidadMedida.objects.get(codigo="99")
+# except (OperationalError, ObjectDoesNotExist):
+#     UNI_MEDIDA_99 = None
+
+formas_pago = []
 documentos_relacionados = []
 tipo_dte_doc_relacionar = None
 documento_relacionado = False
@@ -119,7 +164,29 @@ descuentos_r = []
 tipo_documento_dte = "01"
 productos_inventario = None
 
-emisor_fe = Emisor_fe.objects.get(id=1)#Hacer dinamico el id de empresa
+# try:
+#     emisor_fe = Emisor_fe.objects.get(id=1)
+# except (OperationalError, ObjectDoesNotExist):
+#     emisor_fe = None
+
+
+class StandardResultsSetPagination(PageNumberPagination):
+    # Número de ítems por página por defecto
+    page_size = 10
+    # Permitir al cliente cambiar el tamaño de página con ?page_size=
+    page_size_query_param = 'page_size'
+    # Límite máximo que puede pedir
+    max_page_size = 100
+
+    def get_paginated_response(self, data):
+        return Response({
+            'count': self.page.paginator.count,
+            'page_size': self.page.paginator.per_page,
+            'current_page': self.page.number,
+            'has_next': self.page.has_next(),
+            'has_previous': self.page.has_previous(),
+            'results': data
+        })
 
 ######################################################
 # AUTENTICACION CON MH
@@ -272,6 +339,8 @@ class ActividadEconomicaListAPIView(generics.ListAPIView):
         return queryset
     
     serializer_class = ActividadEconomicaSerializer
+    # pagination_class = StandardResultsSetPagination
+
 
 class ActividadEconomicaCreateAPIView(generics.CreateAPIView):
     queryset = ActividadEconomica.objects.all()
@@ -903,6 +972,7 @@ class ObtenerReceptorAPIView(APIView):
         
 class receptorListAPIView(generics.ListAPIView):
     serializer_class = ReceptorSerializer
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         qs = Receptor_fe.objects.all()
@@ -1101,6 +1171,7 @@ class GenerarFacturaAPIView(APIView):
             "direccion_comercial": emisor_obj.direccion_comercial if emisor_obj else "",
             "telefono": emisor_obj.telefono if emisor_obj else "",
             "email": emisor_obj.email if emisor_obj else "",
+            "tipoContibuyente": emisor_obj.tipoContribuyente if emisor_obj else ""
         } if emisor_obj else None
 
         receptores = list(Receptor_fe.objects.values("id", "num_documento", "nombre"))
@@ -1277,7 +1348,8 @@ class GenerarFacturaAPIView(APIView):
             descuento_gravado = Decimal("0.00")
             neto_unitario = Decimal("0.00")
             sub_total_item = Decimal("0")
-            
+            IVA_RATE=0.13
+
             tributo_valor = None
 
             for index, prod_id in enumerate(productos_ids):
@@ -1327,11 +1399,14 @@ class GenerarFacturaAPIView(APIView):
                         neto_unitario = precio_incl.quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
                         precio_inc_neto = neto_unitario
                     precio_neto = (neto_unitario * cantidad).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
-                
+                    print("PRECIO NETO", precio_neto)
                 if tipo_item_obj.codigo == COD_TIPO_ITEM_OTROS:
                     precio_neto = (precio_neto * Decimal(tributo_valor)).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
                     
-                precio_neto = Decimal(precio_neto)          
+                print("PRECIO NETO", precio_neto)
+                precio_neto = Decimal(precio_neto) 
+                print("PRECIO NETO", precio_neto)
+
                 iva_unitario = (precio_incl - precio_neto).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
                 
                 if porcentaje_descuento_producto:
@@ -1448,6 +1523,7 @@ class GenerarFacturaAPIView(APIView):
             factura.iva_percibido = float(DecimalIvaPerci)
             factura.tipo_documento_relacionar = tipo_doc_relacionar
             factura.documento_relacionado = documento_relacionado
+            
             factura.save()
             
             cuerpo_documento = []
@@ -1729,6 +1805,8 @@ class GenerarDocumentoAjusteAPIView(APIView):
                     
                     cantidades.append(c)
             
+            print(f"productos id relacionado: {productos_ids_r}, cantidades: {cantidades}")
+
             print(f"id productos: {productos_ids}, cantidades: {cantidades}")
             if descuentos_r is not None and len(descuentos_r)>0:
                 for d in descuentos_r:
@@ -1969,7 +2047,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
                 
                 if valor_porcentaje.compare(Decimal("0.00")) > 0:
                     total_descuento_gravado += porcentaje_descuento_item.porcentaje
-                print("-Total desc gravado: ", total_descuento_gravado)
+                print("- Total desc gravado: ", total_descuento_gravado)
                 
             # Calcular retenciones (globales sobre el total neto de cada detalle)
             if retencion_iva and porcentaje_retencion_iva > 0:
@@ -2197,7 +2275,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
                         Producto.objects.filter(pk=det.producto.pk).update(
                             stock=Greatest(F('stock') - det.cantidad, Value(0))
                         )
-
+            print("factura.numero_control", factura.numero_control)
             # Guardar el JSON en la carpeta "FE/json_facturas"
             json_path = os.path.join(RUTA_JSON_FACTURA.url, f"{factura.numero_control}.json")
             os.makedirs(os.path.dirname(json_path), exist_ok=True)
@@ -2206,6 +2284,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
             
             # Verificar si el archivo PDF existe
             pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.url, factura.tipo_dte.codigo, 'pdf', f"{str(factura.codigo_generacion).upper()}.pdf")
+
             
             os.makedirs(os.path.dirname(pdf_signed_path), exist_ok=True)
             if os.path.exists(pdf_signed_path):
@@ -2236,6 +2315,534 @@ class GenerarDocumentoAjusteAPIView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 ######################################################
+# GENERACION DE SUJETO EXCLUIDO
+######################################################
+
+class GenerarFacturaSujetoAPIView(APIView):
+    """
+    Vista API para generar facturas de sujeto excluyente.
+    POST rocesa la generación de la factura.
+    """
+    cod_generacion = str(uuid.uuid4()).upper()
+    def get(self, request, format=None):
+        print("GET Inicio generar dte")
+        global productos_ids_r
+        productos_ids_r = []
+        
+        global cantidades_prod_r
+        cantidades_prod_r = []
+        
+        global documentos_relacionados 
+        documentos_relacionados = []
+        
+        global descuentos_r
+        descuentos_r = []
+        
+        if request.method == 'GET':
+            tipo_dte = 14
+            emisor_obj = Emisor_fe.objects.first()
+            
+            if emisor_obj:
+                nuevo_numero = NumeroControl.preview_numero_control(tipo_dte)
+            else:
+                nuevo_numero = ""
+            codigo_generacion = self.cod_generacion
+            fecha_generacion = timezone.now().date()
+            hora_generacion = timezone.now().strftime('%H:%M:%S')
+
+            emisor_data = {
+                "nit": emisor_obj.nit if emisor_obj else "",
+                "nombre_razon_social": emisor_obj.nombre_razon_social if emisor_obj else "",
+                "direccion_comercial": emisor_obj.direccion_comercial if emisor_obj else "",
+                "telefono": emisor_obj.telefono if emisor_obj else "",
+                "email": emisor_obj.email if emisor_obj else "",
+            } if emisor_obj else None
+
+            proveedores = list(Proveedor.objects.values("id", "num_documento", "nombre"))
+            tipooperaciones = list(CondicionOperacion.objects.all().values())
+            tipoDocumentos = list(Tipo_dte.objects.filter( Q(codigo=COD_NOTA_CREDITO) | Q(codigo=COD_NOTA_DEBITO)).values())
+            tipoItems = list(TipoItem.objects.all().values())
+            descuentos = list(Descuento.objects.all().values())
+            formasPago = list(FormasPago.objects.all().values())
+            tipoGeneracionDocumentos = list(TipoGeneracionDocumento.objects.all().values())
+
+            context = {
+                "numero_control": nuevo_numero,
+                "codigo_generacion": codigo_generacion,
+                "fecha_generacion": fecha_generacion,
+                "hora_generacion": hora_generacion,
+                "emisor": emisor_data,
+                "proveedores": proveedores,
+                "tipooperaciones": tipooperaciones,
+                "tipoDocumentos": tipoDocumentos,
+                "tipoItems": tipoItems,
+                "descuentos": descuentos,
+                "formasPago": formasPago,
+                "tipoGenDocumentos": tipoGeneracionDocumentos
+            }
+            return Response(context, status=status.HTTP_200_OK)
+        
+    cod_generacion = str(uuid.uuid4()).upper()
+    global productos_ids_r
+    productos_ids_r = []
+    global cantidades_prod_r
+    cantidades_prod_r = []
+    global descuentos_r
+    descuentos_r = []
+    global emisor_fe
+
+    # @transaction.atomic
+    def post(self, request, format=None):
+        
+        # sid = transaction.savepoint()
+        try:
+            items_permitidos = 2000 # Límite de ítems permitido por documento
+            data = request.data 
+            contingencia = False
+            
+            print("Datos recibidos:", request.data)
+            
+            # --- Datos del encabezado del documento ---
+            numero_control = data.get('numero_control', '')
+            codigo_generacion = data.get('codigo_generacion', '')
+            receptor_id = data.get('receptor_id', None)     
+            nit_receptor = data.get('nit_receptor', '')
+            nombre_receptor = data.get('nombre_receptor', '')
+            direccion_receptor = data.get('direccion_receptor', '')
+            telefono_receptor = data.get('telefono_receptor', '')
+            correo_receptor = data.get('correo_receptor', '')
+            observaciones = data.get('observaciones', '')
+            tipo_dte = data.get("tipo_documento_seleccionado", None)
+            tipo_item = data.get("tipo_item_select", None)
+            descuento_global = data.get("descuento_global", 0.00)
+            
+            # --- Configuración adicional del documento ---
+            tipooperacion_id = data.get("condicion_operacion", 1)
+            porcentaje_retencion_iva = Decimal(data.get("porcentaje_retencion_iva", "13"))
+            retencion_iva = data.get("retencion_iva", False)
+            porcentaje_retencion_renta = Decimal(data.get("porcentaje_retencion_renta", "10")) #retencion de renta es solo para servicios y es siempre del 10%
+            retencion_renta = data.get("retencion_renta", False)
+            formas_pago_id = agregar_formas_pago_api(request)
+            base_imponible_checkbox = data.get("no_gravado", False)
+            monto_descuento = data.get("monto_descuento", "0") #descuento general
+            productos_ids = data.get('productos_ids', [])
+            cantidades = data.get('cantidades', [])
+            descuentos_aplicados = data.get("descuento_select", []) #lista de descuentos
+            nombre_responsable = data.get("nombre_responsable", None)
+            documento_responsable = data.get("documento_responsable", None)
+            
+            print(f"parametro num control recibido: {numero_control}, tipo dte: {tipo_dte}")
+            
+            # Generar número de control si no se envía desde el frontend
+            if not numero_control:
+                numero_control = NumeroControl.obtener_numero_control(14)
+                print("Numero control asignado: ", numero_control)
+                
+            # Generar código de generación si no se proporciona
+            if not codigo_generacion:
+                codigo_generacion = str(uuid.uuid4()).upper()
+                print("codigo de generacion: ", codigo_generacion)
+                
+            # Obtener datos emisor
+            emisor_obj = Emisor_fe.objects.first()
+            if not emisor_obj:
+                return Response({"error": "No hay emisores registrados en la base de datos"}, status=status.HTTP_400_BAD_REQUEST)
+            emisor = emisor_obj
+            
+            print("emisor", emisor)
+            print("emisor Id", emisor.id)
+
+            # Obtener datos receptor
+            if receptor_id and receptor_id != "nuevo":
+                receptor = Proveedor.objects.get(id=receptor_id)
+            else:
+                tipo_doc, _ = TiposDocIDReceptor.objects.get_or_create(
+                    codigo='13', defaults={"descripcion": "DUI/NIT"}
+                )
+                receptor, _ = Proveedor.objects.update_or_create(
+                    num_documento=nit_receptor,
+                    defaults={
+                        'nombre': nombre_receptor,
+                        'tipo_documento': tipo_doc,
+                        'direccion': direccion_receptor,
+                        'telefono': telefono_receptor,
+                        'correo': correo_receptor
+                    }
+                )
+            
+            print("Receptor final:", receptor)
+            
+            # --- Inicializar objetos relacionados con tipo de documento ---
+            ambiente_obj = AMBIENTE
+            tipo_dte_obj = Tipo_dte.objects.get(codigo=tipo_dte)
+            tipo_item_obj = TipoItem.objects.get(codigo=tipo_item)
+            tipomodelo_obj = Modelofacturacion.objects.get(codigo="1")
+            tipotransmision_obj = TipoTransmision.objects.get(codigo="1")
+            tipooperacion_obj = CondicionOperacion.objects.get(id=tipooperacion_id) if tipooperacion_id else None
+            tipo_moneda_obj = MONEDA_USD
+
+            # --- Crear objeto factura ---
+            factura = FacturaSujetoExcluidoElectronica.objects.create(
+                version="2.0",
+                tipo_dte=tipo_dte_obj,
+                numero_control=numero_control,
+                codigo_generacion=codigo_generacion,
+                tipomodelo=tipomodelo_obj,
+                tipocontingencia=None,
+                motivocontin=None,
+                tipomoneda=tipo_moneda_obj,
+                dteemisor=emisor_obj,
+                dtesujetoexcluido=receptor,
+                json_original={},
+                firmado=False,
+                tipotransmision=tipotransmision_obj
+            )
+
+            print("Factura creada, ID:", factura.id)
+            
+            # --- Inicializar totales de factura ---
+            # DecimalIvaPerci = Decimal("0.00") 
+            # total_gravadas    = Decimal("0.00") # -- Total de ventas gravadas
+            # total_iva         = Decimal("0.00") # -- Total calculo de iva
+            total_descuento   = Decimal("0.00") #  -- suma de todos los descuentos (globales y por item)
+            total_operaciones = Decimal("0.00")
+            # IVA_RATE = Decimal("0.13") # -- porcenta de IVA 13%
+            
+            print("Listado de id de productos:", productos_ids)
+
+            # --- Procesar productos e ítems de factura ---s
+            for index, prod_id in enumerate(productos_ids):
+                print("producto actual:", prod_id)
+                
+                try:
+                    producto = ProductoProveedor.objects.get(id=prod_id) # -- Buscar el producto según el id que recibe la API
+                except Producto.DoesNotExist:
+                    continue
+                
+                print("Objeto producto", producto)
+                
+                if tipo_item_obj.codigo == COD_TIPO_ITEM_SERVICIOS: 
+                    unidad_medida_obj = UNI_MEDIDA_99 # -- si el tipo del item es servicios automaticamente su unidad de medida es "Otra" - codigo 99
+                else:
+                    unidad_medida_obj = TipoUnidadMedida.objects.get(codigo=tipo_item_obj.codigo) # -- sino buscar el tipo de unidad de medida
+
+                if tipo_item_obj.codigo == COD_TIPO_ITEM_OTROS: 
+                    cantidad = 1 # -- si el tipo de item es otro la cantidad siempre es 1
+                    # raise ValueError("El tipo de ítem 'Otros' (código 4) no está permitido en documentos de sujeto excluido.")
+                else:
+                    cantidad = int(cantidades[index]) if index < len(cantidades) else 1 # -- obtener la cantidad del producto actual
+                print("tipo objeto", tipo_item_obj)
+                print("Unidad de medida", unidad_medida_obj)
+                    
+                porcentaje_descuento_producto = descuentos_aplicados[index] if index < len(descuentos_aplicados) else 1 # -- obtener el descuento del producto en la lista de descuentos recibidos
+                factor = (porcentaje_descuento_producto / Decimal("100")).quantize(Decimal("0.000001"), ROUND_HALF_UP)
+
+                descuento_por_item = (producto.preunitario * cantidad * factor).quantize(Decimal("0.01"), ROUND_HALF_UP)
+                print("porcentaje_descuento_producto", porcentaje_descuento_producto )
+                print("factor", factor )
+                print("descuento_por_item", descuento_por_item )
+            
+                
+                # Acumular
+                total_descuento   += descuento_por_item
+                total_operaciones += ((producto.preunitario * cantidad) - descuento_por_item).quantize(Decimal("0.01"), ROUND_HALF_UP)
+                print("total_operaciones:", total_operaciones )
+                print("total_descuento:",total_descuento )
+                
+
+                #Crear detalles de factura
+                detalle = DetalleFacturaSujetoExcluido.objects.create(
+                    factura=factura,
+                    producto=producto,
+                    cantidad=cantidad,
+                    unidad_medida=unidad_medida_obj,
+                    precio_unitario=producto.preunitario,
+                    descuento=descuento_por_item,      # ej. 12.50
+                    tiene_descuento=(descuento_por_item > 0)
+                )
+
+                detalle.save()
+                
+            # Calcular descuento total                
+            global_discount_amount = (total_operaciones * (Decimal(descuento_global) / Decimal("100"))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            
+            print("descuento  global",global_discount_amount)
+
+            # totalCompra
+            total_compra = total_operaciones.quantize(Decimal("0.01"), ROUND_HALF_UP)
+            print("total_compra",total_compra  )
+
+            # totalDescu = descuentos por ítem + descuento global
+            totalDescu = (
+                total_descuento + global_discount_amount
+            ).quantize(Decimal("0.01"), ROUND_HALF_UP)
+
+            print("totalDescu",totalDescu  )
+
+            # subTotal = totalCompra - descuento global (no restas los ítem porque ya los descontaste en line_total)
+            sub_total = (
+                total_compra - global_discount_amount
+            ).quantize(Decimal("0.01"), ROUND_HALF_UP)
+            print("sub_total",sub_total  )
+
+            # Retenciones sobre ese subTotal
+            ret_iv = Decimal("0.00")
+            ret_renta = Decimal("0.00")
+
+            # Aplica retención de IVA automáticamente al 10% si está activada y el emisor es GC o MC
+            if retencion_iva and emisor.tipoContribuyente in ('Gran Contribuyente', 'Mediano Contribuyente'):
+                porcentaje_retencion_iva = Decimal("10.00")  # forzar 10%
+                ret_iv = (sub_total * porcentaje_retencion_iva / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+            # Aplica retención de renta automáticamente al 10% si está activada
+            if retencion_renta:
+                porcentaje_retencion_renta = Decimal("10.00")  # forzar 10%
+                ret_renta = (sub_total * porcentaje_retencion_renta / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+            print("ret_iv", ret_iv)
+            print("ret_renta", ret_renta)
+
+
+            # totalPagar final
+            total_pagar = (sub_total - ret_iv - ret_renta).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            
+            print("*************** Total a pagar", total_pagar )
+            print("=== Totales finales antes de guardar factura ===")
+            print("Total descuento:", totalDescu)
+            print("Total operaciones:", total_operaciones)
+            
+            # --- Guardar totales en factura ---
+            factura.total_descuento       = total_descuento
+            factura.sub_total             = sub_total
+            factura.iva_retenido          = ret_iv
+            factura.retencion_renta       = ret_renta
+            factura.total_operaciones     = total_operaciones
+            factura.total_pagar           = total_pagar
+            factura.total_letras          = num_to_letras(total_pagar)
+            factura.condicion_operacion   = tipooperacion_obj
+            factura.formas_Pago           = formas_pago_id or None
+            factura.save()
+    
+            # --- Generar cuerpo del documento para el JSON ---
+            cuerpo_documento = []
+            for idx, det in enumerate(factura.detallesSujetoExcluido.all(), start=1):
+                if idx > items_permitidos:
+                    return Response({"error": "Cantidad máxima de ítems permitidos"}, status=status.HTTP_400_BAD_REQUEST)
+                
+                unit_price   = det.precio_unitario
+                qty          = det.cantidad
+                # det.descuento es ya un Decimal como '12.50' para 12.5%
+                discount_pct = (det.descuento / Decimal("100")).quantize(Decimal("0.000001"), ROUND_HALF_UP)
+                
+                # montoDescu: precio * cantidad * factor_descuento
+                monto_descu = (unit_price * qty * discount_pct).quantize(Decimal("0.01"), ROUND_HALF_UP)
+                # compra: bruto menos descuento
+                total_line  = (unit_price * qty - monto_descu).quantize(Decimal("0.01"), ROUND_HALF_UP)
+                
+                cuerpo_documento.append({
+                    "numItem":    idx,
+                    "tipoItem":   int(tipo_item_obj.codigo),
+                    "codigo":     det.producto.codigo,
+                    "descripcion":det.producto.descripcion,
+                    "cantidad":   float(qty),
+                    "uniMedida":  int(det.unidad_medida.codigo),
+                    "precioUni":  float(unit_price),
+                    "montoDescu": float(monto_descu),
+                    "compra":     float(total_line),
+                })
+            factura_json = generar_json_sujeto(
+                ambiente_obj,
+                tipo_dte_obj,
+                factura,
+                emisor,
+                receptor,
+                cuerpo_documento,
+                observaciones,
+                contingencia,
+                total_operaciones=total_operaciones,
+                total_descuento=totalDescu,
+                total_pagar=total_pagar,
+                descuento_global=global_discount_amount,
+                sub_total = sub_total,
+                formas_pago=formas_pago_id,
+            )
+            print("FACTURA JSON",factura_json)
+            
+            factura.json_original = factura_json
+            if formas_pago_id:
+                factura.formas_Pago = formas_pago_id
+            factura.save()
+            
+            # Guardar JSON localmente
+            json_path = os.path.join(RUTA_JSON_FACTURA.url, f"{factura.numero_control}.json")
+            os.makedirs(os.path.dirname(json_path), exist_ok=True)
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(factura_json, f, indent=4, ensure_ascii=False)
+            
+            print("PDF antes")
+            # Verificar si el archivo PDF existe
+            pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.url, factura.tipo_dte.codigo, 'pdf', f"{str(factura.codigo_generacion).upper()}.pdf")
+            print("PDF antdespues")
+            
+            os.makedirs(os.path.dirname(pdf_signed_path), exist_ok=True)
+            if os.path.exists(pdf_signed_path):
+                print("PDF ya existe, devolviendo archivo existente: %s", pdf_signed_path)
+                filename=os.path.basename(pdf_signed_path)
+            else:
+                #1.Crear HTML
+                html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": factura}, request=request)
+
+                #Guardar archivo pdf
+                print("guardar pdf: ", pdf_signed_path)
+                with open(pdf_signed_path, "wb") as pdf_file:
+                    pisa_status = pisa.CreatePDF(BytesIO(html_content.encode('utf-8')), dest=pdf_file)
+                    
+                if pisa_status.err:
+                    print(f"Error al crear el PDF en {pdf_signed_path}")
+                else:
+                    print(f"PDF guardado exitosamente en {pdf_signed_path}")
+            # else:
+            #     #1.Crear HTML
+            #     html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": factura}, request=request)
+                
+            #     #2.Definir base_url para que {% static %} funcione correctamente, esto asegura que las imágenes estáticas (logos, etc.) se resuelvan bien en el PDF
+            #     try:
+            #         base_url = request.build_absolute_uri('/')
+            #     except Exception as e:
+            #         print("Error obteniendo base_url")
+            #         base_url = None  # WeasyPrint usará paths relativos si es None
+                
+            #     # 3. Preparar lista de CSS
+            #     stylesheets = [CSS(url='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js') ]
+                
+                #4.Guardar archivo PDF con WeasyPrint
+                # try:
+                #     html = HTML(string=html_content, base_url=base_url)
+                #     html.write_pdf(stylesheets=stylesheets, target=pdf_signed_path)
+                #     filename = os.path.basename(pdf_signed_path)
+                #     print("Pdf guardado ")
+                # except Exception as e:
+                #     print("Error generando el PDF con WeasyPrint")
+                
+            print(json.dumps(factura_json, indent=2, ensure_ascii=False)) # Mostrar el JSON en consola (opcional)
+            # transaction.savepoint_rollback(sid)
+
+            return Response({
+                    "mensaje": "Factura generada correctamente",
+                    "factura_id": factura.id,
+                    "numero_control": factura.numero_control,
+                    "redirect": reverse('detalle_factura', args=[factura.id])
+                }, status=status.HTTP_200_OK)
+                
+        except Exception as e:
+            # transaction.savepoint_rollback(sid)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+######################################################
+# GENERACION DE EXPORTACION
+######################################################
+
+class GenerarFacturaExportacionAPIView(APIView):
+    """
+    Vista API para generar facturas de sujeto excluyente.
+    POST rocesa la generación de la factura.
+    """
+
+    cod_generacion = str(uuid.uuid4()).upper()
+    global productos_ids_r
+    productos_ids_r = []
+    global cantidades_prod_r
+    cantidades_prod_r = []
+    global descuentos_r
+    descuentos_r = []
+    global emisor_fe
+
+    # @transaction.atomic
+    def post(self, request, format=None):
+        # sid = transaction.savepoint()
+        try:
+            items_permitidos = 2000 # Límite de ítems permitido por documento
+            data = request.data 
+            contingencia = False
+            
+            print("Datos recibidos:", request.data)
+            
+            # --- Datos del encabezado del documento ---
+            numero_control = data.get('numero_control', '')
+            codigo_generacion = data.get('codigo_generacion', '')
+            tipo_dte = data.get("tipo_documento_seleccionado", None)
+            tipo_item = data.get("tipo_item_select", None)
+            modelo_facturacion_codigo = data.get("modelo_facturacion_codigo", "1")
+            tipo_transmision_codigo = data.get("tipo_transmision_codigo", "1")
+            tipo_contingencia_codigo = data.get("tipo_contingencia_codigo", None)
+            motivo_contingencia = data.get("motivo_contingencia", None)
+                        
+            print(f"parametro num control recibido: {numero_control}, tipo dte: {tipo_dte}")
+            
+            # Generar número de control si no se envía desde el frontend
+            if not numero_control:
+                numero_control = NumeroControl.obtener_numero_control(14)
+                print("Numero control asignado: ", numero_control)
+                
+            # Generar código de generación si no se proporciona
+            if not codigo_generacion:
+                codigo_generacion = str(uuid.uuid4()).upper()
+                print("codigo de generacion: ", codigo_generacion)
+                
+            
+            # --- Inicializar objetos relacionados con tipo de documento ---
+            ambiente_obj = AMBIENTE
+            tipo_dte_obj = Tipo_dte.objects.get(codigo=tipo_dte)
+            tipo_item_obj = TipoItem.objects.get(codigo=tipo_item)
+            tipomodelo_obj = Modelofacturacion.objects.get(codigo=modelo_facturacion_codigo)
+            tipotransmision_obj = TipoTransmision.objects.get(codigo=tipo_transmision_codigo)
+            #contingencia si se envia el codigo
+            if tipo_contingencia_codigo:
+                tipoContingencia_obj = TipoContingencia.objects.get(codigo=tipo_contingencia_codigo)
+            else:
+                tipoContingencia_obj = None
+            tipo_moneda_obj = MONEDA_USD
+
+            
+            # --- Crear objeto factura ---
+            # factura = FacturaSujetoExcluidoElectronica.objects.create(
+            #     version="2.0",
+            #     tipo_dte=tipo_dte_obj,
+            #     numero_control=numero_control,
+            #     codigo_generacion=codigo_generacion,
+            #     tipomodelo=tipomodelo_obj,
+            #     tipocontingencia=None,
+            #     motivocontin=None,
+            #     tipomoneda=tipo_moneda_obj,
+            #     dteemisor=emisor_obj,
+            #     dtesujetoexcluido=receptor,
+            #     json_original={},
+            #     firmado=False,
+            #     tipotransmision=tipotransmision_obj
+            # )
+
+            print("ambiente_obj:", )
+            print("tipo_dte_obj:", tipo_dte_obj)
+            print("tipo_item_obj:", tipo_item_obj)
+            print("tipomodelo_obj:", tipomodelo_obj)
+            print("tipotransmision_obj:", tipotransmision_obj)
+            print("tipoContingencia_obj:", tipoContingencia_obj)
+            print("tipo_moneda_obj:", tipo_moneda_obj)
+            
+            # --- Inicializar totales de factura ---
+            # DecimalIvaPerci = Decimal("0.00") 
+            # total_gravadas    = Decimal("0.00") # -- Total de ventas gravadas
+            # total_iva         = Decimal("0.00") # -- Total calculo de iva
+            total_descuento   = Decimal("0.00") #  -- suma de todos los descuentos (globales y por item)
+            total_operaciones = Decimal("0.00")
+            # IVA_RATE = Decimal("0.13") # -- porcenta de IVA 13%
+            
+                
+        except Exception as e:
+            # transaction.savepoint_rollback(sid)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+######################################################
 # FIRMA Y ENVIO DE DOCUMENTOS A MH
 ######################################################
 class FirmarFacturaAPIView(APIView):
@@ -2257,6 +2864,7 @@ class FirmarFacturaAPIView(APIView):
         intentos_sesion = request.session.get('intentos_reintento', 0)
 
         # Validar certificado
+        print('certificado',CERT_PATH)
         if not os.path.exists(CERT_PATH):
             return Response(
                 {"error": "Certificado no encontrado."},
@@ -2393,7 +3001,7 @@ class EnviarFacturaHaciendaAPIView(APIView):
             }
             auth_data = {"user": nit, "pwd": pwd}
 
-            contingencia = True
+            contingencia = False
             error_auth = None
             for intento in range(1, 4):
                 try:
@@ -2478,6 +3086,15 @@ class EnviarFacturaHaciendaAPIView(APIView):
                 "User-Agent": HEADERS.valor,
                 "Content-Type": CONTENT_TYPE.valor
             }
+            
+            print("factura id: ", factura.id)
+            print("factura: ", factura)
+            print("despues AMBIENTE: ", AMBIENTE.codigo)
+            print("despues version: ", int(factura.json_original["identificacion"]["version"]))
+            print("despues tipoDte: ", str(factura.json_original["identificacion"]["tipoDte"]))
+            print("despues codigo_generacion: ", str(factura.codigo_generacion))
+
+
             payload = {
                 "ambiente": AMBIENTE.codigo,
                 "idEnvio": factura.id,
@@ -2487,8 +3104,13 @@ class EnviarFacturaHaciendaAPIView(APIView):
                 "codigoGeneracion": str(factura.codigo_generacion)
             }
 
+            print("payload: ")
+            print("payload: ", payload)
+
             error_envio = None
             for intento in range(1, 4):
+                print("intentos", intento)
+
                 try:
                     resp = requests.post(envio_url, json=payload, headers=envio_headers, timeout=10)
                     data = resp.json() if resp.text.strip() else {}
@@ -2502,9 +3124,10 @@ class EnviarFacturaHaciendaAPIView(APIView):
                         factura.json_original = {**factura.json_original, "jsonRespuestaMh": data}
                         
                         #Enviar correo
-                        if factura.recibido_mh == False:
-                            enviar_correo_individual_view(request, factura_id, None, None)
-                            factura.envio_correo = True
+                        # if factura.recibido_mh == False:
+                        #     enviar_correo_individual_view(request, factura_id, None, None)
+                        #     factura.envio_correo = True
+                        print()
                         factura.save()
                         
                         # Registrar movimiento de inventario
@@ -2527,17 +3150,19 @@ class EnviarFacturaHaciendaAPIView(APIView):
                     else:
                         error_envio = f"Envio failed {resp.status_code}"
                 except requests.RequestException as e:
+                    print("error", e)
+
                     error_envio = str(e)
                 time.sleep(1)
 
             # Si llegó aquí, envió falló repetidamente → contingencia
             factura.estado = False
-            factura.contingencia = True
+            factura.contingencia = False
             
             #Enviar correo
             if factura:
                 enviar_correo_individual_view(request, factura_id, None, None)
-                factura.envio_correo_contingencia = True
+                factura.envio_correo_contingencia = False
             
             factura.save()
             return Response(
@@ -2551,6 +3176,267 @@ class EnviarFacturaHaciendaAPIView(APIView):
                 {"error": "Error interno del servidor", "detalle": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+class FirmarFacturaSujetoExcluidoAPIView(APIView):
+    """
+    POST /api/factura/{factura_id}/firmar/
+    - Intenta hasta 3 veces firmar el DTE con el servicio externo.
+    - Cada save() va en su propio bloque atomic para minimizar el tiempo de bloqueo.
+    - En caso de fallo tras 3 intentos, genera contingencia y registra evento.
+    """
+    def post(self, request, factura_id, format=None):
+        factura = get_object_or_404(FacturaSujetoExcluidoElectronica, id=factura_id)
+        fecha_actual = obtener_fecha_actual()
+
+        intentos_max = 3
+        motivo_otro = False
+        tipo_contingencia_obj = None
+
+        # Leer intentos previos en sesión
+        intentos_sesion = request.session.get('intentos_reintento', 0)
+
+        # Validar certificado
+        print('certificado',CERT_PATH)
+        if not os.path.exists(CERT_PATH):
+            return Response(
+                {"error": "Certificado no encontrado."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Parsear JSON original
+        try:
+            dte_obj = (
+                factura.json_original
+                if isinstance(factura.json_original, dict)
+                else json.loads(factura.json_original)
+            )
+        except Exception as e:
+            return Response(
+                {"error": "JSON inválido", "detalle": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Ciclo de intentos de firma
+        for intento in range(1, intentos_max + 1):
+            # Verificar token activo
+            token_data = Token_data.objects.filter(activado=True).first()
+            if not token_data:
+                return Response(
+                    {"error": "No hay token activo."},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+
+            payload = {
+                "nit": str(factura.dteemisor.nit),
+                "activo": True,
+                "passwordPri": str(factura.dteemisor.clave_privada),
+                "dteJson": dte_obj,
+            }
+
+            try:
+                resp = requests.post(
+                    FIRMADOR_URL.url_endpoint,
+                    json=payload,
+                    headers={"Content-Type": CONTENT_TYPE.valor},
+                    timeout=10
+                )
+                try:
+                    data_resp = resp.json()
+                except ValueError:
+                    data_resp = {"error": "No se pudo parsear JSON", "detalle": resp.text}
+
+                # Éxito en la firma
+                if resp.status_code == 200 and data_resp.get("status") == "OK":
+                    with transaction.atomic():
+                        factura.json_firmado = data_resp
+                        factura.firmado = True
+                        factura.save()
+                    connection.close()
+
+                    # Resetear contador en sesión
+                    request.session['intentos_reintento'] = 0
+                    request.session.modified = True
+
+                    return Response(
+                        {"mensaje": "Firma exitosa", "detalle": data_resp},
+                        status=status.HTTP_200_OK
+                    )
+
+                # Determinar tipo de contingencia según código HTTP
+                if resp.status_code in [500, 502]:
+                    tipo_codigo = "1"
+                elif resp.status_code in [503, 504, 408, 499]:
+                    tipo_codigo = "2"
+                else:
+                    tipo_codigo = "5"
+                    motivo_otro = True
+
+                tipo_contingencia_obj = TipoContingencia.objects.get(codigo=tipo_codigo)
+
+            except requests.RequestException:
+                # Error de comunicación con el servicio
+                tipo_contingencia_obj = TipoContingencia.objects.get(codigo="1")
+
+            # Esperar antes del siguiente intento (sin mantener transacción abierta)
+            time.sleep(1)
+
+        # Tras agotar todos los intentos, entrar en contingencia
+        with transaction.atomic():
+            if intentos_sesion == 0:
+                finalizar_contigencia_view(request)
+
+            factura.estado = False
+            factura.contingencia = True
+            factura.tipomodelo = Modelofacturacion.objects.get(codigo="2")
+            factura.tipotransmision = TipoTransmision.objects.get(codigo="2")
+            factura.fecha_modificacion = fecha_actual.date()
+            factura.hora_modificacion = fecha_actual.time()
+            factura.save()
+
+            lote_contingencia_dte_view(request, factura_id, tipo_contingencia_obj)
+
+        connection.close()
+
+        # Actualizar contador en sesión
+        request.session['intentos_reintento'] = intentos_sesion + 1
+        request.session.modified = True
+
+        return Response(
+            {
+                "error": "No se pudo firmar el DTE después de varios intentos",
+                "motivo_otro": motivo_otro
+            },
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+class EnviarFacturaSujetoExcluidoHaciendaAPIView(APIView):
+    """
+    POST /api/factura-sujeto-excluido/{factura_id}/enviar/
+    Envía a MH únicamente facturas de sujeto excluido.
+    """
+    @transaction.atomic
+    def post(self, request, factura_id, format=None):
+        factura = get_object_or_404(FacturaSujetoExcluidoElectronica, pk=factura_id)
+        print("FACTURA", factura)
+        
+        # Paso 1: Autenticación
+        nit = str(emisor_fe.nit)
+        pwd = str(emisor_fe.clave_publica)
+        auth_url = URL_AUTH.url_endpoint
+        auth_headers = {
+            "Content-Type": HEADERS.url_endpoint,
+            "User-Agent": HEADERS.valor
+        }
+        auth_data = {"user": nit, "pwd": pwd}
+
+        contingencia = False
+        error_auth = None
+        for intento in range(1, 4):
+            try:
+                resp = requests.post(auth_url, data=auth_data, headers=auth_headers, timeout=10)
+                if resp.status_code == 200:
+                    try:
+                        resp_data = resp.json()
+                        body = resp_data.get("body", {})
+                        print("resp_data", resp_data)
+                        
+                        if not isinstance(body, dict):
+                            body = {}
+                    except ValueError as e:
+                        print(f"Error al parsear JSON: {e}")
+                        body = {}
+                    
+                    token = body.get("token", "")
+                    if token.startswith("Bearer "):
+                        token = token.split(" ", 1)[1]
+                    
+                    Token_data.objects.update_or_create(
+                        nit_empresa=nit,
+                        defaults={
+                            "password_hacienda": pwd,
+                            "token": token,
+                            "token_type": body.get("tokenType", "Bearer"),
+                            "roles": body.get("roles", []),
+                            "activado": True,
+                            "fecha_caducidad": timezone.now() + timedelta(days=1)
+                        }
+                    )
+                    contingencia = False
+                    error_auth = None  # Éxito, no hay error
+                    break
+                else:
+                    error_auth = f"Auth failed {resp.status_code}"
+            
+            except requests.RequestException as e:
+                error_auth = str(e)
+                
+            time.sleep(1)
+
+            if error_auth:
+                print("Error autenticacion: ", error_auth)
+            else:
+                print("Autenticacion exitosa")
+
+            if contingencia:
+                return Response(
+                    {"error": "No se autenticó con Hacienda", "detalle": error_auth},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        # 3) montas el JSON firmado:
+        try:
+            dte_json = factura.json_firmado
+            if isinstance(dte_json, str):
+                dte_json = json.loads(dte_json)
+        except Exception as e:
+            return Response({"error": "JSON firmado inválido", "detalle": str(e)},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        documento = dte_json.get("body", "").strip()
+        if not documento:
+            return Response({"error": "Falta token en 'body' del JSON firmado"},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        # 4) payload de envío
+        payload = {
+            "ambiente":    AMBIENTE.codigo,
+            "idEnvio":     factura.id,  # ¡ya no collides con FacturaElectronica!
+            "version":     int(factura.json_original["identificacion"]["version"]),
+            "tipoDte":     str(factura.json_original["identificacion"]["tipoDte"]),
+            "documento":   documento,
+            "codigoGeneracion": str(factura.codigo_generacion)
+        }
+
+        # 5) posteas a MH
+        envio_url = "https://api.dtes.mh.gob.sv/fesv/recepciondte"
+        envio_headers = {
+            "Authorization": f"Bearer {Token_data.objects.filter(activado=True).first().token}",
+            "Content-Type": CONTENT_TYPE.valor,
+            "User-Agent": HEADERS.valor
+        }
+
+        resp = requests.post(envio_url, json=payload, headers=envio_headers, timeout=10)
+        
+        print("Envio response status code:", resp.status_code)
+        print("Envio response text:", resp.text)
+        
+        data = resp.json() if resp.status_code == 200 else {}
+        if resp.status_code == 200 and data.get("selloRecibido"):
+            # actualizas sólo la SujetoExcluido
+            factura.sello_recepcion = data["selloRecibido"]
+            factura.recibido_mh   = True
+            factura.estado        = True
+            factura.contingencia  = False
+            factura.json_original = {**factura.json_original, "jsonRespuestaMh": data}
+            factura.save()
+            # registrar inventario, correos, contingencia… igual que antes, usando
+            # factura.detallesSujetoExcluido.all()
+            return Response({"mensaje":"Envío exitoso","respuesta":data}, status=200)
+        else:
+            # fallback a contingencia
+            factura.contingencia = True
+            factura.save()
+            return Response({"error":"Fallo al enviar","detalle":data}, status=400)
 
 ######################################################
 # EVENTOS DE INVALIDACION
@@ -2567,10 +3453,12 @@ class InvalidarDteUnificadoAPIView(APIView):
     Se espera que se realice una petición POST a:
       /api/invalidar-firmar-enviar/<factura_id>/
     """
-    def post(self, request, factura_id):
+    def post(self, request, factura_id ):
         try:
             # Paso 1: Llamar a la función de invalidación
             response_evento = invalidacion_dte_view(request, factura_id)
+            print("response_evento", response_evento)
+            
             if response_evento.status_code != 302:
                 # Si el proceso de invalidación falla, retorna el error
                 return Response(json.loads(response_evento.content),
@@ -2604,6 +3492,59 @@ class InvalidarDteUnificadoAPIView(APIView):
         
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+# EVENTO DE INVALIDACION SUJETO EXCLUIDO UNIFICADO
+class InvalidarDteSujetoExcluidoUnificadoAPIView(APIView):
+    """
+    Vista API unificada que realiza en un solo paso:
+      1. Genera el DTE de invalidación (llama a invalidacion_dte_view)
+      2. Firma el DTE de invalidación (llama a firmar_factura_anulacion_view)
+      3. Envía el DTE firmado a Hacienda (llama a enviar_factura_invalidacion_hacienda_view)
+    
+    Se espera que se realice una petición POST a:
+      /api/invalidar-firmar-enviar/<factura_id>/
+    """
+    def post(self, request, factura_id):
+        try:
+            # Paso 1: Llamar a la función de invalidación
+            response_evento = invalidacion_dte_sujeto_excluido_view(request, factura_id)
+            print("response_evento", response_evento)
+            
+            if response_evento.status_code != 302:
+                # Si el proceso de invalidación falla, retorna el error
+                return Response(json.loads(response_evento.content),
+                                status=response_evento.status_code)
+            
+            # Paso 2: Llamar a la función de firma de la factura de invalidación
+            response_firma = firmar_factura_sujeto_excluido_anulacion_view(request, factura_id)
+            if response_firma.status_code != 302:
+                return Response(json.loads(response_firma.content),
+                                status=response_firma.status_code)
+            
+            # Paso 3: Llamar a la función que envía la factura firmada a Hacienda
+            response_envio = enviar_factura_sujeto_excluido_invalidacion_hacienda_view(request, factura_id)
+            
+            # Consultar el estado final del evento
+            evento = EventoInvalidacion.objects.filter(factura__id=factura_id).first()
+            if evento:
+                mensaje = "Factura invalidada con éxito" if evento.estado else "No se pudo invalidar la factura"
+            else:
+                mensaje = "No se encontró el evento de invalidación para la factura"
+            
+            try:
+                detalle = json.loads(response_envio.content)
+            except Exception:
+                detalle = response_envio.content.decode()
+            
+            return Response({
+                "mensaje": mensaje,
+                "detalle": detalle
+            }, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
         
 # OBTRENER FACTURA POR CODIGO DE GENERACION
 class FacturaPorCodigoGeneracionAPIView(APIView):
@@ -2673,7 +3614,14 @@ class FacturaPorCodigoGeneracionAPIView(APIView):
                 "telefono": receptor.telefono,
                 "correo": receptor.correo,
             },
-            "productos": productos
+            "productos": productos,
+            "subtotal_neto": factura.sub_total,
+            "total_iva": factura.total_iva,
+            "descuento": factura.total_descuento,
+            "total": factura.total_pagar,
+            "total_con_iva": factura.total_pagar,
+            "saldo_a_favor": factura.saldo_favor,
+            "total_a_pagar": factura.total_pagar
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -2720,7 +3668,7 @@ class FacturaListAPIView(generics.ListAPIView):
             else:
                 queryset = queryset.filter(sello_recepcion__isnull=True)
         if tipo_dte:
-            queryset = queryset.filter(tipo_dte__id=tipo_dte)
+            queryset = queryset.filter(tipo_dte__codigo=tipo_dte)
         if estado and estado.lower() in ['true', 'false']:
             queryset = queryset.filter(estado=(estado.lower() == 'true'))
         if estado_invalidacion:
@@ -2737,6 +3685,53 @@ class FacturaListAPIView(generics.ListAPIView):
                 
 
         return queryset
+
+
+# LISTAR FACTURAS SUJETO EXCLUIDO
+class FacturaSujetoExcluidoListAPIView(generics.ListAPIView):
+    serializer_class = FacturaSujetoExcluidoListSerializer
+    pagination_class = FacturaPagination
+
+    def get_queryset(self):
+        queryset = FacturaSujetoExcluidoElectronica .objects.all()
+
+        recibido = self.request.GET.get('recibido_mh')
+        codigo = self.request.GET.get('sello_recepcion')
+        has_codigo = self.request.GET.get('has_sello_recepcion')
+        tipo_dte = self.request.GET.get('tipo_dte')
+        estado = self.request.GET.get('estado')  # Estado normal, por ejemplo "true" o "false"
+        estado_invalidacion = self.request.GET.get('estado_invalidacion')  # Para filtrar el estado de invalidación
+
+        if recibido and recibido.lower() in ['true', 'false']:
+            queryset = queryset.filter(recibido_mh=(recibido.lower() == 'true'))
+        if codigo:
+           queryset = queryset.filter(Q(sello_recepcion__icontains=codigo) | Q(numero_control__icontains=codigo) # Busacar por numero de control y sello de recepcion
+        )
+
+        if has_codigo and has_codigo.lower() in ['true', 'false']:
+            if has_codigo.lower() == 'true':
+                queryset = queryset.exclude(sello_recepcion__isnull=True)
+            else:
+                queryset = queryset.filter(sello_recepcion__isnull=True)
+        if tipo_dte:
+            queryset = queryset.filter(tipo_dte__codigo=tipo_dte)
+        if estado and estado.lower() in ['true', 'false']:
+            queryset = queryset.filter(estado=(estado.lower() == 'true'))
+        if estado_invalidacion:
+            estado_inv_lower = estado_invalidacion.lower()
+            if estado_inv_lower == "invalidada":
+                queryset = queryset.filter(dte_invalidacion__estado=True)
+            elif estado_inv_lower == "firmar":
+                # Filtra facturas sin evento de invalidación y con recibido_mh == False (Firma pendiente).
+                queryset = queryset.filter(dte_invalidacion__isnull=True, recibido_mh=False)
+            elif estado_inv_lower == "enproceso":
+                queryset = queryset.filter(dte_invalidacion__estado=False)
+            elif estado_inv_lower == "viva":
+                queryset = queryset.filter(dte_invalidacion__isnull=True)
+                
+
+        return queryset
+
 
 # ENVIAR FACTURA INVALIDACION HACIENDA
 class EnviarFacturaInvalidacionAPIView(APIView):
@@ -4155,8 +5150,13 @@ class TopProductosAPIView(generics.ListAPIView):
     def get(self, request):
         data = (
             DetalleFactura.objects
-          .values('producto', 'producto__descripcion')  # Agrupamos por producto
-            .annotate(total_vendido=Sum('cantidad'))  # Sumar cantidades
+            .values('producto', 'producto__descripcion')  # Agrupamos por producto
+            .annotate(
+                total_vendido=Sum('cantidad'),
+                total_ventas=Sum(
+                    ExpressionWrapper(F('cantidad') * F('producto__precio_venta'), output_field=DecimalField(max_digits=10, decimal_places=2))
+                )
+            )
              .order_by('-total_vendido')[:3]  # Top 3
         )
  
@@ -4244,43 +5244,50 @@ class EnviarCorreoIndividualAPIView(APIView):
             email.content_subtype = "html"  # Indicar que el contenido es HTML
             
             # Adjuntar archivos
-            try:
-                with open(archivo_pdf, 'rb') as pdf_file:
-                    email.attach(
-                        f"Documento_Electrónico_{receptor.nombre}.pdf",
-                        pdf_file.read(),
-                        'application/pdf'
-                    )
-                with open(archivo_json, 'rb') as json_file:
-                    email.attach(
-                        f"Documento_Electrónico_{receptor.nombre}.json",
-                        json_file.read(),
-                        'application/json'
-                    )
-            except Exception as e:
-                print(f"Error adjuntando archivos: {e}")
-                return Response(
-                {"error": "Error adjuntando archivos:", "detalle": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            # try:
+            #     with open(archivo_pdf, 'rb') as pdf_file:
+            #         email.attach(
+            #             f"Documento_Electrónico_{receptor.nombre}.pdf",
+            #             pdf_file.read(),
+            #             'application/pdf'
+            #         )
+            #     with open(archivo_json, 'rb') as json_file:
+            #         email.attach(
+            #             f"Documento_Electrónico_{receptor.nombre}.json",
+            #             json_file.read(),
+            #             'application/json'
+            #         )
+            # except Exception as e:
+            #     print(f"Error adjuntando archivos: {e}")
+            #     return Response(
+            #     {"error": "Error adjuntando archivos:", "detalle": str(e)},
+            #     status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            # )
             
-            # Enviar el correo
-            try:
-                email.send(fail_silently=False)
-                documento_electronico.envio_correo = True
-                documento_electronico.save()
-                print(f"Correo enviado a {receptor.correo}")
-                return Response(
-                    {"mensaje": f"El correo fue enviado exitosamente a {receptor.correo}"},
-                    status=status.HTTP_200_OK
-                    )
-            except Exception as e:
-                documento_electronico.envio_correo = False
-                documento_electronico.save()
-                print(f"Error al enviar el correo a {receptor.correo}: {e}")
-                return Response(
-                    {"error": "Error al enviar el correo", "detalle": str(e)},
-                    status=status.HTTP_502_BAD_GATEWAY
-                )
+            # # Enviar el correo
+            # try:
+            #     email.send(fail_silently=False)
+            #     documento_electronico.envio_correo = True
+            #     documento_electronico.save()
+            #     print(f"Correo enviado a {receptor.correo}")
+            #     return Response(
+            #         {"mensaje": f"El correo fue enviado exitosamente a {receptor.correo}"},
+            #         status=status.HTTP_200_OK
+            #         )
+            # except Exception as e:
+            #     documento_electronico.envio_correo = False
+            #     documento_electronico.save()
+            #     print(f"Error al enviar el correo a {receptor.correo}: {e}")
+            #     return Response(
+            #         {"error": "Error al enviar el correo", "detalle": str(e)},
+            #         status=status.HTTP_502_BAD_GATEWAY
+            #     )
     #return redirect('detalle_factura', factura_id=factura_id)
     
+###########################################################
+# FACTURA SUJETO EXCLUIDO
+###########################################################
+
+class FacturaSujetoExcluidoDetailAPIView(generics.RetrieveAPIView):
+    queryset = FacturaSujetoExcluidoElectronica.objects.all()
+    serializer_class = FacturaSujetoExcluidoSerializer

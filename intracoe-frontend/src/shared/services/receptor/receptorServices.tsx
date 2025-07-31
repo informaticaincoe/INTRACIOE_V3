@@ -1,19 +1,33 @@
-// src/services/receptorService.ts
-
-import { ReceptorInterface } from '../../interfaces/interfaces';
+import { ReceptorInterface, ReceptorResult } from '../../../features/ventas/receptores/interfaces/receptorInterfaces';
+import { ReceptoresParams } from '../../interfaces/interfacesPagination';
 import { api } from '../api';
+import {ReceptorInterface as ReceptorInterfaceEnFormulario} from "../../../shared/interfaces/interfaces"
 
-export const getAllReceptor = async ({
-  filter,
-}: { filter?: any | null } = {}): Promise<ReceptorInterface[]> => {
+export const getAllReceptor = async (
+  { filter, page, limit }: ReceptoresParams = {
+    page: 1,
+    limit: 10,
+  }
+) => {
   try {
-    const params: Record<string, any> = {};
-    if (filter) params.filtro = filter;
+    const queryParams = new URLSearchParams();
 
-    const response = await api.get<ReceptorInterface[]>('/receptor/', {
-      params,
+    //paginacion
+    queryParams.append('page', String(page));
+    queryParams.append('page_size', String(limit));
+
+    const response = await api.get<ReceptorInterface>('/receptor/', {
+      params: { page: page, page_size: limit, filter: filter },
     });
-    return response.data;
+
+    return {
+      results: response.data.results,
+      current_page: response.data.current_page,
+      page_size: response.data.page_size,
+      has_next: response.data.has_next,
+      has_previous: response.data.has_previous,
+      count: response.data.count,
+    };
   } catch (error) {
     console.error('Error fetching receptores:', error);
     throw new Error('Error fetching receptores');
@@ -22,9 +36,9 @@ export const getAllReceptor = async ({
 
 export const getReceptorById = async (
   id: string
-): Promise<ReceptorInterface> => {
+): Promise<ReceptorInterfaceEnFormulario> => {
   try {
-    const response = await api.get<ReceptorInterface>(`/receptor/${id}/`);
+    const response = await api.get<ReceptorInterfaceEnFormulario>(`/receptor/${id}/`);
     return response.data;
   } catch (error) {
     console.error(`Error fetching receptor ${id}:`, error);
@@ -53,10 +67,10 @@ export const deleteReceptor = async (receptor_id: string): Promise<any> => {
 };
 
 export const createReceptor = async (
-  data: ReceptorInterface
-): Promise<ReceptorInterface> => {
+  data: ReceptorInterfaceEnFormulario
+): Promise<ReceptorInterfaceEnFormulario> => {
   try {
-    const response = await api.post<ReceptorInterface>(
+    const response = await api.post<ReceptorInterfaceEnFormulario>(
       '/receptor/crear/',
       data
     );
@@ -69,10 +83,10 @@ export const createReceptor = async (
 
 export const editReceptor = async (
   id: string,
-  data: ReceptorInterface
-): Promise<ReceptorInterface> => {
+  data: ReceptorInterfaceEnFormulario
+): Promise<ReceptorInterfaceEnFormulario> => {
   try {
-    const response = await api.put<ReceptorInterface>(
+    const response = await api.put<ReceptorInterfaceEnFormulario>(
       `/receptor/actualizar/${id}/`,
       data
     );

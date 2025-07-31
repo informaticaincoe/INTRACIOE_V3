@@ -7,21 +7,38 @@ import {
   deleteReceptor,
   getAllReceptor,
 } from '../../../../shared/services/receptor/receptorServices';
-import { ReceptorInterface } from '../../../../shared/interfaces/interfaces';
 import { HeaderReceptoresOptions } from '../components/headerReceptoresOptions';
 import {
   CustomToastRef,
   ToastSeverity,
 } from '../../../../shared/toast/customToast';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 
 import { FaCheckCircle } from 'react-icons/fa';
 import { IoMdCloseCircle } from 'react-icons/io';
+import { ReceptorInterface } from '../interfaces/receptorInterfaces';
+import { Pagination } from '../../../../shared/interfaces/interfacesPagination';
 
 export const ReceptoresPage = () => {
-  const [receptores, setReceptores] = useState<ReceptorInterface[]>([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [loading, setLoading] = useState(false);
+  const [receptores, setReceptores] = useState<ReceptorInterface>({
+    count: 1,
+    current_page: 1,
+    page_size: 10,
+    has_next: true,
+    has_previous: false,
+    results: [],
+  });
   const [codigoFiltro, setCodigoFiltro] = useState<string>('');
   const [selectedReceptores, setSelectedReceptores] = useState<any[]>([]);
+  const [pagination, setPagination] = useState<Pagination>({
+    count: 1,
+    current_page: 1,
+    page_size: 10,
+    has_next: true,
+    has_previous: false,
+  });
   const toastRef = useRef<CustomToastRef>(null);
   const navigate = useNavigate();
 
@@ -41,16 +58,59 @@ export const ReceptoresPage = () => {
   // Cada vez que cambie el filtro, recargamos los productos
   useEffect(() => {
     fetchReceptores();
-    console.log('d');
   }, [codigoFiltro, setSelectedReceptores, selectedReceptores]);
 
-  const fetchReceptores = async () => {
+  useEffect(() => {
+    // Reinicia a la página 1 cada vez que los filtros cambian
+    setPagination((prev) => ({ ...prev, current_page: 1 }));
+    // Se utiliza el page_size actual para la consulta
+    fetchReceptores(1, pagination.page_size); //enviar el numero de pagina actual 1 por defecto, enviar la cantidad de elementos en pagina
+  }, []);
+
+  const updateReceptores = () => {
+    fetchReceptores(pagination.current_page);
+  };
+
+  const onPageChange = (event: any) => {
+    const page = event.page + 1;
+    const limit = event.rows;
+    fetchReceptores(page, limit);
+  };
+
+  const fetchReceptores = async (page = 1, limit = 10) => {
     try {
+      setLoading(true);
       const response = await getAllReceptor({
         filter: codigoFiltro || undefined,
+        page,
+        limit,
       });
-      console.log(response);
-      setReceptores(response);
+      if (response) {
+        setReceptores(response);
+        setPagination({
+          count: response.count || 0,
+          current_page: response.current_page || 1,
+          page_size: response.page_size || limit,
+          has_next: response.has_next,
+          has_previous: response.has_previous,
+        });
+
+        const params: Record<string, string> = {
+          page: String(response.current_page),
+          page_size: String(response.page_size),
+          // date_from: initialDateFrom,        // <-- futuro: filtro fecha
+          // date_to:   initialDateTo,
+        };
+        setSearchParams(params, { replace: true });
+      } else {
+        setPagination({
+          count: 1,
+          current_page: 1,
+          page_size: 10,
+          has_next: true,
+          has_previous: false,
+        });
+      }
     } catch (error) {
       console.log(error);
     }
@@ -70,6 +130,7 @@ export const ReceptoresPage = () => {
           <FaCheckCircle size={38} />,
           'Receptor eliminado con éxito'
         );
+        updateReceptores();
       } catch (error) {
         console.error(error);
         handleAccion(
@@ -89,7 +150,7 @@ export const ReceptoresPage = () => {
 
   return (
     <>
-      <Title text="Receptores" />
+      <Title text="Clientes" />
       <WhiteSectionsPage>
         <div>
           <HeaderReceptoresOptions
@@ -98,7 +159,10 @@ export const ReceptoresPage = () => {
           />
           <Divider />
           <TableReceptores
-            receptores={receptores}
+            pagination={pagination}
+            onPageChange={onPageChange}
+            updateList={updateReceptores}
+            receptores={receptores.results}
             setSelectedReceptores={setSelectedReceptores}
             selectedReceptores={selectedReceptores}
             onDelete={handleDelete}

@@ -20,11 +20,9 @@ import {
   FacturaPorCodigoGeneracionResponse,
   ReceptorInterface,
   TipoDocumento,
-  TipoGeneracionFactura,
   TipoDTE,
 } from '../../../../shared/interfaces/interfaces';
 import { ProductosTabla } from '../components/FE/productosAgregados/productosData';
-import { ResumenTotalesCard } from '../components/Shared/resumenTotales/resumenTotalesCard';
 import {
   FirmarFactura,
   generarAjusteService,
@@ -32,9 +30,8 @@ import {
   getFacturaBycodigo,
 } from '../services/factura/facturaServices';
 import { CheckBoxRetencion } from '../components/Shared/configuracionFactura/Retencion/checkBoxRetencion';
-import { useNavigate } from 'react-router';
+import { useFetcher, useNavigate } from 'react-router';
 import { Input } from '../../../../shared/forms/input';
-import { DropFownTipoDeDocumentoGeneracion } from '../components/NotaDebito/DropDownTipoDeDocumentoGeneracion';
 import { CheckboxBaseImponible } from '../components/Shared/configuracionFactura/baseImponible/checkboxBaseImponible';
 import CustomToast, {
   CustomToastRef,
@@ -42,6 +39,10 @@ import CustomToast, {
 } from '../../../../shared/toast/customToast';
 import { IoMdCloseCircle } from 'react-icons/io';
 import { ExtensionCard } from '../components/Shared/entension/extensionCard';
+import { ResumenCardNotaAjuste } from '../components/NotaDebito/resumenCardNotaAjuste';
+import { InputTextarea } from 'primereact/inputtextarea';
+import { FormasdePagoForm } from '../components/Shared/configuracionFactura/formasDePago/formasdePagoForm';
+
 
 export const GenerarDocumentosAjuste = () => {
   //lista de datos obtenidas de la api
@@ -60,9 +61,8 @@ export const GenerarDocumentosAjuste = () => {
   const [listProducts, setListProducts] = useState<ProductosTabla[]>([]); //lista que almacena todos los productos
   const [numeroControl, setNumeroControl] = useState('');
   const [codigoGeneracion, setCodigoGeneracion] = useState('');
-  const [tipoGeneracionFactura, setTipoGeneracionFactura] =
-    useState<TipoGeneracionFactura | null>(null);
   const [descuentosList, setDescuentosList] = useState();
+  const [saldoFavor, setSaldoFavor] = useState<number>(0.0);
 
   //datos seleccionados para realizar la factura
   const [selectedCondicionDeOperacion, setSelectedCondicionDeOperacion] =
@@ -93,10 +93,10 @@ export const GenerarDocumentosAjuste = () => {
   const [nombreResponsable, setNombreResponsable] = useState<string>('');
   const [docResponsable, setDocResponsable] = useState<string>('');
   const [tipoTransmision, setTipoTransmision] = useState<string>('');
+  const [formasPagoList, setFormasPagoList] = useState<number[]>([]);
 
-  const [formData, setFormData] = useState({
-    codigo: '',
-  });
+
+  const [formData, setFormData] = useState({ codigo: '' });
 
   const navigate = useNavigate();
   const toastRef = useRef<CustomToastRef>(null);
@@ -119,17 +119,6 @@ export const GenerarDocumentosAjuste = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleMontoPagar = () => {
-    let aux = 0;
-    selectedProducts.map((pago) => {
-      aux = aux + pago.total_con_iva;
-      console.log(pago);
-    });
-
-    console.log('aux', aux);
-    return aux.toFixed(2);
-  };
-
   const generarFactura = async () => {
     const dataNCND = {
       tipoDocumento: tipoDocumentoSelected?.codigo,
@@ -140,26 +129,26 @@ export const GenerarDocumentosAjuste = () => {
       documento_seleccionado: 2, // solo manjeo de documento electronico
       documento_relacionado:
         facturasAjuste[0]?.codigo_generacion.toUpperCase() ?? '',
-      // descuento_select: descuentos, //TODO: Descuento por item
+      // descuento_select: descuentos,
       condicion_operacion: selectedCondicionDeOperacion, //contado, credito, otros
       porcentaje_retencion_iva: (retencionIva / 100).toString(),
       retencion_iva: retencionIva.toString(),
       productos_retencion_iva: '0.00',
-      porcentaje_retencion_renta: '0.00', //TODO: descuento por item
+      porcentaje_retencion_renta: '0.00',
       retencion_renta: '0.0',
-      productos_retencion_renta: '0.00', //TODO: descuento por item
-      producto_id: idListProducts[0],
+      productos_retencion_renta: '0.00',
       num_ref: null,
-      productos_ids: idListProducts,
+      [tipoDocumentoSelected?.codigo === '05'
+        ? 'productos_id_r'
+        : 'productos_ids']: idListProducts,
       cantidades: cantidadListProducts, //cantidad de cada producto de la factura
       descuento_gravado: descuentos.descuentoGravado.toString(),
       descuento_global_input: descuentos.descuentoGeneral.toString(),
       contingencia: false,
       tipotransmision: tipoTransmision,
-      // "retencion_renta": false,
-      // "porcentaje_retencion_renta": 0.00,
     };
     console.log('dataNCND', dataNCND);
+    console.log('factura ajuste', facturasAjuste[0]);
 
     try {
       const response = await generarNotaCreditoService(dataNCND);
@@ -193,16 +182,31 @@ export const GenerarDocumentosAjuste = () => {
         ...response,
         productos: response.productos.map((p) => ({
           ...p,
-          cantidad_editada: p.cantidad,
-          monto_a_aumentar: 0,
+          cantidad_editada: p.cantidad, // **Agregar las cantidades editadas de cada producto
+          monto_a_aumentar: 0, // **nuevo monto a modificar en el producto
         })),
       };
 
       setFacturasAjuste((prev) => [...prev, facturaProcesada]);
       setFormData({ codigo: '' }); // Limpiar input
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      handleAccion('error', <IoMdCloseCircle size={68} />, error.toString());
     }
+  };
+
+  useEffect(() => {
+    handleMontoPagar();
+    console.log("LIST PRODUCTPS", listProducts)
+  }, [listProducts, idListProducts, cantidadListProducts]);
+
+  const handleMontoPagar = () => {
+    let aux = 0;
+    listProducts.map((pago) => {
+      aux = + ((pago.preunitario + pago.iva_unitario) * pago.cantidad);
+    });
+    console.log("AUUUUUX", aux)
+    console.log("AUUUUUX", listProducts[0])
+    setTotalAPagar(aux);
   };
 
   /************************************/
@@ -227,7 +231,6 @@ export const GenerarDocumentosAjuste = () => {
       setCondicionesOperacionList(response.tipooperaciones);
       setSelectedCondicionDeOperacion(response.tipooperaciones[0].codigo);
       setDescuentosList(response.descuentos);
-      setListProducts(response.producto);
       setTipoDocumento(response.tipoDocumentos);
       // setTipoDocumentoSelected(response.tipoDocumentos[0].codigo);
     } catch (error) {
@@ -311,7 +314,8 @@ export const GenerarDocumentosAjuste = () => {
                 setTieneRetencionRenta={setTieneRetencionRenta}
                 tieneRetencionRenta={tieneRetencionRenta}
                 retencionRenta={retencionRenta}
-                setRetencionRenta={setRetencionRenta}
+                setRetencionRenta={setRetencionRenta} 
+                tipoContibuyente={emisorData.tipoContibuyente}              
               />
               <CheckboxBaseImponible
                 baseImponible={baseImponible}
@@ -391,6 +395,7 @@ export const GenerarDocumentosAjuste = () => {
           </div>
           {facturasAjuste && (
             <TablaProductosFacturaNotasDebito
+              tipoDte={tipoDocumentoSelected?.codigo}
               setCantidadListProducts={setCantidadListProducts}
               facturasAjuste={facturasAjuste}
               setFacturasAjuste={setFacturasAjuste}
@@ -401,20 +406,50 @@ export const GenerarDocumentosAjuste = () => {
         </div>
       </WhiteSectionsPage>
 
+      {/*Seccion para pagos*/}
+      {tipoDocumentoSelected?.codigo == '06' &&
+        <WhiteSectionsPage>
+          <>
+            <h1 className="text-start text-xl font-bold text-nowrap">
+              Formas de pago
+            </h1>
+            <Divider />
+            <FormasdePagoForm
+              setFormasPagoList={setFormasPagoList}
+              totalAPagar={totalAPagar}
+              setErrorFormasPago={setErrorFormasPago}
+              errorFormasPago={errorFormasPago}
+              setAuxManejoPagos={setAuxManejoPagos}
+              auxManejoPagos={auxManejoPagos}
+            />
+            <span className="flex flex-col items-start justify-start py-5 pt-10">
+              <p className="opacity-70">Observaciones</p>
+              <div className="justify-content-center flex w-full">
+                <InputTextarea
+                  autoResize
+                  value={observaciones}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                    setObservaciones(e.target.value)
+                  }
+                  rows={3}
+                  style={{ width: '100%' }}
+                />
+              </div>
+            </span>
+          </>
+        </WhiteSectionsPage>}
+
       {/*Seccion totales resumen*/}
       <WhiteSectionsPage>
         <div className="pt-2 pb-5">
           <div className="flex justify-between">
-            <h1 className="text-start text-xl font-bold">Resumen de totales</h1>
+            <h1 className="text-start text-xl font-bold">Resumen nuevo total</h1>
           </div>
           <Divider className="m-0 p-0"></Divider>
-          <ResumenTotalesCard
-            setTotalAPagar={setTotalAPagar}
+          <ResumenCardNotaAjuste
+            facturas={listProducts}
+            cantidades={cantidadListProducts}
             totalAPagar={totalAPagar}
-            listProducts={selectedProducts}
-            descuentos={descuentos}
-            setDescuentos={setDescuentos}
-            tipoDocumento={''}
           />
         </div>
       </WhiteSectionsPage>

@@ -19,8 +19,18 @@ export const getAllCondicionDeOperacion = async () => {
 };
 
 export const getCondicionDeOperacionById = async (id: number) => {
+  console.log("IDDDDDDDDDDD",id)
   try {
     const response = await api.get(`/condicion-operacion/${id}/`);
+    return response.data;
+  } catch (error) {
+    throw new Error();
+  }
+};
+
+export const getTipoContingencia = async () => {
+  try {
+    const response = await api.get(`/tipo-contingencia/`);
     return response.data;
   } catch (error) {
     throw new Error();

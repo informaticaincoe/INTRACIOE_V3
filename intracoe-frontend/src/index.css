@@ -33,6 +33,14 @@ body {
   width: 40vw !important;
 } */
 
+.ant-menu-item-group-title {
+  font-weight: 600;
+  font-size: 12px;
+  padding: 10px 16px;
+  color: #888;
+  text-align: start;
+}
+
 .p-checkbox,
 .p-checkbox-box {
   border-radius: 0.2rem !important;
@@ -86,6 +94,12 @@ input::file-selector-button {
 .p-sidebar-header {
   position: absolute;
   z-index: 10;
+}
+
+.p-calendar > button {
+  background-color: transparent !important;
+  border-color: rgba(48, 48, 48, 0.153) !important;
+  border-right: none;
 }
 
 @theme {

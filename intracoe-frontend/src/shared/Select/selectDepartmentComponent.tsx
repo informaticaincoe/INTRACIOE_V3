@@ -30,7 +30,7 @@ export const SelectDepartmentComponent: React.FC<SelectDeparmentInterface> = ({
   };
 
   return (
-    <div className="justify-content-center flex">
+    <div className="justify-content-center flex text-start">
       <Dropdown
         value={departamentoSelect}
         onChange={(e) => setDepartamentoSelect(e.value)}
