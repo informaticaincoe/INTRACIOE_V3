@@ -31,7 +31,7 @@ export const TablaInventarioHeader: React.FC<
 
   return (
     <span className="flex items-center justify-between">
-      <h1 className="text-lg font-semibold">Resultados {results}</h1>
+      <h1 className="text-lg font-semibold">{results == 1 ? `${results} resultado` : `${results} resultados`} </h1>
       <div className="flex gap-5">
         <span className="border-border-color flex w-[30vw] items-center rounded-md border">
           <span className="flex pl-4">

@@ -11,7 +11,8 @@ export const getAllAjusteInventario = async (
   { page, limit }: AjusteInventarioParams = {
     page: 1,
     limit: 10,
-  }
+  },
+  signal?: AbortSignal
 ) => {
   const queryParams = new URLSearchParams();
 
@@ -24,6 +25,7 @@ export const getAllAjusteInventario = async (
       '/ajustes-inventario/',
       {
         params: { page: page, page_size: limit },
+        signal
       }
     );
 
@@ -40,7 +42,7 @@ export const getAllAjusteInventario = async (
         };
       })
     );
-console.log("AJUSTE DETALLE DATA", ajusteConNombreProducto)
+    console.log("AJUSTE DETALLE DATA", ajusteConNombreProducto)
     return {
       results: ajusteConNombreProducto,
       current_page: response.data.current_page,
