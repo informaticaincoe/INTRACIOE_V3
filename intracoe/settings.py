@@ -185,17 +185,17 @@ WSGI_APPLICATION = 'intracoe.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
+    'default111': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db1.sqlite3',
     },
 
-    'default111': {
+    'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'intracoe',
-        'USER': 'pordefecto',
+        'USER': 'intracoe',
         'PASSWORD': 'intracoe',
-        'HOST': '192.168.2.209',  # Dirección IP del servidor PostgreSQL
+        'HOST': '192.168.2.49',  # Dirección IP del servidor PostgreSQL
         'PORT': '5432',           # Puerto predeterminado de PostgreSQL
     },
 
