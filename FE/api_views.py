@@ -3,6 +3,7 @@ import time
 from decimal import ROUND_HALF_UP, ConversionSyntax, Decimal
 from itertools import count
 from pyexpat.errors import messages
+from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
@@ -267,28 +268,41 @@ class AutenticacionAPIView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 def autenticacion(request):
+    print("[DEBUG] Ingresando a la vista autenticacion")
 
     tokens_saves = Token_data.objects.all()
+    print(f"[DEBUG] Tokens en base de datos: {tokens_saves.count()}")
 
     if request.method == "POST":
         nit_empresa = request.POST.get("user")
         pwd = request.POST.get("pwd")
+        print(f"[DEBUG] Datos recibidos del formulario: user={nit_empresa}, pwd={'*' * len(pwd) if pwd else None}")
 
         auth_url = URL_AUTH.url_endpoint
         headers = {"User-Agent": HEADERS.valor}
         data = {"user": nit_empresa, "pwd": pwd}
+        print(f"[DEBUG] URL de autenticación: {auth_url}")
+        print(f"[DEBUG] Headers: {headers}")
+        print(f"[DEBUG] Payload de autenticación: {data}")
 
         try:
             response = requests.post(auth_url, headers=headers, data=data)
+            print(f"[DEBUG] Código de respuesta HTTP: {response.status_code}")
+
             if response.status_code == 200:
                 response_data = response.json()
+                print(f"[DEBUG] Respuesta JSON: {response_data}")
+
                 if response_data.get("status") == "OK":
                     token_body = response_data["body"]
                     token = token_body.get("token")
                     token_type = token_body.get("tokenType", "Bearer")
                     roles = token_body.get("roles", [])
 
-                    # Guardar o actualizar los datos del token en la base de datos
+                    print(f"[DEBUG] Token recibido: {token}")
+                    print(f"[DEBUG] Tipo de token: {token_type}")
+                    print(f"[DEBUG] Roles: {roles}")
+
                     token_data, created = Token_data.objects.update_or_create(
                         nit_empresa=nit_empresa,
                         defaults={
@@ -301,7 +315,8 @@ def autenticacion(request):
                         }
                     )
 
-                    # Si el token es nuevo, enviamos un mensaje de éxito
+                    print(f"[DEBUG] Token {'creado' if created else 'actualizado'} en la base de datos")
+
                     if created:
                         messages.success(request, "Autenticación exitosa y token guardado.")
                     else:
@@ -309,13 +324,17 @@ def autenticacion(request):
 
                     return redirect('autenticacion')
                 else:
+                    print(f"[DEBUG] Error en autenticación: {response_data.get('message')}")
                     messages.error(request, "Error en la autenticación: " + response_data.get("message", "Error no especificado"))
             else:
+                print("[DEBUG] Falló la solicitud HTTP")
                 messages.error(request, "Error en la autenticación.")
         except requests.exceptions.RequestException as e:
+            print(f"[DEBUG] Excepción en la solicitud HTTP: {e}")
             messages.error(request, "Error de conexión con el servicio de autenticación.")
 
-    return render(request, "autenticacion.html", {'tokens':tokens_saves})
+    print("[DEBUG] Renderizando página de autenticación")
+    return render(request, "autenticacion.html", {'tokens': tokens_saves})
 
 ######################################################
 ######################################################

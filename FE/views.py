@@ -30,7 +30,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from decimal import ROUND_HALF_UP, ConversionSyntax, Decimal
 from intracoe import settings
-from .models import FacturaSujetoExcluidoElectronica, Token_data, Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica,  Receptor_fe, Tipo_dte, TipoMoneda, TipoUnidadMedida, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos, Descuento, FormasPago, Plazo, TipoGeneracionDocumento, TipoContingencia, EventoContingencia, TipoTransmision, LoteContingencia
+from .models import FacturaSujetoExcluidoElectronica, Token_data, Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica,  Receptor_fe, Tipo_dte, TipoMoneda, TipoUnidadMedida, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos, Descuento, FormasPago, Plazo, TipoGeneracionDocumento, TipoContingencia, EventoContingencia, TipoTransmision, LoteContingencia, RecintoFiscal, RegimenExportacion
 from INVENTARIO.models import Almacen, DetalleDevolucionVenta, DevolucionVenta, MovimientoInventario, NotaCredito, Producto, TipoItem, Tributo
 from .forms import ExcelUploadForm
 from django.db import transaction
@@ -60,45 +60,45 @@ from weasyprint import HTML, CSS
 from django.db.utils import OperationalError
 from django.core.exceptions import ObjectDoesNotExist
 
-# try:
-#     FIRMADOR_URL = ConfiguracionServidor.objects.filter(clave="firmador").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     FIRMADOR_URL = None
+try:
+    FIRMADOR_URL = ConfiguracionServidor.objects.filter(clave="firmador").first()
+except (OperationalError, ObjectDoesNotExist):
+    FIRMADOR_URL = None
 
-# try:
-#     DJANGO_SERVER_URL = ConfiguracionServidor.objects.filter(clave="server_url").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     DJANGO_SERVER_URL = None
+try:
+    DJANGO_SERVER_URL = ConfiguracionServidor.objects.filter(clave="server_url").first()
+except (OperationalError, ObjectDoesNotExist):
+    DJANGO_SERVER_URL = None
 
 SCHEMA_PATH_fe_fc_v1 = "FE/json_schemas/fe-fc-v1.json"
 
-# try:
-#     CERT_PATH = ConfiguracionServidor.objects.filter(clave="certificado").first().url_endpoint
-# except (AttributeError, OperationalError, ObjectDoesNotExist):
-#     CERT_PATH = None
+try:
+    CERT_PATH = ConfiguracionServidor.objects.filter(clave="certificado").first().url_endpoint
+except (AttributeError, OperationalError, ObjectDoesNotExist):
+    CERT_PATH = None
 
-# try:
-#     HACIENDA_URL_TEST = ConfiguracionServidor.objects.filter(clave="hacienda_url_test").first().url_endpoint
-# except (AttributeError, OperationalError, ObjectDoesNotExist):
-#     HACIENDA_URL_TEST = None
+try:
+    HACIENDA_URL_TEST = ConfiguracionServidor.objects.filter(clave="hacienda_url_test").first().url_endpoint
+except (AttributeError, OperationalError, ObjectDoesNotExist):
+    HACIENDA_URL_TEST = None
 
-# try:
-#     HACIENDA_URL_PROD = ConfiguracionServidor.objects.filter(clave="hacienda_url_prod").first().url_endpoint
-# except (AttributeError, OperationalError, ObjectDoesNotExist):
-#     HACIENDA_URL_PROD = None
+try:
+    HACIENDA_URL_PROD = ConfiguracionServidor.objects.filter(clave="hacienda_url_prod").first().url_endpoint
+except (AttributeError, OperationalError, ObjectDoesNotExist):
+    HACIENDA_URL_PROD = None
 
-# COD_CONSUMIDOR_FINAL = "01"
-# COD_CREDITO_FISCAL = "03"
+COD_CONSUMIDOR_FINAL = "01"
+COD_CREDITO_FISCAL = "03"
 
-# try:
-#     VERSION_EVENTO_INVALIDACION = ConfiguracionServidor.objects.filter(clave="version_evento_invalidacion").first().valor
-# except (AttributeError, OperationalError, ObjectDoesNotExist):
-#     VERSION_EVENTO_INVALIDACION = None
+try:
+    VERSION_EVENTO_INVALIDACION = ConfiguracionServidor.objects.filter(clave="version_evento_invalidacion").first().valor
+except (AttributeError, OperationalError, ObjectDoesNotExist):
+    VERSION_EVENTO_INVALIDACION = None
 
-# try:
-#     AMBIENTE = Ambiente.objects.get(codigo="01")
-# except (OperationalError, ObjectDoesNotExist):
-#     AMBIENTE = None
+try:
+    AMBIENTE = Ambiente.objects.get(codigo="01")
+except (OperationalError, ObjectDoesNotExist):
+    AMBIENTE = None
 
 COD_FACTURA_EXPORTACION = "11"
 COD_SUJETO_EXCLUIDO = "14"
@@ -118,85 +118,85 @@ COD_TIPO_CONTINGENCIA = "5"
 DTE_APLICA_CONTINGENCIA = ["01", "03", "04", "05", "06", "11", "14"]
 TIPO_TRANSMISION_CONTINGENCIA = 2
 
-# try:
-#     RUTA_COMPROBANTES_PDF = ConfiguracionServidor.objects.filter(clave="ruta_comprobantes_dte").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     RUTA_COMPROBANTES_PDF = None
+try:
+    RUTA_COMPROBANTES_PDF = ConfiguracionServidor.objects.filter(clave="ruta_comprobantes_dte").first()
+except (OperationalError, ObjectDoesNotExist):
+    RUTA_COMPROBANTES_PDF = None
 
-# try:
-#     RUTA_COMPROBANTES_JSON = ConfiguracionServidor.objects.filter(clave="ruta_comprobante_json").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     RUTA_COMPROBANTES_JSON = None
+try:
+    RUTA_COMPROBANTES_JSON = ConfiguracionServidor.objects.filter(clave="ruta_comprobante_json").first()
+except (OperationalError, ObjectDoesNotExist):
+    RUTA_COMPROBANTES_JSON = None
 
-# try:
-#     RUTA_JSON_FACTURA = ConfiguracionServidor.objects.filter(clave="json_factura").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     RUTA_JSON_FACTURA = None
+try:
+    RUTA_JSON_FACTURA = ConfiguracionServidor.objects.filter(clave="json_factura").first()
+except (OperationalError, ObjectDoesNotExist):
+    RUTA_JSON_FACTURA = None
 
-# try:
-#     URL_AUTH = ConfiguracionServidor.objects.filter(clave="url_autenticacion").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     URL_AUTH = None
+try:
+    URL_AUTH = ConfiguracionServidor.objects.filter(clave="url_autenticacion").first()
+except (OperationalError, ObjectDoesNotExist):
+    URL_AUTH = None
 
-# try:
-#     HEADERS = ConfiguracionServidor.objects.filter(clave="headers").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     HEADERS = None
+try:
+    HEADERS = ConfiguracionServidor.objects.filter(clave="headers").first()
+except (OperationalError, ObjectDoesNotExist):
+    HEADERS = None
 
-# try:
-#     CONTENT_TYPE = ConfiguracionServidor.objects.filter(clave="content_type").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     CONTENT_TYPE = None
+try:
+    CONTENT_TYPE = ConfiguracionServidor.objects.filter(clave="content_type").first()
+except (OperationalError, ObjectDoesNotExist):
+    CONTENT_TYPE = None
 
-# try:
-#     INVALIDAR_DTE_URL = ConfiguracionServidor.objects.filter(clave="url_invalidar_dte").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     INVALIDAR_DTE_URL = None
+try:
+    INVALIDAR_DTE_URL = ConfiguracionServidor.objects.filter(clave="url_invalidar_dte").first()
+except (OperationalError, ObjectDoesNotExist):
+    INVALIDAR_DTE_URL = None
 
-# try:
-#     VERSION_EVENTO_CONTINGENCIA = ConfiguracionServidor.objects.filter(clave="version_evento_contingencia").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     VERSION_EVENTO_CONTINGENCIA = None
+try:
+    VERSION_EVENTO_CONTINGENCIA = ConfiguracionServidor.objects.filter(clave="version_evento_contingencia").first()
+except (OperationalError, ObjectDoesNotExist):
+    VERSION_EVENTO_CONTINGENCIA = None
 
-# try:
-#     FACTURAS_FIRMADAS_URL = ConfiguracionServidor.objects.filter(clave="json_facturas_firmadas").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     FACTURAS_FIRMADAS_URL = None
+try:
+    FACTURAS_FIRMADAS_URL = ConfiguracionServidor.objects.filter(clave="json_facturas_firmadas").first()
+except (OperationalError, ObjectDoesNotExist):
+    FACTURAS_FIRMADAS_URL = None
 
-# try:
-#     HACIENDA_CONTINGENCIA_URL = ConfiguracionServidor.objects.filter(clave="hacienda_contingencia_url").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     HACIENDA_CONTINGENCIA_URL = None
+try:
+    HACIENDA_CONTINGENCIA_URL = ConfiguracionServidor.objects.filter(clave="hacienda_contingencia_url").first()
+except (OperationalError, ObjectDoesNotExist):
+    HACIENDA_CONTINGENCIA_URL = None
 
-# try:
-#     USER_AGENT = ConfiguracionServidor.objects.filter(clave="user_agent").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     USER_AGENT = None
+try:
+    USER_AGENT = ConfiguracionServidor.objects.filter(clave="user_agent").first()
+except (OperationalError, ObjectDoesNotExist):
+    USER_AGENT = None
 
-# try:
-#     SCHEMA_JSON = ConfiguracionServidor.objects.filter(clave="schema_json").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     SCHEMA_JSON = None
+try:
+    SCHEMA_JSON = ConfiguracionServidor.objects.filter(clave="schema_json").first()
+except (OperationalError, ObjectDoesNotExist):
+    SCHEMA_JSON = None
 
-# try:
-#     CONSULTAR_DTE = ConfiguracionServidor.objects.filter(clave="consulta_dte").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     CONSULTAR_DTE = None
+try:
+    CONSULTAR_DTE = ConfiguracionServidor.objects.filter(clave="consulta_dte").first()
+except (OperationalError, ObjectDoesNotExist):
+    CONSULTAR_DTE = None
 
-# try:
-#     EMAIL_HOST_FE = ConfiguracionServidor.objects.filter(clave="email_host_fe").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     EMAIL_HOST_FE = None
+try:
+    EMAIL_HOST_FE = ConfiguracionServidor.objects.filter(clave="email_host_fe").first()
+except (OperationalError, ObjectDoesNotExist):
+    EMAIL_HOST_FE = None
 
-# try:
-#     MONEDA_USD = TipoMoneda.objects.get(codigo="USD")
-# except (OperationalError, ObjectDoesNotExist):
-#     MONEDA_USD = None
+try:
+    MONEDA_USD = TipoMoneda.objects.get(codigo="USD")
+except (OperationalError, ObjectDoesNotExist):
+    MONEDA_USD = None
 
-# try:
-#     UNI_MEDIDA_99 = TipoUnidadMedida.objects.get(codigo="99")
-# except (OperationalError, ObjectDoesNotExist):
-#     UNI_MEDIDA_99 = None
+try:
+    UNI_MEDIDA_99 = TipoUnidadMedida.objects.get(codigo="99")
+except (OperationalError, ObjectDoesNotExist):
+    UNI_MEDIDA_99 = None
 
 formas_pago = []
 documentos_relacionados = []
@@ -547,15 +547,23 @@ def export_facturas_excel(request):
     wb.save(response)
     return response
 
-
 def obtener_listado_productos_view(request):
     global tipo_documento_dte
+    print("Inicio obtener_listado_productos_view")
+    
     if "generar_ajuste" in request.path.lower():
         tipo_documento_dte = request.GET.get('tipo_documento_dte', '05')
     else:
         tipo_documento_dte = request.GET.get('tipo_documento_dte', '01')
-        
-    tipo_dte_obj = Tipo_dte.objects.get(codigo=tipo_documento_dte)
+    
+    print("Tipo de documento productos (seteado):", tipo_documento_dte)
+    
+    try:
+        tipo_dte_obj = Tipo_dte.objects.get(codigo=tipo_documento_dte)
+    except Tipo_dte.DoesNotExist:
+        print(f"ERROR: Tipo_dte no encontrado para código: {tipo_documento_dte}")
+        raise
+    
     productos = Producto.objects.all()
     tipoItems = TipoItem.objects.all()
     descuentos = Descuento.objects.all()
@@ -563,6 +571,7 @@ def obtener_listado_productos_view(request):
     if productos:
         #recorrer todos los productos y mostrarlos con IVA si aplica
         for producto in productos:
+            print(f"Producto ID {producto.id} - precio_iva: {producto.precio_iva} - precio antes: {producto.preunitario}")
             if tipo_dte_obj.codigo == COD_CONSUMIDOR_FINAL:
                 if producto.precio_iva:
                     producto.preunitario = (producto.preunitario).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
@@ -573,6 +582,8 @@ def obtener_listado_productos_view(request):
                     producto.preunitario = (producto.preunitario / Decimal("1.13")).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
                 else:
                     producto.preunitario = (producto.preunitario).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+            print(f"Producto ID {producto.id} - precio después: {producto.preunitario}")
+
     # Comprobar si la solicitud es AJAX mediante el encabezado X-Requested-With
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return render(request, 'generar_dte.html', 
@@ -589,7 +600,6 @@ def obtener_listado_productos_view(request):
         'descuentos': descuentos
     }
     return render(request, 'generar_dte.html', context)
-
 
 @csrf_exempt
 @transaction.atomic
@@ -633,12 +643,15 @@ def generar_factura_view(request):
         receptores = list(Receptor_fe.objects.values("id", "num_documento", "nombre"))
         #productos = Producto.objects.all()
         productos = obtener_listado_productos_view(request)
+        print("Productos exportacion: ", productos)
         tipooperaciones = CondicionOperacion.objects.all()
         tipoDocumentos = Tipo_dte.objects.exclude( Q(codigo=COD_NOTA_CREDITO) | Q(codigo=COD_NOTA_DEBITO) )
         tipoItems = TipoItem.objects.all()
         descuentos = Descuento.objects.all()
         formasPago = FormasPago.objects.all()
         tipoGeneracionDocumentos = TipoGeneracionDocumento.objects.all()
+        recintos = RecintoFiscal.objects.all()
+        regimenes = RegimenExportacion.objects.all()
 
         context = {
             "numero_control": nuevo_numero,
@@ -653,7 +666,9 @@ def generar_factura_view(request):
             "tipoItems": tipoItems,
             "descuentos": descuentos,
             "formasPago": formasPago,
-            "tipoGenDocumentos": tipoGeneracionDocumentos
+            "tipoGenDocumentos": tipoGeneracionDocumentos,
+            "recintos": recintos,
+            "regimenes": regimenes
         }
         return render(request, "generar_dte.html", context)
 
@@ -751,6 +766,31 @@ def generar_factura_view(request):
                         'correo': correo_receptor
                     }
                 )
+                
+                
+            #Validaciones FEX
+            recinto_id = request.POST.get('recinto_fiscal')
+            regimen_id = request.POST.get('regimen_exportacion')
+            # Traer productos seleccionados y verificar sus tipo_item
+            productos = Producto.objects.filter(id__in=productos_ids).select_related('tipo_item')
+            requiere_campos = any(prod.tipo_item.codigo in ['1', '3'] for prod in productos)
+            
+            # Validar Recinto y Régimen si aplica
+            if requiere_campos:
+                if not recinto_id:
+                    messages.error(request, "Debe seleccionar un Recinto Fiscal si hay productos con tipo de ítem 1 o 3.")
+                    return render(request, 'tu_template.html', {
+                        'recintos': recintos,
+                        'regimenes': regimenes,
+                        'productos': productos,  # o como lo muestres
+                    })
+                if not regimen_id:
+                    messages.error(request, "Debe seleccionar un Régimen de Exportación si hay productos con tipo de ítem 1 o 3.")
+                    return render(request, 'tu_template.html', {
+                        'recintos': recintos,
+                        'regimenes': regimenes,
+                        'productos': productos,
+                    })
 
             # Configuración por defecto de la factura
             ambiente_obj = AMBIENTE
@@ -1639,11 +1679,16 @@ def firmar_factura_view(request, factura_id, interno=False):
             "passwordPri": emisor_fe.clave_privada,
             "dteJson": dte_json_obj,
         }
+        print("Firmar documento 1: ", payload)
 
         try:
+            print("Url firmador: ", FIRMADOR_URL.url_endpoint)
+            print("Headers firma: ", CONTENT_TYPE.valor)
+            
             response = requests.post(FIRMADOR_URL.url_endpoint, json=payload, headers={"Content-Type": CONTENT_TYPE.valor})
             print("Response envio: ", response)
             print("Response envio status: ", response.status_code)
+            
             try:
                 response_data = response.json()
             except Exception as e:
@@ -2375,7 +2420,6 @@ def invalidacion_dte_view(request, factura_id):
         codigo_generacion_invalidacion = str(uuid.uuid4()).upper()
         print(f"Error al generar el evento de invalidación: {e}")
         return JsonResponse({"error": str(e)}, status=400)
-
 
 #########################################################################################################
 # EVENTO DE INVALIDACION DE DTE

@@ -175,6 +175,18 @@ class TipoMoneda(models.Model):
     descripcion = models.CharField(max_length=50)
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
+    
+class RecintoFiscal(models.Model):
+    codigo = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=100)
+    def __str__(self):
+        return f"{self.codigo} - {self.descripcion}"
+
+class RegimenExportacion(models.Model):
+    codigo = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=250)
+    def __str__(self):
+        return f"{self.codigo} - {self.descripcion}"
         
 #modelo para descuentos por productos
 class Descuento(models.Model):
@@ -286,6 +298,7 @@ class NumeroControl(models.Model):
         Se usa en la carga del formulario o en AJAX.
         """
         anio_actual = datetime.now().year
+        current_sequence = 0
         try:
             control = NumeroControl.objects.get(anio=anio_actual, tipo_dte=cod_dte)
             current_sequence = control.secuencia

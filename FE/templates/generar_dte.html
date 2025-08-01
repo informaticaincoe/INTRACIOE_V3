@@ -127,6 +127,28 @@
           <input type="time" name="hora_generacion" class="form-control" readonly value="{{ hora_generacion }}">
         </div>
 
+        <!-- Recinto Fiscal -->
+        <div class="form-group">
+            <label for="recinto_fiscal">Recinto Fiscal:</label>
+            <select id="recinto_fiscal" name="recinto_fiscal" class="form-control">
+                <option value="">Seleccione un recinto</option>
+                {% for recinto in recintos %}
+                <option value="{{ recinto.id }}">{{ recinto.codigo }} - {{ recinto.descripcion }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Regimen de Exportacion -->
+        <div class="form-group">
+            <label for="regimen_exportacion">Régimen de exportación:</label>
+            <select id="regimen_exportacion" name="regimen_exportacion" class="form-control" required>
+                <option value="">Seleccione un régimen de exportación</option>
+                {% for regimen in regimenes %}
+                <option value="{{ regimen.id }}">{{ regimen.codigo }} - {{ regimen.descripcion }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
       <!-- Sección Receptor -->
       <div class="form-section">
         <h4>Seleccione el Receptor</h4>
@@ -1289,6 +1311,27 @@ function validacionesFormulario(event) {
   }
 }
 
+//Factura exportacionfunction
+function toggleCamposSegunTipoDocumento() {
+  const tipoDocumento = document.getElementById('tipo_documento_select').value;
+  const recintoFiscalDiv = document.querySelector('#recinto_fiscal')?.closest('.form-group');
+  const regimenExportacionDiv = document.querySelector('#regimen_exportacion')?.closest('.form-group');
+
+  if (tipoDocumento === "11") {
+    if (recintoFiscalDiv) recintoFiscalDiv.style.display = '';
+    if (regimenExportacionDiv) regimenExportacionDiv.style.display = '';
+  } else {
+    if (recintoFiscalDiv) recintoFiscalDiv.style.display = 'none';
+    if (regimenExportacionDiv) regimenExportacionDiv.style.display = 'none';
+  }
+}
+
+// Ejecutar al cargar la página
+document.addEventListener('DOMContentLoaded', () => {
+  toggleCamposSegunTipoDocumento();
+  document.getElementById('tipo_documento_select').addEventListener('change', toggleCamposSegunTipoDocumento);
+});
+//Fin factura exportacion
 window.onload = actualizarProductos;
 
 </script>
