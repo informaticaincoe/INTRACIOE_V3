@@ -17,7 +17,6 @@ from .views import (
     obtener_listado_productos_view
 )
 
-
 #renombrar el archivo
 urlpatterns = [
     #urls para procesamiento de facturas
