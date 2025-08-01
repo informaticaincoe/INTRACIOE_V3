@@ -10,7 +10,6 @@ from .views import (
     firmar_factura_anulacion_view,
     firmar_factura_view,
     generar_factura_view,
-    generar_factura_exportacion_view,
     invalidacion_dte_view,
     obtener_numero_control_ajax,
     obtener_receptor,
@@ -22,7 +21,6 @@ from .views import (
 urlpatterns = [
     #urls para procesamiento de facturas
     path('generar/', generar_factura_view, name='generar_factura'),
-    path('generar_exportacion/', generar_factura_exportacion_view, name='generar_factura_exportacion'),
     
     # URLS DTE AJUSTE
     path('generar_ajuste/', generar_documento_ajuste_view, name='generar_ajuste_factura'),
