@@ -14,13 +14,15 @@ from .views import (
     obtener_numero_control_ajax,
     obtener_receptor,
     generar_documento_ajuste_view, 
-    obtener_listado_productos_view
+    obtener_listado_productos_view,
+    generar_factura_exportacion_view
 )
 
 #renombrar el archivo
 urlpatterns = [
     #urls para procesamiento de facturas
     path('generar/', generar_factura_view, name='generar_factura'),
+    path('generar_exportacion/', generar_factura_exportacion_view, name='generar_factura_exportacion'),
     
     # URLS DTE AJUSTE
     path('generar_ajuste/', generar_documento_ajuste_view, name='generar_ajuste_factura'),

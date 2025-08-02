@@ -220,6 +220,8 @@ class Receptor_fe(models.Model):
     telefono = models.CharField(max_length=30, blank=True, null=True)
     correo = models.EmailField(blank=True, null=True)
     nombreComercial = models.CharField(max_length=150, null=True, verbose_name=None, blank=True)
+    pais = models.ForeignKey(Pais, on_delete=models.CASCADE, null=True)
+    tipo_persona = models.ForeignKey(TipoPersona, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Tipo de Persona")
 
     def __str__(self):
         return self.nombre
@@ -375,6 +377,14 @@ class FacturaElectronica(models.Model):
     
     envio_correo = models.BooleanField(default=False)
     envio_correo_contingencia = models.BooleanField(default=False)
+    
+    #EXPORTACION
+    tipoItemEmisor = models.ForeignKey(TipoItem, on_delete=models.CASCADE, null=True)
+    recintoFiscal = models.ForeignKey(RecintoFiscal, on_delete=models.CASCADE, null=True)
+    regimenExportacion = models.ForeignKey(RegimenExportacion, on_delete=models.CASCADE, null=True)
+    seguro_exportacion = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    flete_exportacion = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    incoterms = models.ForeignKey(INCOTERMS, on_delete=models.CASCADE, null=True)
     
     def save(self, *args, **kwargs):
         if not self.numero_control:
