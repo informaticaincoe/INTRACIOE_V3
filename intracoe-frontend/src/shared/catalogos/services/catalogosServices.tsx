@@ -1,4 +1,4 @@
-import { ActivitiesInterfacePagination } from '../../interfaces/interfaces';
+import { ActivitiesInterfacePagination, OtrosDocumentosAsociados, OtrosDocumentosAsociadosResponse } from '../../interfaces/interfaces';
 import { api } from '../../services/api';
 
 export const getAllActivities = async (
@@ -143,6 +143,17 @@ export const getAllOtrosDocumentosAsociados = async () => {
   try {
     const response = await api.get(`/otros-documentos-asociado/`);
     return response.data;
+  } catch (error) {
+    throw new Error();
+  }
+};
+
+export const getOtrosDocumentosAsociadosById = async (id: string) => {
+  try {
+    const response = await api.get<OtrosDocumentosAsociadosResponse>(`/otros-documentos-asociado/${id}/`);
+    console.log(response.data)
+    return response.data;
+    
   } catch (error) {
     throw new Error();
   }
@@ -305,6 +316,15 @@ export const getAllTipoMoneda = async () => {
 export const getAllDescuento = async () => {
   try {
     const response = await api.get(`/descuento/`);
+    return response.data;
+  } catch (error) {
+    throw new Error();
+  }
+};
+
+export const getAllSecuencias = async () => {
+  try {
+    const response = await api.get(`/secuencia/`);
     return response.data;
   } catch (error) {
     throw new Error();

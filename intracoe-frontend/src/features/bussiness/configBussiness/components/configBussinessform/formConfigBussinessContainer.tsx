@@ -17,6 +17,7 @@ import {
   getAllEmpresas,
 } from '../../services/empresaServices';
 import { FaCheckCircle } from 'react-icons/fa';
+import { StepperConfiguracionExportacion } from './stepperConfiguracionExportacion';
 
 export const FormConfigBussinessContainer = () => {
   // Estado para controlar el paso actual
@@ -38,7 +39,6 @@ export const FormConfigBussinessContainer = () => {
     try {
       const response = await getAllEmpresas();
       if (response) {
-        // Mezcla el objeto default con lo que venga de la API en caso de que algun campo venga vacio
         setFormData({
           ...RequestEmpresaDefault,
           ...response[0],
@@ -153,6 +153,32 @@ export const FormConfigBussinessContainer = () => {
         </>
       ),
     },
+    //TODO: revisar si debe ir en la configuracion de la empresa
+    // {
+    //   title: 'Exportación',
+    //   content: (
+    //     <>
+    //       <StepperConfiguracionExportacion
+    //         formData={formData}
+    //         handleChange={handleChange}
+    //       />
+    //       <div className="flex w-full justify-between pt-4">
+    //         <button
+    //           onClick={() => setCurrent(current - 1)}
+    //           className="border-gray text-gray rounded-md border px-10 py-3"
+    //         >
+    //           Atras
+    //         </button>
+    //         <button
+    //           className="bg-primary-yellow rounded-md px-6 py-3 text-white"
+    //           onClick={handleSendForm}
+    //         >
+    //           Guardar
+    //         </button>
+    //       </div>
+    //     </>
+    //   ),
+    // },
   ];
 
   return (

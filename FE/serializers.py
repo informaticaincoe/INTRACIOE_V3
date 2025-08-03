@@ -297,6 +297,11 @@ class DescuentoSerializer(serializers.ModelSerializer):
         model = Descuento
         fields = '__all__'
 
+class SecuenciaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NumeroControl
+        fields = '__all__'
+
 
 ##############################################################################
 # SERIALIZER PARA CONTINGENCIAS

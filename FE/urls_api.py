@@ -3,7 +3,7 @@ from django.urls import path
 from FE.api_views import (
 
     CondicionOperacionDetailAPIView, ContingenciaDteAPIView, ContingenciaDteUnificadoAPIView, ContingenciaListAPIView, EmisorCreateAPIView, EmisorUpdateAPIView, EnviarContingenciaHaciendaAPIView, EnviarFacturaHaciendaAPIView, EnviarFacturaInvalidacionAPIView, EnviarFacturaSujetoExcluidoHaciendaAPIView, EnviarLotesHaciendaAPIView, EnvioDteUnificadoAPIView, FacturaDetailAPIView, FacturaListAPIView, FacturaPorCodigoGeneracionAPIView, FacturaSujetoExcluidoDetailAPIView, FacturaSujetoExcluidoListAPIView, FinalizarContingenciaAPIView, FirmarContingenciaAPIView, FirmarFacturaAPIView, FirmarFacturaSujetoExcluidoAPIView, 
-    GenerarFacturaAPIView, GenerarFacturaExportacionAPIView, GenerarFacturaSujetoAPIView, InvalidarDteSujetoExcluidoUnificadoAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, InvalidarVariasDteAPIView, LoteContingenciaDteAPIView, LotesDteAPIView, MotivoContingenciaAPIView, MunicipioByDepartamentoAPIView, TopClientes, TopProductosAPIView, TotalVentasAPIView, TotalesPorTipoDTE, autenticacion, EmisorListAPIView, receptorCreateAPIView, receptorDeleteAPIView, receptorDetailAPIView, 
+    GenerarFacturaAPIView, GenerarFacturaExportacionAPIView, GenerarFacturaSujetoAPIView, InvalidarDteSujetoExcluidoUnificadoAPIView, InvalidarDteUnificadoAPIView, AutenticacionAPIView, InvalidarVariasDteAPIView, LoteContingenciaDteAPIView, LotesDteAPIView, MotivoContingenciaAPIView, MunicipioByDepartamentoAPIView, SecuenciaCreateAPIView, SecuenciaDestroyAPIView, SecuenciaListAPIView, SecuenciaRetrieveAPIView, SecuenciaUpdateAPIView, TopClientes, TopProductosAPIView, TotalVentasAPIView, TotalesPorTipoDTE, autenticacion, EmisorListAPIView, receptorCreateAPIView, receptorDeleteAPIView, receptorDetailAPIView, 
 
     receptorListAPIView, receptorUpdateAPIView, GenerarDocumentoAjusteAPIView,
 
@@ -278,6 +278,7 @@ urlpatterns = [
     path('api/tipo-domicilio-fiscal/<int:pk>/editar/', TipoDomicilioFiscalUpdateAPIView.as_view(), name='tipo-domicilio-fiscal-update'),
     path('api/tipo-domicilio-fiscal/<int:pk>/eliminar/', TipoDomicilioFiscalDestroyAPIView.as_view(), name='tipo-domicilio-fiscal-destroy'),
     
+    
     # TIPO MONEDA
     path('api/tipo-moneda/', TipoMonedaListAPIView.as_view(), name='tipo-moneda-list'),
     path('api/tipo-moneda/crear/', TipoMonedaCreateAPIView.as_view(), name='tipo-moneda-create'),
@@ -291,6 +292,27 @@ urlpatterns = [
     path('api/descuento/<int:pk>/', DescuentoRetrieveAPIView.as_view(), name='descuento-detail'),
     path('api/descuento/<int:pk>/editar/', DescuentoUpdateAPIView.as_view(), name='descuento-update'),
     path('api/descuento/<int:pk>/eliminar/', DescuentoDestroyAPIView.as_view(), name='descuento-destroy'),
+    
+    # Secuencias
+    path('api/secuencia/', SecuenciaListAPIView.as_view(), name='secuencia_api'),
+    path('api/secuencia/crear/', SecuenciaCreateAPIView.as_view(), name='secuencias-create'),
+    path('api/secuencia/<int:pk>/', SecuenciaRetrieveAPIView.as_view(), name='secuencias-detail'),
+    path('api/secuencia/<int:pk>/editar/', SecuenciaUpdateAPIView.as_view(), name='secuencias-update'),
+    path('api/secuencia/<int:pk>/eliminar/', SecuenciaDestroyAPIView.as_view(), name='descuento-destroy'),
+    
+    # Recinto
+    path('api/recinto-fiscal/', RecintoFiscalListAPIView.as_view(), name='recinto-fiscal_api'),
+    path('api/recinto-fiscal/crear/', RecintoFiscalCreateAPIView.as_view(), name='recinto-fiscals-create'),
+    path('api/recinto-fiscal/<int:pk>/', RecintoFiscalRetrieveAPIView.as_view(), name='recinto-fiscals-detail'),
+    path('api/recinto-fiscal/<int:pk>/editar/', RecintoFiscalUpdateAPIView.as_view(), name='recinto-fiscals-update'),
+    path('api/recinto-fiscal/<int:pk>/eliminar/', RecintoFiscalDestroyAPIView.as_view(), name='recinto-fiscal-destroy'),
+    
+    # Regimen
+    path('api/regimen-fiscal/', RegimenListAPIView.as_view(), name='regimen_api'),
+    path('api/regimen/crear/', RegimenCreateAPIView.as_view(), name='regimens-create'),
+    path('api/regimen/<int:pk>/', RegimenRetrieveAPIView.as_view(), name='regimens-detail'),
+    path('api/regimen/<int:pk>/editar/', RegimenUpdateAPIView.as_view(), name='regimens-update'),
+    path('api/regimen/<int:pk>/eliminar/', RegimenDestroyAPIView.as_view(), name='regimen-destroy'),
 
     ##################################################################
     # URLS FACTURAS
