@@ -547,8 +547,8 @@ class Token_data(models.Model):
     nit_empresa = models.CharField(max_length=20, unique=True)  # NIT de la empresa
     password_hacienda = models.CharField(max_length=255)  # Contraseña en texto plano
     password_privado = models.CharField(max_length=255, default="1")
-    token = models.CharField(max_length=255, blank=True, null=True)
-    token_type = models.CharField(max_length=50, default='Bearer')
+    token = models.CharField(max_length=500, blank=True, null=True)
+    token_type = models.CharField(max_length=255, default='Bearer')
     roles = models.JSONField(default=list)  # Almacena los roles como una lista JSON
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

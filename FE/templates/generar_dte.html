@@ -130,7 +130,7 @@
           <select id="recinto_fiscal" name="recinto_fiscal" class="form-control">
             <option value="">Seleccione un recinto</option>
             {% for recinto in recintos %}
-              <option value="{{ recinto.id }}">{{ recinto.codigo }} - {{ recinto.descripcion }}</option>
+              <option value="{{ recinto.codigo }}">{{ recinto.codigo }} - {{ recinto.descripcion }}</option>
             {% endfor %}
           </select>
         </div>
@@ -138,10 +138,10 @@
         <!-- Régimen de Exportación -->
         <div class="form-group">
           <label for="regimen_exportacion">Régimen de exportación:</label>
-          <select id="regimen_exportacion" name="regimen_exportacion" class="form-control" required>
+          <select id="regimen_exportacion" name="regimen_exportacion" class="form-control">
             <option value="">Seleccione un régimen de exportación</option>
             {% for regimen in regimenes %}
-              <option value="{{ regimen.id }}">{{ regimen.codigo }} - {{ regimen.descripcion }}</option>
+              <option value="{{ regimen.codigo }}">{{ regimen.codigo }} - {{ regimen.descripcion }}</option>
             {% endfor %}
           </select>
         </div>
@@ -152,7 +152,7 @@
           <select id="incoterm" name="incoterm" class="form-control">
             <option value="">Seleccione un incoterms</option>
             {% for incoterm in incoterms %}
-              <option value="{{ incoterm.id }}">{{ incoterm.codigo }} - {{ incoterm.descripcion }}</option>
+              <option value="{{ incoterm.codigo }}">{{ incoterm.codigo }} - {{ incoterm.descripcion }}</option>
             {% endfor %}
           </select>
         </div>
@@ -1059,7 +1059,7 @@
       if (tipoDocumento === "11" || tipoDocumento === 11) {
           url = '/fe/generar_exportacion/';
       }
-      
+      console.log("Url:", url);
       try {
           let response = await fetch(url, {
               method: 'POST',
@@ -1398,6 +1398,7 @@ function toggleCamposSegunTipoDocumento() {
   const tipoDocumento = document.getElementById('tipo_documento_select').value;
   const recintoFiscalDiv = document.querySelector('#recinto_fiscal')?.closest('.form-group');
   const regimenExportacionDiv = document.querySelector('#regimen_exportacion')?.closest('.form-group');
+  const incotermDiv = document.querySelector('#incoterm')?.closest('.form-group');
   const tipoItemDiv = document.getElementById('tipo_item_group');
   const tipoItemSelect = document.getElementById('tipo_item');
   const datosExportacionTitulo = document.getElementById('datos_exportacion_group');
@@ -1409,6 +1410,7 @@ function toggleCamposSegunTipoDocumento() {
     if (datosExportacionTitulo) datosExportacionTitulo.style.display = '';
     if (recintoFiscalDiv) recintoFiscalDiv.style.display = '';
     if (regimenExportacionDiv) regimenExportacionDiv.style.display = '';
+    if (incotermDiv) incotermDiv.style.display = '';
     if (tipoItemDiv) tipoItemDiv.style.display = '';
     
     if (seguroGroup) seguroGroup.style.display = '';
@@ -1427,6 +1429,7 @@ function toggleCamposSegunTipoDocumento() {
     if (datosExportacionTitulo) datosExportacionTitulo.style.display = 'none';
     if (recintoFiscalDiv) recintoFiscalDiv.style.display = 'none';
     if (regimenExportacionDiv) regimenExportacionDiv.style.display = 'none';
+    if (incotermDiv) incotermDiv.style.display = 'none';
     if (tipoItemDiv) tipoItemDiv.style.display = 'none';
     
     if (seguroGroup) seguroGroup.style.display = 'none';
