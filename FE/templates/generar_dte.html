@@ -794,12 +794,14 @@
         total_incl = roundHalfUp( (total_neto - roundHalfUp(monto_descuento, 2)) , 6);//ventas gravadas//parseFloat( total_neto - monto_descuento).toFixed(2);
         total_iva = roundHalfUp(( (total_incl / 1.13) * 0.13), 6);
       }else{
-        iva_unitario = roundHalfUp((neto_unitario * 0.13), 6);
         total_neto = roundHalfUp((neto_unitario * qty), 6);
         monto_descuento = roundHalfUp( (total_neto * porcentaje_descu), 6);
         let pre_unitario_iva = roundHalfUp(total_neto, 6);
         total_incl = roundHalfUp( (pre_unitario_iva - roundHalfUp(monto_descuento, 2)), 6) ;
-        total_iva = roundHalfUp((total_incl * 0.13), 6);
+        if(tipo_dte != "11"){
+          iva_unitario = roundHalfUp((neto_unitario * 0.13), 6);
+          total_iva = roundHalfUp((total_incl * 0.13), 6);
+        }
       }
 
       // Verificar si el producto ya está agregado (sumar cantidad si es el caso)
@@ -865,7 +867,9 @@
       if(tipo_dte == "01"){
         total_iva = roundHalfUp( (total_incl / 1.13 * 0.13), 6);
       }else{
-        total_iva = roundHalfUp((total_incl * 0.13), 6);
+        if(tipo_dte != "11"){
+          total_iva = roundHalfUp((total_incl * 0.13), 6);
+        }
       }
       
       row.querySelector('.total-neto').textContent = roundHalfUp(total_neto, 2);//total_neto;
@@ -1182,6 +1186,7 @@ function cargarFacturaRelacionada() {
  function crearTablaDetalles(detalles) {
   // Filtra detalles que no sean productos reales (si hay alguna línea TOTAL, por ejemplo)
   let detallesFiltrados = detalles.filter(item => !item.producto.toUpperCase().includes("TOTAL"));
+  const tipo_dte = document.getElementById('tipo_documento_select').value;
   
   let tablaHTML = `
     <table class="table table-bordered">
@@ -1204,7 +1209,12 @@ function cargarFacturaRelacionada() {
   detallesFiltrados.forEach(function(prod) {
     // Suponemos que el precio_unitario incluye IVA a 13%
     let precioIncl = parseFloat(prod.precio_unitario);
-    let neto = precioIncl / 1.13;
+    let neto = 0
+    if(tipo_dte != "11"){
+      neto = precioIncl / 1.13;
+    }else{
+      neto = precioIncl;
+    }
     let iva = precioIncl - neto;
     let cantidad = parseFloat(prod.cantidad);
     let totalNeto = neto * cantidad;

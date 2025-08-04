@@ -1323,10 +1323,10 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
             direccion_partes = []
             if json_receptor["direccion"]:
                 if receptor.municipio and receptor.municipio.departamento:
-                    direccion_partes.append(str(receptor.municipio.departamento.codigo))
+                    direccion_partes.append(str(receptor.municipio.departamento.descripcion))
 
                 if receptor.municipio:
-                    direccion_partes.append(str(receptor.municipio.codigo))
+                    direccion_partes.append(str(receptor.municipio.descripcion))
 
                 if receptor.direccion:
                     direccion_partes.append(receptor.direccion.strip())
