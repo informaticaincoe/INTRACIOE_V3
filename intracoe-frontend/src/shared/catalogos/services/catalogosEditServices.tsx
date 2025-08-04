@@ -389,3 +389,16 @@ export const updateDescuento = async (id: string, data: any) => {
     throw new Error();
   }
 };
+
+export const updateSecuencias = async (id: string, data: any) => {
+  try {
+    const response = await api.put(`/secuencia/${id}/editar/`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error();
+  }
+};

@@ -8,10 +8,12 @@ import { SelectTipoContingencia } from '../components/Shared/configuracionFactur
 import { MotivoContingencia } from '../components/Shared/configuracionFactura/generacionEnContingencia/motivoContingencia'
 import { CheckboxDocumentosAsociados } from '../components/sujetoExcluido/otrosDocumentosAsociaidos/checkboxDocumentosAsociados'
 import { OtrosDocumentosAsociados } from '../../../../shared/interfaces/interfaces'
-import { Accordion, AccordionTab } from 'primereact/accordion'
-import { FaTruck } from 'react-icons/fa6'
-import { FaFileAlt } from 'react-icons/fa'
-import { Badge } from 'primereact/badge'
+import { SelectTipoDomicilioFiscalComponent } from '../../../../shared/Select/selectTipoDomicilioFiscal'
+import { SelectIcotermsComponent } from '../../../../shared/Select/selectIcoterms'
+import { getOtrosDocumentosAsociadosById } from '../../../../shared/catalogos/services/catalogosServices'
+import { DocumentosAsociadosAccordion } from '../components/exportacion/documentosAsociadosAccordion'
+import { SelectRegimenExportacionComponent } from '../../../../shared/Select/selectRegimenExportacion'
+import { SelectRecintoFiscalComponent } from '../../../../shared/Select/selectRecintoFiscal'
 
 interface GenerarFacturaExportacionProps {
     tipoDocumentoSelected: any
@@ -21,52 +23,6 @@ interface GenerarFacturaExportacionProps {
     descuentosList: any
     tipoContibuyente: string
 }
-
-const getIcon = (code: number) => {
-    if (code === 4) return <FaTruck className="text-xl text-blue-600" />
-    return <FaFileAlt className="text-xl text-green-600" />
-}
-
-const renderHeader = (doc: OtrosDocumentosAsociados) => (
-    <div className="flex items-center justify-between w-full px-5">
-        <div className="flex items-center gap-3">
-            {getIcon(doc.codDocAsociado!)}
-            <div>
-                <h4 className="text-lg font-semibold">
-                    {doc.descDocumento || `Documento ${doc.codDocAsociado}`}
-                </h4>
-                <small className="text-gray-500">Código: {doc.codDocAsociado}</small>
-            </div>
-        </div>
-        <Badge
-            value={doc.codDocAsociado === 4 ? 'Transporte' : 'Asociado'}
-            severity={doc.codDocAsociado === 4 ? 'info' : 'success'}
-            className="px-2 py-1"
-        />
-    </div>
-)
-
-const renderDetails = (doc: OtrosDocumentosAsociados) => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded">
-        {['modoTransp', 'placaTrans', 'numConductor', 'nombreConductor', 'detalleDocumento'].map((field) => {
-            const value = (doc as any)[field]
-            if (!value) return null
-            const labels: Record<string, string> = {
-                modoTransp: 'Modo de transporte',
-                placaTrans: 'Placa',
-                numConductor: 'Cédula conductor',
-                nombreConductor: 'Nombre conductor',
-                detalleDocumento: 'Descripción',
-            }
-            return (
-                <div key={field} className="flex flex-col">
-                    <span className="text-sm text-gray-600">{labels[field]}</span>
-                    <span className="font-medium">{value}</span>
-                </div>
-            )
-        })}
-    </div>
-)
 
 
 export const GenerarFacturaExportacion: React.FC<GenerarFacturaExportacionProps> = ({
@@ -85,8 +41,12 @@ export const GenerarFacturaExportacion: React.FC<GenerarFacturaExportacionProps>
     const [tipoContingencia, setTipoContingencia] = useState<any>()
     const [motivo, setMotivo] = useState<string>('')
     const [documentosAsociadosLista, setDocumentosAsociadosLista] = useState<OtrosDocumentosAsociados[]>([])
+    const [tipoDomicilioFiscal, setTipoDomicilioFiscal] = useState<any>()
+    const [icoterm, setIcoterm] = useState<any>()
+    const [regimenSelecionado, setRegimenSelecionado] = useState<any>()
+    const [recintoSelecionado, setRecintoSelecionado] = useState<any>()
 
-    const [formDataDocumentosAsociados, setFormDataDocumentosAsociados] = useState<OtrosDocumentosAsociados>({
+    const [formDataDocumentosAsociados, setFormDataDocumentosAsociados] = useState<Partial<OtrosDocumentosAsociados>>({
         codDocAsociado: null,
         descDocumento: null,
         detalleDocumento: null,
@@ -118,13 +78,6 @@ export const GenerarFacturaExportacion: React.FC<GenerarFacturaExportacionProps>
     };
 
     /*************************************************/
-
-    useEffect(() => {
-        console.log("documentosAsociadosLista-------", documentosAsociadosLista)
-        documentosAsociadosLista.forEach(element => (
-            console.log("codigo:" + element.codDocAsociado)
-        ))
-    }, [documentosAsociadosLista])
 
     console.log(tipoDocumentoSelected)
     return (
@@ -160,9 +113,11 @@ export const GenerarFacturaExportacion: React.FC<GenerarFacturaExportacionProps>
                         }
 
                         <CheckBoxVentaTerceros />
+                        <SelectTipoDomicilioFiscalComponent tipoDomicilioFiscalSelecionado={tipoDomicilioFiscal} setTipoDomicilioFiscalSelecionado={setTipoDomicilioFiscal} />
+                        <SelectIcotermsComponent icotermSelecionado={icoterm} setIcotermSelecionado={setIcoterm} />
+                        <SelectRegimenExportacionComponent regimenSelecionado={regimenSelecionado} setRegimenSelecionado={setRegimenSelecionado} />
+                        <SelectRecintoFiscalComponent recintoFiscalSelecionado={recintoSelecionado} setRecintoFiscalSelecionado={setRecintoSelecionado} />
                     </div>
-
-
                 </div>
             </WhiteSectionsPage>
 
@@ -172,7 +127,7 @@ export const GenerarFacturaExportacion: React.FC<GenerarFacturaExportacionProps>
                         Documentos asociados
                     </h1>
                     <Divider className="m-0 p-0"></Divider>
-                    <div className="flex flex-col gap-8">
+                    <div className="flex flex-col gap-2">
                         <CheckboxDocumentosAsociados
                             tieneDocumentoAsociado={tieneDocumentoAsociado}
                             setTieneDocumentoAsociado={setTieneDocumentoAsociado}
@@ -181,6 +136,7 @@ export const GenerarFacturaExportacion: React.FC<GenerarFacturaExportacionProps>
                             setDocumentosAsociadosLista={setDocumentosAsociadosLista}
                             documentosAsociadosLista={documentosAsociadosLista}
                         />
+                        
                         {/* <Accordion multiple>
                             {
                                 documentosAsociadosLista && (
@@ -226,16 +182,11 @@ export const GenerarFacturaExportacion: React.FC<GenerarFacturaExportacionProps>
                             }
                         </Accordion> */}
                         {/* Accordion mejorado */}
-                        <Accordion multiple className="shadow-sm border border-gray-200 rounded-lg overflow-hidden">
-                            {documentosAsociadosLista.map((doc) => (
-                                <AccordionTab key={doc.codDocAsociado} header={renderHeader(doc)}>
-                                    {renderDetails(doc)}
-                                </AccordionTab>
-                            ))}
-                        </Accordion>
+
+                        <DocumentosAsociadosAccordion documentos={documentosAsociadosLista} setDocumentos={setDocumentosAsociadosLista}/>
                     </div>
                 </>
-            </WhiteSectionsPage >
+            </WhiteSectionsPage>
 
             <div className="mx-14 flex">
                 <button
