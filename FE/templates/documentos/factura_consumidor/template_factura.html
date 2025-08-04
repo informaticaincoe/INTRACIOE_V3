@@ -130,7 +130,7 @@
         <div class="col-md-6 border p-2">
             <h6 class="mb-1">Datos de la Factura</h6>
             <p class="mb-1"><strong>N° Control:</strong> {{ factura.numero_control }}</p>
-            <p class="mb-1"><strong>Código de Generación:</strong> {{ factura.codigo_generacion }}</p>
+            <p class="mb-1"><strong>Código de Generación:</strong> {{ factura.codigo_generacion|upper }}</p>
             <p class="mb-1"><strong>Sello de Recepción:</strong>
                 {% if factura.sello_recepcion is not null %}
                     {{ factura.sello_recepcion }}

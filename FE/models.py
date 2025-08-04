@@ -220,6 +220,8 @@ class Receptor_fe(models.Model):
     telefono = models.CharField(max_length=30, blank=True, null=True)
     correo = models.EmailField(blank=True, null=True)
     nombreComercial = models.CharField(max_length=150, null=True, verbose_name=None, blank=True)
+    pais = models.ForeignKey(Pais, on_delete=models.CASCADE, null=True)
+    tipo_persona = models.ForeignKey(TipoPersona, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Tipo de Persona")
 
     def __str__(self):
         return self.nombre
@@ -375,6 +377,14 @@ class FacturaElectronica(models.Model):
     
     envio_correo = models.BooleanField(default=False)
     envio_correo_contingencia = models.BooleanField(default=False)
+    
+    #EXPORTACION
+    tipoItemEmisor = models.ForeignKey(TipoItem, on_delete=models.CASCADE, null=True)
+    recintoFiscal = models.ForeignKey(RecintoFiscal, on_delete=models.CASCADE, null=True)
+    regimenExportacion = models.ForeignKey(RegimenExportacion, on_delete=models.CASCADE, null=True)
+    seguro_exportacion = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    flete_exportacion = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    incoterms = models.ForeignKey(INCOTERMS, on_delete=models.CASCADE, null=True)
     
     def save(self, *args, **kwargs):
         if not self.numero_control:
@@ -537,8 +547,8 @@ class Token_data(models.Model):
     nit_empresa = models.CharField(max_length=20, unique=True)  # NIT de la empresa
     password_hacienda = models.CharField(max_length=255)  # Contraseña en texto plano
     password_privado = models.CharField(max_length=255, default="1")
-    token = models.CharField(max_length=255, blank=True, null=True)
-    token_type = models.CharField(max_length=50, default='Bearer')
+    token = models.CharField(max_length=500, blank=True, null=True)
+    token_type = models.CharField(max_length=255, default='Bearer')
     roles = models.JSONField(default=list)  # Almacena los roles como una lista JSON
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
