@@ -8,10 +8,12 @@ import { SelectTipoContingencia } from '../components/Shared/configuracionFactur
 import { MotivoContingencia } from '../components/Shared/configuracionFactura/generacionEnContingencia/motivoContingencia'
 import { CheckboxDocumentosAsociados } from '../components/sujetoExcluido/otrosDocumentosAsociaidos/checkboxDocumentosAsociados'
 import { OtrosDocumentosAsociados } from '../../../../shared/interfaces/interfaces'
-import { SelectTipoDomicilioFiscalComponent } from '../../../../shared/Select/selectRecintoFiscal'
+import { SelectTipoDomicilioFiscalComponent } from '../../../../shared/Select/selectTipoDomicilioFiscal'
 import { SelectIcotermsComponent } from '../../../../shared/Select/selectIcoterms'
 import { getOtrosDocumentosAsociadosById } from '../../../../shared/catalogos/services/catalogosServices'
 import { DocumentosAsociadosAccordion } from '../components/exportacion/documentosAsociadosAccordion'
+import { SelectRegimenExportacionComponent } from '../../../../shared/Select/selectRegimenExportacion'
+import { SelectRecintoFiscalComponent } from '../../../../shared/Select/selectRecintoFiscal'
 
 interface GenerarFacturaExportacionProps {
     tipoDocumentoSelected: any
@@ -41,6 +43,8 @@ export const GenerarFacturaExportacion: React.FC<GenerarFacturaExportacionProps>
     const [documentosAsociadosLista, setDocumentosAsociadosLista] = useState<OtrosDocumentosAsociados[]>([])
     const [tipoDomicilioFiscal, setTipoDomicilioFiscal] = useState<any>()
     const [icoterm, setIcoterm] = useState<any>()
+    const [regimenSelecionado, setRegimenSelecionado] = useState<any>()
+    const [recintoSelecionado, setRecintoSelecionado] = useState<any>()
 
     const [formDataDocumentosAsociados, setFormDataDocumentosAsociados] = useState<Partial<OtrosDocumentosAsociados>>({
         codDocAsociado: null,
@@ -111,6 +115,8 @@ export const GenerarFacturaExportacion: React.FC<GenerarFacturaExportacionProps>
                         <CheckBoxVentaTerceros />
                         <SelectTipoDomicilioFiscalComponent tipoDomicilioFiscalSelecionado={tipoDomicilioFiscal} setTipoDomicilioFiscalSelecionado={setTipoDomicilioFiscal} />
                         <SelectIcotermsComponent icotermSelecionado={icoterm} setIcotermSelecionado={setIcoterm} />
+                        <SelectRegimenExportacionComponent regimenSelecionado={regimenSelecionado} setRegimenSelecionado={setRegimenSelecionado} />
+                        <SelectRecintoFiscalComponent recintoFiscalSelecionado={recintoSelecionado} setRecintoFiscalSelecionado={setRecintoSelecionado} />
                     </div>
                 </div>
             </WhiteSectionsPage>
@@ -130,6 +136,7 @@ export const GenerarFacturaExportacion: React.FC<GenerarFacturaExportacionProps>
                             setDocumentosAsociadosLista={setDocumentosAsociadosLista}
                             documentosAsociadosLista={documentosAsociadosLista}
                         />
+                        
                         {/* <Accordion multiple>
                             {
                                 documentosAsociadosLista && (

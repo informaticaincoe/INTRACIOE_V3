@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 
 from INVENTARIO.serializers import ProductosProveedorSerializer
 from .models import (
-    INCOTERMS, Departamento, Descuento, DetalleFacturaSujetoExcluido, EventoContingencia, FacturaSujetoExcluidoElectronica, FormasPago, LoteContingencia, OtrosDicumentosAsociado, Pais, Plazo, TipoContingencia,
+    INCOTERMS, Departamento, Descuento, DetalleFacturaSujetoExcluido, EventoContingencia, FacturaSujetoExcluidoElectronica, FormasPago, LoteContingencia, OtrosDicumentosAsociado, Pais, Plazo, RecintoFiscal, RegimenExportacion, TipoContingencia,
     TipoDocContingencia, TipoDomicilioFiscal, TipoDonacion, TipoPersona, TipoRetencionIVAMH, TipoTransmision, TipoTransporte, TiposServicio_Medico,
     Token_data, Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica,
     Receptor_fe, Tipo_dte, TipoMoneda, TipoUnidadMedida, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos,
@@ -300,6 +300,16 @@ class DescuentoSerializer(serializers.ModelSerializer):
 class SecuenciaSerializer(serializers.ModelSerializer):
     class Meta:
         model = NumeroControl
+        fields = '__all__'
+        
+class RecintoFiscalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RecintoFiscal
+        fields = '__all__'
+        
+class RegimenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RegimenExportacion
         fields = '__all__'
 
 

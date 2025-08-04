@@ -44,7 +44,6 @@ const renderDetails = (doc: OtrosDocumentosAsociados) => {
   );
 };
 
-
 const items = [
   {
     label: 'Opciones',

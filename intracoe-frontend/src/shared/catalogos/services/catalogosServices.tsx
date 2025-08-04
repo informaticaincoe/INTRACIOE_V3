@@ -304,6 +304,24 @@ export const getAllTipoDomicilioFiscal = async () => {
   }
 };
 
+export const getAllRegimenFiscal = async () => {
+  try {
+    const response = await api.get(`/regimen-fiscal/`);
+    return response.data;
+  } catch (error) {
+    throw new Error();
+  }
+};
+
+export const getAllRecintoFiscal = async () => {
+  try {
+    const response = await api.get(`/recinto-fiscal/`);
+    return response.data;
+  } catch (error) {
+    throw new Error();
+  }
+};
+
 export const getAllTipoMoneda = async () => {
   try {
     const response = await api.get(`/tipo-moneda/`);

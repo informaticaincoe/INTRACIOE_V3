@@ -30,7 +30,7 @@ from INVENTARIO.serializers import DescuentoSerializer, ProductoSerializer
 
 from .serializers import (
     AmbienteSerializer, EventoContingenciaSerializer, FacturaListSerializer, FacturaSujetoExcluidoListSerializer, FacturaSujetoExcluidoSerializer, 
-    FormasPagosSerializer, LoteContingenciaSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, SecuenciaSerializer, 
+    FormasPagosSerializer, LoteContingenciaSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, RecintoFiscalSerializer, RegimenSerializer, SecuenciaSerializer, 
     TipoDteSerializer, TiposGeneracionDocumentoSerializer, ActividadEconomicaSerializer, ModelofacturacionSerializer,
     TipoTransmisionSerializer, TipoContingenciaSerializer, TipoRetencionIVAMHSerializer, TiposEstablecimientosSerializer, TiposServicio_MedicoSerializer,
     OtrosDicumentosAsociadoSerializer, TiposDocIDReceptorSerializer, PaisSerializer, DepartamentoSerializer, MunicipioSerializer, CondicionOperacionSerializer,                                                                                                                                                                                             
@@ -39,7 +39,7 @@ from .serializers import (
     )
 from .models import (
     INCOTERMS, ActividadEconomica, Departamento, DetalleFacturaSujetoExcluido, Emisor_fe, EventoContingencia, FacturaSujetoExcluidoElectronica, LoteContingencia, Municipio, OtrosDicumentosAsociado, Pais, Receptor_fe, FacturaElectronica, DetalleFactura,
-    Ambiente, CondicionOperacion, Modelofacturacion, NumeroControl, Tipo_dte, TipoContingencia, TipoDocContingencia, TipoDomicilioFiscal, TipoDonacion, TipoGeneracionDocumento, 
+    Ambiente, CondicionOperacion, Modelofacturacion, NumeroControl, RecintoFiscal, RegimenExportacion, Tipo_dte, TipoContingencia, TipoDocContingencia, TipoDomicilioFiscal, TipoDonacion, TipoGeneracionDocumento, 
     TipoMoneda, TipoPersona, TipoRetencionIVAMH, TipoTransmision, TipoTransporte, TipoUnidadMedida, TiposDocIDReceptor, EventoInvalidacion, 
     Receptor_fe, TipoInvalidacion, TiposEstablecimientos, TiposServicio_Medico, Token_data, Descuento, FormasPago, TipoGeneracionDocumento, Plazo
 )
@@ -986,45 +986,45 @@ class SecuenciaDestroyAPIView(generics.DestroyAPIView):
 
 # ========= Recinto fiscal =========
 class RecintoFiscalListAPIView(generics.ListAPIView):
-    queryset = NumeroControl.objects.all()
+    queryset = RecintoFiscal.objects.all()
     serializer_class = RecintoFiscalSerializer
 
 class RecintoFiscalCreateAPIView(generics.CreateAPIView):
-    queryset = NumeroControl.objects.all()
+    queryset = RecintoFiscal.objects.all()
     serializer_class = RecintoFiscalSerializer
 
 class RecintoFiscalRetrieveAPIView(generics.RetrieveAPIView):
-    queryset = NumeroControl.objects.all()
+    queryset = RecintoFiscal.objects.all()
     serializer_class = RecintoFiscalSerializer
 
 class RecintoFiscalUpdateAPIView(generics.UpdateAPIView):
-    queryset = NumeroControl.objects.all()
+    queryset = RecintoFiscal.objects.all()
     serializer_class = RecintoFiscalSerializer
 
 class RecintoFiscalDestroyAPIView(generics.DestroyAPIView):
-    queryset = NumeroControl.objects.all()
+    queryset = RecintoFiscal.objects.all()
     serializer_class = RecintoFiscalSerializer
 
 # ========= Regimen =========
-class SecuenciaListAPIView(generics.ListAPIView):
-    queryset = NumeroControl.objects.all()
-    serializer_class = SecuenciaSerializer
+class RegimenListAPIView(generics.ListAPIView):
+    queryset = RegimenExportacion.objects.all()
+    serializer_class = RegimenSerializer
 
-class SecuenciaCreateAPIView(generics.CreateAPIView):
-    queryset = NumeroControl.objects.all()
-    serializer_class = SecuenciaSerializer
+class RegimenCreateAPIView(generics.CreateAPIView):
+    queryset = RegimenExportacion.objects.all()
+    serializer_class = RegimenSerializer
 
-class SecuenciaRetrieveAPIView(generics.RetrieveAPIView):
-    queryset = NumeroControl.objects.all()
-    serializer_class = SecuenciaSerializer
+class RegimenRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = RegimenExportacion.objects.all()
+    serializer_class = RegimenSerializer
 
-class SecuenciaUpdateAPIView(generics.UpdateAPIView):
-    queryset = NumeroControl.objects.all()
-    serializer_class = SecuenciaSerializer
+class RegimenUpdateAPIView(generics.UpdateAPIView):
+    queryset = RegimenExportacion.objects.all()
+    serializer_class = RegimenSerializer
 
-class SecuenciaDestroyAPIView(generics.DestroyAPIView):
-    queryset = NumeroControl.objects.all()
-    serializer_class = SecuenciaSerializer
+class RegimenDestroyAPIView(generics.DestroyAPIView):
+    queryset = RegimenExportacion.objects.all()
+    serializer_class = RegimenSerializer
 
 
 ######################################################

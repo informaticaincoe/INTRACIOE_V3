@@ -1,29 +1,29 @@
 import { Dropdown } from 'primereact/dropdown';
 import { HTMLProps, useEffect, useState } from 'react';
-import { getAllTipoDomicilioFiscal } from '../catalogos/services/catalogosServices';
+import { getAllRecintoFiscal } from '../catalogos/services/catalogosServices';
 
-interface SelectTipoDomicilioFiscalProps {
-    tipoDomicilioFiscalSelecionado: any;
-    setTipoDomicilioFiscalSelecionado: any;
+interface SelectRecintoFiscalProps {
+    recintoFiscalSelecionado: any;
+    setRecintoFiscalSelecionado: any;
     className?: HTMLProps<HTMLElement>['className'];
 }
 
-export const SelectTipoDomicilioFiscalComponent: React.FC<SelectTipoDomicilioFiscalProps> = ({
-    tipoDomicilioFiscalSelecionado,
-    setTipoDomicilioFiscalSelecionado,
+export const SelectRecintoFiscalComponent: React.FC<SelectRecintoFiscalProps> = ({
+    recintoFiscalSelecionado,
+    setRecintoFiscalSelecionado,
     className,
 }) => {
-    const [recinto, setRecinto] = useState<[]>([]);
+    const [recintoFiscal, setRecintoFiscal] = useState<[]>([]);
 
     useEffect(() => {
-        fetchListaTipoDomilioFiscal();
+        fetchListaRecintoFiscal();
     }, []);
 
-    const fetchListaTipoDomilioFiscal = async () => {
+    const fetchListaRecintoFiscal = async () => {
         try {
-            const response = await getAllTipoDomicilioFiscal();
+            const response = await getAllRecintoFiscal();
             console.log(response);
-            setRecinto(response);
+            setRecintoFiscal(response);
         } catch (error) {
             console.log(error);
         }
@@ -32,17 +32,17 @@ export const SelectTipoDomicilioFiscalComponent: React.FC<SelectTipoDomicilioFis
     return (
         <div className="flex flex-col items-start gap-1">
             <label htmlFor="tipoTransmision" className="opacity-70">
-                Tipo de domicilio fiscal
+                Recinto Fiscal
             </label>
             <Dropdown
-                value={tipoDomicilioFiscalSelecionado}
+                value={recintoFiscalSelecionado}
                 onChange={(e) =>
-                   setTipoDomicilioFiscalSelecionado(e.value)
+                    setRecintoFiscalSelecionado(e.value)
                 }
-                options={recinto}
+                options={recintoFiscal}
                 optionLabel="descripcion"
                 optionValue="id"
-                placeholder="Seleccionar recinto"
+                placeholder="Seleccionar recintoFiscal"
                 className="md:w-14rem font-display w-full text-start"
             />
         </div>

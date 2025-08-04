@@ -1,19 +1,17 @@
 import { Dropdown } from 'primereact/dropdown';
 import { HTMLProps, useEffect, useState } from 'react';
-import { getAllTipoDomicilioFiscal } from '../catalogos/services/catalogosServices';
+import { getAllRegimenFiscal } from '../catalogos/services/catalogosServices';
 
 interface SelectRegimenExportacionProps {
-  value: any;
-  onChange: any;
+  regimenSelecionado: any;
+  setRegimenSelecionado: any;
   className?: HTMLProps<HTMLElement>['className'];
-  name: string;
 }
 
 export const SelectRegimenExportacionComponent: React.FC<SelectRegimenExportacionProps> = ({
-  value,
-  onChange,
+  regimenSelecionado,
+  setRegimenSelecionado,
   className,
-  name,
 }) => {
   const [regimen, setRegimen] = useState<[]>([]);
 
@@ -23,7 +21,7 @@ export const SelectRegimenExportacionComponent: React.FC<SelectRegimenExportacio
 
   const fetchListaregimen = async () => {
     try {
-      const response = await getAllTipoDomicilioFiscal();
+      const response = await getAllRegimenFiscal();
       console.log(response);
       setRegimen(response);
     } catch (error) {
@@ -32,22 +30,20 @@ export const SelectRegimenExportacionComponent: React.FC<SelectRegimenExportacio
   };
 
   return (
-    <div className="justify-content-center flex">
+    <div className="flex flex-col items-start gap-1">
+      <label htmlFor="tipoTransmision" className="opacity-70">
+        Regimen
+      </label>
       <Dropdown
-        value={value}
+        value={regimenSelecionado}
         onChange={(e) =>
-          onChange({
-            target: {
-              name,
-              value: e.value,
-            },
-          })
+          setRegimenSelecionado(e.value)
         }
         options={regimen}
         optionLabel="descripcion"
         optionValue="id"
         placeholder="Seleccionar regimen"
-        className="md:w-14rem font-display w-full"
+        className="md:w-14rem font-display w-full text-start"
       />
     </div>
   );
