@@ -33,6 +33,7 @@ import {
   getAllTipoTransporte,
   getPaisById,
   getDepartamentoById,
+  getAllSecuencias,
 } from '../../../../shared/catalogos/services/catalogosServices';
 import { HeaderTable } from '../components/headerTable';
 // import { Paginator } from "primereact/paginator";
@@ -51,6 +52,7 @@ import {
   updateOtrosDocumentosAsociados,
   updatePaises,
   updatePlazos,
+  updateSecuencias,
   updateTipoContingencia,
   updateTipoDocContingencia,
   updateTipoDomicilioFiscal,
@@ -80,6 +82,7 @@ import {
   deleteOtrosDocumentosAsociados,
   deletePaises,
   deletePlazos,
+  deleteSecuencia,
   deleteTipoContingencia,
   deleteTipoDocContingencia,
   deleteTipoDomicilioFiscal,
@@ -109,6 +112,7 @@ import {
   createOtrosDocumentosAsociados,
   createPaises,
   createPlazos,
+  createSecuencia,
   createTipoContingencia,
   createTipoDocContingencia,
   createTipoDomicilioFiscal,
@@ -133,6 +137,7 @@ import {
 } from '../../../facturacion/activities/services/activitiesServices';
 import { EditActivityForm } from '../components/editActivityForm';
 import { Segmented } from 'antd';
+import { NewModalSecuenciasForm } from '../components/newSecuenciasForm';
 
 type CatalogKey =
   | 'Actividades economicas'
@@ -161,7 +166,8 @@ type CatalogKey =
   | 'Incoterms'
   | 'Tipo de domicilio fiscal'
   | 'Tipo de moneda'
-  | 'Descuento';
+  | 'Descuento'
+  | 'Secuencias';
 
 // Cada valor es una función que recibe opcionalmente un filtro y devuelve Promise<any[]>
 const fetchers: Record<CatalogKey, (filter?: string) => Promise<any[]>> = {
@@ -193,6 +199,7 @@ const fetchers: Record<CatalogKey, (filter?: string) => Promise<any[]>> = {
   'Tipo de domicilio fiscal': () => getAllTipoDomicilioFiscal(),
   'Tipo de moneda': () => getAllTipoMoneda(),
   Descuento: () => getAllDescuento(),
+  'Secuencias': () => getAllSecuencias()
 };
 
 const createFunctions: Record<CatalogKey, (body: any) => Promise<any>> = {
@@ -225,6 +232,7 @@ const createFunctions: Record<CatalogKey, (body: any) => Promise<any>> = {
   'Tipo de domicilio fiscal': (body) => createTipoDomicilioFiscal(body),
   'Tipo de moneda': (body) => createTipoMoneda(body),
   Descuento: (body) => createDescuento(body),
+  'Secuencias': (body) => createSecuencia(body),
 };
 
 const deleteFunctions: Record<CatalogKey, (id: number) => Promise<any>> = {
@@ -255,45 +263,47 @@ const deleteFunctions: Record<CatalogKey, (id: number) => Promise<any>> = {
   'Tipo de domicilio fiscal': (id) => deleteTipoDomicilioFiscal(id),
   'Tipo de moneda': (id) => deleteTipoMoneda(id),
   Descuento: (id) => deleteDescuento(id),
+  'Secuencias': (id) => deleteSecuencia(id)
 };
 
 const editFunctions: Record<CatalogKey, (id: any, data: any) => Promise<any>> =
-  {
-    'Actividades economicas': (id, data) => updateActivity(id, data),
-    Ambientes: (id, data) => updateAmbientes(id, data),
-    'Modelo facturacion': (id, data) => updateModelosDeFacturacion(id, data),
-    'Tipo transmision': (id, data) => updateTipoTransmision(id, data),
-    'Tipo contingencia': (id, data) => updateTipoContingencia(id, data),
-    'Tipo retencion IVA': (id, data) => updateTipoTipoRentencionIVA(id, data),
-    'Tipo generación de documento': (id, data) =>
-      updateTiposGeneracionDocumento(id, data),
-    'Tipo establecimiento': (id, data) => updateTiposEstablecimientos(id, data),
-    'Tipo servicio medico': (id, data) => updateTipoServiciosMedicos(id, data),
-    'tipo documento tributario electronico': (id, data) =>
-      updateTipoDTE(id, data),
-    'Otros documentos asociados': (id, data) =>
-      updateOtrosDocumentosAsociados(id, data),
-    'Tipo de identificacion receptores': (id, data) =>
-      updateTipoIdReceptor(id, data),
-    Paises: (id, data) => updatePaises(id, data),
-    Departamentos: (id, data) => updateDepartamentos(id, data),
-    municipios: (id, data) => updateMunicipios(id, data),
-    'Condiciones de operación': (id, data) =>
-      updateCondicioOperaciones(id, data),
-    'Formas de pago': (id, data) => updateMetodosDePago(id, data),
-    'Plazos de pago': (id, data) => updatePlazos(id, data),
-    'tipo de documento de contingencia': (id, data) =>
-      updateTipoDocContingencia(id, data),
-    'Tipo de invalidación': (id, data) => updateTipoInvalidacion(id, data),
-    'Tipo de donación': (id, data) => updateTipoDonacion(id, data),
-    'Tipo de persona': (id, data) => updateTipoPersona(id, data),
-    'Tipo de transporte': (id, data) => updateTipoTransporte(id, data),
-    Incoterms: (id, data) => updateIncoterms(id, data),
-    'Tipo de domicilio fiscal': (id, data) =>
-      updateTipoDomicilioFiscal(id, data),
-    'Tipo de moneda': (id, data) => updateTipoMoneda(id, data),
-    Descuento: (id, data) => updateDescuento(id, data),
-  };
+{
+  'Actividades economicas': (id, data) => updateActivity(id, data),
+  Ambientes: (id, data) => updateAmbientes(id, data),
+  'Modelo facturacion': (id, data) => updateModelosDeFacturacion(id, data),
+  'Tipo transmision': (id, data) => updateTipoTransmision(id, data),
+  'Tipo contingencia': (id, data) => updateTipoContingencia(id, data),
+  'Tipo retencion IVA': (id, data) => updateTipoTipoRentencionIVA(id, data),
+  'Tipo generación de documento': (id, data) =>
+    updateTiposGeneracionDocumento(id, data),
+  'Tipo establecimiento': (id, data) => updateTiposEstablecimientos(id, data),
+  'Tipo servicio medico': (id, data) => updateTipoServiciosMedicos(id, data),
+  'tipo documento tributario electronico': (id, data) =>
+    updateTipoDTE(id, data),
+  'Otros documentos asociados': (id, data) =>
+    updateOtrosDocumentosAsociados(id, data),
+  'Tipo de identificacion receptores': (id, data) =>
+    updateTipoIdReceptor(id, data),
+  Paises: (id, data) => updatePaises(id, data),
+  Departamentos: (id, data) => updateDepartamentos(id, data),
+  municipios: (id, data) => updateMunicipios(id, data),
+  'Condiciones de operación': (id, data) =>
+    updateCondicioOperaciones(id, data),
+  'Formas de pago': (id, data) => updateMetodosDePago(id, data),
+  'Plazos de pago': (id, data) => updatePlazos(id, data),
+  'tipo de documento de contingencia': (id, data) =>
+    updateTipoDocContingencia(id, data),
+  'Tipo de invalidación': (id, data) => updateTipoInvalidacion(id, data),
+  'Tipo de donación': (id, data) => updateTipoDonacion(id, data),
+  'Tipo de persona': (id, data) => updateTipoPersona(id, data),
+  'Tipo de transporte': (id, data) => updateTipoTransporte(id, data),
+  Incoterms: (id, data) => updateIncoterms(id, data),
+  'Tipo de domicilio fiscal': (id, data) =>
+    updateTipoDomicilioFiscal(id, data),
+  'Tipo de moneda': (id, data) => updateTipoMoneda(id, data),
+  Descuento: (id, data) => updateDescuento(id, data),
+  'Secuencias': (id, data) => updateSecuencias(id, data)
+};
 
 export const CatalogosPage = () => {
   const [selectedCatalog, setSelectedCatalog] = useState<CatalogKey>(
@@ -397,9 +407,9 @@ export const CatalogosPage = () => {
   // Genera columnas dinámicamente
   const columns = data.length
     ? Object.keys(data[0]).map((field) => ({
-        field,
-        header: field.toUpperCase(),
-      }))
+      field,
+      header: field.toUpperCase(),
+    }))
     : [];
 
   return (
@@ -445,6 +455,7 @@ export const CatalogosPage = () => {
                   'Tipo de domicilio fiscal',
                   'Tipo de moneda',
                   'Descuento',
+                  'Secuencias',
                 ] as CatalogKey[]
               ).map((key) => (
                 <li
@@ -557,16 +568,27 @@ export const CatalogosPage = () => {
           />
         )}
 
-        {editItem && selectedCatalog == 'Descuento' && (
+        {editItem && selectedCatalog === 'Descuento' && (
           <EditModalDescuento
             activity={editItem}
             visible={isEditModalVisible}
             setVisible={setEditModalVisible}
             onSave={onSaveFromModal}
-            saveFunction={(id, data) =>
-              editFunctions[selectedCatalog](id, data)
-            }
+            saveFunction={editFunctions[selectedCatalog]}
+            isEdit={true}
           />
+        )}
+
+        {editItem && selectedCatalog == 'Secuencias' && (
+          <NewModalSecuenciasForm
+            visible={isEditModalVisible}
+            setVisible={setEditModalVisible}
+            onSave={onSaveFromModal}
+            activity={editItem}
+            saveFunction={editFunctions[selectedCatalog]}
+            isEdit={true}
+          />
+
         )}
 
         {deleteItem && (
@@ -582,7 +604,29 @@ export const CatalogosPage = () => {
           />
         )}
 
-        {showModalNew && selectedCatalog != 'Descuento' && (
+        {showModalNew && selectedCatalog === 'Descuento' && (
+          <EditModalDescuento
+            visible={showModalNew}
+            setVisible={setShowModalNew}
+            onSave={onSaveFromModal}
+            createFunction={createFunctions[selectedCatalog]}
+            isEdit={false}
+          />
+        )}
+
+
+        {showModalNew && selectedCatalog == 'Secuencias' && (
+          <NewModalSecuenciasForm
+            visible={isEditModalVisible}
+            setVisible={setEditModalVisible}
+            onSave={onSaveFromModal}
+            activity={editItem}
+            saveFunction={editFunctions[selectedCatalog]}
+            isEdit={true}
+          />
+        )}
+
+        {showModalNew && selectedCatalog !== 'Descuento' && selectedCatalog !== 'Secuencias' && (
           <NewActivityForm
             catalogo={selectedCatalog}
             visible={showModalNew}
@@ -591,14 +635,6 @@ export const CatalogosPage = () => {
           />
         )}
 
-        {showModalNew && selectedCatalog == 'Descuento' && (
-          <NewModalDescuento
-            onSave={onSaveFromModal}
-            visible={showModalNew}
-            setVisible={setShowModalNew}
-            createFunction={createFunctions[selectedCatalog]}
-          />
-        )}
 
         {/* <div className="pt-5">
           <Paginator

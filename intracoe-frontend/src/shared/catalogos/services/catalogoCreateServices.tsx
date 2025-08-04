@@ -365,3 +365,16 @@ export const createDescuento = async (body: any) => {
     throw new Error();
   }
 };
+
+export const createSecuencia = async (body: any) => {
+  try {
+    const response = await api.post(`/secuencia/crear/`, body, {
+      headers: {
+        'Content-Type': 'application/json', // Asegúrate de que se está enviando como JSON
+      },
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error();
+  }
+};

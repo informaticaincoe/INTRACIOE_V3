@@ -276,3 +276,12 @@ export const deleteDescuento = async (id: number) => {
     throw new Error();
   }
 };
+
+export const deleteSecuencia = async (id: number) => {
+  try {
+    const response = await api.delete(`/secuencia/${id}/eliminar/`);
+    return response.data;
+  } catch (error) {
+    throw new Error();
+  }
+};

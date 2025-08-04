@@ -107,6 +107,58 @@
         </div>
       </div>
 
+      <!-- Sección de Exportación -->
+      <div class="mb-4" id="seccion_exportacion">
+        <div class="form-group" id="datos_exportacion_group">
+          <h4>Datos de Exportación</h4>
+        </div>
+
+        <!-- Tipo de item -->
+        <div class="form-group mt-3" id="tipo_item_group">
+          <label for="tipo_item">Tipo de Ítem</label>
+          <select name="tipo_item" id="tipo_item" class="form-control">
+            <option value="">Seleccione una opción</option>
+            {% for item in tipoItems %}
+              <option value="{{ item.codigo }}">{{ item.descripcion }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Recinto Fiscal -->
+        <div class="form-group">
+          <label for="recinto_fiscal">Recinto Fiscal:</label>
+          <select id="recinto_fiscal" name="recinto_fiscal" class="form-control">
+            <option value="">Seleccione un recinto</option>
+            {% for recinto in recintos %}
+              <option value="{{ recinto.codigo }}">{{ recinto.codigo }} - {{ recinto.descripcion }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Régimen de Exportación -->
+        <div class="form-group">
+          <label for="regimen_exportacion">Régimen de exportación:</label>
+          <select id="regimen_exportacion" name="regimen_exportacion" class="form-control">
+            <option value="">Seleccione un régimen de exportación</option>
+            {% for regimen in regimenes %}
+              <option value="{{ regimen.codigo }}">{{ regimen.codigo }} - {{ regimen.descripcion }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Incoterms -->
+        <div class="form-group">
+          <label for="incoterm">Incoterms:</label>
+          <select id="incoterm" name="incoterm" class="form-control">
+            <option value="">Seleccione un incoterms</option>
+            {% for incoterm in incoterms %}
+              <option value="{{ incoterm.codigo }}">{{ incoterm.codigo }} - {{ incoterm.descripcion }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+      </div>
+
       <!-- Sección Identificación -->
       <div class="form-section">
         <h4>Identificación</h4>
@@ -125,28 +177,6 @@
         <div class="form-group">
           <label>Hora de Generación:</label>
           <input type="time" name="hora_generacion" class="form-control" readonly value="{{ hora_generacion }}">
-        </div>
-
-        <!-- Recinto Fiscal -->
-        <div class="form-group">
-            <label for="recinto_fiscal">Recinto Fiscal:</label>
-            <select id="recinto_fiscal" name="recinto_fiscal" class="form-control">
-                <option value="">Seleccione un recinto</option>
-                {% for recinto in recintos %}
-                <option value="{{ recinto.id }}">{{ recinto.codigo }} - {{ recinto.descripcion }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <!-- Regimen de Exportacion -->
-        <div class="form-group">
-            <label for="regimen_exportacion">Régimen de exportación:</label>
-            <select id="regimen_exportacion" name="regimen_exportacion" class="form-control" required>
-                <option value="">Seleccione un régimen de exportación</option>
-                {% for regimen in regimenes %}
-                <option value="{{ regimen.id }}">{{ regimen.codigo }} - {{ regimen.descripcion }}</option>
-                {% endfor %}
-            </select>
         </div>
 
       <!-- Sección Receptor -->
@@ -172,6 +202,16 @@
             <label>Nombre o Razón Social:</label>
             <input type="text" name="nombre_receptor" class="form-control" placeholder="Nombre o Razón Social">
           </div>
+          <!-- Tipo de Persona -->
+          <div class="form-group">
+            <label for="tipo_persona">Tipo de Persona</label>
+            <select name="tipo_persona" id="tipo_persona" class="form-control">
+              <option value="">Seleccione una opción</option>
+              {% for tipo in tiposPersona %}
+                <option value="{{ tipo.id }}">{{ tipo.codigo }} - {{ tipo.descripcion }}</option>
+              {% endfor %}
+            </select>
+          </div>
           <div class="form-group">
             <label>NRC:</label>
             <input type="text" name="nrc_receptor" class="form-control" placeholder="NRC">
@@ -187,6 +227,16 @@
           <div class="form-group">
             <label>Correo Electrónico:</label>
             <input type="email" name="correo_receptor" class="form-control" placeholder="Correo Electrónico">
+          </div>
+          <!-- País -->
+          <div class="form-group">
+            <label for="pais_receptor"><strong>País</strong></label>
+            <select name="pais_receptor" id="pais_receptor" class="form-control">
+              <option value="">Seleccione un país</option>
+              {% for pais in paises %}
+                <option value="{{ pais.id }}">{{ pais.codigo }} - {{ pais.descripcion }}</option>
+              {% endfor %}
+            </select>
           </div>
         </div>
       </div>
@@ -244,6 +294,7 @@
               <th>Ventas Gravadas</th>
               <th>IVA por ítem</th>
               <th>Aplica IVA</th>
+              <th>No Afecto ($)</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -293,6 +344,15 @@
           </div>
           <div class="col-md-6">
             <strong>Saldo a Favor:</strong><input name="saldo_favor" id="saldo_favor_input" class="saldo-favor-input" value="0">
+          </div>
+          <div class="col-md-6" id="seguro_exportacion_group" style="display:none;">
+            <label>Seguro ($):</label>
+            <input type="number" id="seguro_exportacion" name="seguro_exportacion" class="form-control" value="0.00" min="0" step="0.01" oninput="actualizarResumen()">
+          </div>
+
+          <div class="col-md-6" id="flete_exportacion_group" style="display:none;">
+            <label>Flete ($):</label>
+            <input type="number" id="flete_exportacion" name="flete_exportacion" class="form-control" value="0.00" min="0" step="0.01" oninput="actualizarResumen()">
           </div>
           <div class="col-md-6">
             <p><strong>Sub Total:</strong> $<span id="sub-total-resumen">0.00</span></p>
@@ -357,6 +417,7 @@
               <th>Tipo de ítem</th>
               <th>Descuento</th>
               <th>P. IVA</th>
+              <th>No Afecto ($)</th>
             </tr>
           </thead>
           <tbody>
@@ -383,6 +444,7 @@
                 </select>
               </td>
               <td class="producto-con-iva" data-prod-iva="{{producto.precio_iva}}">{{ producto.precio_iva }}</td>
+              <td><input type="number" class="no-afecto-input" step="0.00000001" value="0.00" style="width: 100px;"></td>
             </tr>
             {% endfor %}
           </tbody>
@@ -690,9 +752,10 @@
               var cantidad = row.querySelector('.cantidad-input').value;
               var tipoItem = row.querySelector('.tipo_item_select');
               var numero_relacionado = documentoRelacionado;
+              var noAfecto = parseFloat(row.querySelector('.no-afecto-input').value) || 0; // <--- aquí tomas el valor No Afecto
               //Obtener seleccion del descuento
               //var descuentoSeleccionado = document.getElementById('descuento_select'); //row.querySelector('.descuento_select');
-              agregarProductoFilaTabla(productoId, productoText, precio_incl, cantidad, precio_con_iva);
+              agregarProductoFilaTabla(productoId, productoText, precio_incl, cantidad, precio_con_iva, noAfecto);
           }
       });
       actualizarResumen();
@@ -701,7 +764,7 @@
 
   const dte_seleccionado = document.getElementById('tipo_documento_select').value;
   // Función para agregar una fila a la tabla de productos
-  function agregarProductoFilaTabla(productoId, productoText, precio_incl, cantidad, aplica_iva) {
+  function agregarProductoFilaTabla(productoId, productoText, precio_incl, cantidad, aplica_iva, noAfecto) {
     const tipo_dte = document.getElementById('tipo_documento_select').value;
     console.log("DTE= ", tipo_dte)
 
@@ -768,6 +831,7 @@
           <td class="total-incl" data-total-incl="${total_incl}">${parseFloat(total_incl).toFixed(2)}</td>
           <td class="total-iva">${parseFloat(total_iva).toFixed(2)}</td>
           <td class="aplica-iva">${aplica_iva}</td>
+          <td class="no-afecto">${noAfecto.toFixed(2)}</td> <!-- Aquí la columna No Afecto -->
           <td><button type="button" class="btn btn-danger btn-sm" onclick="eliminarProductoFila(this)">Eliminar</button></td>
       `;
       tableBody.appendChild(row);
@@ -978,9 +1042,26 @@
 
       // Aquí incluimos el arreglo de facturas relacionadas
       jsonData["facturas_relacionadas"] = facturasRelacionadas;
-      
+
+      jsonData["pais_receptor"] = document.getElementById("pais_receptor").value;
+      jsonData["tipo_persona"] = document.getElementById("tipo_persona").value;
+      jsonData["tipo_item"] = document.getElementById("tipo_item").value;
+      jsonData["recinto_fiscal"] = document.getElementById("recinto_fiscal").value;
+      jsonData["regimen_exportacion"] = document.getElementById("regimen_exportacion").value;
+      jsonData["seguro_exportacion"] = document.getElementById("seguro_exportacion").value;
+      jsonData["flete_exportacion"] = document.getElementById("flete_exportacion").value;
+      jsonData["incoterm"] = document.getElementById("incoterm").value;
+
+      // Determinar la URL según el tipo de documento
+      let tipoDocumento = jsonData["tipo_documento_select"];
+      let url = '/fe/generar/';
+
+      if (tipoDocumento === "11" || tipoDocumento === 11) {
+          url = '/fe/generar_exportacion/';
+      }
+      console.log("Url:", url);
       try {
-          let response = await fetch('/fe/generar/', {
+          let response = await fetch(url, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(jsonData)
@@ -1114,6 +1195,7 @@ function cargarFacturaRelacionada() {
           <th>Total IVA</th>
           <th>Total con IVA</th>
           <th>Descuento</th>
+          <th>No Afecto ($)</th>
           <th>Acciones</th>
         </tr>
       </thead>
@@ -1311,21 +1393,54 @@ function validacionesFormulario(event) {
   }
 }
 
-//Factura exportacionfunction
+//Factura exportacion function
 function toggleCamposSegunTipoDocumento() {
   const tipoDocumento = document.getElementById('tipo_documento_select').value;
   const recintoFiscalDiv = document.querySelector('#recinto_fiscal')?.closest('.form-group');
   const regimenExportacionDiv = document.querySelector('#regimen_exportacion')?.closest('.form-group');
-
+  const incotermDiv = document.querySelector('#incoterm')?.closest('.form-group');
+  const tipoItemDiv = document.getElementById('tipo_item_group');
+  const tipoItemSelect = document.getElementById('tipo_item');
+  const datosExportacionTitulo = document.getElementById('datos_exportacion_group');
+  
+  const seguroGroup = document.getElementById('seguro_exportacion_group');
+  const fleteGroup = document.getElementById('flete_exportacion_group');
+  
   if (tipoDocumento === "11") {
+    if (datosExportacionTitulo) datosExportacionTitulo.style.display = '';
     if (recintoFiscalDiv) recintoFiscalDiv.style.display = '';
     if (regimenExportacionDiv) regimenExportacionDiv.style.display = '';
+    if (incotermDiv) incotermDiv.style.display = '';
+    if (tipoItemDiv) tipoItemDiv.style.display = '';
+    
+    if (seguroGroup) seguroGroup.style.display = '';
+    if (fleteGroup) fleteGroup.style.display = '';
+    
+    // Ocultar opción del tipo de item con valor 4
+    [...tipoItemSelect.options].forEach(option => {
+      option.style.display = option.value === "4" ? "none" : "";
+    });
+
+    // Si estaba seleccionado el 4, lo quitamos
+    if (tipoItemSelect.value === "4") {
+      tipoItemSelect.value = "";
+    }
   } else {
+    if (datosExportacionTitulo) datosExportacionTitulo.style.display = 'none';
     if (recintoFiscalDiv) recintoFiscalDiv.style.display = 'none';
     if (regimenExportacionDiv) regimenExportacionDiv.style.display = 'none';
+    if (incotermDiv) incotermDiv.style.display = 'none';
+    if (tipoItemDiv) tipoItemDiv.style.display = 'none';
+    
+    if (seguroGroup) seguroGroup.style.display = 'none';
+    if (fleteGroup) fleteGroup.style.display = 'none';
+    
+    // Mostrar todas las opciones si no es exportación
+    [...tipoItemSelect.options].forEach(option => {
+      option.style.display = "";
+    });
   }
 }
-
 // Ejecutar al cargar la página
 document.addEventListener('DOMContentLoaded', () => {
   toggleCamposSegunTipoDocumento();
