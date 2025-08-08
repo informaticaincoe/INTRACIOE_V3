@@ -1,0 +1,39 @@
+{# FE/templates/fe/partials/_productos_tbody.html #}
+{% for producto in productos %}
+<tr data-id="{{ producto.id }}">
+  <td><input type="checkbox" class="producto-checkbox"></td>
+  <td>{{ producto.codigo }} - {{ producto.descripcion }}</td>
+
+  {# Precio mostrado con/ sin IVA según lo ya calculado en la view (preunitario) #}
+  <td class="precio-unitario" data-precio="{{ producto.preunitario|floatformat:'6' }}">
+    {{ producto.preunitario|floatformat:'2' }}
+  </td>
+
+  <td>
+    <input type="number" class="cantidad-input" value="1" min="1" style="width: 90px;">
+  </td>
+
+  <td>
+    <select class="form-control tipo_item_select">
+      {% for item in tipoItems %}
+        <option value="{{ item.id }}">{{ item.descripcion }}</option>
+      {% endfor %}
+    </select>
+  </td>
+
+  <td>
+    <select class="form-control descuento-select">
+      <option value="0">Sin descuento</option>
+      {% for d in descuentos %}
+        <option value="{{ d.porcentaje }}">{{ d.porcentaje }}</option>
+      {% endfor %}
+    </select>
+  </td>
+
+  <td class="producto-con-iva" data-prod-iva="{{ producto.precio_iva }}">{{ producto.precio_iva }}</td>
+</tr>
+{% empty %}
+<tr>
+  <td colspan="7" class="empty-state">No hay productos.</td>
+</tr>
+{% endfor %}

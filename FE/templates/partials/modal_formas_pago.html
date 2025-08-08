@@ -1,0 +1,51 @@
+<div class="modal fade" id="formasPagoModal" tabindex="-1" aria-labelledby="formasPagoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="formasPagoModalLabel">Seleccionar Forma de Pago</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <div class="px-3 pt-2">
+        <div class="badge bg-light text-dark me-2">Total a Pagar: $<span id="total-pagar-fp">0.00</span></div>
+        <div class="badge bg-light text-dark">Recibido: $<span id="recibido">0.00</span></div>
+      </div>
+
+      <div class="modal-body">
+        <div class="table-responsive">
+          <table id="tabla-formaspago-modal" class="table align-middle">
+            <thead>
+              <tr>
+                <th>Codigo</th>
+                <th>Forma de Pago</th>
+                <th>Monto</th>
+                <th>Periodo de plazo</th>
+                <th># Referencia</th>
+                <th>Sel.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for fp in formasPago %}
+              <tr data-id="{{ fp.id }}">
+                <td>{{ fp.codigo }}</td>
+                <td>{{ fp.descripcion }}</td>
+                <td><input type="number" class="monto-input form-control" min="0" value="0" placeholder="0.00"></td>
+                <td><input type="number" class="periodo-input form-control" min="0" value="0" placeholder="0"></td>
+                <td><input class="referencia-input form-control" placeholder="Ref."></td>
+                <td class="text-center">
+                  <input type="checkbox" class="formapago-checkbox">
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="btn-aceptar-fp" type="button" class="btn btn-primary">Aceptar</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,58 @@
+<div class="modal fade" id="productosModal" tabindex="-1" aria-labelledby="productosModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="productosModalLabel">Seleccionar Productos</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div class="table-responsive">
+          <table id="tabla-productos-modal" class="table" data-url="{% url 'obtener_listado_productos_view' %}">
+            <thead>
+              <tr>
+                <th>Sel.</th>
+                <th>Producto</th>
+                <th>Precio Unit. (IVA incl.)</th>
+                <th>Cantidad</th>
+                <th>Tipo de ítem</th>
+                <th>Descuento</th>
+                <th>P. IVA</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% comment %} {% for producto in productos %}
+              <tr data-id="{{ producto.id }}">
+                <td><input type="checkbox" class="producto-checkbox"></td>
+                <td>{{ producto.codigo }} - {{ producto.descripcion }}</td>
+                <td class="precio-unitario" data-precio="{{ producto.preunitario|floatformat:'6' }}">{{ producto.preunitario|floatformat:'2' }}</td>
+                <td><input type="number" class="cantidad-input form-control" value="1" min="1" style="width: 90px;"></td>
+                <td>
+                  <select class="form-select tipo_item_select">
+                    {% for item in tipoItems %}
+                      <option value="{{ item.id }}">{{ item.descripcion }}</option>
+                    {% endfor %}
+                  </select>
+                </td>
+                <td>
+                  <select class="form-select descuento-select">
+                    <option value="0">Sin descuento</option>
+                    {% for descuento in descuentos %}
+                      <option value="{{ descuento.porcentaje }}">{{ descuento.porcentaje }}</option>
+                    {% endfor %}
+                  </select>
+                </td>
+                <td class="producto-con-iva" data-prod-iva="{{producto.precio_iva}}">{{ producto.precio_iva }}</td>
+              </tr>
+              {% endfor %} {% endcomment %}
+              {% include 'partials/_productos_tbody.html'%}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-cargar-productos" type="button" class="btn btn-primary">Cargar Productos</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>

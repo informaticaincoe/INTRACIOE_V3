@@ -60,45 +60,45 @@ from weasyprint import HTML, CSS
 from django.db.utils import OperationalError
 from django.core.exceptions import ObjectDoesNotExist
 
-# try:
-#     FIRMADOR_URL = ConfiguracionServidor.objects.filter(clave="firmador").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     FIRMADOR_URL = None
+try:
+    FIRMADOR_URL = ConfiguracionServidor.objects.filter(clave="firmador").first()
+except (OperationalError, ObjectDoesNotExist):
+    FIRMADOR_URL = None
 
-# try:
-#     DJANGO_SERVER_URL = ConfiguracionServidor.objects.filter(clave="server_url").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     DJANGO_SERVER_URL = None
+try:
+    DJANGO_SERVER_URL = ConfiguracionServidor.objects.filter(clave="server_url").first()
+except (OperationalError, ObjectDoesNotExist):
+    DJANGO_SERVER_URL = None
 
 SCHEMA_PATH_fe_fc_v1 = "FE/json_schemas/fe-fc-v1.json"
 
-# try:
-#     CERT_PATH = ConfiguracionServidor.objects.filter(clave="certificado").first().url_endpoint
-# except (AttributeError, OperationalError, ObjectDoesNotExist):
-#     CERT_PATH = None
+try:
+    CERT_PATH = ConfiguracionServidor.objects.filter(clave="certificado").first().url_endpoint
+except (AttributeError, OperationalError, ObjectDoesNotExist):
+    CERT_PATH = None
 
-# try:
-#     HACIENDA_URL_TEST = ConfiguracionServidor.objects.filter(clave="hacienda_url_test").first().url_endpoint
-# except (AttributeError, OperationalError, ObjectDoesNotExist):
-#     HACIENDA_URL_TEST = None
+try:
+    HACIENDA_URL_TEST = ConfiguracionServidor.objects.filter(clave="hacienda_url_test").first().url_endpoint
+except (AttributeError, OperationalError, ObjectDoesNotExist):
+    HACIENDA_URL_TEST = None
 
-# try:
-#     HACIENDA_URL_PROD = ConfiguracionServidor.objects.filter(clave="hacienda_url_prod").first().url_endpoint
-# except (AttributeError, OperationalError, ObjectDoesNotExist):
-#     HACIENDA_URL_PROD = None
+try:
+    HACIENDA_URL_PROD = ConfiguracionServidor.objects.filter(clave="hacienda_url_prod").first().url_endpoint
+except (AttributeError, OperationalError, ObjectDoesNotExist):
+    HACIENDA_URL_PROD = None
 
-# COD_CONSUMIDOR_FINAL = "01"
-# COD_CREDITO_FISCAL = "03"
+COD_CONSUMIDOR_FINAL = "01"
+COD_CREDITO_FISCAL = "03"
 
-# try:
-#     VERSION_EVENTO_INVALIDACION = ConfiguracionServidor.objects.filter(clave="version_evento_invalidacion").first().valor
-# except (AttributeError, OperationalError, ObjectDoesNotExist):
-#     VERSION_EVENTO_INVALIDACION = None
+try:
+    VERSION_EVENTO_INVALIDACION = ConfiguracionServidor.objects.filter(clave="version_evento_invalidacion").first().valor
+except (AttributeError, OperationalError, ObjectDoesNotExist):
+    VERSION_EVENTO_INVALIDACION = None
 
-# try:
-#     AMBIENTE = Ambiente.objects.get(codigo="01")
-# except (OperationalError, ObjectDoesNotExist):
-#     AMBIENTE = None
+try:
+    AMBIENTE = Ambiente.objects.get(codigo="01")
+except (OperationalError, ObjectDoesNotExist):
+    AMBIENTE = None
 
 COD_FACTURA_EXPORTACION = "11"
 COD_SUJETO_EXCLUIDO = "14"
@@ -118,85 +118,85 @@ COD_TIPO_CONTINGENCIA = "5"
 DTE_APLICA_CONTINGENCIA = ["01", "03", "04", "05", "06", "11", "14"]
 TIPO_TRANSMISION_CONTINGENCIA = 2
 
-# try:
-#     RUTA_COMPROBANTES_PDF = ConfiguracionServidor.objects.filter(clave="ruta_comprobantes_dte").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     RUTA_COMPROBANTES_PDF = None
+try:
+    RUTA_COMPROBANTES_PDF = ConfiguracionServidor.objects.filter(clave="ruta_comprobantes_dte").first()
+except (OperationalError, ObjectDoesNotExist):
+    RUTA_COMPROBANTES_PDF = None
 
-# try:
-#     RUTA_COMPROBANTES_JSON = ConfiguracionServidor.objects.filter(clave="ruta_comprobante_json").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     RUTA_COMPROBANTES_JSON = None
+try:
+    RUTA_COMPROBANTES_JSON = ConfiguracionServidor.objects.filter(clave="ruta_comprobante_json").first()
+except (OperationalError, ObjectDoesNotExist):
+    RUTA_COMPROBANTES_JSON = None
 
-# try:
-#     RUTA_JSON_FACTURA = ConfiguracionServidor.objects.filter(clave="json_factura").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     RUTA_JSON_FACTURA = None
+try:
+    RUTA_JSON_FACTURA = ConfiguracionServidor.objects.filter(clave="json_factura").first()
+except (OperationalError, ObjectDoesNotExist):
+    RUTA_JSON_FACTURA = None
 
-# try:
-#     URL_AUTH = ConfiguracionServidor.objects.filter(clave="url_autenticacion").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     URL_AUTH = None
+try:
+    URL_AUTH = ConfiguracionServidor.objects.filter(clave="url_autenticacion").first()
+except (OperationalError, ObjectDoesNotExist):
+    URL_AUTH = None
 
-# try:
-#     HEADERS = ConfiguracionServidor.objects.filter(clave="headers").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     HEADERS = None
+try:
+    HEADERS = ConfiguracionServidor.objects.filter(clave="headers").first()
+except (OperationalError, ObjectDoesNotExist):
+    HEADERS = None
 
-# try:
-#     CONTENT_TYPE = ConfiguracionServidor.objects.filter(clave="content_type").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     CONTENT_TYPE = None
+try:
+    CONTENT_TYPE = ConfiguracionServidor.objects.filter(clave="content_type").first()
+except (OperationalError, ObjectDoesNotExist):
+    CONTENT_TYPE = None
 
-# try:
-#     INVALIDAR_DTE_URL = ConfiguracionServidor.objects.filter(clave="url_invalidar_dte").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     INVALIDAR_DTE_URL = None
+try:
+    INVALIDAR_DTE_URL = ConfiguracionServidor.objects.filter(clave="url_invalidar_dte").first()
+except (OperationalError, ObjectDoesNotExist):
+    INVALIDAR_DTE_URL = None
 
-# try:
-#     VERSION_EVENTO_CONTINGENCIA = ConfiguracionServidor.objects.filter(clave="version_evento_contingencia").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     VERSION_EVENTO_CONTINGENCIA = None
+try:
+    VERSION_EVENTO_CONTINGENCIA = ConfiguracionServidor.objects.filter(clave="version_evento_contingencia").first()
+except (OperationalError, ObjectDoesNotExist):
+    VERSION_EVENTO_CONTINGENCIA = None
 
-# try:
-#     FACTURAS_FIRMADAS_URL = ConfiguracionServidor.objects.filter(clave="json_facturas_firmadas").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     FACTURAS_FIRMADAS_URL = None
+try:
+    FACTURAS_FIRMADAS_URL = ConfiguracionServidor.objects.filter(clave="json_facturas_firmadas").first()
+except (OperationalError, ObjectDoesNotExist):
+    FACTURAS_FIRMADAS_URL = None
 
-# try:
-#     HACIENDA_CONTINGENCIA_URL = ConfiguracionServidor.objects.filter(clave="hacienda_contingencia_url").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     HACIENDA_CONTINGENCIA_URL = None
+try:
+    HACIENDA_CONTINGENCIA_URL = ConfiguracionServidor.objects.filter(clave="hacienda_contingencia_url").first()
+except (OperationalError, ObjectDoesNotExist):
+    HACIENDA_CONTINGENCIA_URL = None
 
-# try:
-#     USER_AGENT = ConfiguracionServidor.objects.filter(clave="user_agent").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     USER_AGENT = None
+try:
+    USER_AGENT = ConfiguracionServidor.objects.filter(clave="user_agent").first()
+except (OperationalError, ObjectDoesNotExist):
+    USER_AGENT = None
 
-# try:
-#     SCHEMA_JSON = ConfiguracionServidor.objects.filter(clave="schema_json").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     SCHEMA_JSON = None
+try:
+    SCHEMA_JSON = ConfiguracionServidor.objects.filter(clave="schema_json").first()
+except (OperationalError, ObjectDoesNotExist):
+    SCHEMA_JSON = None
 
-# try:
-#     CONSULTAR_DTE = ConfiguracionServidor.objects.filter(clave="consulta_dte").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     CONSULTAR_DTE = None
+try:
+    CONSULTAR_DTE = ConfiguracionServidor.objects.filter(clave="consulta_dte").first()
+except (OperationalError, ObjectDoesNotExist):
+    CONSULTAR_DTE = None
 
-# try:
-#     EMAIL_HOST_FE = ConfiguracionServidor.objects.filter(clave="email_host_fe").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     EMAIL_HOST_FE = None
+try:
+    EMAIL_HOST_FE = ConfiguracionServidor.objects.filter(clave="email_host_fe").first()
+except (OperationalError, ObjectDoesNotExist):
+    EMAIL_HOST_FE = None
 
-# try:
-#     MONEDA_USD = TipoMoneda.objects.get(codigo="USD")
-# except (OperationalError, ObjectDoesNotExist):
-#     MONEDA_USD = None
+try:
+    MONEDA_USD = TipoMoneda.objects.get(codigo="USD")
+except (OperationalError, ObjectDoesNotExist):
+    MONEDA_USD = None
 
-# try:
-#     UNI_MEDIDA_99 = TipoUnidadMedida.objects.get(codigo="99")
-# except (OperationalError, ObjectDoesNotExist):
-#     UNI_MEDIDA_99 = None
+try:
+    UNI_MEDIDA_99 = TipoUnidadMedida.objects.get(codigo="99")
+except (OperationalError, ObjectDoesNotExist):
+    UNI_MEDIDA_99 = None
 
 formas_pago = []
 documentos_relacionados = []
@@ -208,10 +208,10 @@ descuentos_r = []
 tipo_documento_dte = "01"
 productos_inventario = None
 
-# try:
-#     emisor_fe = Emisor_fe.objects.get(id=1)
-# except (OperationalError, ObjectDoesNotExist):
-#     emisor_fe = None
+try:
+    emisor_fe = Emisor_fe.objects.get(id=1)
+except (OperationalError, ObjectDoesNotExist):
+    emisor_fe = None
 
 
 #vistas para actividad economica
@@ -318,26 +318,26 @@ class EmisorDeleteView(DeleteView):
 
 schema_path = "FE/json_schemas/fe-fc-v1.json"
 
-# if SCHEMA_JSON and SCHEMA_JSON.url:
-#     try:
-#         with open(SCHEMA_JSON.url, "r", encoding="utf-8") as schema_file:
-#             factura_schema = json.load(schema_file)
+if SCHEMA_JSON and SCHEMA_JSON.url:
+    try:
+        with open(SCHEMA_JSON.url, "r", encoding="utf-8") as schema_file:
+            factura_schema = json.load(schema_file)
 
-#         required_fields = factura_schema.get("required", [])
-#         properties = factura_schema.get("properties", {})
+        required_fields = factura_schema.get("required", [])
+        properties = factura_schema.get("properties", {})
 
-#         form_fields = []
-#         for field in required_fields:
-#             field_type = properties.get(field, {}).get("type", "text")
-#             form_fields.append({"name": field, "type": field_type})
+        form_fields = []
+        for field in required_fields:
+            field_type = properties.get(field, {}).get("type", "text")
+            form_fields.append({"name": field, "type": field_type})
 
-#     except (FileNotFoundError, json.JSONDecodeError):
-#         factura_schema = {}
-#         form_fields = []
+    except (FileNotFoundError, json.JSONDecodeError):
+        factura_schema = {}
+        form_fields = []
 
-# else:
-#     factura_schema = {}
-#     form_fields = []
+else:
+    factura_schema = {}
+    form_fields = []
 
 
 ##################################################################################################
@@ -590,6 +590,15 @@ def obtener_listado_productos_view(request):
     }
     return render(request, 'generar_dte.html', context)
 
+def get_productos_para_tipo(tipo_codigo: str):
+    tipo_dte_obj = Tipo_dte.objects.get(codigo=tipo_codigo)
+    productos = Producto.objects.all()
+    for p in productos:
+        if tipo_dte_obj.codigo == COD_CONSUMIDOR_FINAL:
+            p.preunitario = (p.preunitario if p.precio_iva else p.preunitario * Decimal("1.13")).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+        else:
+            p.preunitario = (p.preunitario / Decimal("1.13") if p.precio_iva else p.preunitario).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+    return productos, tipo_dte_obj
 
 @csrf_exempt
 @transaction.atomic
@@ -633,6 +642,7 @@ def generar_factura_view(request):
         receptores = list(Receptor_fe.objects.values("id", "num_documento", "nombre"))
         #productos = Producto.objects.all()
         productos = obtener_listado_productos_view(request)
+        #productos, _ = get_productos_para_tipo()  # o el default
         tipooperaciones = CondicionOperacion.objects.all()
         tipoDocumentos = Tipo_dte.objects.exclude( Q(codigo=COD_NOTA_CREDITO) | Q(codigo=COD_NOTA_DEBITO) )
         tipoItems = TipoItem.objects.all()
@@ -658,6 +668,18 @@ def generar_factura_view(request):
         return render(request, "generar_dte.html", context)
 
     elif request.method == 'POST':
+        data = json.loads(request.body)
+
+        def _dec(x, default="0.00"):
+            try:
+                return Decimal(str(x))
+            except Exception:
+                return Decimal(default)
+
+        data.setdefault("flete_exportacion", "0.00")
+        data.setdefault("seguro_exportacion", "0.00")
+        data.setdefault("otros_gastos_exportacion", "0.00")
+
         try:
             items_permitidos = 2000
             data = json.loads(request.body)
@@ -776,7 +798,11 @@ def generar_factura_view(request):
                 json_original={},
                 firmado=False,
                 base_imponible = base_imponible_checkbox,
-                tipotransmision=tipotransmision_obj
+                tipotransmision=tipotransmision_obj,
+                # ⬇⬇⬇  evita NULLs
+                flete_exportacion=Decimal("0.00"),
+                seguro_exportacion=Decimal("0.00"),
+                otros_gastos_exportacion=Decimal("0.00"),
             )
             print("cod generacion: ", factura.codigo_generacion)
 
@@ -1097,7 +1123,7 @@ def generar_factura_view(request):
             factura_json = generar_json(
                 ambiente_obj, tipo_dte_obj, factura, emisor, receptor,
                 cuerpo_documento, observaciones, Decimal(str(total_iva_item)), base_imponible_checkbox, saldo_favor, documentos_relacionados, contingencia, 
-                total_gravada, nombre_responsable, documento_responsable, formas_pago
+                total_gravada, nombre_responsable, documento_responsable, formas_pago_id
             )
             
             factura.json_original = factura_json
@@ -1257,20 +1283,29 @@ def generar_json(ambiente_obj, tipo_dte_obj, factura, emisor, receptor, cuerpo_d
             valor_iva_item = iva_item_total
             
             #Recorrer items y modificar campo ivaItem cuando son FE
-            for i, cuerpo in enumerate(cuerpo_documento):
-                #Remover el item
-                cuerpo_documento.pop(i)
-                gravado = Decimal(cuerpo["ventaGravada"])#Decimal(cuerpo["precioUni"])
-                valor_iva_item = ( gravado / Decimal("1.13") * Decimal("0.13") ).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
-                #Modificar campo
-                cuerpo["ivaItem"] = float(valor_iva_item.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
-                #Agregar nuevamente el item
-                cuerpo_documento.insert(i, cuerpo)
+            # for i, cuerpo in enumerate(cuerpo_documento):
+            #     #Remover el item
+            #     cuerpo_documento.pop(i)
+            #     gravado = Decimal(cuerpo["ventaGravada"])#Decimal(cuerpo["precioUni"])
+            #     valor_iva_item = ( gravado / Decimal("1.13") * Decimal("0.13") ).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+            #     #Modificar campo
+            #     cuerpo["ivaItem"] = float(valor_iva_item.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+            #     #Agregar nuevamente el item
+            #     cuerpo_documento.insert(i, cuerpo)
                 
-                if cuerpo["tipoItem"] != COD_TIPO_ITEM_OTROS:
-                    if base_imponible_checkbox == True:
-                        cuerpo["tributos"] = None
-                        
+            #     if cuerpo["tipoItem"] != COD_TIPO_ITEM_OTROS:
+            #         if base_imponible_checkbox == True:
+            #             cuerpo["tributos"] = None
+            nuevo_cuerpo = []
+            for cuerpo in cuerpo_documento:
+                gravado = Decimal(cuerpo["ventaGravada"])
+                iva_item = (gravado / Decimal("1.13") * Decimal("0.13")).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+                cuerpo["ivaItem"] = float(iva_item.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+                if base_imponible_checkbox is True:
+                    cuerpo["tributos"] = None
+                nuevo_cuerpo.append(cuerpo)
+            cuerpo_documento = nuevo_cuerpo
+                                    
             json_resumen["totalIva"] = float(factura.total_iva)
             json_resumen["totalPagar"] = float(factura.total_pagar)
             json_resumen["tributos"] = None
