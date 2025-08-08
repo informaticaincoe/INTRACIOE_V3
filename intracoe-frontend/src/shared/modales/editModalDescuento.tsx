@@ -5,11 +5,13 @@ import { RadioButton, RadioButtonChangeEvent } from 'primereact/radiobutton';
 import { Descuento } from '../interfaces/interfaces';
 
 interface EditModalDescuentoProps {
-  activity: Descuento;
+  activity?: Descuento;
   visible: boolean;
   setVisible: (v: boolean) => void;
   onSave: () => void;
-  saveFunction: (id: number, data: Partial<Descuento>) => Promise<any>;
+  saveFunction?: (id: number, data: Partial<Descuento>) => Promise<any>;
+  createFunction?: (data: Partial<Descuento>) => Promise<any>;
+  isEdit: boolean;
 }
 
 export const EditModalDescuento: React.FC<EditModalDescuentoProps> = ({
@@ -18,12 +20,30 @@ export const EditModalDescuento: React.FC<EditModalDescuentoProps> = ({
   setVisible,
   onSave,
   saveFunction,
+  createFunction,
+  isEdit,
 }) => {
-  // formData.estdo es boolean
-  const [formData, setFormData] = useState<Descuento>(activity);
+  const [formData, setFormData] = useState<Partial<Descuento>>({
+    porcentaje: 0,
+    descripcion: '',
+    fecha_inicio: '',
+    fecha_fin: '',
+    estdo: true,
+    ...(activity || {}),
+  });
 
   useEffect(() => {
-    setFormData(activity);
+    if (activity) {
+      setFormData(activity);
+    } else {
+      setFormData({
+        porcentaje: 0,
+        descripcion: '',
+        fecha_inicio: '',
+        fecha_fin: '',
+        estdo: true,
+      });
+    }
   }, [activity]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,7 +54,6 @@ export const EditModalDescuento: React.FC<EditModalDescuentoProps> = ({
     }));
   };
 
-  // Handler para el radio booleano
   const handleEstadoChange = (e: RadioButtonChangeEvent) => {
     setFormData((prev) => ({
       ...prev,
@@ -46,7 +65,13 @@ export const EditModalDescuento: React.FC<EditModalDescuentoProps> = ({
     e.preventDefault();
     try {
       const { id, ...rest } = formData;
-      await saveFunction(id, rest);
+
+      if (isEdit && saveFunction && id) {
+        await saveFunction(id, rest);
+      } else if (!isEdit && createFunction) {
+        await createFunction(rest);
+      }
+
       onSave();
     } catch (err) {
       console.error(err);
@@ -55,7 +80,7 @@ export const EditModalDescuento: React.FC<EditModalDescuentoProps> = ({
 
   return (
     <Dialog
-      header="Editar Descuento"
+      header={isEdit ? 'Editar Descuento' : 'Crear Descuento'}
       visible={visible}
       style={{ width: '60vw' }}
       onHide={() => setVisible(false)}
@@ -75,7 +100,7 @@ export const EditModalDescuento: React.FC<EditModalDescuentoProps> = ({
           Descripción:
           <Input
             name="descripcion"
-            value={formData.descripcion}
+            value={formData.descripcion || ''}
             onChange={handleChange}
           />
         </label>
@@ -85,7 +110,7 @@ export const EditModalDescuento: React.FC<EditModalDescuentoProps> = ({
           <Input
             type="date"
             name="fecha_inicio"
-            value={formData.fecha_inicio}
+            value={formData.fecha_inicio || ''}
             onChange={handleChange}
           />
         </label>
@@ -95,7 +120,7 @@ export const EditModalDescuento: React.FC<EditModalDescuentoProps> = ({
           <Input
             type="date"
             name="fecha_fin"
-            value={formData.fecha_fin}
+            value={formData.fecha_fin || ''}
             onChange={handleChange}
           />
         </label>
@@ -107,7 +132,7 @@ export const EditModalDescuento: React.FC<EditModalDescuentoProps> = ({
               <RadioButton
                 inputId="estado-true"
                 name="estdo"
-                value={true} // boolean
+                value={true}
                 onChange={handleEstadoChange}
                 checked={formData.estdo === true}
               />
@@ -119,7 +144,7 @@ export const EditModalDescuento: React.FC<EditModalDescuentoProps> = ({
               <RadioButton
                 inputId="estado-false"
                 name="estdo"
-                value={false} // boolean
+                value={false}
                 onChange={handleEstadoChange}
                 checked={formData.estdo === false}
               />

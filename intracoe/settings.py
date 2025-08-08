@@ -185,6 +185,14 @@ WSGI_APPLICATION = 'intracoe.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
+# The line `'default111': {` is defining a database configuration named `default111`. This
+# configuration specifies settings for a SQLite database in the Django project. SQLite is a
+# lightweight, file-based database that is often used for development purposes or small-scale
+# applications.
+# The line `'default111': {` is defining a database configuration named `default111`. This
+# configuration specifies settings for a SQLite database in this case. SQLite is a lightweight,
+# serverless, self-contained database engine that is often used for development and testing purposes
+# in Django projects.
     'default111': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db1.sqlite3',

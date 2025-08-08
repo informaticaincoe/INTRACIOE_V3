@@ -3,6 +3,7 @@ import time
 from decimal import ROUND_HALF_UP, ConversionSyntax, Decimal
 from itertools import count
 from pyexpat.errors import messages
+from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
@@ -29,7 +30,7 @@ from INVENTARIO.serializers import DescuentoSerializer, ProductoSerializer
 
 from .serializers import (
     AmbienteSerializer, EventoContingenciaSerializer, FacturaListSerializer, FacturaSujetoExcluidoListSerializer, FacturaSujetoExcluidoSerializer, 
-    FormasPagosSerializer, LoteContingenciaSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, 
+    FormasPagosSerializer, LoteContingenciaSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, RecintoFiscalSerializer, RegimenSerializer, SecuenciaSerializer, 
     TipoDteSerializer, TiposGeneracionDocumentoSerializer, ActividadEconomicaSerializer, ModelofacturacionSerializer,
     TipoTransmisionSerializer, TipoContingenciaSerializer, TipoRetencionIVAMHSerializer, TiposEstablecimientosSerializer, TiposServicio_MedicoSerializer,
     OtrosDicumentosAsociadoSerializer, TiposDocIDReceptorSerializer, PaisSerializer, DepartamentoSerializer, MunicipioSerializer, CondicionOperacionSerializer,                                                                                                                                                                                             
@@ -38,7 +39,7 @@ from .serializers import (
     )
 from .models import (
     INCOTERMS, ActividadEconomica, Departamento, DetalleFacturaSujetoExcluido, Emisor_fe, EventoContingencia, FacturaSujetoExcluidoElectronica, LoteContingencia, Municipio, OtrosDicumentosAsociado, Pais, Receptor_fe, FacturaElectronica, DetalleFactura,
-    Ambiente, CondicionOperacion, Modelofacturacion, NumeroControl, Tipo_dte, TipoContingencia, TipoDocContingencia, TipoDomicilioFiscal, TipoDonacion, TipoGeneracionDocumento, 
+    Ambiente, CondicionOperacion, Modelofacturacion, NumeroControl, RecintoFiscal, RegimenExportacion, Tipo_dte, TipoContingencia, TipoDocContingencia, TipoDomicilioFiscal, TipoDonacion, TipoGeneracionDocumento, 
     TipoMoneda, TipoPersona, TipoRetencionIVAMH, TipoTransmision, TipoTransporte, TipoUnidadMedida, TiposDocIDReceptor, EventoInvalidacion, 
     Receptor_fe, TipoInvalidacion, TiposEstablecimientos, TiposServicio_Medico, Token_data, Descuento, FormasPago, TipoGeneracionDocumento, Plazo
 )
@@ -63,49 +64,49 @@ from django.db.models.functions import Greatest
 from django.db.utils import OperationalError
 from django.core.exceptions import ObjectDoesNotExist
 
-# try:
-#     FIRMADOR_URL = ConfiguracionServidor.objects.filter(clave="firmador").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     FIRMADOR_URL = None
+try:
+    FIRMADOR_URL = ConfiguracionServidor.objects.filter(clave="firmador").first()
+except (OperationalError, ObjectDoesNotExist):
+    FIRMADOR_URL = None
 
-# try:
-#     DJANGO_SERVER_URL = ConfiguracionServidor.objects.filter(clave="server_url").first()
-# except (OperationalError, ObjectDoesNotExist):
-#     DJANGO_SERVER_URL = None
+try:
+    DJANGO_SERVER_URL = ConfiguracionServidor.objects.filter(clave="server_url").first()
+except (OperationalError, ObjectDoesNotExist):
+    DJANGO_SERVER_URL = None
 
 SCHEMA_PATH_fe_fc_v1 = "FE/json_schemas/fe-fc-v1.json"
 
-# try:
-#     CERT_PATH = ConfiguracionServidor.objects.filter(clave="certificado").first()
-#     CERT_PATH = CERT_PATH.url_endpoint if CERT_PATH else None
-# except (OperationalError, ObjectDoesNotExist, AttributeError):
-#     CERT_PATH = None
+try:
+    CERT_PATH = ConfiguracionServidor.objects.filter(clave="certificado").first()
+    CERT_PATH = CERT_PATH.url_endpoint if CERT_PATH else None
+except (OperationalError, ObjectDoesNotExist, AttributeError):
+    CERT_PATH = None
 
-# try:
-#     hacienda_test_obj = ConfiguracionServidor.objects.filter(clave="hacienda_url_test").first()
-#     HACIENDA_URL_TEST = hacienda_test_obj.url_endpoint if hacienda_test_obj else None
-# except (OperationalError, ObjectDoesNotExist, AttributeError):
-#     HACIENDA_URL_TEST = None
+try:
+    hacienda_test_obj = ConfiguracionServidor.objects.filter(clave="hacienda_url_test").first()
+    HACIENDA_URL_TEST = hacienda_test_obj.url_endpoint if hacienda_test_obj else None
+except (OperationalError, ObjectDoesNotExist, AttributeError):
+    HACIENDA_URL_TEST = None
 
-# try:
-#     hacienda_prod_obj = ConfiguracionServidor.objects.filter(clave="hacienda_url_prod").first()
-#     HACIENDA_URL_PROD = hacienda_prod_obj.url_endpoint if hacienda_prod_obj else None
-# except (OperationalError, ObjectDoesNotExist, AttributeError):
-#     HACIENDA_URL_PROD = None
+try:
+    hacienda_prod_obj = ConfiguracionServidor.objects.filter(clave="hacienda_url_prod").first()
+    HACIENDA_URL_PROD = hacienda_prod_obj.url_endpoint if hacienda_prod_obj else None
+except (OperationalError, ObjectDoesNotExist, AttributeError):
+    HACIENDA_URL_PROD = None
 
 COD_CONSUMIDOR_FINAL = "01"
 COD_CREDITO_FISCAL = "03"
 
-# try:
-#     version_obj = ConfiguracionServidor.objects.filter(clave="version_evento_invalidacion").first()
-#     VERSION_EVENTO_INVALIDACION = version_obj.valor if version_obj else None
-# except (OperationalError, ObjectDoesNotExist, AttributeError):
-#     VERSION_EVENTO_INVALIDACION = None
+try:
+    version_obj = ConfiguracionServidor.objects.filter(clave="version_evento_invalidacion").first()
+    VERSION_EVENTO_INVALIDACION = version_obj.valor if version_obj else None
+except (OperationalError, ObjectDoesNotExist, AttributeError):
+    VERSION_EVENTO_INVALIDACION = None
 
-# try:
-#     AMBIENTE = Ambiente.objects.get(codigo="01")
-# except (OperationalError, ObjectDoesNotExist):
-#     AMBIENTE = None
+try:
+    AMBIENTE = Ambiente.objects.get(codigo="01")
+except (OperationalError, ObjectDoesNotExist):
+    AMBIENTE = None
 
 COD_FACTURA_EXPORTACION = "11"
 COD_TIPO_INVALIDACION_RESCINDIR = 2
@@ -124,35 +125,35 @@ RELACIONAR_DOC_ELECTRONICO = 2
 COD_TIPO_CONTINGENCIA = "5"
 DTE_APLICA_CONTINGENCIA = ["01", "03", "04", "05", "06", "11", "14"]
 
-# def safe_conf(clave):
-#     try:
-#         return ConfiguracionServidor.objects.filter(clave=clave).first()
-#     except (OperationalError, ObjectDoesNotExist):
-#         return None
+def safe_conf(clave):
+    try:
+        return ConfiguracionServidor.objects.filter(clave=clave).first()
+    except (OperationalError, ObjectDoesNotExist):
+        return None
 
-# RUTA_COMPROBANTES_PDF = safe_conf("ruta_comprobantes_dte")
-# RUTA_COMPROBANTES_JSON = safe_conf("ruta_comprobante_json")
-# RUTA_JSON_FACTURA = safe_conf("json_factura")
-# URL_AUTH = safe_conf("url_autenticacion")
-# HEADERS = safe_conf("headers")
-# CONTENT_TYPE = safe_conf("content_type")
-# INVALIDAR_DTE_URL = safe_conf("url_invalidar_dte")
-# VERSION_EVENTO_CONTINGENCIA = safe_conf("version_evento_contingencia")
-# FACTURAS_FIRMADAS_URL = safe_conf("json_facturas_firmadas")
-# HACIENDA_CONTINGENCIA_URL = safe_conf("hacienda_contingencia_url")
-# USER_AGENT = safe_conf("user_agent")
-# CONSULTAR_DTE = safe_conf("consulta_dte")
-# EMAIL_HOST_FE = safe_conf("email_host_fe")
+RUTA_COMPROBANTES_PDF = safe_conf("ruta_comprobantes_dte")
+RUTA_COMPROBANTES_JSON = safe_conf("ruta_comprobante_json")
+RUTA_JSON_FACTURA = safe_conf("json_factura")
+URL_AUTH = safe_conf("url_autenticacion")
+HEADERS = safe_conf("headers")
+CONTENT_TYPE = safe_conf("content_type")
+INVALIDAR_DTE_URL = safe_conf("url_invalidar_dte")
+VERSION_EVENTO_CONTINGENCIA = safe_conf("version_evento_contingencia")
+FACTURAS_FIRMADAS_URL = safe_conf("json_facturas_firmadas")
+HACIENDA_CONTINGENCIA_URL = safe_conf("hacienda_contingencia_url")
+USER_AGENT = safe_conf("user_agent")
+CONSULTAR_DTE = safe_conf("consulta_dte")
+EMAIL_HOST_FE = safe_conf("email_host_fe")
 
-# try:
-#     MONEDA_USD = TipoMoneda.objects.get(codigo="USD")
-# except (OperationalError, ObjectDoesNotExist):
-#     MONEDA_USD = None
+try:
+    MONEDA_USD = TipoMoneda.objects.get(codigo="USD")
+except (OperationalError, ObjectDoesNotExist):
+    MONEDA_USD = None
 
-# try:
-#     UNI_MEDIDA_99 = TipoUnidadMedida.objects.get(codigo="99")
-# except (OperationalError, ObjectDoesNotExist):
-#     UNI_MEDIDA_99 = None
+try:
+    UNI_MEDIDA_99 = TipoUnidadMedida.objects.get(codigo="99")
+except (OperationalError, ObjectDoesNotExist):
+    UNI_MEDIDA_99 = None
 
 formas_pago = []
 documentos_relacionados = []
@@ -164,10 +165,10 @@ descuentos_r = []
 tipo_documento_dte = "01"
 productos_inventario = None
 
-# try:
-#     emisor_fe = Emisor_fe.objects.get(id=1)
-# except (OperationalError, ObjectDoesNotExist):
-#     emisor_fe = None
+try:
+    emisor_fe = Emisor_fe.objects.get(id=1)
+except (OperationalError, ObjectDoesNotExist):
+    emisor_fe = None
 
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -267,28 +268,41 @@ class AutenticacionAPIView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 def autenticacion(request):
+    print("[DEBUG] Ingresando a la vista autenticacion")
 
     tokens_saves = Token_data.objects.all()
+    print(f"[DEBUG] Tokens en base de datos: {tokens_saves.count()}")
 
     if request.method == "POST":
         nit_empresa = request.POST.get("user")
         pwd = request.POST.get("pwd")
+        print(f"[DEBUG] Datos recibidos del formulario: user={nit_empresa}, pwd={'*' * len(pwd) if pwd else None}")
 
         auth_url = URL_AUTH.url_endpoint
         headers = {"User-Agent": HEADERS.valor}
         data = {"user": nit_empresa, "pwd": pwd}
+        print(f"[DEBUG] URL de autenticación: {auth_url}")
+        print(f"[DEBUG] Headers: {headers}")
+        print(f"[DEBUG] Payload de autenticación: {data}")
 
         try:
             response = requests.post(auth_url, headers=headers, data=data)
+            print(f"[DEBUG] Código de respuesta HTTP: {response.status_code}")
+
             if response.status_code == 200:
                 response_data = response.json()
+                print(f"[DEBUG] Respuesta JSON: {response_data}")
+
                 if response_data.get("status") == "OK":
                     token_body = response_data["body"]
                     token = token_body.get("token")
                     token_type = token_body.get("tokenType", "Bearer")
                     roles = token_body.get("roles", [])
 
-                    # Guardar o actualizar los datos del token en la base de datos
+                    print(f"[DEBUG] Token recibido: {token}")
+                    print(f"[DEBUG] Tipo de token: {token_type}")
+                    print(f"[DEBUG] Roles: {roles}")
+
                     token_data, created = Token_data.objects.update_or_create(
                         nit_empresa=nit_empresa,
                         defaults={
@@ -301,7 +315,8 @@ def autenticacion(request):
                         }
                     )
 
-                    # Si el token es nuevo, enviamos un mensaje de éxito
+                    print(f"[DEBUG] Token {'creado' if created else 'actualizado'} en la base de datos")
+
                     if created:
                         messages.success(request, "Autenticación exitosa y token guardado.")
                     else:
@@ -309,13 +324,17 @@ def autenticacion(request):
 
                     return redirect('autenticacion')
                 else:
+                    print(f"[DEBUG] Error en autenticación: {response_data.get('message')}")
                     messages.error(request, "Error en la autenticación: " + response_data.get("message", "Error no especificado"))
             else:
+                print("[DEBUG] Falló la solicitud HTTP")
                 messages.error(request, "Error en la autenticación.")
         except requests.exceptions.RequestException as e:
+            print(f"[DEBUG] Excepción en la solicitud HTTP: {e}")
             messages.error(request, "Error de conexión con el servicio de autenticación.")
 
-    return render(request, "autenticacion.html", {'tokens':tokens_saves})
+    print("[DEBUG] Renderizando página de autenticación")
+    return render(request, "autenticacion.html", {'tokens': tokens_saves})
 
 ######################################################
 ######################################################
@@ -943,6 +962,69 @@ class DescuentoUpdateAPIView(generics.UpdateAPIView):
 class DescuentoDestroyAPIView(generics.DestroyAPIView):
     queryset = Descuento.objects.all()
     serializer_class = DescuentoSerializer
+    
+# ========= SECUENCIA =========
+class SecuenciaListAPIView(generics.ListAPIView):
+    queryset = NumeroControl.objects.all()
+    serializer_class = SecuenciaSerializer
+
+class SecuenciaCreateAPIView(generics.CreateAPIView):
+    queryset = NumeroControl.objects.all()
+    serializer_class = SecuenciaSerializer
+
+class SecuenciaRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = NumeroControl.objects.all()
+    serializer_class = SecuenciaSerializer
+
+class SecuenciaUpdateAPIView(generics.UpdateAPIView):
+    queryset = NumeroControl.objects.all()
+    serializer_class = SecuenciaSerializer
+
+class SecuenciaDestroyAPIView(generics.DestroyAPIView):
+    queryset = NumeroControl.objects.all()
+    serializer_class = SecuenciaSerializer
+
+# ========= Recinto fiscal =========
+class RecintoFiscalListAPIView(generics.ListAPIView):
+    queryset = RecintoFiscal.objects.all()
+    serializer_class = RecintoFiscalSerializer
+
+class RecintoFiscalCreateAPIView(generics.CreateAPIView):
+    queryset = RecintoFiscal.objects.all()
+    serializer_class = RecintoFiscalSerializer
+
+class RecintoFiscalRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = RecintoFiscal.objects.all()
+    serializer_class = RecintoFiscalSerializer
+
+class RecintoFiscalUpdateAPIView(generics.UpdateAPIView):
+    queryset = RecintoFiscal.objects.all()
+    serializer_class = RecintoFiscalSerializer
+
+class RecintoFiscalDestroyAPIView(generics.DestroyAPIView):
+    queryset = RecintoFiscal.objects.all()
+    serializer_class = RecintoFiscalSerializer
+
+# ========= Regimen =========
+class RegimenListAPIView(generics.ListAPIView):
+    queryset = RegimenExportacion.objects.all()
+    serializer_class = RegimenSerializer
+
+class RegimenCreateAPIView(generics.CreateAPIView):
+    queryset = RegimenExportacion.objects.all()
+    serializer_class = RegimenSerializer
+
+class RegimenRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = RegimenExportacion.objects.all()
+    serializer_class = RegimenSerializer
+
+class RegimenUpdateAPIView(generics.UpdateAPIView):
+    queryset = RegimenExportacion.objects.all()
+    serializer_class = RegimenSerializer
+
+class RegimenDestroyAPIView(generics.DestroyAPIView):
+    queryset = RegimenExportacion.objects.all()
+    serializer_class = RegimenSerializer
 
 
 ######################################################
