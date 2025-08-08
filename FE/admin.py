@@ -12,7 +12,7 @@ from .models import (INCOTERMS, ActividadEconomica, NumeroControl, FacturaElectr
                            TipoInvalidacion, TipoPersona, TipoTransmision, TipoContingencia, TipoRetencionIVAMH, 
                            TipoGeneracionDocumento, TipoTransporte, TiposDocIDReceptor, TiposEstablecimientos, 
                            TiposServicio_Medico, CondicionOperacion, FormasPago, Plazo,
-                            Descuento, DetalleFactura, TipoMoneda, TipoUnidadMedida, EventoInvalidacion, EventoContingencia, LoteContingencia, representanteEmisor)
+                            Descuento, DetalleFactura, TipoMoneda, TipoUnidadMedida, EventoInvalidacion, EventoContingencia, LoteContingencia, representanteEmisor, RecintoFiscal, RegimenExportacion)
 
 
 # Lista de todos los modelos a registrar
@@ -205,5 +205,5 @@ class Token_dataAdmin(admin.ModelAdmin):
     #list_filter = ('created_at')
 
 admin.site.register(Token_data, Token_dataAdmin)
-
-
+admin.site.register(RecintoFiscal)
+admin.site.register(RegimenExportacion)
