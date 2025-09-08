@@ -165,6 +165,7 @@ TEMPLATES = [
             os.path.join(BASE_DIR, 'CONTABILIDAD/templates'),
             os.path.join(BASE_DIR, 'INFORMATICA/templates'),
             os.path.join(BASE_DIR, 'INVENTARIO/templates'),
+            os.path.join(BASE_DIR, 'AUTENTICACION/templates'),
         ],
         'APP_DIRS': True,
         'OPTIONS': {

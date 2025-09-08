@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+  <h4>Catálogo de productos</h4>
+
+  <form class="d-flex align-items-center gap-2" method="get">
+    <select name="receptor_id" id="receptor" class="form-select">
+      <option value="">— Cliente —</option>
+      {% for r in receptores %}
+        <option value="{{ r.id }}" {% if receptor_actual|stringformat:"s" == r.id|stringformat:"s" %}selected{% endif %}>
+          {{ r.num_documento }} — {{ r.nombre }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <input class="form-control" name="q" placeholder="Buscar…" value="{{ q }}">
+    <button class="btn btn-outline-secondary">Buscar</button>
+  </form>
+</div>
+
+  <div class="table-responsive">
+    <table class="table table-sm table-hover">
+      <thead><tr><th>Código</th><th>Descripción</th><th>Precio</th><th>Stock</th><th></th></tr></thead>
+      <tbody>
+        {% for p in productos %}
+        <tr>
+          <td>{{ p.codigo }}</td>
+          <td>{{ p.descripcion }}</td>
+          <td>${{ p.preunitario }}</td>
+          <td>{{ p.stock }}</td>
+          <td class="text-end">
+            <form class="agregar-carrito" data-pid="{{ p.id }}">
+              <input type="hidden" name="rid" value="{{ receptor_actual }}">
+              <button type="submit" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-cart-plus"></i> Agregar
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center text-muted">Sin productos</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="text-muted small">Tip: si pasas ?receptor_id=ID en la URL podrás agregar directo al carrito del cliente.</div>
+</div>
+
+<script>
+const receptorSel = document.getElementById('receptor');
+
+// Cuando cambie el cliente, recarga la página con ?receptor_id=
+receptorSel?.addEventListener('change', ()=>{
+  const params = new URLSearchParams(window.location.search);
+  if (receptorSel.value) params.set('receptor_id', receptorSel.value);
+  else params.delete('receptor_id');
+  window.location.search = params.toString();
+});
+
+// Mantener el hidden "rid" de cada form sincronizado con el select
+function syncRidHidden(){
+  document.querySelectorAll('form.agregar-carrito input[name="rid"]').forEach(h=>{
+    h.value = receptorSel?.value || '';
+  });
+}
+syncRidHidden();
+receptorSel?.addEventListener('change', syncRidHidden);
+
+// Enviar a /carrito/add-go/
+document.querySelectorAll('form.agregar-carrito').forEach(f=>{
+  f.addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const pid = f.dataset.pid;
+    const rid = (new FormData(f)).get('rid');
+    if(!rid){ alert('Seleccione un cliente.'); return; }
+    window.location.href = "{% url 'carrito_add_go' %}" +
+      "?pid=" + encodeURIComponent(pid) +
+      "&rid=" + encodeURIComponent(rid) +
+      "&qty=1";
+  });
+});
+</script>
+
+{% endblock %}

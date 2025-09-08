@@ -1,6 +1,10 @@
 from django.conf import settings
 from django.db import models
 import uuid
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+from FE.models import Emisor_fe
 
 class PasswordResetCode(models.Model):
     #NEW
@@ -28,6 +32,26 @@ class ConfiguracionServidor(models.Model):
     def __str__(self):
         return f"{self.clave}"
     
+class UsuarioEmisor(models.Model):
+    """
+    Relación entre usuarios y emisores. Permite varios emisores por usuario,
+    marcar uno como predeterminado, y activar/desactivar la relación.
+    """
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="emisores_rel")
+    emisor = models.ForeignKey(Emisor_fe, on_delete=models.CASCADE, related_name="usuarios_rel")
+    activo = models.BooleanField(default=True)
+    es_predeterminado = models.BooleanField(default=False)
+    creado = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "emisor")
+        verbose_name = "Vínculo Usuario–Emisor"
+        verbose_name_plural = "Vínculos Usuario–Emisor"
+
+    def __str__(self):
+        return f"{self.user} → {self.emisor} ({'pred.' if self.es_predeterminado else 'sec.'})"
+    
+# Tu modelo Perfilusuario ya existe; solo añadimos el emisor activo:
 class Perfilusuario(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     nombre = models.CharField(max_length=100, null=True, blank=True)
@@ -37,5 +61,18 @@ class Perfilusuario(models.Model):
     fecha_nacimiento = models.DateField(null=True, blank=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
+    # NUEVO: emisor activo
+    emisor_activo = models.ForeignKey(
+        Emisor_fe, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="usuarios_activos"
+    )
+
     def __str__(self):
-        return f"{self.user.email} – {self.nombre} {self.apellido}"
+        return f"{self.user.email} – {self.nombre or ''} {self.apellido or ''}".strip()
+
+
+# Crear automáticamente el perfil al crear el usuario
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def crear_perfil_usuario(sender, instance, created, **kwargs):
+    if created:
+        Perfilusuario.objects.create(user=instance)

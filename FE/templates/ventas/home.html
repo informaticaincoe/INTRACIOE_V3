@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+  <h3 class="mb-4">Ventas</h3>
+  <div class="row g-3">
+    <div class="col-md-3">
+      <a class="text-decoration-none" href="{% url 'clientes_list' %}">
+        <div class="card shadow-sm h-100">
+          <div class="card-body text-center">
+            <div class="display-6">👤</div>
+            <div class="fw-bold mt-2">Clientes</div>
+            <div class="text-muted">Alta / edición / listado</div>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col-md-3">
+      <a class="text-decoration-none" href="{% url 'catalogo_productos' %}">
+        <div class="card shadow-sm h-100">
+          <div class="card-body text-center">
+            <div class="display-6">📦</div>
+            <div class="fw-bold mt-2">Catálogo</div>
+            <div class="text-muted">Productos disponibles</div>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col-md-3">
+      <a class="text-decoration-none" href="{% url 'ventas_list' %}">
+        <div class="card shadow-sm h-100">
+          <div class="card-body text-center">
+            <div class="display-6">🧾</div>
+            <div class="fw-bold mt-2">Ventas</div>
+            <div class="text-muted">Listado y detalle</div>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col-md-3">
+      <a class="text-decoration-none" href="{% url 'devoluciones_list' %}">
+        <div class="card shadow-sm h-100">
+          <div class="card-body text-center">
+            <div class="display-6">↩️</div>
+            <div class="fw-bold mt-2">Devoluciones</div>
+            <div class="text-muted">Gestión de devoluciones</div>
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-end mb-1">
+    
+    <div class="me-auto">
+      <h4>Clientes</h4>
+    </div>
+
+    <div class="me-3">
+      <a href="{% url 'clientes_crear' %}" class="btn btn-primary">Nuevo</a>
+    </div>
+
+    <a href="{% url 'carrito_ver' %}" class="btn btn-outline-primary">
+      <i class="bi bi-cart3"></i> Carrito
+      {% if carrito_count and carrito_count > 0 %}
+        <span class="badge bg-primary rounded-pill">{{ carrito_count }}</span>
+      {% endif %}
+    </a>
+  </div>
+
+  <form class="row g-2 mb-3">
+    <div class="col-auto">
+      <input name="q" class="form-control" placeholder="Buscar por nombre o documento" value="{{ q }}">
+    </div>
+    <div class="col-auto">
+      <button class="btn btn-outline-secondary">Buscar</button>
+    </div>
+  </form>
+
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+      <thead><tr><th>Nombre</th><th>Documento</th><th>Teléfono</th><th>Correo</th><th></th></tr></thead>
+      <tbody>
+        {% for c in clientes %}
+        <tr>
+          <td>{{ c.nombre }}</td>
+          <td>{{ c.num_documento }}</td>
+          <td>{{ c.telefono }}</td>
+          <td>{{ c.correo }}</td>
+          <td class="text-end">
+            <a href="{% url 'clientes_editar' c.id %}" class="btn btn-sm btn-outline-primary">Editar</a>
+            <a href="{% url 'clientes_eliminar' c.id %}" class="btn btn-sm btn-outline-danger">Eliminar</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center text-muted">Sin resultados</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

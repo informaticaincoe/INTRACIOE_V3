@@ -45,10 +45,11 @@
   <button id="btnInvalidarSeleccionadas" class="btn btn-danger mb-3">Anular seleccionadas</button>
 
   <!-- Botón para invalidar las facturas seleccionadas -->
-  <a href="{% url 'exportar_facturas_excel' %}" class="btn btn-danger">facturas sin anular xlsx</a>
-  
+  <a href="{% url 'exportar_facturas_excel' %}" class="btn btn-success">Facturas sin anular (Excel)</a>
+
   <!-- Tabla de Facturas -->
   <form id="formInvalidarFacturas">
+    {% csrf_token %}
     <div class="table-responsive">
       <table class="table table-striped">
         <thead class="table-dark">
@@ -83,13 +84,13 @@
               {% if factura.dte_invalidacion.all|length > 0 %}
                 {% with evento=factura.dte_invalidacion.all.0 %}
                   {% if evento.recibido_mh %}
-                    <i class="fa fa-ban text-danger" title="Anulada"></i>
+                    <i class="bi bi-x-octagon-fill text-danger" title="Anulada"></i>
                   {% else %}
-                    <i class="fa fa-hourglass-half text-warning" title="En proceso de anulación"></i>
+                    <i class="bi bi-hourglass-split text-warning" title="En proceso de anulación"></i>
                   {% endif %}
                 {% endwith %}
               {% else %}
-                <i class="fa fa-check text-success" title="Viva"></i>
+                <i class="bi bi-check-circle-fill text-success" title="Viva"></i>
               {% endif %}
             </td>
             <td>{{ factura.numero_control }}</td>
@@ -189,49 +190,103 @@
 <!-- JavaScript para manejar la selección y la llamada AJAX -->
 <script>
 document.addEventListener('DOMContentLoaded', function(){
-  // Seleccionar/des-seleccionar todos los checkboxes
+  const form = document.getElementById('formInvalidarFacturas');
+  const btnInvalidar = document.getElementById('btnInvalidarSeleccionadas');
   const seleccionarTodo = document.getElementById('seleccionarTodo');
-  seleccionarTodo.addEventListener('change', function(){
-    const checkboxes = document.querySelectorAll('input[name="factura_ids"]');
-    checkboxes.forEach(chk => chk.checked = seleccionarTodo.checked);
+  const modalEl = document.getElementById('respuestaModal');
+  const resultadoDiv = document.getElementById('resultadoInvalidacion');
+  const csrfInput = form.querySelector('input[name="csrfmiddlewaretoken"]');
+
+  // Habilitar / deshabilitar botón según selección
+  function toggleBoton() {
+    const anyChecked = form.querySelectorAll('input[name="factura_ids"]:checked').length > 0;
+    btnInvalidar.disabled = !anyChecked;
+  }
+  toggleBoton();
+
+  // Seleccionar/des-seleccionar todas
+  if (seleccionarTodo) {
+    seleccionarTodo.addEventListener('change', function(){
+      form.querySelectorAll('input[name="factura_ids"]').forEach(chk => chk.checked = seleccionarTodo.checked);
+      toggleBoton();
+    });
+  }
+
+  // Detectar cambios por fila
+  form.addEventListener('change', function(e){
+    if (e.target && e.target.name === 'factura_ids') toggleBoton();
   });
 
-  // Manejar el click en el botón "Anular seleccionadas"
-  const btnInvalidarSeleccionadas = document.getElementById('btnInvalidarSeleccionadas');
-  btnInvalidarSeleccionadas.addEventListener('click', function(e){
+  // Click en “Anular seleccionadas”
+  btnInvalidar.addEventListener('click', function(e){
     e.preventDefault();
-    const form = document.getElementById('formInvalidarFacturas');
+
     const formData = new FormData(form);
+    // Seguridad mínima: si no hay seleccionadas, no enviar
+    if (!form.querySelector('input[name="factura_ids"]:checked')) return;
+
+    btnInvalidar.disabled = true;
+    btnInvalidar.innerHTML = 'Anulando...';
 
     fetch("{% url 'invalidar_varias_dte' %}", {
       method: 'POST',
       body: formData,
       headers: {
         'X-Requested-With': 'XMLHttpRequest',
-        // Si usas CSRF token, inclúyelo; por ejemplo:
-        'X-CSRFToken': '{{ csrf_token }}'
+        'X-CSRFToken': csrfInput ? csrfInput.value : ''
       }
     })
-    .then(response => response.json())
+    .then(r => r.json())
     .then(data => {
-       console.log("Respuesta:", data);
-       let htmlResultado = '';
-       if (data.results && data.results.length) {
-         data.results.forEach(result => {
-           htmlResultado += `<p><strong>Factura ${result.factura_id}:</strong> ${result.mensaje}<br><small>${JSON.stringify(result.detalle)}</small></p>`;
-         });
-       } else {
-         htmlResultado = "<p>No se recibió respuesta.</p>";
-       }
-       document.getElementById('resultadoInvalidacion').innerHTML = htmlResultado;
-       const myModal = new bootstrap.Modal(document.getElementById('respuestaModal'));
-       myModal.show();
+      // Construir el resumen para el modal
+      let htmlResultado = '';
+      if (data.results && data.results.length) {
+        data.results.forEach(result => {
+          htmlResultado += `<p><strong>Factura ${result.factura_id}:</strong> ${result.mensaje}`;
+          if (result.detalle) {
+            let detTxt;
+            try { detTxt = typeof result.detalle === 'string' ? result.detalle : JSON.stringify(result.detalle); }
+            catch { detTxt = ''; }
+            if (detTxt) htmlResultado += `<br><small>${detTxt}</small>`;
+          }
+          htmlResultado += `</p>`;
+
+          // Actualiza visualmente la fila si fue anulada OK
+          if (result.exito || /anulada/i.test(result.mensaje)) {
+            const rowChk = form.querySelector(`input[name="factura_ids"][value="${result.factura_id}"]`);
+            if (rowChk) {
+              const row = rowChk.closest('tr');
+              const estadoCell = row ? row.children[1] : null; // 2da celda = estado (ajusta si tu orden cambia)
+              if (estadoCell) {
+                estadoCell.innerHTML = `<i class="bi bi-x-octagon-fill text-danger" title="Anulada"></i>`;
+              }
+              // Si quieres, desmarca la fila anulada:
+              rowChk.checked = false;
+            }
+          }
+        });
+      } else {
+        htmlResultado = "<p>No se recibió respuesta.</p>";
+      }
+
+      resultadoDiv.innerHTML = htmlResultado;
+      const myModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+      myModal.show();
     })
-    .catch(error => {
-       console.error('Error:', error);
+    .catch(err => {
+      console.error(err);
+      resultadoDiv.innerHTML = `<p class="text-danger">Error al anular: ${err}</p>`;
+      const myModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+      myModal.show();
+    })
+    .finally(() => {
+      btnInvalidar.disabled = false;
+      btnInvalidar.innerHTML = 'Anular seleccionadas';
+      toggleBoton();
     });
   });
 });
 </script>
+
 
 {% endblock %}

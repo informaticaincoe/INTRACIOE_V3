@@ -184,14 +184,16 @@ class ProductoProveedor(models.Model):
 
 # MODELO PARA COMPRAS
 class Compra(models.Model):
+    ESTADOS = [
+        ('Pendiente','Pendiente'),
+        ('Pagado','Pagado'),
+        ('Devuelto','Devuelto'),     # <- NUEVO
+        ('Cancelado','Cancelado'),
+    ]
     proveedor = models.ForeignKey(Proveedor, on_delete=models.CASCADE)
     fecha = models.DateTimeField(auto_now_add=True)
     total = models.DecimalField(max_digits=14, decimal_places=2, default=0.00)
-    estado = models.CharField(
-        max_length=20,
-        choices=[('Pendiente','Pendiente'),('Pagado','Pagado'),('Cancelado','Cancelado')],
-        default='Pendiente'
-    )
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='Pendiente')
     # Nuevos campos para Anexo de Compras
     tipo_documento = models.CharField(max_length=10, blank=True, null=True)
     numero_documento = models.CharField(max_length=100, blank=True, null=True)

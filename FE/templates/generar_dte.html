@@ -1,351 +1,833 @@
 {% extends "base.html" %}
 {% load static %}
+{% block extra_css %}
+<style>
+  .kbd{border:1px solid #d0d7de;border-bottom-width:2px;border-radius:4px;padding:0 .25rem;font-size:.85em;background:#f8fafc}
+  .pos-sticky{position:sticky;top:76px}
+  .table-sm td .form-control-sm{min-height: calc(1.5em + .5rem + 2px)}
+  .stock-low{color:#dc3545}
+  .stock-ok{color:#6c757d}
+  .combo-menu{display:none;max-height:260px;overflow:auto;border:1px solid #e5e7eb;border-radius:.5rem;margin-top:.25rem;background:#fff}
+  .combo-item.active{background:#eef2ff}
+</style>
+{% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="{% static 'fe/css/factura.css' %}">
-<div class="container mt-5">
-  <div class="card shadow p-4">
-    <h2 class="text-center mb-4">Generar Factura Electrónica</h2>
+<div class="container py-3">
+  <form method="post" id="form-pos" autocomplete="off">
+    {% csrf_token %}
 
-    <!-- Stepper -->
-    <ol class="stepper" aria-label="Progreso">
-      <li class="active" data-step="1">Config.</li>
-      <li data-step="2">Receptor</li>
-      <li data-step="3">Doc. Rel.</li>
-      <li data-step="4">Productos</li>
-      <li data-step="5">Pago</li>
-      <li data-step="6">Resumen</li>
-    </ol>
-
-    <!-- Datos del Emisor (solo lectura) -->
-    {% if emisor %}
-    <div class="mb-3 info-box">
-      <div class="d-flex align-items-center gap-2">
-        <h4 class="mb-0">Datos del Emisor</h4>
-        <span class="text-muted small">Solo lectura</span>
+    <!-- Encabezado compacto -->
+    <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+      <div class="me-auto">
+        <h4 class="mb-0">Facturación rápida</h4>
+        <small class="text-muted">Documento → Cliente → Productos → Pago → Extras</small>
       </div>
-      <div class="row mt-2">
-        <div class="col-md-3"><strong>NIT:</strong> {{ emisor.nit }}</div>
-        <div class="col-md-3"><strong>Ambiente:</strong> {{ emisor.ambiente.descripcion }}</div>
-        <div class="col-md-3"><strong>Teléfono:</strong> {{ emisor.telefono }}</div>
-        <div class="col-md-3"><strong>Email:</strong> {{ emisor.email }}</div>
-        <div class="col-12"><strong>Dirección Comercial:</strong> {{ emisor.direccion_comercial }}</div>
+      <div class="text-end">
+        <div class="small text-muted">No. control</div>
+        <div class="fw-semibold" id="numero_control_text">{{ numero_control|default:"—" }}</div>
+        <input type="hidden" name="numero_control" id="numero_control_input" value="{{ numero_control }}">
+        {% if codigo_generacion %}
+          <input type="hidden" name="codigo_generacion" value="{{ codigo_generacion }}">
+        {% endif %}
       </div>
     </div>
-    {% endif %}
 
-    <form id="form-factura">
-      <!-- PASO 1: Configuración -->
-      <section class="form-section" data-step="1">
-        <div class="section-header">
-          <h4>1) Configuración de Factura</h4>
-          <small class="text-muted">Define tipo de documento y condiciones</small>
+    <div class="row g-3">
+      <!-- Columna izquierda -->
+      <div class="col-lg-8">
+
+        {% comment %} <!-- 1) Tipo de documento -->
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="mb-0">1) Tipo de documento</h6>
+              <small class="text-muted">Obligatorio</small>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+              {% for d in tipoDocumentos %}
+                <input type="radio" class="btn-check" name="tipo_documento_seleccionado" id="doc-{{ d.codigo }}" value="{{ d.codigo }}" {% if documento_seleccionado == d.codigo or forloop.first and not documento_seleccionado %}checked{% endif %}>
+                <label class="btn btn-outline-primary" for="doc-{{ d.codigo }}">{{ d.descripcion }}</label>
+              {% endfor %}
+            </div>
+          </div>
+        </div> {% endcomment %}
+
+        <!-- 1) Tipo de documento (SELECT) -->
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="mb-0">1) Tipo de documento</h6>
+              <small class="text-muted">Obligatorio</small>
+            </div>
+
+            <label class="form-label small mb-1">Seleccione el tipo de DTE</label>
+            <select name="tipo_documento_seleccionado" id="tipo_documento_seleccionado" class="form-select" required>
+              {% for d in tipoDocumentos %}
+                <option value="{{ d.codigo }}"
+                  {% if documento_seleccionado == d.codigo or forloop.first and not documento_seleccionado %}selected{% endif %}>
+                  {{ d.descripcion }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
         </div>
-        <div class="row">
-          <div class="col-md-4">
-            <label for="condicion_op" class="form-label">Condición de Operación</label>
-            <select id="condicion_op" name="condicion_operacion" class="form-select" required>
-              {% for tipo in tipooperaciones %}
-                <option value="{{ tipo.id }}">{{ tipo.descripcion }}</option>
-              {% endfor %}
-            </select>
-            <div class="form-hint">Ej.: Contado, Crédito, etc.</div>
-          </div>
 
-          <div class="col-md-4">
-            <label for="tipo_documento_select" class="form-label">Tipo de Documento</label>
-            <select name="tipo_documento_seleccionado" class="form-select" id="tipo_documento_select" required data-bs-toggle="tooltip" title="Cambia la forma de calcular el IVA">
-              {% for dte in tipoDocumentos %}
-                <option value="{{ dte.codigo }}" {% if dte.codigo == documento_seleccionado %}selected{% endif %}>{{ dte.descripcion }}</option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <div class="col-md-4">
-            <label class="form-label d-block">Retenciones</label>
-            <div class="d-flex gap-3 align-items-center">
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="retencion_iva_checkbox">
-                <label class="form-check-label" for="retencion_iva_checkbox">Ret. IVA</label>
+        <!-- 2) Cliente -->
+        <div class="card shadow-sm mt-3">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="mb-0">2) Cliente</h6>
+              <small class="text-muted">Obligatorio</small>
+            </div>
+            <div class="row g-2">
+              <div class="col-md-8">
+                <label class="form-label small mb-1">Seleccione cliente</label>
+                <select name="receptor_id" id="receptor_id" class="form-select" required>
+                  <option value="">— Seleccione —</option>
+                  {% for r in receptores %}
+                    <option value="{{ r.id }}">{{ r.num_documento }} — {{ r.nombre }}</option>
+                  {% endfor %}
+                </select>
               </div>
-              <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-retencion-iva" style="display:none;" data-bs-toggle="modal" data-bs-target="#retencionIvaModal">Configurar</button>
-
-              <div class="form-check ms-3">
-                <input class="form-check-input" type="checkbox" id="retencion_renta_checkbox">
-                <label class="form-check-label" for="retencion_renta_checkbox">Ret. Renta</label>
+              <div class="col-md-4">
+                <label class="form-label small mb-1">Condición</label>
+                <select name="condicion_operacion" id="condicion_op" class="form-select" required>
+                  {% for t in tipooperaciones %}
+                    <option value="{{ t.id }}">{{ t.descripcion }}</option>
+                  {% endfor %}
+                </select>
               </div>
-              <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-retencion-renta" style="display:none;" data-bs-toggle="modal" data-bs-target="#retencionRentaModal">Configurar</button>
             </div>
-          </div>
 
-          <div class="col-md-4 mt-3">
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" id="no_gravado_checkbox">
-              <label class="form-check-label" for="no_gravado_checkbox">Base imponible</label>
-            </div>
-          </div>
-        </div>
-
-        <div class="row mt-3 g-3">
-          <div class="col-md-3">
-            <label for="numero_control_input" class="form-label">Número de Control</label>
-            <input type="text" name="numero_control" class="form-control" readonly id="numero_control_input" value="{{ numero_control }}">
-          </div>
-          <div class="col-md-3">
-            <label for="codigo_generacion_input" class="form-label">Código de Generación</label>
-            <input type="text" id="codigo_generacion_input" name="codigo_generacion" class="form-control" readonly value="{{ codigo_generacion }}">
-          </div>
-          <div class="col-md-3">
-            <label for="fecha_generacion_input" class="form-label">Fecha</label>
-            <input type="date" id="fecha_generacion_input" name="fecha_generacion" class="form-control" readonly value="{{ fecha_generacion|date:'Y-m-d' }}">
-          </div>
-          <div class="col-md-3">
-            <label for="hora_generacion_input" class="form-label">Hora</label>
-            <input type="time" id="hora_generacion_input" name="hora_generacion" class="form-control" readonly value="{{ hora_generacion }}">
-          </div>
-        </div>
-
-        <div class="section-footer">
-          <button class="btn btn-primary btn-next" type="button" data-next="2">Continuar</button>
-        </div>
-      </section>
-
-      <!-- PASO 2: Receptor -->
-      <section class="form-section" data-step="2" hidden>
-        <div class="section-header">
-          <h4>2) Receptor</h4>
-          <small class="text-muted">Selecciona o crea el receptor</small>
-        </div>
-
-        <div class="row g-3">
-          <div class="col-md-6">
-            <label for="receptor-select" class="form-label">Receptor</label>
-            <select class="form-select" id="receptor-select" name="receptor_id" required>
-              <option value="">Seleccione un receptor</option>
-              {% for receptor in receptores %}
-                <option value="{{ receptor.id }}">{{ receptor.num_documento }} - {{ receptor.nombre }}</option>
-              {% endfor %}
-              <option value="nuevo">Añadir nuevo receptor</option>
-            </select>
-          </div>
-        </div>
-
-        <div id="nuevo-receptor" class="mt-3" hidden>
-          <div class="row g-3">
-            <div class="col-md-4">
-              <label for="nit_receptor_input" class="form-label">NIT</label>
-              <input type="text" id="nit_receptor_input" name="nit_receptor" class="form-control" placeholder="0000-000000-000-0">
-            </div>
-            <div class="col-md-8">
-              <label for="nombre_receptor_input" class="form-label">Nombre o Razón Social</label>
-              <input type="text" id="nombre_receptor_input" name="nombre_receptor" class="form-control" placeholder="Empresa XYZ, S.A. de C.V.">
-            </div>
-            <div class="col-md-4">
-              <label for="nrc_receptor_input" class="form-label">NRC</label>
-              <input type="text" id="nrc_receptor_input" name="nrc_receptor" class="form-control" placeholder="123456-7">
-            </div>
-            <div class="col-md-8">
-              <label for="direccion_receptor_input" class="form-label">Dirección</label>
-              <textarea id="direccion_receptor_input" name="direccion_receptor" class="form-control" placeholder="Calle, número, municipio"></textarea>
-            </div>
-            <div class="col-md-4">
-              <label for="telefono_receptor_input" class="form-label">Teléfono</label>
-              <input type="text" id="telefono_receptor_input" name="telefono_receptor" class="form-control" placeholder="7777-7777">
-            </div>
-            <div class="col-md-8">
-              <label for="correo_receptor_input" class="form-label">Correo</label>
-              <input type="email" id="correo_receptor_input" name="correo_receptor" class="form-control" placeholder="correo@dominio.com">
+            <div class="row g-2 mt-2">
+              <div class="col-md-4">
+                <input type="text" class="form-control" name="nit_receptor" placeholder="NIT (opcional)">
+              </div>
+              <div class="col-md-4">
+                <input type="text" class="form-control" name="nombre_receptor" placeholder="Nombre (opcional)">
+              </div>
+              <div class="col-md-4">
+                <input type="text" class="form-control" name="telefono_receptor" placeholder="Tel. (opcional)">
+              </div>
+              <div class="col-12 mt-2">
+                <input type="text" class="form-control" name="direccion_receptor" placeholder="Dirección (opcional)">
+              </div>
+              <div class="col-12 mt-2">
+                <input type="email" class="form-control" name="correo_receptor" placeholder="Correo (opcional)">
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="section-footer">
-          <button class="btn btn-secondary btn-prev" type="button" data-prev="1">Atrás</button>
-          <button class="btn btn-primary btn-next" type="button" data-next="3">Continuar</button>
-        </div>
-      </section>
-
-      <!-- PASO 3: Documento relacionado -->
-      <section class="form-section" data-step="3" hidden>
-        <div class="section-header">
-          <h4>3) Documentos Relacionados</h4>
-          <small class="text-muted">Opcional, si corresponde</small>
-        </div>
-
-        <div class="row align-items-end g-3">
-          <div class="col-md-5">
-            <label for="documento_select" class="form-label">Tipo de documento</label>
-            <select name="documento_seleccionado" class="form-select" id="documento_select">
-              <option value="S">Seleccione</option>
-              {% for tipo in tipoGenDocumentos %}
-                <option value="{{ tipo.codigo }}">{{ tipo.descripcion }}</option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <div class="col-md-4" id="div-electronic" hidden>
-            <label for="documento_relacionado_input" class="form-label">Documento (Electrónico)</label>
-            <input type="text" name="documento_relacionado" class="form-control" id="documento_relacionado_input" placeholder="Código de generación">
-          </div>
-
-          <div class="col-md-4" id="div-physical" hidden>
-            <label class="form-label">&nbsp;</label>
-            <button type="button" class="btn btn-outline-secondary w-100" id="btn-doc-fisico">+ Físico</button>
-          </div>
-
-          <div class="col-md-3">
-            <button type="button" class="btn btn-outline-primary" id="btn_add_relacion" hidden>Agregar</button>
-          </div>
-
-          <div class="col-12">
-            <div class="small text-muted">Total Pagar documento relacionado: {{ total_pagar_doc_r }}</div>
-          </div>
-        </div>
-
-        <div class="mt-3">
-          <h5 class="mb-2">Facturas Relacionadas</h5>
-          <div id="facturasAccordion" class="accordion slim-scroll">
-            <div class="empty-state">No hay documentos relacionados.</div>
-          </div>
-        </div>
-
-        <div class="section-footer">
-          <button class="btn btn-secondary btn-prev" type="button" data-prev="2">Atrás</button>
-          <button class="btn btn-primary btn-next" type="button" data-next="4">Continuar</button>
-        </div>
-      </section>
-
-      <!-- PASO 4: Productos -->
-      <section class="form-section" data-step="4" hidden>
-        <div class="section-header">
-          <h4>4) Productos</h4>
-          <small class="text-muted">Agrega líneas de la factura</small>
-        </div>
-        <div class="d-flex justify-content-end">
-          <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#productosModal">
-            + Productos
-          </button>
-        </div>
-
-        <div class="table-responsive mt-3">
-          <table id="tabla-productos" class="table table-hover align-middle">
-            <thead>
-              <tr>
-                <th>Producto</th>
-                <th>P. Unit. (Neto)</th>
-                <th>IVA Unit.</th>
-                <th>Cantidad</th>
-                <th>Total Neto</th>
-                <th>Desc. ítem</th>
-                <th>Ventas Grav.</th>
-                <th>IVA ítem</th>
-                <th>Aplica IVA</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="tbody-productos">
-              <tr class="empty-row">
-                <td colspan="10" class="empty-state">No has agregado productos aún.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="section-footer">
-          <button class="btn btn-secondary btn-prev" type="button" data-prev="3">Atrás</button>
-          <button class="btn btn-primary btn-next" type="button" data-next="5">Continuar</button>
-        </div>
-      </section>
-
-      <!-- PASO 5: Formas de pago -->
-      <section class="form-section" data-step="5" hidden>
-        <div class="section-header">
-          <h4>5) Formas de Pago</h4>
-          <small class="text-muted">Indica cómo se cubrirá el total</small>
-        </div>
-        <div class="d-flex justify-content-end">
-          <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#formasPagoModal">
-            + Formas de Pago
-          </button>
-        </div>
-
-        <div class="pay-status mt-2">
-          <span><strong>Total a Pagar:</strong> $<span id="total-pagar-fp">0.00</span></span>
-          <span class="divider">|</span>
-          <span><strong>Recibido:</strong> $<span id="recibido">0.00</span></span>
-        </div>
-
-        <div class="section-footer">
-          <button class="btn btn-secondary btn-prev" type="button" data-prev="4">Atrás</button>
-          <button class="btn btn-primary btn-next" type="button" data-next="6">Continuar</button>
-        </div>
-      </section>
-
-      <!-- PASO 6: Resumen y extensión -->
-      <section class="form-section" data-step="6" hidden>
-        <div class="section-header">
-          <h4>6) Resumen y Extensión</h4>
-          <small class="text-muted">Revisa totales y completa datos del responsable (si aplica)</small>
-        </div>
-
-        <div class="resumen">
-          <div class="row">
-            <div class="col-md-4"><p><strong>SubTotal Neto:</strong> $<span id="subtotal-neto">0.00</span></p></div>
-            <div class="col-md-4"><p><strong>Total IVA:</strong> $<span id="total-iva">0.00</span></p></div>
-            <div class="col-md-4"><p><strong>Sumatoria de ventas:</strong> $<span id="total-incl">0.00</span></p></div>
-
-            <div class="col-md-6">
-              <label for="descuento-global" class="form-label mb-0">Descuento (%)</label>
-              <input type="number" id="descuento-global" name="descuento_global_input" class="form-control" value="0" min="0" max="100">
-            </div>
-            <div class="col-md-6">
-              <label for="descuento_gravado" class="form-label mb-0">Descuento (Ventas g.)</label>
-              <input type="number" id="descuento_gravado" name="descuento_gravado_input" class="form-control" value="0" min="0" max="100">
+        <!-- 3) Productos -->
+        <div class="card shadow-sm mt-3">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="mb-0">3) Productos</h6>
+              <small class="text-muted">Buscar por código o nombre. Enter agrega.</small>
             </div>
 
-            <div class="col-md-6"><p class="mb-1"><strong>Monto Descuento:</strong> $<span id="monto_descuento" name="monto_descuento_input">0.00</span></p></div>
-            <div class="col-md-6 d-flex align-items-center">
-              <label for="saldo_favor_input" class="me-2 mb-0"><strong>Saldo a Favor:</strong></label>
-              <input name="saldo_favor" id="saldo_favor_input" class="form-control" value="0" style="max-width:160px">
-            </div>
-            <div class="col-md-6"><p class="mb-1"><strong>Sub Total:</strong> $<span id="sub-total-resumen">0.00</span></p></div>
-            <div class="col-md-6"><p class="mb-1"><strong>Valor tributo:</strong> $<span id="monto_tributo" name="tributo_input" class="tributo-input">0.00</span></p></div>
-            <div class="col-md-6"><p class="mb-1"><strong>Monto Total Op.:</strong> $<span id="total-operacion">0.00</span></p></div>
-            <div class="col-md-6"><p class="mb-1"><strong>Total a Pagar:</strong> $<span id="total-pagar">0.00</span></p></div>
-          </div>
-        </div>
+            <div class="row g-2 align-items-end">
+              <div class="col-md-6">
+                <label class="form-label small mb-1">Producto</label>
+                <div class="combobox" id="productoPicker">
+                  <input type="text" class="form-control" id="productoPickerInput" placeholder="Busca por código o nombre… (↑/↓ navega, Enter selecciona)">
+                  <div class="combo-menu" id="productoPickerMenu" role="listbox" aria-label="Productos"></div>
+                </div>
+                <div class="form-text">Tip: escanea o escribe; Enter selecciona.</div>
+              </div>
 
-        <div class="mt-3">
-          <h5>Extensión</h5>
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label for="nombre_responsable" class="form-label">Nombre responsable</label>
-              <input type="text" id="nombre_responsable" name="resp_nombre_input" class="form-control" placeholder="Nombre del Responsable">
-              <div class="form-hint">Obligatorio si Nota de Crédito ≥ $25,000</div>
+              <div class="col-md-2">
+                <label class="form-label small mb-1">Cant.</label>
+                <input type="number" min="1" value="1" id="cantidadProducto" class="form-control text-center">
+              </div>
+
+              <div class="col-md-2">
+                <label class="form-label small mb-1">Precio</label>
+                <div class="input-group">
+                  <span class="input-group-text">$</span>
+                  <input type="number" step="0.01" min="0" id="precioProducto" class="form-control">
+                </div>
+              </div>
+
+              <div class="col-md-2 d-grid">
+                <button type="button" id="btnAgregarProducto" class="btn btn-primary">
+                  <i class="bi bi-plus-circle me-1"></i> Agregar
+                </button>
+              </div>
+
+              <div class="col-12">
+                <div class="form-check mt-1">
+                  <input class="form-check-input" type="checkbox" id="aplicaIvaProducto" checked>
+                  <label class="form-check-label" for="aplicaIvaProducto">Aplica IVA (13%)</label>
+                </div>
+              </div>
             </div>
-            <div class="col-md-6">
-              <label for="documento_responsable" class="form-label">Número de documento del responsable</label>
-              <input type="text" id="documento_responsable" name="resp_documento_input" class="form-control" placeholder="DUI/NIT">
+
+            <div class="table-responsive mt-3">
+              <table class="table table-sm align-middle" id="tabla-items">
+                <thead class="table-light">
+                  <tr>
+                    <th style="width:40%">Producto</th>
+                    <th class="text-end" style="width:10%">P. Unit</th>
+                    <th class="text-end" style="width:10%">Cant.</th>
+                    <th class="text-end" style="width:10%">Desc. (%)</th>
+                    <th class="text-center" style="width:10%">IVA</th>
+                    <th class="text-end" style="width:10%">Total</th>
+                    <th class="text-end" style="width:10%"></th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-items">
+                  <tr class="empty">
+                    <td colspan="7" class="text-center text-muted py-3">Sin productos agregados.</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
 
-        <div class="section-footer d-grid mt-3">
-          <button id="btn-generar" type="submit" class="btn btn-primary">Generar Factura</button>
-          <div id="form-errors" class="form-errors" aria-live="polite"></div>
+        
+        <!-- 5) Extras -->
+        <div class="card shadow-sm mt-3">
+          <div class="card-body">
+            <a class="d-flex align-items-center justify-content-between text-decoration-none" data-bs-toggle="collapse" href="#extrasCollapse" role="button" aria-expanded="false" aria-controls="extrasCollapse">
+              <h6 class="mb-0">5) Extras</h6>
+              <i class="bi bi-chevron-down"></i>
+            </a>
+            <div class="collapse mt-3" id="extrasCollapse">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <div class="border rounded p-3">
+                    <div class="form-check form-switch mb-2">
+                      <input class="form-check-input" type="checkbox" id="ret_iva_sw" name="retencion_iva">
+                      <label class="form-check-label" for="ret_iva_sw">Retención IVA</label>
+                    </div>
+                    <div class="row g-2">
+                      <div class="col-6">
+                        <label class="form-label small mb-1">Porcentaje</label>
+                        <input type="number" step="0.01" min="0" id="ret_iva_pct" class="form-control" value="1.00">
+                        <!-- espejo para la vista -->
+                        <input type="hidden" name="porcentaje_retencion_iva" id="porcentaje_retencion_iva" value="1.00">
+                      </div>
+                      <div class="col-6">
+                        <label class="form-label small mb-1">Monto</label>
+                        <input type="number" step="0.01" min="0" id="ret_iva_mto" class="form-control" value="0.00">
+                      </div>
+                    </div>
+                    <hr class="my-3">
+                    <div class="form-check form-switch mb-2">
+                      <input class="form-check-input" type="checkbox" id="ret_renta_sw" name="retencion_renta">
+                      <label class="form-check-label" for="ret_renta_sw">Retención Renta</label>
+                    </div>
+                    <div class="row g-2">
+                      <div class="col-6">
+                        <label class="form-label small mb-1">Porcentaje</label>
+                        <input type="number" step="0.01" min="0" id="ret_renta_pct" class="form-control" value="10.00">
+                        <!-- espejo para la vista -->
+                        <input type="hidden" name="porcentaje_retencion_renta" id="porcentaje_retencion_renta" value="10.00">
+                      </div>
+                      <div class="col-6">
+                        <label class="form-label small mb-1">Monto</label>
+                        <input type="number" step="0.01" min="0" id="ret_renta_mto" class="form-control" value="0.00">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="border rounded p-3">
+                    <label class="form-label small">Documento relacionado (opcional)</label>
+                    <div class="row g-2 mb-2">
+                      <div class="col-5">
+                        <select class="form-select" name="documento_seleccionado">
+                          <option value="S">— Sin relación —</option>
+                          <option value="1">Físico</option>
+                          <option value="2">Electrónico</option>
+                        </select>
+                      </div>
+                      <div class="col-7">
+                        <input type="text" name="documento_relacionado" class="form-control" placeholder="Código de generación o ref. física">
+                      </div>
+                    </div>
+
+                    <label class="form-label small mb-1">Extensión (responsable)</label>
+                    <div class="row g-2">
+                      <div class="col-6">
+                        <input type="text" name="nombre_responsable" class="form-control" placeholder="Nombre responsable">
+                      </div>
+                      <div class="col-6">
+                        <input type="text" name="documento_responsable" class="form-control" placeholder="DUI/NIT">
+                      </div>
+                    </div>
+
+                    <div class="form-check form-switch mt-3">
+                      <input class="form-check-input" type="checkbox" id="no_gravado" name="no_gravado">
+                      <label class="form-check-label" for="no_gravado">Base imponible (servicios / no gravado)</label>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label small mb-1">Observaciones</label>
+                  <textarea class="form-control" name="observaciones" rows="2" placeholder="Opcional"></textarea>
+                </div>
+
+              </div><!-- row -->
+            </div>
+          </div>
         </div>
-      </section>
-    </form>
-  </div>
+      </div>
+
+      <!-- Columna derecha: Resumen + Método de pago (SELECT) -->
+      <div class="col-lg-4">
+
+        <div class="card shadow-sm pos-sticky">
+          <div class="card-body">
+
+            <!-- Método de pago (ahora SELECT en el resumen) -->
+            <div class="mb-3">
+              <label class="form-label small mb-1">4) Método de pago</label>
+              <select class="form-select" name="metodo_pago" id="metodo_pago">
+                {% if formas_pago %}
+                  {% for f in formas_pago %}
+                    <option value="{{ f.codigo }}">{{ f.descripcion }}</option>
+                  {% endfor %}
+                {% else %}
+                  <!-- Fallback si no mandas 'formas_pago' en el contexto -->
+                  <option value="EFECTIVO">Efectivo</option>
+                  <option value="TARJETA">Tarjeta</option>
+                  <option value="TRANSFERENCIA">Transferencia</option>
+                  <option value="CREDITO">Crédito</option>
+                {% endif %}
+              </select>
+            </div>
+
+            <!-- Campos condicionales de pago -->
+            <div class="mb-3" id="wrap-efectivo" style="display:none">
+              <label class="form-label small mb-1">Efectivo</label>
+              <div class="input-group">
+                <span class="input-group-text">Recibido</span>
+                <input type="number" step="0.01" min="0" class="form-control" id="montoRecibido" value="">
+              </div>
+              <div class="small mt-1">Cambio: <span id="montoCambio">$0.00</span></div>
+            </div>
+
+            <div class="mb-3" id="wrap-credito" style="display:none">
+              <div class="row g-2">
+                <div class="col-4">
+                  <label class="form-label small mb-1">Días crédito</label>
+                  <input type="number" name="dias_credito" id="dias_credito" class="form-control" value="30" min="1">
+                </div>
+                <div class="col-8">
+                  <label class="form-label small mb-1">Fecha venc.</label>
+                  <input type="date" name="fecha_vencimiento" id="fecha_vencimiento" class="form-control">
+                </div>
+                <div class="col-12">
+                  <label class="form-label small mb-1">Notas de pago</label>
+                  <input type="text" name="notas_pago" class="form-control" placeholder="Opcional">
+                </div>
+              </div>
+            </div>
+
+            <h6 class="mb-3">Resumen</h6>
+
+            <div class="d-flex justify-content-between small">
+              <span>SubTotal Neto</span>
+              <strong id="sum_subtotal">$0.00</strong>
+            </div>
+            <div class="d-flex justify-content-between small">
+              <span>IVA</span>
+              <strong id="sum_iva">$0.00</strong>
+            </div>
+            <div class="d-flex justify-content-between small">
+              <span>Descuentos</span>
+              <strong id="sum_desc">$0.00</strong>
+            </div>
+            <hr>
+            <div class="d-flex justify-content-between fs-5">
+              <span>Total a pagar</span>
+              <strong id="sum_total">$0.00</strong>
+            </div>
+
+            <!-- hidden para backend -->
+            <div id="hidden-items"></div>
+            <input type="hidden" name="retencion_iva_monto" id="retencion_iva_monto">
+            <input type="hidden" name="retencion_renta_monto" id="retencion_renta_monto">
+
+            <div class="d-grid mt-3">
+              <button type="submit" class="btn btn-primary btn-lg">
+                <i class="bi bi-check2-circle me-1"></i> Generar DTE
+              </button>
+              <button type="button" class="btn btn-light mt-2" id="btnBorrador">
+                Guardar borrador
+              </button>
+            </div>
+            <div class="small text-muted mt-2">Atajos: Enter agrega · F9 generar · ESC limpia línea.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
 </div>
 
-<!-- Modales -->
-{% include "partials/modal_productos.html" %}
-{% include "partials/modal_doc_fisico.html" %}
-{% include "partials/modal_formas_pago.html" %}
-{% include "partials/modal_ret_iva.html" %}
-{% include "partials/modal_ret_renta.html" %}
+<script>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="{% static 'fe/js/factura.js' %}"></script>
+(function(){
+  // ======= Estado global POS =======
+  window.POS = {
+    items: [],   // {id, codigo, nombre, precio, cantidad, desc_pct, aplica_iva, stock}
+    apiUrl: "{% url 'api_productos' %}",
+  };
+
+  // ======= Helpers / refs =======
+  const $ = (id) => document.getElementById(id);
+  const tbody       = $('tbody-items');
+  const hiddenItems = $('hidden-items');
+  const qtyInput    = $('cantidadProducto');
+  const priceInput  = $('precioProducto');
+  const ivaChk      = $('aplicaIvaProducto');
+
+  const sumSub  = $('sum_subtotal');
+  const sumIva  = $('sum_iva');
+  const sumDesc = $('sum_desc');
+  const sumTot  = $('sum_total');
+
+  
+  //FALTABA: referencia al <select> de método de pago
+  const mpSelect = $('metodo_pago');
+
+  function fmt(n){ return '$' + (Number(n||0).toFixed(2)); }
+  function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+
+  //NUEVO: detectores robustos (código MH o etiqueta)
+  function _isEfectivoVal(value, label=''){
+    const v = (value||'').toString().toUpperCase();
+    const t = (label||'').toString().toUpperCase();
+    return v === '01' || v === 'EFECTIVO' || t.includes('EFECT');
+  }
+  function _isCreditoVal(value, label=''){
+    const v = (value||'').toString().toUpperCase();
+    const t = (label||'').toString().toUpperCase();
+    // ajusta '17' si tu catálogo MH usa otro código para crédito
+    return v === '17' || v === 'CREDITO' || v === 'CRÉDITO' || t.includes('CRED');
+  }
+
+  function lineTotal(it){
+    const subtotal = (+it.precio) * it.cantidad;
+    const desc = subtotal * (Math.min(100, Math.max(0, +it.desc_pct))/100);
+    const base = subtotal - desc;
+    const iva = it.aplica_iva ? base * 0.13 : 0;
+    return base + iva;
+  }
+
+  // --- Actualización dinámica del número de control según tipo DTE ---
+  const tipoDteSelect = document.getElementById('tipo_documento_seleccionado');
+  const ncText  = document.getElementById('numero_control_text');
+  const ncInput = document.getElementById('numero_control_input');
+
+  async function actualizarNumeroControl() {
+    if (!tipoDteSelect) return;
+    const tipo = tipoDteSelect.value;
+    try {
+      if (ncText) ncText.textContent = '…';
+      const url = "{% url 'obtener_numero_control_ajax' %}?tipo_dte=" + encodeURIComponent(tipo);
+      const resp = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const data = await resp.json();
+      const nuevo = data?.numero_control || '';
+      if (ncText)  ncText.textContent  = nuevo || '—';
+      if (ncInput) ncInput.value = nuevo;
+    } catch (err) {
+      console.error('Error obteniendo número de control:', err);
+      if (ncText) ncText.textContent = 'Error';
+    }
+  }
+
+// Dispara al cambiar el select y también una vez al cargar
+tipoDteSelect?.addEventListener('change', actualizarNumeroControl);
+actualizarNumeroControl();
+
+
+  // ======= Construye HIDDEN para el backend (siempre desde POS.items) =======
+  function syncHidden(){
+    hiddenItems.innerHTML = POS.items.map(it => `
+      <input type="hidden" name="item_id[]" value="${it.id}">
+      <input type="hidden" name="item_cantidad[]" value="${it.cantidad}">
+      <input type="hidden" name="item_precio[]" value="${(+it.precio).toFixed(2)}">
+      <input type="hidden" name="item_descuento[]" value="${it.desc_pct}">
+      <input type="hidden" name="item_iva[]" value="${it.aplica_iva ? '1':'0'}">
+      <input type="hidden" name="item_stock[]" value="${Number.isFinite(+it.stock)? it.stock : ''}">
+    `).join('');
+  }
+
+  // ======= Render de filas =======
+  function renderItems(){
+    const items = POS.items;
+    if (!items.length){
+      tbody.innerHTML = `<tr class="empty"><td colspan="7" class="text-center text-muted py-3">Sin productos agregados.</td></tr>`;
+      hiddenItems.innerHTML = '';
+      return;
+    }
+    tbody.innerHTML = items.map((it, i) => {
+      const stockTxt = Number.isFinite(+it.stock) ? it.stock : '-';
+      const stockClass = (Number(it.stock) <= 0) ? 'stock-low' : 'stock-ok';
+      return `
+        <tr data-idx="${i}">
+          <td>
+            <div class="fw-semibold">${escapeHtml(it.nombre)}</div>
+            <div class="small ${stockClass}">#${escapeHtml(it.codigo||'-')} · Stock: ${stockTxt}</div>
+            <!-- ⚠️ OJO: aquí ya NO va hidden item_id[] -->
+          </td>
+          <td class="text-end">
+            <input type="number" step="0.01" min="0" class="form-control form-control-sm text-end inp-precio" value="${(+it.precio).toFixed(2)}" aria-label="Precio unitario">
+          </td>
+          <td class="text-end">
+            <input type="number" min="1" class="form-control form-control-sm text-end inp-cant" value="${it.cantidad}" aria-label="Cantidad">
+          </td>
+          <td class="text-end">
+            <input type="number" min="0" max="100" class="form-control form-control-sm text-end inp-desc" value="${it.desc_pct}" aria-label="Descuento (%)">
+          </td>
+          <td class="text-center">
+            <input class="form-check-input chk-iva" type="checkbox" ${it.aplica_iva ? 'checked':''} aria-label="Aplica IVA">
+          </td>
+          <td class="text-end cel-total">${fmt(lineTotal(it))}</td>
+          <td class="text-end">
+            <button type="button" class="btn btn-sm btn-outline-danger btn-del"><i class="bi bi-x-lg"></i></button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    // listeners por fila
+    tbody.querySelectorAll('tr').forEach(tr=>{
+      const idx = +tr.dataset.idx;
+      const item = POS.items[idx];
+      tr.querySelector('.inp-precio').addEventListener('input', (e)=>{
+        item.precio = parseFloat(e.target.value||'0')||0;
+        tr.querySelector('.cel-total').textContent = fmt(lineTotal(item));
+        calcTotals();
+      });
+      tr.querySelector('.inp-cant').addEventListener('input', (e)=>{
+        item.cantidad = Math.max(1, parseInt(e.target.value||'1',10));
+        tr.querySelector('.cel-total').textContent = fmt(lineTotal(item));
+        calcTotals();
+      });
+      tr.querySelector('.inp-desc').addEventListener('input', (e)=>{
+        let v = parseFloat(e.target.value||'0')||0; v = Math.max(0, Math.min(100, v));
+        item.desc_pct = v;
+        tr.querySelector('.cel-total').textContent = fmt(lineTotal(item));
+        calcTotals();
+      });
+      tr.querySelector('.chk-iva').addEventListener('change', (e)=>{
+        item.aplica_iva = e.target.checked;
+        tr.querySelector('.cel-total').textContent = fmt(lineTotal(item));
+        calcTotals();
+      });
+      tr.querySelector('.btn-del').addEventListener('click', ()=>{
+        POS.items.splice(idx,1);
+        renderItems();
+        calcTotals();
+      });
+    });
+
+    // HIDDEN al día
+    syncHidden();
+  }
+  window.renderItems = renderItems;
+
+  // ======= Totales =======
+  function calcTotals(){
+    let subtotal = 0, descuentos = 0, iva = 0, total = 0;
+    POS.items.forEach(it=>{
+      const st = (+it.precio) * it.cantidad;
+      const ds = st * (Math.min(100, Math.max(0, +it.desc_pct))/100);
+      const base = st - ds;
+      const iv = it.aplica_iva ? base * 0.13 : 0;
+      subtotal += base;
+      descuentos += ds;
+      iva += iv;
+      total += base + iv;
+    });
+
+    const retIvaOn = $('ret_iva_sw')?.checked;
+    const retRentaOn = $('ret_renta_sw')?.checked;
+    let retIvaMto = retIvaOn ? parseFloat($('ret_iva_mto').value||'0')||0 : 0;
+    let retRentaMto = retRentaOn ? parseFloat($('ret_renta_mto').value||'0')||0 : 0;
+
+    const totalPagar = total - retIvaMto - retRentaMto;
+
+    sumSub.textContent  = fmt(subtotal);
+    sumIva.textContent  = fmt(iva);
+    sumDesc.textContent = fmt(descuentos);
+    sumTot.textContent  = fmt(totalPagar);
+
+    if ($('retencion_iva_monto'))   $('retencion_iva_monto').value   = retIvaMto.toFixed(2);
+    if ($('retencion_renta_monto')) $('retencion_renta_monto').value = retRentaMto.toFixed(2);
+
+    // 👉 AHORA con <select>:
+    const val   = mpSelect?.value || '';
+    const label = mpSelect?.options[mpSelect.selectedIndex]?.text || '';
+    if (_isEfectivoVal(val, label)) {
+      const recibido = parseFloat($('montoRecibido').value||'0')||0;
+      const cambio = Math.max(0, recibido - totalPagar);
+      $('montoCambio') && ($('montoCambio').textContent = fmt(cambio));
+    }
+
+    syncHidden();
+  }
+  window.calcTotals = calcTotals;
+
+  // Recalcular al cambiar retenciones / efectivo
+  ;['ret_iva_sw','ret_iva_mto','ret_renta_sw','ret_renta_mto','montoRecibido'].forEach(id=>{
+    $(id)?.addEventListener('input', calcTotals);
+    $(id)?.addEventListener('change', calcTotals);
+  });
+
+  // ======= Add item (usado por el picker) =======
+  function addItemFromProduct(sel){
+    if(!sel) return;
+    const cant   = Math.max(1, parseInt(qtyInput.value||'1',10));
+    const aplica = ivaChk.checked;
+    const precio = parseFloat(priceInput.value || sel.precio || '0') || 0;
+
+    const idx = POS.items.findIndex(x => x.id === sel.id);
+    if (idx >= 0) {
+      POS.items[idx].cantidad += cant;
+      if (!priceInput.value) POS.items[idx].precio = +sel.precio; // mantener neto base si no se forzó
+    } else {
+      POS.items.push({
+        id: sel.id,
+        codigo: sel.codigo,
+        nombre: sel.nombre,
+        precio: precio,
+        cantidad: cant,
+        desc_pct: 0,
+        aplica_iva: aplica,
+        stock: sel.stock
+      });
+    }
+
+    qtyInput.value = 1;
+    renderItems();
+    calcTotals();
+  }
+  window.addItem = () => {}; // placeholder, el picker lo invoca con su selección
+
+  // ======= Picker =======
+  class ProductPicker {
+    constructor({input, menu, apiUrl, onChoose}){
+      this.input = input;
+      this.menu  = menu;
+      this.apiUrl = apiUrl;
+      this.onChoose = onChoose || (()=>{});
+      this.items = [];
+      this.activeIndex = -1;
+      this.selected = null;
+
+      this.input.addEventListener('focus', ()=> this.search(''));
+      this.input.addEventListener('input',  (e)=> this.debouncedSearch(e.target.value.trim()));
+      this.input.addEventListener('keydown',(e)=> this.onKey(e));
+      document.addEventListener('click', (e)=>{
+        if(!this.menu.contains(e.target) && e.target!==this.input){ this.hide(); }
+      });
+    }
+    debouncedSearch(q){ clearTimeout(this._t); this._t = setTimeout(()=>this.search(q), 180); }
+    async search(q){
+      try{
+        const url = `${this.apiUrl}?q=${encodeURIComponent(q)}&page_size=25`;
+        const res = await fetch(url, {headers:{'X-Requested-With':'XMLHttpRequest'}});
+        const data = await res.json();
+        this.items = (data.results||[]).map(p=>{
+          const precio = parseFloat(p.precio||'0')||0;
+          const neto = p.con_iva ? (precio/1.13) : precio; // trabajar en neto
+          return { id:p.id, codigo:p.codigo, nombre:p.nombre, precio:neto,
+                   con_iva: !!p.con_iva, stock: p.stock, imagen:p.imagen||'' };
+        });
+        this.activeIndex = this.items.length ? 0 : -1;
+        this.render(); this.show();
+      }catch(_e){ this.items=[]; this.activeIndex=-1; this.render(); this.show(); }
+    }
+    render(){
+      if(!this.items.length){ this.menu.innerHTML = `<div class="combo-empty p-2 text-muted">Sin resultados…</div>`; return; }
+      this.menu.innerHTML = this.items.map((it,i)=>`
+        <div class="combo-item ${i===this.activeIndex?'active':''} p-2" role="option" data-idx="${i}" style="cursor:pointer;">
+          <div class="d-flex align-items-center justify-content-between gap-3">
+            <div class="me-3">
+              <div class="fw-semibold">${this.escape(it.nombre)}</div>
+              <div class="small ${(+it.stock)<=0?'text-danger':'text-success'}">
+                #${this.escape(it.codigo||'-')} · Stock: ${Number.isFinite(+it.stock)?it.stock:'-'}
+              </div>
+            </div>
+            <div class="ms-auto text-nowrap">
+              <span class="badge text-bg-light">$${(+it.precio).toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+      this.menu.querySelectorAll('.combo-item').forEach(el=>{
+        el.addEventListener('click', ()=>{
+          const idx = +el.dataset.idx; this.choose(idx);
+        });
+      });
+    }
+    onKey(e){
+      if(!this.isOpen()) this.show();
+      if(e.key==='ArrowDown'){ e.preventDefault(); this.move(1); }
+      else if(e.key==='ArrowUp'){ e.preventDefault(); this.move(-1); }
+      else if(e.key==='Enter'){ e.preventDefault(); this.choose(this.activeIndex); }
+      else if(e.key==='Escape'){ this.hide(); }
+    }
+    move(delta){
+      if(!this.items.length) return;
+      this.activeIndex = (this.activeIndex + delta + this.items.length) % this.items.length;
+      this.render();
+      this.menu.querySelector('.combo-item.active')?.scrollIntoView({block:'nearest'});
+    }
+    choose(idx){
+      const item = this.items[idx]; if(!item) return;
+      this.selected = item;
+      this.input.value = `${item.codigo} | ${item.nombre}`;
+      this.onChoose(item);
+      this.hide();
+    }
+    getSelected(){ return this.selected; }
+    focus(){ this.input.focus(); }
+    isOpen(){ return this.menu.style.display!=='none'; }
+    show(){ this.menu.style.display='block'; }
+    hide(){ this.menu.style.display='none'; }
+    escape(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+  }
+
+  // Instancia del picker
+  const picker = new ProductPicker({
+    input: $('productoPickerInput'),
+    menu:  $('productoPickerMenu'),
+    apiUrl: POS.apiUrl,
+    onChoose: (prod)=>{
+      // precargar precio neto y ajustar IVA por defecto
+      priceInput.value = (+prod.precio).toFixed(2);
+      priceInput.dataset.sticky = '1'; // no se borra tras agregar
+      ivaChk.checked = !prod.con_iva;  // si venía con IVA incluido, apagamos IVA de línea
+      // al Enter del input, si ya se eligió, agregamos
+      setTimeout(()=>{ addItemFromProduct(prod); }, 10);
+    }
+  });
+  window.PRODUCT_PICKER = picker;
+
+  // Enter en el input → si hay seleccionado, agregar
+  $('productoPickerInput').addEventListener('keydown', (e)=>{
+    if(e.key==='Enter'){
+      const sel = picker.getSelected();
+      if(sel){ e.preventDefault(); addItemFromProduct(sel); }
+    }
+  });
+
+  // Botón Agregar
+  $('btnAgregarProducto')?.addEventListener('click', ()=>{
+    const sel = picker.getSelected();
+    if(!sel){ picker.focus(); return; }
+    addItemFromProduct(sel);
+  });
+
+// Método de pago (SELECT): mostrar/ocultar bloques
+  function togglePago(){
+    const val   = mpSelect?.value || '';
+    const label = mpSelect?.options[mpSelect.selectedIndex]?.text || '';
+    const isEf = _isEfectivoVal(val, label);
+    const isCr = _isCreditoVal(val, label);
+    const $ef = $('wrap-efectivo');
+    const $cr = $('wrap-credito');
+    if ($ef) $ef.style.display = isEf ? '' : 'none';
+    if ($cr) $cr.style.display = isCr ? '' : 'none';
+    calcTotals();
+  }
+
+  // 👉 eventos de cambio y de tecleo en “recibido” para recalcular cambio
+  mpSelect?.addEventListener('change', togglePago);
+  $('montoRecibido')?.addEventListener('input', calcTotals);
+
+  // Llamada inicial (al cargar la página)
+  togglePago();
+
+  // ======= Submit: usar fetch para recibir JSON y redirigir =======
+  const form = document.getElementById('form-pos');
+  form.addEventListener('submit', async (e) => {
+    if (POS.items.length === 0) {
+      e.preventDefault();
+      alert('Agrega al menos un producto.');
+      picker.focus();
+      return;
+    }
+
+    e.preventDefault();
+    // Asegura que los hidden reflejen lo que hay en pantalla
+    if (typeof window.calcTotals === 'function') window.calcTotals();
+
+    try {
+      const fd = new FormData(form);
+      const resp = await fetch(form.action || location.href, {
+        method: 'POST',
+        body: fd,
+        headers: { 'X-Requested-With':'XMLHttpRequest' }
+      });
+      const data = await resp.json();
+      if (!resp.ok) { alert(data?.error || 'Error al generar la factura.'); return; }
+      if (data.redirect) { window.location.href = data.redirect; return; }
+      alert(data?.mensaje || 'Operación completada.');
+    } catch (err) {
+      console.error('Submit error:', err);
+      form.submit(); // Fallback
+    }
+  });
+
+  // Atajo F9 para enviar
+  document.addEventListener('keydown', (e)=>{
+    if (e.key === 'F9') { e.preventDefault(); form.requestSubmit(); }
+  });
+
+  // Si el usuario edita a mano el precio base, marcamos "sticky"
+  priceInput.addEventListener('input', ()=> priceInput.dataset.sticky = priceInput.value ? '1' : '');
+
+})();
+
+</script>
+
+{% if prefill_factura %}
+<script>
+(function(){
+  try{
+    const PF = {{ prefill_factura|safe }};
+    if(PF && PF.receptor_id){
+      // setear cliente
+      const sel = document.getElementById('receptor_id');
+      if(sel){
+        sel.value = String(PF.receptor_id);
+        sel.dispatchEvent(new Event('change'));
+      }
+    }
+    if(PF && PF.items && PF.items.length){
+      // cargar líneas a POS.items (NETO)
+      PF.items.forEach(it=>{
+        window.POS.items.push({
+          id: it.id,
+          codigo: it.codigo,
+          nombre: it.nombre,
+          precio: parseFloat(it.precio||'0')||0,
+          cantidad: parseInt(it.cantidad||'1',10),
+          desc_pct: parseFloat(it.desc_pct||'0')||0,
+          aplica_iva: !!it.iva_on,
+          stock: null
+        });
+      });
+      if(typeof window.renderItems==='function') window.renderItems();
+      if(typeof window.calcTotals==='function') window.calcTotals();
+    }
+  }catch(e){ console.error('prefill_cart error', e); }
+})();
+</script>
+{% endif %}
+
+
 {% endblock %}

@@ -170,6 +170,7 @@ try:
 except (OperationalError, ObjectDoesNotExist):
     emisor_fe = None
 
+#emisor_fe = None
 
 class StandardResultsSetPagination(PageNumberPagination):
     # Número de ítems por página por defecto

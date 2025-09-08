@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+  <h4>{% if c %}Editar cliente{% else %}Nuevo cliente{% endif %}</h4>
+  <form method="post" class="row g-3 mt-2">
+    {% csrf_token %}
+    <div class="col-md-3">
+      <label class="form-label">Tipo documento</label>
+      <select name="tipo_documento" class="form-select" required>
+        <option value="">Seleccione…</option>
+        {% for t in tipos %}
+          <option value="{{ t.id }}" {% if c and c.tipo_documento_id == t.id %}selected{% endif %}>{{ t.descripcion }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">N° documento</label>
+      <input name="num_documento" class="form-control" value="{{ c.num_documento|default:'' }}" required>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Nombre</label>
+      <input name="nombre" class="form-control" value="{{ c.nombre|default:'' }}" required>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Dirección</label>
+      <input name="direccion" class="form-control" value="{{ c.direccion|default:'' }}">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Municipio</label>
+      <select name="municipio" class="form-select" required>
+        <option value="">Seleccione…</option>
+        {% for m in municipios %}
+          <option value="{{ m.id }}" {% if c and c.municipio_id == m.id %}selected{% endif %}>
+            {{ m.departamento.descripcion }} - {{ m.descripcion }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">NRC</label>
+      <input name="nrc" class="form-control" value="{{ c.nrc|default:'' }}">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Teléfono</label>
+      <input name="telefono" class="form-control" value="{{ c.telefono|default:'' }}">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Correo</label>
+      <input name="correo" type="email" class="form-control" value="{{ c.correo|default:'' }}">
+    </div>
+    <div class="col-12 d-flex gap-2">
+      <button class="btn btn-primary">Guardar</button>
+      <a href="{% url 'clientes_list' %}" class="btn btn-light">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

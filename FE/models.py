@@ -197,17 +197,6 @@ class Descuento(models.Model):
     estdo = models.BooleanField(default=True)
     def __str__(self):
         return f"{self.descripcion} - {self.porcentaje}%"
-    
-#modelo para productos
-# class Producto_fe(models.Model):
-#     codigo = models.CharField(max_length=50)
-#     descripcion = models.CharField(max_length=50)
-#     preunitario = models.DecimalField(max_digits=5, decimal_places=2)
-#     stock = models.IntegerField()
-#     tiene_descuento = models.BooleanField(default=False)
-#     descuento = models.ForeignKey(Descuento, on_delete=models.CASCADE, null=True)
-#     def __str__(self):
-#         return f"{self.codigo} - {self.descripcion}"
 
 class Receptor_fe(models.Model):
     tipo_documento = models.ForeignKey(TiposDocIDReceptor, on_delete=models.CASCADE, null=True)
@@ -235,7 +224,7 @@ class representanteEmisor(models.Model):
         return f"{self.nombre} ({self.numero_documento})"
     
 class Emisor_fe(models.Model):
-    nit = models.CharField(max_length=20, unique=True, verbose_name="NIT del Emisor")
+    nit = models.CharField(max_length=20, verbose_name="NIT del Emisor")
     nrc = models.CharField(max_length=50, null=True)
     nombre_razon_social = models.CharField(max_length=255, verbose_name="Nombre o Razón Social")
     actividades_economicas = models.ManyToManyField(ActividadEconomica, verbose_name="Actividades Económicas")
@@ -264,12 +253,16 @@ class Emisor_fe(models.Model):
         ],
         default='Pequeño Contribuyente'
     )
+    imprime_termica = models.BooleanField(
+        default=False,
+        verbose_name="Imprimir en térmica (80mm)"
+    )
+    
     
     def __str__(self):
         return f"{self.nombre_razon_social} ({self.nit})"
 
 # Modelo para manejar la numeración de control por año
-
 
 class NumeroControl(models.Model):
     anio = models.IntegerField()
@@ -427,7 +420,6 @@ class DetalleFactura(models.Model):
 
     def __str__(self):
         return f"Factura {self.factura.numero_control} - {self.producto.descripcion} ({self.cantidad} x {self.precio_unitario})"
-    
 
 # Modelo de Factura Sujeto excluido
 class FacturaSujetoExcluidoElectronica(models.Model):
@@ -628,4 +620,3 @@ class LoteContingencia(models.Model):
     hora_modificacion = models.TimeField(auto_now_add=True, null=True)
     #evento = models.ForeignKey(EventoContingencia, related_name='lotecontingencia', on_delete=models.CASCADE)
     
-

@@ -1,32 +1,35 @@
-<div class="modal fade" id="modalDocFisico" tabindex="-1" aria-labelledby="modalDocFisicoLabel" aria-hidden="true">
+<div class="modal fade" id="docFisicoModal" tabindex="-1" aria-labelledby="docFisicoLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="modalDocFisicoLabel">Documento Físico</h5>
+        <h5 id="docFisicoLabel" class="modal-title"><i class="bi bi-link-45deg me-2"></i> Documento físico</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
       <div class="modal-body">
-        <div class="mb-3">
-          <label for="fisico-numero-control" class="form-label">Número de Control</label>
-          <input type="text" id="fisico-numero-control" class="form-control">
+        <div class="mb-2">
+          <label class="form-label">Serie</label>
+          <input type="text" id="doc_fisico_serie" class="form-control" placeholder="Serie">
         </div>
-        <div class="mb-3">
-          <label for="fisico-codigo-generacion" class="form-label">Código de Generación</label>
-          <input type="text" id="fisico-codigo-generacion" class="form-control">
+        <div class="mb-2">
+          <label class="form-label">Número</label>
+          <input type="text" id="doc_fisico_numero" class="form-control" placeholder="000000">
         </div>
-        <div class="mb-3">
-          <label for="fisico-fecha" class="form-label">Fecha</label>
-          <input type="date" id="fisico-fecha" class="form-control">
+        <div class="mb-2">
+          <label class="form-label">Fecha</label>
+          <input type="date" id="doc_fisico_fecha" class="form-control">
         </div>
-        <div class="mb-3">
-          <label for="fisico-hora" class="form-label">Hora</label>
-          <input type="time" id="fisico-hora" class="form-control">
-        </div>
+        <small class="text-muted">Se agregará a la sección de documentos relacionados.</small>
       </div>
       <div class="modal-footer">
-        <button id="btn-guardar-doc-fisico" type="button" class="btn btn-primary">Guardar Documento</button>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button class="btn btn-primary" id="btn-add-doc-fisico">Agregar</button>
       </div>
     </div>
   </div>
 </div>
+
+<script>
+(() => {
+  const openBtn = document.getElementById('btn-doc-fisico');
+  openBtn?.addEventListener('click', ()=> new bootstrap.Modal('#docFisicoModal').show());
+})();
+</script>

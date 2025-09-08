@@ -1,0 +1,88 @@
+{# Se inserta DENTRO de: <div class="list-group list-group-flush"> ... #}
+{# Prefijo para IDs únicos en desktop / móvil #}
+{% with uid_prefix=uid|default:"fac" %}
+
+<!-- Generar Facturas -->
+<button class="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#{{ uid_prefix }}-gen-fact"
+        aria-expanded="false"
+        aria-controls="{{ uid_prefix }}-gen-fact">
+  <span><i class="bi bi-file-earmark-plus me-2"></i> Generar Facturas</span>
+</button>
+
+
+<!-- Generar Correcciones -->
+<button class="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#{{ uid_prefix }}-gen-corr"
+        aria-expanded="false"
+        aria-controls="{{ uid_prefix }}-gen-corr">
+  <span><i class="bi bi-pencil-square me-2"></i> Generar Correcciones</span>
+</button>
+
+
+<!-- Listado de Facturas -->
+<button class="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#{{ uid_prefix }}-lst-fact"
+        aria-expanded="false"
+        aria-controls="{{ uid_prefix }}-lst-fact">
+  <span><i class="bi bi-journal-text me-2"></i> Listado de Facturas</span>
+</button>
+
+
+<!-- Listado Factura Sujeto Excluido -->
+<button class="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#{{ uid_prefix }}-suj-exc"
+        aria-expanded="false"
+        aria-controls="{{ uid_prefix }}-suj-exc">
+  <span><i class="bi bi-person-x me-2"></i> Listado factura sujeto excluido</span>
+</button>
+
+<!-- Listado Contingencias -->
+<button class="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#{{ uid_prefix }}-conting"
+        aria-expanded="false"
+        aria-controls="{{ uid_prefix }}-conting">
+  <span><i class="bi bi-exclamation-triangle me-2"></i> Listado contingencias</span>
+</button>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const prefix = "{{ uid_prefix|default:'fac' }}";
+
+  // Mapa: botón -> URL Django
+  const goto = new Map([
+    // Apunta al HOME nuevo de Generar:
+    [`#${prefix}-gen-fact`, "{% url 'facturacion_generar_home' %}"],
+
+    // Apunta al HOME nuevo de Correcciones:
+    [`#${prefix}-gen-corr`, "{% url 'facturacion_correcciones_home' %}"],
+
+    // Mantén el resto como los tengas:
+    [`#${prefix}-lst-fact`, "{% url 'listar_facturas' %}"],
+    [`#${prefix}-suj-exc`, "{% url 'listar_facturas' %}?tipo_dte=14"],  // ajusta si tienes vista propia
+    [`#${prefix}-conting`, "{% url 'listar_contingencias' %}"],
+  ]);
+  document
+    .querySelectorAll(`[data-bs-target^="#${prefix}-"]`)
+    .forEach(btn => {
+      btn.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        const target = btn.getAttribute('data-bs-target');
+        const href = goto.get(target);
+        if (href) window.location.href = href;
+      });
+    });
+});
+</script>
+
+{% endwith %}
