@@ -57,7 +57,7 @@ from django.conf import settings
 from xhtml2pdf import pisa
 from io import BytesIO
 from django.template.loader import render_to_string
-from weasyprint import HTML, CSS
+#from weasyprint import HTML, CSS
 from django.db.models import F, Value
 from django.db.models.functions import Greatest
 

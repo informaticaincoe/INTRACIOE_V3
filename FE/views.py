@@ -58,7 +58,7 @@ from django.contrib.auth.decorators import login_required
 from xhtml2pdf import pisa
 from django.core.mail import EmailMessage
 from AUTENTICACION.models import ConfiguracionServidor, UsuarioEmisor
-from weasyprint import HTML, CSS
+#from weasyprint import HTML, CSS
 
 from django.db.utils import OperationalError
 from django.core.exceptions import ObjectDoesNotExist
