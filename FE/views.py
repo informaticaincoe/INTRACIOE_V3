@@ -1164,6 +1164,7 @@ def generar_factura_view(request):
                     "factura_id": factura.id,
                     "numero_control": factura.numero_control,
                     "redirect": reverse('detalle_factura', args=[factura.id]),
+                    "print_url": reverse('factura_termica', args=[factura.id]) + "?autoprint=1",
                 })
             else:
                 return redirect('detalle_factura', factura.id)
@@ -2443,6 +2444,14 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False):
 #         'firmado': factura.firmado,  # ← agregado
 #     })
 
+@login_required
+def factura_termica(request, factura_id):
+    factura = get_object_or_404(FacturaElectronica, id=factura_id)
+    return render(request, "documentos/factura_consumidor/template_factura_termica.html", {
+        "factura": factura,
+    })
+
+@login_required
 def detalle_factura(request, factura_id):
     factura = get_object_or_404(FacturaElectronica, id=factura_id)
 
@@ -2474,6 +2483,7 @@ def detalle_factura(request, factura_id):
         "firma": firma,
         "envio_mh": envio_mh,
         "firmado": factura.firmado,
+        
     })
 
 #########################################################################################################

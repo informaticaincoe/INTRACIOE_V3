@@ -97,6 +97,20 @@
   <div><em><strong>Son: {{ factura.json_original.resumen.totalLetras }}</strong></em></div>
 
   <br>
+
+  {% if factura.json_original.resumen.pagos.0 %}
+    <div class="mt xs">
+      <span class="bold">Pago:</span>
+      Cód {{ factura.json_original.resumen.pagos.0.codigo }}
+      · ${{ factura.json_original.resumen.pagos.0.montoPago|floatformat:2 }}
+    </div>
+  {% endif %}
+
+  <div class="cut xs center">
+    Gracias por su compra
+  </div>
+
+  <br>
   
   <div class="line"></div>
   <div class="center">
@@ -104,5 +118,28 @@
     <small>Documento Tributario Electrónico</small><br>
     <small>Generado por INTRACOE</small>
   </div>
+
+<div class="noprint center mt">
+  <button onclick="triggerPrint()">Imprimir</button>
+</div>
+
+
+<script>
+  function triggerPrint(){
+    if (window.AndroidPrinter && typeof AndroidPrinter.printFactura === 'function') {
+      AndroidPrinter.printFactura(location.href);
+    } else {
+      window.print();
+    }
+  }
+  (function auto(){
+    const usp = new URLSearchParams(location.search);
+    if (usp.get('autoprint') === '1') {
+      setTimeout(triggerPrint, 150);
+    }
+  })();
+</script>
+
+
 </body>
 </html>
