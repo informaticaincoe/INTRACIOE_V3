@@ -752,18 +752,15 @@ actualizarNumeroControl();
   togglePago();
 
   // ======= Submit: usar fetch para recibir JSON y redirigir =======
-  const form = document.getElementById('form-pos');
+ const form = document.getElementById('form-pos');
   form.addEventListener('submit', async (e) => {
-    if (POS.items.length === 0) {
+    if (window.POS.items.length === 0) {
       e.preventDefault();
       alert('Agrega al menos un producto.');
-      picker.focus();
       return;
     }
 
     e.preventDefault();
-    // Asegura que los hidden reflejen lo que hay en pantalla
-    if (typeof window.calcTotals === 'function') window.calcTotals();
 
     try {
       const fd = new FormData(form);
@@ -773,12 +770,27 @@ actualizarNumeroControl();
         headers: { 'X-Requested-With':'XMLHttpRequest' }
       });
       const data = await resp.json();
-      if (!resp.ok) { alert(data?.error || 'Error al generar la factura.'); return; }
-      if (data.redirect) { window.location.href = data.redirect; return; }
+
+      if (!resp.ok) {
+        alert(data?.error || 'Error al generar la factura.');
+        return;
+      }
+
+      // ✅ Si AndroidPrinter está disponible y hay print_url, mandamos a imprimir
+      if (data.print_url && window.AndroidPrinter && typeof AndroidPrinter.printFactura === 'function') {
+        AndroidPrinter.printFactura(data.print_url);
+      }
+
+      // Redirección normal después de imprimir
+      if (data.redirect) {
+        window.location.href = data.redirect;
+        return;
+      }
+
       alert(data?.mensaje || 'Operación completada.');
     } catch (err) {
       console.error('Submit error:', err);
-      form.submit(); // Fallback
+      form.submit(); // fallback clásico
     }
   });
 
@@ -791,12 +803,6 @@ actualizarNumeroControl();
   priceInput.addEventListener('input', ()=> priceInput.dataset.sticky = priceInput.value ? '1' : '');
 
 })();
-
-if (data.print_url && window.AndroidPrinter) {
-  AndroidPrinter.printFactura(data.print_url);
-}
-// Y además redirigir al detalle si quieres
-if (data.redirect) window.location.href = data.redirect;
 
 </script>
 

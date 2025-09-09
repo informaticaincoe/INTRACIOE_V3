@@ -1169,19 +1169,6 @@ def generar_factura_view(request):
             else:
                 return redirect('detalle_factura', factura.id)
 
-
-            # Al final del bloque try, cuando todo salió bien:
-            if is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({
-                    "mensaje": "Factura generada correctamente",
-                    "factura_id": factura.id,
-                    "numero_control": factura.numero_control,
-                    "redirect": reverse('detalle_factura', args=[factura.id]),
-                })
-            else:
-                # Petición HTML normal: redirige directamente
-                return redirect('detalle_factura', factura.id)
-
         except Exception as e:
             print("DTE: *** EXCEPCION ***", repr(e))
             return JsonResponse({"error": str(e)}, status=400)
