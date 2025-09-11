@@ -154,20 +154,27 @@
 
 
 <script>
-  function triggerPrint(){
-    // Obtén siempre la URL actual desde Django (será http/https, no file://)
-    let url = "{{ request.build_absolute_uri }}";
-    if (window.AndroidPrinter && typeof AndroidPrinter.printFactura === 'function') {
-      AndroidPrinter.printFactura(url);
+  function triggerPrint() {
+    const url = String(location.href); // siempre la URL actual
+    const hasAndroid = !!(window.AndroidPrinter && typeof AndroidPrinter.printFactura === 'function');
+
+    if (hasAndroid) {
+      try {
+        AndroidPrinter.printFactura(url);
+      } catch (e) {
+        alert("No se pudo invocar AndroidPrinter: " + e);
+      }
     } else {
-      window.print(); // fallback navegador normal
+      // No estás dentro de la app (o estás en una WebView sin el puente)
+      // usa el print normal del navegador
+      window.print();
     }
   }
 
   (function auto(){
     const usp = new URLSearchParams(location.search);
     if (usp.get('autoprint') === '1') {
-      setTimeout(triggerPrint, 150);
+      setTimeout(triggerPrint, 200);
     }
   })();
 </script>
