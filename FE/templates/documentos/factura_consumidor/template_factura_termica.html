@@ -25,15 +25,16 @@
       .btn-print, .noprint { display: none !important; }
       @page { size: 80mm auto; margin: auto; }
     }
-  </style>
+    /* --- Promo / catálogo --- */
+  .promo { margin-top: 6px; }
+  .promo .title { font-weight: bold; display:block; margin: 4px 0 2px; }
+  .promo .mono-link { font-weight: bold; word-break: break-all; }
+  .promo small { display:block; margin-top: 2px; }
+  img.qr-sm { max-width: 80px; display:block; margin: 3px auto; }
+    </style>
 </head>
 <body>
 
-  <div class="noprint center mt">
-  <button onclick="triggerPrint()" style="font-size:14px;padding:6px 10px">
-    Imprimir
-  </button>
-</div>
 
   <div class="center">
     <img src="{% static 'img/logo_empresa.png' %}" class="logo" alt="Logo">
@@ -109,11 +110,12 @@
     <div class="mt xs">
       <span class="bold">Pago:</span>
       Cód {{ factura.json_original.resumen.pagos.0.codigo }}
-      · ${{ factura.json_original.resumen.pagos.0.montoPago|floatformat:2 }}
+      · ${{ factura.total_pagar|floatformat:2 }}
     </div>
   {% endif %}
 
-  <div class="cut xs center">
+  <div class="cut xs">
+     <br>
     Gracias por su compra
   </div>
 
@@ -126,6 +128,29 @@
     <small>Generado por INTRACOE</small>
   </div>
 
+  <div class="line"></div>
+
+<div class=" promo">
+  <span class="title">¡Conoce nuestro catálogo!</span>
+  <div>Visita:</div>
+  <div class="mono-link">
+   incoe.net/category/all-products
+  </div>
+  <br>
+  <small>WhatsApp: +503 7069 5594</small>
+  <small>Facebook: INCOE</small>
+  <small>Instagram: @INCOE</small>
+  <small>Tel: +503 2345 3900</small>
+  <small>Web: incoe.net</small>
+</div>
+
+
+  <div class="noprint center mt">
+      <div class="line"></div>
+    <button onclick="triggerPrint()" style="font-size:14px;padding:6px 10px">
+      Imprimir
+    </button>
+  </div>
 
 
 <script>
