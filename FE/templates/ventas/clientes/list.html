@@ -2,10 +2,7 @@
 {% block content %}
 <div class="container py-4">
   <div class="d-flex justify-content-end mb-1">
-    
-    <div class="me-auto">
-      <h4>Clientes</h4>
-    </div>
+    <div class="me-auto"><h4>Clientes</h4></div>
 
     <div class="me-3">
       <a href="{% url 'clientes_crear' %}" class="btn btn-primary">Nuevo</a>
@@ -30,7 +27,15 @@
 
   <div class="table-responsive">
     <table class="table table-sm table-hover align-middle">
-      <thead><tr><th>Nombre</th><th>Documento</th><th>Teléfono</th><th>Correo</th><th></th></tr></thead>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Documento</th>
+          <th>Teléfono</th>
+          <th>Correo</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
       <tbody>
         {% for c in clientes %}
         <tr>
@@ -39,6 +44,25 @@
           <td>{{ c.telefono }}</td>
           <td>{{ c.correo }}</td>
           <td class="text-end">
+            {# --- Botón Visitar (Maps) --- #}
+            {% if c.lat and c.lng %}
+              <a class="btn btn-sm btn-success"
+                 target="_blank" rel="noopener"
+                 href="https://www.google.com/maps/dir/?api=1&destination={{ c.lat }},{{ c.lng }}">
+                 Visitar
+              </a>
+            {% elif c.direccion %}
+              {% with q=c.direccion|default_if_none:""|add:", "|add:c.municipio.descripcion|default_if_none:""|add:", El Salvador"|urlencode %}
+                <a class="btn btn-sm btn-success"
+                   target="_blank" rel="noopener"
+                   href="https://www.google.com/maps/dir/?api=1&destination={{ q }}">
+                   Visitar
+                </a>
+              {% endwith %}
+            {% else %}
+              <span class="text-muted small me-2">Sin ubicación</span>
+            {% endif %}
+
             <a href="{% url 'clientes_editar' c.id %}" class="btn btn-sm btn-outline-primary">Editar</a>
             <a href="{% url 'clientes_eliminar' c.id %}" class="btn btn-sm btn-outline-danger">Eliminar</a>
           </td>

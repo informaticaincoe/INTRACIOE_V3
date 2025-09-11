@@ -1,4 +1,7 @@
 {% load static %}
+{% load qr_tags %}
+{% load i18n %}
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -31,6 +34,10 @@
   .promo .mono-link { font-weight: bold; word-break: break-all; }
   .promo small { display:block; margin-top: 2px; }
   img.qr-sm { max-width: 80px; display:block; margin: 3px auto; }
+
+  .qr-row{ display:flex; justify-content:space-between; gap:4px; margin-top:4px; }
+  .qr-col{ width:calc(33.333% - 4px); text-align:center; }
+  .qr-col img{ width:100%; display:block; margin:0 auto; }
     </style>
 </head>
 <body>
@@ -121,13 +128,25 @@
 
   <br>
   
-  <div class="line"></div>
-  <div class="center">
-    <img src="{% static 'img/logo_empresa.png' %}" class="qr" alt="QR">
-    <small>Documento Tributario Electrónico</small><br>
-    <small>Generado por INTRACOE</small>
+<div class="line"></div>
+<div class="qr-row">
+  <div class="qr-col">
+    <img src="{% qr_src 'https://admin.factura.gob.sv/consultaPublica' 90 1 'M' %}" alt="QR Consulta pública">
+    <small>Consulta pública</small>
   </div>
-
+  <div class="qr-col">
+    <img src="{% qr_src factura.codigo_generacion|upper 90 1 'M' %}" alt="QR Código">
+    <small>Código</small>
+  </div>
+  <div class="qr-col">
+    <img src="{% qr_src factura.sello_recepcion|upper 90 1 'M' %}" alt="QR Sello">
+    <small>Sello</small>
+  </div>
+</div>
+<div class="center">
+  <small>Documento Tributario Electrónico</small><br>
+  <small>Generado por INTRACOE</small>
+</div>
   <div class="line"></div>
 
 <div class=" promo">

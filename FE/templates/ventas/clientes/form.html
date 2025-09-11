@@ -48,10 +48,90 @@
       <label class="form-label">Correo</label>
       <input name="correo" type="email" class="form-control" value="{{ c.correo|default:'' }}">
     </div>
+    
+<div class="row">
+  <div class="col-md-6">
+    <label>Latitud</label>
+    <input type="text" class="form-control" name="lat" id="id_lat" placeholder="13.692940" />
+  </div>
+  <div class="col-md-6">
+    <label>Longitud</label>
+    <input type="text" class="form-control" name="lng" id="id_lng" placeholder="-89.218191" />
+  </div>
+</div>
+
+<div class="mt-2">
+  <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-geo">
+    Usar mi ubicación
+  </button>
+  <small class="text-muted ms-2">o haz clic en el mapa</small>
+</div>
+
+
+
     <div class="col-12 d-flex gap-2">
       <button class="btn btn-primary">Guardar</button>
       <a href="{% url 'clientes_list' %}" class="btn btn-light">Cancelar</a>
     </div>
   </form>
 </div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+ integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<div id="map" style="height: 330px; border:1px solid #ccc; margin-top:8px;"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+ integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+ <script>
+(function() {
+  // Centro por defecto (San Salvador)
+  var start = {lat: 13.69294, lng: -89.21819, zoom: 12};
+
+  var map = L.map('map').setView([start.lat, start.lng], start.zoom);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'&copy; OpenStreetMap'
+  }).addTo(map);
+
+  var $lat = document.getElementById('id_lat');
+  var $lng = document.getElementById('id_lng');
+  var marker = null;
+
+  function setMarker(lat, lng) {
+    if (!isFinite(lat) || !isFinite(lng)) return;
+    if (marker) {
+      marker.setLatLng([lat, lng]);
+    } else {
+      marker = L.marker([lat, lng], {draggable: true}).addTo(map);
+      marker.on('dragend', function(){
+        var ll = marker.getLatLng();
+        $lat.value = ll.lat.toFixed(6);
+        $lng.value = ll.lng.toFixed(6);
+      });
+    }
+    $lat.value = (+lat).toFixed(6);
+    $lng.value = (+lng).toFixed(6);
+    map.setView([lat, lng], 15);
+  }
+
+  // clic en el mapa → fija punto
+  map.on('click', function(e) {
+    setMarker(e.latlng.lat, e.latlng.lng);
+  });
+
+  // si el usuario ya escribió lat/lng, centra ahí
+  if ($lat.value && $lng.value) {
+    setMarker(parseFloat($lat.value), parseFloat($lng.value));
+  }
+
+  // botón "Usar mi ubicación"
+  document.getElementById('btn-geo').addEventListener('click', function(){
+    if (!navigator.geolocation) return alert('Geolocalización no soportada.');
+    navigator.geolocation.getCurrentPosition(function(pos){
+      setMarker(pos.coords.latitude, pos.coords.longitude);
+    }, function(err){
+      alert('No se pudo obtener tu ubicación (' + err.message + ').');
+    }, {enableHighAccuracy:true, timeout:8000});
+  });
+})();
+</script>
 {% endblock %}

@@ -5,9 +5,13 @@ from django.contrib import messages
 from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponseBadRequest
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
+from django.db.models import Q, F, Sum
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
+import requests
+from django.utils import timezone
+from django.views.decorators.http import require_http_methods
 
 # Modelos FE
 from .models import NumeroControl, Receptor_fe, TiposDocIDReceptor, Municipio, Tipo_dte, Modelofacturacion, TipoTransmision
@@ -38,10 +42,41 @@ def _ensure_receptor(receptor_id):
 
 
 # ---------- HOME VENTAS ----------
+@login_required
 def ventas_home(request):
     return render(request, 'ventas/home.html')
 
-# ---------- CLIENTES (Receptor_fe) ----------
+# --------- CLIENTES (Receptor_fe) ----------
+@login_required
+def _parse_coord(val):
+    try:
+        if val in (None, "","null"): return None
+        return Decimal(str(val))
+    except (InvalidOperation, ValueError, TypeError):
+        return None
+    
+@login_required
+def _geocode_address_osm(q):
+    """
+    Geocodifica con Nominatim (OSM).
+    Respeta su política: añade User-Agent propio.
+    """
+    try:
+        r = requests.get(
+            'https://nominatim.openstreetmap.org/search',
+            params={'q': q, 'format': 'json', 'addressdetails': 0, 'limit': 1},
+            headers={'User-Agent': 'INTRACIOE/1.0 (+https://intracioe.com)'},
+            timeout=5,
+            )
+        r.raise_for_status()
+        data = r.json()
+        if data:
+            return Decimal(data[0]['lat']), Decimal(data[0]['lon']), "nominatim"
+    except Exception:
+        pass
+    return None, None, ""
+
+@login_required
 def clientes_list(request):
     q = request.GET.get('q', '')
     clientes = Receptor_fe.objects.all().order_by('nombre')
@@ -49,9 +84,12 @@ def clientes_list(request):
         clientes = clientes.filter(nombre__icontains=q) | clientes.filter(num_documento__icontains=q)
     return render(request, 'ventas/clientes/list.html', {'clientes': clientes, 'q': q})
 
+@login_required
+@require_http_methods(["GET", "POST"])
 def clientes_crear(request):
     tipos = TiposDocIDReceptor.objects.all().order_by('descripcion')
     municipios = Municipio.objects.select_related('departamento').order_by('descripcion')
+
     if request.method == 'POST':
         tipo_id = request.POST.get('tipo_documento')
         num_documento = request.POST.get('num_documento')
@@ -62,6 +100,10 @@ def clientes_crear(request):
         municipio_id = request.POST.get('municipio')
         nrc = request.POST.get('nrc') or None
 
+        # coordenadas del form (pueden venir vacías)
+        lat = _parse_coord(request.POST.get('lat'))
+        lng = _parse_coord(request.POST.get('lng'))
+
         if not (tipo_id and num_documento and nombre and municipio_id):
             messages.error(request, 'Complete los campos obligatorios.')
             return redirect('clientes_crear')
@@ -69,15 +111,34 @@ def clientes_crear(request):
         tipo = get_object_or_404(TiposDocIDReceptor, pk=tipo_id)
         municipio = get_object_or_404(Municipio, pk=municipio_id)
 
+        # si no hay lat/lng pero hay dirección → intentar geocodificar
+        geocode_source = ""
+        geocoded_at = None
+        if (lat is None or lng is None) and direccion:
+            # construye una consulta con municipio y país para mejorar precisión
+            muni = municipio.descripcion if hasattr(municipio, "descripcion") else ""
+            depto = getattr(getattr(municipio, "departamento", None), "descripcion", "")
+            query = f"{direccion}, {muni}, {depto}, El Salvador"
+            lat, lng, geocode_source = _geocode_address_osm(query)
+            if lat is not None and lng is not None:
+                geocoded_at = timezone.now()
+
         Receptor_fe.objects.create(
             tipo_documento=tipo, num_documento=num_documento, nombre=nombre,
             direccion=direccion, telefono=telefono, correo=correo,
-            municipio=municipio, nrc=nrc
+            municipio=municipio, nrc=nrc,
+            lat=lat, lng=lng, geocode_source=geocode_source, geocoded_at=geocoded_at
         )
         messages.success(request, 'Cliente creado.')
         return redirect('clientes_list')
-    return render(request, 'ventas/clientes/form.html', {'tipos': tipos, 'municipios': municipios})
 
+    return render(
+        request,
+        'ventas/clientes/form.html',
+        {'tipos': tipos, 'municipios': municipios}
+    )
+
+@login_required
 def clientes_editar(request, pk):
     c = get_object_or_404(Receptor_fe, pk=pk)
     tipos = TiposDocIDReceptor.objects.all().order_by('descripcion')
@@ -99,6 +160,7 @@ def clientes_editar(request, pk):
         return redirect('clientes_list')
     return render(request, 'ventas/clientes/form.html', {'c': c, 'tipos': tipos, 'municipios': municipios})
 
+@login_required
 def clientes_eliminar(request, pk):
     c = get_object_or_404(Receptor_fe, pk=pk)
     if request.method == 'POST':
@@ -336,6 +398,7 @@ def carrito_add_go(request):
 
 
 # ---------- LISTA/DETALLE VENTAS ----------
+@login_required
 def ventas_list(request):
     tipo = request.GET.get('tipo', '')  # '01' FE, '14' sujeto excluido, etc.
     qs = FacturaElectronica.objects.select_related('dtereceptor', 'tipo_dte').all().order_by('-fecha_emision', '-id')
@@ -343,11 +406,13 @@ def ventas_list(request):
         qs = qs.filter(tipo_dte__codigo=tipo)
     return render(request, 'ventas/lista.html', {'ventas': qs, 'tipo': tipo})
 
+@login_required
 def venta_detalle(request, factura_id: int):
     # Reusa tu template existente del detalle
     return redirect('detalle_factura', factura_id=factura_id)
 
 # ---------- DEVOLUCIONES DE VENTA ----------
+@login_required
 def devoluciones_list(request):
     devs = DevolucionVenta.objects.select_related().all().order_by('-fecha')
     return render(request, 'ventas/devoluciones/lista.html', {'devoluciones': devs})
@@ -397,6 +462,7 @@ from django.http import JsonResponse
 from django.db.models import Q
 from INVENTARIO.models import Producto
 
+@login_required
 def api_productos(request):
     """
     Devuelve productos en JSON para el catálogo del modal.
@@ -445,6 +511,7 @@ def api_productos(request):
 #################################
 # VISTA NUEVA PARA GENERAR FACTURAS
 
+@login_required
 def generar_factura(request):
 
     print ("Generando factura...", request)

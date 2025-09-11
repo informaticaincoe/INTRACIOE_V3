@@ -869,7 +869,7 @@ def generar_factura_view(request):
                 base = (precio_unit * cantidad)
                 monto_desc = q2(base * (desc_pct / Decimal("100"))) if desc_pct > 0 else Decimal("0.00")
                 gravada = base - monto_desc
-                iva_line = q2(gravada / Decimal("0.13")) if aplica_iva else Decimal("0.00")
+                iva_line = q2(gravada * Decimal("0.13")) if aplica_iva else Decimal("0.00")  # ← aquí
                 total_line = gravada + iva_line
 
                 print(f"DTE: calc[{idx}] cod={producto.codigo} qty={cantidad} pu={precio_unit} base={q2(base)} desc={monto_desc} gravada={q2(gravada)} iva={iva_line} total={q2(total_line)}")

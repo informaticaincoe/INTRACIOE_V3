@@ -3,6 +3,7 @@ from django.utils import timezone
 from datetime import timedelta, datetime
 from decimal import ROUND_HALF_UP, Decimal
 from INVENTARIO.models import Producto, ProductoProveedor, Proveedor, TipoItem, TipoUnidadMedida
+from django.core.validators import MinValueValidator, MaxValueValidator
 import uuid
 
 class ActividadEconomica(models.Model):
@@ -211,6 +212,20 @@ class Receptor_fe(models.Model):
     nombreComercial = models.CharField(max_length=150, null=True, verbose_name=None, blank=True)
     pais = models.ForeignKey(Pais, on_delete=models.CASCADE, null=True)
     tipo_persona = models.ForeignKey(TipoPersona, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Tipo de Persona")
+
+    #nuevos campos para georeferencia de cliente
+    lat = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True,
+        validators=[MinValueValidator(Decimal("-90")), MaxValueValidator(Decimal("90"))],
+        help_text="Latitud (WGS84)"
+    )
+    lng = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True,
+        validators=[MinValueValidator(Decimal("-180")), MaxValueValidator(Decimal("180"))],
+        help_text="Longitud (WGS84)"
+    )
+    geocoded_at = models.DateTimeField(null=True, blank=True)
+    geocode_source = models.CharField(max_length=30, blank=True, default="")
 
     def __str__(self):
         return self.nombre
