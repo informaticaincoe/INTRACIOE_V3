@@ -4,30 +4,28 @@
 <head>
   <meta charset="UTF-8">
   <title>Factura Térmica</title>
-<style>
-  body {
-    font-family: monospace, sans-serif;
-    font-size: 11px;
-    width: 80mm;
-    margin: 0 auto;
-    color: #000;
-  }
-  .center { text-align: center; }
-  .right { text-align: right; }
-  .line { border-top: 1px dashed #000; margin: 4px 0; }
-  img.logo { max-width: 60px; margin-bottom: 5px; }
-  img.qr { max-width: 80px; display:block; margin: 3px auto; }
-  table { width: 100%; border-collapse: collapse; }
-  td, th { padding: 2px 0; }
-  th { border-bottom: 1px solid #000; }
-  .totales td { padding: 2px 0; }
-
-  @media print {
-    .btn-print, .noprint { display: none !important; }   /* ⬅️ oculta también .noprint */
-    @page { size: 280mm auto; margin: 0; }
-    body { margin: 0; padding: 0; }                      /* quita márgenes sobrantes */
-  }
-</style>
+  <style>
+    body {
+      font-family: monospace, sans-serif;
+      font-size: 11px;
+      width: 80mm;
+      margin: 0 auto;
+      color: #000;
+    }
+    .center { text-align: center; }
+    .right { text-align: right; }
+    .line { border-top: 1px dashed #000; margin: 4px 0; }
+    img.logo { max-width: 60px; margin-bottom: 5px; }
+    img.qr { max-width: 80px; display:block; margin: 3px auto; }
+    table { width: 100%; border-collapse: collapse; }
+    td, th { padding: 2px 0; }
+    th { border-bottom: 1px solid #000; }
+    .totales td { padding: 2px 0; }
+    @media print {
+      .btn-print, .noprint { display: none !important; }
+      @page { size: 80mm auto; margin: 0; }
+    }
+  </style>
 </head>
 <body>
 
@@ -37,11 +35,10 @@
   </button>
 </div>
 
-
   <div class="center">
     <img src="{% static 'img/logo_empresa.png' %}" class="logo" alt="Logo">
     <div><h2>{{ factura.dteemisor.nombre_comercial }}</h2></div>
-    <br>
+    <br
     <div>{{ factura.dteemisor.direccion_comercial }}</div>
     <div>Tel: {{ factura.dteemisor.telefono }}</div>
     <div>NIT: {{ factura.dteemisor.nit }}</div>
@@ -119,6 +116,8 @@
   <div class="cut xs center">
     Gracias por su compra
   </div>
+
+  <br>
   
   <div class="line"></div>
   <div class="center">

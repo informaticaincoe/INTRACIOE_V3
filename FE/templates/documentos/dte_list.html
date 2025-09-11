@@ -118,6 +118,9 @@
             <td>
               <a href="{% url 'enviar_correo_individual' factura.id %}" class="btn btn-sm btn-secondary btn-invalidar" data-factura-id="{{ factura.id }}">Enviar</a>
             </td>
+            <td>
+              <a href="{% url 'detalle_factura' factura.id %}" class="btn btn-sm btn-secondary btn-invalidar" data-factura-id="{{ factura.id }}">Ver</a>
+            </td>
           </tr>
           {% empty %}
           <tr>
