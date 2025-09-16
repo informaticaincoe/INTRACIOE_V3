@@ -586,6 +586,13 @@ def generar_factura_view(request):
     print("DTE: method=", request.method, " content_type=", request.content_type)
 
     if request.method == 'GET':
+
+        prefill = None
+        if request.GET.get("from_cart") == "1":
+            prefill = request.session.pop("facturacion_prefill", None)
+            request.session.modified = True
+            print("DTE: prefill recuperado =", prefill)
+            
         tipo_dte = globals().get('tipo_documento_dte', '01')
         print("DTE: GET tipo_dte=", tipo_dte)
 

@@ -5,7 +5,7 @@ from . import views
 
 urlpatterns = [
 
-    path('', views.index, name='index'),  # URL raíz que carga la vista index
+    path('', views.dashboard, name='index'),  # URL raíz que carga la vista index
     path('admin/', admin.site.urls),
     path('rrhh/', include('RRHH.urls')),
     path('fe/', include('FE.urls')),

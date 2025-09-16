@@ -8,6 +8,7 @@ from django.http import JsonResponse, HttpResponseBadRequest
 from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
 from django.db.models import Q, F, Sum
 from django.contrib.auth.decorators import login_required
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 import requests
 from django.utils import timezone
@@ -233,7 +234,6 @@ def carrito_ver(request):
     }
     return render(request, "ventas/carrito/carrito.html", context)
 
-
 @login_required
 @require_POST
 def carrito_agregar(request):
@@ -314,7 +314,7 @@ def carrito_vaciar(request):
     _save_cart(request, cart)
     return JsonResponse({"ok": True})
 
-
+@login_required
 def carrito_cotizacion(request, receptor_id: int):
     # Renderiza una "prefactura" (no DTE, no firma)
     key = _cart_key(receptor_id)
@@ -338,45 +338,47 @@ def carrito_cotizacion(request, receptor_id: int):
         'total': total.quantize(Decimal('0.01'))
     })
 
+
 @login_required
 @require_POST
 def carrito_facturar(request):
-    """Empaqueta carrito → session y redirige a tu generar_factura_view (GET) con prefill."""
     rid = request.POST.get("receptor_id")
     receptor = _ensure_receptor(rid)
     if not receptor:
-        return HttpResponseBadRequest("Cliente inválido")
+        return HttpResponseBadRequest("Debe seleccionar un cliente válido.")
 
     cart = _get_cart(request)
     bucket = cart.get(str(receptor.id), {})
     if not bucket:
-        return HttpResponseBadRequest("El carrito está vacío.")
+        return HttpResponseBadRequest("Tu carrito está vacío.")
 
-    # Construir payload para prefill en generar_dte
     items = []
     for pid, row in bucket.items():
         try:
-            p = Producto.objects.get(id=pid)
+            prod = Producto.objects.get(id=pid)
         except Producto.DoesNotExist:
             continue
         items.append({
-            "id": p.id,
-            "codigo": p.codigo,
-            "nombre": p.descripcion,
-            "precio": str(row.get("precio") or (p.preunitario or "0")),
-            "cantidad": int(row.get("qty", 1)),
-            "iva_on": bool(row.get("iva_on", False)),
-            "desc_pct": str(row.get("desc_pct", "0")),
+            "id": prod.id,
+            "codigo": prod.codigo,
+            "nombre": prod.descripcion,
+            "precio": float(row.get("precio") or prod.preunitario or 0),
+            "cantidad": int(row.get("qty") or 1),
+            "desc_pct": float(row.get("desc_pct") or 0),
+            "iva_on": bool(row.get("iva_on")),
         })
+
+    if not items:
+        return HttpResponseBadRequest("Tu carrito está vacío.")
 
     request.session["facturacion_prefill"] = {
         "receptor_id": receptor.id,
         "items": items,
     }
     request.session.modified = True
-    # Redirige a tu vista que renderiza generar_dte.html
-    from django.urls import reverse
-    return JsonResponse({"redirect": reverse("generar_factura") + "?from_cart=1"})
+
+    return redirect("/fe/generar/?from_cart=1")
+
 
 @login_required
 def carrito_add_go(request):
@@ -395,7 +397,6 @@ def carrito_add_go(request):
     _save_cart(request, cart)
     from django.urls import reverse
     return redirect(f'{reverse("carrito_ver")}?receptor_id={receptor.id}')
-
 
 # ---------- LISTA/DETALLE VENTAS ----------
 @login_required

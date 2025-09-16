@@ -1,32 +1,172 @@
-<!-- Breadcrumb / título de sección -->
-      <div class="d-flex align-items-center justify-content-between mb-3">
-        <h1 class="h5 m-0 fw-semibold">{% block tittle_sections %}Dashboard{% endblock %}</h1>
-      </div>
 
-      <!-- Cards superiores (ejemplo) -->
-      <div class="row g-3 mb-3">
-        <div class="col-12 col-md-4">
-          <div class="card kpi">
-            <div class="card-body">
-              <div class="text-muted small">Total ventas</div>
-              <div class="fs-3 fw-semibold">${{ total_ventas|default:"2.13" }}</div>
-            </div>
-          </div>
-        </div>
-        <div class="col-12 col-md-4">
-          <div class="card kpi">
-            <div class="card-body">
-              <div class="text-muted small">Total facturas emitidas</div>
-              <div class="fs-3 fw-semibold">{{ total_facturas|default:"2" }}</div>
-            </div>
-          </div>
-        </div>
-        <div class="col-12 col-md-4">
-          <div class="card kpi">
-            <div class="card-body">
-              <div class="text-muted small">Top 3 productos</div>
-              <div class="fw-semibold">Leche en…</div>
-            </div>
-          </div>
-        </div>
+<!-- KPI Cards -->
+<div class="row g-3 mb-3">
+  <div class="col-12 col-md-3">
+    <div class="card kpi"><div class="card-body">
+      <div class="text-muted small">Total ventas (6m)</div>
+      <div class="fs-3 fw-semibold">${{ total_ventas|floatformat:2 }}</div>
+    </div></div>
+  </div>
+  <div class="col-12 col-md-3">
+    <div class="card kpi"><div class="card-body">
+      <div class="text-muted small">Facturas emitidas</div>
+      <div class="fs-3 fw-semibold">{{ total_facturas }}</div>
+    </div></div>
+  </div>
+  <div class="col-12 col-md-3">
+    <div class="card kpi"><div class="card-body">
+      <div class="text-muted small">Clientes</div>
+      <div class="fs-3 fw-semibold">{{ total_clientes }}</div>
+    </div></div>
+  </div>
+  <div class="col-12 col-md-3">
+    <div class="card kpi"><div class="card-body">
+      <div class="text-muted small">Valor inventario</div>
+      <div class="fs-3 fw-semibold">${{ inventario_valor_total|floatformat:2 }}</div>
+    </div></div>
+  </div>
+</div>
+
+<!-- Gráficas -->
+<div class="row g-3">
+  <div class="col-12 col-lg-6">
+    <div class="card"><div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="m-0">Ventas por mes</h6>
       </div>
+      <canvas id="chartVentas"></canvas>
+    </div></div>
+  </div>
+  <div class="col-12 col-lg-6">
+    <div class="card"><div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="m-0">Compras por mes</h6>
+      </div>
+      <canvas id="chartCompras"></canvas>
+    </div></div>
+  </div>
+
+  <div class="col-12 col-lg-6">
+    <div class="card"><div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="m-0">Clientes nuevos por mes</h6>
+      </div>
+      <canvas id="chartClientes"></canvas>
+    </div></div>
+  </div>
+
+  <div class="col-12 col-lg-6">
+    <div class="card"><div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="m-0">Inventario por categoría (Top)</h6>
+      </div>
+      <canvas id="chartInventario"></canvas>
+    </div></div>
+  </div>
+
+  <div class="col-12 col-lg-6">
+    <div class="card"><div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="m-0">Facturación por estado</h6>
+      </div>
+      <canvas id="chartEstados"></canvas>
+    </div></div>
+  </div>
+
+  <div class="col-12 col-lg-6">
+    <div class="card"><div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="m-0">Top 5 productos</h6>
+      </div>
+      <canvas id="chartTopProd"></canvas>
+    </div></div>
+  </div>
+</div>
+
+<!-- Datos seguros como JSON -->
+{{ ventas_mes_labels|json_script:"ventas_mes_labels" }}
+{{ ventas_mes_data|json_script:"ventas_mes_data" }}
+{{ compras_mes_labels|json_script:"compras_mes_labels" }}
+{{ compras_mes_data|json_script:"compras_mes_data" }}
+{{ clientes_mes_labels|json_script:"clientes_mes_labels" }}
+{{ clientes_mes_data|json_script:"clientes_mes_data" }}
+{{ inv_labels|json_script:"inv_labels" }}
+{{ inv_data|json_script:"inv_data" }}
+{{ fact_estado_labels|json_script:"fact_estado_labels" }}
+{{ fact_estado_data|json_script:"fact_estado_data" }}
+{{ top_prod_labels|json_script:"top_prod_labels" }}
+{{ top_prod_data|json_script:"top_prod_data" }}
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+(function(){
+  const J = id => JSON.parse(document.getElementById(id).textContent);
+
+  const moneyTicks = (value) => {
+    try { return '$' + Number(value).toLocaleString(undefined, {maximumFractionDigits: 2}); }
+    catch(_) { return '$' + value; }
+  };
+
+  // Ventas
+  new Chart(document.getElementById('chartVentas'), {
+    type: 'line',
+    data: {
+      labels: J('ventas_mes_labels'),
+      datasets: [{ label: 'Ventas', data: J('ventas_mes_data') }]
+    },
+    options: { responsive: true, scales: { y: { ticks: { callback: moneyTicks } } } }
+  });
+
+  // Compras
+  new Chart(document.getElementById('chartCompras'), {
+    type: 'bar',
+    data: {
+      labels: J('compras_mes_labels'),
+      datasets: [{ label: 'Compras', data: J('compras_mes_data') }]
+    },
+    options: { responsive: true, scales: { y: { ticks: { callback: moneyTicks } } } }
+  });
+
+  // Clientes
+  new Chart(document.getElementById('chartClientes'), {
+    type: 'bar',
+    data: {
+      labels: J('clientes_mes_labels'),
+      datasets: [{ label: 'Clientes nuevos', data: J('clientes_mes_data') }]
+    },
+    options: { responsive: true }
+  });
+
+  // Inventario por categoría
+  new Chart(document.getElementById('chartInventario'), {
+    type: 'bar',
+    data: {
+      labels: J('inv_labels'),
+      datasets: [{ label: 'Unidades', data: J('inv_data') }]
+    },
+    options: { responsive: true }
+  });
+
+  // Facturación por estado
+  new Chart(document.getElementById('chartEstados'), {
+    type: 'doughnut',
+    data: {
+      labels: J('fact_estado_labels'),
+      datasets: [{ data: J('fact_estado_data') }]
+    },
+    options: { responsive: true }
+  });
+
+  // Top productos
+  new Chart(document.getElementById('chartTopProd'), {
+    type: 'bar',
+    data: {
+      labels: J('top_prod_labels'),
+      datasets: [{ label: 'Cantidades', data: J('top_prod_data') }]
+    },
+    options: { responsive: true }
+  });
+})();
+</script>
+

@@ -146,16 +146,30 @@
   });
 
   $('#btnFacturar')?.addEventListener('click', async ()=>{
-    const r = rid(); if(!r) return toast('Selecciona un cliente.');
-    const resp = await fetch(url('facturar'), {
-      method: 'POST',
-      headers: { 'X-CSRFToken': csrftoken() },
-      body: new URLSearchParams({ receptor_id:r })
-    });
-    const data = await resp.json().catch(()=>({}));
-    if(resp.ok && data.redirect){ window.location.href = data.redirect; }
-    else { toast(data?.error || 'No se pudo facturar.'); }
+  const r = rid(); if(!r) return toast('Selecciona un cliente.');
+  
+  // recoge productos directamente de la tabla
+  const rows = $$('#tbody tr[data-id]');
+  const fd = new URLSearchParams({ receptor_id:r });
+  rows.forEach(tr=>{
+    fd.append('producto_id[]', tr.dataset.id);
+    fd.append('precio[]', $('.inp-precio', tr).value);
+    fd.append('cantidad[]', $('.inp-cant', tr).value);
+    fd.append('iva_on[]', $('.chk-iva', tr).checked ? '1':'0');
+    fd.append('desc_pct[]', $('.inp-desc', tr).value);
   });
+
+  const resp = await fetch(url('facturar'), {
+    method: 'POST',
+    headers: { 'X-CSRFToken': csrftoken() },
+    body: fd
+  });
+
+  const data = await resp.json().catch(()=>({}));
+  if(resp.ok && data.redirect){ window.location.href = data.redirect; }
+  else { toast(data?.error || 'No se pudo facturar.'); }
+});
+
 
   // listeners por fila
   $$('#tbody tr').forEach(tr=>{
