@@ -437,20 +437,31 @@ def num_to_letras(numero):
     except Exception as e:
         return "Conversión no disponible"
 
+@login_required
 def obtener_numero_control_ajax(request):
-    global tipo_documento_dte 
+    global tipo_documento_dte
     global productos_inventario
-    tipo_dte = request.GET.get('tipo_dte', '01')  # Valor por defecto '03' si no se envía ninguno
-    
-    #Asignar tipo de documento seleccionado a variable global que posteriormente sera utilzada para retornar productos
+
+    tipo_dte = request.GET.get('tipo_dte', '01')  # por defecto Factura
+
+    # Guardar tipo en global
     tipo_documento_dte = tipo_dte
     productos_inventario = Producto
-    #productos_inventario = obtener_listado_productos_view()
-    #obtener_listado_productos_view()
-    #iniciar_dte = request.GET.get('iniciar_dte', False)
-    print(f"Inicializando DTE Vista: {tipo_dte}")
-    nuevo_numero = NumeroControl.preview_numero_control(tipo_dte)
-    print("vista numero de control: ", nuevo_numero)
+
+    # ✅ obtener emisor del usuario logueado
+    emisor = _get_emisor_for_user(request.user, estricto=False)
+    if not emisor:
+        return JsonResponse({'error': 'No hay emisor configurado'}, status=400)
+
+    estab = emisor.codigo_establecimiento or "0000"
+    pv = emisor.codigo_punto_venta or "0001"
+
+    print(f"Inicializando DTE Vista: tipo={tipo_dte}, estab={estab}, pv={pv}")
+
+    # ✅ pasar estab y pv a la preview
+    nuevo_numero = NumeroControl.preview_numero_control(tipo_dte, estab=estab, pv=pv)
+
+    print("vista numero de control:", nuevo_numero)
     return JsonResponse({'numero_control': nuevo_numero})
 
 def factura_list(request):
@@ -597,8 +608,11 @@ def generar_factura_view(request):
         print("DTE: GET tipo_dte=", tipo_dte)
 
         emisor_obj = _get_emisor_for_user(request.user, estricto=False)
-        nuevo_numero = NumeroControl.preview_numero_control(tipo_dte) if emisor_obj else ""
-        print("DTE: preview numero_control=", nuevo_numero)
+        nuevo_numero = NumeroControl.preview_numero_control(
+            tipo_dte,
+            estab=emisor_obj.codigo_establecimiento or "0000",
+            pv=emisor_obj.codigo_punto_venta or "0001"
+        ) if emisor_obj else ""
 
         prefill = None
         if request.GET.get("from_cart") == "1":
@@ -626,6 +640,7 @@ def generar_factura_view(request):
             "descuentos": Descuento.objects.all(),
             "formasPago": FormasPago.objects.all(),
             "tipoGenDocumentos": TipoGeneracionDocumento.objects.all(),
+            "prefill_factura": json.dumps(prefill, ensure_ascii=False) if prefill else None,
         }
         print("DTE: Renderizar template generar_dte.html")
         return render(request, "generar_dte.html", context)
@@ -711,7 +726,19 @@ def generar_factura_view(request):
             tipo_dte_obj = Tipo_dte.objects.get(codigo=tipo_dte)
             print("DTE: tipo_dte=", tipo_dte)
 
-            numero_control = NumeroControl.obtener_numero_control(tipo_dte)
+            emisor_obj = _get_emisor_for_user(request.user, estricto=False)
+            if not emisor_obj:
+                return JsonResponse(
+                    {"error": "No hay emisor asignado a tu usuario. Configúralo antes de facturar."},
+                    status=400
+                )
+
+            # ✅ obtener estab y punto de venta
+            estab = emisor_obj.codigo_establecimiento or "0000"
+            pv = emisor_obj.codigo_punto_venta or "0001"
+
+            # ✅ pasar a la función
+            numero_control = NumeroControl.obtener_numero_control(tipo_dte, estab=estab, pv=pv)
             codigo_generacion = data.get('codigo_generacion') or str(uuid.uuid4()).upper()
             print("DTE: numero_control asignado=", numero_control)
             print("DTE: codigo_generacion=", codigo_generacion)
@@ -3404,6 +3431,26 @@ def invalidar_varias_dte_view(request):
 @csrf_exempt
 def invalidar_dte_unificado_view(request, factura_id):
     try:
+        factura = get_object_or_404(FacturaElectronica, id=factura_id)
+
+        # ✅ Verificar si ya tiene un evento de invalidación
+        if factura.dte_invalidacion.exists():
+            evento = factura.dte_invalidacion.first()
+            return JsonResponse({
+                "mensaje": "La factura ya se encuentra invalidada",
+                "detalle": {
+                    "codigoGeneracion": str(evento.codigo_generacion),
+                    "fecha_anulacion": evento.fecha_anulacion,
+                    "hora_anulacion": evento.hora_anulacion,
+                    "motivo": evento.motivo_anulacion,
+                    "recibido_mh": evento.recibido_mh,
+                    "sello": evento.sello_recepcion,
+                    "estado": evento.estado,
+                    "json_invalidacion": evento.json_invalidacion,
+                    "json_firmado": evento.json_firmado,
+                }
+            })
+        
         response_evento_invalidacion = invalidacion_dte_view(request, factura_id)
         if response_evento_invalidacion.status_code != 302 :
             return response_evento_invalidacion

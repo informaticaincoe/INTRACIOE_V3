@@ -70,6 +70,10 @@ urlpatterns = [
     
     #LISTADO DE PRODUCTOS
     path('obtener-listado-productos/', views.obtener_listado_productos_view, name='obtener_listado_productos_view'),
+
+    #URLS DE EXPORTACION
+    path('exportacion/excel/', views_ventas.exportar_facturas_excel, name='exportar_facturas_excel'),
+    path('exportacion/pdf/', views_ventas.exportar_facturas_pdf, name='exportar_facturas_pdf'),
     
     #Contingencia
     path('listar_contingencias/', views.contingencia_list, name='listar_contingencias'),

@@ -1,17 +1,79 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container py-4">
+      <h4>Ventas</h4>
   <div class="d-flex justify-content-between align-items-center">
-    <h4>Ventas</h4>
-    <form class="d-flex" method="get">
-      <select name="tipo" class="form-select form-select-sm me-2" style="width:auto">
-        <option value="">Todos</option>
-        <option value="01" {% if tipo == '01' %}selected{% endif %}>Factura (FE)</option>
-        <option value="14" {% if tipo == '14' %}selected{% endif %}>Sujeto Excluido</option>
-      </select>
-      <button class="btn btn-sm btn-outline-secondary">Filtrar</button>
-    </form>
+
+    <form class="row g-2 mb-3" method="get">
+      <div class="col-md-2">
+        <input type="date" name="fecha_ini" value="{{ fecha_ini }}" class="form-control form-control-sm">
+      </div>
+      <div class="col-md-2">
+        <input type="date" name="fecha_fin" value="{{ fecha_fin }}" class="form-control form-control-sm">
+      </div>
+
+      <div class="col-md-2">
+        <select name="cliente" class="form-select form-select-sm">
+          <option value="">Todos los clientes</option>
+          {% for c in clientes %}
+            <option value="{{ c.id }}" {% if cliente|default:'' == c.id|stringformat:"s" %}selected{% endif %}>
+              {{ c.nombre }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <select name="producto" class="form-select form-select-sm">
+          <option value="">Todos los productos</option>
+          {% for p in productos %}
+            <option value="{{ p.id }}" {% if producto|default:'' == p.id|stringformat:"s" %}selected{% endif %}>
+              {{ p.descripcion }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <select name="usuario" class="form-select form-select-sm">
+          <option value="">Todos los usuarios</option>
+          {% for u in usuarios %}
+            <option value="{{ u.id }}" {% if usuario|default:'' == u.id|stringformat:"s" %}selected{% endif %}>
+              {{ u.username }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <select name="estado" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          <option value="borrador" {% if estado == 'borrador' %}selected{% endif %}>Borrador</option>
+          <option value="firmado" {% if estado == 'firmado' %}selected{% endif %}>Firmado</option>
+          <option value="recibido" {% if estado == 'recibido' %}selected{% endif %}>Recibido MH</option>
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <input type="number" name="monto_min" step="0.01" placeholder="Monto mínimo" value="{{ monto_min }}" class="form-control form-control-sm">
+      </div>
+      <div class="col-md-2">
+        <input type="number" name="monto_max" step="0.01" placeholder="Monto máximo" value="{{ monto_max }}" class="form-control form-control-sm">
+      </div>
+
+      <div class="col-md-2">
+        <button class="btn btn-sm btn-primary w-100">Filtrar</button>
+      </div>
+    </form> 
   </div>
+      <div class="col-md-2">
+      <a href="{% url 'exportar_facturas_excel' %}?{{ request.GET.urlencode }}" class="btn btn-sm btn-success">
+        Export <i class="bi bi-file-earmark-excel"></i>
+      </a>
+      <a href="{% url 'exportar_facturas_pdf' %}?{{ request.GET.urlencode }}" class="btn btn-sm btn-danger">
+        Export <i class="bi bi-file-earmark-pdf"></i>
+      </a>
+    </div>
 
   <div class="table-responsive mt-3">
     <table class="table table-sm table-hover">
@@ -44,6 +106,33 @@
         {% endfor %}
       </tbody>
     </table>
+    <!-- PAGINACIÓN -->
+    <nav aria-label="Page navigation">
+      <ul class="pagination justify-content-center">
+        {% if ventas.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ ventas.previous_page_number }}{% if querystring %}&{{ querystring }}{% endif %}" aria-label="Anterior">&laquo;</a>
+          </li>
+        {% endif %}
+
+        {% for i in ventas.paginator.page_range %}
+          <li class="page-item {% if ventas.number == i %}active{% endif %}">
+            <a class="page-link" href="?page={{ i }}{% if querystring %}&{{ querystring }}{% endif %}">{{ i }}</a>
+          </li>
+        {% endfor %}
+
+        {% if ventas.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ ventas.next_page_number }}{% if querystring %}&{{ querystring }}{% endif %}" aria-label="Siguiente">&raquo;</a>
+          </li>
+        {% endif %}
+      </ul>
+    </nav>
+
+    <div class="mt-2">
+      <strong>Total ventas:</strong> ${{ resumen.total_ventas|default:"0.00" }}  
+      <strong>Documentos:</strong> {{ resumen.cantidad }}
+    </div>
   </div>
 </div>
 {% endblock %}

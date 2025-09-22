@@ -280,46 +280,63 @@ class Emisor_fe(models.Model):
 # Modelo para manejar la numeración de control por año
 
 class NumeroControl(models.Model):
+    codigo_establecimiento = models.CharField(max_length=4, null=True, blank=True, default="0000")
+    codigo_punto_venta = models.CharField(max_length=4, null=True, blank=True, default="0001")
     anio = models.IntegerField()
     secuencia = models.IntegerField(default=1)
     tipo_dte = models.CharField(max_length=2, default="00", editable=True)
-    
+
     class Meta:
         unique_together = (('anio', 'tipo_dte'),)
+
     def __str__(self):
         return f"{self.anio} - {self.secuencia} - {self.tipo_dte}"
 
     @staticmethod
-
-    def obtener_numero_control(cod_dte):
-        print("Inicio asignar numero de control: ")
+    def obtener_numero_control(cod_dte, estab="0000", pv="0001"):
+        print("Inicio asignar numero de control")
         anio_actual = datetime.now().year
-        control, creado = NumeroControl.objects.get_or_create(anio=anio_actual, tipo_dte=cod_dte)
-        numero_control = f"DTE-{cod_dte}-0000MOO1-{str(control.secuencia).zfill(15)}"
+        control, _ = NumeroControl.objects.get_or_create(anio=anio_actual, tipo_dte=cod_dte)
+
+        # normalizar estab/pv
+        estab = str(estab or "0000").zfill(4)
+        pv = str(pv or "0001").zfill(4)
+        secuencia = str(control.secuencia).zfill(15)
+
+        # formato Hacienda: DTE-{tipo}-{estab}{pv}-{secuencia}
+        numero_control = f"DTE-{cod_dte}-{estab}{pv}-{secuencia}"
+
         control.secuencia += 1
         control.save()
-        print("Asignar numero de control: ", numero_control)
+
+        print("Asignar numero de control:", numero_control, "len=", len(numero_control))
         return numero_control
-    
+
+
     @staticmethod
-    def preview_numero_control(cod_dte):
+    def preview_numero_control(cod_dte, estab="0000", pv="0001"):
         """
         Genera un número de control de vista previa sin incrementar la secuencia.
-        Se usa en la carga del formulario o en AJAX.
         """
         anio_actual = datetime.now().year
-        current_sequence = 0
+        current_sequence = 1
         try:
             control = NumeroControl.objects.get(anio=anio_actual, tipo_dte=cod_dte)
             current_sequence = control.secuencia
-            print("Secuencia: ", current_sequence)
         except NumeroControl.DoesNotExist:
-            current_sequence += 1
-            print("Incrementar secuencia: ", current_sequence)
-        return f"DTE-{cod_dte}-0000MOO1-{str(current_sequence).zfill(15)}"
+            pass
+
+        return (
+            f"DTE-{cod_dte}-"
+            f"{str(estab).zfill(4)}{str(pv).zfill(4)}-"
+            f"{str(current_sequence).zfill(15)}"
+        )
+
 
 # Modelo de Factura Electrónica
 class FacturaElectronica(models.Model):
+    #USUARIO QUE CREA EL DOCUMENTO
+    usuario = models.ForeignKey('auth.User', on_delete=models.CASCADE, null=True)
     #IDENTIFICACION
     version = models.CharField(max_length=50)
     #ambiente = models.ForeignKey(Ambiente, on_delete=models.CASCADE, null=True)

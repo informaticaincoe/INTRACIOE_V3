@@ -52,11 +52,13 @@
 <div class="row">
   <div class="col-md-6">
     <label>Latitud</label>
-    <input type="text" class="form-control" name="lat" id="id_lat" placeholder="13.692940" />
+    <input type="number" step="0.000001" inputmode="decimal" lang="en" class="form-control"
+       name="lat" id="id_lat" value="{{ c.lat|default:'' }}" placeholder="{{ c.lat|default:'' }}">
   </div>
   <div class="col-md-6">
     <label>Longitud</label>
-    <input type="text" class="form-control" name="lng" id="id_lng" placeholder="-89.218191" />
+    <input type="number" step="0.000001" inputmode="decimal" lang="en" class="form-control"
+       name="lng" id="id_lng" value="{{ c.lng|default:'' }}" placeholder="{{ c.lng|default:'' }}">
   </div>
 </div>
 
@@ -66,8 +68,6 @@
   </button>
   <small class="text-muted ms-2">o haz clic en el mapa</small>
 </div>
-
-
 
     <div class="col-12 d-flex gap-2">
       <button class="btn btn-primary">Guardar</button>
@@ -82,18 +82,24 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
- <script>
-(function() {
-  // Centro por defecto (San Salvador)
-  var start = {lat: 13.69294, lng: -89.21819, zoom: 12};
 
-  var map = L.map('map').setView([start.lat, start.lng], start.zoom);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+<script>
+  
+(function() {
+  // Valores iniciales
+  var $lat = document.getElementById('id_lat');
+  var $lng = document.getElementById('id_lng');
+
+  // Si ya hay coords en el input → usarlas, si no usar San Salvador
+  var initLat = parseFloat($lat.value) || 13.69294;
+  var initLng = parseFloat($lng.value) || -89.21819;
+  var zoom    = ($lat.value && $lng.value) ? 15 : 12;
+
+  var map = L.map('map').setView([initLat, initLng], zoom);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution:'&copy; OpenStreetMap'
   }).addTo(map);
 
-  var $lat = document.getElementById('id_lat');
-  var $lng = document.getElementById('id_lng');
   var marker = null;
 
   function setMarker(lat, lng) {
@@ -113,17 +119,17 @@
     map.setView([lat, lng], 15);
   }
 
-  // clic en el mapa → fija punto
+  // Si había coords guardadas → mostrar marcador
+  if ($lat.value && $lng.value) {
+    setMarker(initLat, initLng);
+  }
+
+  // Clic en el mapa
   map.on('click', function(e) {
     setMarker(e.latlng.lat, e.latlng.lng);
   });
 
-  // si el usuario ya escribió lat/lng, centra ahí
-  if ($lat.value && $lng.value) {
-    setMarker(parseFloat($lat.value), parseFloat($lng.value));
-  }
-
-  // botón "Usar mi ubicación"
+  // Botón "Usar mi ubicación"
   document.getElementById('btn-geo').addEventListener('click', function(){
     if (!navigator.geolocation) return alert('Geolocalización no soportada.');
     navigator.geolocation.getCurrentPosition(function(pos){
@@ -133,5 +139,7 @@
     }, {enableHighAccuracy:true, timeout:8000});
   });
 })();
+
 </script>
+
 {% endblock %}

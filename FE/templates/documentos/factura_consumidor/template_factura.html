@@ -1,4 +1,6 @@
 {% load static %}
+{% load qr_tags %}
+{% load i18n %}
 
 <!DOCTYPE html>
 <html lang="es">
@@ -159,9 +161,9 @@
                 <p class="mb-1"><strong>Correo:</strong> {{ factura.dtereceptor.correo }}</p>
             </div>
             <div class="col-md-4 text-end qr-container">
-                <img src="{% static 'img/qr1.png' %}" alt="QR 1" class="img-fluid">
-                <img src="{% static 'img/qr2.png' %}" alt="QR 2" class="img-fluid">
-                <img src="{% static 'img/qr3.png' %}" alt="QR 3" class="img-fluid">
+                <img src="{% qr_src 'https://admin.factura.gob.sv/consultaPublica' 90 1 'M' %}" alt="QR Consulta pública">
+                <img src="{% qr_src factura.codigo_generacion|upper 90 1 'M' %}" alt="QR Código">
+                <img src="{% qr_src factura.sello_recepcion|upper 90 1 'M' %}" alt="QR Sello">                
             </div>
         </div>
     </div>

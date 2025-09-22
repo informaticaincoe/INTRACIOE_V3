@@ -47,9 +47,9 @@
             {# --- Botón Visitar (Maps) --- #}
             {% if c.lat and c.lng %}
               <a class="btn btn-sm btn-success"
-                 target="_blank" rel="noopener"
-                 href="https://www.google.com/maps/dir/?api=1&destination={{ c.lat }},{{ c.lng }}">
-                 Visitar
+                target="_blank" rel="noopener"
+                href="https://www.google.com/maps/dir/?api=1&destination={{ c.lat|stringformat:"f" }},{{ c.lng|stringformat:"f" }}">
+                Visitar
               </a>
             {% elif c.direccion %}
               {% with q=c.direccion|default_if_none:""|add:", "|add:c.municipio.descripcion|default_if_none:""|add:", El Salvador"|urlencode %}

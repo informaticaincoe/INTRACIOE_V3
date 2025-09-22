@@ -16,18 +16,27 @@
   <!-- TOPBAR -->
   <nav class="navbar navbar-dark bg-primary sticky-top">
     <div class="container-fluid">
+      <!-- Botón menú móvil -->
       <button class="btn btn-outline-light d-lg-none me-2" data-bs-toggle="offcanvas" data-bs-target="#sidebarOff">
         <i class="bi bi-list"></i>
       </button>
-      <a class="navbar-brand fw-bold">
+
+      <!-- Botón ir atrás -->
+      <button class="btn btn-outline-light me-2" onclick="window.history.back()">
+        <i class="bi bi-arrow-left"></i>
+      </button>
+
+      <!-- Nombre/logo -->
+      <a class="navbar-brand fw-bold" href="{% url 'index' %}">
         Intra<span class="text-accent">coe</span>
       </a>
+
       <div class="d-flex align-items-center gap-2">
         {% if user.is_authenticated %}
         <button class="btn btn-link text-white"><i class="bi bi-bell"></i></button>
         <button class="btn btn-outline-light" data-bs-toggle="offcanvas" data-bs-target="#profileOff">
           <i class="bi bi-person-circle me-1"></i>
-              {{ user.username }}
+          {{ user.username }}
         </button>
         {% else %}
           <a href="{% url 'login' %}" class="btn btn-primary w-100 mb-2">

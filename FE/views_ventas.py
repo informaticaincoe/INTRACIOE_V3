@@ -6,13 +6,21 @@ from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponseBadRequest
 from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
-from django.db.models import Q, F, Sum
+from django.db.models import Q, F, Sum, Count
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 import requests
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
+from django.contrib.auth.models import User  # si usas auth default
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+import openpyxl
+from openpyxl.utils import get_column_letter
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+from weasyprint import HTML
+
 
 # Modelos FE
 from .models import NumeroControl, Receptor_fe, TiposDocIDReceptor, Municipio, Tipo_dte, Modelofacturacion, TipoTransmision
@@ -40,6 +48,91 @@ def _ensure_receptor(receptor_id):
         return Receptor_fe.objects.get(id=receptor_id)
     except Receptor_fe.DoesNotExist:
         return None
+# ------------- EXPORTACIONES -------------
+
+@login_required
+def exportar_facturas_excel(request):
+    # aplicar mismos filtros que en tu lista
+    qs = FacturaElectronica.objects.select_related("dtereceptor", "tipo_dte").all()
+
+    if request.GET.get("recibido_mh"):
+        qs = qs.filter(recibido_mh=(request.GET["recibido_mh"] == "True"))
+    if request.GET.get("tipo_dte"):
+        qs = qs.filter(tipo_dte_id=request.GET["tipo_dte"])
+    if request.GET.get("sello_recepcion"):
+        qs = qs.filter(sello_recepcion__icontains=request.GET["sello_recepcion"])
+
+    # Crear workbook
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Facturas"
+
+    # Encabezados
+    headers = ["Número de Control", "Cliente", "Tipo DTE", "Fecha", "Total", "IVA", "Recibido MH", "Estado"]
+    ws.append(headers)
+
+    for factura in qs:
+        ws.append([
+            factura.numero_control,
+            factura.dtereceptor.nombre if factura.dtereceptor else "",
+            factura.tipo_dte.descripcion if factura.tipo_dte else "",
+            factura.fecha_emision.strftime("%Y-%m-%d") if factura.fecha_emision else "",
+            float(factura.total_pagar or 0),
+            float(factura.total_iva or 0),
+            "Sí" if factura.recibido_mh else "No",
+            "Anulada" if factura.dte_invalidacion.exists() else "Viva"
+        ])
+
+    # Ajustar ancho de columnas
+    for col_num, _ in enumerate(headers, 1):
+        ws.column_dimensions[get_column_letter(col_num)].width = 20
+
+    # Preparar respuesta
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = 'attachment; filename="facturas.xlsx"'
+    wb.save(response)
+    return response
+
+
+
+@login_required
+def exportar_facturas_pdf(request):
+    qs = FacturaElectronica.objects.select_related("dtereceptor", "tipo_dte").prefetch_related("detalles__producto")
+
+    # aplicar filtros
+    if request.GET.get("recibido_mh"):
+        qs = qs.filter(recibido_mh=(request.GET["recibido_mh"] == "True"))
+    if request.GET.get("tipo_dte"):
+        qs = qs.filter(tipo_dte_id=request.GET["tipo_dte"])
+
+    # totales de facturas
+    total_facturas = qs.count()
+    total_monto = qs.aggregate(Sum("total_pagar"))["total_pagar__sum"] or 0
+    total_iva = qs.aggregate(Sum("total_iva"))["total_iva__sum"] or 0
+
+    # totales de productos
+    from .models import DetalleFactura
+    detalles = DetalleFactura.objects.filter(factura__in=qs)
+
+    total_lineas = detalles.count()
+    total_cantidad = detalles.aggregate(Sum("cantidad"))["cantidad__sum"] or 0
+
+    html_string = render_to_string("reportes/facturas_pdf.html", {
+        "facturas": qs,
+        "total_facturas": total_facturas,
+        "total_monto": total_monto,
+        "total_iva": total_iva,
+        "total_lineas": total_lineas,
+        "total_cantidad": total_cantidad,
+        "filtros": request.GET,
+    })
+    pdf_file = HTML(string=html_string).write_pdf()
+
+    response = HttpResponse(pdf_file, content_type="application/pdf")
+    response["Content-Disposition"] = 'inline; filename="facturas.pdf"'
+    return response
 
 
 # ---------- HOME VENTAS ----------
@@ -48,14 +141,17 @@ def ventas_home(request):
     return render(request, 'ventas/home.html')
 
 # --------- CLIENTES (Receptor_fe) ----------
-@login_required
 def _parse_coord(val):
     try:
-        if val in (None, "","null"): return None
-        return Decimal(str(val))
+        if val in (None, "", "null"):
+            return None
+        # Normalizar: convertir comas decimales a puntos
+        val = str(val).strip().replace(",", ".")
+        # Convertir a Decimal manteniendo todos los decimales
+        return Decimal(val)
     except (InvalidOperation, ValueError, TypeError):
         return None
-    
+     
 @login_required
 def _geocode_address_osm(q):
     """
@@ -105,6 +201,9 @@ def clientes_crear(request):
         lat = _parse_coord(request.POST.get('lat'))
         lng = _parse_coord(request.POST.get('lng'))
 
+        geocode_source = ""
+        geocoded_at = None
+
         if not (tipo_id and num_documento and nombre and municipio_id):
             messages.error(request, 'Complete los campos obligatorios.')
             return redirect('clientes_crear')
@@ -112,17 +211,19 @@ def clientes_crear(request):
         tipo = get_object_or_404(TiposDocIDReceptor, pk=tipo_id)
         municipio = get_object_or_404(Municipio, pk=municipio_id)
 
-        # si no hay lat/lng pero hay dirección → intentar geocodificar
-        geocode_source = ""
-        geocoded_at = None
+
         if (lat is None or lng is None) and direccion:
-            # construye una consulta con municipio y país para mejorar precisión
+            # auto-geocode
             muni = municipio.descripcion if hasattr(municipio, "descripcion") else ""
             depto = getattr(getattr(municipio, "departamento", None), "descripcion", "")
             query = f"{direccion}, {muni}, {depto}, El Salvador"
             lat, lng, geocode_source = _geocode_address_osm(query)
             if lat is not None and lng is not None:
                 geocoded_at = timezone.now()
+        elif lat is not None and lng is not None:
+            # 👇 si viene del mapa o "usar mi ubicación"
+            geocode_source = "manual"
+            geocoded_at = timezone.now()
 
         Receptor_fe.objects.create(
             tipo_documento=tipo, num_documento=num_documento, nombre=nombre,
@@ -130,6 +231,7 @@ def clientes_crear(request):
             municipio=municipio, nrc=nrc,
             lat=lat, lng=lng, geocode_source=geocode_source, geocoded_at=geocoded_at
         )
+
         messages.success(request, 'Cliente creado.')
         return redirect('clientes_list')
 
@@ -144,6 +246,7 @@ def clientes_editar(request, pk):
     c = get_object_or_404(Receptor_fe, pk=pk)
     tipos = TiposDocIDReceptor.objects.all().order_by('descripcion')
     municipios = Municipio.objects.select_related('departamento').order_by('descripcion')
+
     if request.method == 'POST':
         tipo_id = request.POST.get('tipo_documento')
         municipio_id = request.POST.get('municipio')
@@ -154,11 +257,30 @@ def clientes_editar(request, pk):
         c.telefono = request.POST.get('telefono') or ''
         c.correo = request.POST.get('correo') or ''
         c.nrc = request.POST.get('nrc') or None
+
+        # ✅ guardar coords del formulario
+        c.lat = _parse_coord(request.POST.get('lat'))
+        c.lng = _parse_coord(request.POST.get('lng'))
+
+        lat = _parse_coord(request.POST.get('lat'))
+        lng = _parse_coord(request.POST.get('lng'))
+
+        if lat is not None and lng is not None:
+            c.lat = lat
+            c.lng = lng
+            c.geocode_source = "manual"
+            c.geocoded_at = timezone.now()
+        elif c.direccion:
+            # opcional: reintentar geocodificación automática si no hay lat/lng
+            pass
+
         if municipio_id:
             c.municipio = get_object_or_404(Municipio, pk=municipio_id)
+
         c.save()
         messages.success(request, 'Cliente actualizado.')
         return redirect('clientes_list')
+
     return render(request, 'ventas/clientes/form.html', {'c': c, 'tipos': tipos, 'municipios': municipios})
 
 @login_required
@@ -398,14 +520,99 @@ def carrito_add_go(request):
     from django.urls import reverse
     return redirect(f'{reverse("carrito_ver")}?receptor_id={receptor.id}')
 
-# ---------- LISTA/DETALLE VENTAS ----------
+# ---------- LISTA/DETALLE VENTAS ---------
 @login_required
 def ventas_list(request):
-    tipo = request.GET.get('tipo', '')  # '01' FE, '14' sujeto excluido, etc.
-    qs = FacturaElectronica.objects.select_related('dtereceptor', 'tipo_dte').all().order_by('-fecha_emision', '-id')
+    qs = FacturaElectronica.objects.select_related(
+        'dtereceptor__municipio__departamento',
+        'tipo_dte'
+    ).all().order_by('-fecha_emision', '-id')
+
+    # --- FILTROS ---
+    tipo = request.GET.get('tipo', '')
+    cliente = request.GET.get('cliente', '')
+    producto = request.GET.get('producto', '')
+    usuario = request.GET.get('usuario', '')
+    fecha_ini = request.GET.get('fecha_ini', '')
+    fecha_fin = request.GET.get('fecha_fin', '')
+    estado = request.GET.get('estado', '')
+    departamento = request.GET.get('departamento', '')
+    municipio = request.GET.get('municipio', '')
+    monto_min = request.GET.get('monto_min', '')
+    monto_max = request.GET.get('monto_max', '')
+
     if tipo:
         qs = qs.filter(tipo_dte__codigo=tipo)
-    return render(request, 'ventas/lista.html', {'ventas': qs, 'tipo': tipo})
+    if cliente:
+        qs = qs.filter(dtereceptor__id=cliente)
+    if fecha_ini:
+        qs = qs.filter(fecha_emision__gte=fecha_ini)
+    if fecha_fin:
+        qs = qs.filter(fecha_emision__lte=fecha_fin)
+    if estado == "firmado":
+        qs = qs.filter(firmado=True, recibido_mh=False)
+    elif estado == "recibido":
+        qs = qs.filter(recibido_mh=True)
+    elif estado == "borrador":
+        qs = qs.filter(firmado=False)
+
+    if departamento:
+        qs = qs.filter(dtereceptor__municipio__departamento__id=departamento)
+    if municipio:
+        qs = qs.filter(dtereceptor__municipio__id=municipio)
+
+    if monto_min:
+        qs = qs.filter(total_pagar__gte=monto_min)
+    if monto_max:
+        qs = qs.filter(total_pagar__lte=monto_max)
+
+    if producto:
+        qs = qs.filter(detalles__producto__id=producto).distinct()
+
+    if usuario:
+        qs = qs.filter(json_original__user_id=usuario)  # ⚠️ ajusta si tienes un campo real "usuario"
+        # si guardas el usuario en otro campo de FacturaElectronica cámbialo aquí
+
+    # --- PAGINACIÓN ---
+    paginator = Paginator(qs, 20)
+    page = request.GET.get('page')
+    ventas_page = paginator.get_page(page)
+
+    # --- Limpieza del querystring (para paginación) ---
+    params = request.GET.copy()
+    if "page" in params:
+        params.pop("page")
+    querystring = params.urlencode()
+
+    # --- RESUMEN ---
+    resumen = qs.aggregate(
+        total_ventas=Sum('total_pagar'),
+        cantidad=Count('id')
+    )
+
+    context = {
+        'ventas': ventas_page,
+        'resumen': resumen,
+        'tipo': tipo,
+        'cliente': cliente,
+        'producto': producto,
+        'usuario': usuario,
+        'fecha_ini': fecha_ini,
+        'fecha_fin': fecha_fin,
+        'estado': estado,
+        'departamento': departamento,
+        'municipio': municipio,
+        'monto_min': monto_min,
+        'monto_max': monto_max,
+
+        # listas para selects
+        'clientes': Receptor_fe.objects.all().order_by('nombre'),
+        'productos': Producto.objects.all().order_by('descripcion'),
+        'usuarios': User.objects.all().order_by('username'),
+        **request.GET.dict(),
+        'querystring': querystring,
+    }
+    return render(request, 'ventas/lista.html', context)
 
 @login_required
 def venta_detalle(request, factura_id: int):
