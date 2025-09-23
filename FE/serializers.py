@@ -7,10 +7,10 @@ from .models import (
     INCOTERMS, Departamento, Descuento, DetalleFacturaSujetoExcluido, EventoContingencia, FacturaSujetoExcluidoElectronica, FormasPago, LoteContingencia, OtrosDicumentosAsociado, Pais, Plazo, RecintoFiscal, RegimenExportacion, TipoContingencia,
     TipoDocContingencia, TipoDomicilioFiscal, TipoDonacion, TipoPersona, TipoRetencionIVAMH, TipoTransmision, TipoTransporte, TiposServicio_Medico,
     Token_data, Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica,
-    Receptor_fe, Tipo_dte, TipoMoneda, TipoUnidadMedida, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos,
+    Receptor_fe, Tipo_dte, TipoMoneda, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos,
     TipoGeneracionDocumento
 )
-from INVENTARIO.models import Producto, TipoItem, TipoTributo, Tributo
+from INVENTARIO.models import Producto, TipoItem, TipoTributo, Tributo, TipoUnidadMedida
 
 # Serializer para la autenticación vía API
 class AuthRequestSerializer(serializers.Serializer):

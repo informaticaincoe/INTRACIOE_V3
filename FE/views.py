@@ -33,8 +33,8 @@ from django.views.decorators.http import require_POST
 from decimal import ROUND_HALF_UP, ConversionSyntax, Decimal, getcontext
 from FE.utils import _get_emisor_for_user
 from intracoe import settings
-from .models import FacturaSujetoExcluidoElectronica, Token_data, Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica,  Receptor_fe, Tipo_dte, TipoMoneda, TipoUnidadMedida, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos, Descuento, FormasPago, Plazo, TipoGeneracionDocumento, TipoContingencia, EventoContingencia, TipoTransmision, LoteContingencia, representanteEmisor
-from INVENTARIO.models import Almacen, DetalleDevolucionVenta, DevolucionVenta, MovimientoInventario, NotaCredito, Producto, TipoItem, Tributo
+from .models import FacturaSujetoExcluidoElectronica, Token_data, Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica,  Receptor_fe, Tipo_dte, TipoMoneda, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos, Descuento, FormasPago, Plazo, TipoGeneracionDocumento, TipoContingencia, EventoContingencia, TipoTransmision, LoteContingencia, representanteEmisor
+from INVENTARIO.models import Almacen, DetalleDevolucionVenta, DevolucionVenta, MovimientoInventario, NotaCredito, Producto, TipoItem, Tributo, TipoUnidadMedida
 from .forms import EmisorForm, ExcelUploadForm, RepresentanteEmisorForm
 from django.db import transaction
 from django.utils import timezone

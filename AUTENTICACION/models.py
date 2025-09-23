@@ -3,8 +3,25 @@ from django.db import models
 import uuid
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.contrib.auth.models import AbstractUser
 
-from FE.models import Emisor_fe
+class User(AbstractUser):
+    ROLE_CHOICES = (
+        ('admin', 'Administrador'),
+        ('vendedor', 'Vendedor'),
+        ('supervisor', 'Supervisor'),
+        ('cliente', 'Cliente'),
+    )
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='cliente')
+
+    def is_admin(self):
+        return self.role == 'admin'
+
+    def is_vendedor(self):
+        return self.role == 'vendedor'
+
+    def is_supervisor(self):
+        return self.role == 'supervisor'
 
 class PasswordResetCode(models.Model):
     #NEW
@@ -38,7 +55,7 @@ class UsuarioEmisor(models.Model):
     marcar uno como predeterminado, y activar/desactivar la relación.
     """
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="emisores_rel")
-    emisor = models.ForeignKey(Emisor_fe, on_delete=models.CASCADE, related_name="usuarios_rel")
+    emisor = models.ForeignKey("FE.Emisor_fe", on_delete=models.CASCADE, related_name="usuarios_rel")
     activo = models.BooleanField(default=True)
     es_predeterminado = models.BooleanField(default=False)
     creado = models.DateTimeField(auto_now_add=True)
@@ -63,13 +80,12 @@ class Perfilusuario(models.Model):
 
     # NUEVO: emisor activo
     emisor_activo = models.ForeignKey(
-        Emisor_fe, on_delete=models.SET_NULL,
+        "FE.Emisor_fe", on_delete=models.SET_NULL,
         null=True, blank=True, related_name="usuarios_activos"
     )
 
     def __str__(self):
         return f"{self.user.email} – {self.nombre or ''} {self.apellido or ''}".strip()
-
 
 # Crear automáticamente el perfil al crear el usuario
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)

@@ -1,4 +1,6 @@
 from django.contrib import admin
+
+from INVENTARIO.models import TipoUnidadMedida
 from .models import DetalleFacturaSujetoExcluido, FacturaSujetoExcluidoElectronica, Token_data
 from django import forms
 from django.shortcuts import render, redirect
@@ -12,7 +14,7 @@ from .models import (INCOTERMS, ActividadEconomica, NumeroControl, FacturaElectr
                            TipoInvalidacion, TipoPersona, TipoTransmision, TipoContingencia, TipoRetencionIVAMH, 
                            TipoGeneracionDocumento, TipoTransporte, TiposDocIDReceptor, TiposEstablecimientos, 
                            TiposServicio_Medico, CondicionOperacion, FormasPago, Plazo,
-                            Descuento, DetalleFactura, TipoMoneda, TipoUnidadMedida, EventoInvalidacion, EventoContingencia, LoteContingencia, representanteEmisor, RecintoFiscal, RegimenExportacion)
+                            Descuento, DetalleFactura, TipoMoneda, EventoInvalidacion, EventoContingencia, LoteContingencia, representanteEmisor, RecintoFiscal, RegimenExportacion)
 
 
 # Lista de todos los modelos a registrar

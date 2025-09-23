@@ -21,12 +21,14 @@ from django.http import HttpResponse
 from django.template.loader import render_to_string
 from weasyprint import HTML
 
+from django.db.models import FloatField, F, ExpressionWrapper
+from math import radians, cos, sin, asin, sqrt
 
 # Modelos FE
 from .models import NumeroControl, Receptor_fe, TiposDocIDReceptor, Municipio, Tipo_dte, Modelofacturacion, TipoTransmision
-from .models import FacturaElectronica, DetalleFactura, TipoUnidadMedida, Descuento
+from .models import FacturaElectronica, DetalleFactura, Descuento
 # Modelos INVENTARIO
-from INVENTARIO.models import Producto, MovimientoInventario, DevolucionVenta, DetalleDevolucionVenta, Almacen, Tributo, TipoItem
+from INVENTARIO.models import Producto, MovimientoInventario, DevolucionVenta, DetalleDevolucionVenta, Almacen, Tributo, TipoItem, TipoUnidadMedida
 
 CART_SESSION_KEY = "cart_by_receptor"    # { "<receptor_id>": { "<producto_id>": {qty, precio, iva_on, desc_pct} } }
 
@@ -173,13 +175,59 @@ def _geocode_address_osm(q):
         pass
     return None, None, ""
 
+
+def haversine(lat1, lon1, lat2, lon2):
+    """
+    Calcula la distancia en km entre dos puntos (lat/lng)
+    """
+    # Aseguramos que todo sea float
+    lat1, lon1, lat2, lon2 = map(float, [lat1, lon1, lat2, lon2])
+
+    R = 6378  # Radio de la Tierra en km
+    dlat = radians(lat2 - lat1)
+    dlon = radians(lon2 - lon1)
+    a = sin(dlat/2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a))
+    return R * c
+
 @login_required
 def clientes_list(request):
     q = request.GET.get('q', '')
+    lat = request.GET.get('lat')
+    lng = request.GET.get('lng')
+
     clientes = Receptor_fe.objects.all().order_by('nombre')
     if q:
         clientes = clientes.filter(nombre__icontains=q) | clientes.filter(num_documento__icontains=q)
-    return render(request, 'ventas/clientes/list.html', {'clientes': clientes, 'q': q})
+
+    lat_user, lng_user = None, None
+    if lat and lng:
+        try:
+            lat_user = float(lat)
+            lng_user = float(lng)
+            # calcular distancia en Python para cada cliente
+            for c in clientes:
+                if c.lat and c.lng:
+                    c.distancia_km = round(haversine(lat_user, lng_user, c.lat, c.lng), 2)
+                else:
+                    c.distancia_km = None
+            # ordenar por distancia
+            clientes = sorted(clientes, key=lambda x: x.distancia_km if x.distancia_km is not None else 999999)
+        except ValueError:
+            pass
+
+    # Paginación
+    paginator = Paginator(clientes, 10)
+    page_number = request.GET.get('page')
+    clientes_page = paginator.get_page(page_number)
+
+    return render(request, 'ventas/clientes/list.html', {
+        'clientes': clientes_page,
+        'q': q,
+        'lat': lat_user,
+        'lng': lng_user,
+    })
+
 
 @login_required
 @require_http_methods(["GET", "POST"])

@@ -2,6 +2,7 @@
 {# Prefijo para IDs únicos en desktop / móvil #}
 {% with uid_prefix=uid|default:"inv" %}
 
+{% if user.is_staff %}
 <button id="{{ uid_prefix }}-btn-gestion"
         class="list-group-item list-group-item-action d-flex align-items-center justify-content-between" type="button">
   <span><i class="bi bi-arrow-left-right me-2"></i> Gestión</span>
@@ -13,6 +14,7 @@
   <span><i class="bi bi-sliders me-2"></i> Ajuste de Inventario</span>
   <i class="bi bi-chevron-right small"></i>
 </button>
+{% endif %}
 
 <button id="{{ uid_prefix }}-btn-prod"
         class="list-group-item list-group-item-action d-flex align-items-center justify-content-between" type="button">

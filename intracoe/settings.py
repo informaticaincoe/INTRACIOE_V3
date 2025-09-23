@@ -140,8 +140,10 @@ INSTALLED_APPS = [
     'corsheaders',
     'AUTENTICACION',
 ]
+AUTH_USER_MODEL = "AUTENTICACION.User"
 
 MIDDLEWARE = [
+    "middleware.setup_check.SetupRedirectMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
@@ -194,12 +196,12 @@ DATABASES = {
 # configuration specifies settings for a SQLite database in this case. SQLite is a lightweight,
 # serverless, self-contained database engine that is often used for development and testing purposes
 # in Django projects.
-    'default111': {
+    'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db1.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     },
 
-    'default': {
+    'default1': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'intracoe',
         'USER': 'intracoe',
@@ -266,7 +268,7 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = BASE_DIR / 'media'
 
 #URL LOCAL PARA GUARDAR ARCHIVOS
 

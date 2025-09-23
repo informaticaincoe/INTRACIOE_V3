@@ -2,6 +2,7 @@
 {# Usa un prefijo 'uid' para no duplicar IDs cuando se incluye en desktop y móvil #}
 {% with uid_prefix=uid|default:"cmp" %}
 
+{% if user.is_staff %}
 <!-- COMPRAS -->
 <button class="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
         type="button"
@@ -11,6 +12,7 @@
         aria-controls="{{ uid_prefix }}-conta">
   <span><i class="bi bi-calculator me-2"></i> Compras </a> </span>
 </button>
+{% endif %}
 
 <!-- PROVEEDORES -->
 <button class="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
@@ -22,6 +24,7 @@
   <span><i class="bi bi-people me-2"></i> Proveedores</span>
 </button>
 
+{% if user.is_staff %}
 <!-- REPORTE -->
 <button class="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
         type="button"
@@ -31,7 +34,7 @@
         aria-controls="{{ uid_prefix }}-it">
   <span><i class="bi bi-pc-display me-2"></i> Reporte</span>
 </button>
-
+{% endif %}
 
 {# codigo js para manipular los botones y que abran una url #}
 <script>

@@ -1,4 +1,6 @@
 from decimal import Decimal
+import os
+from django.conf import settings
 from django.db import models
 
 class Categoria(models.Model):
@@ -113,6 +115,11 @@ class Producto(models.Model):
 
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
+    
+    def get_imagen_url(self):
+        if self.imagen:
+            return self.imagen.url
+        return os.path.join(settings.MEDIA_URL, "default.jpg")
 
 # MODELO PARA PROVEEDORES
 class Proveedor(models.Model):

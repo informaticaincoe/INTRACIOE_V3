@@ -10,6 +10,7 @@ from .models import (
     UsuarioEmisor,
     PasswordResetCode,
     ConfiguracionServidor,
+    User,
 )
 # Ajusta el import al nombre real de tu app que contiene Emisor_fe
 
@@ -21,10 +22,10 @@ try:
 except admin.sites.NotRegistered:
     pass
 
-@admin.register(User)
-class UserAdmin(BaseUserAdmin):
-    # además de lo que ya trae BaseUserAdmin, nos aseguramos de que haya search_fields
-    list_display = ("username", "email", "first_name", "last_name", "is_staff")
+# @admin.register(User)
+# class UserAdmin(BaseUserAdmin):
+#     # además de lo que ya trae BaseUserAdmin, nos aseguramos de que haya search_fields
+#     list_display = ("username", "email", "first_name", "last_name", "is_staff")
 
 
 # --- 2) Asegurar que Emisor_fe tenga admin con search_fields si lo usas en autocomplete_fields ---
@@ -78,3 +79,11 @@ class ConfiguracionServidorAdmin(admin.ModelAdmin):
     list_display  = ("clave", "valor", "url", "url_endpoint", "fecha_creacion")
     #search_fields = ("clave", "valor", "url", "url_endpoint", "descripcion")
     list_filter   = ("fecha_creacion",)
+
+@admin.register(User)
+class UserAdmin(BaseUserAdmin):
+    fieldsets = BaseUserAdmin.fieldsets + (
+        ("Rol en el sistema", {"fields": ("role",)}),
+    )
+    list_display = ("username", "email", "first_name", "last_name", "role", "is_staff")
+    list_filter = ("role", "is_staff", "is_superuser")

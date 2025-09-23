@@ -2,7 +2,6 @@ from django.db import models
 from django.utils import timezone
 from datetime import timedelta, datetime
 from decimal import ROUND_HALF_UP, Decimal
-from INVENTARIO.models import Producto, ProductoProveedor, Proveedor, TipoItem, TipoUnidadMedida
 from django.core.validators import MinValueValidator, MaxValueValidator
 import uuid
 
@@ -332,11 +331,11 @@ class NumeroControl(models.Model):
             f"{str(current_sequence).zfill(15)}"
         )
 
-
 # Modelo de Factura Electrónica
 class FacturaElectronica(models.Model):
     #USUARIO QUE CREA EL DOCUMENTO
-    usuario = models.ForeignKey('auth.User', on_delete=models.CASCADE, null=True)
+    #usuario = models.ForeignKey('auth.User', on_delete=models.CASCADE, null=True)
+    usuario = models.ForeignKey('AUTENTICACION.User', on_delete=models.CASCADE, null=True)
     #IDENTIFICACION
     version = models.CharField(max_length=50)
     #ambiente = models.ForeignKey(Ambiente, on_delete=models.CASCADE, null=True)
@@ -404,7 +403,7 @@ class FacturaElectronica(models.Model):
     envio_correo_contingencia = models.BooleanField(default=False)
     
     #EXPORTACION
-    tipoItemEmisor = models.ForeignKey(TipoItem, on_delete=models.CASCADE, null=True)
+    tipoItemEmisor = models.ForeignKey("INVENTARIO.TipoItem", on_delete=models.CASCADE, null=True)
     recintoFiscal = models.ForeignKey(RecintoFiscal, on_delete=models.CASCADE, null=True)
     regimenExportacion = models.ForeignKey(RegimenExportacion, on_delete=models.CASCADE, null=True)
     seguro_exportacion = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
@@ -421,10 +420,10 @@ class FacturaElectronica(models.Model):
         return f"Factura {self.numero_control}"
 
 class DetalleFactura(models.Model):
-    factura = models.ForeignKey(FacturaElectronica, on_delete=models.CASCADE, related_name='detalles', help_text="Factura a la que pertenece este detalle")
-    producto = models.ForeignKey(Producto, on_delete=models.CASCADE,help_text="Producto asociado a este detalle")
+    factura = models.ForeignKey("FE.FacturaElectronica", on_delete=models.CASCADE, related_name='detalles', help_text="Factura a la que pertenece este detalle")
+    producto = models.ForeignKey("INVENTARIO.Producto", on_delete=models.CASCADE,help_text="Producto asociado a este detalle")
     cantidad = models.PositiveIntegerField(default=1,help_text="Cantidad del producto")
-    unidad_medida = models.ForeignKey(TipoUnidadMedida, on_delete=models.CASCADE, null=True)
+    unidad_medida = models.ForeignKey("INVENTARIO.TipoUnidadMedida", on_delete=models.CASCADE, null=True)
     iva_item = models.DecimalField(max_digits=10, decimal_places=6, null=True, default=Decimal('0.00'),)
     precio_unitario = models.DecimalField(max_digits=10, decimal_places=6,help_text="Precio unitario del producto")
     #descuento = models.DecimalField(max_digits=5, decimal_places=2, default=0,help_text="Descuento aplicado (en monto) sobre el total sin IVA")
@@ -472,7 +471,7 @@ class FacturaSujetoExcluidoElectronica(models.Model):
     #EMISOR
     dteemisor = models.ForeignKey(Emisor_fe, on_delete=models.CASCADE, related_name='facturas_emisor_sujeto_excluido_FE')
     #SUJETO EXCLUIDO
-    dtesujetoexcluido = models.ForeignKey(Proveedor, on_delete=models.CASCADE, related_name='facturas_sujeto_excluido_FE')
+    dtesujetoexcluido = models.ForeignKey("INVENTARIO.Proveedor", on_delete=models.CASCADE, related_name='facturas_sujeto_excluido_FE')
     
     #CONTINGENCIA
     #dtecontingencia = models.ForeignKey(EventoContingencia, on_delete=models.CASCADE, related_name='contingencia_dte', null=True, blank=True)
@@ -521,11 +520,11 @@ class FacturaSujetoExcluidoElectronica(models.Model):
 
 class DetalleFacturaSujetoExcluido(models.Model):
     factura = models.ForeignKey(FacturaSujetoExcluidoElectronica, on_delete=models.CASCADE, related_name='detallesSujetoExcluido', help_text="Factura a la que pertenece este detalle")
-    producto = models.ForeignKey(ProductoProveedor, on_delete=models.CASCADE,help_text="Producto de sujeto exclusivo asociado a este detalle")
+    producto = models.ForeignKey("INVENTARIO.ProductoProveedor", on_delete=models.CASCADE,help_text="Producto de sujeto exclusivo asociado a este detalle")
     cantidad = models.PositiveIntegerField(default=1,help_text="Cantidad del producto")
-    unidad_medida = models.ForeignKey(TipoUnidadMedida, on_delete=models.CASCADE, null=True)
+    unidad_medida = models.ForeignKey("INVENTARIO.TipoUnidadMedida", on_delete=models.CASCADE, null=True)
     tipo_item = models.CharField(max_length=150, null=True, blank=True)
-    codigo = models.ForeignKey(TipoItem, on_delete=models.CASCADE, null=True)
+    codigo = models.ForeignKey("INVENTARIO.TipoItem", on_delete=models.CASCADE, null=True)
     precio_unitario = models.DecimalField(max_digits=10, decimal_places=6,help_text="Precio unitario del producto")
 
     tiene_descuento = models.BooleanField(default=False)

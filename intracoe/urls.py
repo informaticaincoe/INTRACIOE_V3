@@ -3,7 +3,15 @@ from django.contrib.auth import views as auth_views
 from django.urls import path, include
 from . import views
 
+from django.conf import settings
+from django.conf.urls.static import static
+
+from AUTENTICACION import views_setup
+
 urlpatterns = [
+
+    path('', views.dashboard, name='index'),  # URL raíz que carga la vista index
+    path('setup/', views_setup.setup_wizard, name='setup_wizard'),  # 👈 agrega la ruta de setup
 
     path('', views.dashboard, name='index'),  # URL raíz que carga la vista index
     path('admin/', admin.site.urls),
@@ -23,3 +31,6 @@ urlpatterns = [
     path('api/', include('FE.urls_api')),
     path('api/autenticacion/', include('AUTENTICACION.urls_api')),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

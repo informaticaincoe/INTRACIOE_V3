@@ -40,10 +40,10 @@ from .serializers import (
 from .models import (
     INCOTERMS, ActividadEconomica, Departamento, DetalleFacturaSujetoExcluido, Emisor_fe, EventoContingencia, FacturaSujetoExcluidoElectronica, LoteContingencia, Municipio, OtrosDicumentosAsociado, Pais, Receptor_fe, FacturaElectronica, DetalleFactura,
     Ambiente, CondicionOperacion, Modelofacturacion, NumeroControl, RecintoFiscal, RegimenExportacion, Tipo_dte, TipoContingencia, TipoDocContingencia, TipoDomicilioFiscal, TipoDonacion, TipoGeneracionDocumento, 
-    TipoMoneda, TipoPersona, TipoRetencionIVAMH, TipoTransmision, TipoTransporte, TipoUnidadMedida, TiposDocIDReceptor, EventoInvalidacion, 
+    TipoMoneda, TipoPersona, TipoRetencionIVAMH, TipoTransmision, TipoTransporte, TiposDocIDReceptor, EventoInvalidacion, 
     Receptor_fe, TipoInvalidacion, TiposEstablecimientos, TiposServicio_Medico, Token_data, Descuento, FormasPago, TipoGeneracionDocumento, Plazo
 )
-from INVENTARIO.models import Almacen, DetalleDevolucionVenta, DevolucionVenta, MovimientoInventario, Producto, ProductoProveedor, Proveedor, TipoItem, TipoTributo, Tributo, UnidadMedida, NotaCredito
+from INVENTARIO.models import Almacen, DetalleDevolucionVenta, DevolucionVenta, MovimientoInventario, Producto, ProductoProveedor, Proveedor, TipoItem, TipoTributo, Tributo, UnidadMedida, NotaCredito, TipoUnidadMedida
 from django.db.models import Q
 from django.core.paginator import Paginator  # esta sigue igual
 

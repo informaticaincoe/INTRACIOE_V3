@@ -1,38 +1,53 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container py-4">
-  <div class="d-flex justify-content-end mb-1">
-    <div class="me-auto"><h4>Clientes</h4></div>
+  <!-- Encabezado -->
+  <div class="d-flex justify-content-end mb-3 align-items-center">
+    <div class="me-auto"><h4 class="mb-0">Clientes</h4></div>
 
-    <div class="me-3">
-      <a href="{% url 'clientes_crear' %}" class="btn btn-primary">Nuevo</a>
+    <div class="me-2">
+      <a href="{% url 'clientes_crear' %}" class="btn btn-primary">
+        <i class="bi bi-person-plus"></i>
+      </a>
     </div>
 
-    <a href="{% url 'carrito_ver' %}" class="btn btn-outline-primary">
-      <i class="bi bi-cart3"></i> Carrito
+    <a href="{% url 'carrito_ver' %}" class="btn btn-outline-primary position-relative">
+      <i class="bi bi-cart3"></i>
       {% if carrito_count and carrito_count > 0 %}
-        <span class="badge bg-primary rounded-pill">{{ carrito_count }}</span>
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+          {{ carrito_count }}
+        </span>
       {% endif %}
     </a>
   </div>
 
+  <!-- Filtro búsqueda -->
   <form class="row g-2 mb-3">
-    <div class="col-auto">
+    <div class="col-md-4">
       <input name="q" class="form-control" placeholder="Buscar por nombre o documento" value="{{ q }}">
     </div>
     <div class="col-auto">
-      <button class="btn btn-outline-secondary">Buscar</button>
+      <button class="btn btn-outline-secondary"><i class="bi bi-search"></i></button>
+    </div>
+    <div class="col-auto">
+      <button type="button" id="btnUbicacion" class="btn btn-outline-success">
+        <i class="bi bi-geo-alt"></i> Cerca de mí
+      </button>
     </div>
   </form>
 
+  <!-- Tabla -->
   <div class="table-responsive">
     <table class="table table-sm table-hover align-middle">
-      <thead>
+      <thead class="table-light">
         <tr>
           <th>Nombre</th>
           <th>Documento</th>
           <th>Teléfono</th>
           <th>Correo</th>
+          {% if lat and lng %}
+            <th>Distancia</th>
+          {% endif %}
           <th class="text-end">Acciones</th>
         </tr>
       </thead>
@@ -43,28 +58,48 @@
           <td>{{ c.num_documento }}</td>
           <td>{{ c.telefono }}</td>
           <td>{{ c.correo }}</td>
+
+          {% if lat and lng %}
+            <td>
+              {% if c.distancia_km %}
+                {{ c.distancia_km }} km
+              {% else %}
+                <span class="text-muted small">-</span>
+              {% endif %}
+            </td>
+          {% endif %}
+
           <td class="text-end">
-            {# --- Botón Visitar (Maps) --- #}
+            <!-- Botón Visitar -->
             {% if c.lat and c.lng %}
-              <a class="btn btn-sm btn-success"
-                target="_blank" rel="noopener"
-                href="https://www.google.com/maps/dir/?api=1&destination={{ c.lat|stringformat:"f" }},{{ c.lng|stringformat:"f" }}">
-                Visitar
+              <a class="btn btn-sm btn-success" target="_blank"
+                 href="https://www.google.com/maps/dir/?api=1&destination={{ c.lat|stringformat:"f" }},{{ c.lng|stringformat:"f" }}"
+                 title="Ver en mapa">
+                <i class="bi bi-geo-alt"></i>
               </a>
             {% elif c.direccion %}
               {% with q=c.direccion|default_if_none:""|add:", "|add:c.municipio.descripcion|default_if_none:""|add:", El Salvador"|urlencode %}
-                <a class="btn btn-sm btn-success"
-                   target="_blank" rel="noopener"
-                   href="https://www.google.com/maps/dir/?api=1&destination={{ q }}">
-                   Visitar
+                <a class="btn btn-sm btn-success" target="_blank" href="https://www.google.com/maps/dir/?api=1&destination={{ q }}" title="Ver en mapa">
+                  <i class="bi bi-geo-alt"></i>
                 </a>
               {% endwith %}
             {% else %}
               <span class="text-muted small me-2">Sin ubicación</span>
             {% endif %}
 
-            <a href="{% url 'clientes_editar' c.id %}" class="btn btn-sm btn-outline-primary">Editar</a>
-            <a href="{% url 'clientes_eliminar' c.id %}" class="btn btn-sm btn-outline-danger">Eliminar</a>
+            <!-- Botón Editar -->
+            <a href="{% url 'clientes_editar' c.id %}" class="btn btn-sm btn-outline-primary" title="Editar">
+              <i class="bi bi-pencil"></i>
+            </a>
+
+            <!-- Botón Eliminar con modal -->
+            <button type="button"
+                    class="btn btn-sm btn-outline-danger btn-eliminar"
+                    data-id="{{ c.id }}"
+                    data-nombre="{{ c.nombre }}"
+                    title="Eliminar">
+              <i class="bi bi-trash"></i>
+            </button>
           </td>
         </tr>
         {% empty %}
@@ -74,4 +109,91 @@
     </table>
   </div>
 </div>
+
+<nav aria-label="Paginación">
+  <ul class="pagination justify-content-center">
+    {% if clientes.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ clientes.previous_page_number }}&q={{ q }}{% if lat %}&lat={{ lat }}&lng={{ lng }}{% endif %}">
+          &laquo;
+        </a>
+      </li>
+    {% endif %}
+
+    {% for num in clientes.paginator.page_range %}
+      <li class="page-item {% if clientes.number == num %}active{% endif %}">
+        <a class="page-link" href="?page={{ num }}&q={{ q }}{% if lat %}&lat={{ lat }}&lng={{ lng }}{% endif %}">{{ num }}</a>
+      </li>
+    {% endfor %}
+
+    {% if clientes.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ clientes.next_page_number }}&q={{ q }}{% if lat %}&lat={{ lat }}&lng={{ lng }}{% endif %}">
+          &raquo;
+        </a>
+      </li>
+    {% endif %}
+  </ul>
+</nav>
+
+
+<!-- Modal Confirmación -->
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-labelledby="modalEliminarLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="modalEliminarLabel"><i class="bi bi-exclamation-triangle"></i> Confirmar eliminación</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        ¿Seguro que deseas eliminar al cliente <strong id="clienteNombre"></strong>?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle"></i>
+        </button>
+        <a id="btnConfirmarEliminar" href="#" class="btn btn-danger">
+          <i class="bi bi-trash"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const modal = new bootstrap.Modal(document.getElementById("modalEliminar"));
+  const clienteNombre = document.getElementById("clienteNombre");
+  const btnConfirmar = document.getElementById("btnConfirmarEliminar");
+
+  document.querySelectorAll(".btn-eliminar").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.id;
+      const nombre = btn.dataset.nombre;
+      clienteNombre.textContent = nombre;
+      btnConfirmar.href = "{% url 'clientes_eliminar' 0 %}".replace("0", id);
+      modal.show();
+    });
+  });
+});
+</script>
+
+<script>
+document.getElementById("btnUbicacion").addEventListener("click", function() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(function(pos) {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      const url = new URL(window.location.href);
+      url.searchParams.set("lat", lat);
+      url.searchParams.set("lng", lng);
+      window.location.href = url.toString();
+    }, function(err) {
+      alert("No se pudo obtener tu ubicación");
+    });
+  } else {
+    alert("Tu navegador no soporta geolocalización");
+  }
+});
+</script>
 {% endblock %}
