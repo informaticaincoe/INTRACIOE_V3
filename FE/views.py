@@ -63,32 +63,37 @@ from AUTENTICACION.models import ConfiguracionServidor, UsuarioEmisor
 from django.db.utils import OperationalError
 from django.core.exceptions import ObjectDoesNotExist
 
-try:
-    FIRMADOR_URL = ConfiguracionServidor.objects.filter(clave="firmador").first()
-except (OperationalError, ObjectDoesNotExist):
-    FIRMADOR_URL = None
+def get_firmador_url():
+    try:
+        conf = ConfiguracionServidor.objects.filter(clave="firmador").first()
+        return conf.url if conf else None
+    except (OperationalError, ObjectDoesNotExist):
+        return None
+    
+def get_config(clave, campo="url", default=None):
+    """
+    Obtiene un valor de ConfiguracionServidor de forma segura.
+    - clave: clave en la tabla (ej: 'firmador', 'certificado')
+    - campo: 'url', 'url_endpoint', 'valor', etc.
+    - default: valor por defecto si no existe
+    """
+    try:
+        conf = ConfiguracionServidor.objects.filter(clave=clave).first()
+        if conf:
+            return getattr(conf, campo, default)
+    except (AttributeError, OperationalError, ObjectDoesNotExist):
+        return default
+    return default
 
-try:
-    DJANGO_SERVER_URL = ConfiguracionServidor.objects.filter(clave="server_url").first()
-except (OperationalError, ObjectDoesNotExist):
-    DJANGO_SERVER_URL = None
+# Estos valores ya no rompen migraciones
+#FIRMADOR_URL     = get_config("firmador", campo="url")
+#DJANGO_SERVER_URL = get_config("server_url", campo="url")
+#CERT_PATH        = get_config("certificado", campo="url_endpoint")
+# HACIENDA_URL_TEST = get_config("hacienda_url_test", campo="url_endpoint")
+# HACIENDA_URL_PROD = get_config("hacienda_url_prod", campo="url_endpoint")
 
+# Constantes estáticas no cambian
 SCHEMA_PATH_fe_fc_v1 = "FE/json_schemas/fe-fc-v1.json"
-
-try:
-    CERT_PATH = ConfiguracionServidor.objects.filter(clave="certificado").first().url_endpoint
-except (AttributeError, OperationalError, ObjectDoesNotExist):
-    CERT_PATH = None
-
-try:
-    HACIENDA_URL_TEST = ConfiguracionServidor.objects.filter(clave="hacienda_url_test").first().url_endpoint
-except (AttributeError, OperationalError, ObjectDoesNotExist):
-    HACIENDA_URL_TEST = None
-
-try:
-    HACIENDA_URL_PROD = ConfiguracionServidor.objects.filter(clave="hacienda_url_prod").first().url_endpoint
-except (AttributeError, OperationalError, ObjectDoesNotExist):
-    HACIENDA_URL_PROD = None
 
 COD_CONSUMIDOR_FINAL = "01"
 COD_CREDITO_FISCAL = "03"
@@ -294,6 +299,35 @@ class ActividadEconomicaDeleteView(DeleteView):
     context_object_name = 'actividad'
     template_name = 'actividad_economica/delete.html'
     success_url = reverse_lazy('actividad_economica_list')
+
+def crear_tipo_dte(request):
+    if request.method == "POST":
+        codigo = request.POST.get("codigo")
+        descripcion = request.POST.get("descripcion")
+        version = request.POST.get("version")
+
+        if not codigo or not descripcion or not version:
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse({"error": "Todos los campos son obligatorios."}, status=400)
+
+        tipo, created = Tipo_dte.objects.get_or_create(
+            codigo=codigo,
+            defaults={"descripcion": descripcion, "version": version}
+        )
+        if not created:
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse({"error": f"El Tipo DTE {codigo} ya existe."}, status=400)
+
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse({
+                "id": tipo.id,
+                "codigo": tipo.codigo,
+                "descripcion": tipo.descripcion,
+                "version": tipo.version,
+            })
+
+    tipos = Tipo_dte.objects.all()
+    return render(request, "crear_tipo_dte.html", {"tipos": tipos})
 
 ########################################################################################################
 
@@ -580,15 +614,19 @@ def obtener_listado_productos_view(request):
     }
     return render(request, 'generar_dte.html', context)
 
-def get_productos_para_tipo(tipo_codigo: str):
-    tipo_dte_obj = Tipo_dte.objects.get(codigo=tipo_codigo)
+def get_productos_para_tipo(request, tipo_codigo):
+    try:
+        tipo_dte_obj = Tipo_dte.objects.get(codigo=tipo_codigo)
+    except Tipo_dte.DoesNotExist:
+        # Siempre devolvemos dos valores
+        messages.warning(
+            request,
+            f"No existe un Tipo DTE con código {tipo_codigo}. Por favor crea uno antes de continuar."
+        )
+        return [], None  # 👈 SIEMPRE dos valores
+
     productos = Producto.objects.all()
-    for p in productos:
-        if tipo_dte_obj.codigo == COD_CONSUMIDOR_FINAL:
-            p.preunitario = (p.preunitario if p.precio_iva else p.preunitario * Decimal("1.13")).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
-        else:
-            p.preunitario = (p.preunitario / Decimal("1.13") if p.precio_iva else p.preunitario).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
-    return productos, tipo_dte_obj
+    return list(productos), tipo_dte_obj
 
 @csrf_exempt
 @transaction.atomic
@@ -606,6 +644,15 @@ def generar_factura_view(request):
             
         tipo_dte = globals().get('tipo_documento_dte', '01')
         print("DTE: GET tipo_dte=", tipo_dte)
+
+        if not tipo_dte:
+            messages.error(request, "No se ha especificado el tipo de documento.")
+            return redirect('crear_tipo_dte')
+        
+        productos, tipo_dte_obj = get_productos_para_tipo(request, tipo_dte)
+        if not tipo_dte_obj:
+            return redirect("crear_tipo_dte")
+        print(f"DTE: Tipo DTE encontrado: {tipo_dte_obj.codigo} - {tipo_dte_obj.descripcion}")
 
         emisor_obj = _get_emisor_for_user(request.user, estricto=False)
         nuevo_numero = NumeroControl.preview_numero_control(
@@ -633,7 +680,8 @@ def generar_factura_view(request):
                 "email": emisor_obj.email,
             } if emisor_obj else None),
             "receptores": list(Receptor_fe.objects.values("id", "num_documento", "nombre")),
-            "productos": get_productos_para_tipo(tipo_dte)[0],  # por compatibilidad
+            "productos": productos,
+            "tipo_dte_obj": tipo_dte_obj,
             "tipooperaciones": CondicionOperacion.objects.all(),
             "tipoDocumentos": Tipo_dte.objects.exclude(Q(codigo=COD_NOTA_CREDITO) | Q(codigo=COD_NOTA_DEBITO)),
             "tipoItems": TipoItem.objects.all(),
@@ -1819,6 +1867,8 @@ def generar_json_sujeto(
 #VISTAS PARA FIRMAR Y GENERAR EL SELLO DE RECEPCION CON HACIENDA
 @csrf_exempt
 def firmar_factura_view(request, factura_id, interno=False):
+    CERT_PATH        = get_config("certificado", campo="url_endpoint")
+    FIRMADOR_URL = get_firmador_url()
     #Bloquear creacion de eventos por reintentos
     crear_evento = request.GET.get('crear_evento', 'false').lower() == 'true'
     print(f"-Inicio firma DTE: {factura_id}, interno: {interno}: crear evento: {crear_evento}")
@@ -2003,6 +2053,7 @@ def firmar_factura_view(request, factura_id, interno=False):
 @csrf_exempt
 @require_POST
 def enviar_factura_hacienda_view(request, factura_id, uso_interno=False):
+    HACIENDA_URL_PROD = get_config("hacienda_url_prod", campo="url_endpoint")
     #Bloquear creacion de eventos por reintentos
     crear_evento = request.GET.get('crear_evento', 'false').lower() == 'true'
     print("Inicio enviar factura a MH: crear evento: ", crear_evento)
@@ -2665,6 +2716,8 @@ def _obtener_token_hacienda():
     return token, token_type
 
 def _firmar_evento_invalidacion(evento: EventoInvalidacion):
+    CERT_PATH        = get_config("certificado", campo="url_endpoint")
+    FIRMADOR_URL = get_firmador_url()
     """
     Envía el JSON del evento al firmador.
     Devuelve (ok: bool, respuesta_json: dict)
@@ -3054,7 +3107,9 @@ def invalidacion_dte_sujeto_excluido_view(request, factura_id):
         return JsonResponse({"error": str(e)}, status=400)
     
 @csrf_exempt
-def firmar_factura_sujeto_excluido_anulacion_view(request, factura_id): 
+def firmar_factura_sujeto_excluido_anulacion_view(request, factura_id):
+    CERT_PATH        = get_config("certificado", campo="url_endpoint")
+    FIRMADOR_URL = get_firmador_url()
     """
     Firma la factura y, si ya está firmada, la envía a Hacienda.
     """
@@ -4755,6 +4810,7 @@ def contingencia_dte_view(request, contingencia_id):
 # FIRMAR EL JSON CONTINGENCIA
 @csrf_exempt
 def firmar_contingencia_view(request, contingencia_id):
+    CERT_PATH        = get_config("certificado", campo="url_endpoint")
     """
     Firma contingencia y, si ya está firmada, la envía a Hacienda.
     """
@@ -4817,6 +4873,7 @@ def firmar_contingencia_view(request, contingencia_id):
         headers = {"Content-Type": CONTENT_TYPE.valor}
 
         try:
+            FIRMADOR_URL = get_firmador_url()
             response = requests.post(FIRMADOR_URL.url_endpoint, json=payload, headers=headers)
             
             # Capturamos la respuesta completa

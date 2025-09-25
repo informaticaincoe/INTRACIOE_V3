@@ -21,6 +21,8 @@ from .views import (
 
 #renombrar el archivo
 urlpatterns = [
+    path("tipo-dte/nuevo/", views.crear_tipo_dte, name="crear_tipo_dte"),
+    
     # Homes de facturación:
     path('fe/facturacion/generar/', views.facturacion_generar_home, name='facturacion_generar_home'),
     path('fe/facturacion/correcciones/', views.facturacion_correcciones_home, name='facturacion_correcciones_home'),

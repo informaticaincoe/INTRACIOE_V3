@@ -196,14 +196,14 @@ DATABASES = {
 # configuration specifies settings for a SQLite database in this case. SQLite is a lightweight,
 # serverless, self-contained database engine that is often used for development and testing purposes
 # in Django projects.
-    'default': {
+    'default1': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     },
 
-    'default1': {
+    'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'intracoe',
+        'NAME': 'intracoe_prod',
         'USER': 'intracoe',
         'PASSWORD': 'intracoe',
         'HOST': '192.168.2.49',  # Dirección IP del servidor PostgreSQL

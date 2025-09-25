@@ -109,15 +109,14 @@
 
         <!-- Actividades -->
         <div class="mb-3">
-          <label class="form-label">Actividades Económicas *</label>
+          <label class="form-label">Buscar Actividad Económica</label>
+          <input type="text" id="buscarActividad" class="form-control mb-2" placeholder="Escribe para filtrar...">
+
           <select name="actividades_economicas" id="actividades" class="form-select" multiple required>
             {% for act in actividades %}
               <option value="{{ act.id }}">{{ act.codigo }} - {{ act.descripcion }}</option>
             {% endfor %}
           </select>
-          <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#modalActividad">
-            <i class="bi bi-plus"></i> Agregar actividad
-          </button>
         </div>
 
         <!-- Tipo Documento -->
@@ -165,5 +164,18 @@
   </div>
 </div>
 
+<script>
+  document.getElementById('buscarActividad').addEventListener('keyup', function() {
+    let filter = this.value.toLowerCase();
+    let options = document.querySelectorAll('#actividades option');
+    options.forEach(option => {
+      let text = option.textContent.toLowerCase();
+      option.style.display = text.includes(filter) ? '' : 'none';
+    });
+  });
+</script>
+
 {% include "setup/modales.html" %}
+
+
 {% endblock %}
