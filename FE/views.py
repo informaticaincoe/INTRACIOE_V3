@@ -63,12 +63,17 @@ from AUTENTICACION.models import ConfiguracionServidor, UsuarioEmisor
 from django.db.utils import OperationalError
 from django.core.exceptions import ObjectDoesNotExist
 
-def get_firmador_url():
-    try:
-        conf = ConfiguracionServidor.objects.filter(clave="firmador").first()
-        return conf.url if conf else None
-    except (OperationalError, ObjectDoesNotExist):
-        return None
+try:
+    FIRMADOR_URL = ConfiguracionServidor.objects.filter(clave="firmador").first()
+except (OperationalError, ObjectDoesNotExist):
+    FIRMADOR_URL = None
+
+try:
+    CERT_PATH = ConfiguracionServidor.objects.filter(clave="certificado").first()
+    CERT_PATH = CERT_PATH.url_endpoint if CERT_PATH else None
+except (OperationalError, ObjectDoesNotExist, AttributeError):
+    CERT_PATH = None
+
     
 def get_config(clave, campo="url", default=None):
     """
@@ -1867,8 +1872,8 @@ def generar_json_sujeto(
 #VISTAS PARA FIRMAR Y GENERAR EL SELLO DE RECEPCION CON HACIENDA
 @csrf_exempt
 def firmar_factura_view(request, factura_id, interno=False):
-    CERT_PATH        = get_config("certificado", campo="url_endpoint")
-    FIRMADOR_URL = get_firmador_url()
+    #CERT_PATH        = get_config("certificado", campo="url_endpoint")
+    #FIRMADOR_URL = get_firmador_url()
     #Bloquear creacion de eventos por reintentos
     crear_evento = request.GET.get('crear_evento', 'false').lower() == 'true'
     print(f"-Inicio firma DTE: {factura_id}, interno: {interno}: crear evento: {crear_evento}")
@@ -2675,6 +2680,21 @@ def _build_json_invalidacion(factura: FacturaElectronica,
         "motivo": json_motivo
     }
 
+
+@csrf_exempt
+def obtener_token_view(request):
+    if request.method == "GET":
+        try:
+            token, token_type = _obtener_token_hacienda()
+            return JsonResponse({
+                "token_type": token_type,
+                "token": token
+            })
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+    else:
+        return JsonResponse({"error": "Método no permitido"}, status=405)
+
 def _obtener_token_hacienda():
     """Autentica y retorna (token, token_type). Lanza excepción con texto claro si falla."""
     emisor = Emisor_fe.objects.first()
@@ -2716,8 +2736,6 @@ def _obtener_token_hacienda():
     return token, token_type
 
 def _firmar_evento_invalidacion(evento: EventoInvalidacion):
-    CERT_PATH        = get_config("certificado", campo="url_endpoint")
-    FIRMADOR_URL = get_firmador_url()
     """
     Envía el JSON del evento al firmador.
     Devuelve (ok: bool, respuesta_json: dict)
@@ -3108,8 +3126,7 @@ def invalidacion_dte_sujeto_excluido_view(request, factura_id):
     
 @csrf_exempt
 def firmar_factura_sujeto_excluido_anulacion_view(request, factura_id):
-    CERT_PATH        = get_config("certificado", campo="url_endpoint")
-    FIRMADOR_URL = get_firmador_url()
+
     """
     Firma la factura y, si ya está firmada, la envía a Hacienda.
     """
@@ -4873,7 +4890,6 @@ def firmar_contingencia_view(request, contingencia_id):
         headers = {"Content-Type": CONTENT_TYPE.valor}
 
         try:
-            FIRMADOR_URL = get_firmador_url()
             response = requests.post(FIRMADOR_URL.url_endpoint, json=payload, headers=headers)
             
             # Capturamos la respuesta completa

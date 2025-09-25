@@ -21,6 +21,9 @@ from .views import (
 
 #renombrar el archivo
 urlpatterns = [
+    # url para obtener token de hacienda
+    path("hacienda/token/", views.obtener_token_view, name="obtener_token_hacienda"),
+
     path("tipo-dte/nuevo/", views.crear_tipo_dte, name="crear_tipo_dte"),
     
     # Homes de facturación:

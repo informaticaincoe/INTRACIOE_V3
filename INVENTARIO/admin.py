@@ -103,5 +103,4 @@ class DetalleDevolucionCompraAdmin(admin.ModelAdmin):
 
 @admin.register(Categoria)
 class CategoriaAdmin(admin.ModelAdmin):
-    list_display = ('nombre')
-    search_fields = ('nombre')
+    pass
