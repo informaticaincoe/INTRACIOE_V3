@@ -13,7 +13,7 @@ from django.views.decorators.http import require_POST
 import requests
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
-from django.contrib.auth.models import User  # si usas auth default
+#from django.contrib.auth.models import User  # si usas auth default
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import openpyxl
 from openpyxl.utils import get_column_letter
@@ -32,6 +32,10 @@ from INVENTARIO.models import Producto, MovimientoInventario, DevolucionVenta, D
 
 CART_SESSION_KEY = "cart_by_receptor"    # { "<receptor_id>": { "<producto_id>": {qty, precio, iva_on, desc_pct} } }
 
+
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 def _get_cart(request):
     cart = request.session.get(CART_SESSION_KEY) or {}
