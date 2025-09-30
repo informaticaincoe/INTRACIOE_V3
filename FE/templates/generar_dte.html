@@ -17,11 +17,17 @@
   <form method="post" id="form-pos" autocomplete="off">
     {% csrf_token %}
 
-    <!-- Encabezado compacto -->
+    <!-- Encabezado -->
     <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
       <div class="me-auto">
         <h4 class="mb-0">Facturación rápida</h4>
-        <small class="text-muted">Documento → Cliente → Productos → Pago → Extras</small>
+        <small class="text-muted">
+          {% if emisor and emisor.imprime_termica or Emisor_fe and Emisor_fe.imprime_termica %}
+            Documento → Cliente → Productos → Pago
+          {% else %}
+            Documento → Cliente → Productos → Pago → Extras
+          {% endif %}
+        </small>
       </div>
       <div class="text-end">
         <div class="small text-muted">No. control</div>
@@ -37,30 +43,115 @@
       <!-- Columna izquierda -->
       <div class="col-lg-8">
 
-        {% comment %} <!-- 1) Tipo de documento -->
+      {% if emisor and emisor.imprime_termica or Emisor_fe and Emisor_fe.imprime_termica %}
+        {# ================== MODO TÉRMICA (solo datos factura, cliente, productos) ================== #}
+
+        <!-- 1) Tipo de documento -->
         <div class="card shadow-sm">
           <div class="card-body">
             <div class="d-flex align-items-center justify-content-between mb-2">
               <h6 class="mb-0">1) Tipo de documento</h6>
               <small class="text-muted">Obligatorio</small>
             </div>
-            <div class="d-flex flex-wrap gap-2">
+            <label class="form-label small mb-1">Seleccione el tipo de DTE</label>
+            <select name="tipo_documento_seleccionado" id="tipo_documento_seleccionado" class="form-select" required>
               {% for d in tipoDocumentos %}
-                <input type="radio" class="btn-check" name="tipo_documento_seleccionado" id="doc-{{ d.codigo }}" value="{{ d.codigo }}" {% if documento_seleccionado == d.codigo or forloop.first and not documento_seleccionado %}checked{% endif %}>
-                <label class="btn btn-outline-primary" for="doc-{{ d.codigo }}">{{ d.descripcion }}</label>
+                <option value="{{ d.codigo }}"
+                  {% if documento_seleccionado == d.codigo or forloop.first and not documento_seleccionado %}selected{% endif %}>
+                  {{ d.descripcion }} 
+                </option>
               {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <!-- 2) Cliente (sin condición de operación) -->
+        <div class="card shadow-sm mt-3">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="mb-0">2) Cliente</h6>
+              <small class="text-muted">Obligatorio</small>
+              <a href="{% url "clientes_crear" %}"><i class="bi bi-pen" data-bs-toggle="tooltip" data-bs-placement="left" title="Agregar"></i></a>
+            </div>
+            <label class="form-label small mb-1">Seleccione cliente</label>
+            <select name="receptor_id" id="receptor_id" class="form-select" required>
+              <option value="">— Seleccione —</option>
+              {% for r in receptores %}
+                <option value="{{ r.id }}">{{ r.num_documento }} — {{ r.nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <!-- 3) Productos -->
+        <div class="card shadow-sm mt-3">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="mb-0">3) Productos</h6>
+              <small class="text-muted">Buscar por código o nombre. Enter agrega.</small>
+            </div>
+
+            <div class="row g-2 align-items-end">
+              <div class="col-md-2">
+                <label class="form-label small mb-1">Cant.</label>
+                <input type="number" min="1" value="1" id="cantidadProducto" class="form-control text-center">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small mb-1">Producto</label>
+                <div class="combobox" id="productoPicker">
+                  <input type="text" class="form-control" id="productoPickerInput" placeholder="Busca por código o nombre… (↑/↓, Enter)">
+                  <div class="combo-menu" id="productoPickerMenu" role="listbox" aria-label="Productos"></div>
+                </div>
+                <div class="form-text">Tip: escanea o escribe; Enter selecciona.</div>
+              </div>
+              
+              <div class="col-md-2">
+                <label class="form-label small mb-1">Precio</label>
+                <div class="input-group">
+                  <span class="input-group-text">$</span>
+                  <input type="number" step="0.01" min="0" id="precioProducto" class="form-control">
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="form-check mt-1">
+                  <input class="form-check-input" type="checkbox" id="aplicaIvaProducto" checked>
+                  <label class="form-check-label" for="aplicaIvaProducto">Aplica IVA (13%)</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="table-responsive mt-3">
+              <table class="table table-sm align-middle" id="tabla-items">
+                <thead class="table-light">
+                  <tr>
+                    <th style="width:40%">Producto</th>
+                    <th class="text-end" style="width:10%">Precio</th>
+                    <th class="text-end" style="width:10%">Cant.</th>
+                    <th class="text-center" style="width:10%">IVA</th>
+                    <th class="text-end" style="width:10%">Total</th>
+                    <th class="text-end" style="width:10%"></th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-items">
+                  <tr class="empty">
+                    <td colspan="6" class="text-center text-muted py-3">Sin productos agregados.</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
-        </div> {% endcomment %}
+        </div>
 
-        <!-- 1) Tipo de documento (SELECT) -->
+      {% else %}
+        {# ================== MODO COMPLETO (todo) ================== #}
+
+        <!-- 1) Tipo de documento -->
         <div class="card shadow-sm">
           <div class="card-body">
             <div class="d-flex align-items-center justify-content-between mb-2">
               <h6 class="mb-0">1) Tipo de documento</h6>
               <small class="text-muted">Obligatorio</small>
             </div>
-
             <label class="form-label small mb-1">Seleccione el tipo de DTE</label>
             <select name="tipo_documento_seleccionado" id="tipo_documento_seleccionado" class="form-select" required>
               {% for d in tipoDocumentos %}
@@ -73,7 +164,7 @@
           </div>
         </div>
 
-        <!-- 2) Cliente -->
+        <!-- 2) Cliente + Condición -->
         <div class="card shadow-sm mt-3">
           <div class="card-body">
             <div class="d-flex align-items-center justify-content-between mb-2">
@@ -99,24 +190,6 @@
                 </select>
               </div>
             </div>
-
-            <div class="row g-2 mt-2">
-              <div class="col-md-4">
-                <input type="text" class="form-control" name="nit_receptor" placeholder="NIT (opcional)">
-              </div>
-              <div class="col-md-4">
-                <input type="text" class="form-control" name="nombre_receptor" placeholder="Nombre (opcional)">
-              </div>
-              <div class="col-md-4">
-                <input type="text" class="form-control" name="telefono_receptor" placeholder="Tel. (opcional)">
-              </div>
-              <div class="col-12 mt-2">
-                <input type="text" class="form-control" name="direccion_receptor" placeholder="Dirección (opcional)">
-              </div>
-              <div class="col-12 mt-2">
-                <input type="email" class="form-control" name="correo_receptor" placeholder="Correo (opcional)">
-              </div>
-            </div>
           </div>
         </div>
 
@@ -137,12 +210,10 @@
                 </div>
                 <div class="form-text">Tip: escanea o escribe; Enter selecciona.</div>
               </div>
-
               <div class="col-md-2">
                 <label class="form-label small mb-1">Cant.</label>
                 <input type="number" min="1" value="1" id="cantidadProducto" class="form-control text-center">
               </div>
-
               <div class="col-md-2">
                 <label class="form-label small mb-1">Precio</label>
                 <div class="input-group">
@@ -150,13 +221,11 @@
                   <input type="number" step="0.01" min="0" id="precioProducto" class="form-control">
                 </div>
               </div>
-
               <div class="col-md-2 d-grid">
                 <button type="button" id="btnAgregarProducto" class="btn btn-primary">
                   <i class="bi bi-plus-circle me-1"></i> Agregar
                 </button>
               </div>
-
               <div class="col-12">
                 <div class="form-check mt-1">
                   <input class="form-check-input" type="checkbox" id="aplicaIvaProducto" checked>
@@ -170,9 +239,8 @@
                 <thead class="table-light">
                   <tr>
                     <th style="width:40%">Producto</th>
-                    <th class="text-end" style="width:10%">P. Unit</th>
+                    <th class="text-end" style="width:10%">Precio</th>
                     <th class="text-end" style="width:10%">Cant.</th>
-                    <th class="text-end" style="width:10%">Desc. (%)</th>
                     <th class="text-center" style="width:10%">IVA</th>
                     <th class="text-end" style="width:10%">Total</th>
                     <th class="text-end" style="width:10%"></th>
@@ -180,7 +248,7 @@
                 </thead>
                 <tbody id="tbody-items">
                   <tr class="empty">
-                    <td colspan="7" class="text-center text-muted py-3">Sin productos agregados.</td>
+                    <td colspan="6" class="text-center text-muted py-3">Sin productos agregados.</td>
                   </tr>
                 </tbody>
               </table>
@@ -188,7 +256,6 @@
           </div>
         </div>
 
-        
         <!-- 5) Extras -->
         <div class="card shadow-sm mt-3">
           <div class="card-body">
@@ -208,7 +275,6 @@
                       <div class="col-6">
                         <label class="form-label small mb-1">Porcentaje</label>
                         <input type="number" step="0.01" min="0" id="ret_iva_pct" class="form-control" value="1.00">
-                        <!-- espejo para la vista -->
                         <input type="hidden" name="porcentaje_retencion_iva" id="porcentaje_retencion_iva" value="1.00">
                       </div>
                       <div class="col-6">
@@ -222,12 +288,6 @@
                       <label class="form-check-label" for="ret_renta_sw">Retención Renta</label>
                     </div>
                     <div class="row g-2">
-                      <div class="col-6">
-                        <label class="form-label small mb-1">Porcentaje</label>
-                        <input type="number" step="0.01" min="0" id="ret_renta_pct" class="form-control" value="10.00">
-                        <!-- espejo para la vista -->
-                        <input type="hidden" name="porcentaje_retencion_renta" id="porcentaje_retencion_renta" value="10.00">
-                      </div>
                       <div class="col-6">
                         <label class="form-label small mb-1">Monto</label>
                         <input type="number" step="0.01" min="0" id="ret_renta_mto" class="form-control" value="0.00">
@@ -273,20 +333,19 @@
                   <label class="form-label small mb-1">Observaciones</label>
                   <textarea class="form-control" name="observaciones" rows="2" placeholder="Opcional"></textarea>
                 </div>
-
-              </div><!-- row -->
+              </div>
             </div>
           </div>
         </div>
+
+      {% endif %}
       </div>
 
-      <!-- Columna derecha: Resumen + Método de pago (SELECT) -->
+      <!-- Columna derecha: Métodos de pago + Resumen -->
       <div class="col-lg-4">
-
         <div class="card shadow-sm pos-sticky">
           <div class="card-body">
 
-            <!-- Método de pago (ahora SELECT en el resumen) -->
             <div class="mb-3">
               <label class="form-label small mb-1">4) Método de pago</label>
               <select class="form-select" name="metodo_pago" id="metodo_pago">
@@ -295,7 +354,6 @@
                     <option value="{{ f.codigo }}">{{ f.descripcion }}</option>
                   {% endfor %}
                 {% else %}
-                  <!-- Fallback si no mandas 'formas_pago' en el contexto -->
                   <option value="EFECTIVO">Efectivo</option>
                   <option value="TARJETA">Tarjeta</option>
                   <option value="TRANSFERENCIA">Transferencia</option>
@@ -332,23 +390,18 @@
             </div>
 
             <h6 class="mb-3">Resumen</h6>
-
             <div class="d-flex justify-content-between small">
-              <span>SubTotal Neto</span>
-              <strong id="sum_subtotal">$0.00</strong>
+              <span>SubTotal Neto</span><strong id="sum_subtotal">$0.00</strong>
             </div>
             <div class="d-flex justify-content-between small">
-              <span>IVA</span>
-              <strong id="sum_iva">$0.00</strong>
+              <span>IVA</span><strong id="sum_iva">$0.00</strong>
             </div>
             <div class="d-flex justify-content-between small">
-              <span>Descuentos</span>
-              <strong id="sum_desc">$0.00</strong>
+              <span>Descuentos</span><strong id="sum_desc">$0.00</strong>
             </div>
             <hr>
             <div class="d-flex justify-content-between fs-5">
-              <span>Total a pagar</span>
-              <strong id="sum_total">$0.00</strong>
+              <span>Total a pagar</span><strong id="sum_total">$0.00</strong>
             </div>
 
             <!-- hidden para backend -->
@@ -360,9 +413,6 @@
               <button type="submit" class="btn btn-primary btn-lg">
                 <i class="bi bi-check2-circle me-1"></i> Generar DTE
               </button>
-              <button type="button" class="btn btn-light mt-2" id="btnBorrador">
-                Guardar borrador
-              </button>
             </div>
             <div class="small text-muted mt-2">Atajos: Enter agrega · F9 generar · ESC limpia línea.</div>
           </div>
@@ -373,11 +423,10 @@
 </div>
 
 <script>
-
 (function(){
   // ======= Estado global POS =======
   window.POS = {
-    items: [],   // {id, codigo, nombre, precio, cantidad, desc_pct, aplica_iva, stock}
+    items: [],
     apiUrl: "{% url 'api_productos' %}",
   };
 
@@ -394,14 +443,11 @@
   const sumDesc = $('sum_desc');
   const sumTot  = $('sum_total');
 
-  
-  //FALTABA: referencia al <select> de método de pago
   const mpSelect = $('metodo_pago');
 
   function fmt(n){ return '$' + (Number(n||0).toFixed(2)); }
   function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 
-  //NUEVO: detectores robustos (código MH o etiqueta)
   function _isEfectivoVal(value, label=''){
     const v = (value||'').toString().toUpperCase();
     const t = (label||'').toString().toUpperCase();
@@ -410,7 +456,6 @@
   function _isCreditoVal(value, label=''){
     const v = (value||'').toString().toUpperCase();
     const t = (label||'').toString().toUpperCase();
-    // ajusta '17' si tu catálogo MH usa otro código para crédito
     return v === '17' || v === 'CREDITO' || v === 'CRÉDITO' || t.includes('CRED');
   }
 
@@ -422,7 +467,7 @@
     return base + iva;
   }
 
-  // --- Actualización dinámica del número de control según tipo DTE ---
+  // --- Número de control por tipo DTE ---
   const tipoDteSelect = document.getElementById('tipo_documento_seleccionado');
   const ncText  = document.getElementById('numero_control_text');
   const ncInput = document.getElementById('numero_control_input');
@@ -444,13 +489,10 @@
       if (ncText) ncText.textContent = 'Error';
     }
   }
+  tipoDteSelect?.addEventListener('change', actualizarNumeroControl);
+  actualizarNumeroControl();
 
-// Dispara al cambiar el select y también una vez al cargar
-tipoDteSelect?.addEventListener('change', actualizarNumeroControl);
-actualizarNumeroControl();
-
-
-  // ======= Construye HIDDEN para el backend (siempre desde POS.items) =======
+  // ======= Hidden para backend =======
   function syncHidden(){
     hiddenItems.innerHTML = POS.items.map(it => `
       <input type="hidden" name="item_id[]" value="${it.id}">
@@ -462,11 +504,11 @@ actualizarNumeroControl();
     `).join('');
   }
 
-  // ======= Render de filas =======
+  // ======= Render tabla =======
   function renderItems(){
     const items = POS.items;
     if (!items.length){
-      tbody.innerHTML = `<tr class="empty"><td colspan="7" class="text-center text-muted py-3">Sin productos agregados.</td></tr>`;
+      tbody.innerHTML = `<tr class="empty"><td colspan="6" class="text-center text-muted py-3">Sin productos agregados.</td></tr>`;
       hiddenItems.innerHTML = '';
       return;
     }
@@ -478,16 +520,12 @@ actualizarNumeroControl();
           <td>
             <div class="fw-semibold">${escapeHtml(it.nombre)}</div>
             <div class="small ${stockClass}">#${escapeHtml(it.codigo||'-')} · Stock: ${stockTxt}</div>
-            <!-- ⚠️ OJO: aquí ya NO va hidden item_id[] -->
           </td>
           <td class="text-end">
             <input type="number" step="0.01" min="0" class="form-control form-control-sm text-end inp-precio" value="${(+it.precio).toFixed(2)}" aria-label="Precio unitario">
           </td>
           <td class="text-end">
             <input type="number" min="1" class="form-control form-control-sm text-end inp-cant" value="${it.cantidad}" aria-label="Cantidad">
-          </td>
-          <td class="text-end">
-            <input type="number" min="0" max="100" class="form-control form-control-sm text-end inp-desc" value="${it.desc_pct}" aria-label="Descuento (%)">
           </td>
           <td class="text-center">
             <input class="form-check-input chk-iva" type="checkbox" ${it.aplica_iva ? 'checked':''} aria-label="Aplica IVA">
@@ -500,7 +538,6 @@ actualizarNumeroControl();
       `;
     }).join('');
 
-    // listeners por fila
     tbody.querySelectorAll('tr').forEach(tr=>{
       const idx = +tr.dataset.idx;
       const item = POS.items[idx];
@@ -511,12 +548,6 @@ actualizarNumeroControl();
       });
       tr.querySelector('.inp-cant').addEventListener('input', (e)=>{
         item.cantidad = Math.max(1, parseInt(e.target.value||'1',10));
-        tr.querySelector('.cel-total').textContent = fmt(lineTotal(item));
-        calcTotals();
-      });
-      tr.querySelector('.inp-desc').addEventListener('input', (e)=>{
-        let v = parseFloat(e.target.value||'0')||0; v = Math.max(0, Math.min(100, v));
-        item.desc_pct = v;
         tr.querySelector('.cel-total').textContent = fmt(lineTotal(item));
         calcTotals();
       });
@@ -532,7 +563,6 @@ actualizarNumeroControl();
       });
     });
 
-    // HIDDEN al día
     syncHidden();
   }
   window.renderItems = renderItems;
@@ -551,10 +581,11 @@ actualizarNumeroControl();
       total += base + iv;
     });
 
+    // Extras (si existen en DOM)
     const retIvaOn = $('ret_iva_sw')?.checked;
     const retRentaOn = $('ret_renta_sw')?.checked;
-    let retIvaMto = retIvaOn ? parseFloat($('ret_iva_mto').value||'0')||0 : 0;
-    let retRentaMto = retRentaOn ? parseFloat($('ret_renta_mto').value||'0')||0 : 0;
+    let retIvaMto = retIvaOn ? parseFloat($('ret_iva_mto')?.value||'0')||0 : 0;
+    let retRentaMto = retRentaOn ? parseFloat($('ret_renta_mto')?.value||'0')||0 : 0;
 
     const totalPagar = total - retIvaMto - retRentaMto;
 
@@ -566,11 +597,11 @@ actualizarNumeroControl();
     if ($('retencion_iva_monto'))   $('retencion_iva_monto').value   = retIvaMto.toFixed(2);
     if ($('retencion_renta_monto')) $('retencion_renta_monto').value = retRentaMto.toFixed(2);
 
-    // 👉 AHORA con <select>:
+    // Efectivo: calcular cambio
     const val   = mpSelect?.value || '';
     const label = mpSelect?.options[mpSelect.selectedIndex]?.text || '';
     if (_isEfectivoVal(val, label)) {
-      const recibido = parseFloat($('montoRecibido').value||'0')||0;
+      const recibido = parseFloat($('montoRecibido')?.value||'0')||0;
       const cambio = Math.max(0, recibido - totalPagar);
       $('montoCambio') && ($('montoCambio').textContent = fmt(cambio));
     }
@@ -579,13 +610,13 @@ actualizarNumeroControl();
   }
   window.calcTotals = calcTotals;
 
-  // Recalcular al cambiar retenciones / efectivo
-  ;['ret_iva_sw','ret_iva_mto','ret_renta_sw','ret_renta_mto','montoRecibido'].forEach(id=>{
-    $(id)?.addEventListener('input', calcTotals);
-    $(id)?.addEventListener('change', calcTotals);
+  // Eventos extras (si existen) y efectivo
+  ['ret_iva_sw','ret_iva_mto','ret_renta_sw','ret_renta_mto','montoRecibido'].forEach(id=>{
+    $(id)?.addEventListener?.('input', calcTotals);
+    $(id)?.addEventListener?.('change', calcTotals);
   });
 
-  // ======= Add item (usado por el picker) =======
+  // Agregar item desde picker
   function addItemFromProduct(sel){
     if(!sel) return;
     const cant   = Math.max(1, parseInt(qtyInput.value||'1',10));
@@ -595,7 +626,7 @@ actualizarNumeroControl();
     const idx = POS.items.findIndex(x => x.id === sel.id);
     if (idx >= 0) {
       POS.items[idx].cantidad += cant;
-      if (!priceInput.value) POS.items[idx].precio = +sel.precio; // mantener neto base si no se forzó
+      if (!priceInput.value) POS.items[idx].precio = +sel.precio;
     } else {
       POS.items.push({
         id: sel.id,
@@ -613,25 +644,18 @@ actualizarNumeroControl();
     renderItems();
     calcTotals();
   }
-  window.addItem = () => {}; // placeholder, el picker lo invoca con su selección
+  window.addItem = () => {};
 
-  // ======= Picker =======
+  // Picker
   class ProductPicker {
     constructor({input, menu, apiUrl, onChoose}){
-      this.input = input;
-      this.menu  = menu;
-      this.apiUrl = apiUrl;
-      this.onChoose = onChoose || (()=>{});
-      this.items = [];
-      this.activeIndex = -1;
-      this.selected = null;
+      this.input = input; this.menu = menu; this.apiUrl = apiUrl; this.onChoose = onChoose || (()=>{});
+      this.items = []; this.activeIndex = -1; this.selected = null;
 
       this.input.addEventListener('focus', ()=> this.search(''));
       this.input.addEventListener('input',  (e)=> this.debouncedSearch(e.target.value.trim()));
       this.input.addEventListener('keydown',(e)=> this.onKey(e));
-      document.addEventListener('click', (e)=>{
-        if(!this.menu.contains(e.target) && e.target!==this.input){ this.hide(); }
-      });
+      document.addEventListener('click', (e)=>{ if(!this.menu.contains(e.target) && e.target!==this.input){ this.hide(); }});
     }
     debouncedSearch(q){ clearTimeout(this._t); this._t = setTimeout(()=>this.search(q), 180); }
     async search(q){
@@ -641,9 +665,8 @@ actualizarNumeroControl();
         const data = await res.json();
         this.items = (data.results||[]).map(p=>{
           const precio = parseFloat(p.precio||'0')||0;
-          const neto = p.con_iva ? (precio/1.13) : precio; // trabajar en neto
-          return { id:p.id, codigo:p.codigo, nombre:p.nombre, precio:neto,
-                   con_iva: !!p.con_iva, stock: p.stock, imagen:p.imagen||'' };
+          const neto = p.con_iva ? (precio/1.13) : precio;
+          return { id:p.id, codigo:p.codigo, nombre:p.nombre, precio:neto, con_iva: !!p.con_iva, stock:p.stock, imagen:p.imagen||'' };
         });
         this.activeIndex = this.items.length ? 0 : -1;
         this.render(); this.show();
@@ -700,24 +723,21 @@ actualizarNumeroControl();
     escape(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
   }
 
-  // Instancia del picker
   const picker = new ProductPicker({
     input: $('productoPickerInput'),
     menu:  $('productoPickerMenu'),
     apiUrl: POS.apiUrl,
     onChoose: (prod)=>{
-      // precargar precio neto y ajustar IVA por defecto
       priceInput.value = (+prod.precio).toFixed(2);
-      priceInput.dataset.sticky = '1'; // no se borra tras agregar
-      ivaChk.checked = !prod.con_iva;  // si venía con IVA incluido, apagamos IVA de línea
-      // al Enter del input, si ya se eligió, agregamos
+      priceInput.dataset.sticky = '1';
+      ivaChk.checked = !prod.con_iva;
       setTimeout(()=>{ addItemFromProduct(prod); }, 10);
     }
   });
   window.PRODUCT_PICKER = picker;
 
-  // Enter en el input → si hay seleccionado, agregar
-  $('productoPickerInput').addEventListener('keydown', (e)=>{
+  // Enter del input → agrega
+  $('productoPickerInput')?.addEventListener('keydown', (e)=>{
     if(e.key==='Enter'){
       const sel = picker.getSelected();
       if(sel){ e.preventDefault(); addItemFromProduct(sel); }
@@ -731,7 +751,7 @@ actualizarNumeroControl();
     addItemFromProduct(sel);
   });
 
-// Método de pago (SELECT): mostrar/ocultar bloques
+  // Método de pago: mostrar/ocultar bloques
   function togglePago(){
     const val   = mpSelect?.value || '';
     const label = mpSelect?.options[mpSelect.selectedIndex]?.text || '';
@@ -743,25 +763,19 @@ actualizarNumeroControl();
     if ($cr) $cr.style.display = isCr ? '' : 'none';
     calcTotals();
   }
-
-  // 👉 eventos de cambio y de tecleo en “recibido” para recalcular cambio
   mpSelect?.addEventListener('change', togglePago);
   $('montoRecibido')?.addEventListener('input', calcTotals);
-
-  // Llamada inicial (al cargar la página)
   togglePago();
 
-  // ======= Submit: usar fetch para recibir JSON y redirigir =======
- const form = document.getElementById('form-pos');
+  // Submit con fetch
+  const form = document.getElementById('form-pos');
   form.addEventListener('submit', async (e) => {
     if (window.POS.items.length === 0) {
       e.preventDefault();
       alert('Agrega al menos un producto.');
       return;
     }
-
     e.preventDefault();
-
     try {
       const fd = new FormData(form);
       const resp = await fetch(form.action || location.href, {
@@ -776,34 +790,25 @@ actualizarNumeroControl();
         return;
       }
 
-      // ✅ Si AndroidPrinter está disponible y hay print_url, mandamos a imprimir
       if (data.print_url && window.AndroidPrinter && typeof AndroidPrinter.printFactura === 'function') {
         AndroidPrinter.printFactura(data.print_url);
       }
-
-      // Redirección normal después de imprimir
-      if (data.redirect) {
-        window.location.href = data.redirect;
-        return;
-      }
-
+      if (data.redirect) { window.location.href = data.redirect; return; }
       alert(data?.mensaje || 'Operación completada.');
     } catch (err) {
       console.error('Submit error:', err);
-      form.submit(); // fallback clásico
+      form.submit(); // fallback
     }
   });
 
-  // Atajo F9 para enviar
+  // Atajo F9
   document.addEventListener('keydown', (e)=>{
     if (e.key === 'F9') { e.preventDefault(); form.requestSubmit(); }
   });
 
-  // Si el usuario edita a mano el precio base, marcamos "sticky"
-  priceInput.addEventListener('input', ()=> priceInput.dataset.sticky = priceInput.value ? '1' : '');
-
+  // Sticky del precio si se edita manualmente
+  priceInput?.addEventListener('input', ()=> priceInput.dataset.sticky = priceInput.value ? '1' : '');
 })();
-
 </script>
 
 {% if prefill_factura %}
@@ -812,25 +817,17 @@ actualizarNumeroControl();
   try{
     const PF = {{ prefill_factura|safe }};
     if(PF && PF.receptor_id){
-      // setear cliente
       const sel = document.getElementById('receptor_id');
-      if(sel){
-        sel.value = String(PF.receptor_id);
-        sel.dispatchEvent(new Event('change'));
-      }
+      if(sel){ sel.value = String(PF.receptor_id); sel.dispatchEvent(new Event('change')); }
     }
     if(PF && PF.items && PF.items.length){
-      // cargar líneas a POS.items (NETO)
       PF.items.forEach(it=>{
         window.POS.items.push({
-          id: it.id,
-          codigo: it.codigo,
-          nombre: it.nombre,
+          id: it.id, codigo: it.codigo, nombre: it.nombre,
           precio: parseFloat(it.precio||'0')||0,
           cantidad: parseInt(it.cantidad||'1',10),
           desc_pct: parseFloat(it.desc_pct||'0')||0,
-          aplica_iva: !!it.iva_on,
-          stock: null
+          aplica_iva: !!it.iva_on, stock: null
         });
       });
       if(typeof window.renderItems==='function') window.renderItems();
@@ -840,6 +837,4 @@ actualizarNumeroControl();
 })();
 </script>
 {% endif %}
-
-
 {% endblock %}

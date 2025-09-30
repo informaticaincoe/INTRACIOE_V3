@@ -2,6 +2,8 @@
 {% block content %}
 <div class="container py-4">
   <h3 class="mb-4">Ventas</h3>
+
+  {# === Menú principal === #}
   <div class="row g-3">
     <div class="col-md-3">
       <a class="text-decoration-none" href="{% url 'clientes_list' %}">
@@ -49,4 +51,20 @@
     </div>
   </div>
 </div>
+
+
+  {# === Resumen de hoy === #}
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card border-success shadow-sm">
+        <div class="card-body text-center">
+          <div class="display-6">💰</div>
+          <h5 class="fw-bold mt-2">Ventas de hoy</h5>
+          <p class="mb-1">Facturas: <span class="fw-bold">{{ ventas_hoy_count }}</span></p>
+          <p class="mb-0">Total: <span class="fw-bold">${{ ventas_hoy_total|floatformat:2 }}</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
 {% endblock %}

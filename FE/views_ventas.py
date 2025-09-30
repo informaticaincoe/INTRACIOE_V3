@@ -24,8 +24,10 @@ from weasyprint import HTML
 from django.db.models import FloatField, F, ExpressionWrapper
 from math import radians, cos, sin, asin, sqrt
 
+from django.db.models.functions import Coalesce
+
 # Modelos FE
-from .models import NumeroControl, Receptor_fe, TiposDocIDReceptor, Municipio, Tipo_dte, Modelofacturacion, TipoTransmision
+from .models import ActividadEconomica, NumeroControl, Pais, Receptor_fe, TipoPersona, TiposDocIDReceptor, Municipio, Tipo_dte, Modelofacturacion, TipoTransmision
 from .models import FacturaElectronica, DetalleFactura, Descuento
 # Modelos INVENTARIO
 from INVENTARIO.models import Producto, MovimientoInventario, DevolucionVenta, DetalleDevolucionVenta, Almacen, Tributo, TipoItem, TipoUnidadMedida
@@ -34,6 +36,10 @@ CART_SESSION_KEY = "cart_by_receptor"    # { "<receptor_id>": { "<producto_id>":
 
 
 from django.contrib.auth import get_user_model
+
+def _none_if_blank(v):
+    v = (v or "").strip()
+    return v or None
 
 User = get_user_model()
 
@@ -133,6 +139,7 @@ def exportar_facturas_pdf(request):
         "total_lineas": total_lineas,
         "total_cantidad": total_cantidad,
         "filtros": request.GET,
+        "now": timezone.localdate(),
     })
     pdf_file = HTML(string=html_string).write_pdf()
 
@@ -142,9 +149,41 @@ def exportar_facturas_pdf(request):
 
 
 # ---------- HOME VENTAS ----------
+def _pick_field(model, candidates):
+    """Devuelve el primer field existente en el modelo."""
+    if not model:
+        return None
+    names = {f.name for f in model._meta.get_fields()}
+    for name in candidates:
+        if name in names:
+            return name
+    return None
+
+
 @login_required
 def ventas_home(request):
-    return render(request, 'ventas/home.html')
+    today = timezone.localdate()
+    fac_date_field = _pick_field(
+        FacturaElectronica,
+        ["fecha_emision", "fecha", "fecha_generacion", "created_at", "created", "fecha_creacion"]
+    )
+
+    ventas_hoy_total = Decimal("0.00")
+    ventas_hoy_count = 0
+
+    if fac_date_field:
+        filtro = {fac_date_field: today}
+        qs = FacturaElectronica.objects.filter(**filtro)
+        ventas_hoy_total = qs.aggregate(
+            s=Coalesce(Sum("total_pagar"), Decimal("0.00"))
+        )["s"] or Decimal("0.00")
+        ventas_hoy_count = qs.count()
+
+    context = {
+        "ventas_hoy_total": ventas_hoy_total,
+        "ventas_hoy_count": ventas_hoy_count,
+    }
+    return render(request, "ventas/home.html", context)
 
 # --------- CLIENTES (Receptor_fe) ----------
 def _parse_coord(val):
@@ -233,21 +272,29 @@ def clientes_list(request):
     })
 
 
+
 @login_required
 @require_http_methods(["GET", "POST"])
 def clientes_crear(request):
     tipos = TiposDocIDReceptor.objects.all().order_by('descripcion')
     municipios = Municipio.objects.select_related('departamento').order_by('descripcion')
+    paises = Pais.objects.all().order_by('descripcion')
+    tipos_persona = TipoPersona.objects.all().order_by('descripcion')
+    actividades = ActividadEconomica.objects.all().order_by('descripcion')
 
     if request.method == 'POST':
-        tipo_id = request.POST.get('tipo_documento')
-        num_documento = request.POST.get('num_documento')
-        nombre = request.POST.get('nombre')
-        direccion = request.POST.get('direccion')
-        telefono = request.POST.get('telefono')
-        correo = request.POST.get('correo')
-        municipio_id = request.POST.get('municipio')
-        nrc = request.POST.get('nrc') or None
+        tipo_id        = request.POST.get('tipo_documento')
+        num_documento  = _none_if_blank(request.POST.get('num_documento'))
+        nombre         = _none_if_blank(request.POST.get('nombre'))
+        direccion      = _none_if_blank(request.POST.get('direccion'))
+        telefono       = _none_if_blank(request.POST.get('telefono'))
+        correo         = _none_if_blank(request.POST.get('correo'))
+        municipio_id   = request.POST.get('municipio')
+        nrc            = _none_if_blank(request.POST.get('nrc'))
+        nombre_com     = _none_if_blank(request.POST.get('nombreComercial'))  # <- nuevo
+        pais_id        = request.POST.get('pais')                              # <- nuevo (opcional)
+        tipo_persona_id= request.POST.get('tipo_persona')                      # <- nuevo (opcional)
+        act_ids        = request.POST.getlist('actividades_economicas') or request.POST.getlist('actividades')  # <- M2M
 
         # coordenadas del form (pueden venir vacías)
         lat = _parse_coord(request.POST.get('lat'))
@@ -256,33 +303,67 @@ def clientes_crear(request):
         geocode_source = ""
         geocoded_at = None
 
-        if not (tipo_id and num_documento and nombre and municipio_id):
-            messages.error(request, 'Complete los campos obligatorios.')
+        # Validación mínima
+        if not (tipo_id and nombre and municipio_id):
+            messages.error(request, 'Complete los campos obligatorios (tipo documento, nombre y municipio).')
             return redirect('clientes_crear')
 
         tipo = get_object_or_404(TiposDocIDReceptor, pk=tipo_id)
         municipio = get_object_or_404(Municipio, pk=municipio_id)
 
+        # (opcional) Pais y TipoPersona si se mandan
+        pais = None
+        if pais_id:
+            try:
+                pais = Pais.objects.get(pk=pais_id)
+            except Pais.DoesNotExist:
+                pais = None
+        # si no se envía país y quieres default a El Salvador, descomenta:
+        # if not pais:
+        #     pais = Pais.objects.filter(iso_alpha2='SV').first()
 
+        tipo_persona = None
+        if tipo_persona_id:
+            try:
+                tipo_persona = TipoPersona.objects.get(pk=tipo_persona_id)
+            except TipoPersona.DoesNotExist:
+                tipo_persona = None
+
+        # Geocodificación
         if (lat is None or lng is None) and direccion:
-            # auto-geocode
-            muni = municipio.descripcion if hasattr(municipio, "descripcion") else ""
-            depto = getattr(getattr(municipio, "departamento", None), "descripcion", "")
+            muni = getattr(municipio, "descripcion", "") or ""
+            depto = getattr(getattr(municipio, "departamento", None), "descripcion", "") or ""
             query = f"{direccion}, {muni}, {depto}, El Salvador"
             lat, lng, geocode_source = _geocode_address_osm(query)
             if lat is not None and lng is not None:
                 geocoded_at = timezone.now()
         elif lat is not None and lng is not None:
-            # 👇 si viene del mapa o "usar mi ubicación"
             geocode_source = "manual"
             geocoded_at = timezone.now()
 
-        Receptor_fe.objects.create(
-            tipo_documento=tipo, num_documento=num_documento, nombre=nombre,
-            direccion=direccion, telefono=telefono, correo=correo,
-            municipio=municipio, nrc=nrc,
-            lat=lat, lng=lng, geocode_source=geocode_source, geocoded_at=geocoded_at
-        )
+        with transaction.atomic():
+            receptor = Receptor_fe.objects.create(
+                tipo_documento=tipo,
+                num_documento=num_documento,
+                nrc=nrc,
+                nombre=nombre,
+                municipio=municipio,
+                direccion=direccion,
+                telefono=telefono,
+                correo=correo,
+                nombreComercial=nombre_com,   # <- nuevo
+                pais=pais,                    # <- nuevo
+                tipo_persona=tipo_persona,    # <- nuevo
+                lat=lat,
+                lng=lng,
+                geocode_source=geocode_source,
+                geocoded_at=geocoded_at,
+            )
+
+            # ManyToMany: actividades económicas
+            if act_ids:
+                acts_qs = ActividadEconomica.objects.filter(pk__in=act_ids)
+                receptor.actividades_economicas.set(acts_qs)
 
         messages.success(request, 'Cliente creado.')
         return redirect('clientes_list')
@@ -290,7 +371,13 @@ def clientes_crear(request):
     return render(
         request,
         'ventas/clientes/form.html',
-        {'tipos': tipos, 'municipios': municipios}
+        {
+            'tipos': tipos,
+            'municipios': municipios,
+            'paises': paises,
+            'tipos_persona': tipos_persona,
+            'actividades': actividades,
+        }
     )
 
 @login_required

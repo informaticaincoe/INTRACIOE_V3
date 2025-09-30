@@ -683,6 +683,7 @@ def generar_factura_view(request):
                 "direccion_comercial": emisor_obj.direccion_comercial,
                 "telefono": emisor_obj.telefono,
                 "email": emisor_obj.email,
+                "imprime_termica": emisor_obj.imprime_termica,
             } if emisor_obj else None),
             "receptores": list(Receptor_fe.objects.values("id", "num_documento", "nombre")),
             "productos": productos,
@@ -804,7 +805,7 @@ def generar_factura_view(request):
                 receptor = Receptor_fe.objects.get(id=receptor_id)
             except Receptor_fe.DoesNotExist:
                 return JsonResponse({"error": "Receptor no encontrado."}, status=404)
-
+                
             observaciones = data.get('observaciones', '')
             print("DTE: observaciones.len=", len(observaciones))
 
@@ -814,6 +815,7 @@ def generar_factura_view(request):
             porcentaje_retencion_renta = _dec(data.get("porcentaje_retencion_renta", "0"))
             retencion_renta = bool(data.get("retencion_renta", False))
             print(f"DTE: ret_iva={retencion_iva} pct={porcentaje_retencion_iva}  ret_renta={retencion_renta} pct={porcentaje_retencion_renta}")
+
 
             descuento_global = _dec(data.get("descuento_global_input", "0"))  # %
             base_imponible_checkbox = bool(data.get("no_gravado", False))
