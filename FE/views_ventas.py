@@ -111,26 +111,35 @@ def exportar_facturas_excel(request):
 
 @login_required
 def exportar_facturas_pdf(request):
-    qs = FacturaElectronica.objects.select_related("dtereceptor", "tipo_dte").prefetch_related("detalles__producto")
+    qs = FacturaElectronica.objects.select_related(
+        "dtereceptor", "tipo_dte"
+    ).prefetch_related("detalles__producto")
 
-    # aplicar filtros
+    # filtros
     if request.GET.get("recibido_mh"):
         qs = qs.filter(recibido_mh=(request.GET["recibido_mh"] == "True"))
     if request.GET.get("tipo_dte"):
         qs = qs.filter(tipo_dte_id=request.GET["tipo_dte"])
 
-    # totales de facturas
-    total_facturas = qs.count()
-    total_monto = qs.aggregate(Sum("total_pagar"))["total_pagar__sum"] or 0
-    total_iva = qs.aggregate(Sum("total_iva"))["total_iva__sum"] or 0
+    fecha_ini = request.GET.get("fecha_ini") or None
+    fecha_fin = request.GET.get("fecha_fin") or None
 
-    # totales de productos
+    if fecha_ini:
+        qs = qs.filter(fecha_emision__gte=fecha_ini)
+    if fecha_fin:
+        qs = qs.filter(fecha_emision__lte=fecha_fin)
+
+    # totales
+    total_facturas = qs.count()
+    total_monto = qs.aggregate(s=Sum("total_pagar"))["s"] or 0
+    total_iva = qs.aggregate(s=Sum("total_iva"))["s"] or 0
+
     from .models import DetalleFactura
     detalles = DetalleFactura.objects.filter(factura__in=qs)
-
     total_lineas = detalles.count()
-    total_cantidad = detalles.aggregate(Sum("cantidad"))["cantidad__sum"] or 0
+    total_cantidad = detalles.aggregate(s=Sum("cantidad"))["s"] or 0
 
+    # 🆕 enviar las fechas al template
     html_string = render_to_string("reportes/facturas_pdf.html", {
         "facturas": qs,
         "total_facturas": total_facturas,
@@ -138,15 +147,14 @@ def exportar_facturas_pdf(request):
         "total_iva": total_iva,
         "total_lineas": total_lineas,
         "total_cantidad": total_cantidad,
-        "filtros": request.GET,
-        "now": timezone.localdate(),
+        "fecha_ini": fecha_ini,
+        "fecha_fin": fecha_fin,
     })
     pdf_file = HTML(string=html_string).write_pdf()
 
     response = HttpResponse(pdf_file, content_type="application/pdf")
     response["Content-Disposition"] = 'inline; filename="facturas.pdf"'
     return response
-
 
 # ---------- HOME VENTAS ----------
 def _pick_field(model, candidates):

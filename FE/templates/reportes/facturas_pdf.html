@@ -16,9 +16,9 @@
 </head>
 <body>
   <div class="container">
-    <h2 class="text-center">
-      Reporte de Facturas — {{ now|date:"d/m/Y" }}
-    </h2>
+<h2 class="text-center">
+  Reporte de Facturas — {{ fecha_ini }} a {{ fecha_fin }}
+</h2>
 
     <!-- Tabla principal -->
     <table class="table table-bordered table-striped table-sm">
@@ -75,7 +75,33 @@
           <td>{{ total_cantidad }}</td>
         </tr>
       </table>
+      <div class="detalles">
     </div>
   </div>
+
+  <!-- Firmas -->
+    <div class="firmas">
+      <table class="table table-borderless w-100">
+        <tr>
+          <td class="text-center">
+            <div class="firma-linea">Firma de quien entrega</div>
+            <div><strong>Nombre:</strong> ______________________________</div>
+            <div><strong>Código empleado:</strong> __________</div>
+          </td>
+          <td class="text-center">
+            <div class="firma-linea">Firma de quien recibe</div>
+            <div><strong>Nombre:</strong> ______________________________</div>
+            <div><strong>Código empleado:</strong> __________</div>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+
+   <strong>Nota:</strong> Los totales incluyen todas las facturas listadas en el reporte, 
+                                independientemente de su estado. 
+                                Las facturas anuladas no afectan el total a liquidar. 
+                                Las cantidades reflejan las líneas y unidades vendidas en todas las facturas. 
+                                Verifique los detalles de cada factura para información específica.
 </body>
 </html>
