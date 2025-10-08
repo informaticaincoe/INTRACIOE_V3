@@ -94,7 +94,7 @@ urlpatterns = [
     path('enviar-motivo-evento/', views.motivo_contingencia_view, name='enviar_motivo'),
     
     #ENVIO DE CORREO(DOCUMENTOS ELECTRONICOS)
-    path('enviar-correo/<int:factura_id>/', views.enviar_correo_individual_view, name='enviar_correo_individual'),
+    path('enviar-correo/<int:factura_id>/', views.enviar_correo_individual_view, name='enviar_correo_indiv'),
 
 ]
 

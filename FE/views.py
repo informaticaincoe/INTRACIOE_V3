@@ -5885,107 +5885,190 @@ import glob
 #BC:Guardar archivos pdf y json que posteriormente seran enviados en el correo
 #Crear carpeta para almacenar los archivos pdf ubicacion: FE/dtes/tipo_dte/pdf
 #La carpeta para almacenar los archivos json ya existe ubicacion: FE/json_facturas
+
+from django.utils.text import slugify
+from AUTENTICACION.email_utils import get_smtp_connection_for
+import tempfile  # <-- necesario para el PDF temporal
+from django.apps import apps as django_apps  # <-- para resolver la ruta de la app
+
+# Helpers PDF
+def _fe_app_path():
+    """
+    Devuelve la ruta absoluta del paquete de la app FE en disco.
+    Soporta label 'FE' o 'fe'.
+    """
+    try:
+        return django_apps.get_app_config('FE').path
+    except LookupError:
+        return django_apps.get_app_config('fe').path  # fallback usual
+
+
+def _ensure_json_factura(fe_obj, target_path):
+    """
+    Asegura que exista el JSON de la factura en target_path.
+    Si no existe, lo crea desde factura.json_original.
+    """
+    os.makedirs(os.path.dirname(target_path), exist_ok=True)
+    if not os.path.exists(target_path):
+        data = fe_obj.json_original or {}
+        with open(target_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    return target_path
+
+
+def _render_pdf_from_template(request, template_name, context):
+    """
+    Genera un PDF (bytes) desde un template HTML.
+    Intenta con WeasyPrint; si falla, usa xhtml2pdf.
+    """
+    html_string = render_to_string(template_name, context, request=request)
+    base_url = request.build_absolute_uri('/')
+
+    # Plan A: WeasyPrint
+    try:
+        from weasyprint import HTML
+        return HTML(string=html_string, base_url=base_url).write_pdf()
+    except Exception as e_weasy:
+        # Plan B: xhtml2pdf
+        try:
+            from xhtml2pdf import pisa
+            from io import BytesIO
+            out = BytesIO()
+            status = pisa.CreatePDF(src=html_string, dest=out, encoding='utf-8')
+            if status.err:
+                raise Exception("xhtml2pdf no pudo generar el PDF")
+            return out.getvalue()
+        except Exception as e_pisa:
+            raise Exception(f"No se pudo generar PDF (WeasyPrint/xhtml2pdf): {e_weasy} / {e_pisa}")
+
 @csrf_exempt
 def enviar_correo_individual_view(request, factura_id, archivo_pdf=None, archivo_json=None):
-    print(f"Inicio envio de correos: pdf: {archivo_pdf}, json: {archivo_json}")
-    receptor = None
-    documento_electronico = FacturaElectronica.objects.filter(id=factura_id).order_by('id').first()
-    #Correo receptor principal: juniorfran@hotmail.es
-    
+    """
+    Envía correo con PDF generado al vuelo y JSON desde FE/json_factura.
+    """
+    fe = get_object_or_404(FacturaElectronica, id=factura_id)
+    receptor = Receptor_fe.objects.filter(id=fe.dtereceptor_id).first()
+    emisor = Emisor_fe.objects.filter(id=fe.dteemisor_id).first()
+
+    if not receptor:
+        messages.error(request, "No se encontró el receptor.")
+        return redirect('detalle_factura', factura_id=factura_id)
+
+    # 1) JSON: FE/json_factura/<numero_control>.json
     try:
-        # Buscar archivos si no se enviaron como parametro
-        if not archivo_pdf:
-            ruta_pdf = os.path.join(RUTA_COMPROBANTES_PDF.url, documento_electronico.tipo_dte.codigo, "pdf")
-            archivo_pdf = os.path.join(ruta_pdf, f"{str(documento_electronico.codigo_generacion).upper()}.pdf")
-            if not os.path.exists(archivo_pdf):
-                print(f"Archivo PDF no encontrado en {archivo_pdf}")
-                messages.error(request, "Archivo PDF no encontrado.")
-        
         if not archivo_json:
-            ruta_json = RUTA_JSON_FACTURA.url
-            archivo_json = os.path.join(ruta_json, f"{documento_electronico.numero_control}.json")
-            if not os.path.exists(archivo_json):
-                print(f"Archivo JSON no encontrado en {archivo_json}")
-                messages.error(request, "Archivo JSON no encontrado.")
-        print(f"json: {archivo_json} pdf: {archivo_pdf}")
-        
-        if documento_electronico:
-            
-            receptor = Receptor_fe.objects.filter(id=documento_electronico.dtereceptor_id).order_by('id').first()
-            emisor = Emisor_fe.objects.filter(id=documento_electronico.dteemisor_id).order_by('id').first()
-            
-            # Renderizar el HTML del mensaje del correo
-            email_html_content = f"""
-            <p>Estimado/a {receptor.nombre} reciba un cordial saludo.</p>
-            <p>Le notificamos que se ha generado el documento electrónico. A continuación, los detalles principales:</p>
-            <ul>
-                <li><strong>Código de generación:</strong> {str(documento_electronico.codigo_generacion).upper()}</li>
-                <li><strong>Fecha de emisión:</strong> {documento_electronico.fecha_emision.strftime("%Y-%m-%d")}</li>
-                <li><strong>Hora de emisión:</strong> {documento_electronico.hora_emision.strftime('%H:%M:%S')}</li>
-                <li><strong>Estado:</strong> {"Procesado" if documento_electronico.recibido_mh and documento_electronico.sello_recepcion else "Contingencia" if documento_electronico.contingencia else ""}</li>
-            </ul>
-            
-            <p>Adjuntamos el documento en formato PDF y JSON para su respaldo.</p>
-            <p>Si tiene alguna consulta, estamos a su disposición.</p>
-            
-            Consulte el documento electrónico aquí: {CONSULTAR_DTE.url_endpoint}
-            <BR>
-            <BR>
-            
-            Atentamente, <BR>
-            {emisor.nombre_razon_social} <BR>
-            {emisor.email}
-            """
-            
-            # Crear el correo electrónico con formato HTML
-            email = EmailMessage(
-                subject="Documento Electrónico "+ documento_electronico.tipo_dte.descripcion,
-                body=email_html_content,
-                from_email=EMAIL_HOST_FE.valor, #settings.EMAIL_HOST_USER_FE,
-                to=[receptor.correo],
-            )
-            email.content_subtype = "html"  # Indicar que el contenido es HTML
-            
-            # Adjuntar el archivo PDF
-            if archivo_pdf and os.path.exists(archivo_pdf):
-                try:
-                    with open(archivo_pdf, 'rb') as pdf_file:
-                        email.attach(
-                            f"Documento_Electrónico_{receptor.nombre}.pdf",
-                            pdf_file.read(), 'application/pdf')
-                except Exception as e:
-                    print(f"Error al abrir el archivo PDF: {e}")
-                    messages.error(request, f"Error al abrir el archivo PDF: {e}")
-            
-            # Adjuntar el archivo JSON
-            if archivo_json and os.path.exists(archivo_json):
-                try:
-                    with open(archivo_json, 'rb') as json_file:
-                        email.attach(
-                            f"Documento_Electrónico_{receptor.nombre}.json",
-                            json_file.read(),
-                            'application/json')
-                except Exception as e:
-                    print(f"Error al abrir el archivo JSON: {e}")
-                    messages.error(request, f"Error al abrir el archivo JSON: {e}")
-            
-            # Enviar el correo
-            try:
-                email.send(fail_silently=False)
-                documento_electronico.envio_correo = True
-                documento_electronico.save()
-                print(f"Correo enviado a {receptor.correo}")
-                messages.success(request, f"El correo fue enviado exitosamente a {receptor.nombre}")
-            except Exception as e:
-                documento_electronico.envio_correo = False
-                documento_electronico.save()
-                print(f"Error al enviar el correo a {receptor.correo}: {e}")
-                messages.error(request, f"Error al enviar el correo a {receptor.correo}: {e}")
-            return redirect('detalle_factura', factura_id=factura_id)
+            base_json = os.path.join(_fe_app_path(), "json_factura")
+            archivo_json = os.path.join(base_json, f"{fe.numero_control}.json")
+        _ensure_json_factura(fe, archivo_json)
     except Exception as e:
-        print(f"Error general en el proceso de envío: {e}")
-        messages.error(request, f"No se encontró un documento electrónico para {receptor.nombre}.")
+        messages.warning(request, f"No se pudo preparar el JSON: {e}")
+        archivo_json = None
+
+    # 2) PDF: generar en tiempo real con el template
+    #    FE/templates/documentos/factura_consumidor/template_factura.html
+    pdf_temp_path = None
+    try:
+        if not archivo_pdf or not os.path.exists(archivo_pdf):
+            ctx = {
+                "factura": fe,
+                "emisor": emisor,
+                "receptor": receptor,
+                "detalles": fe.detalles.all().select_related("producto", "unidad_medida"),
+                # Agrega aquí más llaves si tu template las necesita:
+                "total_pagar": fe.total_pagar,
+                "total_iva": fe.total_iva,
+                "total_gravadas": getattr(fe, "total_gravadas", 0),
+            }
+            pdf_bytes = _render_pdf_from_template(
+                request,
+                "documentos/factura_consumidor/template_factura.html",
+                ctx
+            )
+            # escribir a un tmp para adjuntar
+            tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+            tmp.write(pdf_bytes)
+            tmp.flush()
+            tmp.close()
+            pdf_temp_path = tmp.name
+            archivo_pdf = pdf_temp_path
+    except Exception as e:
+        messages.warning(request, f"No se pudo generar el PDF: {e}")
+        archivo_pdf = None
+
+    # 3) SMTP desde BD (scope 'fe')
+    conn, from_email = get_smtp_connection_for('fe')
+    if not from_email:
+        messages.error(request, "No hay remitente configurado para correo FE.")
+        # limpiar tmp si lo creamos
+        if pdf_temp_path and os.path.exists(pdf_temp_path):
+            os.unlink(pdf_temp_path)
+        return redirect('detalle_factura', factura_id=factura_id)
+
+    correo_destino = receptor.correo or getattr(settings, 'DEFAULT_DTE_FALLBACK_EMAIL', None) or getattr(emisor, 'email', None)
+    if not correo_destino:
+        messages.error(request, "El receptor no tiene correo y no hay correo de respaldo configurado.")
+        if pdf_temp_path and os.path.exists(pdf_temp_path):
+            os.unlink(pdf_temp_path)
+        return redirect('detalle_factura', factura_id=factura_id)
+
+    estado = "Procesado" if (fe.recibido_mh and fe.sello_recepcion) else ("Contingencia" if fe.contingencia else "Pendiente")
+    consultar_url = getattr(CONSULTAR_DTE, 'url_endpoint', '')
+
+    html = f"""
+    <p>Estimado/a {receptor.nombre or 'Cliente'},</p>
+    <p>Le enviamos su documento electrónico:</p>
+    <ul>
+        <li><strong>Tipo:</strong> {fe.tipo_dte.descripcion}</li>
+        <li><strong>Código de generación:</strong> {str(fe.codigo_generacion).upper()}</li>
+        <li><strong>Fecha de emisión:</strong> {fe.fecha_emision:%Y-%m-%d}</li>
+        <li><strong>Hora de emisión:</strong> {fe.hora_emision:%H:%M:%S}</li>
+        <li><strong>Estado:</strong> {estado}</li>
+    </ul>
+    <p>Adjuntamos el PDF y el JSON.</p>
+    {f'<p>Consultar DTE: {consultar_url}</p>' if consultar_url else ''}
+    <br>
+    <p>Atentamente,<br>{getattr(emisor, 'nombre_razon_social', 'Emisor')}<br>{getattr(emisor, 'email', from_email)}</p>
+    """
+
+    subject = f"Documento Electrónico {fe.tipo_dte.descripcion}"
+    email = EmailMessage(
+        subject=subject,
+        body=html,
+        from_email=from_email,
+        to=[correo_destino],
+        connection=conn,
+    )
+    email.content_subtype = "html"
+
+    # Adjuntos
+    if archivo_pdf and os.path.exists(archivo_pdf):
+        with open(archivo_pdf, 'rb') as f:
+            email.attach(f"DTE_{slugify(receptor.nombre or 'cliente')}.pdf", f.read(), 'application/pdf')
+    else:
+        messages.warning(request, "No se adjuntó el PDF porque no se pudo generar o encontrar.")
+
+    if archivo_json and os.path.exists(archivo_json):
+        with open(archivo_json, 'rb') as f:
+            email.attach(f"DTE_{slugify(fe.numero_control)}.json", f.read(), 'application/json')
+    else:
+        messages.warning(request, "No se adjuntó el JSON porque no se encontró/creó.")
+
+    try:
+        email.send(fail_silently=False)
+        fe.envio_correo = True
+        fe.save(update_fields=['envio_correo'])
+        messages.success(request, f"Correo enviado a {correo_destino}.")
+    except Exception as e:
+        fe.envio_correo = False
+        fe.save(update_fields=['envio_correo'])
+        messages.error(request, f"Error al enviar correo: {e}")
+
+    # limpiar tmp
+    if pdf_temp_path and os.path.exists(pdf_temp_path):
+        os.unlink(pdf_temp_path)
+
     return redirect('detalle_factura', factura_id=factura_id)
+
 
 
 ####################################################################################################

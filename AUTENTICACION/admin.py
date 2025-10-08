@@ -6,6 +6,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from FE.models import Emisor_fe
 
 from .models import (
+    EmailProfile,
     Perfilusuario,
     UsuarioEmisor,
     PasswordResetCode,
@@ -34,6 +35,13 @@ try:
     admin.site.unregister(Emisor_fe)
 except admin.sites.NotRegistered:
     pass
+
+
+@admin.register(EmailProfile)
+class EmailProfileAdmin(admin.ModelAdmin):
+    list_display = ("nombre", "scope", "host", "port", "use_ssl", "use_tls", "username", "is_active", "updated_at")
+    list_filter  = ("scope", "is_active", "use_ssl", "use_tls")
+    search_fields= ("nombre", "host", "username", "from_email")
 
 @admin.register(Emisor_fe)
 class EmisorFeAdmin(admin.ModelAdmin):

@@ -87,6 +87,32 @@ class Perfilusuario(models.Model):
     def __str__(self):
         return f"{self.user.email} – {self.nombre or ''} {self.apellido or ''}".strip()
 
+
+class EmailProfile(models.Model):
+    SCOPE_CHOICES = (
+        ('general', 'General'),
+        ('fe', 'Facturación Electrónica'),
+    )
+    nombre       = models.CharField(max_length=100, unique=True)
+    scope        = models.CharField(max_length=20, choices=SCOPE_CHOICES, default='general', db_index=True)
+    host         = models.CharField(max_length=200)
+    port         = models.PositiveIntegerField(default=465)
+    use_ssl      = models.BooleanField(default=True)
+    use_tls      = models.BooleanField(default=False)
+    username     = models.CharField(max_length=200)
+    password     = models.CharField(max_length=255)
+    from_email   = models.EmailField(help_text="Remitente por defecto (FROM)")
+    is_active    = models.BooleanField(default=True)
+    notes        = models.TextField(blank=True, default="")
+    updated_at   = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Perfil de correo"
+        verbose_name_plural = "Perfiles de correo"
+
+    def __str__(self):
+        return f"{self.nombre} [{self.scope}]{' *' if self.is_active else ''}"
+
 # Crear automáticamente el perfil al crear el usuario
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def crear_perfil_usuario(sender, instance, created, **kwargs):
