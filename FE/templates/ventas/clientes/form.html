@@ -1,223 +1,215 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container py-4">
-  <h4>{% if c %}Editar cliente{% else %}Nuevo cliente{% endif %}</h4>
+  <h4>Nuevo cliente</h4>
 
-  <form method="post" class="row g-3 mt-2">
+  <form method="post" class="row g-3 mt-2" id="clienteForm">
     {% csrf_token %}
 
-    {# ==================== TIPO DOCUMENTO ==================== #}
-    {% if Emisor_fe and Emisor_fe.imprime_termica %}
-      <input type="hidden" name="tipo_documento" value="2">
-    {% else %}
-      <div class="col-md-3" hidden>
-        <label class="form-label">Tipo documento</label>
-        <select name="tipo_documento" class="form-select" required>
-          <option value="">Seleccione…</option>
-          {% for t in tipos %}
-            <option value="{{ t.id }}"
-              {% if c and c.tipo_documento_id == t.id %}
-                selected
-              {% elif not c and t.id == 2 %}
-                selected
-              {% endif %}>
-              {{ t.descripcion }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
-    {% endif %}
-
-    {# ==================== N° DOCUMENTO ==================== #}
+    <!-- TIPO PERSONA: SIEMPRE VISIBLE -->
     <div class="col-md-3">
+      <label class="form-label">Tipo de persona</label>
+      <select name="tipo_persona" id="tipo_persona" class="form-select" required>
+        <option value="">Seleccione…</option>
+        {% for tp in tipos_persona %}
+          <option value="{{ tp.id }}"
+            data-codigo="{{ tp.codigo }}"
+          >{{ tp.descripcion }}</option>
+        {% endfor %}
+      </select>
+      <div class="form-text">Primero elija el tipo de persona.</div>
+    </div>
+
+    <!-- ============ CAMPOS COMUNES O NATURAL ============ -->
+    <div class="col-md-3" data-natural data-juridica>
       <label class="form-label">N° documento (DUI)</label>
-      <input name="num_documento" class="form-control"
-             pattern="[0-9]{8}-[0-9]"
-             title="Formato: ########-#"
-             value="{% if c %}{{ c.num_documento }}{% endif %}" required>
+      <input name="num_documento" id="num_documento" class="form-control"
+             pattern="[0-9]{8}-[0-9]" title="Formato: ########-#">
       <div class="form-text">Formato: 12345678-9</div>
     </div>
 
-    {# ==================== NOMBRE ==================== #}
-    <div class="col-md-6">
+    <div class="col-md-6" data-natural data-juridica>
       <label class="form-label">Nombre</label>
-      <input name="nombre" class="form-control"
-             value="{{ c.nombre|default:'' }}" required>
+      <input name="nombre" id="nombre" class="form-control">
     </div>
 
-    {# ==================== NOMBRE COMERCIAL ==================== #}
-    <div class="col-md-6">
+    <div class="col-md-6" data-natural data-juridica>
       <label class="form-label">Nombre comercial</label>
-      <input name="nombreComercial" class="form-control"
-             value="{% if c %}{{ c.nombreComercial }}{% else %}{{ c.nombre|default:'' }}{% endif %}">
+      <input name="nombreComercial" id="nombreComercial" class="form-control">
     </div>
 
-    {# ==================== DIRECCION ==================== #}
-    {% if not Emisor_fe or not Emisor_fe.imprime_termica %}
-      <div class="col-md-6">
-        <label class="form-label">Dirección</label>
-        <input name="direccion" class="form-control" value="{{ c.direccion|default:'' }}">
-      </div>
-    {% endif %}
+    <div class="col-md-6" data-natural data-juridica>
+      <label class="form-label">Dirección</label>
+      <input name="direccion" id="direccion" class="form-control">
+    </div>
 
-    {# ==================== MUNICIPIO ==================== #}
-    <div class="col-md-3">
+    <div class="col-md-3" data-natural data-juridica>
       <label class="form-label">Municipio</label>
-      <select name="municipio" class="form-select" required>
+      <select name="municipio" id="municipio" class="form-select">
         <option value="">Seleccione…</option>
         {% for m in municipios %}
-          <option value="{{ m.id }}"
-            {% if c and c.municipio_id == m.id %}selected{% endif %}>
-            {{ m.departamento.descripcion }} - {{ m.descripcion }}
-          </option>
+          <option value="{{ m.id }}">{{ m.departamento.descripcion }} - {{ m.descripcion }}</option>
         {% endfor %}
       </select>
     </div>
 
-    {# ==================== PAIS ==================== #}
-    {% if Emisor_fe and Emisor_fe.imprime_termica %}
-      <input type="hidden" name="pais" value="11">
-    {% else %}
-      <div class="col-md-3" hidden>
-        <label class="form-label">País</label>
-        <select name="pais" class="form-select">
-          {% for p in paises %}
-            <option value="{{ p.id }}"
-              {% if c and c.pais_id == p.id %}
-                selected
-              {% elif not c and p.id == 11 %}
-                selected
-              {% endif %}>
-              {{ p.descripcion }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
-    {% endif %}
-
-    {# ==================== TIPO PERSONA ==================== #}
-    {% if Emisor_fe and Emisor_fe.imprime_termica %}
-      <input type="hidden" name="tipo_persona" value="1">
-    {% else %}
-      <div class="col-md-3" hidden>
-        <label class="form-label">Tipo de persona</label>
-        <select name="tipo_persona" class="form-select">
-          {% for tp in tipos_persona %}
-            <option value="{{ tp.id }}"
-              {% if c and c.tipo_persona_id == tp.id %}
-                selected
-              {% elif not c and tp.id == 1 %}
-                selected
-              {% endif %}>
-              {{ tp.descripcion }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
-    {% endif %}
-
-    {# ==================== NRC ==================== #}
-    {% if Emisor_fe and Emisor_fe.imprime_termica %}
-      <input type="hidden" name="nrc" value="">
-    {% else %}
-      <div class="col-md-3" hidden>
-        <label class="form-label">NRC</label>
-        <input name="nrc" class="form-control"
-               value="{% if c %}{{ c.nrc }}{% endif %}">
-        <div class="form-text">Vacío si tipo documento = DUI (2)</div>
-      </div>
-    {% endif %}
-
-    {# ==================== TELEFONO ==================== #}
-    <div class="col-md-3">
+    <div class="col-md-3" data-natural data-juridica>
       <label class="form-label">Teléfono</label>
-      <input name="telefono" class="form-control" value="{{ c.telefono|default:'' }}">
+      <input name="telefono" id="telefono" class="form-control">
     </div>
 
-    {# ==================== CORREO ==================== #}
-    {% if Emisor_fe and Emisor_fe.imprime_termica %}
-      <input type="hidden" name="correo" value="ventasdetalleincoe@gmail.com">
-    {% else %}
-      <div class="col-md-3" hidden>
-        <label class="form-label">Correo</label>
-        <input name="correo" type="email" class="form-control"
-               value="{% if c %}{{ c.correo }}{% else %}ventasdetalleincoe@gmail.com{% endif %}">
+    <!-- ============ SOLO JURÍDICA (mostrar TODO) ============ -->
+    <div class="col-md-3" data-juridica>
+      <label class="form-label">Tipo documento</label>
+      <select name="tipo_documento" id="tipo_documento" class="form-select">
+        <option value="">Seleccione…</option>
+        {% for t in tipos %}
+          <option value="{{ t.id }}" data-codigo="{{ t.codigo }}">{{ t.descripcion }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-3" data-juridica>
+      <label class="form-label">NRC</label>
+      <input name="nrc" id="nrc" class="form-control">
+    </div>
+
+    <div class="col-md-3" data-juridica>
+      <label class="form-label">Correo</label>
+      <input name="correo" id="correo" type="email" class="form-control">
+    </div>
+
+    <div class="col-md-3" data-juridica>
+      <label class="form-label">País</label>
+      <select name="pais" id="pais" class="form-select">
+        <option value="">Seleccione…</option>
+        {% for p in paises %}
+          <option value="{{ p.id }}">{{ p.descripcion }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-12" data-juridica>
+      <label class="form-label">Actividades económicas</label>
+      <select name="actividades_economicas" id="actividades_economicas" class="form-select" multiple size="6">
+        {% for a in actividades %}
+          <option value="{{ a.id }}">{{ a.codigo }} — {{ a.descripcion }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- ============ GEO (aplica para ambos) ============ -->
+    <div class="row" data-natural data-juridica>
+      <div class="col-md-6">
+        <label class="form-label">Latitud</label>
+        <input type="number" step="0.000001" inputmode="decimal" lang="en" class="form-control"
+               name="lat" id="id_lat">
       </div>
-    {% endif %}
-
-    {# ==================== ACTIVIDADES ECONOMICAS ==================== #}
-    {% if Emisor_fe and Emisor_fe.imprime_termica %}
-      <input type="hidden" name="actividades_economicas" value="771">
-    {% else %}
-      <div class="col-12" hidden>
-        <label class="form-label">Actividades económicas</label>
-        <select name="actividades_economicas" class="form-select" multiple size="6">
-          {% for a in actividades %}
-            <option value="{{ a.id }}"
-              {% if c and a in c.actividades_economicas.all %}
-                selected
-              {% elif not c and a.id == 771 %}
-                selected
-              {% endif %}>
-              {{ a.codigo }} — {{ a.descripcion }}
-            </option>
-          {% endfor %}
-        </select>
+      <div class="col-md-6">
+        <label class="form-label">Longitud</label>
+        <input type="number" step="0.000001" inputmode="decimal" lang="en" class="form-control"
+               name="lng" id="id_lng">
       </div>
-    {% endif %}
-
-{# ==================== GEO ==================== #}
-{% if not Emisor_fe or not Emisor_fe.imprime_termica %}
-  <div class="row">
-    <div class="col-md-6">
-      <label class="form-label">Latitud</label>
-      <input type="number" step="0.000001" inputmode="decimal" lang="en" class="form-control"
-             name="lat" id="id_lat" value="{{ c.lat|default:'' }}">
+      <div class="mt-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-geo">Usar mi ubicación</button>
+        <small class="text-muted ms-2">o haz clic en el mapa</small>
+      </div>
+      <div id="map" style="height: 330px; border:1px solid #ccc; margin-top:8px;"></div>
     </div>
-    <div class="col-md-6">
-      <label class="form-label">Longitud</label>
-      <input type="number" step="0.000001" inputmode="decimal" lang="en" class="form-control"
-             name="lng" id="id_lng" value="{{ c.lng|default:'' }}">
+
+    <div class="col-12 d-flex gap-2">
+      <button class="btn btn-primary">Guardar</button>
+      <a href="{% url 'clientes_list' %}" class="btn btn-light">Cancelar</a>
     </div>
-  </div>
+  </form>
+</div>
 
-  <div class="mt-2">
-    <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-geo">
-      Usar mi ubicación
-    </button>
-    <small class="text-muted ms-2">o haz clic en el mapa</small>
-  </div>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-   integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-  <div id="map" style="height: 330px; border:1px solid #ccc; margin-top:8px;"></div>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+(function(){
+  const $ = (s,root=document)=>root.querySelector(s);
+  const $$ = (s,root=document)=>[...root.querySelectorAll(s)];
 
-  <script>
-  (function() {
-    var $lat = document.getElementById('id_lat');
-    var $lng = document.getElementById('id_lng');
+  const selTipoPersona = $('#tipo_persona');
+  const selTipoDoc = $('#tipo_documento');
+  const inpNumDoc = $('#num_documento');
+  const inpNombre = $('#nombre');
+  const selMuni = $('#municipio');
+  const inpDir = $('#direccion');
 
-    var initLat = parseFloat($lat.value) || 13.69294;
-    var initLng = parseFloat($lng.value) || -89.21819;
-    var zoom    = ($lat.value && $lng.value) ? 15 : 12;
+  // Helpers para toggle de grupos
+  function showGroup(selector, on) { $$(selector).forEach(el => el.style.display = on ? '' : 'none'); }
+  function setRequired(ids, on){ ids.forEach(id=>{ const el = $('#'+id); if(el){ if(on){el.setAttribute('required','required');} else {el.removeAttribute('required');}}}); }
+  function forceDUI(){
+    // marca DUI por defecto si existe en la lista
+    if (!selTipoDoc) return;
+    const optDui = [...selTipoDoc.options].find(o => (o.dataset.codigo||'').trim()==='2' || o.text.toUpperCase().includes('DUI'));
+    if (optDui){ selTipoDoc.value = optDui.value; }
+    // fuerza patrón DUI
+    inpNumDoc.setAttribute('pattern','[0-9]{8}-[0-9]');
+    inpNumDoc.setAttribute('title','Formato: ########-#');
+    inpNumDoc.placeholder = '########-#';
+  }
 
-    var map = L.map('map').setView([initLat, initLng], zoom);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution:'&copy; OpenStreetMap'
-    }).addTo(map);
+  function onTipoPersonaChange(){
+    const opt = selTipoPersona.options[selTipoPersona.selectedIndex];
+    const codigo = (opt?.dataset?.codigo || '').trim();
 
-    var marker = null;
+    const natural = (codigo === '1');   // Persona Natural
+    const juridica = (codigo === '2');  // Persona Jurídica
 
+    // Visibilidad
+    showGroup('[data-natural]', natural || juridica); // comunes + natural
+    showGroup('[data-juridica]', juridica);          // todos para jurídica
+
+    // Requeridos según regla
+    if (natural){
+      // requeridos mínimos
+      setRequired(['num_documento','nombre','municipio','direccion'], true);
+      // quitar required de los que no aplican
+      setRequired(['tipo_documento','nrc','correo','pais','actividades_economicas'], false);
+      // Forzar DUI en UI
+      forceDUI();
+    } else if (juridica){
+      // Jurídica: permitir todo; al menos estos:
+      setRequired(['tipo_documento','nombre','municipio'], true);
+      setRequired(['num_documento','direccion'], false); // puedes decidir si pedirlos obligatorios
+      // relajar patrón del documento (según tipo seleccionado)
+      inpNumDoc.removeAttribute('pattern');
+      inpNumDoc.removeAttribute('title');
+      inpNumDoc.placeholder = '';
+    } else {
+      // sin selección aún
+      showGroup('[data-natural]', false);
+      showGroup('[data-juridica]', false);
+      setRequired(['num_documento','nombre','municipio','direccion','tipo_documento'], false);
+    }
+  }
+
+  selTipoPersona?.addEventListener('change', onTipoPersonaChange);
+  onTipoPersonaChange();
+
+  // -------- Mapa / Geolocalización (idéntico a tu snippet) --------
+  (function initMap(){
+    const $lat = document.getElementById('id_lat');
+    const $lng = document.getElementById('id_lng');
+    const initLat = parseFloat($lat.value) || 13.69294;
+    const initLng = parseFloat($lng.value) || -89.21819;
+    const zoom    = ($lat.value && $lng.value) ? 15 : 12;
+
+    const map = L.map('map').setView([initLat, initLng], zoom);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap'}).addTo(map);
+
+    let marker = null;
     function setMarker(lat, lng) {
       if (!isFinite(lat) || !isFinite(lng)) return;
-      if (marker) {
-        marker.setLatLng([lat, lng]);
-      } else {
+      if (marker) marker.setLatLng([lat, lng]);
+      else {
         marker = L.marker([lat, lng], {draggable: true}).addTo(map);
         marker.on('dragend', function(){
-          var ll = marker.getLatLng();
+          const ll = marker.getLatLng();
           $lat.value = ll.lat.toFixed(6);
           $lng.value = ll.lng.toFixed(6);
         });
@@ -229,11 +221,8 @@
 
     if ($lat.value && $lng.value) setMarker(initLat, initLng);
 
-    map.on('click', function(e) {
-      setMarker(e.latlng.lat, e.latlng.lng);
-    });
-
-    document.getElementById('btn-geo').addEventListener('click', function(){
+    map.on('click', e => setMarker(e.latlng.lat, e.latlng.lng));
+    document.getElementById('btn-geo')?.addEventListener('click', function(){
       if (!navigator.geolocation) return alert('Geolocalización no soportada.');
       navigator.geolocation.getCurrentPosition(function(pos){
         setMarker(pos.coords.latitude, pos.coords.longitude);
@@ -242,70 +231,6 @@
       }, {enableHighAccuracy:true, timeout:8000});
     });
   })();
-  </script>
-{% endif %}
-
-
-    <div class="col-12 d-flex gap-2">
-      <button class="btn btn-primary">Guardar</button>
-      <a href="{% url 'clientes_list' %}" class="btn btn-light">Cancelar</a>
-    </div>
-  </form>
-</div>
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
- integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-<div id="map" style="height: 330px; border:1px solid #ccc; margin-top:8px;"></div>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
- integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-
-<script>
-(function() {
-  var $lat = document.getElementById('id_lat');
-  var $lng = document.getElementById('id_lng');
-
-  var initLat = parseFloat($lat.value) || 13.69294;
-  var initLng = parseFloat($lng.value) || -89.21819;
-  var zoom    = ($lat.value && $lng.value) ? 15 : 12;
-
-  var map = L.map('map').setView([initLat, initLng], zoom);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution:'&copy; OpenStreetMap'
-  }).addTo(map);
-
-  var marker = null;
-
-  function setMarker(lat, lng) {
-    if (!isFinite(lat) || !isFinite(lng)) return;
-    if (marker) {
-      marker.setLatLng([lat, lng]);
-    } else {
-      marker = L.marker([lat, lng], {draggable: true}).addTo(map);
-      marker.on('dragend', function(){
-        var ll = marker.getLatLng();
-        $lat.value = ll.lat.toFixed(6);
-        $lng.value = ll.lng.toFixed(6);
-      });
-    }
-    $lat.value = (+lat).toFixed(6);
-    $lng.value = (+lng).toFixed(6);
-    map.setView([lat, lng], 15);
-  }
-
-  if ($lat.value && $lng.value) setMarker(initLat, initLng);
-
-  map.on('click', function(e) {
-    setMarker(e.latlng.lat, e.latlng.lng);
-  });
-
-  document.getElementById('btn-geo').addEventListener('click', function(){
-    if (!navigator.geolocation) return alert('Geolocalización no soportada.');
-    navigator.geolocation.getCurrentPosition(function(pos){
-      setMarker(pos.coords.latitude, pos.coords.longitude);
-    }, function(err){
-      alert('No se pudo obtener tu ubicación (' + err.message + ').');
-    }, {enableHighAccuracy:true, timeout:8000});
-  });
 })();
 </script>
 {% endblock %}

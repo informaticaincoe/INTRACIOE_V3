@@ -280,6 +280,28 @@ def clientes_list(request):
     })
 
 
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_http_methods
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.utils import timezone
+from django.db import transaction
+from django.db.models import Q
+import re
+
+DUI_REGEX = re.compile(r"^\d{8}-\d$")
+
+def _none_if_blank(s):
+    s = (s or "").strip()
+    return s if s else None
+
+def _parse_coord(s):
+    try:
+        if s is None or str(s).strip() == "":
+            return None
+        return float(s)
+    except Exception:
+        return None
 
 @login_required
 @require_http_methods(["GET", "POST"])
@@ -291,91 +313,162 @@ def clientes_crear(request):
     actividades = ActividadEconomica.objects.all().order_by('descripcion')
 
     if request.method == 'POST':
-        tipo_id        = request.POST.get('tipo_documento')
-        num_documento  = _none_if_blank(request.POST.get('num_documento'))
-        nombre         = _none_if_blank(request.POST.get('nombre'))
-        direccion      = _none_if_blank(request.POST.get('direccion'))
-        telefono       = _none_if_blank(request.POST.get('telefono'))
-        correo         = _none_if_blank(request.POST.get('correo'))
-        municipio_id   = request.POST.get('municipio')
-        nrc            = _none_if_blank(request.POST.get('nrc'))
-        nombre_com     = _none_if_blank(request.POST.get('nombreComercial'))  # <- nuevo
-        pais_id        = request.POST.get('pais')                              # <- nuevo (opcional)
-        tipo_persona_id= request.POST.get('tipo_persona')                      # <- nuevo (opcional)
-        act_ids        = request.POST.getlist('actividades_economicas') or request.POST.getlist('actividades')  # <- M2M
+        # siempre requerimos tipo_persona primero
+        tipo_persona_id = request.POST.get('tipo_persona')
+        if not tipo_persona_id:
+            messages.error(request, "Seleccione el tipo de persona.")
+            return redirect('clientes_crear')
 
-        # coordenadas del form (pueden venir vacías)
-        lat = _parse_coord(request.POST.get('lat'))
-        lng = _parse_coord(request.POST.get('lng'))
+        # buscamos instancia de tipo_persona
+        try:
+            tipo_persona_obj = TipoPersona.objects.get(pk=tipo_persona_id)
+        except TipoPersona.DoesNotExist:
+            messages.error(request, "Tipo de persona inválido.")
+            return redirect('clientes_crear')
+
+        # campos comunes que podrían usarse
+        municipio_id = request.POST.get('municipio')
+        nombre       = _none_if_blank(request.POST.get('nombre'))
+        direccion    = _none_if_blank(request.POST.get('direccion'))
+        telefono     = _none_if_blank(request.POST.get('telefono'))
+        nombre_com   = _none_if_blank(request.POST.get('nombreComercial'))
+        lat          = _parse_coord(request.POST.get('lat'))
+        lng          = _parse_coord(request.POST.get('lng'))
 
         geocode_source = ""
         geocoded_at = None
 
-        # Validación mínima
-        if not (tipo_id and nombre and municipio_id):
-            messages.error(request, 'Complete los campos obligatorios (tipo documento, nombre y municipio).')
+        # --------------------------------------------------
+        # PERSONA NATURAL (1): solo los campos solicitados
+        # --------------------------------------------------
+        if str(tipo_persona_obj.codigo) == "1":
+            # tipo_documento = DUI por defecto (intenta por código 2; si no, por descripción)
+            tipo = (
+                TiposDocIDReceptor.objects.filter(Q(codigo="2")).first() or
+                TiposDocIDReceptor.objects.filter(descripcion__icontains="DUI").first()
+            )
+            if not tipo:
+                messages.error(request, "No existe el tipo de documento DUI configurado.")
+                return redirect('clientes_crear')
+
+            num_documento = _none_if_blank(request.POST.get('num_documento'))
+            if not num_documento or not DUI_REGEX.match(num_documento):
+                messages.error(request, "Ingrese un DUI válido con formato ########-#.")
+                return redirect('clientes_crear')
+
+            if not (nombre and municipio_id and direccion):
+                messages.error(request, "Complete los campos obligatorios (nombre, municipio, dirección).")
+                return redirect('clientes_crear')
+
+            municipio = get_object_or_404(Municipio, pk=municipio_id)
+
+            # Geocodificación (igual que tu lógica original)
+            if (lat is None or lng is None) and direccion:
+                muni = getattr(municipio, "descripcion", "") or ""
+                depto = getattr(getattr(municipio, "departamento", None), "descripcion", "") or ""
+                query = f"{direccion}, {muni}, {depto}, El Salvador"
+                lat, lng, geocode_source = _geocode_address_osm(query)
+                if lat is not None and lng is not None:
+                    geocoded_at = timezone.now()
+            elif lat is not None and lng is not None:
+                geocode_source = "manual"
+                geocoded_at = timezone.now()
+
+            with transaction.atomic():
+                receptor = Receptor_fe.objects.create(
+                    tipo_documento=tipo,
+                    num_documento=num_documento,
+                    nrc=None,                         # no aplica natural
+                    nombre=nombre,
+                    municipio=municipio,
+                    direccion=direccion,
+                    telefono=telefono,
+                    correo=None,                      # no obligatorio natural
+                    nombreComercial=nombre_com,
+                    pais=None,                        # no obligatorio natural
+                    tipo_persona=tipo_persona_obj,    # 1
+                    lat=lat,
+                    lng=lng,
+                    geocode_source=geocode_source,
+                    geocoded_at=geocoded_at,
+                )
+                # Natural: actividades_economicas no se exige
+                receptor.actividades_economicas.clear()
+
+            messages.success(request, 'Cliente (Persona Natural) creado.')
+            return redirect('clientes_list')
+
+        # --------------------------------------------------
+        # PERSONA JURÍDICA (2): llenar TODO
+        # --------------------------------------------------
+        elif str(tipo_persona_obj.codigo) == "2":
+            tipo_id        = request.POST.get('tipo_documento')
+            num_documento  = _none_if_blank(request.POST.get('num_documento'))
+            correo         = _none_if_blank(request.POST.get('correo'))
+            nrc            = _none_if_blank(request.POST.get('nrc'))
+            pais_id        = request.POST.get('pais')
+            act_ids        = request.POST.getlist('actividades_economicas') or request.POST.getlist('actividades')
+
+            if not (tipo_id and nombre and municipio_id):
+                messages.error(request, 'Complete los campos obligatorios (tipo documento, nombre y municipio).')
+                return redirect('clientes_crear')
+
+            tipo = get_object_or_404(TiposDocIDReceptor, pk=tipo_id)
+            municipio = get_object_or_404(Municipio, pk=municipio_id)
+
+            pais = None
+            if pais_id:
+                try:
+                    pais = Pais.objects.get(pk=pais_id)
+                except Pais.DoesNotExist:
+                    pais = None
+
+            # Geocodificación
+            if (lat is None or lng is None) and direccion:
+                muni = getattr(municipio, "descripcion", "") or ""
+                depto = getattr(getattr(municipio, "departamento", None), "descripcion", "") or ""
+                query = f"{direccion}, {muni}, {depto}, El Salvador"
+                lat, lng, geocode_source = _geocode_address_osm(query)
+                if lat is not None and lng is not None:
+                    geocoded_at = timezone.now()
+            elif lat is not None and lng is not None:
+                geocode_source = "manual"
+                geocoded_at = timezone.now()
+
+            with transaction.atomic():
+                receptor = Receptor_fe.objects.create(
+                    tipo_documento=tipo,
+                    num_documento=num_documento,
+                    nrc=nrc,
+                    nombre=nombre,
+                    municipio=municipio,
+                    direccion=direccion,
+                    telefono=telefono,
+                    correo=correo,
+                    nombreComercial=nombre_com,
+                    pais=pais,
+                    tipo_persona=tipo_persona_obj,   # 2
+                    lat=lat,
+                    lng=lng,
+                    geocode_source=geocode_source,
+                    geocoded_at=geocoded_at,
+                )
+                if act_ids:
+                    acts_qs = ActividadEconomica.objects.filter(pk__in=act_ids)
+                    receptor.actividades_economicas.set(acts_qs)
+
+            messages.success(request, 'Cliente (Persona Jurídica) creado.')
+            return redirect('clientes_list')
+
+        # --------------------------------------------------
+        # otra clase/código de tipo_persona -> tratar como jurídica (todo)
+        # --------------------------------------------------
+        else:
+            # fallback: permitir todos los campos
+            messages.info(request, "Tipo de persona no reconocido. Se aplicó registro completo.")
             return redirect('clientes_crear')
 
-        tipo = get_object_or_404(TiposDocIDReceptor, pk=tipo_id)
-        municipio = get_object_or_404(Municipio, pk=municipio_id)
-
-        # (opcional) Pais y TipoPersona si se mandan
-        pais = None
-        if pais_id:
-            try:
-                pais = Pais.objects.get(pk=pais_id)
-            except Pais.DoesNotExist:
-                pais = None
-        # si no se envía país y quieres default a El Salvador, descomenta:
-        # if not pais:
-        #     pais = Pais.objects.filter(iso_alpha2='SV').first()
-
-        tipo_persona = None
-        if tipo_persona_id:
-            try:
-                tipo_persona = TipoPersona.objects.get(pk=tipo_persona_id)
-            except TipoPersona.DoesNotExist:
-                tipo_persona = None
-
-        # Geocodificación
-        if (lat is None or lng is None) and direccion:
-            muni = getattr(municipio, "descripcion", "") or ""
-            depto = getattr(getattr(municipio, "departamento", None), "descripcion", "") or ""
-            query = f"{direccion}, {muni}, {depto}, El Salvador"
-            lat, lng, geocode_source = _geocode_address_osm(query)
-            if lat is not None and lng is not None:
-                geocoded_at = timezone.now()
-        elif lat is not None and lng is not None:
-            geocode_source = "manual"
-            geocoded_at = timezone.now()
-
-        with transaction.atomic():
-            receptor = Receptor_fe.objects.create(
-                tipo_documento=tipo,
-                num_documento=num_documento,
-                nrc=nrc,
-                nombre=nombre,
-                municipio=municipio,
-                direccion=direccion,
-                telefono=telefono,
-                correo=correo,
-                nombreComercial=nombre_com,   # <- nuevo
-                pais=pais,                    # <- nuevo
-                tipo_persona=tipo_persona,    # <- nuevo
-                lat=lat,
-                lng=lng,
-                geocode_source=geocode_source,
-                geocoded_at=geocoded_at,
-            )
-
-            # ManyToMany: actividades económicas
-            if act_ids:
-                acts_qs = ActividadEconomica.objects.filter(pk__in=act_ids)
-                receptor.actividades_economicas.set(acts_qs)
-
-        messages.success(request, 'Cliente creado.')
-        return redirect('clientes_list')
-
+    # GET
     return render(
         request,
         'ventas/clientes/form.html',
@@ -387,6 +480,7 @@ def clientes_crear(request):
             'actividades': actividades,
         }
     )
+
 
 @login_required
 def clientes_editar(request, pk):
