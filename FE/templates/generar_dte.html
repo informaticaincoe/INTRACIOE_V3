@@ -422,6 +422,37 @@
   </form>
 </div>
 
+<!-- Modal: Error/Contingencia MH -->
+<div class="modal fade" id="mhModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="mhModalTitle">No se pudo enviar a Hacienda</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div id="mhModalMsg" class="mb-2"></div>
+        <details id="mhModalDet" class="mb-2" style="display:none;">
+          <summary class="small text-muted">Detalles técnicos</summary>
+          <pre class="small mt-2" id="mhModalDetPre" style="white-space:pre-wrap;"></pre>
+        </details>
+        <div id="mhModalAviso" class="alert alert-warning py-2 px-3 mb-0" style="display:none;">
+          ¿Deseas **enviar en contingencia** este DTE? (Se transmitirá más tarde)
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btnReintentar" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+          Reintentar
+        </button>
+        <button type="button" id="btnContingencia" class="btn btn-primary">
+          Enviar en contingencia
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <script>
 (function(){
   // ======= Estado global POS =======
@@ -478,7 +509,7 @@
     try {
       if (ncText) ncText.textContent = '…';
       const url = "{% url 'obtener_numero_control_ajax' %}?tipo_dte=" + encodeURIComponent(tipo);
-      const resp = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+      const resp = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' });
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       const data = await resp.json();
       const nuevo = data?.numero_control || '';
@@ -646,7 +677,7 @@
   }
   window.addItem = () => {};
 
-  // Picker
+  // ======= Product Picker =======
   class ProductPicker {
     constructor({input, menu, apiUrl, onChoose}){
       this.input = input; this.menu = menu; this.apiUrl = apiUrl; this.onChoose = onChoose || (()=>{});
@@ -661,7 +692,7 @@
     async search(q){
       try{
         const url = `${this.apiUrl}?q=${encodeURIComponent(q)}&page_size=25`;
-        const res = await fetch(url, {headers:{'X-Requested-With':'XMLHttpRequest'}});
+        const res = await fetch(url, {headers:{'X-Requested-With':'XMLHttpRequest'}, credentials: 'same-origin'});
         const data = await res.json();
         this.items = (data.results||[]).map(p=>{
           const precio = parseFloat(p.precio||'0')||0;
@@ -738,9 +769,10 @@
 
   // Enter del input → agrega
   $('productoPickerInput')?.addEventListener('keydown', (e)=>{
-    if(e.key==='Enter'){
-      const sel = picker.getSelected();
-      if(sel){ e.preventDefault(); addItemFromProduct(sel); }
+    const sel = picker.getSelected();
+    if(e.key==='Enter' && sel){
+      e.preventDefault();
+      addItemFromProduct(sel);
     }
   });
 
@@ -767,43 +799,184 @@
   $('montoRecibido')?.addEventListener('input', calcTotals);
   togglePago();
 
-  // Submit con fetch
+  // ======= Modal de MH (si existe en el DOM) =======
+  const MHModalEl = document.getElementById('mhModal');
+  const MHModal   = MHModalEl && window.bootstrap ? new bootstrap.Modal(MHModalEl) : null;
+  const $mTitle   = document.getElementById('mhModalTitle');
+  const $mMsg     = document.getElementById('mhModalMsg');
+  const $mDet     = document.getElementById('mhModalDet');
+  const $mDetPre  = document.getElementById('mhModalDetPre');
+  const $btnReint = document.getElementById('btnReintentar');
+  const $btnCont  = document.getElementById('btnContingencia');
+
+  function showMhModal(payload){
+    if (!MHModal) {
+      // Fallback si no hay modal en el DOM
+      const msg = (payload?.titulo ? (payload.titulo + ': ') : '') + (payload?.mensaje || 'Error');
+      alert(msg);
+      return;
+    }
+    const titulo = payload?.titulo || 'No se pudo enviar a Hacienda';
+    const mensaje = payload?.mensaje || 'Ocurrió un error al intentar enviar el DTE.';
+    const detalles = payload?.detalles || payload?.respuesta || '';
+    const puedeConting = !!payload?.puede_contingencia;
+    const facturaId = payload?.factura_id;
+    const enviarUrl = payload?.enviar_mh_url;
+
+    $mTitle && ($mTitle.textContent = titulo);
+    $mMsg && ($mMsg.textContent = mensaje);
+
+    if ($mDet && $mDetPre) {
+      if (detalles) {
+        $mDet.style.display = '';
+        $mDetPre.textContent = typeof detalles === 'string' ? detalles : JSON.stringify(detalles, null, 2);
+      } else {
+        $mDet.style.display = 'none';
+        $mDetPre.textContent = '';
+      }
+    }
+    const aviso = document.getElementById('mhModalAviso');
+    if (aviso) aviso.style.display = puedeConting ? '' : 'none';
+
+    if ($btnReint) {
+      $btnReint.onclick = () => {
+        setTimeout(()=> form.requestSubmit(), 120);
+      };
+    }
+
+    if ($btnCont) {
+      $btnCont.onclick = async () => {
+        if (!enviarUrl || !facturaId) return;
+        const csrf = form.querySelector('input[name="csrfmiddlewaretoken"]')?.value || '';
+        $btnCont.disabled = true;
+        $btnCont.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Enviando…`;
+        try {
+          const idem = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+          const fd = new FormData();
+          fd.append('csrfmiddlewaretoken', csrf);
+          fd.append('crear_evento', 'true');
+          fd.append('idempotency_key', idem);
+
+          const resp = await fetch(`${enviarUrl}${enviarUrl.endsWith('/')?'':'/'}?crear_evento=true`, {
+            method: 'POST',
+            body: fd,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+          });
+
+          const ct = resp.headers.get('content-type') || '';
+          const data = ct.includes('application/json') ? await resp.json() : {};
+          if (resp.ok && (data.ok || data.redirect)) {
+            MHModal.hide();
+            if (data.redirect) window.location.href = data.redirect;
+            else window.location.reload();
+          } else {
+            showMhModal({
+              titulo: 'No se pudo crear contingencia',
+              mensaje: data?.error || `HTTP ${resp.status}`,
+              detalles: data
+            });
+          }
+        } catch(e) {
+          showMhModal({ titulo: 'Error de red', mensaje: String(e) });
+        } finally {
+          $btnCont.disabled = false;
+          $btnCont.textContent = 'Enviar en contingencia';
+        }
+      };
+    }
+
+    MHModal.show();
+  }
+
+  // ======= Submit con fetch (anti-doble click + idempotencia + modal) =======
   const form = document.getElementById('form-pos');
+  const genBtn = () => form.querySelector('button[type="submit"]');
+  let SUBMITTING = false;
+
+  function setSubmitting(on) {
+    const b = genBtn();
+    if (!b) return;
+    if (on) {
+      SUBMITTING = true;
+      b.disabled = true;
+      b.dataset.prev = b.innerHTML;
+      b.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Generando…`;
+    } else {
+      SUBMITTING = false;
+      b.disabled = false;
+      if (b.dataset.prev) b.innerHTML = b.dataset.prev;
+    }
+  }
+
   form.addEventListener('submit', async (e) => {
     if (window.POS.items.length === 0) {
       e.preventDefault();
       alert('Agrega al menos un producto.');
       return;
     }
+    if (SUBMITTING) { e.preventDefault(); return; }
+
     e.preventDefault();
+    setSubmitting(true);
+
     try {
       const fd = new FormData(form);
+      // Idempotencia (el backend debe ignorar duplicados con misma key)
+      fd.append('idempotency_key', `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+
       const resp = await fetch(form.action || location.href, {
         method: 'POST',
         body: fd,
-        headers: { 'X-Requested-With':'XMLHttpRequest' }
+        headers: { 'X-Requested-With':'XMLHttpRequest' },
+        credentials: 'same-origin'
       });
-      const data = await resp.json();
 
-      if (!resp.ok) {
-        alert(data?.error || 'Error al generar la factura.');
+      const ct = resp.headers.get('content-type') || '';
+      const isJson = ct.includes('application/json');
+      const data = isJson ? await resp.json() : null;
+
+      // 1) Éxito normal
+      if (resp.ok && data && (data.ok || data.print_url || data.redirect)) {
+        if (data.print_url && window.AndroidPrinter?.printFactura) {
+          try { window.AndroidPrinter.printFactura(data.print_url); } catch(_e){}
+        }
+        if (data.redirect) { window.location.href = data.redirect; return; }
+        setSubmitting(false); // dejamos habilitado el botón por si hace otra venta
+        alert(data?.mensaje || 'Operación completada.');
         return;
       }
 
-      if (data.print_url && window.AndroidPrinter && typeof AndroidPrinter.printFactura === 'function') {
-        AndroidPrinter.printFactura(data.print_url);
+      // 2) Error controlado → Modal
+      if (data && (data.mostrar_modal || data.puede_contingencia || data.mensaje)) {
+        setSubmitting(false);
+        showMhModal(data);
+        return;
       }
-      if (data.redirect) { window.location.href = data.redirect; return; }
-      alert(data?.mensaje || 'Operación completada.');
+
+      // 3) Error genérico (con/sin JSON)
+      if (!resp.ok) {
+        setSubmitting(false);
+        alert((data && (data.error||data.mensaje)) || `Error al generar: HTTP ${resp.status}`);
+        return;
+      }
+
+      // 4) Si no fue JSON (HTML), fallback a submit normal
+      if (!isJson) {
+        setSubmitting(false); // mejor reactivamos por si el submit tarda
+        form.submit();
+        return;
+      }
     } catch (err) {
       console.error('Submit error:', err);
-      form.submit(); // fallback
+      setSubmitting(false);
+      alert('Error de red, intenta de nuevo.');
     }
   });
 
-  // Atajo F9
+  // Atajo F9 (respeta bloqueo)
   document.addEventListener('keydown', (e)=>{
-    if (e.key === 'F9') { e.preventDefault(); form.requestSubmit(); }
+    if (e.key === 'F9') { e.preventDefault(); if (!SUBMITTING) form.requestSubmit(); }
   });
 
   // Sticky del precio si se edita manualmente
@@ -837,4 +1010,7 @@
 })();
 </script>
 {% endif %}
+
+
+
 {% endblock %}
