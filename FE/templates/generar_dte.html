@@ -74,7 +74,7 @@
               <a href="{% url "clientes_crear" %}"><i class="bi bi-pen" data-bs-toggle="tooltip" data-bs-placement="left" title="Agregar"></i></a>
             </div>
             <label class="form-label small mb-1">Seleccione cliente</label>
-            <select name="receptor_id" id="receptor_id" class="form-select" required>
+            <select name="receptor_id" id="receptor_id" class="form-select" required data-varios-id="1">
               <option value="">— Seleccione —</option>
               {% for r in receptores %}
                 <option value="{{ r.id }}">{{ r.num_documento }} — {{ r.nombre }}</option>
@@ -437,10 +437,13 @@
           <pre class="small mt-2" id="mhModalDetPre" style="white-space:pre-wrap;"></pre>
         </details>
         <div id="mhModalAviso" class="alert alert-warning py-2 px-3 mb-0" style="display:none;">
-          ¿Deseas **enviar en contingencia** este DTE? (Se transmitirá más tarde)
+          ¿Deseas <strong>enviar en contingencia</strong> este DTE? (Se transmitirá más tarde)
         </div>
       </div>
       <div class="modal-footer">
+        <button type="button" id="btnGuardarSinEnviar" class="btn btn-warning" style="display:none;">
+          Guardar sin enviar
+        </button>
         <button type="button" id="btnReintentar" class="btn btn-outline-secondary" data-bs-dismiss="modal">
           Reintentar
         </button>
@@ -452,8 +455,73 @@
   </div>
 </div>
 
+<script>
+const THRESHOLD_MH = 20; // USD
+const receptorSel = document.getElementById('receptor_id');
+
+function isVacios(str){ return !str || String(str).trim()===''; }
+
+// ¿es "Clientes varios"?
+function isClientesVariosSelected() {
+  if (!receptorSel) return true;
+  const selVal  = String(receptorSel.value || '');
+  const selTxt  = (receptorSel.options[receptorSel.selectedIndex]?.text || '').toUpperCase();
+  const variosId = String(receptorSel.dataset.variosId || '1'); // fallback 1
+
+  if (selVal && selVal === variosId) return true;       // match por ID exacto
+  if (selTxt.includes('VARIOS')) return true;            // heurística por texto
+  return false;
+}
+
+function ensureAlertaCliente() {
+  const card = document.querySelector('.pos-sticky .card-body') || document;
+  let alert = document.getElementById('mhClienteAlert');
+  if (!alert) {
+    alert = document.createElement('div');
+    alert.id = 'mhClienteAlert';
+    alert.className = 'alert alert-warning d-flex align-items-center gap-2 py-2 px-3';
+    alert.style.display = 'none';
+    alert.innerHTML = `
+      <i class="bi bi-info-circle"></i>
+      <div><strong>Monto supera $${THRESHOLD_MH.toFixed(2)}</strong>: selecciona un <b>cliente registrado</b> (no "Clientes varios").</div>
+    `;
+    const submitBtn = document.querySelector('#form-pos button[type="submit"]');
+    if (submitBtn && submitBtn.parentElement) {
+      submitBtn.parentElement.parentElement.insertBefore(alert, submitBtn.parentElement);
+    } else {
+      card.prepend(alert);
+    }
+  }
+  return alert;
+}
+
+// SOLO aplica la regla si hay ítems en el carrito
+function enforceClienteRequirement(totalPagar) {
+  const alert = ensureAlertaCliente();
+  const submitBtn = document.querySelector('#form-pos button[type="submit"]');
+
+  const itemsCount = (window.POS?.items?.length || 0);
+  if (!itemsCount) { // sin ítems → nada de alertas ni bloqueos
+    if (alert) alert.style.display = 'none';
+    submitBtn && (submitBtn.disabled = false);
+    receptorSel && receptorSel.classList.remove('is-invalid');
+    return;
+  }
+
+  const requiereCliente = Number(totalPagar) > THRESHOLD_MH;
+  const sinCliente = !receptorSel || isVacios(receptorSel.value);
+  const esVarios = isClientesVariosSelected();
+  const invalido = requiereCliente && (sinCliente || esVarios);
+
+  if (alert) alert.style.display = invalido ? '' : 'none';
+  if (submitBtn) submitBtn.disabled = !!invalido;
+  if (receptorSel) receptorSel.classList.toggle('is-invalid', !!invalido);
+}
+</script>
+
 
 <script>
+
 (function(){
   // ======= Estado global POS =======
   window.POS = {
@@ -637,9 +705,12 @@
       $('montoCambio') && ($('montoCambio').textContent = fmt(cambio));
     }
 
+    // Reglas MH: exigir cliente si total > umbral
+    enforceClienteRequirement(totalPagar);
     syncHidden();
   }
   window.calcTotals = calcTotals;
+
 
   // Eventos extras (si existen) y efectivo
   ['ret_iva_sw','ret_iva_mto','ret_renta_sw','ret_renta_mto','montoRecibido'].forEach(id=>{
@@ -820,8 +891,10 @@
     const mensaje = payload?.mensaje || 'Ocurrió un error al intentar enviar el DTE.';
     const detalles = payload?.detalles || payload?.respuesta || '';
     const puedeConting = !!payload?.puede_contingencia;
+    const puedeGuardar = !!payload?.puede_guardar;
     const facturaId = payload?.factura_id;
     const enviarUrl = payload?.enviar_mh_url;
+    const redirectUrl = payload?.redirect;
 
     $mTitle && ($mTitle.textContent = titulo);
     $mMsg && ($mMsg.textContent = mensaje);
@@ -837,6 +910,16 @@
     }
     const aviso = document.getElementById('mhModalAviso');
     if (aviso) aviso.style.display = puedeConting ? '' : 'none';
+
+    // MOSTRAR/OCULTAR MODAL DE GUARDAR SIN Enviar
+    if ($btnguardar){
+      $btnGuardar.style.display = puedeGuardar ? '' : 'none';
+      $btnGuardar.onclick = () => {
+        MHModal.hide();
+        if (redirectUrl) window.location.href = redirectUrl;
+        else window.location.reload();
+      };
+    }
 
     if ($btnReint) {
       $btnReint.onclick = () => {
@@ -875,6 +958,8 @@
               titulo: 'No se pudo crear contingencia',
               mensaje: data?.error || `HTTP ${resp.status}`,
               detalles: data
+              //puede_guardar: true,
+              //puede_contingencia: false
             });
           }
         } catch(e) {
@@ -917,7 +1002,30 @@
     }
     if (SUBMITTING) { e.preventDefault(); return; }
 
-    e.preventDefault();
+    // >>> Bloqueo MH: total > 20 no permite "Clientes varios" (ID=1)
+    // Recalcula totals por si el DOM no está actualizado al milisegundo
+    let total = 0;
+    window.POS.items.forEach(it=>{
+      const st = (+it.precio) * it.cantidad;
+      const ds = st * (Math.min(100, Math.max(0, +it.desc_pct))/100);
+      const base = st - ds;
+      const iv = it.aplica_iva ? base * 0.13 : 0;
+      total += base + iv;
+    });
+    // Restar retenciones si las usas en el total a pagar:
+    const retIvaOn = document.getElementById('ret_iva_sw')?.checked;
+    const retRentaOn = document.getElementById('ret_renta_sw')?.checked;
+    let retIvaMto = retIvaOn ? parseFloat(document.getElementById('ret_iva_mto')?.value||'0')||0 : 0;
+    let retRentaMto = retRentaOn ? parseFloat(document.getElementById('ret_renta_mto')?.value||'0')||0 : 0;
+    const totalPagar = total - retIvaMto - retRentaMto;
+
+    if (totalPagar > THRESHOLD_MH && (!receptorSel || !receptorSel.value || isClientesVariosSelected())) {
+      e.preventDefault();
+      alert(`El total supera $${THRESHOLD_MH.toFixed(2)}.\nDebes seleccionar un cliente registrado (no "Clientes varios").`);
+      receptorSel?.focus();
+      return;
+    }
+    // <<< Fin bloqueo MH
     setSubmitting(true);
 
     try {

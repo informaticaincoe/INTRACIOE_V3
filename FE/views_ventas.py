@@ -1,6 +1,7 @@
 # =========================
 #   VENTAS (front-office)
 # =========================
+from datetime import datetime, date, timedelta
 from django.contrib import messages
 from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
@@ -21,10 +22,17 @@ from django.http import HttpResponse
 from django.template.loader import render_to_string
 from weasyprint import HTML
 
-from django.db.models import FloatField, F, ExpressionWrapper
+from django.utils.encoding import smart_str
+
+from django.db.models import Sum, Case, When, Prefetch, FloatField, F, ExpressionWrapper, Value, DecimalField, Q
 from math import radians, cos, sin, asin, sqrt
 
 from django.db.models.functions import Coalesce
+
+from django.utils.timezone import now
+
+from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
 
 # Modelos FE
 from .models import ActividadEconomica, NumeroControl, Pais, Receptor_fe, TipoPersona, TiposDocIDReceptor, Municipio, Tipo_dte, Modelofacturacion, TipoTransmision
@@ -196,6 +204,7 @@ def ventas_home(request):
     context = {
         "ventas_hoy_total": ventas_hoy_total,
         "ventas_hoy_count": ventas_hoy_count,
+        "today": now().date().isoformat(),
     }
     return render(request, "ventas/home.html", context)
 
@@ -1034,3 +1043,366 @@ def generar_factura(request):
 
 
     return render(request, 'ventas/generar_factura.html')
+
+
+# REPORTES
+
+# REPORTES PARA CONTABILIDAD
+
+## HELPER
+def _qs_without_page(request):
+    params = request.GET.copy()
+    params.pop('page', None)
+    return params.urlencode()
+
+##### REPORTES
+@login_required
+def reporte_contabilidad_view(request):
+    """
+    REPORTE PARA CONTABILIDAD-INCOE
+    - fecha_emision
+    - tipo (01,03,05,06)
+    - numero_control
+    - sello_recepcion
+    - codigo_generacion
+    - si es 03: NRC, NIT, nombre cliente
+    - total grabado + IVA
+    - total IVA
+    - total grabado sin IVA
+    Con filtros, paginación y exportación a Excel.
+    """
+    # --------- Filtros ---------
+    hoy = datetime.now().date()
+    fini = request.GET.get("fini") or hoy.replace(day=1).isoformat()
+    ffin = request.GET.get("ffin") or hoy.isoformat()
+    tipos = request.GET.getlist("tipo")  # lista: ["01","03",...]
+    buscar = (request.GET.get("q") or "").strip()
+    page = int(request.GET.get("page") or 1)
+    per_page = int(request.GET.get("per_page") or 25)
+    export = request.GET.get("export") == "excel"
+
+    tipos_validos = {"01", "03", "05", "06"}
+    if not tipos:
+        tipos = ["01", "03", "05", "06"]
+    else:
+        tipos = [t for t in tipos if t in tipos_validos]
+        if not tipos:
+            tipos = ["01", "03", "05", "06"]
+
+    # --------- QuerySet base ---------
+    qs = (
+        FacturaElectronica.objects
+        .select_related("tipo_dte", "dtereceptor")
+        .filter(fecha_emision__range=[fini, ffin],
+                tipo_dte__codigo__in=tipos)
+        .order_by("-fecha_emision", "-id")
+    )
+
+    if buscar:
+        qs = qs.filter(
+            Q(numero_control__icontains=buscar) |
+            Q(sello_recepcion__icontains=buscar) |
+            Q(codigo_generacion__icontains=buscar)
+        )
+
+
+    # --------- Anotaciones (2 pasos) ---------
+    cero = Value(Decimal("0.00"), output_field=DecimalField(max_digits=15, decimal_places=2))
+    tasa_iva = Value(Decimal("0.13"), output_field=DecimalField(max_digits=5, decimal_places=2))
+
+    # 1) Sumar desde detalles
+    qs = qs.annotate(
+        sum_det_iva_item=Coalesce(Sum("detalles__iva_item"), cero),
+        sum_det_gravadas=Coalesce(Sum("detalles__ventas_gravadas"), cero),
+    )
+
+    # 2) Campos calculados usando las sumas anteriores
+    qs = qs.annotate(
+        # Total gravadas: usa header, si viene NULL/0 usa la suma del detalle
+        a_total_gravadas=Case(
+            When(Q(total_gravadas__isnull=True) | Q(total_gravadas=0), then=F("sum_det_gravadas")),
+            default=Coalesce(F("total_gravadas"), cero),
+            output_field=DecimalField(max_digits=15, decimal_places=2),
+        ),
+        # IVA estimado desde detalle: prioridad SUM(iva_item) > (SUM(gravadas) * 0.13)
+        a_total_iva=Case(
+            When(Q(total_iva__isnull=True) | Q(total_iva=0),
+                then=Case(
+                    When(sum_det_iva_item__gt=Decimal("0.00"), then=F("sum_det_iva_item")),
+                    default=ExpressionWrapper(F("sum_det_gravadas") * tasa_iva,
+                                            output_field=DecimalField(max_digits=15, decimal_places=2)),
+                )),
+            default=Coalesce(F("total_iva"), cero),
+            output_field=DecimalField(max_digits=15, decimal_places=2),
+        ),
+    )
+
+    # Total grabado + IVA
+    qs = qs.annotate(
+        a_total_grabado_mas_iva=ExpressionWrapper(
+            F("a_total_gravadas"),
+            output_field=DecimalField(max_digits=15, decimal_places=2),
+        ),
+    )
+
+    # Total gravado sin IVA (para reporte)
+    qs = qs.annotate(
+        a_total_grabado_sin_iva=ExpressionWrapper(
+            F("a_total_gravadas") - F("a_total_iva"),
+            output_field=DecimalField(max_digits=15, decimal_places=2),
+        ),
+    )
+
+    # --------- Exportar a Excel ---------
+    if export:
+        return _reporte_contabilidad_excel(qs, fini, ffin, tipos, buscar)
+
+    # --------- Paginación ---------
+    paginator = Paginator(qs, per_page)
+    page_obj = paginator.get_page(page)
+
+    ctx = {
+        "fini": fini,
+        "ffin": ffin,
+        "tipos": tipos,
+        "buscar": buscar,
+        "page_obj": page_obj,
+        "qs_no_page": _qs_without_page(request),
+        "per_page": per_page,
+        "tipos_opciones": [("01", "01 - Factura Electrónica"),
+                           ("03", "03 - Comprobante Crédito Fiscal"),
+                           ("05", "05 - Nota de Crédito"),
+                           ("06", "06 - Nota de Débito")],
+    }
+    return render(request, "reportes/reporte_contabilidad.html", ctx)
+
+# ---------------- Excel ----------------
+def _reporte_contabilidad_excel(qs, fini, ffin, tipos, buscar):
+
+    """
+    Exporta el queryset filtrado a Excel.
+    """
+    try:
+        import openpyxl
+        from openpyxl.utils import get_column_letter
+        from openpyxl.styles import Alignment, Font
+    except ImportError:
+        return HttpResponse("Falta dependencia 'openpyxl' para exportar a Excel.", status=500)
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Contabilidad"
+
+    title = f"REPORTE CONTABILIDAD INCOE ({fini} a {ffin})"
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=12)
+    c = ws.cell(row=1, column=1, value=title)
+    c.font = Font(bold=True, size=14)
+    c.alignment = Alignment(horizontal="center")
+
+    headers = [
+        "Fecha emisión",
+        "Tipo",
+        "Número de control",
+        "Sello recepción",
+        "Código generación",
+        "NRC (si 03)",
+        "NIT (si 03)",
+        "Cliente (si 03)",
+        "Total grabado + IVA",
+        "Total IVA",
+        "Total grabado sin IVA",
+        "Recibido MH",
+    ]
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=3, column=col, value=h)
+        cell.font = Font(bold=True)
+
+    row = 4
+    for f in qs:
+        es_03 = (str(getattr(f.tipo_dte, "codigo", "")) == "03")
+        nrc = f.dtereceptor.nrc if (es_03 and f.dtereceptor) else ""
+        nit = f.dtereceptor.num_documento if (es_03 and f.dtereceptor) else ""
+        cliente = f.dtereceptor.nombre if (es_03 and f.dtereceptor) else ""
+
+        ws.cell(row=row, column=1, value=f.fecha_emision.isoformat() if f.fecha_emision else "")
+        ws.cell(row=row, column=2, value=getattr(f.tipo_dte, "codigo", ""))
+        ws.cell(row=row, column=3, value=f.numero_control)
+        ws.cell(row=row, column=4, value=f.sello_recepcion or "")
+        ws.cell(row=row, column=5, value=str(f.codigo_generacion))
+        ws.cell(row=row, column=6, value=nrc)
+        ws.cell(row=row, column=7, value=nit)
+        ws.cell(row=row, column=8, value=cliente)
+        ws.cell(row=row, column=9, value=float(f.a_total_grabado_mas_iva or 0))
+        ws.cell(row=row, column=10, value=float(f.a_total_iva or 0))
+        ws.cell(row=row, column=11, value=float(f.a_total_gravadas or 0))
+        ws.cell(row=row, column=12, value="Sí" if f.recibido_mh else "No")
+        row += 1
+
+    # Auto ancho simple
+    for col in range(1, len(headers)+1):
+        ws.column_dimensions[get_column_letter(col)].width = 18
+
+    resp = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    filename = f"reporte_contabilidad_{fini}_{ffin}.xlsx"
+    resp["Content-Disposition"] = f'attachment; filename="{filename}"'
+    wb.save(resp)
+    return resp
+
+#################################
+
+@login_required
+def reporte_facturacion_view(request):
+    """
+    REPORTE PARA FACTURACION-INCOE
+
+    Encabezado por factura:
+      - fecha_emision
+      - numero_control
+      - sello_recepcion
+      - codigo_generacion
+
+    Ítems por factura:
+      - código, descripción, cantidad, precio_unitario, total_pagar_item
+        (total_pagar_item = cantidad * precio_unitario + iva_item; si iva_item es None → 0)
+    """
+
+    # --------- Filtros ---------
+    hoy = date.today()
+    fini = request.GET.get("fini") or hoy.replace(day=1).isoformat()
+    ffin = request.GET.get("ffin") or hoy.isoformat()
+    buscar = (request.GET.get("q") or "").strip()
+    tipos = request.GET.getlist("tipo")
+    page = int(request.GET.get("page") or 1)
+    per_page = int(request.GET.get("per_page") or 25)
+    export = (request.GET.get("export") == "excel")
+
+    tipos_validos = {"01", "03", "05", "06"}
+    if not tipos:
+        tipos = ["01", "03", "05", "06"]
+    else:
+        tipos = [t for t in tipos if t in tipos_validos] or ["01", "03", "05", "06"]
+
+    # --------- Query base Facturas ---------
+    qs = (
+        FacturaElectronica.objects
+        .select_related("tipo_dte")
+        .filter(
+            fecha_emision__range=[fini, ffin],
+            tipo_dte__codigo__in=tipos
+        )
+        .order_by("-fecha_emision", "-id")
+    )
+
+    if buscar:
+        qs = qs.filter(
+            Q(numero_control__icontains=buscar) |
+            Q(sello_recepcion__icontains=buscar) |
+            Q(codigo_generacion__icontains=buscar)
+        )
+
+    # --------- Prefetch de Detalles con anotaciones ---------
+    cero = Value(Decimal("0.00"), output_field=DecimalField(max_digits=16, decimal_places=2))
+    detalles_qs = (
+        DetalleFactura.objects
+        .select_related("producto", "unidad_medida")
+        .annotate(
+            a_cantidad=Coalesce(F("cantidad"), Value(0)),
+            a_precio=Coalesce(F("precio_unitario"), cero),
+            a_iva=Coalesce(F("iva_item"), cero),
+        )
+        .annotate(
+            total_pagar_item=ExpressionWrapper(
+                F("a_cantidad") * F("a_precio") + F("a_iva"),
+                output_field=DecimalField(max_digits=16, decimal_places=2),
+            )
+        )
+        .order_by("id")
+    )
+
+    qs = qs.prefetch_related(
+        Prefetch("detalles", queryset=detalles_qs, to_attr="detalles_anno")
+    )
+
+    # --------- Exportar a Excel ---------
+    if export:
+        return _reporte_facturacion_excel(qs, fini, ffin, tipos, buscar)
+
+    # --------- Paginación ---------
+    paginator = Paginator(qs, per_page)
+    page_obj = paginator.get_page(page)
+
+    ctx = {
+        "fini": fini,
+        "ffin": ffin,
+        "tipos": tipos,
+        "buscar": buscar,
+        "page_obj": page_obj,
+        "qs_no_page": _qs_without_page(request),
+        "per_page": per_page,
+        "tipos_opciones": [
+            ("01", "01 - Factura Electrónica"),
+            ("03", "03 - Comprobante Crédito Fiscal"),
+            ("05", "05 - Nota de Crédito"),
+            ("06", "06 - Nota de Débito"),
+        ],
+    }
+    return render(request, "reportes/reporte_facturacion.html", ctx)
+
+
+def _reporte_facturacion_excel(qs, fini, ffin, tipos=None, buscar=""):
+    tipos = tipos or []
+    """
+    Exporta a Excel:
+      Encabezado factura + filas por cada ítem.
+    """
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Facturación INCOE"
+
+    headers = [
+        "Fecha emisión",
+        "Tipo DTE",
+        "Número control",
+        "Sello recepción",
+        "Código generación",
+        "Código ítem",
+        "Descripción ítem",
+        "Cantidad",
+        "Precio unitario",
+        "IVA ítem",
+        "Total ítem",
+    ]
+    ws.append(headers)
+
+    for f in qs:
+        for it in getattr(f, "detalles_anno", []):
+            ws.append([
+                smart_str(f.fecha_emision or ""),
+                smart_str(getattr(f.tipo_dte, "codigo", "")),
+                smart_str(f.numero_control or ""),
+                smart_str(f.sello_recepcion or ""),
+                smart_str(f.codigo_generacion or ""),
+                smart_str(getattr(it.producto, "codigo", "") or ""),
+                smart_str(getattr(it.producto, "descripcion", "") or str(getattr(it.producto, "id", "") or "")),
+                float(it.cantidad or 0),
+                float(it.precio_unitario or 0),
+                float(it.iva_item or 0),
+                float(getattr(it, "total_pagar_item", 0) or 0),
+            ])
+
+    # Ancho de columnas (opcional)
+    widths = [14, 8, 24, 22, 40, 14, 36, 10, 14, 12, 14]
+    for i, w in enumerate(widths, start=1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+
+    resp = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    fname = f"reporte_facturacion_{fini}_a_{ffin}.xlsx"
+    resp["Content-Disposition"] = f'attachment; filename="{fname}"'
+    wb.save(resp)
+    return resp
+
+

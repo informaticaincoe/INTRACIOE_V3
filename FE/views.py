@@ -636,6 +636,19 @@ def get_productos_para_tipo(request, tipo_codigo):
 # --------------------------------------------------------------------
 # generar_factura_view
 # --------------------------------------------------------------------
+# ---------- Helpers ----------
+def _dec(x, default="0.00"):
+    try:
+        return Decimal(str(x))
+    except Exception:
+        return Decimal(default)
+
+def _bool_from_str(s):
+    return str(s).lower() in ("1", "true", "on", "yes")
+
+def q2(d):  # 2 decimales HALF_UP
+    return Decimal(d).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
 @csrf_exempt
 @transaction.atomic
 def generar_factura_view(request):
@@ -702,18 +715,7 @@ def generar_factura_view(request):
         return render(request, "generar_dte.html", context)
 
     elif request.method == 'POST':
-        # ---------- Helpers ----------
-        def _dec(x, default="0.00"):
-            try:
-                return Decimal(str(x))
-            except Exception:
-                return Decimal(default)
-
-        def _bool_from_str(s):
-            return str(s).lower() in ("1", "true", "on", "yes")
-
-        def q2(d):  # 2 decimales HALF_UP
-            return Decimal(d).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        
 
         # ---------- Parse body (JSON o form) ----------
         is_json = (request.content_type or '').startswith('application/json')
@@ -1180,20 +1182,61 @@ def generar_factura_view(request):
             try:
                 resp_firma = firmar_factura_view(request, factura.id, interno=True)
                 if hasattr(resp_firma, "status_code") and int(resp_firma.status_code) >= 400:
-                    return resp_firma
+                    return JsonResponse({
+                        "mostrar_modal": True,
+                        "titulo": "Error al firmar el DTE",
+                        "mensaje": "No se pudo firmar el DTE, desea guardar el DTE sin firmar?",
+                        "detalles": getattr(resp_firma, "content", b"").decode("utf-8", errors="ignore")[:2000],
+                        "factura_id": factura.id,
+                        "redirect": reverse('detalle_factura', args=[factura.id]),
+                        "puede_guardar": True,
+                        "puede_contingencia": False, #como fallo no se manda a contingencia
+                        "enviar_mh_url": reverse('enviar_factura_hacienda', args=[factura.id]),
+                    }, status=400)
+                
             except Exception as e:
                 print("DTE: *** ERROR firmando ***", e)
-                return JsonResponse({"error": "Error al firmar el DTE", "detalle": str(e)}, status=400)
+                return JsonResponse({
+                    "mostrar_modal": True,
+                    "titulo": "No se pudo firmar el DTE",
+                    "mensaje": "Ocurrió un error durante la firma. ¿Deseas guardar la factura sin enviarla a Hacienda?",
+                    "detalles": str(e),
+                    "factura_id": factura.id,
+                    "redirect": reverse('detalle_factura', args=[factura.id]),
+                    "puede_guardar": True,                # <- NUEVO
+                    "puede_contingencia": False,
+                    "enviar_mh_url": reverse('enviar_factura_hacienda', args=[factura.id]),
+                }, status=200)
 
             # ---------- ENVÍO ----------
             print("DTE: ==== INICIO ENVÍO a MH (función existente) ====")
             try:
                 resp_envio = enviar_factura_hacienda_view(request, factura.id, uso_interno=True)
                 if hasattr(resp_envio, "status_code") and int(resp_envio.status_code) >= 400:
-                    return resp_envio
+                    return JsonResponse({
+                        "mostrar_modal": True,
+                        "titulo": "Error al enviar el DTE a MH",
+                        "mensaje": "No se pudo enviar el DTE a MH, desea guardar el DTE sin enviar?",
+                        "detalles": getattr(resp_envio, "content", b"").decode("utf-8", errors="ignore")[:2000],
+                        "factura_id": factura.id,
+                        "redirect": reverse('detalle_factura', args=[factura.id]),
+                        "puede_guardar": True,
+                        "puede_contingencia": True,
+                        "enviar_mh_url": reverse('enviar_factura_hacienda', args=[factura.id]),
+                    } , status=400)
             except Exception as e:
                 print("DTE: *** ERROR enviando a MH ***", e)
-                return JsonResponse({"error": "Error al enviar el DTE a MH", "detalle": str(e)}, status=400)
+                return JsonResponse({
+                    "mostrar_modal": True,
+                    "titulo": "No se pudo enviar el DTE a MH",
+                    "mensaje": "Ocurrió un error durante el envío a MH. ¿Deseas guardar la factura sin enviarla?",
+                    "detalles": str(e),
+                    "factura_id": factura.id,
+                    "redirect": reverse('detalle_factura', args=[factura.id]),
+                    "puede_guardar": True,
+                    "puede_contingencia": True,
+                    "enviar_mh_url": reverse('enviar_factura_hacienda', args=[factura.id]),
+                    }, status=200)
 
             print("DTE: ====== FIN generar+firmar+enviar OK ======")
 

@@ -131,4 +131,10 @@ urlpatterns += [
     # Devoluciones de ventas
     path('ventas/<int:factura_id>/devolucion/', views_ventas.devolucion_crear, name='devolucion_crear'),
     path('ventas/devoluciones/', views_ventas.devoluciones_list, name='devoluciones_list'),
+
+    # Reportes de ventas
+    path("reporte/contabilidad/", views_ventas.reporte_contabilidad_view, name="reporte_contabilidad"),
+    path("reporte/facturacion/", views_ventas.reporte_facturacion_view, name="reporte_facturacion"),
+
+
 ]
