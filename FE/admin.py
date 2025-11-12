@@ -24,6 +24,15 @@ models = [
     TipoMoneda, TipoUnidadMedida,
 ]
 
+from django.contrib.admin.models import LogEntry
+
+@admin.register(LogEntry)
+class LogEntryAdmin(admin.ModelAdmin):
+    date_hierarchy = "action_time"
+    list_display = ("action_time", "user", "content_type", "object_repr", "action_flag")
+    list_filter = ("action_flag", "content_type", "user")
+    search_fields = ("object_repr", "change_message")
+
 @admin.register(LoteContingencia)
 class LoteContingencia(admin.ModelAdmin):
     list_display = ('id', 'recibido_mh')
