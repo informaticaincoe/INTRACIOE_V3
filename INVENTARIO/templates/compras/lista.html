@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Compras · INTRACOE{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h5 mb-0">Compras</h1>
+  <a href="{% url 'compras-crear' %}" class="btn btn-primary">
+    <i class="bi bi-plus-lg me-1"></i> Nueva compra
+  </a>
+</div>
+
+<form class="row g-2 align-items-end mb-3">
+  <div class="col-md-4">
+    <label class="form-label">Proveedor</label>
+    <select class="form-select" name="proveedor">
+      <option value="">Todos</option>
+      {% for p in proveedores %}
+        <option value="{{ p.id }}" {% if f_proveedor|default:'' == p.id|stringformat:'s' %}selected{% endif %}>{{ p.nombre }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Estado</label>
+    <select class="form-select" name="estado">
+      <option value="">Todos</option>
+      {% for e in estados %}
+        <option value="{{ e }}" {% if f_estado == e %}selected{% endif %}>{{ e }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2">
+    <button class="btn btn-outline-primary w-100"><i class="bi bi-funnel me-1"></i> Filtrar</button>
+  </div>
+</form>
+
+<div class="table-responsive">
+  <table class="table align-middle">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Fecha</th>
+        <th>Proveedor</th>
+        <th class="text-end">Total</th>
+        <th>Estado</th>
+        <th style="width:150px;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in compras %}
+      <tr>
+        <td>{{ c.id }}</td>
+        <td>{{ c.fecha|date:"d/m/Y H:i" }}</td>
+        <td>{{ c.proveedor.nombre }}</td>
+        <td class="text-end">${{ c.total }}</td>
+        <td>
+          <span class="badge {% if c.estado == 'Pendiente' %}text-bg-warning{% elif c.estado == 'Pagado' %}text-bg-success{% else %}text-bg-secondary{% endif %}">
+            {{ c.estado }}
+          </span>
+        </td>
+        <td class="text-end">
+          <a class="btn btn-sm btn-light" href="{% url 'compras-detalle' c.id %}"><i class="bi bi-eye"></i></a>
+          <a class="btn btn-sm btn-light" href="{% url 'compras-editar' c.id %}"><i class="bi bi-pencil"></i></a>
+          <a class="btn btn-sm btn-outline-danger" href="{% url 'compras-eliminar' c.id %}"><i class="bi bi-trash"></i></a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="text-center text-muted">No hay compras registradas.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

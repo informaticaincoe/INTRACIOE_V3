@@ -1,0 +1,254 @@
+<!-- Modal Ambiente -->
+<div class="modal fade" id="modalAmbiente" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="formNuevoAmbiente">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">Nuevo Ambiente</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <label>Código</label>
+          <input type="text" name="codigo" class="form-control mb-2" required>
+          <label>Descripción</label>
+          <input type="text" name="descripcion" class="form-control" required>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Departamento -->
+<div class="modal fade" id="modalDepartamento" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="formNuevoDepartamento">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">Nuevo Departamento</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label>Código</label>
+            <input type="text" name="codigo" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label>Descripción</label>
+            <input type="text" name="descripcion" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label>País</label>
+            <select name="pais" class="form-select" required>
+              {% for p in paises %}
+              <option value="{{ p.id }}">{{ p.descripcion }}</option>
+              {% endfor %}
+            </select>
+            <button type="button" class="btn btn-sm btn-outline-success mt-2" data-bs-toggle="modal" data-bs-target="#modalPais">+ Crear País</button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal Municipio -->
+<div class="modal fade" id="modalMunicipio" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="formNuevoMunicipio">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">Nuevo Municipio</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label>Código</label>
+            <input type="text" name="codigo" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label>Descripción</label>
+            <input type="text" name="descripcion" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label>Departamento</label>
+            <select name="departamento" class="form-select" required>
+              {% for d in departamentos %}
+              <option value="{{ d.id }}">{{ d.descripcion }}</option>
+              {% endfor %}
+            </select>
+            <button type="button" class="btn btn-sm btn-outline-success mt-2" data-bs-toggle="modal" data-bs-target="#modalDepartamento">+ Crear Departamento</button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal Actividad -->
+<div class="modal fade" id="modalActividad" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="formNuevaActividad">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">Nueva Actividad Económica</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <label>Código</label>
+          <input type="text" name="codigo" class="form-control mb-2" required>
+          <label>Descripción</label>
+          <input type="text" name="descripcion" class="form-control mb-2" required>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Tipo Establecimiento -->
+<div class="modal fade" id="modalTipoEstablecimiento" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="formNuevoTipoEstablecimiento">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">Nuevo Tipo de Establecimiento</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label>Código</label>
+            <input type="text" name="codigo" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label>Descripción</label>
+            <input type="text" name="descripcion" class="form-control" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal País -->
+<div class="modal fade" id="modalPais" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="formNuevoPais">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">Nuevo País</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label>Código</label>
+            <input type="text" name="codigo" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label>Descripción</label>
+            <input type="text" name="descripcion" class="form-control" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal Tipo Documento -->
+<div class="modal fade" id="modalTipoDocumento" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="formNuevoTipoDocumento">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">Nuevo Tipo de Documento</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label>Código</label>
+            <input type="text" name="codigo" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label>Descripción</label>
+            <input type="text" name="descripcion" class="form-control" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<script>
+function ajaxModal(formId, url, selectId, modalId) {
+  document.getElementById(formId).addEventListener("submit", function(e){
+    e.preventDefault();
+    const formData = new FormData(this);
+
+    fetch(url, {
+      method: "POST",
+      body: formData,
+      headers: { "X-Requested-With": "XMLHttpRequest" }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.id) {
+        let select = document.getElementById(selectId);
+        if (select) {
+          let opt = document.createElement("option");
+          opt.value = data.id;
+          opt.textContent = data.descripcion || data.codigo;
+          opt.selected = true;
+          select.appendChild(opt);
+        }
+
+        // Cierra modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById(modalId));
+        if (modal) modal.hide();
+
+        // Reset form
+        this.reset();
+      }
+    })
+    .catch(err => console.error("Error:", err));
+  });
+}
+
+// Asignaciones
+ajaxModal("formNuevoAmbiente", "{% url 'crear_ambiente' %}", "ambiente", "modalAmbiente");
+ajaxModal("formNuevoMunicipio", "{% url 'crear_municipio' %}", "municipio", "modalMunicipio");
+ajaxModal("formNuevaActividad", "{% url 'crear_actividad' %}", "actividades", "modalActividad");
+ajaxModal("formNuevoTipoEstablecimiento", "{% url 'crear_tipo_establecimiento' %}", "tipoestablecimiento", "modalTipoEstablecimiento");
+ajaxModal("formNuevoDepartamento", "{% url 'crear_departamento' %}", "departamento", "modalDepartamento");
+ajaxModal("formNuevoPais", "{% url 'crear_pais' %}", "pais", "modalPais");
+ajaxModal("formNuevoTipoDocumento", "{% url 'crear_tipo_documento' %}", "tipodocumento", "modalTipoDocumento");
+</script>

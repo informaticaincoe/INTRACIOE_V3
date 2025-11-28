@@ -1,0 +1,176 @@
+{
+  "emisor": {
+    "nit": "06142811001040",
+    "nrc": "1278913",
+    "correo": "informatica@grupoincoe.com",
+    "nombre": "Inversiones Comerciales Escobar SA de CV",
+    "telefono": "77462310",
+    "direccion": {
+      "municipio": "25",
+      "complemento": "Carretera a Sonsonate, km 27 ½ Zona Industrial Lourdes, Calle Antigua Hda, La Libertad, El Salvador C.A",
+      "departamento": "05"
+    },
+    "codEstable": "0001",
+    "codActividad": "46375",
+    "codEstableMH": "M001",
+    "codPuntoVenta": "0001",
+    "descActividad": "Venta al por  mayor de productos lácteos",
+    "codPuntoVentaMH": "P002",
+    "nombreComercial": "Inversiones Comerciales Escobar SA de CV",
+    "tipoEstablecimiento": "02"
+  },
+  "resumen": {
+    "pagos": [
+      {
+        "plazo": null,
+        "codigo": "01",
+        "periodo": null,
+        "montoPago": 103.33,
+        "referencia": null
+      }
+    ],
+    "ivaRete1": 0.0,
+    "subTotal": 91.44,
+    "tributos": [
+      {
+        "valor": 11.89,
+        "codigo": "20",
+        "descripcion": "Impuesto al Valor Agregado 13%"
+      }
+    ],
+    "ivaPerci1": 0.0,
+    "reteRenta": 0.0,
+    "descuNoSuj": 0.0,
+    "saldoFavor": 0.0,
+    "totalDescu": 0.0,
+    "totalNoSuj": 0.0,
+    "totalPagar": 103.33,
+    "descuExenta": 0.0,
+    "totalExenta": 0.0,
+    "totalLetras": "Noventa y uno con 44/100 USD",
+    "descuGravada": 0.0,
+    "totalGravada": 91.44,
+    "subTotalVentas": 91.44,
+    "totalNoGravado": 0.0,
+    "condicionOperacion": 3,
+    "numPagoElectronico": null,
+    "montoTotalOperacion": 103.33,
+    "porcentajeDescuento": 0.0
+  },
+  "apendice": null,
+  "receptor": {
+    "nit": "039794246",
+    "nrc": "3401841",
+    "correo": "orellanaale426@gimail.com",
+    "nombre": "Montejo Orellana Pedro alejandro",
+    "telefono": "64383712",
+    "direccion": {
+      "municipio": "16",
+      "complemento": "Calle principal blvd la democracia col el zapote colonia el zapote texitepeque santa ana",
+      "departamento": "02"
+    },
+    "codActividad": "47899",
+    "descActividad": "Venta al por  menor en puestos de ferias y mercados n.c.p.",
+    "nombreComercial": "Montejo Orellana Pedro alejandro"
+  },
+  "extension": {
+    "docuRecibe": null,
+    "nombRecibe": null,
+    "docuEntrega": null,
+    "nombEntrega": null,
+    "observaciones": "Generado por Sistema Django",
+    "placaVehiculo": null
+  },
+  "ventaTercero": null,
+  "identificacion": {
+    "fecEmi": "2025-10-20",
+    "horEmi": "08:05:23",
+    "tipoDte": "03",
+    "version": 3,
+    "ambiente": "01",
+    "tipoModelo": 1,
+    "tipoMoneda": "USD",
+    "motivoContin": null,
+    "numeroControl": "DTE-03-M001P002-000000000000025",
+    "tipoOperacion": 1,
+    "codigoGeneracion": "C609938E-A6E8-41D0-8F93-B9A34C0984BC",
+    "tipoContingencia": null
+  },
+  "cuerpoDocumento": [
+    {
+      "psv": 2.62,
+      "codigo": "PCH048.1",
+      "numItem": 1,
+      "cantidad": 12.0,
+      "tipoItem": 1,
+      "tributos": [
+        "20"
+      ],
+      "noGravado": 0.0,
+      "precioUni": 2.62,
+      "uniMedida": 59,
+      "codTributo": null,
+      "montoDescu": 0.0,
+      "ventaNoSuj": 0.0,
+      "descripcion": "Lecha entera ira 26 350 gramos",
+      "ventaExenta": 0.0,
+      "ventaGravada": 31.44,
+      "numeroDocumento": null
+    },
+    {
+      "psv": 1.0,
+      "codigo": "PCH005.1",
+      "numItem": 2,
+      "cantidad": 24.0,
+      "tipoItem": 1,
+      "tributos": [
+        "20"
+      ],
+      "noGravado": 0.0,
+      "precioUni": 1.0,
+      "uniMedida": 59,
+      "codTributo": null,
+      "montoDescu": 0.0,
+      "ventaNoSuj": 0.0,
+      "descripcion": "Leche entera ira 120 gramos",
+      "ventaExenta": 0.0,
+      "ventaGravada": 24.0,
+      "numeroDocumento": null
+    },
+    {
+      "psv": 2.4,
+      "codigo": "PCH068.1",
+      "numItem": 3,
+      "cantidad": 15.0,
+      "tipoItem": 1,
+      "tributos": [
+        "20"
+      ],
+      "noGravado": 0.0,
+      "precioUni": 2.4,
+      "uniMedida": 59,
+      "codTributo": null,
+      "montoDescu": 0.0,
+      "ventaNoSuj": 0.0,
+      "descripcion": "Tira de 12u de leche de 26g",
+      "ventaExenta": 0.0,
+      "ventaGravada": 36.0,
+      "numeroDocumento": null
+    }
+  ],
+  "jsonRespuestaMh": {
+    "estado": "PROCESADO",
+    "version": 2,
+    "ambiente": "01",
+    "codigoMsg": "001",
+    "versionApp": 2,
+    "clasificaMsg": "10",
+    "observaciones": [],
+    "selloRecibido": "2025ADF753FDF2E54A77ADEA25885CBF5380TOSW",
+    "descripcionMsg": "RECIBIDO",
+    "fhProcesamiento": "20/10/2025 08:05:25",
+    "codigoGeneracion": "C609938E-A6E8-41D0-8F93-B9A34C0984BC"
+  },
+  "otrosDocumentos": null,
+  "documentoRelacionado": null
+}

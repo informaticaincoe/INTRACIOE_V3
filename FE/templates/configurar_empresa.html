@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+  .card{box-shadow:0 1px 2px rgba(0,0,0,.06)}
+  .pos-sticky{position:sticky;top:76px}
+  .logo-prev{max-height:80px;border:1px dashed #cbd5e1;border-radius:8px;padding:4px;background:#fff}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-3">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h4 class="mb-0">Configuración de mi empresa</h4>
+      <small class="text-muted">Emisor y representante en una sola pantalla</small>
+    </div>
+    {% if emisor %}
+      <span class="badge text-bg-light">NIT: {{ emisor.nit }}</span>
+    {% endif %}
+  </div>
+
+  {% if messages %}
+    {% for m in messages %}
+      <div class="alert alert-{{ m.tags }} py-2">{{ m }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+    {% csrf_token %}
+    <div class="row g-3">
+      <!-- Emisor -->
+      <div class="col-lg-8">
+        <div class="card">
+          <div class="card-body">
+            <h6 class="mb-3">Datos del emisor</h6>
+
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label">NIT *</label>
+                {{ emisor_form.nit }}
+                {% for e in emisor_form.nit.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">NRC</label>
+                {{ emisor_form.nrc }}
+                {% for e in emisor_form.nrc.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Tipo contribuyente</label>
+                {{ emisor_form.tipoContribuyente }}
+                {% for e in emisor_form.tipoContribuyente.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+              </div>
+
+              <div class="col-12">
+                <label class="form-label">Razón social *</label>
+                {{ emisor_form.nombre_razon_social }}
+                {% for e in emisor_form.nombre_razon_social.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Nombre comercial</label>
+                {{ emisor_form.nombre_comercial }}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Nombre establecimiento</label>
+                {{ emisor_form.nombre_establecimiento }}
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Tipo establecimiento *</label>
+                {{ emisor_form.tipoestablecimiento }}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Municipio *</label>
+                {{ emisor_form.municipio }}
+              </div>
+
+              <div class="col-12">
+                <label class="form-label">Dirección comercial *</label>
+                {{ emisor_form.direccion_comercial }}
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Teléfono</label>
+                {{ emisor_form.telefono }}
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Correo</label>
+                {{ emisor_form.email }}
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Ambiente *</label>
+                {{ emisor_form.ambiente }}
+                {% for e in emisor_form.ambiente.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Código Establecimiento (MH)</label>
+                {{ emisor_form.codigo_establecimiento }}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Código Punto de Venta (MH)</label>
+                {{ emisor_form.codigo_punto_venta }}
+              </div>
+
+              <div class="col-12">
+                <label class="form-label">Actividades económicas *</label>
+                {{ emisor_form.actividades_economicas }}
+                {% for e in emisor_form.actividades_economicas.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                <div class="form-text">Use Ctrl/Cmd para seleccionar múltiples.</div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Tipo documento (Emisor)</label>
+                {{ emisor_form.tipo_documento }}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Logo</label>
+                {{ emisor_form.logo }}
+                {% if emisor and emisor.logo %}
+                  <div class="mt-2">
+                    <img src="{{ emisor.logo.url }}" class="logo-prev" alt="Logo actual">
+                  </div>
+                {% endif %}
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Clave privada (firmador)</label>
+                {{ emisor_form.clave_privada }}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Clave pública / Password Hacienda</label>
+                {{ emisor_form.clave_publica }}
+              </div>
+            </div>
+            <div class="form-check form-switch mt-2">
+  {{ form.imprime_termica }}
+  <label class="form-check-label" for="{{ form.imprime_termica.id_for_label }}">
+    Imprimir en térmica (80mm)
+  </label>
+</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Representante + Guardar -->
+      <div class="col-lg-4">
+        <div class="card pos-sticky">
+          <div class="card-body">
+            <h6 class="mb-3">Representante</h6>
+            <div class="mb-2">
+              <label class="form-label">Nombre *</label>
+              {{ rep_form.nombre }}
+              {% for e in rep_form.nombre.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Tipo de documento *</label>
+              {{ rep_form.tipo_documento }}
+              {% for e in rep_form.tipo_documento.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Número de documento *</label>
+              {{ rep_form.numero_documento }}
+              {% for e in rep_form.numero_documento.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+
+            <div class="d-grid mt-3">
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-save me-1"></i> Guardar configuración
+              </button>
+              {% if tiene_emisor %}
+              <a href="{% url 'configurar_empresa' %}" class="btn btn-light mt-2">Cancelar</a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </form>
+</div>
+{% endblock %}

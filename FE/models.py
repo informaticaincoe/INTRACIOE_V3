@@ -2,7 +2,7 @@ from django.db import models
 from django.utils import timezone
 from datetime import timedelta, datetime
 from decimal import ROUND_HALF_UP, Decimal
-from INVENTARIO.models import Producto, ProductoProveedor, Proveedor, TipoItem, TipoUnidadMedida
+from django.core.validators import MinValueValidator, MaxValueValidator
 import uuid
 
 class ActividadEconomica(models.Model):
@@ -197,17 +197,6 @@ class Descuento(models.Model):
     estdo = models.BooleanField(default=True)
     def __str__(self):
         return f"{self.descripcion} - {self.porcentaje}%"
-    
-#modelo para productos
-# class Producto_fe(models.Model):
-#     codigo = models.CharField(max_length=50)
-#     descripcion = models.CharField(max_length=50)
-#     preunitario = models.DecimalField(max_digits=5, decimal_places=2)
-#     stock = models.IntegerField()
-#     tiene_descuento = models.BooleanField(default=False)
-#     descuento = models.ForeignKey(Descuento, on_delete=models.CASCADE, null=True)
-#     def __str__(self):
-#         return f"{self.codigo} - {self.descripcion}"
 
 class Receptor_fe(models.Model):
     tipo_documento = models.ForeignKey(TiposDocIDReceptor, on_delete=models.CASCADE, null=True)
@@ -223,6 +212,20 @@ class Receptor_fe(models.Model):
     pais = models.ForeignKey(Pais, on_delete=models.CASCADE, null=True)
     tipo_persona = models.ForeignKey(TipoPersona, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Tipo de Persona")
 
+    #nuevos campos para georeferencia de cliente
+    lat = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True,
+        validators=[MinValueValidator(Decimal("-90")), MaxValueValidator(Decimal("90"))],
+        help_text="Latitud (WGS84)"
+    )
+    lng = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True,
+        validators=[MinValueValidator(Decimal("-180")), MaxValueValidator(Decimal("180"))],
+        help_text="Longitud (WGS84)"
+    )
+    geocoded_at = models.DateTimeField(null=True, blank=True)
+    geocode_source = models.CharField(max_length=30, blank=True, default="")
+
     def __str__(self):
         return self.nombre
 
@@ -235,7 +238,7 @@ class representanteEmisor(models.Model):
         return f"{self.nombre} ({self.numero_documento})"
     
 class Emisor_fe(models.Model):
-    nit = models.CharField(max_length=20, unique=True, verbose_name="NIT del Emisor")
+    nit = models.CharField(max_length=20, verbose_name="NIT del Emisor")
     nrc = models.CharField(max_length=50, null=True)
     nombre_razon_social = models.CharField(max_length=255, verbose_name="Nombre o Razón Social")
     actividades_economicas = models.ManyToManyField(ActividadEconomica, verbose_name="Actividades Económicas")
@@ -264,54 +267,75 @@ class Emisor_fe(models.Model):
         ],
         default='Pequeño Contribuyente'
     )
+    imprime_termica = models.BooleanField(
+        default=False,
+        verbose_name="Imprimir en térmica (80mm)"
+    )
+    
     
     def __str__(self):
         return f"{self.nombre_razon_social} ({self.nit})"
 
 # Modelo para manejar la numeración de control por año
 
-
 class NumeroControl(models.Model):
+    codigo_establecimiento = models.CharField(max_length=4, null=True, blank=True, default="0000")
+    codigo_punto_venta = models.CharField(max_length=4, null=True, blank=True, default="0001")
     anio = models.IntegerField()
     secuencia = models.IntegerField(default=1)
     tipo_dte = models.CharField(max_length=2, default="00", editable=True)
-    
+
     class Meta:
         unique_together = (('anio', 'tipo_dte'),)
+
     def __str__(self):
         return f"{self.anio} - {self.secuencia} - {self.tipo_dte}"
 
     @staticmethod
-
-    def obtener_numero_control(cod_dte):
-        print("Inicio asignar numero de control: ")
+    def obtener_numero_control(cod_dte, estab="0000", pv="0001"):
+        print("Inicio asignar numero de control")
         anio_actual = datetime.now().year
-        control, creado = NumeroControl.objects.get_or_create(anio=anio_actual, tipo_dte=cod_dte)
-        numero_control = f"DTE-{cod_dte}-0000MOO1-{str(control.secuencia).zfill(15)}"
+        control, _ = NumeroControl.objects.get_or_create(anio=anio_actual, tipo_dte=cod_dte)
+
+        # normalizar estab/pv
+        estab = str(estab or "0000").zfill(4)
+        pv = str(pv or "0001").zfill(4)
+        secuencia = str(control.secuencia).zfill(15)
+
+        # formato Hacienda: DTE-{tipo}-{estab}{pv}-{secuencia}
+        numero_control = f"DTE-{cod_dte}-{estab}{pv}-{secuencia}"
+
         control.secuencia += 1
         control.save()
-        print("Asignar numero de control: ", numero_control)
+
+        print("Asignar numero de control:", numero_control, "len=", len(numero_control))
         return numero_control
-    
+
+
     @staticmethod
-    def preview_numero_control(cod_dte):
+    def preview_numero_control(cod_dte, estab="0000", pv="0001"):
         """
         Genera un número de control de vista previa sin incrementar la secuencia.
-        Se usa en la carga del formulario o en AJAX.
         """
         anio_actual = datetime.now().year
-        current_sequence = 0
+        current_sequence = 1
         try:
             control = NumeroControl.objects.get(anio=anio_actual, tipo_dte=cod_dte)
             current_sequence = control.secuencia
-            print("Secuencia: ", current_sequence)
         except NumeroControl.DoesNotExist:
-            current_sequence += 1
-            print("Incrementar secuencia: ", current_sequence)
-        return f"DTE-{cod_dte}-0000MOO1-{str(current_sequence).zfill(15)}"
+            pass
+
+        return (
+            f"DTE-{cod_dte}-"
+            f"{str(estab).zfill(4)}{str(pv).zfill(4)}-"
+            f"{str(current_sequence).zfill(15)}"
+        )
 
 # Modelo de Factura Electrónica
 class FacturaElectronica(models.Model):
+    #USUARIO QUE CREA EL DOCUMENTO
+    #usuario = models.ForeignKey('auth.User', on_delete=models.CASCADE, null=True)
+    usuario = models.ForeignKey('AUTENTICACION.User', on_delete=models.CASCADE, null=True)
     #IDENTIFICACION
     version = models.CharField(max_length=50)
     #ambiente = models.ForeignKey(Ambiente, on_delete=models.CASCADE, null=True)
@@ -379,7 +403,7 @@ class FacturaElectronica(models.Model):
     envio_correo_contingencia = models.BooleanField(default=False)
     
     #EXPORTACION
-    tipoItemEmisor = models.ForeignKey(TipoItem, on_delete=models.CASCADE, null=True)
+    tipoItemEmisor = models.ForeignKey("INVENTARIO.TipoItem", on_delete=models.CASCADE, null=True)
     recintoFiscal = models.ForeignKey(RecintoFiscal, on_delete=models.CASCADE, null=True)
     regimenExportacion = models.ForeignKey(RegimenExportacion, on_delete=models.CASCADE, null=True)
     seguro_exportacion = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
@@ -396,10 +420,10 @@ class FacturaElectronica(models.Model):
         return f"Factura {self.numero_control}"
 
 class DetalleFactura(models.Model):
-    factura = models.ForeignKey(FacturaElectronica, on_delete=models.CASCADE, related_name='detalles', help_text="Factura a la que pertenece este detalle")
-    producto = models.ForeignKey(Producto, on_delete=models.CASCADE,help_text="Producto asociado a este detalle")
+    factura = models.ForeignKey("FE.FacturaElectronica", on_delete=models.CASCADE, related_name='detalles', help_text="Factura a la que pertenece este detalle")
+    producto = models.ForeignKey("INVENTARIO.Producto", on_delete=models.CASCADE,help_text="Producto asociado a este detalle")
     cantidad = models.PositiveIntegerField(default=1,help_text="Cantidad del producto")
-    unidad_medida = models.ForeignKey(TipoUnidadMedida, on_delete=models.CASCADE, null=True)
+    unidad_medida = models.ForeignKey("INVENTARIO.TipoUnidadMedida", on_delete=models.CASCADE, null=True)
     iva_item = models.DecimalField(max_digits=10, decimal_places=6, null=True, default=Decimal('0.00'),)
     precio_unitario = models.DecimalField(max_digits=10, decimal_places=6,help_text="Precio unitario del producto")
     #descuento = models.DecimalField(max_digits=5, decimal_places=2, default=0,help_text="Descuento aplicado (en monto) sobre el total sin IVA")
@@ -427,7 +451,6 @@ class DetalleFactura(models.Model):
 
     def __str__(self):
         return f"Factura {self.factura.numero_control} - {self.producto.descripcion} ({self.cantidad} x {self.precio_unitario})"
-    
 
 # Modelo de Factura Sujeto excluido
 class FacturaSujetoExcluidoElectronica(models.Model):
@@ -448,7 +471,7 @@ class FacturaSujetoExcluidoElectronica(models.Model):
     #EMISOR
     dteemisor = models.ForeignKey(Emisor_fe, on_delete=models.CASCADE, related_name='facturas_emisor_sujeto_excluido_FE')
     #SUJETO EXCLUIDO
-    dtesujetoexcluido = models.ForeignKey(Proveedor, on_delete=models.CASCADE, related_name='facturas_sujeto_excluido_FE')
+    dtesujetoexcluido = models.ForeignKey("INVENTARIO.Proveedor", on_delete=models.CASCADE, related_name='facturas_sujeto_excluido_FE')
     
     #CONTINGENCIA
     #dtecontingencia = models.ForeignKey(EventoContingencia, on_delete=models.CASCADE, related_name='contingencia_dte', null=True, blank=True)
@@ -497,11 +520,11 @@ class FacturaSujetoExcluidoElectronica(models.Model):
 
 class DetalleFacturaSujetoExcluido(models.Model):
     factura = models.ForeignKey(FacturaSujetoExcluidoElectronica, on_delete=models.CASCADE, related_name='detallesSujetoExcluido', help_text="Factura a la que pertenece este detalle")
-    producto = models.ForeignKey(ProductoProveedor, on_delete=models.CASCADE,help_text="Producto de sujeto exclusivo asociado a este detalle")
+    producto = models.ForeignKey("INVENTARIO.ProductoProveedor", on_delete=models.CASCADE,help_text="Producto de sujeto exclusivo asociado a este detalle")
     cantidad = models.PositiveIntegerField(default=1,help_text="Cantidad del producto")
-    unidad_medida = models.ForeignKey(TipoUnidadMedida, on_delete=models.CASCADE, null=True)
+    unidad_medida = models.ForeignKey("INVENTARIO.TipoUnidadMedida", on_delete=models.CASCADE, null=True)
     tipo_item = models.CharField(max_length=150, null=True, blank=True)
-    codigo = models.ForeignKey(TipoItem, on_delete=models.CASCADE, null=True)
+    codigo = models.ForeignKey("INVENTARIO.TipoItem", on_delete=models.CASCADE, null=True)
     precio_unitario = models.DecimalField(max_digits=10, decimal_places=6,help_text="Precio unitario del producto")
 
     tiene_descuento = models.BooleanField(default=False)
@@ -628,4 +651,3 @@ class LoteContingencia(models.Model):
     hora_modificacion = models.TimeField(auto_now_add=True, null=True)
     #evento = models.ForeignKey(EventoContingencia, related_name='lotecontingencia', on_delete=models.CASCADE)
     
-

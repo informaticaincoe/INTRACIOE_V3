@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Eliminar compra #{{ compra.id }} · INTRACOE{% endblock %}
+{% block content %}
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <h1 class="h5">Eliminar compra #{{ compra.id }}</h1>
+    <p>Esta acción revertirá el stock agregado por esta compra y eliminará sus movimientos de inventario.</p>
+    <form method="post">
+      {% csrf_token %}
+      <a href="{% url 'compras-detalle' compra.id %}" class="btn btn-light">Cancelar</a>
+      <button class="btn btn-outline-danger"><i class="bi bi-trash me-1"></i> Eliminar definitivamente</button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

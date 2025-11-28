@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Devoluciones de Compra{% endblock %}
+{% block content %}
+<h1 class="h5 mb-3">Devoluciones de Compra</h1>
+<div class="table-responsive">
+  <table class="table align-middle">
+    <thead><tr><th>#</th><th>Fecha</th><th>Compra</th><th>Proveedor</th><th>Estado</th></tr></thead>
+    <tbody>
+    {% for d in devoluciones %}
+      <tr>
+        <td>{{ d.id }}</td>
+        <td>{{ d.fecha|date:"d/m/Y H:i" }}</td>
+        <td><a href="{% url 'compras-detalle' d.compra.id %}">#{{ d.compra.id }}</a></td>
+        <td>{{ d.compra.proveedor.nombre }}</td>
+        <td>{{ d.estado }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5" class="text-center text-muted">Sin devoluciones</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

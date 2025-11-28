@@ -1,0 +1,21 @@
+<div class="modal fade" id="retencionIvaModal" tabindex="-1" aria-labelledby="retIvaLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 id="retIvaLabel" class="modal-title"><i class="bi bi-percent me-2"></i> Retención IVA</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label">Porcentaje</label>
+        <div class="input-group">
+          <input type="number" id="ret_iva_porcentaje" class="form-control" min="0" max="100" step="0.01" value="1.00">
+          <span class="input-group-text">%</span>
+        </div>
+        <small class="text-muted">Se aplicará sobre la base gravada definida por el documento.</small>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light" data-bs-dismiss="modal">Listo</button>
+      </div>
+    </div>
+  </div>
+</div>

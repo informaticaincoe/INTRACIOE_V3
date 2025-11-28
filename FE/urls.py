@@ -1,12 +1,13 @@
 from django.urls import path
 from . import views
+from . import views_ventas
 from .views import (
     ActividadEconomicaDetailView,
     ActividadEconomicaCreateView, ActividadEconomicaUpdateView, ActividadEconomicaDeleteView,
-    EmisorListView, EmisorDetailView, EmisorCreateView, EmisorUpdateView, EmisorDeleteView, 
     detalle_factura,
     enviar_factura_hacienda_view,
     enviar_factura_invalidacion_hacienda_view,
+    factura_termica,
     firmar_factura_anulacion_view,
     firmar_factura_view,
     generar_factura_view,
@@ -15,14 +16,23 @@ from .views import (
     obtener_receptor,
     generar_documento_ajuste_view, 
     obtener_listado_productos_view,
-    generar_factura_exportacion_view
+    #generar_factura_exportacion_view
 )
 
 #renombrar el archivo
 urlpatterns = [
+    # url para obtener token de hacienda
+    path("hacienda/token/", views.obtener_token_view, name="obtener_token_hacienda"),
+
+    path("tipo-dte/nuevo/", views.crear_tipo_dte, name="crear_tipo_dte"),
+    
+    # Homes de facturación:
+    path('fe/facturacion/generar/', views.facturacion_generar_home, name='facturacion_generar_home'),
+    path('fe/facturacion/correcciones/', views.facturacion_correcciones_home, name='facturacion_correcciones_home'),
+
     #urls para procesamiento de facturas
     path('generar/', generar_factura_view, name='generar_factura'),
-    path('generar_exportacion/', generar_factura_exportacion_view, name='generar_factura_exportacion'),
+    #path('generar_exportacion/', generar_factura_exportacion_view, name='generar_factura_exportacion'),
     
     # URLS DTE AJUSTE
     path('generar_ajuste/', generar_documento_ajuste_view, name='generar_ajuste_factura'),
@@ -45,6 +55,7 @@ urlpatterns = [
     #path('factura/pdf/<int:factura_id>/', views.generar_factura_pdf, name='generar_factura_pdf'),
     #path('factura/pdf/<int:factura_id>/', views.generar_factura_pdf_2, name='generar_factura_pdf_2'),
     path("factura_pdf/<int:factura_id>/", detalle_factura, name="detalle_factura"),
+    path("fe/factura/<int:factura_id>/termica/", factura_termica, name="factura_termica"),
 
     path('obtener-numero-control/', views.obtener_numero_control_ajax, name='obtener_numero_control_ajax'),
     path('obtener-descuento/', views.seleccion_descuento_ajax, name='obtener_descuento'),
@@ -60,14 +71,14 @@ urlpatterns = [
     path('cargar-actividades/', views.cargar_actividades, name='cargar_actividades'),
 
     #url para emisor o empresa
-    path('emisor/', EmisorListView.as_view(), name='emisor_list'),
-    path('emisor/<int:pk>/', EmisorDetailView.as_view(), name='emisor_detail'),
-    path('emisor/new/', EmisorCreateView.as_view(), name='emisor_create'),
-    path('emisor/<int:pk>/edit/', EmisorUpdateView.as_view(), name='emisor_update'),
-    path('emisor/<int:pk>/delete/', EmisorDeleteView.as_view(), name='emisor_delete'),
+    path("configuracion/empresa/", views.configurar_empresa_view, name="configurar_empresa"),
     
     #LISTADO DE PRODUCTOS
     path('obtener-listado-productos/', views.obtener_listado_productos_view, name='obtener_listado_productos_view'),
+
+    #URLS DE EXPORTACION
+    path('exportacion/excel/', views_ventas.exportar_facturas_excel, name='exportar_facturas_excel'),
+    path('exportacion/pdf/', views_ventas.exportar_facturas_pdf, name='exportar_facturas_pdf'),
     
     #Contingencia
     path('listar_contingencias/', views.contingencia_list, name='listar_contingencias'),
@@ -83,6 +94,47 @@ urlpatterns = [
     path('enviar-motivo-evento/', views.motivo_contingencia_view, name='enviar_motivo'),
     
     #ENVIO DE CORREO(DOCUMENTOS ELECTRONICOS)
-    path('enviar-correo/<int:factura_id>/', views.enviar_correo_individual_view, name='enviar_correo_individual'),
+    path('enviar-correo/<int:factura_id>/', views.enviar_correo_individual_view, name='enviar_correo_indiv'),
+
+]
+
+urlpatterns += [
+    # Home de Ventas
+    path('ventas/', views_ventas.ventas_home, name='ventas_home'),
+
+    path('api/productos/', views_ventas.api_productos, name='api_productos'),
+
+    # Clientes
+    path('ventas/clientes/', views_ventas.clientes_list, name='clientes_list'),
+    path('ventas/clientes/nuevo/', views_ventas.clientes_crear, name='clientes_crear'),
+    path('ventas/clientes/<int:pk>/editar/', views_ventas.clientes_editar, name='clientes_editar'),
+    path('ventas/clientes/<int:pk>/eliminar/', views_ventas.clientes_eliminar, name='clientes_eliminar'),
+
+    # Catálogo de productos (de INVENTARIO.Producto)
+    path('ventas/catalogo/', views_ventas.catalogo_productos, name='catalogo_productos'),
+
+    # Carrito por cliente (session-based)
+    path('ventas/carrito/<int:receptor_id>/cotizacion/', views_ventas.carrito_cotizacion, name='carrito_cotizacion'),
+    path('carrito/', views_ventas.carrito_ver, name='carrito_ver'),
+    path('carrito/agregar/', views_ventas.carrito_agregar, name='carrito_agregar'),
+    path('carrito/actualizar/', views_ventas.carrito_actualizar, name='carrito_actualizar'),
+    path('carrito/quitar/', views_ventas.carrito_quitar, name='carrito_quitar'),
+    path('carrito/vaciar/', views_ventas.carrito_vaciar, name='carrito_vaciar'),
+    path('carrito/facturar/', views_ventas.carrito_facturar, name='carrito_facturar'),
+    # opcional: atajo para “agregar y abrir carrito”
+    path('carrito/add-go/', views_ventas.carrito_add_go, name='carrito_add_go'),
+
+    # Ventas (usa tus modelos FacturaElectronica / FacturaSujetoExcluidoElectronica)
+    path('ventas/lista/', views_ventas.ventas_list, name='ventas_list'),
+    path('ventas/<int:factura_id>/', views_ventas.venta_detalle, name='venta_detalle'),  # redirige al detalle que ya tienes
+
+    # Devoluciones de ventas
+    path('ventas/<int:factura_id>/devolucion/', views_ventas.devolucion_crear, name='devolucion_crear'),
+    path('ventas/devoluciones/', views_ventas.devoluciones_list, name='devoluciones_list'),
+
+    # Reportes de ventas
+    path("reporte/contabilidad/", views_ventas.reporte_contabilidad_view, name="reporte_contabilidad"),
+    path("reporte/facturacion/", views_ventas.reporte_facturacion_view, name="reporte_facturacion"),
+
 
 ]
