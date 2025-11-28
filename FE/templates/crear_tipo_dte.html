@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h4 class="card-title mb-3">Tipos de DTE</h4>
+      <p class="text-muted">Administra los tipos de Documentos Tributarios Electrónicos.</p>
+
+      <!-- Tabla -->
+      <div class="table-responsive mb-4">
+        <table class="table table-sm table-bordered align-middle" id="tablaTipoDte">
+          <thead class="table-light">
+            <tr>
+              <th>Código</th>
+              <th>Descripción</th>
+              <th>Versión</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in tipos %}
+              <tr>
+                <td>{{ t.codigo }}</td>
+                <td>{{ t.descripcion }}</td>
+                <td>{{ t.version }}</td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="3" class="text-center text-muted">No hay registros</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Formulario -->
+      <h5 class="mb-3">Agregar nuevo Tipo DTE</h5>
+      <form id="formTipoDte">
+        {% csrf_token %}
+        <div class="row g-3">
+          <div class="col-md-2">
+            <label class="form-label">Código</label>
+            <input type="text" name="codigo" class="form-control" placeholder="Ej: 01" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Descripción</label>
+            <input type="text" name="descripcion" class="form-control" placeholder="Ej: Factura, CCF, NC..." required>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Versión</label>
+            <input type="number" name="version" class="form-control" placeholder="1" required>
+          </div>
+          <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">Guardar</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById("formTipoDte").addEventListener("submit", function(e){
+  e.preventDefault();
+  const formData = new FormData(this);
+
+  fetch("{% url 'crear_tipo_dte' %}", {
+    method: "POST",
+    body: formData,
+    headers: {"X-Requested-With": "XMLHttpRequest"}
+  })
+  .then(res => res.json())
+  .then(data => {
+    if(data.id){
+      let tabla = document.querySelector("#tablaTipoDte tbody");
+      let fila = document.createElement("tr");
+      fila.innerHTML = `
+        <td>${data.codigo}</td>
+        <td>${data.descripcion}</td>
+        <td>${data.version}</td>
+      `;
+      tabla.appendChild(fila);
+
+      this.reset();
+    } else if(data.error){
+      alert(data.error);
+    }
+  });
+});
+</script>
+{% endblock %}

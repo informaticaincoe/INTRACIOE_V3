@@ -1,4 +1,6 @@
 {% load static %}
+{% load qr_tags %}
+{% load i18n %}
 
 <!DOCTYPE html>
 <html lang="es">
@@ -66,7 +68,11 @@
     </style>
 </head>
 <body>
-
+    {% if factura.recibido_mh %}
+        {% if factura.envio_correo %}
+            <p class="mb-1"><strong>Correo enviado al receptor:</strong> {{ factura.dtereceptor.correo }}</p>
+        {% endif %}
+    {% else %}
     <div class="text-center mt-3">
         <button class="btn btn-primary btn-print" onclick="window.print()">Imprimir</button>
         <form action="{% url 'firmar_factura' factura.id %}" method="post" style="display:inline;">
@@ -106,13 +112,12 @@
             </button>
         </form>
     </div>
+    {% endif %}
+    
 <div class="container factura-container">
     
     <!-- Datos del Emisor y Datos de la Factura -->
     <div class="row mb-2">
-        {% if factura.envio_correo %}
-            <p class="mb-1"><strong>Correo enviado al receptor:</strong> {{ factura.dtereceptor.correo }}</p>
-        {% endif %}
         <div class="col-md-6 border p-2">
             <div class="d-flex align-items-center">
                 <img src="{% static 'img/logo_empresa.png' %}" alt="Logo Empresa" class="img-fluid me-2" style="max-width: 70px;">
@@ -156,9 +161,9 @@
                 <p class="mb-1"><strong>Correo:</strong> {{ factura.dtereceptor.correo }}</p>
             </div>
             <div class="col-md-4 text-end qr-container">
-                <img src="{% static 'img/qr1.png' %}" alt="QR 1" class="img-fluid">
-                <img src="{% static 'img/qr2.png' %}" alt="QR 2" class="img-fluid">
-                <img src="{% static 'img/qr3.png' %}" alt="QR 3" class="img-fluid">
+                <img src="{% qr_src 'https://admin.factura.gob.sv/consultaPublica' 90 1 'M' %}" alt="QR Consulta pública">
+                <img src="{% qr_src factura.codigo_generacion|upper 90 1 'M' %}" alt="QR Código">
+                <img src="{% qr_src factura.sello_recepcion|upper 90 1 'M' %}" alt="QR Sello">                
             </div>
         </div>
     </div>

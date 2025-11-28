@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h4 class="card-title mb-4">Configuración inicial – Paso 3: Configuración del Servidor</h4>
+
+      <form method="post">
+        {% csrf_token %}
+
+        <div class="table-responsive">
+          <table class="table table-bordered align-middle">
+            <thead class="table-light">
+              <tr>
+                <th style="width: 15%;">Clave</th>
+                <th style="width: 20%;">Valor</th>
+                <th style="width: 20%;">URL</th>
+                <th style="width: 20%;">URL Endpoint</th>
+                <th style="width: 15%;">Contraseña</th>
+                <th style="width: 20%;">Descripción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for clave in claves_fijas %}
+              <tr>
+                <td>
+                  <input type="hidden" name="clave_{{ forloop.counter }}" value="{{ clave }}">
+                  <span class="fw-bold text-muted"
+                        data-bs-toggle="tooltip"
+                        data-bs-placement="top"
+                        title="
+                        {% if clave == 'email_host_fe' %}Correo desde donde se enviarán las facturas electrónicas.
+                        {% elif clave == 'consulta_dte' %}URL pública de Hacienda para consulta de DTE.
+                        {% elif clave == 'schema_json' %}Ruta local al esquema JSON de facturación.
+                        {% elif clave == 'user_agent' %}Identificador de la aplicación que consume la API.
+                        {% elif clave == 'hacienda_contingencia_url' %}URL para reportar contingencias de facturación.
+                        {% elif clave == 'json_facturas_firmadas' %}Ruta local donde se guardan los JSON firmados.
+                        {% elif clave == 'version_evento_contingencia' %}Versión del evento de contingencia según Hacienda.
+                        {% elif clave == 'url_invalidar_dte' %}URL de Hacienda para invalidar un DTE.
+                        {% elif clave == 'content_type' %}Formato del contenido de la API (normalmente application/json).
+                        {% elif clave == 'headers' %}Cabeceras personalizadas para la comunicación con Hacienda.
+                        {% elif clave == 'url_autenticacion' %}URL para autenticación contra la API de Hacienda.
+                        {% elif clave == 'version_evento_invalidacion' %}Versión del evento de invalidación según Hacienda.
+                        {% elif clave == 'hacienda_url_prod' %}URL de producción de la API de Hacienda.
+                        {% elif clave == 'hacienda_url_test' %}URL de pruebas de la API de Hacienda.
+                        {% elif clave == 'certificado' %}Ruta al certificado digital (.crt) usado para firmar.
+                        {% elif clave == 'server_url' %}URL del servidor local (ejemplo: http://127.0.0.1:8000).
+                        {% elif clave == 'firmador' %}URL del servicio firmador que aplica la firma digital.
+                        {% elif clave == 'json_factura' %}Ruta local donde se guardan los JSON de facturas.
+                        {% elif clave == 'ruta_comprobante_json' %}Ruta local de comprobantes en JSON.
+                        {% elif clave == 'ruta_comprobantes_dte' %}Ruta local de comprobantes electrónicos DTE.
+                        {% endif %}
+                        ">
+                    {{ clave }}
+                  </span>
+                </td>
+
+                <td><input type="text" class="form-control" name="valor_{{ forloop.counter }}"
+                           placeholder="{% if clave == 'email_host_fe' %}facturacion@empresa.com{% elif clave == 'user_agent' %}MiAppDjango/1.0{% endif %}"></td>
+
+                <td><input type="text" class="form-control" name="url_{{ forloop.counter }}"
+                           placeholder="{% if clave == 'schema_json' %}FE/json_schemas/fe-fc-v1.json{% elif clave == 'certificado' %}FE/cert/mi_certificado.crt{% endif %}"></td>
+
+                <td><input type="text" class="form-control" name="url_endpoint_{{ forloop.counter }}"
+                           placeholder="{% if clave == 'consulta_dte' %}https://admin.factura.gob.sv/consultaPublica{% elif clave == 'hacienda_url_test' %}https://apitest.dtes.mh.gob.sv/fesv/recepciondte{% endif %}"></td>
+
+                <td><input type="password" class="form-control" name="contraseña_{{ forloop.counter }}"
+                           placeholder="{% if clave == 'firmador' %}ClavePrivada123{% endif %}"></td>
+
+                <td><input type="text" class="form-control" name="descripcion_{{ forloop.counter }}"
+                           placeholder="Descripción breve de {{ clave }}"></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="text-end">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save"></i> Guardar configuración
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Inicializar tooltips de Bootstrap
+  document.addEventListener("DOMContentLoaded", function(){
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+  });
+</script>
+{% endblock %}

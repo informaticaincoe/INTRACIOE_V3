@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}{% if proveedor %}Editar proveedor{% else %}Nuevo proveedor{% endif %} · INTRACOE{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h5 mb-0">{% if proveedor %}Editar{% else %}Nuevo{% endif %} proveedor</h1>
+  <a class="btn btn-light" href="{% url 'proveedores-lista' %}"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+
+<form method="post" class="needs-validation" novalidate enctype="multipart/form-data">
+  {% csrf_token %}
+
+  <div class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label">Nombre</label>
+      <input type="text" name="nombre" class="form-control" value="{{ proveedor.nombre|default:'' }}" required>
+      <div class="invalid-feedback">Ingresa el nombre.</div>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Tipo documento</label>
+      <select name="tipo_documento" class="form-select">
+        <option value="">Seleccione…</option>
+        {% for t in tipos_doc %}
+          <option value="{{ t.id }}" {% if proveedor and proveedor.tipo_documento_id == t.id %}selected{% endif %}>{{ t.descripcion }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Número documento</label>
+      <input type="text" name="num_documento" class="form-control" value="{{ proveedor.num_documento|default:'' }}" required>
+      <div class="invalid-feedback">Ingresa el documento.</div>
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label">Departamento</label>
+      <select name="departamento" id="depto" class="form-select">
+        <option value="">Seleccione…</option>
+        {% for d in departamentos %}
+          <option value="{{ d.id }}" {% if proveedor and proveedor.departamento_id == d.id %}selected{% endif %}>
+            {{ d.descripcion }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Municipio</label>
+      <select name="municipio" id="muni" class="form-select">
+        <option value="">Seleccione…</option>
+        {% for m in municipios %}
+          <option value="{{ m.id }}" {% if proveedor and proveedor.municipio_id == m.id %}selected{% endif %}>
+            {{ m.descripcion }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Actividades económicas</label>
+      <select name="actividades_economicas" class="form-select" multiple>
+        {% for a in actividades %}
+          <option value="{{ a.id }}"
+            {% if proveedor and a in proveedor.actividades_economicas.all %}selected{% endif %}>
+            {{ a.descripcion }}
+          </option>
+        {% endfor %}
+      </select>
+      <div class="form-text">Mantén presionada Ctrl/Cmd para seleccionar varias.</div>
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label">Contacto</label>
+      <input type="text" name="contacto" class="form-control" value="{{ proveedor.contacto|default:'' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Teléfono</label>
+      <input type="text" name="telefono" class="form-control" value="{{ proveedor.telefono|default:'' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Email</label>
+      <input type="email" name="email" class="form-control" value="{{ proveedor.email|default:'' }}">
+    </div>
+
+    <div class="col-md-8">
+      <label class="form-label">Dirección</label>
+      <input type="text" name="direccion" class="form-control" value="{{ proveedor.direccion|default:'' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Condiciones de pago</label>
+      <input type="text" name="condiciones_pago" class="form-control" value="{{ proveedor.condiciones_pago|default:'' }}">
+    </div>
+  </div>
+
+  <div class="mt-3 d-flex justify-content-end">
+    <button class="btn btn-primary"><i class="bi bi-save me-1"></i> Guardar</button>
+  </div>
+</form>
+
+<script>
+  // Municipios por departamento (ajax)
+  document.getElementById('depto')?.addEventListener('change', async (e) => {
+    const d = e.target.value;
+    const muni = document.getElementById('muni');
+    muni.innerHTML = '<option value="">Seleccione…</option>';
+    if (!d) return;
+    const res = await fetch("{% url 'ajax-municipios' %}?depto=" + d);
+    const data = await res.json();
+    data.municipios.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m.id;
+      opt.textContent = m.descripcion;   // <- antes m.nombre
+      muni.appendChild(opt);
+    });
+  });
+
+  // Validación Bootstrap
+  (function(){
+    const form = document.querySelector('form.needs-validation');
+    form?.addEventListener('submit', function (e) {
+      if (!form.checkValidity()) { e.preventDefault(); e.stopPropagation(); }
+      form.classList.add('was-validated');
+    });
+  })();
+</script>
+
+{% endblock %}

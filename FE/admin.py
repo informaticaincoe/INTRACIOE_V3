@@ -1,4 +1,6 @@
 from django.contrib import admin
+
+from INVENTARIO.models import TipoUnidadMedida
 from .models import DetalleFacturaSujetoExcluido, FacturaSujetoExcluidoElectronica, Token_data
 from django import forms
 from django.shortcuts import render, redirect
@@ -12,7 +14,7 @@ from .models import (INCOTERMS, ActividadEconomica, NumeroControl, FacturaElectr
                            TipoInvalidacion, TipoPersona, TipoTransmision, TipoContingencia, TipoRetencionIVAMH, 
                            TipoGeneracionDocumento, TipoTransporte, TiposDocIDReceptor, TiposEstablecimientos, 
                            TiposServicio_Medico, CondicionOperacion, FormasPago, Plazo,
-                            Descuento, DetalleFactura, TipoMoneda, TipoUnidadMedida, EventoInvalidacion, EventoContingencia, LoteContingencia, representanteEmisor, RecintoFiscal, RegimenExportacion)
+                            Descuento, DetalleFactura, TipoMoneda, EventoInvalidacion, EventoContingencia, LoteContingencia, representanteEmisor, RecintoFiscal, RegimenExportacion)
 
 
 # Lista de todos los modelos a registrar
@@ -21,6 +23,15 @@ models = [
     TipoDonacion, TipoPersona, TipoTransporte, INCOTERMS, TipoDomicilioFiscal, Descuento,
     TipoMoneda, TipoUnidadMedida,
 ]
+
+from django.contrib.admin.models import LogEntry
+
+@admin.register(LogEntry)
+class LogEntryAdmin(admin.ModelAdmin):
+    date_hierarchy = "action_time"
+    list_display = ("action_time", "user", "content_type", "object_repr", "action_flag")
+    list_filter = ("action_flag", "content_type", "user")
+    search_fields = ("object_repr", "change_message")
 
 @admin.register(LoteContingencia)
 class LoteContingencia(admin.ModelAdmin):

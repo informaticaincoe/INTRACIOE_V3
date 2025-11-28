@@ -21,7 +21,7 @@ export const SelectModeloFactura: React.FC<SelectModeloFacturaProps> = ({ setTip
     if (response) {
       setTipoModeloFacturacion(response);
       setSelectedModeloFacturacion(response[0].codigo);
-      setTipoModeloFacturacionSeleccionado(response[0].codigo)
+      setTipoModeloFacturacionSeleccionado("1");
     }
   };
 

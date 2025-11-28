@@ -1,0 +1,66 @@
+{# Se inserta DENTRO de: <div class="list-group list-group-flush"> ... #}
+{% with uid_prefix=uid|default:"ven" %}
+
+<!-- Clientes -->
+<button id="{{ uid_prefix }}-btn-clientes"
+        type="button"
+        class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">
+  <span><i class="bi bi-people me-2"></i> Clientes</span>
+</button>
+
+<!-- Ventas -->
+<button id="{{ uid_prefix }}-btn-ventas"
+        type="button"
+        class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">
+  <span><i class="bi bi-cart-check me-2"></i> Ventas</span>
+</button>
+
+<!-- Catálogo -->
+<button id="{{ uid_prefix }}-btn-catalogo"
+        type="button"
+        class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">
+  <span><i class="bi bi-journal-bookmark-fill me-2"></i> Catálogo</span>
+</button>
+
+{% if user.is_staff %}
+<!-- Devoluciones -->
+<button id="{{ uid_prefix }}-btn-devoluciones"
+        type="button"
+        class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">
+  <span><i class="bi bi-arrow-return-left me-2"></i> Devoluciones</span>
+</button>
+
+<!-- Reportes -->
+
+<button id="{{ uid_prefix }}-btn-reportes"
+        type="button"
+        class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">
+  <span><i class="bi bi-clipboard-data me-2"></i> Reportes</span>
+</button>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const base = "{{ uid_prefix|default:'ven' }}";
+
+  // Si tienes receptor_id en el contexto y quieres pasarlo al catálogo, úsalo aquí:
+  const catalogoURL = "{% url 'catalogo_productos' %}{% if receptor_id %}?receptor_id={{ receptor_id }}{% endif %}";
+
+  const routes = {
+    'btn-clientes':    "{% url 'clientes_list' %}",
+    'btn-ventas':      "{% url 'ventas_home' %}",
+    'btn-catalogo':    catalogoURL,
+    'btn-devoluciones':"{% url 'devoluciones_list' %}",
+    'btn-reportes':    "{% url 'ventas_list' %}#reportes"
+  };
+
+  Object.entries(routes).forEach(([suffix, url]) => {
+    const el = document.getElementById(`${base}-${suffix}`);
+    if (el) {
+      el.addEventListener('click', () => { window.location.assign(url); });
+    }
+  });
+});
+</script>
+
+{% endwith %}

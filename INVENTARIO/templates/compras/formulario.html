@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block title %}{% if compra %}Editar compra #{{ compra.id }}{% else %}Nueva compra{% endif %} · INTRACOE{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h5 mb-0">{% if compra %}Editar compra #{{ compra.id }}{% else %}Nueva compra{% endif %}</h1>
+  <a href="{% url 'compras-lista' %}" class="btn btn-light"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+
+<form method="post" id="formCompra" class="needs-validation" novalidate>
+  {% csrf_token %}
+
+  <div class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label">Proveedor</label>
+      <select name="proveedor" class="form-select" required>
+        <option value="">Seleccione…</option>
+        {% for p in proveedores %}
+          <option value="{{ p.id }}" {% if compra and compra.proveedor_id == p.id %}selected{% endif %}>{{ p.nombre }}</option>
+        {% endfor %}
+      </select>
+      <div class="invalid-feedback">Seleccione proveedor.</div>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Almacén</label>
+      <select name="almacen" class="form-select" required>
+        <option value="">Seleccione…</option>
+        {% for a in almacenes %}
+          <option value="{{ a.id }}">{{ a.nombre }}</option>
+        {% endfor %}
+      </select>
+      <div class="invalid-feedback">Seleccione almacén destino.</div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="table-responsive">
+    <table class="table align-middle" id="tablaDetalles">
+      <thead>
+        <tr>
+          <th style="width:35%;">Producto</th>
+          <th style="width:12%;">Cantidad</th>
+          <th style="width:18%;">Precio unit.</th>
+          <th style="width:20%;">Tipo compra</th>
+          <th class="text-end" style="width:15%;">Importe</th>
+          <th style="width:5%;"></th>
+        </tr>
+      </thead>
+      <tbody id="tbodyDetalles">
+        {% if compra %}
+          {% for d in compra.detalles.all %}
+            <tr>
+              <td>
+                <select name="producto" class="form-select" required>
+                  <option value="">Seleccione…</option>
+                  {% for pr in productos %}
+                    <option value="{{ pr.id }}" {% if pr.id == d.producto_id %}selected{% endif %}>{{ pr.codigo }} — {{ pr.descripcion }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td><input type="number" name="cantidad" class="form-control text-end" min="1" step="1" value="{{ d.cantidad }}" required></td>
+              <td><input type="number" name="precio_unitario" class="form-control text-end" min="0" step="0.01" value="{{ d.precio_unitario }}"></td>
+              <td>
+                <select name="tipo_compra" class="form-select">
+                  {% for val, txt in tipo_compra_choices %}
+                    <option value="{{ val }}" {% if d.tipo_compra == val %}selected{% endif %}>{{ txt }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td class="text-end fw-semibold importe-cell">${{ d.subtotal|floatformat:2 }}</td>
+              <td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger btnDel"><i class="bi bi-x"></i></button></td>
+            </tr>
+          {% endfor %}
+        {% endif %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="6">
+            <button type="button" class="btn btn-light" id="btnAdd"><i class="bi bi-plus-lg me-1"></i> Agregar ítem</button>
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="d-flex justify-content-end gap-3">
+    <div class="text-end">
+      <div class="small text-muted">Subtotal + IVA</div>
+      <div class="display-6 h4 mb-0" id="totalPreview">$0.00</div>
+    </div>
+  </div>
+
+  <div class="mt-3 d-flex justify-content-end">
+    <button class="btn btn-primary"><i class="bi bi-save me-1"></i> Guardar</button>
+  </div>
+</form>
+
+<!-- Fila plantilla oculta -->
+<table class="d-none">
+  <tbody id="tplFila">
+    <tr>
+      <td>
+        <select name="producto" class="form-select" required>
+          <option value="">Seleccione…</option>
+          {% for pr in productos %}
+            <option value="{{ pr.id }}">{{ pr.codigo }} — {{ pr.descripcion }}</option>
+          {% endfor %}
+        </select>
+      </td>
+      <td><input type="number" name="cantidad" class="form-control text-end" min="1" step="1" value="1" required></td>
+      <td><input type="number" name="precio_unitario" class="form-control text-end" min="0" step="0.01" value="0.00"></td>
+      <td>
+        <select name="tipo_compra" class="form-select">
+          {% for val, txt in tipo_compra_choices %}
+            <option value="{{ val }}" {% if forloop.first %}selected{% endif %}>{{ txt }}</option>
+          {% endfor %}
+        </select>
+      </td>
+      <td class="text-end fw-semibold importe-cell">$0.00</td>
+      <td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger btnDel"><i class="bi bi-x"></i></button></td>
+    </tr>
+  </tbody>
+</table>
+
+<script>
+(function () {
+  const tbody = document.getElementById('tbodyDetalles');
+  const tpl   = document.getElementById('tplFila').querySelector('tr');
+  const addBtn= document.getElementById('btnAdd');
+  const totalPreview = document.getElementById('totalPreview');
+
+  function money(v){ return '$' + Number(v || 0).toFixed(2); }
+
+  function recalcRow(tr){
+    const qty = parseFloat(tr.querySelector('input[name="cantidad"]').value || 0);
+    const pu  = parseFloat(tr.querySelector('input[name="precio_unitario"]').value || 0);
+    const tipo= tr.querySelector('select[name="tipo_compra"]').value || 'GR_INT';
+    const sub = qty * pu;
+    const iva = tipo.startsWith('GR') ? sub * 0.13 : 0;
+    tr.querySelector('.importe-cell').textContent = money(sub + iva);
+  }
+
+  function recalcTotal(){
+    let total = 0;
+    tbody.querySelectorAll('tr').forEach(tr=>{
+      const qty = parseFloat(tr.querySelector('input[name="cantidad"]').value || 0);
+      const pu  = parseFloat(tr.querySelector('input[name="precio_unitario"]').value || 0);
+      const tipo= tr.querySelector('select[name="tipo_compra"]').value || 'GR_INT';
+      const sub = qty * pu;
+      const iva = tipo.startsWith('GR') ? sub * 0.13 : 0;
+      total += (sub + iva);
+    });
+    totalPreview.textContent = money(total);
+  }
+
+  function wire(tr){
+    tr.querySelectorAll('input,select').forEach(el=>{
+      el.addEventListener('input', ()=>{ recalcRow(tr); recalcTotal(); });
+      el.addEventListener('change', ()=>{ recalcRow(tr); recalcTotal(); });
+    });
+    tr.querySelector('.btnDel').addEventListener('click', ()=>{
+      tr.remove(); recalcTotal();
+    });
+    recalcRow(tr);
+  }
+
+  addBtn.addEventListener('click', ()=>{
+    const row = tpl.cloneNode(true);
+    tbody.appendChild(row);
+    wire(row);
+    recalcTotal();
+  });
+
+  // Si no hay filas (nueva compra), añade una por defecto
+  if (tbody.querySelectorAll('tr').length === 0) {
+    addBtn.click();
+  } else {
+    tbody.querySelectorAll('tr').forEach(wire);
+    recalcTotal();
+  }
+
+  // Validación BS
+  const form = document.getElementById('formCompra');
+  form.addEventListener('submit', (e)=>{
+    if (!form.checkValidity() || tbody.querySelectorAll('tr').length === 0) {
+      e.preventDefault(); e.stopPropagation();
+    }
+    form.classList.add('was-validated');
+  });
+})();
+</script>
+
+{% endblock %}
