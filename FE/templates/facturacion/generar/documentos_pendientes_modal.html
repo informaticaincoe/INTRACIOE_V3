@@ -14,12 +14,22 @@
                 </tr>
             </thead>
             <tbody>
+                {% for detalle in doc.detalles.all %} 
+                <tr class="list-group-item d-flex justify-content-between align-items-center py-1">
+                    <td>
+                        <strong>{{ detalle.producto.descripcion }}</strong> 
+                        <small class="text-muted">({{ detalle.cantidad|floatformat:0 }} x ${{ detalle.precio_unitario|floatformat:2 }})</small>
+                    </div>
+                    {% comment %} <span class="badge bg-primary rounded-pill">Total Línea: $N/A</span>  {% endcomment %}
+                </li>
+            {% endfor %}
                 {% for doc in documentos_pendientes %}
                 <tr data-documento-id="{{ doc.id }}">
                     <td>
                         <input type="checkbox"
                                name="documentos_seleccionados"
                                value="{{ doc.id }}"
+                               data-documento-detalles={{doc.detalles.all}}
                                class="form-check-input select-doc">
                     </td>
                     <td>{{ doc.numero_control }}</td>

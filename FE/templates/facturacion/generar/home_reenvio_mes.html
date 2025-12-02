@@ -11,7 +11,7 @@
                 <label class="form-label" for="mes_filtro">Mes de Emisión</label>
                 <select id="mes_filtro" name="mes" class="form-select">
                     {% for mes in meses %}
-                    <option value="{{ mes }}" {% if mes == current_mes %}selected{% endif %}>
+                    <option value="{{ mes.id }}" {% if mes.id == current_mes_id %}selected{% endif %}>
                         {{ mes.nombre }}
                     </option>
                     {% endfor %}
@@ -101,7 +101,6 @@
                 tipo_doc_selecionado = tipoDte
 
                 hiddenTipoDte.value = tipoDte;
-                console.log("hiddenTipoDte ----- ", hiddenTipoDte);
 
                 dteCards.forEach(c => c.classList.remove('border-primary', 'border-3'));
                 card.classList.add('border', 'border-primary', 'border-2');
@@ -118,6 +117,12 @@
             const tipoDte = hiddenTipoDte.value;
             const mes = mesFiltro.value;
             const year = yearFiltro.value;
+{% comment %} 
+            MONTH_MAP = {
+                "enero": 1, "febrero": 2, "marzo": 3, "abril": 4, "mayo": 5, "junio": 6,
+                "julio": 7, "agosto": 8, "septiembre": 9, "octubre": 10, "noviembre": 11, "diciembre": 12} {% endcomment %}
+
+            
 
             modalListadoContent.innerHTML = `
                 <div class="text-center py-5">
@@ -129,6 +134,7 @@
             `;
             reenvioModal.show();
 
+            console.log("Mes filtro", mes )
             const url = `/fe/documentos_pendientes/?${new URLSearchParams({
                 tipo_documento_dte: tipoDte,
                 mes: mes,
@@ -183,39 +189,55 @@
 
         // 4. Lógica de Consolidación y PRUEBA DE DATOS
         if (btnConsolidar) {
-            btnConsolidar.addEventListener('click', () => {
-                const idsQuery = documentosSeleccionados.map(id => `docs=${id}`).join('&');
-                const urlRedireccion = `${GENERAR_FACTURA_URL}?tipo_documento_dte=${tipo_doc_selecionado}&${idsQuery}`;
+    btnConsolidar.addEventListener('click', () => {
+        let documentosSeleccionados = [];
+        
+        const checkedDocs = document.querySelectorAll('.select-doc:checked');
+        
+        checkedDocs.forEach(cb => {
+            documentosSeleccionados.push(cb.value); // Solo guarda los IDs de la Factura
+        });
 
-                console.log("select")
-                console.log("idsQuery ------ ", idsQuery)
-                console.log("urlRedireccion ------ ", urlRedireccion)
-
-                const checkedDocs = document.querySelectorAll('.select-doc:checked');
-                console.log("checkedDocs --- ", checkedDocs)
-
-                checkedDocs.forEach(cb => {
-                    const docId = cb.value;
-
-                    documentosSeleccionados.push(docId);
-                });
-
-
-                // ⚠️ MOSTRAR DATOS CONSOLIDADOS (Simulación de la regeneración/consolidación)
-                console.log("=== IDs de Facturas Seleccionadas ===");
-                console.log(documentosSeleccionados,);
-
-                // Mensaje visible para el usuario (simulando el PRINT solicitado)
-                // alert('Datos consolidados listos. Revise la consola (F12) para ver los IDs seleccionados y los detalles de los productos.');
-
-                // Aquí es donde iría la llamada AJAX para enviar 'documentosSeleccionados' 
-                // a otra vista de Django para el procesamiento final.
-
-                // href="{% url 'generar_factura' %}?tipo_documento_dte=01"
-
-                // window.location.href = urlRedireccion;
-            });
+        if (documentosSeleccionados.length === 0) {
+            alert('Por favor, selecciona al menos un documento.');
+            return;
         }
+
+        // 🎯 Paso 1: Usar la nueva URL de consolidación
+        const CONSOLIDAR_URL = "{% url 'consolidar_y_redirigir_a_dte' %}"; 
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value; 
+
+        fetch(CONSOLIDAR_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrftoken 
+            },
+            body: new URLSearchParams({
+                'documentos_ids': documentosSeleccionados.join(','), 
+                'tipo_dte': tipo_doc_selecionado 
+            })
+        })
+        .then(async response => {
+            let data;
+            try {
+                data = await response.json();
+            } catch (e) {
+                throw new Error(`Respuesta inválida o error HTTP: ${response.statusText}`); 
+            }
+            if (response.ok && data.ok && data.redirect_url) {
+                // Éxito: Redirigimos directamente a generar_factura_view
+                window.location.href = data.redirect_url; 
+            } else {
+                throw new Error(data.error || 'Fallo desconocido en la consolidación.');
+            }
+        })
+        .catch(error => {
+            console.error('ERROR de Consolidación:', error);
+            alert(`Error al consolidar: ${error.message}`);
+        });
+    });
+}
     }
 </script>
 {% endblock %}

@@ -669,6 +669,95 @@ def carrito_agregar(request):
 
 @login_required
 @require_POST
+@transaction.atomic
+def consolidar_y_redirigir_a_dte(request):
+    """
+    1. Consulta los detalles de las facturas seleccionadas.
+    2. Consolida los productos.
+    3. Serializa el resultado en el formato 'prefill' de la sesión.
+    4. Redirige a generar_factura_view.
+    """
+    documentos_ids_str = request.POST.get("documentos_ids")
+    tipo_dte_codigo = request.POST.get("tipo_dte")
+
+    if not documentos_ids_str:
+        return HttpResponseBadRequest(json.dumps({'error': "No se seleccionaron documentos."}), 
+                                      content_type="application/json")
+
+    documentos_ids = [int(id_str) for id_str in documentos_ids_str.split(',') if id_str.isdigit()]
+
+    # 1. Obtener facturas y detalles eficientemente
+    facturas_seleccionadas = FacturaElectronica.objects.filter(
+        id__in=documentos_ids
+    ).prefetch_related(
+        'detalles', 
+        'detalles__producto',
+        'dtereceptor', # Para acceder al receptor sin consulta adicional
+    )
+
+    if not facturas_seleccionadas.exists():
+        return HttpResponseBadRequest(json.dumps({'error': "No se encontraron facturas válidas."}), 
+                                      content_type="application/json")
+    
+    # 2. Definir el Receptor y consolidar productos
+    primer_factura = facturas_seleccionadas.first()
+    receptor_obj = primer_factura.dtereceptor
+    
+    # Estructura para consolidar productos: {producto_id: {'qty': N, 'precio': X, ...}}
+    productos_consolidados = {}
+
+    for factura in facturas_seleccionadas:
+        for detalle in factura.detalles.all():
+            prod = detalle.producto
+            prod_id = str(prod.id)
+            
+            cantidad_actual = float(detalle.cantidad)
+            # El precio se toma del detalle, ya que puede ser distinto al precio de lista
+            # También lo convertimos a str o float para la sesión
+            precio_unitario_float = float(detalle.precio_unitario)
+            
+            if prod_id in productos_consolidados:
+                # Sumar cantidad si el producto ya existe (consolidación)                
+                productos_consolidados[prod_id]['cantidad'] += cantidad_actual
+                
+            else:
+                # Inicializar el producto
+                productos_consolidados[prod_id] = {
+                    "id": prod.id,
+                    "cantidad": cantidad_actual,
+                    "precio": precio_unitario_float,
+                    "nombre": prod.descripcion, 
+                    "codigo": prod.codigo,
+                    # Puedes agregar aquí otros campos necesarios para el formulario DTE:
+                    "iva_on": False,
+                    "desc_pct": "0", 
+                }
+                
+
+    # 3. Construir la estructura 'prefill' (simulando el resultado de un carrito facturado)
+    prefill_data = {
+        'receptor_id': receptor_obj.id,
+        'tipo_dte': tipo_dte_codigo,
+        'items': list(productos_consolidados.values()),
+        # Puedes incluir otros campos de resumen aquí si los necesitas
+    }
+    
+    print("PREFILL DATA XXXXXX", prefill_data)
+
+    # 4. Guardar en la sesión y redirigir
+    # La vista generar_factura_view ya tiene la lógica para leer 'facturacion_prefill'
+    request.session['facturacion_prefill'] = prefill_data
+    request.session.modified = True
+    redirect_url = f"{reverse('generar_factura')}?tipo_documento_dte={tipo_dte_codigo}&from_cart=1"
+    
+    # Redirigir a generar_factura_view con el parámetro from_cart=1
+    return JsonResponse({
+        "ok": True,
+        "redirect_url": redirect_url
+    })
+    
+@login_required
+@require_POST
 def carrito_actualizar(request):
     """Actualiza cantidad / precio / iva / descuento."""
     rid = request.POST.get("receptor_id")

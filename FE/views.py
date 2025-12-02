@@ -659,9 +659,11 @@ def q2(d):  # 2 decimales HALF_UP
 @csrf_exempt
 @transaction.atomic
 def generar_factura_view(request):
+    req_id = str(uuid.uuid4())[:8]
     print("DTE: ====== INICIO generar_factura_view ======")
     print("DTE: method=", request.method, " content_type=", request.content_type)
 
+    print(f"DTE[{req_id}]: ....")
     if request.method == 'GET':
         prefill = None
         if request.GET.get("from_cart") == "1":
@@ -1193,6 +1195,7 @@ def generar_factura_view(request):
             print("DTE: ==== INICIO FIRMA (función existente) ====")
             try:
                 resp_firma = firmar_factura_view(request, factura.id, interno=True)
+                print("STATUS CODE", resp_firma,  "code", resp_firma.status_code)
                 if hasattr(resp_firma, "status_code") and int(resp_firma.status_code) >= 400:
                     return JsonResponse({
                         "mostrar_modal": True,
@@ -1296,13 +1299,14 @@ def select_tipo_facturas_mes_home(request):
 
         print("current_month", current_month)
         print("current_year", current_year)
-
+        
+        mes_nombre = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
         
         # 1. Preparar la lista de meses para el selector
         meses = []
         for i in range(1, 13):
-            mes_nombre = date(current_year, i, 1).strftime('%B').capitalize()
-            meses.append({'id': str(i).zfill(2), 'nombre': mes_nombre}) # Usamos zfill(2) para el formato 01, 02...
+            # mes_nombre = date(current_year, i, 1).strftime('%B').capitalize()
+            meses.append({'id': str(i).zfill(2), 'nombre': mes_nombre[i-1]}) # Usamos zfill(2) para el formato 01, 02...
             
         # 2. Preparar la lista de años (ej. últimos 3 años)
         years = [str(y) for y in range(current_year, current_year - 3, -1)]
@@ -1327,31 +1331,53 @@ def listar_documentos_pendientes(request):
     tipo_dte = request.GET.get('tipo_documento_dte')
     mes_filtro = request.GET.get('mes')
     year_filtro = request.GET.get('year')
-
-    print("tipo coduemnto DTE ", tipo_dte)
-
-    # Aquí DEBES incluir la lógica REAL para consultar la DB
-    # -------------------------------------------------------------------
-    # documentos_pendientes = []
-
+    
     documentos_pendientes = FacturaElectronica.objects.filter(
         tipo_dte__codigo=tipo_dte,
     )
-
-    print("documentos_pendientes --- ", documentos_pendientes)
-    print("documentos_pendientes --- ", documentos_pendientes[0].numero_control)
-
-    # -------------------------------------------------------------------
+    
+    print("mes_filtro", mes_filtro)
+    
+    # 1. 📅 Filtrar por AÑO
+    if year_filtro and year_filtro.isdigit():
+        try:
+            year_int = int(year_filtro)
+            documentos_pendientes = documentos_pendientes.filter(
+                fecha_emision__year=year_int
+            )
+            print(f"DEBUG: Aplicado filtro YEAR: {year_int}")
+        except ValueError:
+            # Esto maneja si isdigit() pasa pero int() falla (aunque es raro)
+            pass
+            
+    # 2. 🗓️ Filtrar por MES
+    if mes_filtro and mes_filtro.isdigit():
+        try:
+            mes_int = int(mes_filtro)
+            # Los meses en DB son 1-12. El filtro debe ser 1-12
+            if 1 <= mes_int <= 12: 
+                documentos_pendientes = documentos_pendientes.filter(
+                    fecha_emision__month=mes_int
+                )
+                print(f"DEBUG: Aplicado filtro MONTH: {mes_int}")
+            else:
+                print(f"DEBUG: Mes inválido: {mes_int}")
+        except ValueError:
+            pass
+    
+    # 3. Optimización y ordenamiento
+    documentos_pendientes = documentos_pendientes.prefetch_related(
+        'detalles',
+        'detalles__producto' 
+    ).order_by('-fecha_emision')
 
     context = {
-        # Necesitas pasar la lista de documentos a la plantilla del modal
         'documentos_pendientes': documentos_pendientes, 
         'tipo_dte': tipo_dte,
         'mes': mes_filtro,
         'year': year_filtro,
     }
     
-    # Renderiza la plantilla que contiene solo la tabla y el footer del modal
     return render(request, 'facturacion/generar/documentos_pendientes_modal.html', context)
 
 # --------------------------------------------------------------------
@@ -2027,10 +2053,17 @@ def firmar_factura_view(request, factura_id, interno=False):
     while intento <= intentos_max and not factura.firmado and intentos_modal <=2:
         print(f"Inicio Intento {intento} de {intentos_max}")
         token_data = Token_data.objects.filter(activado=True).first()
+        print(f"token_data:   {token_data} ")
+        
         if not token_data:
+            print(f"NO HAY TOKEN:   {token_data} ")
+            
             return JsonResponse({"error": "No hay token activo."}, status=401)
 
         if not os.path.exists(CERT_PATH):
+            print("sssssss: ")
+            print(f"sssssss: {CERT_PATH}")
+            
             return JsonResponse({"error": "Certificado no encontrado."}, status=400)
 
         try:
@@ -2054,8 +2087,12 @@ def firmar_factura_view(request, factura_id, interno=False):
             "passwordPri": emisor.clave_privada,
             "dteJson": dte_json_obj,
         }
+        
+        print("payload-------------- ", payload)
 
         try:
+            print("dentro try-------------- ")
+            
             response = requests.post(FIRMADOR_URL.url_endpoint, json=payload, headers={"Content-Type": CONTENT_TYPE.valor})
             print("Response envio: ", response)
             print("Response envio status: ", response.status_code)

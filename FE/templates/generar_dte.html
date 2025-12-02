@@ -574,6 +574,8 @@ function enforceClienteRequirement(totalPagar) {
   const ncInput = document.getElementById('numero_control_input');
 
   async function actualizarNumeroControl() {
+    console.log("change numero de control", )
+
     if (!tipoDteSelect) return;
     const tipo = tipoDteSelect.value;
     try {
@@ -645,13 +647,15 @@ function enforceClienteRequirement(totalPagar) {
     tbody.querySelectorAll('tr').forEach(tr=>{
       const idx = +tr.dataset.idx;
       const item = POS.items[idx];
+
+      console.log("ITEMS", item)
       tr.querySelector('.inp-precio').addEventListener('input', (e)=>{
         item.precio = parseFloat(e.target.value||'0')||0;
         tr.querySelector('.cel-total').textContent = fmt(lineTotal(item));
         calcTotals();
       });
       tr.querySelector('.inp-cant').addEventListener('input', (e)=>{
-        item.cantidad = Math.max(1, parseInt(e.target.value||'1',10));
+        item.cantidad = Math.max(1, parseInt(e.target.value||'80',10));
         tr.querySelector('.cel-total').textContent = fmt(lineTotal(item));
         calcTotals();
       });
@@ -1003,6 +1007,7 @@ function enforceClienteRequirement(totalPagar) {
   }
 
   form.addEventListener('submit', async (e) => {
+    e.preventDefault();
     if (window.POS.items.length === 0) {
       e.preventDefault();
       alert('Agrega al menos un producto.');
@@ -1048,6 +1053,8 @@ function enforceClienteRequirement(totalPagar) {
         credentials: 'same-origin'
       });
 
+      console.log("resp dentro de ngerar_dte ", resp)
+
       const ct = resp.headers.get('content-type') || '';
       const isJson = ct.includes('application/json');
       const data = isJson ? await resp.json() : null;
@@ -1078,11 +1085,7 @@ function enforceClienteRequirement(totalPagar) {
       }
 
       // 4) Si no fue JSON (HTML), fallback a submit normal
-      if (!isJson) {
-        setSubmitting(false); // mejor reactivamos por si el submit tarda
-        form.submit();
-        return;
-      }
+      
     } catch (err) {
       console.error('Submit error:', err);
       setSubmitting(false);
