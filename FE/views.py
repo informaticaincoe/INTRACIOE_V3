@@ -238,6 +238,13 @@ def facturacion_correcciones_home(request):
     """
     return render(request, 'facturacion/correcciones/home.html')
 
+@login_required
+def facturacion_generar_home(request):
+    """
+    Pantalla inicial para elegir el tipo de DTE a generar (Factura, CCF, Exportación, …).
+    Usa la plantilla: templates/facturacion/generar/home.html
+    """
+    return render(request, 'facturacion/generar/home.html')
 
 #vistas para actividad economica
 def cargar_actividades(request):
@@ -681,10 +688,15 @@ def generar_factura_view(request):
         )
 
         # prefill otra vez por si viene del carrito (protección)
-        prefill = None
+        # prefill = None
+
         if request.GET.get("from_cart") == "1":
-            prefill = request.session.pop("facturacion_prefill", None)
-            request.session.modified = True
+            
+            # print("CART ", request.GET.get("from_cart") )
+            # prefill = request.session.pop("facturacion_prefill", None)
+            # request.session.modified = True
+
+            print("prefill 22 ------ ", prefill )
 
         context = {
             "prefill_factura": prefill,
@@ -1259,6 +1271,88 @@ def generar_factura_view(request):
     print("DTE: Metodo no permitido")
     return JsonResponse({"error": "Método no permitido"}, status=405)
 # --------------------------------------------------------------------
+
+@login_required
+def select_tipo_facturas_mes_home(request):
+    """
+    Controlador maestro para el proceso de reenvío por lote.
+    1. Si no hay filtros GET: Muestra la pantalla de selección (Mes/Año + DTE).
+    2. Si hay filtros GET: Muestra la tabla de documentos pendientes (Listado).
+    """
+    tipo_dte = request.GET.get('tipo_documento_dte')
+    mes_filtro = request.GET.get('mes')
+    year_filtro = request.GET.get('year')
+
+    print("ifffffffffffffffff")
+    print("mes_filtro", mes_filtro)
+
+    
+    # === Lógica para mostrar la PANTALLA DE SELECCIÓN (Paso 1) ===
+    if not tipo_dte or not mes_filtro or not year_filtro:
+        
+        now = timezone.now()
+        current_year = now.year
+        current_month = now.month
+
+        print("current_month", current_month)
+        print("current_year", current_year)
+
+        
+        # 1. Preparar la lista de meses para el selector
+        meses = []
+        for i in range(1, 13):
+            mes_nombre = date(current_year, i, 1).strftime('%B').capitalize()
+            meses.append({'id': str(i).zfill(2), 'nombre': mes_nombre}) # Usamos zfill(2) para el formato 01, 02...
+            
+        # 2. Preparar la lista de años (ej. últimos 3 años)
+        years = [str(y) for y in range(current_year, current_year - 3, -1)]
+        print("meses", mes_filtro or str(current_month).zfill(2))
+
+        context = {
+            'meses': meses,
+            # Se usan los valores GET o los valores actuales como defecto
+            'current_mes': mes_filtro or str(current_month).zfill(2), 
+            'years': years,
+            'current_year': year_filtro or str(current_year), 
+            # Aquí podrías pasar la lista de todos los tipos de DTE disponibles para las tarjetas si fuera dinámico
+        }
+        
+        # Renderiza la plantilla de selección
+        return render(request, 'facturacion/generar/home_reenvio_mes.html', context)
+
+    
+@login_required
+def listar_documentos_pendientes(request):
+    # La vista DEBE usar request.GET para obtener los filtros enviados por AJAX
+    tipo_dte = request.GET.get('tipo_documento_dte')
+    mes_filtro = request.GET.get('mes')
+    year_filtro = request.GET.get('year')
+
+    print("tipo coduemnto DTE ", tipo_dte)
+
+    # Aquí DEBES incluir la lógica REAL para consultar la DB
+    # -------------------------------------------------------------------
+    # documentos_pendientes = []
+
+    documentos_pendientes = FacturaElectronica.objects.filter(
+        tipo_dte__codigo=tipo_dte,
+    )
+
+    print("documentos_pendientes --- ", documentos_pendientes)
+    print("documentos_pendientes --- ", documentos_pendientes[0].numero_control)
+
+    # -------------------------------------------------------------------
+
+    context = {
+        # Necesitas pasar la lista de documentos a la plantilla del modal
+        'documentos_pendientes': documentos_pendientes, 
+        'tipo_dte': tipo_dte,
+        'mes': mes_filtro,
+        'year': year_filtro,
+    }
+    
+    # Renderiza la plantilla que contiene solo la tabla y el footer del modal
+    return render(request, 'facturacion/generar/documentos_pendientes_modal.html', context)
 
 # --------------------------------------------------------------------
 # Asegura precisión suficiente en cálculos intermedios

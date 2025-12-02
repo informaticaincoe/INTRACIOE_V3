@@ -20,7 +20,12 @@ import openpyxl
 from openpyxl.utils import get_column_letter
 from django.http import HttpResponse
 from django.template.loader import render_to_string
-from weasyprint import HTML
+try:
+    from weasyprint import HTML
+    WEASYPRINT_OK = True
+except Exception as e:
+    HTML = None
+    WEASYPRINT_OK = False
 
 from django.utils.encoding import smart_str
 
@@ -767,10 +772,12 @@ def carrito_facturar(request):
             "cantidad": int(row.get("qty") or 1),
             "desc_pct": float(row.get("desc_pct") or 0),
             "iva_on": bool(row.get("iva_on")),
+            "stock": int(prod.stock)
         })
 
     if not items:
-        return HttpResponseBadRequest("Tu carrito está vacío.")
+        return JsonResponse({"ok": False, "error": "Tu carrito está vacío."}, status=400)
+
 
     request.session["facturacion_prefill"] = {
         "receptor_id": receptor.id,
@@ -778,7 +785,12 @@ def carrito_facturar(request):
     }
     request.session.modified = True
 
-    return redirect("/fe/generar/?from_cart=1")
+    print("ITEMSSS --- ", items)
+    # Devolvemos SOLO la URL; no hacemos redirect aquí
+    return JsonResponse({
+        "ok": True,
+        "redirect_url": "/fe/generar/?from_cart=1"
+    })
 
 
 @login_required

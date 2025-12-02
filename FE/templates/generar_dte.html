@@ -529,6 +529,7 @@ function enforceClienteRequirement(totalPagar) {
     apiUrl: "{% url 'api_productos' %}",
   };
 
+  
   // ======= Helpers / refs =======
   const $ = (id) => document.getElementById(id);
   const tbody       = $('tbody-items');
@@ -536,7 +537,8 @@ function enforceClienteRequirement(totalPagar) {
   const qtyInput    = $('cantidadProducto');
   const priceInput  = $('precioProducto');
   const ivaChk      = $('aplicaIvaProducto');
-
+  const btnAgregar  = $('btnAgregarProducto');
+   
   const sumSub  = $('sum_subtotal');
   const sumIva  = $('sum_iva');
   const sumDesc = $('sum_desc');
@@ -611,6 +613,9 @@ function enforceClienteRequirement(totalPagar) {
       hiddenItems.innerHTML = '';
       return;
     }
+    console.log("ITEMAAA ", items)
+
+    items.map((it)=> console.log("ITEMSSSS", it))
     tbody.innerHTML = items.map((it, i) => {
       const stockTxt = Number.isFinite(+it.stock) ? it.stock : '-';
       const stockClass = (Number(it.stock) <= 0) ? 'stock-low' : 'stock-ok';
@@ -768,7 +773,10 @@ function enforceClienteRequirement(totalPagar) {
         this.items = (data.results||[]).map(p=>{
           const precio = parseFloat(p.precio||'0')||0;
           const neto = p.con_iva ? (precio/1.13) : precio;
-          return { id:p.id, codigo:p.codigo, nombre:p.nombre, precio:neto, con_iva: !!p.con_iva, stock:p.stock, imagen:p.imagen||'' };
+          const stockValue = parseFloat(p.stock);
+          const stockFinal = Number.isFinite(stockValue) ? stockValue : 0;
+
+          return { id:p.id, codigo:p.codigo, nombre:p.nombre||p.descripcion, precio:neto, stock:stockFinal };
         });
         this.activeIndex = this.items.length ? 0 : -1;
         this.render(); this.show();
@@ -1108,7 +1116,8 @@ function enforceClienteRequirement(totalPagar) {
           precio: parseFloat(it.precio||'0')||0,
           cantidad: parseInt(it.cantidad||'1',10),
           desc_pct: parseFloat(it.desc_pct||'0')||0,
-          aplica_iva: !!it.iva_on, stock: null
+          aplica_iva: !!it.iva_on, stock: null,
+          stock: it.stock,
         });
       });
       if(typeof window.renderItems==='function') window.renderItems();

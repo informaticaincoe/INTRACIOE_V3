@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="container py-4">
+    <h4 class="mb-3">Paso 1: Seleccione Periodo y Tipo de DTE Pendiente</h4>
+
+    <form method="GET" id="filtro_form" class="card card-body mb-4">
+        <input type="hidden" name="tipo_documento_dte" id="hidden_tipo_dte_filter">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label" for="mes_filtro">Mes de Emisión</label>
+                <select id="mes_filtro" name="mes" class="form-select">
+                    {% for mes in meses %}
+                    <option value="{{ mes }}" {% if mes == current_mes %}selected{% endif %}>
+                        {{ mes.nombre }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="year_filtro">Año</label>
+                <select id="year_filtro" name="year" class="form-select">
+                    {% for year in years %}
+                    <option value="{{ year }}" {% if year == current_year %}selected{% endif %}>
+                        {{ year }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="button" class="btn btn-secondary w-100 disabled" id="btn_listar_documentos">
+                    Listar Documentos Pendientes
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <h5 class="mt-4 mb-3">Paso 2: Seleccione el Tipo de Documento</h5>
+    <div class="row g-3">
+        <div class="col-sm-6 col-lg-4">
+            <button class="card h-100 text-decoration-none card-dte-select" data-tipo-dte="01">
+                <div class="card-body d-flex align-items-center">
+                    <i class="bi bi-file-earmark-text fs-1 me-3"></i>
+                    <div>
+                        <div class="fw-semibold">Factura Pendiente</div>
+                        <div class="text-muted small">DTE 01</div>
+                    </div>
+                </div>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="reenvioListadoModal" tabindex="-1" aria-labelledby="reenvioListadoModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reenvioListadoModalLabel">
+                    Documentos Pendientes de Reenvío (DTE <span id="modal_tipo_dte"></span>)
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modal_listado_content">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando documentos...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    let reenvioModal;
+    const GENERAR_FACTURA_URL = "{% url 'generar_factura' %}";
+    let tipo_doc_selecionado;
+    let documentosSeleccionados = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log("addEventListener");
+        const dteCards = document.querySelectorAll('.card-dte-select');
+        const hiddenTipoDte = document.getElementById('hidden_tipo_dte_filter');
+        const btnListarDocumentos = document.getElementById('btn_listar_documentos');
+        const mesFiltro = document.getElementById('mes_filtro');
+        const yearFiltro = document.getElementById('year_filtro');
+        const modalListadoContent = document.getElementById('modal_listado_content');
+
+        // Instanciar modal (cuando ya tengas bootstrap.js cargado)
+        reenvioModal = new bootstrap.Modal( // Asigna a la variable declarada arriba
+            document.getElementById('reenvioListadoModal')
+        );
+
+        dteCards.forEach(card => {
+            card.addEventListener('click', (event) => {
+                const tipoDte = card.getAttribute('data-tipo-dte');
+                console.log("tipoDte ----- ", tipoDte);
+                tipo_doc_selecionado = tipoDte
+
+                hiddenTipoDte.value = tipoDte;
+                console.log("hiddenTipoDte ----- ", hiddenTipoDte);
+
+                dteCards.forEach(c => c.classList.remove('border-primary', 'border-3'));
+                card.classList.add('border', 'border-primary', 'border-2');
+                btnListarDocumentos.classList.add('btn', 'btn-primary');
+
+                btnListarDocumentos.textContent = `Listar DTEs ${tipoDte}`;
+                btnListarDocumentos.classList.remove('disabled');
+            });
+        });
+
+        btnListarDocumentos.addEventListener('click', (event) => {
+            if (btnListarDocumentos.classList.contains('disabled')) return;
+
+            const tipoDte = hiddenTipoDte.value;
+            const mes = mesFiltro.value;
+            const year = yearFiltro.value;
+
+            modalListadoContent.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando documentos...</p>
+                </div>
+            `;
+            reenvioModal.show();
+
+            const url = `/fe/documentos_pendientes/?${new URLSearchParams({
+                tipo_documento_dte: tipoDte,
+                mes: mes,
+                year: year
+            })}`;
+
+            // 3. Realizar la llamada FETCH (AJAX)
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error al obtener la lista de documentos.');
+                    }
+                    return response.text();
+                })
+                .then(htmlContent => {
+                    // 4. Inyectar el HTML de la respuesta en el cuerpo del modal
+                    modalListadoContent.innerHTML = htmlContent;
+
+                    // 5. Configurar eventos de los checkboxes (siempre después de inyectar el HTML)
+                    setupModalEvents();
+                })
+                .catch(error => {
+                    console.error('FETCH ERROR:', error);
+                    modalListadoContent.innerHTML = `<p class="alert alert-danger text-center">Error al cargar el listado: ${error.message}</p>`;
+                });
+        });
+    });
+
+    function setupModalEvents() {
+        const selectAll = document.getElementById('select_all_docs');
+        const checkboxes = document.querySelectorAll('.select-doc');
+        const btnConsolidar = document.getElementById('btn_consolidar_datos');
+
+        // 1. Habilitar/Deshabilitar botón Consolidar
+        const updateConsolidarButton = () => {
+            const checkedCount = document.querySelectorAll('.select-doc:checked').length;
+            btnConsolidar.disabled = checkedCount === 0;
+        };
+
+        // 2. Control de 'Seleccionar Todos'
+        if (selectAll) {
+            selectAll.addEventListener('change', () => {
+                checkboxes.forEach(cb => cb.checked = selectAll.checked);
+                updateConsolidarButton();
+            });
+        }
+
+        // 3. Control de Checkbox individual
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', updateConsolidarButton);
+        });
+
+        // 4. Lógica de Consolidación y PRUEBA DE DATOS
+        if (btnConsolidar) {
+            btnConsolidar.addEventListener('click', () => {
+                const idsQuery = documentosSeleccionados.map(id => `docs=${id}`).join('&');
+                const urlRedireccion = `${GENERAR_FACTURA_URL}?tipo_documento_dte=${tipo_doc_selecionado}&${idsQuery}`;
+
+                console.log("select")
+                console.log("idsQuery ------ ", idsQuery)
+                console.log("urlRedireccion ------ ", urlRedireccion)
+
+                const checkedDocs = document.querySelectorAll('.select-doc:checked');
+                console.log("checkedDocs --- ", checkedDocs)
+
+                checkedDocs.forEach(cb => {
+                    const docId = cb.value;
+
+                    documentosSeleccionados.push(docId);
+                });
+
+
+                // ⚠️ MOSTRAR DATOS CONSOLIDADOS (Simulación de la regeneración/consolidación)
+                console.log("=== IDs de Facturas Seleccionadas ===");
+                console.log(documentosSeleccionados,);
+
+                // Mensaje visible para el usuario (simulando el PRINT solicitado)
+                // alert('Datos consolidados listos. Revise la consola (F12) para ver los IDs seleccionados y los detalles de los productos.');
+
+                // Aquí es donde iría la llamada AJAX para enviar 'documentosSeleccionados' 
+                // a otra vista de Django para el procesamiento final.
+
+                // href="{% url 'generar_factura' %}?tipo_documento_dte=01"
+
+                // window.location.href = urlRedireccion;
+            });
+        }
+    }
+</script>
+{% endblock %}
+{% endblock %}
