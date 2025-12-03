@@ -728,7 +728,6 @@ def consolidar_y_redirigir_a_dte(request):
                     "precio": precio_unitario_float,
                     "nombre": prod.descripcion, 
                     "codigo": prod.codigo,
-                    # Puedes agregar aquí otros campos necesarios para el formulario DTE:
                     "iva_on": False,
                     "desc_pct": "0", 
                 }
@@ -739,6 +738,7 @@ def consolidar_y_redirigir_a_dte(request):
         'receptor_id': receptor_obj.id,
         'tipo_dte': tipo_dte_codigo,
         'items': list(productos_consolidados.values()),
+        'consolidado': True
         # Puedes incluir otros campos de resumen aquí si los necesitas
     }
     

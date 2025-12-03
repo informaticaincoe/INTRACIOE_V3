@@ -1222,6 +1222,11 @@ def generar_factura_view(request):
                     "puede_contingencia": False,
                     "enviar_mh_url": reverse('enviar_factura_hacienda', args=[factura.id]),
                 }, status=200)
+            
+            
+            
+            
+            
 
             # ---------- ENVÍO ----------
             print("DTE: ==== INICIO ENVÍO a MH (función existente) ====")
@@ -1334,9 +1339,10 @@ def listar_documentos_pendientes(request):
     
     documentos_pendientes = FacturaElectronica.objects.filter(
         tipo_dte__codigo=tipo_dte,
+        sello_recepcion=None
     )
-    
-    print("mes_filtro", mes_filtro)
+    print("Lista facturas pendientes de envio: ", documentos_pendientes)
+    print("Mes giltr", mes_filtro)
     
     # 1. 📅 Filtrar por AÑO
     if year_filtro and year_filtro.isdigit():
@@ -2212,7 +2218,7 @@ def firmar_factura_view(request, factura_id, interno=False):
 
 @csrf_exempt
 @require_POST
-def enviar_factura_hacienda_view(request, factura_id, uso_interno=False):
+def enviar_factura_hacienda_view(request, factura_id, uso_interno=False, consolidacion=False):
     HACIENDA_URL_PROD = get_config("hacienda_url_prod", campo="url_endpoint")
     #Bloquear creacion de eventos por reintentos
     crear_evento = request.GET.get('crear_evento', 'false').lower() == 'true'
@@ -2442,7 +2448,6 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False):
                     # crear el movimeinto de inventario
                     # Se asume que la factura tiene una relación a sus detalles, 
                     # donde se encuentran los productos y cantidades
-
                     for detalle in factura.detalles.all():
                         if detalle is not None and detalle.producto.almacenes.exists():
                             almacen = detalle.producto.almacenes.first() or Almacen.objects.first()
@@ -2453,7 +2458,7 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False):
                                 cantidad=detalle.cantidad,
                                 referencia=f"Factura {factura.codigo_generacion}",
                             )
-                        # ¡El stock baja solo gracias al signal!
+                            # ¡El stock baja solo gracias al signal!
                         
                     #Si la factura fue recibida por mh detener los eventos en contingencia activos
                     finalizar_contigencia_view(request)
@@ -3101,26 +3106,15 @@ def enviar_factura_invalidacion_hacienda_view(request, factura_id):
                     estado="Aprobada",
                     usuario=request.user.username if request.user.is_authenticated else None
                 )
-                for det in factura.detalles.all():
+                
+                for det in factura.detalles.all():                    
                     DetalleDevolucionVenta.objects.create(
                         devolucion=devolucion,
                         producto=det.producto,
                         cantidad=det.cantidad,
                         motivo_detalle="Reingreso automático por invalidación"
                     )
-                    if det and det.producto.almacenes.exists():
-                        almacen = det.producto.almacenes.first() or Almacen.objects.first()
-                        MovimientoInventario.objects.create(
-                            producto=det.producto,
-                            almacen=almacen,
-                            tipo='Entrada',
-                            cantidad=det.cantidad,
-                            referencia=f"Invalidación Factura {factura.codigo_generacion}",
-                        )
-                    # Ajuste de stock
-                    Producto.objects.filter(pk=det.producto.pk).update(
-                        stock=F('stock') + det.cantidad
-                    )
+                    
             except Exception as inv_ex:
                 print("ANU: WARN reingreso inventario:", inv_ex)
 
@@ -3625,6 +3619,8 @@ def invalidar_varias_dte_view(request):
                                     cantidad=detalle.cantidad,
                                     referencia=f"Reingreso invalidación Factura {factura.numero_control}"
                                 )
+                                
+                                print("INVALIDAR VARIAS DTE " )
                                 # Ajuste de stock atómico
                                 Producto.objects.filter(pk=detalle.producto.pk).update(
                                     stock=F('stock') + detalle.cantidad
@@ -4522,6 +4518,8 @@ def generar_documento_ajuste_view(request):
                             cantidad=det.cantidad,
                             referencia=f"Reingreso NC {factura.numero_control}"
                         )
+                    print("DEVOLUCION DESDE VIEW AJUSTE")
+                        
                     # 2c) Ajuste de stock atómico
                     Producto.objects.filter(pk=det.producto.pk).update(
                         stock=F('stock') + det.cantidad

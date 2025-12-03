@@ -2332,6 +2332,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
                             cantidad=det.cantidad,
                             referencia=f"Reingreso NC {factura.numero_control}"
                         )
+                    print("DEVOLUCION DESDE API VIEW")
                     # 2c) Ajuste de stock atómico
                     Producto.objects.filter(pk=det.producto.pk).update(
                         stock=F('stock') + det.cantidad
