@@ -63,6 +63,9 @@ from AUTENTICACION.models import ConfiguracionServidor, UsuarioEmisor
 from django.db.utils import OperationalError
 from django.core.exceptions import ObjectDoesNotExist
 
+import json
+from django.core.serializers.json import DjangoJSONEncoder
+
 try:
     FIRMADOR_URL = ConfiguracionServidor.objects.filter(clave="firmador").first()
 except (OperationalError, ObjectDoesNotExist):
@@ -688,18 +691,7 @@ def generar_factura_view(request):
             estab=(emisor_obj.codigo_establecimiento or "0000") if emisor_obj else "0000",
             pv=(emisor_obj.codigo_punto_venta or "0001") if emisor_obj else "0001",
         )
-
-        # prefill otra vez por si viene del carrito (protección)
-        # prefill = None
-
-        if request.GET.get("from_cart") == "1":
-            
-            # print("CART ", request.GET.get("from_cart") )
-            # prefill = request.session.pop("facturacion_prefill", None)
-            # request.session.modified = True
-
-            print("prefill 22 ------ ", prefill )
-
+        
         context = {
             "prefill_factura": prefill,
             "numero_control": nuevo_numero,
@@ -1336,13 +1328,25 @@ def listar_documentos_pendientes(request):
     tipo_dte = request.GET.get('tipo_documento_dte')
     mes_filtro = request.GET.get('mes')
     year_filtro = request.GET.get('year')
+    cliente_filtro = request.GET.get('cliente_filtro')
     
     documentos_pendientes = FacturaElectronica.objects.filter(
         tipo_dte__codigo=tipo_dte,
         sello_recepcion=None
     )
+    
+    clientes_disponibles = documentos_pendientes.values('dtereceptor__num_documento', 'dtereceptor__nombre').distinct()
+    
+    clientes_list = [
+        {'num_documento': c['dtereceptor__num_documento'], 'nombre': c['dtereceptor__nombre']}
+        for c in clientes_disponibles if c['dtereceptor__num_documento'] is not None and c['dtereceptor__nombre'] is not None
+    ]
+    
+    print(" >>> CLIENTES DISPONIBLES ", clientes_disponibles)
+    print(" >>> CLIENTES clientes_list ", clientes_list)
+    
     print("Lista facturas pendientes de envio: ", documentos_pendientes)
-    print("Mes giltr", mes_filtro)
+    print("Mes filtro", mes_filtro)
     
     # 1. 📅 Filtrar por AÑO
     if year_filtro and year_filtro.isdigit():
@@ -1370,6 +1374,11 @@ def listar_documentos_pendientes(request):
                 print(f"DEBUG: Mes inválido: {mes_int}")
         except ValueError:
             pass
+    if cliente_filtro:
+        documentos_pendientes = documentos_pendientes.filter(
+            dtereceptor__num_documento=cliente_filtro
+        )
+        print(f"DEBUG: Aplicado filtro CLIENTE: {cliente_filtro}")
     
     # 3. Optimización y ordenamiento
     documentos_pendientes = documentos_pendientes.prefetch_related(
@@ -1378,9 +1387,11 @@ def listar_documentos_pendientes(request):
     ).order_by('-fecha_emision')
 
     context = {
-        'documentos_pendientes': documentos_pendientes, 
+        'documentos_pendientes': documentos_pendientes, # <--- Usar la lista serializada
         'tipo_dte': tipo_dte,
         'mes': mes_filtro,
+        'clientes_list': clientes_list,
+        'cliente_seleccionado': cliente_filtro,
         'year': year_filtro,
     }
     
@@ -1673,8 +1684,7 @@ def generar_json(
         if saldo_favor is not None and saldo_favor != "" and saldo_favor > 0:
             condicion_operacion_codigo = 1
 
-        pagos = _normaliza_pagos(formas_pago or getattr(factura, "formas_Pago", []),
-                                 condicion_operacion_codigo, total_a_pagar)
+        pagos = _normaliza_pagos(formas_pago or getattr(factura, "formas_Pago", []), condicion_operacion_codigo, total_a_pagar)
 
         json_resumen = {
             "totalNoSuj":          float(_q2(total_no_suj)),

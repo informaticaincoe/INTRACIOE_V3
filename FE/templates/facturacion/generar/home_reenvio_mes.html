@@ -2,22 +2,25 @@
 {% load static %}
 {% block content %}
 <div class="container py-4">
-    <h4 class="mb-3">Paso 1: Seleccione Periodo y Tipo de DTE Pendiente</h4>
+    <h4 class="mb-4">Consolidación</h4>
+    <h5 class="mb-3">Paso 1: Seleccione el periodo de consolidación</h5>
 
-    <form method="GET" id="filtro_form" class="card card-body mb-4">
+    <form method="GET" id="filtro_form" class="mb-5 mt-4">
         <input type="hidden" name="tipo_documento_dte" id="hidden_tipo_dte_filter">
-        <div class="row g-3 align-items-end">
-            <div class="col-md-4">
+        <div class="row g-3 align-items-end w-100">
+            <div class="col-md-4 flex-fill">
                 <label class="form-label" for="mes_filtro">Mes de Emisión</label>
                 <select id="mes_filtro" name="mes" class="form-select">
                     {% for mes in meses %}
-                    <option value="{{ mes.id }}" {% if mes.id == current_mes_id %}selected{% endif %}>
-                        {{ mes.nombre }}
-                    </option>
+                        <option value="{{ mes.id }}" {% if mes.id == current_mes_id %}selected{% endif %}>
+                            {{ mes.nombre }}
+                        </option>
                     {% endfor %}
+                    
                 </select>
             </div>
-            <div class="col-md-4">
+            
+            <div class="col-md-4 flex-fill">
                 <label class="form-label" for="year_filtro">Año</label>
                 <select id="year_filtro" name="year" class="form-select">
                     {% for year in years %}
@@ -27,27 +30,43 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-4">
-                <button type="button" class="btn btn-secondary w-100 disabled" id="btn_listar_documentos">
-                    Listar Documentos Pendientes
-                </button>
-            </div>
         </div>
     </form>
 
     <h5 class="mt-4 mb-3">Paso 2: Seleccione el Tipo de Documento</h5>
-    <div class="row g-3">
-        <div class="col-sm-6 col-lg-4">
-            <button class="card h-100 text-decoration-none card-dte-select" data-tipo-dte="01">
-                <div class="card-body d-flex align-items-center">
-                    <i class="bi bi-file-earmark-text fs-1 me-3"></i>
-                    <div>
-                        <div class="fw-semibold">Factura Pendiente</div>
-                        <div class="text-muted small">DTE 01</div>
+    <div class="d-flex flex-column flex-md-row gap-4 mb-5">
+        <div class="flex-fill">
+            <div> 
+                <button class="card h-100 text-decoration-none card-dte-select border w-100" data-tipo-dte="01">
+                    <div class="card-body d-flex align-items-center">
+                        <i class="bi bi-file-earmark-text fs-1 me-3"></i>
+                        <div>
+                            <div class="fw-semibold text-start">Facturas consumidor final</div>
+                            <div class="text-muted small text-start">DTE 01</div>
+                        </div>
                     </div>
-                </div>
-            </button>
+                </button>
+            </div>
         </div>
+
+        <div class="flex-fill">
+            <div>
+                <button class="card h-100 text-decoration-none card-dte-select border w-100" data-tipo-dte="03">
+                    <div class="card-body d-flex align-items-center">
+                        <i class="bi bi-file-earmark-text fs-1 me-3"></i>
+                        <div>
+                            <div class="fw-semibold text-start">Credito Fiscal</div>
+                            <div class="text-muted small text-start">DTE 03</div>
+                        </div>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mt-4">
+        <button type="button" class="btn btn-secondary w-100 disabled" id="btn_listar_documentos">
+            Listar Documentos Pendientes
+        </button>
     </div>
 </div>
 
@@ -81,7 +100,7 @@
     let documentosSeleccionados = [];
 
     document.addEventListener('DOMContentLoaded', () => {
-        console.log("addEventListener");
+        console.log("addEventListener DOMContentLoaded");
         const dteCards = document.querySelectorAll('.card-dte-select');
         const hiddenTipoDte = document.getElementById('hidden_tipo_dte_filter');
         const btnListarDocumentos = document.getElementById('btn_listar_documentos');
@@ -89,17 +108,17 @@
         const yearFiltro = document.getElementById('year_filtro');
         const modalListadoContent = document.getElementById('modal_listado_content');
 
-        // Instanciar modal (cuando ya tengas bootstrap.js cargado)
-        reenvioModal = new bootstrap.Modal( // Asigna a la variable declarada arriba
+        // Instanciar modal
+        reenvioModal = new bootstrap.Modal(
             document.getElementById('reenvioListadoModal')
         );
 
+        // ========= Selección de tipo DTE =========
         dteCards.forEach(card => {
             card.addEventListener('click', (event) => {
                 const tipoDte = card.getAttribute('data-tipo-dte');
                 console.log("tipoDte ----- ", tipoDte);
-                tipo_doc_selecionado = tipoDte
-
+                tipo_doc_selecionado = tipoDte;
                 hiddenTipoDte.value = tipoDte;
 
                 dteCards.forEach(c => c.classList.remove('border-primary', 'border-3'));
@@ -111,18 +130,13 @@
             });
         });
 
+        // ========= Botón "Listar Documentos Pendientes" =========
         btnListarDocumentos.addEventListener('click', (event) => {
             if (btnListarDocumentos.classList.contains('disabled')) return;
 
             const tipoDte = hiddenTipoDte.value;
             const mes = mesFiltro.value;
             const year = yearFiltro.value;
-{% comment %} 
-            MONTH_MAP = {
-                "enero": 1, "febrero": 2, "marzo": 3, "abril": 4, "mayo": 5, "junio": 6,
-                "julio": 7, "agosto": 8, "septiembre": 9, "octubre": 10, "noviembre": 11, "diciembre": 12} {% endcomment %}
-
-            
 
             modalListadoContent.innerHTML = `
                 <div class="text-center py-5">
@@ -141,7 +155,8 @@
                 year: year
             })}`;
 
-            // 3. Realizar la llamada FETCH (AJAX)
+            console.log("URL inicial listado documentos:", url);
+
             fetch(url)
                 .then(response => {
                     if (!response.ok) {
@@ -150,31 +165,84 @@
                     return response.text();
                 })
                 .then(htmlContent => {
-                    // 4. Inyectar el HTML de la respuesta en el cuerpo del modal
                     modalListadoContent.innerHTML = htmlContent;
-
-                    // 5. Configurar eventos de los checkboxes (siempre después de inyectar el HTML)
-                    setupModalEvents();
+                    setupModalEvents();   // 👈 muy importante
                 })
                 .catch(error => {
                     console.error('FETCH ERROR:', error);
                     modalListadoContent.innerHTML = `<p class="alert alert-danger text-center">Error al cargar el listado: ${error.message}</p>`;
                 });
         });
+
+        // ========= Delegación: cambio de cliente_filtro dentro del modal =========
+        document.addEventListener('change', (event) => {
+            if (event.target && event.target.id === 'clientes_filtro') {
+                const cliente = event.target.value;
+                console.log('🟡 Cambio de clientes_filtro =', cliente);
+                recargarDocumentos(cliente);
+            }
+        });
+
+        // ========= Función para recargar documentos al cambiar de cliente =========
+        function recargarDocumentos(cliente_filtro) {
+            const tipoDte = hiddenTipoDte.value || tipo_doc_selecionado || '';
+            const mes = mesFiltro.value;
+            const year = yearFiltro.value;
+
+            const params = new URLSearchParams({
+                tipo_documento_dte: tipoDte,
+                mes: mes,
+                year: year,
+            });
+            if (cliente_filtro) {
+                params.append('cliente_filtro', cliente_filtro);
+            }
+
+            const url = `/fe/documentos_pendientes/?${params.toString()}`;
+            console.log('🔄 recargarDocumentos URL:', url);
+
+            // puedes mostrar nuevamente el spinner mientras se recarga
+            modalListadoContent.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando documentos filtrados...</p>
+                </div>
+            `;
+
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error al obtener la lista de documentos (filtro cliente).');
+                    }
+                    return response.text();
+                })
+                .then(htmlContent => {
+                    modalListadoContent.innerHTML = htmlContent;
+                    console.log('✅ HTML del modal recargado con filtro cliente:', cliente_filtro);
+                    setupModalEvents();   // 👈 volver a enganchar los checkboxes
+                })
+                .catch(error => {
+                    console.error('FETCH ERROR (cliente_filtro):', error);
+                    modalListadoContent.innerHTML = `<p class="alert alert-danger text-center">Error al recargar documentos: ${error.message}</p>`;
+                });
+        }
     });
 
+    // ========= Eventos del contenido del modal (checkboxes / botón consolidar) =========
     function setupModalEvents() {
         const selectAll = document.getElementById('select_all_docs');
         const checkboxes = document.querySelectorAll('.select-doc');
         const btnConsolidar = document.getElementById('btn_consolidar_datos');
 
-        // 1. Habilitar/Deshabilitar botón Consolidar
         const updateConsolidarButton = () => {
             const checkedCount = document.querySelectorAll('.select-doc:checked').length;
-            btnConsolidar.disabled = checkedCount === 0;
+            if (btnConsolidar) {
+                btnConsolidar.disabled = checkedCount === 0;
+            }
         };
 
-        // 2. Control de 'Seleccionar Todos'
         if (selectAll) {
             selectAll.addEventListener('change', () => {
                 checkboxes.forEach(cb => cb.checked = selectAll.checked);
@@ -182,62 +250,57 @@
             });
         }
 
-        // 3. Control de Checkbox individual
         checkboxes.forEach(cb => {
             cb.addEventListener('change', updateConsolidarButton);
         });
 
-        // 4. Lógica de Consolidación y PRUEBA DE DATOS
         if (btnConsolidar) {
-    btnConsolidar.addEventListener('click', () => {
-        let documentosSeleccionados = [];
-        
-        const checkedDocs = document.querySelectorAll('.select-doc:checked');
-        
-        checkedDocs.forEach(cb => {
-            documentosSeleccionados.push(cb.value); // Solo guarda los IDs de la Factura
-        });
+            btnConsolidar.addEventListener('click', () => {
+                let documentosSeleccionados = [];
+                const checkedDocs = document.querySelectorAll('.select-doc:checked');
 
-        if (documentosSeleccionados.length === 0) {
-            alert('Por favor, selecciona al menos un documento.');
-            return;
+                checkedDocs.forEach(cb => {
+                    documentosSeleccionados.push(cb.value);
+                });
+
+                if (documentosSeleccionados.length === 0) {
+                    alert('Por favor, selecciona al menos un documento.');
+                    return;
+                }
+
+                const CONSOLIDAR_URL = "{% url 'consolidar_y_redirigir_a_dte' %}";
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                fetch(CONSOLIDAR_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: new URLSearchParams({
+                        'documentos_ids': documentosSeleccionados.join(','),
+                        'tipo_dte': tipo_doc_selecionado
+                    })
+                })
+                .then(async response => {
+                    let data;
+                    try {
+                        data = await response.json();
+                    } catch (e) {
+                        throw new Error(`Respuesta inválida o error HTTP: ${response.statusText}`);
+                    }
+                    if (response.ok && data.ok && data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    } else {
+                        throw new Error(data.error || 'Fallo desconocido en la consolidación.');
+                    }
+                })
+                .catch(error => {
+                    console.error('ERROR de Consolidación:', error);
+                    alert(`Error al consolidar: ${error.message}`);
+                });
+            });
         }
-
-        // 🎯 Paso 1: Usar la nueva URL de consolidación
-        const CONSOLIDAR_URL = "{% url 'consolidar_y_redirigir_a_dte' %}"; 
-        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value; 
-
-        fetch(CONSOLIDAR_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': csrftoken 
-            },
-            body: new URLSearchParams({
-                'documentos_ids': documentosSeleccionados.join(','), 
-                'tipo_dte': tipo_doc_selecionado 
-            })
-        })
-        .then(async response => {
-            let data;
-            try {
-                data = await response.json();
-            } catch (e) {
-                throw new Error(`Respuesta inválida o error HTTP: ${response.statusText}`); 
-            }
-            if (response.ok && data.ok && data.redirect_url) {
-                // Éxito: Redirigimos directamente a generar_factura_view
-                window.location.href = data.redirect_url; 
-            } else {
-                throw new Error(data.error || 'Fallo desconocido en la consolidación.');
-            }
-        })
-        .catch(error => {
-            console.error('ERROR de Consolidación:', error);
-            alert(`Error al consolidar: ${error.message}`);
-        });
-    });
-}
     }
 </script>
 {% endblock %}

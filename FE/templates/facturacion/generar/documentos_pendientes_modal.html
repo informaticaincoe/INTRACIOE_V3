@@ -1,11 +1,31 @@
 <form id="form_documentos_a_consolidar">
     <div class="table-responsive">
+        {% if tipo_dte == "03" %}
+            <div class="d-flex mt-1 mb-4 gap-2">
+                <p class="m-0 p-0">Cliente:</p>
+                <select id="clientes_filtro" name="cliente_filtro" class="form-select">
+                    <option value="">-- Todos los Clientes --</option> 
+                    {% for cliente in clientes_list %}
+                        <option value="{{ cliente.num_documento }}"
+                                {% if cliente.num_documento == cliente_seleccionado %}selected{% endif %}> 
+                            {{ cliente.nombre }}
+                        </option>
+                    {% endfor %}  
+                </select>
+            </div>
+        {% endif %}
         <table class="table table-striped table-hover align-middle">
             <thead>
                 <tr>
-                    <th scope="col">
-                        <input type="checkbox" id="select_all_docs" class="form-check-input">
-                    </th>
+                    {% if tipo_dte == "03" %}
+                        <th scope="col">
+                            Seleccionar
+                        </th>
+                    {% else %}
+                        <th scope="col">
+                            <input type="checkbox" id="select_all_docs" class="form-check-input">
+                        </th>
+                    {% endif %}
                     <th scope="col">DTE</th>
                     <th scope="col">Receptor</th>
                     <th scope="col">Monto</th>
@@ -15,35 +35,47 @@
             </thead>
             <tbody>
                 {% for detalle in doc.detalles.all %} 
-                <tr class="list-group-item d-flex justify-content-between align-items-center py-1">
-                    <td>
-                        <strong>{{ detalle.producto.descripcion }}</strong> 
-                        <small class="text-muted">({{ detalle.cantidad|floatformat:0 }} x ${{ detalle.precio_unitario|floatformat:2 }})</small>
-                    </div>
-                    {% comment %} <span class="badge bg-primary rounded-pill">Total Línea: $N/A</span>  {% endcomment %}
-                </li>
-            {% endfor %}
-                {% for doc in documentos_pendientes %}
-                <tr data-documento-id="{{ doc.id }}">
-                    <td>
-                        <input type="checkbox"
-                               name="documentos_seleccionados"
-                               value="{{ doc.id }}"
-                               data-documento-detalles={{doc.detalles.all}}
-                               class="form-check-input select-doc">
-                    </td>
-                    <td>{{ doc.numero_control }}</td>
-                    <td>{{ doc.dtereceptor }}</td>
-                    <td>${{ doc.total_pagar|floatformat:2 }}</td>
-                    <td>{{ doc.fecha_emision|date:"Y-m-d" }}</td>
-                    <td><span class="badge bg-warning">{{ doc.estado }}</span></td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" class="text-center text-muted">
-                        No se encontraron documentos pendientes para el filtro seleccionado.
-                    </td>
-                </tr>
+                    <tr class="list-group-item d-flex justify-content-between align-items-center py-1">
+                        <td>
+                            <strong>{{ detalle.producto.descripcion }}</strong> 
+                            <small class="text-muted">({{ detalle.cantidad|floatformat:0 }} x ${{ detalle.precio_unitario|floatformat:2 }})</small>
+                        </td>
+                        {% comment %} <span class="badge bg-primary rounded-pill">Total Línea: $N/A</span>  {% endcomment %}
+                    </tr>
+                    {% endfor %}
+                    {% for doc in documentos_pendientes %}
+                    <tr data-documento-id="{{ doc.id }}">
+                        {% if tipo_dte == "03" %}
+                            <td>
+                                <input type="radio"
+                                    name="documentos_seleccionados"
+                                    value="{{ doc.id }}"
+                                    data-documento-detalles="{{ doc.detalles_json|safe }}"
+                                    class="form-check-input select-doc"
+                                >
+                            </td>
+                        {% else %}
+                            <td>
+                                <input type="checkbox"
+                                    name="documentos_seleccionados"
+                                    value="{{ doc.id }}"
+                                    data-documento-detalles="{{ doc.detalles_json|safe }}"
+                                    class="form-check-input select-doc"
+                                >
+                            </td>
+                        {% endif %}
+                        <td>{{ doc.numero_control }}</td>
+                        <td>{{ doc.dtereceptor }}</td>
+                        <td>${{ doc.total_pagar|floatformat:2 }}</td>
+                        <td>{{ doc.fecha_emision|date:"Y-m-d" }}</td>
+                        <td><span class="badge bg-warning">{{ doc.estado }}</span></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">
+                            No se encontraron documentos pendientes para el filtro seleccionado.
+                        </td>
+                    </tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -56,3 +88,54 @@
         <i class="bi bi-file-earmark-diff me-2"></i> Consolidar Datos (Probar)
     </button>
 </div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Usar un contenedor estático que NO se recargue con el AJAX, por ejemplo, el modal principal o document
+    const contenedorEstatico = document.getElementById('contenedor_principal_del_modal'); // REEMPLAZAR con el ID del contenedor del modal que NO se recarga
+    const TIPO_DTE_INICIAL = '{{ tipo_dte }}'; 
+
+    if (!contenedorEstatico) {
+        console.error("Contenedor estático no encontrado.");
+        return;
+    }
+
+    // 🌟 1. Delegar el evento 'change'
+    contenedorEstatico.addEventListener('change', (event) => {
+        // Verificar si el elemento que disparó el evento es el select del cliente
+        if (event.target && event.target.id === 'clientes_filtro') {
+            recargarDocumentos(event.target.value);
+        }
+    });
+
+    function recargarDocumentos(cliente_filtro) {
+        // Obtener otros filtros (tipoDte, mes, year) como se explicó arriba
+        const tipoDte = TIPO_DTE_INICIAL;
+        const mes = document.getElementById('id_mes_filtro_externo')?.value || ''; 
+        const year = document.getElementById('id_year_filtro_externo')?.value || '';
+        
+        const url = `/fe/documentos_pendientes/?${new URLSearchParams({
+            tipo_documento_dte: tipoDte,
+            cliente_filtro: cliente_filtro, // Usar el valor pasado
+            mes: mes,
+            year: year
+        })}`;
+        
+        console.log("URL de recarga:", url);
+        
+        fetch(url)
+            .then(response => {
+                if (!response.ok) throw new Error('Error al obtener la lista de documentos.');
+                return response.text();
+            })
+            .then(htmlContent => {
+                // Inyectar el HTML de la respuesta en el contenedor que contiene la tabla
+                document.getElementById('id_del_contenedor_modal_body').innerHTML = htmlContent; 
+            })
+            .catch(error => {
+                console.error('FETCH ERROR:', error);
+            });
+    }
+});
+</script>

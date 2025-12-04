@@ -679,10 +679,11 @@ def consolidar_y_redirigir_a_dte(request):
     """
     documentos_ids_str = request.POST.get("documentos_ids")
     tipo_dte_codigo = request.POST.get("tipo_dte")
+    
+    print(f"TIPO DET codigo en consolidacion >>>>> {tipo_dte_codigo}")
 
     if not documentos_ids_str:
-        return HttpResponseBadRequest(json.dumps({'error': "No se seleccionaron documentos."}), 
-                                      content_type="application/json")
+        return HttpResponseBadRequest(json.dumps({'error': "No se seleccionaron documentos."}), content_type="application/json")
 
     documentos_ids = [int(id_str) for id_str in documentos_ids_str.split(',') if id_str.isdigit()]
 
@@ -696,8 +697,7 @@ def consolidar_y_redirigir_a_dte(request):
     )
 
     if not facturas_seleccionadas.exists():
-        return HttpResponseBadRequest(json.dumps({'error': "No se encontraron facturas válidas."}), 
-                                      content_type="application/json")
+        return HttpResponseBadRequest(json.dumps({'error': "No se encontraron facturas válidas."}), content_type="application/json")
     
     # 2. Definir el Receptor y consolidar productos
     primer_factura = facturas_seleccionadas.first()
@@ -732,7 +732,6 @@ def consolidar_y_redirigir_a_dte(request):
                     "desc_pct": "0", 
                 }
                 
-
     # 3. Construir la estructura 'prefill' (simulando el resultado de un carrito facturado)
     prefill_data = {
         'receptor_id': receptor_obj.id,
