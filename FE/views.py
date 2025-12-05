@@ -665,8 +665,8 @@ def generar_factura_view(request):
     req_id = str(uuid.uuid4())[:8]
     print("DTE: ====== INICIO generar_factura_view ======")
     print("DTE: method=", request.method, " content_type=", request.content_type)
-
-    print(f"DTE[{req_id}]: ....")
+    
+    
     if request.method == 'GET':
         prefill = None
         if request.GET.get("from_cart") == "1":
@@ -674,7 +674,11 @@ def generar_factura_view(request):
             request.session.modified = True
             print("DTE: prefill recuperado =", prefill)
 
-        tipo_dte = globals().get('tipo_documento_dte', '01')
+        # tipo_dte = globals().get('tipo_documento_dte', '01')
+        tipo_dte = request.GET.get("tipo_documento_dte", '01')
+        
+        
+        
         print("DTE: GET tipo_dte=", tipo_dte)
         if not tipo_dte:
             messages.error(request, "No se ha especificado el tipo de documento.")
@@ -716,13 +720,15 @@ def generar_factura_view(request):
             "formasPago": FormasPago.objects.all(),
             "tipoGenDocumentos": TipoGeneracionDocumento.objects.all(),
             "prefill_factura": json.dumps(prefill, ensure_ascii=False) if prefill else None,
+            "dte_select": tipo_dte
         }
         print("DTE: Renderizar template generar_dte.html")
+        print(f"DTE: Renderizar template generar_dte.html {context}")
+        
         return render(request, "generar_dte.html", context)
 
     elif request.method == 'POST':
         
-
         # ---------- Parse body (JSON o form) ----------
         is_json = (request.content_type or '').startswith('application/json')
         if is_json:
@@ -1215,11 +1221,6 @@ def generar_factura_view(request):
                     "enviar_mh_url": reverse('enviar_factura_hacienda', args=[factura.id]),
                 }, status=200)
             
-            
-            
-            
-            
-
             # ---------- ENVÍO ----------
             print("DTE: ==== INICIO ENVÍO a MH (función existente) ====")
             try:

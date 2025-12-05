@@ -703,7 +703,7 @@ def consolidar_y_redirigir_a_dte(request):
     primer_factura = facturas_seleccionadas.first()
     receptor_obj = primer_factura.dtereceptor
     
-    # Estructura para consolidar productos: {producto_id: {'qty': N, 'precio': X, ...}}
+    # Estructura para consolidar productos
     productos_consolidados = {}
 
     for factura in facturas_seleccionadas:
@@ -738,13 +738,8 @@ def consolidar_y_redirigir_a_dte(request):
         'tipo_dte': tipo_dte_codigo,
         'items': list(productos_consolidados.values()),
         'consolidado': True
-        # Puedes incluir otros campos de resumen aquí si los necesitas
     }
-    
-    print("PREFILL DATA XXXXXX", prefill_data)
-
     # 4. Guardar en la sesión y redirigir
-    # La vista generar_factura_view ya tiene la lógica para leer 'facturacion_prefill'
     request.session['facturacion_prefill'] = prefill_data
     request.session.modified = True
     redirect_url = f"{reverse('generar_factura')}?tipo_documento_dte={tipo_dte_codigo}&from_cart=1"

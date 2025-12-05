@@ -12,7 +12,7 @@
                 <label class="form-label" for="mes_filtro">Mes de Emisión</label>
                 <select id="mes_filtro" name="mes" class="form-select">
                     {% for mes in meses %}
-                        <option value="{{ mes.id }}" {% if mes.id == current_mes_id %}selected{% endif %}>
+                        <option value="{{ mes.id }}" {% if mes.id == current_mes_id %}selected{% endif %}> <!-- Seleccionar automaticamente el mes actual-->
                             {{ mes.nombre }}
                         </option>
                     {% endfor %}
@@ -24,7 +24,7 @@
                 <label class="form-label" for="year_filtro">Año</label>
                 <select id="year_filtro" name="year" class="form-select">
                     {% for year in years %}
-                    <option value="{{ year }}" {% if year == current_year %}selected{% endif %}>
+                    <option value="{{ year }}" {% if year == current_year %}selected{% endif %}> <!-- Seleccionar automaticamente el año actual-->
                         {{ year }}
                     </option>
                     {% endfor %}
@@ -37,7 +37,7 @@
     <div class="d-flex flex-column flex-md-row gap-4 mb-5">
         <div class="flex-fill">
             <div> 
-                <button class="card h-100 text-decoration-none card-dte-select border w-100" data-tipo-dte="01">
+                <button class="card h-100 text-decoration-none card-dte-select border w-100" data-tipo-dte="01"> 
                     <div class="card-body d-flex align-items-center">
                         <i class="bi bi-file-earmark-text fs-1 me-3"></i>
                         <div>
@@ -76,7 +76,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="reenvioListadoModalLabel">
-                    Documentos Pendientes de Reenvío (DTE <span id="modal_tipo_dte"></span>)
+                    Documentos Pendientes de Reenvío (DTE <span id="tipo_doc_reenvio"></span>)
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -100,13 +100,13 @@
     let documentosSeleccionados = [];
 
     document.addEventListener('DOMContentLoaded', () => {
-        console.log("addEventListener DOMContentLoaded");
         const dteCards = document.querySelectorAll('.card-dte-select');
         const hiddenTipoDte = document.getElementById('hidden_tipo_dte_filter');
         const btnListarDocumentos = document.getElementById('btn_listar_documentos');
         const mesFiltro = document.getElementById('mes_filtro');
         const yearFiltro = document.getElementById('year_filtro');
         const modalListadoContent = document.getElementById('modal_listado_content');
+        const modalTituloSpan = document.getElementById('tipo_doc_reenvio')
 
         // Instanciar modal
         reenvioModal = new bootstrap.Modal(
@@ -117,16 +117,17 @@
         dteCards.forEach(card => {
             card.addEventListener('click', (event) => {
                 const tipoDte = card.getAttribute('data-tipo-dte');
-                console.log("tipoDte ----- ", tipoDte);
                 tipo_doc_selecionado = tipoDte;
                 hiddenTipoDte.value = tipoDte;
 
                 dteCards.forEach(c => c.classList.remove('border-primary', 'border-3'));
-                card.classList.add('border', 'border-primary', 'border-2');
-                btnListarDocumentos.classList.add('btn', 'btn-primary');
+                card.classList.add('border', 'border-primary', 'border-2'); //añadir borde azul cuando se selecione el tipo de documento
 
-                btnListarDocumentos.textContent = `Listar DTEs ${tipoDte}`;
-                btnListarDocumentos.classList.remove('disabled');
+                btnListarDocumentos.textContent = `Listar DTEs ${tipoDte}`; // Agregar al boton el tipo de documento a listar
+                btnListarDocumentos.classList.add('btn', 'btn-primary'); // cambiar el estilo del boton listar
+                btnListarDocumentos.classList.remove('disabled'); // habilitar el boton de listar
+
+                modalTituloSpan.textContent = tipoDte
             });
         });
 
@@ -138,6 +139,7 @@
             const mes = mesFiltro.value;
             const year = yearFiltro.value;
 
+            //pantalla de carga de documentos
             modalListadoContent.innerHTML = `
                 <div class="text-center py-5">
                     <div class="spinner-border text-primary" role="status">
@@ -146,16 +148,13 @@
                     <p class="mt-2">Cargando documentos...</p>
                 </div>
             `;
-            reenvioModal.show();
+            reenvioModal.show(); // mostrar el modal
 
-            console.log("Mes filtro", mes )
-            const url = `/fe/documentos_pendientes/?${new URLSearchParams({
+            const url = `/fe/documentos_pendientes/?${new URLSearchParams({ //direccion para listar productos pendientes
                 tipo_documento_dte: tipoDte,
                 mes: mes,
                 year: year
             })}`;
-
-            console.log("URL inicial listado documentos:", url);
 
             fetch(url)
                 .then(response => {
@@ -166,7 +165,7 @@
                 })
                 .then(htmlContent => {
                     modalListadoContent.innerHTML = htmlContent;
-                    setupModalEvents();   // 👈 muy importante
+                    setupModalEvents();
                 })
                 .catch(error => {
                     console.error('FETCH ERROR:', error);
@@ -178,7 +177,7 @@
         document.addEventListener('change', (event) => {
             if (event.target && event.target.id === 'clientes_filtro') {
                 const cliente = event.target.value;
-                console.log('🟡 Cambio de clientes_filtro =', cliente);
+                console.log('Cambio de clientes_filtro =', cliente);
                 recargarDocumentos(cliente);
             }
         });
@@ -199,9 +198,8 @@
             }
 
             const url = `/fe/documentos_pendientes/?${params.toString()}`;
-            console.log('🔄 recargarDocumentos URL:', url);
 
-            // puedes mostrar nuevamente el spinner mientras se recarga
+            // Mostrar nuevamente el spinner mientras se recarga
             modalListadoContent.innerHTML = `
                 <div class="text-center py-5">
                     <div class="spinner-border text-primary" role="status">
@@ -220,8 +218,8 @@
                 })
                 .then(htmlContent => {
                     modalListadoContent.innerHTML = htmlContent;
-                    console.log('✅ HTML del modal recargado con filtro cliente:', cliente_filtro);
-                    setupModalEvents();   // 👈 volver a enganchar los checkboxes
+                    console.log('HTML del modal recargado con filtro cliente:', cliente_filtro);
+                    setupModalEvents();   // volver a enganchar los checkboxes
                 })
                 .catch(error => {
                     console.error('FETCH ERROR (cliente_filtro):', error);

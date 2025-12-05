@@ -57,14 +57,13 @@
             <select name="tipo_documento_seleccionado" id="tipo_documento_seleccionado" class="form-select" required>
               {% for d in tipoDocumentos %}
                 <option value="{{ d.codigo }}"
-                  {% if documento_seleccionado == d.codigo or forloop.first and not documento_seleccionado %}selected{% endif %}>
+                  {% if dte_select == d.codigo or forloop.first and not documento_seleccionado %}selected{% endif %}>
                   {{ d.descripcion }} 
                 </option>
               {% endfor %}
             </select>
           </div>
         </div>
-
         <!-- 2) Cliente (sin condición de operación) -->
         <div class="card shadow-sm mt-3">
           <div class="card-body">
@@ -156,7 +155,7 @@
             <select name="tipo_documento_seleccionado" id="tipo_documento_seleccionado" class="form-select" required>
               {% for d in tipoDocumentos %}
                 <option value="{{ d.codigo }}"
-                  {% if documento_seleccionado == d.codigo or forloop.first and not documento_seleccionado %}selected{% endif %}>
+                  {% if dte_select == d.codigo or forloop.first and not documento_seleccionado %}selected{% endif %}>
                   {{ d.descripcion }}
                 </option>
               {% endfor %}
@@ -482,6 +481,8 @@
 
     if (selVal && selVal === variosId) return true;
     if (selTxt.includes('VARIOS')) return true;
+    if (selTxt.includes('0000000-0')) return true;
+
 
     return false;
   }
