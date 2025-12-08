@@ -5,6 +5,7 @@ from django.db.models import Sum, Count, F, DecimalField
 from django.db.models.functions import TruncMonth, Coalesce
 from django.shortcuts import render
 from decimal import Decimal
+from django.db.models import Q
 
 # Modelos que ya tienes
 from FE.models import FacturaElectronica, DetalleFactura, Receptor_fe
@@ -161,11 +162,36 @@ def dashboard(request):
             pass
 
     # ===== Facturación por estado =====
-    # Ajusta los nombres si tu modelo usa otros campos (e.g. 'enviado_mh', 'rechazado_mh', etc.)
     fact_estado_labels = ["Aprobadas", "Rechazadas", "Pendientes"]
-    aprobadas = FacturaElectronica.objects.filter(estado__iexact="APROBADA").count() if _pick_field(FacturaElectronica, ["estado"]) else 0
-    rechazadas = FacturaElectronica.objects.filter(estado__iexact="RECHAZADA").count() if _pick_field(FacturaElectronica, ["estado"]) else 0
-    pendientes = FacturaElectronica.objects.filter(estado__iexact="PENDIENTE").count() if _pick_field(FacturaElectronica, ["estado"]) else 0
+
+    # 1) Aprobadas:
+    #   - sello_recepcion NO es null ni cadena vacía
+    #   - NO tienen evento de invalidación asociado
+    aprobadas = (
+        FacturaElectronica.objects
+        .filter(
+            Q(sello_recepcion__isnull=False) & ~Q(sello_recepcion=""),
+            dte_invalidacion__isnull=True,
+        )
+        .count()
+    )
+
+    # 2) Rechazadas:
+    #   - sello_recepcion vacío (NULL o "")
+    #   - opcional: ya están firmadas para no mezclar con pendientes
+    rechazadas = (
+        FacturaElectronica.objects
+        .filter(
+            Q(sello_recepcion__isnull=True) | Q(sello_recepcion=""),
+            firmado=True,
+        )
+        .count()
+    )
+
+    # 3) Pendientes:
+    #   - firmado == False
+    pendientes = FacturaElectronica.objects.filter(firmado=False).count()
+
     fact_estado_data = [aprobadas, rechazadas, pendientes]
 
     # ===== Top 5 productos vendidos =====

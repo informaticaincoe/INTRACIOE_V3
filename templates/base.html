@@ -38,90 +38,274 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
     <link rel="stylesheet" href="{% static 'utilities/css/style_base.css' %}" />
-    {% block extra_css %}
-      <style>
-        .sidebar-menu .bg-menu-item {
-          background-color: #f1f4f9 !important;
-          color: black !important;
-        }
-        
-        /* También lo hacemos más específico para los íconos */
-        .sidebar-menu .bg-menu-item i {
-          color: black !important;
-        }
-        
-        /* Y para los estados hover/focus */
-        .sidebar-menu .list-group-item-action.bg-menu-item:hover,
-        .sidebar-menu .list-group-item-action.bg-menu-item:focus {
-          background-color: var(--brand-primary) !important;
-          color: white !important;
-        }
-        
-        /* Mostrar sidebar fijo desde md (≥768px) para tablets horizontales */
-        @media (min-width: 768px) {
-          .sidebar {
-            display: block !important;
-            position: sticky;
-            top: 0;
-            height: 100vh;
-            overflow-y: auto;
+
+    <head>
+      {% block extra_css %}
+        <style>
+          .navbar-brand-center {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
           }
-          /* Si usas offcanvas para el menú en móvil, ocúltalo como offcanvas en pantallas medianas+ */
-          .offcanvas,
-          .offcanvas-backdrop {
-            display: none !important;
+
+          .navbar .container-fluid {
+            position: relative; /* referencia para el centrado absoluto */
           }
-          .menu-show {
-            display: block !important;
-          }
-          .menu-hidden {
-            display: none !important;
-          }
+          /* Estilo base para links con fondo */
           .ancho-completo {
-            width: 100vw !important;
+            width: 100% !important;
           }
-        
-          .sidebar-menu .bg-menu-item {
+          
+          .menu-show {
+            display: block;
+          }
+
+          .menu-hidden {
+            display: none;
+          }
+          
+          .bg-menu-item {
             background-color: #f1f4f9 !important;
             color: black !important;
           }
-        
-          /* También lo hacemos más específico para los íconos */
-          .sidebar-menu .bg-menu-item i {
-            color: black !important;
-          }
-        
-          /* Y para los estados hover/focus */
-          .sidebar-menu .list-group-item-action.bg-menu-item:hover,
-          .sidebar-menu .list-group-item-action.bg-menu-item:focus {
-            background-color: #E2E9F4 !important;
+          
+          .list-group-item-action.bg-menu-item:hover,
+          .list-group-item-action.bg-menu-item:focus {
+            background-color: #e2e9f4 !important;
             color: white !important;
           }
-        }
-      </style>
-    {% endblock %}
+          
+          .sidebar-menu .list-group-item-action.bg-menu-item:hover,
+          .sidebar-menu .list-group-item-action.bg-menu-item:focus {
+            background-color: #e2e9f4 !important;
+            color: white !important;
+          }
+          
+          /* ==== ESTILOS PARA MENÚ MÓVIL (offcanvas) ==== */
+          
+          .offcanvas-start {
+            max-width: 280px;
+          }
+          
+          .offcanvas-header {
+            border-bottom: 1px solid #e1e5f2;
+          }
+          
+          .offcanvas-body {
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+          }
+          
+          .offcanvas-main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.75rem;
+          }
+          
+          .offcanvas-footer {
+            border-top: 1px solid #e1e5f2;
+            padding: 0.75rem;
+          }
+          
+          /* Tarjetita para Dashboard y Configurar empresa en móvil */
+          .offcanvas-link {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background-color: #ffffff;
+            color: #1f2933;
+            border-radius: 0.75rem;
+            padding:0rem;
+            font-size: 0.95rem;
+            text-decoration: none;
+            margin-bottom: 0.75rem;
+            font-weight: 500;
+          }
+          
+          .offcanvas-link i {
+            font-size: 1rem;
+          }
+          
+          .offcanvas-link:hover {
+            background-color: #0d47a1;
+            color: #ffffff;
+            border-color: #0d47a1;
+          }
+          
+          /* Acordeón mobile */
+          .offcanvas-accordion .accordion-item {
+            border: 0;
+            background: transparent;
+          }
+          
+          .offcanvas-accordion .accordion-button {
+            background: transparent;
+            padding: 0.35rem 0;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #111827;
+          }
+          
+          .offcanvas-accordion .accordion-button::after {
+            transform: scale(0.8);
+          }
+          
+          .offcanvas-accordion .accordion-collapse {
+            margin-bottom: 0.25rem;
+          }
+          
+          .offcanvas-accordion .list-group-item {
+            border: 0;
+            border-radius: 0.5rem;
+            margin: 0.1rem 0.25rem;
+            padding: 0.35rem 0.75rem;
+            font-size: 0.9rem;
+            background: #ffffff;
+            color: #374151;
+          }
+          
+          .offcanvas-accordion .list-group-item:hover {
+            background: #e5edff;
+            color: #111827;
+          }
+          
+          /* ==== ESTILOS DESKTOP (sidebar izquierdo) ==== */
+          @media (min-width: 768px) {
+            :root {
+              --navbar-height: 56px;
+              --sidebar-bg: #f5f7fb;
+              --sidebar-border: #e1e5f2;
+            }
+          
+            .sidebar-menu {
+              background: var(--sidebar-bg);
+              border-right: 1px solid var(--sidebar-border);
+            }
+          
+            .sidebar-inner {
+              height: calc(100vh - var(--navbar-height));
+              display: flex;
+              flex-direction: column;
+              padding: 0.75rem;
+              gap: 0.75rem;
+            }
+          
+            .sidebar-main {
+              flex: 1;
+              overflow-y: auto;
+              padding-right: 0.25rem;
+            }
+          
+            .sidebar-footer {
+              border-top: 1px solid var(--sidebar-border);
+              padding-top: 0.75rem;
+            }
+          
+            .sidebar-link {
+              display: flex;
+              align-items: center;
+              gap: 0.5rem;
+              background-color: #ffffff !important;
+              color: #1f2933 !important;
+              border-radius: 0.75rem;
+              border: 1px solid #dde3f0;
+              padding: 0.5rem 0.75rem;
+              font-size: 0.95rem;
+              text-decoration: none;
+            }
+          
+            .sidebar-link i {
+              font-size: 1rem;
+            }
+          
+            .sidebar-link:hover {
+              background-color: #0d47a1 !important;
+              color: #ffffff !important;
+              border-color: #0d47a1;
+            }
+          
+            .sidebar-menu .accordion-item {
+              border: 0;
+              background: transparent;
+              margin-bottom: 0.25rem;
+              border-radius: 0.75rem;
+              overflow: hidden;
+            }
+          
+            .sidebar-menu .accordion-button {
+              background: transparent;
+              padding: 0.4rem 0.75rem;
+              font-size: 0.95rem;
+              font-weight: 500;
+              color: #111827;
+            }
+          
+            .sidebar-menu .accordion-button::after {
+              transform: scale(0.8);
+            }
+          
+            .sidebar-menu .accordion-button:not(.collapsed) {
+              background-color: #0d47a1;
+              color: #ffffff;
+            }
+          
+            .sidebar-menu .accordion-button:not(.collapsed)::after {
+              filter: brightness(5);
+            }
+          
+            .sidebar-submenu .list-group-item {
+              border: 0;
+              border-radius: 0.5rem;
+              margin: 0.15rem 0.4rem;
+              padding: 0.35rem 0.75rem;
+              font-size: 0.9rem;
+              background: #ffffff;
+              color: #374151;
+            }
+
+            
+          
+            .sidebar-submenu .list-group-item:hover {
+              background: #e5edff;
+              color: #111827;
+            }
+          
+            /* Ocultar offcanvas en desktop */
+            .offcanvas-start {
+              display: none !important;
+            }
+          }
+        </style>
+      {% endblock %}
+    </head>
   </head>
 
   <body class="bg-light">
     <!-- TOPBAR -->
     <nav class="navbar navbar-dark bg-primary sticky-top">
       <div class="container-fluid">
-        <!-- Botón menú móvil -->
-        <button class="btn btn-outline-light d-md-none me-2" data-bs-toggle="offcanvas" data-bs-target="#sidebarOff" id="menu-mobil"><i class="bi bi-list"></i></button>
+        <div class="d-flex gap-4">
+          <!-- Botón menú móvil -->
+          <button class="btn btn-outline-light d-md-none me-2" data-bs-toggle="offcanvas" data-bs-target="#sidebarOff" id="menu-mobil"><i class="bi bi-list"></i></button>
 
-        <!-- Botón ir atrás -->
-        <button class="btn btn-outline-light me-2" onclick="window.history.back()"><i class="bi bi-arrow-left"></i></button>
-
+          <!-- Botón ir atrás -->
+          {% if user.is_authenticated %}
+            <button class="btn btn-outline-light me-2" onclick="window.history.back()"><i class="bi bi-arrow-left"></i></button>
+          {% endif %}
+        </div>
         <!-- Nombre/logo -->
-        <a class="navbar-brand fw-bold" href="{% url 'index' %}">Intra<span class="text-accent">coe</span></a>
+        <a class="navbar-brand fw-bold navbar-brand-center" href="{% url 'index' %}">Intra<span class="text-accent">coe</span></a>
 
         <div class="d-flex align-items-center gap-2">
           {% if user.is_authenticated %}
-            <button class="btn btn-link text-white"><i class="bi bi-bell"></i></button>
-            <button class="btn btn-outline-light" data-bs-toggle="offcanvas" data-bs-target="#profileOff">
-              <i class="bi bi-person-circle me-1"></i>
-              {{ user.username }}
-            </button>
+            <div class="d-flex">
+              <button class="btn btn-link text-white"><i class="bi bi-bell"></i></button>
+              <button class="btn btn-outline-light" data-bs-toggle="offcanvas" data-bs-target="#profileOff">
+                <i class="bi bi-person-circle me-1"></i>
+                {{ user.username }}
+              </button>
+            </div>
           {% else %}
             <a href="{% url 'login' %}" class="btn btn-primary w-100 mb-2"><i class="bi bi-box-arrow-in-right me-2"></i> Iniciar sesión</a>
           {% endif %}
@@ -132,73 +316,71 @@
     <div class="container-fluid">
       <div class="row">
         <!-- SIDEBAR DESKTOP (visible desde md) -->
-        <aside class="col-md-3 col-xl-2 d-none d-md-block p-0 border-end bg-white sidebar sidebar-menu sticky">
           {% if user.is_authenticated %}
-            <div class="sidebar-sticky">
-              <!-- link directo -->
-              <a href="{% url 'index' %}" class="list-group-item list-group-item-action border-0 m-0 rounded-0 d-flex align-items-center gap-2 bg-menu-item"><i class="bi bi-speedometer2"></i> <span>Dashboard</span></a>
+            <aside class="col-md-3 col-xl-2 d-none d-md-block p-0 border-end bg-white sidebar sidebar-menu sticky">
+                <div class="sidebar-sticky p-3 d-flex flex-column justify-content-between">
+                  <!-- link directo -->
+                  <div>
+                    <a href="{% url 'index' %}" class="list-group-item list-group-item-action border-0 m-0 rounded-0 d-flex align-items-center gap-2 bg-menu-item"><i class="bi bi-speedometer2"></i> <span class="fw-medium">Dashboard</span></a>
 
-              <!-- acordeón -->
-              <div class="accordion accordion-flush sidebar" id="accMenu">
-                <!-- Compras -->
-                <div class="accordion-item bg-menu-item">
-                  <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbCompras"><i class="bi bi-basket me-2"></i> Compras</button></h2>
-                  <div id="sbCompras" class="accordion-collapse collapse" data-bs-parent="#accMenu">
-                    <div class="list-group list-group-flush">
-                      {% include 'opciones_menu/compras.html' with uid='desk' %}
+                    <!-- acordeón -->
+                    <div class="accordion accordion-flush sidebar" id="accMenu">
+                      <!-- Compras -->
+                      <div class="accordion-item">
+                        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbCompras"><i class="bi bi-basket me-2"></i> Compras</button></h2>
+                        <div id="sbCompras" class="accordion-collapse collapse" data-bs-parent="#accMenu">
+                          <div class="list-group list-group-flush">
+                            {% include 'opciones_menu/compras.html' with uid='desk' %}
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Ventas -->
+                      <div class="accordion-item">
+                        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbVentas"><i class="bi bi-receipt-cutoff me-2"></i> Ventas</button></h2>
+                        <div id="sbVentas" class="accordion-collapse collapse" data-bs-parent="#accMenu">
+                          <div class="list-group list-group-flush">
+                            {% include 'opciones_menu/ventas.html' with uid='deskV' %}
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Facturación -->
+                      <div class="accordion-item">
+                        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbFact"><i class="bi bi-file-earmark-text me-2"></i> Facturación</button></h2>
+                        <div id="sbFact" class="accordion-collapse collapse" data-bs-parent="#accMenu">
+                          <div class="list-group list-group-flush">
+                            {% include 'opciones_menu/facturacion.html' with uid='deskF' %}
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Inventario -->
+                      <div class="accordion-item">
+                        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbInv"><i class="bi bi-box-seam me-2"></i> Inventario</button></h2>
+                        <div id="sbInv" class="accordion-collapse collapse" data-bs-parent="#accMenu">
+                          <div class="list-group list-group-flush">
+                            {% include 'opciones_menu/inventario.html' with uid='deskI' %}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <!-- Ventas -->
-                <div class="accordion-item">
-                  <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbVentas"><i class="bi bi-receipt-cutoff me-2"></i> Ventas</button></h2>
-                  <div id="sbVentas" class="accordion-collapse collapse" data-bs-parent="#accMenu">
-                    <div class="list-group list-group-flush">
-                      {% include 'opciones_menu/ventas.html' with uid='deskV' %}
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Facturación -->
-                <div class="accordion-item">
-                  <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbFact"><i class="bi bi-file-earmark-text me-2"></i> Facturación</button></h2>
-                  <div id="sbFact" class="accordion-collapse collapse" data-bs-parent="#accMenu">
-                    <div class="list-group list-group-flush">
-                      {% include 'opciones_menu/facturacion.html' with uid='deskF' %}
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Inventario -->
-                <div class="accordion-item">
-                  <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbInv"><i class="bi bi-box-seam me-2"></i> Inventario</button></h2>
-                  <div id="sbInv" class="accordion-collapse collapse" data-bs-parent="#accMenu">
-                    <div class="list-group list-group-flush">
-                      {% include 'opciones_menu/inventario.html' with uid='deskI' %}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <hr class="my-3" />
-
-              {% if user.is_staff %}
-                <div class="list-group list-group-flush">
-                  <a class="list-group-item list-group-item-action d-none"><i class="bi bi-calculator me-2"></i> Contabilidad</a>
                   <hr class="my-3" />
-                  <a class="list-group-item list-group-item-action d-none"><i class="bi bi-buildings me-2"></i> Empresa</a>
-                  <hr class="my-3" />
-                  <a class="list-group-item list-group-item-action" href="{% url 'configurar_empresa' %}"><i class="bi bi-gear me-2"></i> Configurar empresa</a>
+
+                  {% if user.is_staff %}
+                    <div class="list-group list-group-flush">
+                      <a class="list-group-item list-group-item-action d-none"><i class="bi bi-calculator me-2"></i> Contabilidad</a>
+                      <hr class="my-3" />
+                      <a class="list-group-item list-group-item-action d-none"><i class="bi bi-buildings me-2"></i> Empresa</a>
+                      <hr class="my-3" />
+                      <a class="list-group-item " href="{% url 'configurar_empresa' %}"><i class="bi bi-gear me-2"></i> Configurar empresa</a>
+                    </div>
+                  {% endif %}
                 </div>
-              {% endif %}
-            </div>
-          {% else %}
-            <div class="p-3">
-              <p class="text-muted small mb-1">Por favor, inicia sesión para ver el menú.</p>
-            </div>
+            </aside>
           {% endif %}
-        </aside>
 
         <!-- SIDEBAR MÓVIL (OFFCANVAS) -->
         <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarOff">
@@ -208,48 +390,59 @@
           </div>
 
           {% if user.is_authenticated %}
-            <div class="offcanvas-body p-0">
-              <a href="{% url 'index' %}" class="list-group-item list-group-item-action border-0 m-0 rounded-0 d-flex align-items-center gap-2 bg-menu-item bg-mobil"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
-              <div class="accordion accordion-flush sidebar" id="accMenuMobile">
-                <div class="accordion-item">
-                  <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mCompras">Compras</button></h2>
-                  <div id="mCompras" class="accordion-collapse collapse" data-bs-parent="#accMenuMobile">
-                    <div class="list-group list-group-flush">
-                      {% include 'opciones_menu/compras.html' with uid='mob' %}
+            <div class="offcanvas-body">
+              <div class="offcanvas-main pt-4">
+                <!-- Dashboard como tarjeta -->
+                <a href="{% url 'index' %}" class="offcanvas-link">
+                  <span>Dashboard</span>
+                </a>
+
+                <!-- Acordeón principal -->
+                <div class="accordion accordion-flush offcanvas-accordion d-flex flex-column gap-2" id="accMenuMobile">
+                  <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mCompras">Compras</button></h2>
+                    <div id="mCompras" class="accordion-collapse collapse" data-bs-parent="#accMenuMobile">
+                      <div class="list-group list-group-flush">
+                        {% include 'opciones_menu/compras.html' with uid='mob' %}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div class="accordion-item">
-                  <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mVentas">Ventas</button></h2>
-                  <div id="mVentas" class="accordion-collapse collapse" data-bs-parent="#accMenuMobile">
-                    <div class="list-group list-group-flush">
-                      {% include 'opciones_menu/ventas.html' with uid='mobV' %}
+
+                  <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mVentas">Ventas</button></h2>
+                    <div id="mVentas" class="accordion-collapse collapse" data-bs-parent="#accMenuMobile">
+                      <div class="list-group list-group-flush">
+                        {% include 'opciones_menu/ventas.html' with uid='mobV' %}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div class="accordion-item">
-                  <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mFact">Facturación</button></h2>
-                  <div id="mFact" class="accordion-collapse collapse" data-bs-parent="#accMenuMobile">
-                    <div class="list-group list-group-flush">
-                      {% include 'opciones_menu/facturacion.html' with uid='mobF' %}
+
+                  <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mFact">Facturación</button></h2>
+                    <div id="mFact" class="accordion-collapse collapse" data-bs-parent="#accMenuMobile">
+                      <div class="list-group list-group-flush">
+                        {% include 'opciones_menu/facturacion.html' with uid='mobF' %}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div class="accordion-item">
-                  <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mInv">Inventario</button></h2>
-                  <div id="mInv" class="accordion-collapse collapse" data-bs-parent="#accMenuMobile">
-                    <div class="list-group list-group-flush">
-                      {% include 'opciones_menu/inventario.html' with uid='mobI' %}
+
+                  <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mInv">Inventario</button></h2>
+                    <div id="mInv" class="accordion-collapse collapse" data-bs-parent="#accMenuMobile">
+                      <div class="list-group list-group-flush">
+                        {% include 'opciones_menu/inventario.html' with uid='mobI' %}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-              <hr class="my-2" />
+
               {% if user.is_staff %}
-                <div class="list-group list-group-flush">
-                  <a class="list-group-item list-group-item-action d-none">Contabilidad</a>
-                  <a class="list-group-item list-group-item-action d-none">Empresa</a>
-                  <a class="list-group-item list-group-item-action border-0 m-0 rounded-0 d-flex align-items-center gap-2 bg-menu-item" href="{% url 'configurar_empresa' %}">Configurar empresa</a>
+                <div class="offcanvas-footer">
+                  <a class="offcanvas-link" href="{% url 'configurar_empresa' %}">
+                    <i class="bi bi-gear me-2"></i>
+                    Configurar empresa
+                  </a>
                 </div>
               {% endif %}
             </div>
@@ -261,6 +454,7 @@
         </div>
 
         <!-- CONTENIDO -->
+         
         <main class="col-md-9 col-xl-10 p-3" id="main-content">
           <div class="card shadow-sm">
             <div class="card-body">
@@ -290,7 +484,7 @@
         <button class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
       </div>
 
-      <div class="offcanvas-body">
+      <div class="offcanvas-body mx-4 my-2">
         {% if user.is_authenticated %}
           <p class="mb-1 fw-semibold">{{ user.get_full_name|default:user.perfilusuario.nombre }}</p>
           <p class="text-muted small mb-3">{{ user.email }}</p>
@@ -318,25 +512,34 @@
           const menuButton = document.getElementById("menu-mobil")
 
           
-          // Usar la nueva variable JS:
-          if ({% if user.is_authenticated %}true{% else %}false{% endif %}) {
-            console.log('SI, el usuario está autenticado.');
-            mainContent.classList.remove("ancho-completo")
-            
-            menu.classList.add("menu-show")
-            menu.classList.remove("menu-hidden")
-            menuButton.classList.remove("d-none")
+          {% if user.is_authenticated %}
+      console.log('SI, el usuario está autenticado.')
 
-            
-        } else {
-            console.log('NO, el usuario no está autenticado.');
-            mainContent.classList.add("ancho-completo")
+      if (mainContent) {
+        mainContent.classList.remove('ancho-completo')
+      }
+      if (menu) {
+        menu.classList.add('menu-show')
+        menu.classList.remove('menu-hidden')
+      }
+      if (menuButton) {
+        menuButton.classList.remove('d-none')
+      }
+    {% else %}
+      console.log('NO, el usuario no está autenticado.')
 
-            menu.classList.add("menu-hidden")
-            menu.classList.remove("menu-show")
-            menuButton.classList.add("d-none")
-        }
-      })
-    </script>
+      if (mainContent) {
+        mainContent.classList.add('ancho-completo')
+      }
+      if (menu) {
+        menu.classList.add('menu-hidden')
+        menu.classList.remove('menu-show')
+      }
+      if (menuButton) {
+        menuButton.classList.add('d-none')
+      }
+    {% endif %}
+  })
+</script>
   </body>
 </html>
