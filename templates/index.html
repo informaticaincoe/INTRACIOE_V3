@@ -1,13 +1,12 @@
-
 <style>
   .chart-estados-wrapper {
     position: relative;
-    height: 80%;   /* ajusta 180, 220, etc. según te guste */
+    height: 80%; /* ajusta 180, 220, etc. según te guste */
     width: 80%;
     margin: 0;
     padding: 0;
   }
-
+  
   .chart-estados-wrapper canvas {
     width: 100% !important;
     height: 100% !important;
@@ -17,28 +16,36 @@
 <!-- KPI Cards -->
 <div class="row g-3 mb-3">
   <div class="col-12 col-md-3">
-    <div class="card kpi"><div class="card-body">
-      <div class="text-muted small">Total ventas (6m)</div>
-      <div class="fs-3 fw-semibold">${{ total_ventas|floatformat:2 }}</div>
-    </div></div>
+    <div class="card kpi">
+      <div class="card-body">
+        <div class="text-muted small">Total ventas (6m)</div>
+        <div class="fs-3 fw-semibold">${{ total_ventas|floatformat:2 }}</div>
+      </div>
+    </div>
   </div>
   <div class="col-12 col-md-3">
-    <div class="card kpi"><div class="card-body">
-      <div class="text-muted small">Facturas emitidas</div>
-      <div class="fs-3 fw-semibold">{{ total_facturas }}</div>
-    </div></div>
+    <div class="card kpi">
+      <div class="card-body">
+        <div class="text-muted small">Facturas emitidas</div>
+        <div class="fs-3 fw-semibold">{{ total_facturas }}</div>
+      </div>
+    </div>
   </div>
   <div class="col-12 col-md-3">
-    <div class="card kpi"><div class="card-body">
-      <div class="text-muted small">Clientes</div>
-      <div class="fs-3 fw-semibold">{{ total_clientes }}</div>
-    </div></div>
+    <div class="card kpi">
+      <div class="card-body">
+        <div class="text-muted small">Clientes</div>
+        <div class="fs-3 fw-semibold">{{ total_clientes }}</div>
+      </div>
+    </div>
   </div>
   <div class="col-12 col-md-3">
-    <div class="card kpi"><div class="card-body">
-      <div class="text-muted small">Valor inventario</div>
-      <div class="fs-3 fw-semibold">${{ inventario_valor_total|floatformat:2 }}</div>
-    </div></div>
+    <div class="card kpi">
+      <div class="card-body">
+        <div class="text-muted small">Valor inventario</div>
+        <div class="fs-3 fw-semibold">${{ inventario_valor_total|floatformat:2 }}</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -55,30 +62,36 @@
     </div>
   </div>
   <div class="col-12 col-lg-6">
-    <div class="card"><div class="card-body">
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <h6 class="m-0">Compras por mes</h6>
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="m-0">Compras por mes</h6>
+        </div>
+        <canvas id="chartCompras"></canvas>
       </div>
-      <canvas id="chartCompras"></canvas>
-    </div></div>
+    </div>
   </div>
 
   <div class="col-12 col-lg-6">
-    <div class="card"><div class="card-body">
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <h6 class="m-0">Clientes nuevos por mes</h6>
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="m-0">Clientes nuevos por mes</h6>
+        </div>
+        <canvas id="chartClientes"></canvas>
       </div>
-      <canvas id="chartClientes"></canvas>
-    </div></div>
+    </div>
   </div>
 
   <div class="col-12 col-lg-6">
-    <div class="card"><div class="card-body">
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <h6 class="m-0">Inventario por categoría (Top)</h6>
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="m-0">Inventario por categoría (Top)</h6>
+        </div>
+        <canvas id="chartInventario"></canvas>
       </div>
-      <canvas id="chartInventario"></canvas>
-    </div></div>
+    </div>
   </div>
 
   <div class="col-12 col-lg-6">
@@ -95,111 +108,135 @@
   </div>
 
   <div class="col-12 col-lg-6">
-    <div class="card"><div class="card-body">
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <h6 class="m-0">Top 5 productos</h6>
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="m-0">Top 5 productos</h6>
+        </div>
+        <canvas id="chartTopProd"></canvas>
       </div>
-      <canvas id="chartTopProd"></canvas>
-    </div></div>
+    </div>
   </div>
 </div>
 
 <!-- Datos seguros como JSON -->
-{{ ventas_mes_labels|json_script:"ventas_mes_labels" }}
-{{ ventas_mes_data|json_script:"ventas_mes_data" }}
-{{ compras_mes_labels|json_script:"compras_mes_labels" }}
-{{ compras_mes_data|json_script:"compras_mes_data" }}
-{{ clientes_mes_labels|json_script:"clientes_mes_labels" }}
-{{ clientes_mes_data|json_script:"clientes_mes_data" }}
-{{ inv_labels|json_script:"inv_labels" }}
-{{ inv_data|json_script:"inv_data" }}
-{{ fact_estado_labels|json_script:"fact_estado_labels" }}
-{{ fact_estado_data|json_script:"fact_estado_data" }}
-{{ top_prod_labels|json_script:"top_prod_labels" }}
-{{ top_prod_data|json_script:"top_prod_data" }}
+{{ ventas_mes_labels|json_script:'ventas_mes_labels' }}
+{{ ventas_mes_data|json_script:'ventas_mes_data' }}
+{{ compras_mes_labels|json_script:'compras_mes_labels' }}
+{{ compras_mes_data|json_script:'compras_mes_data' }}
+{{ clientes_mes_labels|json_script:'clientes_mes_labels' }}
+{{ clientes_mes_data|json_script:'clientes_mes_data' }}
+{{ inv_labels|json_script:'inv_labels' }}
+{{ inv_data|json_script:'inv_data' }}
+{{ fact_estado_labels|json_script:'fact_estado_labels' }}
+{{ fact_estado_data|json_script:'fact_estado_data' }}
+{{ top_prod_labels|json_script:'top_prod_labels' }}
+{{ top_prod_data|json_script:'top_prod_data' }}
 
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-(function(){
-  const J = id => JSON.parse(document.getElementById(id).textContent);
-
-  const moneyTicks = (value) => {
-    try { return '$' + Number(value).toLocaleString(undefined, {maximumFractionDigits: 2}); }
-    catch(_) { return '$' + value; }
-  };
-
-  // Ventas
-  new Chart(document.getElementById('chartVentas'), {
-    type: 'line',
-    data: {
-      labels: J('ventas_mes_labels'),
-      datasets: [{ label: 'Ventas', data: J('ventas_mes_data') }]
-    },
-    options: { responsive: true, scales: { y: { ticks: { callback: moneyTicks } } } }
-  });
-
-  // Compras
-  new Chart(document.getElementById('chartCompras'), {
-    type: 'bar',
-    data: {
-      labels: J('compras_mes_labels'),
-      datasets: [{ label: 'Compras', data: J('compras_mes_data') }]
-    },
-    options: { responsive: true, scales: { y: { ticks: { callback: moneyTicks } } } }
-  });
-
-  // Clientes
-  new Chart(document.getElementById('chartClientes'), {
-    type: 'bar',
-    data: {
-      labels: J('clientes_mes_labels'),
-      datasets: [{ label: 'Clientes nuevos', data: J('clientes_mes_data') }]
-    },
-    options: { responsive: true }
-  });
-
-  // Inventario por categoría
-  new Chart(document.getElementById('chartInventario'), {
-    type: 'bar',
-    data: {
-      labels: J('inv_labels'),
-      datasets: [{ label: 'Unidades', data: J('inv_data') }]
-    },
-    options: { responsive: true }
-  });
+  ;(function () {
+    const J = (id) => JSON.parse(document.getElementById(id).textContent)
+  
+    const moneyTicks = (value) => {
+      try {
+        return '$' + Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 })
+      } catch (_) {
+        return '$' + value
+      }
+    }
+  
+    // Ventas
+    new Chart(document.getElementById('chartVentas'), {
+      type: 'line',
+      data: {
+        labels: J('ventas_mes_labels'),
+        datasets: [{ label: 'Ventas', data: J('ventas_mes_data'), backgroundColor: "#0d48a1" }]
+      },
+      options: { responsive: true, scales: { y: { ticks: { callback: moneyTicks } } } }
+    })
+  
+    // Compras
+    new Chart(document.getElementById('chartCompras'), {
+      type: 'bar',
+      data: {
+        labels: J('compras_mes_labels'),
+        datasets: [{ label: 'Compras', data: J('compras_mes_data'), backgroundColor: "#0d48a1aa" }]
+      },
+      options: { responsive: true, scales: { y: { ticks: { callback: moneyTicks } } } }
+    })
+  
+    // Clientes
+    new Chart(document.getElementById('chartClientes'), {
+      type: 'bar',
+      data: {
+        labels: J('clientes_mes_labels'),
+        datasets: [{ label: 'Clientes nuevos', data: J('clientes_mes_data'), backgroundColor: "#0d48a1aa" }]
+      },
+      options: { responsive: true }
+    })
+  
+    // Inventario por categoría
+    const labels_categoria = J('inv_labels')
+    const values_categoria = J('inv_data') 
+    const colors_categoria = ['#0d48a1aa', '#9eb7e5aa', '#FEAF53aa', '#EF798Aaa', '#439A86aa']
+  
+    const datasets_categoria = labels_categoria.map((cat, i) => ({
+      label: cat, // lo que se verá en la leyenda
+      data: [values_categoria[i]], // un valor por categoría
+      backgroundColor: colors_categoria[i % colors_categoria.length]
+    }))
+  
+    new Chart(document.getElementById('chartInventario'), {
+      type: 'bar',
+      data: {
+        labels: ['Categorías'], // un solo grupo en el eje X
+        datasets: datasets_categoria, // uno por categoría
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: { beginAtZero: true },
+          y: { beginAtZero: true }
+        }
+      }
+    })
 
   // Facturación por estado
   new Chart(document.getElementById('chartEstados'), {
     type: 'doughnut',
     data: {
       labels: J('fact_estado_labels'),
-      datasets: [{ data: J('fact_estado_data') }]
+      datasets: [{ data: J('fact_estado_data'), backgroundColor:['#0d48a1c0', '#0d48a17b', '#6d8bb942'] }]
     },
-    options: { 
-      responsive: true, 
-      maintainAspectRatio: false,        
-      layout: {
-        padding: 0,
-        margin: 0
+    options: { responsive: true }
+  });
+  
+    // Top productos
+    const labels_top_productos = J('top_prod_labels')
+    const values_top_productos = J('top_prod_data')
+    const colors_top_productos = ['#0d48a1aa', '#9eb7e5aa', '#FEAF53aa', '#EF798Aaa', '#439A86aa']
+  
+    const datasets_top_productos = labels_top_productos.map((prod, i) => ({
+      label: prod,
+      data: [values_top_productos[i]], // un valor por dataset
+      backgroundColor: colors_top_productos[i]
+    }))
+  
+    new Chart(document.getElementById('chartTopProd'), {
+      type: 'bar',
+      data: {
+        labels: ['Productos'], // un solo grupo en el eje X
+        datasets: datasets_top_productos // uno por producto
       },
-      plugins: { 
-        legend : {
-          position: 'top'
-        } 
-      } 
-    }
-  });
-
-  // Top productos
-  new Chart(document.getElementById('chartTopProd'), {
-    type: 'bar',
-    data: {
-      labels: J('top_prod_labels'),
-      datasets: [{ label: 'Cantidades', data: J('top_prod_data') , backgroundColor: ["#0d47a1", "#FEAF53", "#4785C2", "#DF003F", "#378F6F"]}]
-    },
-    options: { responsive: true,  }
-  });
-})();
+      options: {
+        responsive: true,
+        scales: {
+          x: { stacked: false },
+          y: { beginAtZero: true }
+        }
+      }
+    })
+  })()
 </script>
-

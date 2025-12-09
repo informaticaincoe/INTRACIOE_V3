@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
-{% block extra_css %}
+
+{% block content %}
 <style>
   .kbd{border:1px solid #d0d7de;border-bottom-width:2px;border-radius:4px;padding:0 .25rem;font-size:.85em;background:#f8fafc}
   .pos-sticky{position:sticky;top:76px}
@@ -10,9 +11,7 @@
   .combo-menu{display:none;max-height:260px;overflow:auto;border:1px solid #e5e7eb;border-radius:.5rem;margin-top:.25rem;background:#fff}
   .combo-item.active{background:#eef2ff}
 </style>
-{% endblock %}
 
-{% block content %}
 <div class="container py-3">
   <form method="post" id="form-pos" autocomplete="off">
     {% csrf_token %}

@@ -51,7 +51,7 @@
           .navbar .container-fluid {
             position: relative; /* referencia para el centrado absoluto */
           }
-          /* Estilo base para links con fondo */
+          
           .ancho-completo {
             width: 100% !important;
           }
@@ -64,25 +64,13 @@
             display: none;
           }
           
-          .bg-menu-item {
-            background-color: #f1f4f9 !important;
-            color: black !important;
-          }
-          
           .list-group-item-action.bg-menu-item:hover,
           .list-group-item-action.bg-menu-item:focus {
             background-color: #e2e9f4 !important;
-            color: white !important;
-          }
-          
-          .sidebar-menu .list-group-item-action.bg-menu-item:hover,
-          .sidebar-menu .list-group-item-action.bg-menu-item:focus {
-            background-color: #e2e9f4 !important;
-            color: white !important;
+            color: black !important;
           }
           
           /* ==== ESTILOS PARA MENÚ MÓVIL (offcanvas) ==== */
-          
           .offcanvas-start {
             max-width: 280px;
           }
@@ -108,13 +96,11 @@
             padding: 0.75rem;
           }
           
-          /* Tarjetita para Dashboard y Configurar empresa en móvil */
+          /* Estilos para menu lateral version movil */
           .offcanvas-link {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            background-color: #ffffff;
-            color: #1f2933;
             border-radius: 0.75rem;
             padding:0rem;
             font-size: 0.95rem;
@@ -125,12 +111,6 @@
           
           .offcanvas-link i {
             font-size: 1rem;
-          }
-          
-          .offcanvas-link:hover {
-            background-color: #0d47a1;
-            color: #ffffff;
-            border-color: #0d47a1;
           }
           
           /* Acordeón mobile */
@@ -170,7 +150,7 @@
             color: #111827;
           }
           
-          /* ==== ESTILOS DESKTOP (sidebar izquierdo) ==== */
+          /* ==== ESTILOS ESCRITORIO (sidebar izquierdo) ==== */
           @media (min-width: 768px) {
             :root {
               --navbar-height: 56px;
@@ -251,7 +231,8 @@
             }
           
             .sidebar-menu .accordion-button:not(.collapsed)::after {
-              filter: brightness(5);
+              filter: invert(100);
+              color: black;
             }
           
             .sidebar-submenu .list-group-item {
@@ -375,7 +356,7 @@
                       <hr class="my-3" />
                       <a class="list-group-item list-group-item-action d-none"><i class="bi bi-buildings me-2"></i> Empresa</a>
                       <hr class="my-3" />
-                      <a class="list-group-item " href="{% url 'configurar_empresa' %}"><i class="bi bi-gear me-2"></i> Configurar empresa</a>
+                      <a class="list-group-item list-group-item-action border-0 bg-white" href="{% url 'configurar_empresa' %}"><i class="bi bi-gear me-2"></i> Configurar empresa</a>
                     </div>
                   {% endif %}
                 </div>

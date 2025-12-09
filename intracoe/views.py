@@ -1,7 +1,8 @@
 # FE/views.py
+from datetime import date
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from django.db.models import Sum, Count, F, DecimalField
+from django.db.models import Sum, Count, F, DecimalField,ExpressionWrapper, Value
 from django.db.models.functions import TruncMonth, Coalesce
 from django.shortcuts import render
 from decimal import Decimal
@@ -116,6 +117,7 @@ def dashboard(request):
     clientes_labels = labels[:]
     clientes_data = [0] * len(months)
     cli_date_field = _pick_field(Receptor_fe, ["created_at", "created", "fecha_creacion", "fecha_registro"])
+    
     if cli_date_field:
         qs = (
             Receptor_fe.objects
@@ -135,32 +137,49 @@ def dashboard(request):
     if Producto:
         # Campos típicos
         stock_field = _pick_field(Producto, ["existencia", "existencias", "stock", "cantidad_disponible"])
-        precio_field = _pick_field(Producto, ["precio", "precio_venta", "preunitario", "precio_sugerido"])
+        precio_field = _pick_field(Producto, ["preunitario","precio", "precio_venta", "precio_sugerido"])
         categoria_field = _pick_field(Producto, ["categoria", "categoria__nombre", "familia", "grupo"])
-
         try:
+        # Valor total inventario
             if stock_field and precio_field:
-                # Valor total
-                inventario_valor_total = float(
-                    Producto.objects.aggregate(
-                        v=Coalesce(Sum(F(stock_field) * F(precio_field)), 0.0)
-                    )["v"] or 0
+                valor_expr = ExpressionWrapper(
+                    F(stock_field) * F(precio_field),
+                    output_field=DecimalField(max_digits=20, decimal_places=2),
                 )
-            # Top por categoría (si hay)
+                agg = Producto.objects.aggregate(
+                    v=Coalesce(
+                        Sum(valor_expr, output_field=DecimalField(max_digits=20, decimal_places=2)),
+                        Value(Decimal("0.00")),
+                        output_field=DecimalField(max_digits=20, decimal_places=2),
+                    )
+                )
+                inventario_valor_total = float(agg["v"] or Decimal("0.00"))
+
+            # Top por categoría (nombre, no id)
             if categoria_field and stock_field:
-                # Si categoria es FK usamos categoria__nombre; si no, el mismo field
-                cat_expr = F(categoria_field) if "__" in categoria_field else F(categoria_field)
+                # si el campo es FK `categoria`, usamos `categoria__nombre`
+                if categoria_field == "categoria":
+                    cat_value_field = "categoria__nombre"
+                else:
+                    # si es otro campo normal (familia, grupo, etc.), lo usamos tal cual
+                    cat_value_field = categoria_field
+
                 qs = (
                     Producto.objects
-                    .values(categoria_field)
-                    .annotate(total=Coalesce(Sum(stock_field), 0))
+                    .values(cat_value_field)
+                    .annotate(
+                        total=Coalesce(Sum(stock_field), 0)
+                    )
                     .order_by("-total")[:6]
                 )
-                inv_labels = [str(row[categoria_field]) or "—" for row in qs]
-                inv_data = [int(row["total"] or 0) for row in qs]
-        except Exception:
-            pass
 
+                inv_labels = [str(row[cat_value_field]) or "—" for row in qs]
+                inv_data = [int(row["total"] or 0) for row in qs]
+
+        except Exception as e:
+            print("excepcion", e)
+            pass
+        
     # ===== Facturación por estado =====
     fact_estado_labels = ["Aprobadas", "Rechazadas", "Pendientes"]
 
@@ -200,11 +219,11 @@ def dashboard(request):
         # asumimos campo 'cantidad' en DetalleFactura y FK 'producto'
         qs = (
             DetalleFactura.objects
-            .values("producto__descripcion")  # ajusta a producto__nombre si aplica
+            .values("producto__codigo")  # ajusta a producto__nombre si aplica
             .annotate(c=Coalesce(Sum("cantidad"), 0))
             .order_by("-c")[:5]
         )
-        top_prod_labels = [row["producto__descripcion"] or "—" for row in qs]
+        top_prod_labels = [row["producto__codigo"] or "—" for row in qs]
         top_prod_data = [int(row["c"] or 0) for row in qs]
     except Exception:
         pass
