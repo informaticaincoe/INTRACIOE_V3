@@ -152,7 +152,7 @@
         </div>
 
         <div class="form-check mb-3">
-          <input class="form-check-input" type="checkbox" name="imprime_termica" id="imprime_termica">
+          <input class="form-check-input border" type="checkbox" name="imprime_termica" id="imprime_termica">
           <label class="form-check-label" for="imprime_termica">
             Imprimir en térmica (80mm)
           </label>
@@ -173,6 +173,8 @@
       option.style.display = text.includes(filter) ? '' : 'none';
     });
   });
+
+  
 </script>
 
 {% include "setup/modales.html" %}

@@ -2332,6 +2332,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
                             cantidad=det.cantidad,
                             referencia=f"Reingreso NC {factura.numero_control}"
                         )
+                    print("DEVOLUCION DESDE API VIEW")
                     # 2c) Ajuste de stock atómico
                     Producto.objects.filter(pk=det.producto.pk).update(
                         stock=F('stock') + det.cantidad
@@ -2969,6 +2970,7 @@ class FirmarFacturaAPIView(APIView):
 
         # Ciclo de intentos de firma
         for intento in range(1, intentos_max + 1):
+            print("INTENTOS EN API VIEW", intento)
             # Verificar token activo
             token_data = Token_data.objects.filter(activado=True).first()
             if not token_data:

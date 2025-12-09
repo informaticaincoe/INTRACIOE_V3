@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
-{% block extra_css %}
+
+{% block content %}
 <style>
   .kbd{border:1px solid #d0d7de;border-bottom-width:2px;border-radius:4px;padding:0 .25rem;font-size:.85em;background:#f8fafc}
   .pos-sticky{position:sticky;top:76px}
@@ -10,9 +11,7 @@
   .combo-menu{display:none;max-height:260px;overflow:auto;border:1px solid #e5e7eb;border-radius:.5rem;margin-top:.25rem;background:#fff}
   .combo-item.active{background:#eef2ff}
 </style>
-{% endblock %}
 
-{% block content %}
 <div class="container py-3">
   <form method="post" id="form-pos" autocomplete="off">
     {% csrf_token %}
@@ -57,14 +56,13 @@
             <select name="tipo_documento_seleccionado" id="tipo_documento_seleccionado" class="form-select" required>
               {% for d in tipoDocumentos %}
                 <option value="{{ d.codigo }}"
-                  {% if documento_seleccionado == d.codigo or forloop.first and not documento_seleccionado %}selected{% endif %}>
+                  {% if dte_select == d.codigo or forloop.first and not documento_seleccionado %}selected{% endif %}>
                   {{ d.descripcion }} 
                 </option>
               {% endfor %}
             </select>
           </div>
         </div>
-
         <!-- 2) Cliente (sin condición de operación) -->
         <div class="card shadow-sm mt-3">
           <div class="card-body">
@@ -156,7 +154,7 @@
             <select name="tipo_documento_seleccionado" id="tipo_documento_seleccionado" class="form-select" required>
               {% for d in tipoDocumentos %}
                 <option value="{{ d.codigo }}"
-                  {% if documento_seleccionado == d.codigo or forloop.first and not documento_seleccionado %}selected{% endif %}>
+                  {% if dte_select == d.codigo or forloop.first and not documento_seleccionado %}selected{% endif %}>
                   {{ d.descripcion }}
                 </option>
               {% endfor %}
@@ -404,6 +402,15 @@
               <span>Total a pagar</span><strong id="sum_total">$0.00</strong>
             </div>
 
+            <div id="alert-clientes-varios"
+                class="alert alert-warning d-none mt-2"
+                role="alert"
+              >
+                <i class="bi bi-info-circle me-1"></i>
+                <strong>Monto supera $20.00</strong>: selecciona un
+                <b>cliente registrado</b> (no "Clientes varios").
+            </div>
+
             <!-- hidden para backend -->
             <div id="hidden-items"></div>
             <input type="hidden" name="retencion_iva_monto" id="retencion_iva_monto">
@@ -456,666 +463,683 @@
 </div>
 
 <script>
-const THRESHOLD_MH = 20; // USD
-const receptorSel = document.getElementById('receptor_id');
+  const THRESHOLD_MH = 20; // USD
+  const receptorSel   = document.getElementById('receptor_id');
+  const alertClientes = document.getElementById('alert-clientes-varios');
+  const form          = document.getElementById('form-pos');
+  const submitBtn     = form ? form.querySelector('button[type="submit"]') : null;
+  const receptorError = document.getElementById('receptor-error');
 
-function isVacios(str){ return !str || String(str).trim()===''; }
+  //funcion para verificar que el cliente seleccionado es clientes varios
+  function isClientesVariosSelected() {
+    if (!receptorSel) return false;
 
-// ¿es "Clientes varios"?
-function isClientesVariosSelected() {
-  if (!receptorSel) return true;
-  const selVal  = String(receptorSel.value || '');
-  const selTxt  = (receptorSel.options[receptorSel.selectedIndex]?.text || '').toUpperCase();
-  const variosId = String(receptorSel.dataset.variosId || '1'); // fallback 1
+    const selVal  = String(receptorSel.value || '');
+    const selTxt  = (receptorSel.options[receptorSel.selectedIndex]?.text || '').toUpperCase();
+    const variosId = String(receptorSel.dataset.variosId);  // data-varios-id="1"
 
-  if (selVal && selVal === variosId) return true;       // match por ID exacto
-  if (selTxt.includes('VARIOS')) return true;            // heurística por texto
-  return false;
-}
+    if (selVal && selVal === variosId) return true;
+    if (selTxt.includes('VARIOS')) return true;
+    if (selTxt.includes('0000000-0')) return true;
 
-function ensureAlertaCliente() {
-  const card = document.querySelector('.pos-sticky .card-body') || document;
-  let alert = document.getElementById('mhClienteAlert');
-  if (!alert) {
-    alert = document.createElement('div');
-    alert.id = 'mhClienteAlert';
-    alert.className = 'alert alert-warning d-flex align-items-center gap-2 py-2 px-3';
-    alert.style.display = 'none';
-    alert.innerHTML = `
-      <i class="bi bi-info-circle"></i>
-      <div><strong>Monto supera $${THRESHOLD_MH.toFixed(2)}</strong>: selecciona un <b>cliente registrado</b> (no "Clientes varios").</div>
-    `;
-    const submitBtn = document.querySelector('#form-pos button[type="submit"]');
-    if (submitBtn && submitBtn.parentElement) {
-      submitBtn.parentElement.parentElement.insertBefore(alert, submitBtn.parentElement);
-    } else {
-      card.prepend(alert);
+
+    return false;
+  }
+
+  // SOLO aplica la regla si hay ítems en el carrito
+  function enforceClienteRequirement(totalPagar) {
+    if (!alertClientes) return;
+
+    const itemsCount = (window.POS?.items?.length || 0);
+
+    // Si no hay productos -> todo normal
+    if (!itemsCount) {
+      alertClientes.classList.add('d-none');
+      if (submitBtn) submitBtn.disabled = false;
+
+      if (receptorSel) receptorSel.classList.remove('is-invalid');
+      if (receptorError) receptorError.style.display = 'none';
+      return;
+    }
+
+    const requiereCliente = Number(totalPagar) > THRESHOLD_MH;
+    const esVarios        = isClientesVariosSelected();
+    const bloquear        = requiereCliente && esVarios;
+
+    // Mostrar / ocultar alert
+    alertClientes.classList.toggle('d-none', !bloquear);
+
+    // Bloquear / habilitar botón Generar DTE
+    if (submitBtn) submitBtn.disabled = bloquear;
+
+    // Marcar select como inválido
+    if (receptorSel) {
+      receptorSel.classList.toggle('is-invalid', bloquear);
+    }
+    if (receptorError) {
+      receptorError.style.display = bloquear ? 'block' : 'none';
     }
   }
-  return alert;
-}
 
-// SOLO aplica la regla si hay ítems en el carrito
-function enforceClienteRequirement(totalPagar) {
-  const alert = ensureAlertaCliente();
-  const submitBtn = document.querySelector('#form-pos button[type="submit"]');
-
-  const itemsCount = (window.POS?.items?.length || 0);
-  if (!itemsCount) { // sin ítems → nada de alertas ni bloqueos
-    if (alert) alert.style.display = 'none';
-    submitBtn && (submitBtn.disabled = false);
-    receptorSel && receptorSel.classList.remove('is-invalid');
-    return;
+  // Cuando cambie el cliente, reevaluar con el total actual
+  if (receptorSel) {
+    receptorSel.addEventListener('change', () => {
+      const txt   = document.getElementById('sum_total')?.textContent || '$0.00';
+      const total = parseFloat(txt.replace(/[^\d.]/g, '')) || 0;
+      enforceClienteRequirement(total);
+    });
   }
-
-  const requiereCliente = Number(totalPagar) > THRESHOLD_MH;
-  const sinCliente = !receptorSel || isVacios(receptorSel.value);
-  const esVarios = isClientesVariosSelected();
-  const invalido = requiereCliente && (sinCliente || esVarios);
-
-  if (alert) alert.style.display = invalido ? '' : 'none';
-  if (submitBtn) submitBtn.disabled = !!invalido;
-  if (receptorSel) receptorSel.classList.toggle('is-invalid', !!invalido);
-}
 </script>
 
-
 <script>
+  (function(){
+    // ======= Estado global POS =======
+    window.POS = {
+      items: [],
+      apiUrl: "{% url 'api_productos' %}",
+    };
 
-(function(){
-  // ======= Estado global POS =======
-  window.POS = {
-    items: [],
-    apiUrl: "{% url 'api_productos' %}",
-  };
+    
+    // ======= Helpers / refs =======
+    const $ = (id) => document.getElementById(id);
+    const tbody       = $('tbody-items');
+    const hiddenItems = $('hidden-items');
+    const qtyInput    = $('cantidadProducto');
+    const priceInput  = $('precioProducto');
+    const ivaChk      = $('aplicaIvaProducto');
+    const btnAgregar  = $('btnAgregarProducto');
+    const sumSub  = $('sum_subtotal');
+    const sumIva  = $('sum_iva');
+    const sumDesc = $('sum_desc');
+    const sumTot  = $('sum_total');
 
-  // ======= Helpers / refs =======
-  const $ = (id) => document.getElementById(id);
-  const tbody       = $('tbody-items');
-  const hiddenItems = $('hidden-items');
-  const qtyInput    = $('cantidadProducto');
-  const priceInput  = $('precioProducto');
-  const ivaChk      = $('aplicaIvaProducto');
+    const mpSelect = $('metodo_pago');
 
-  const sumSub  = $('sum_subtotal');
-  const sumIva  = $('sum_iva');
-  const sumDesc = $('sum_desc');
-  const sumTot  = $('sum_total');
+    function fmt(n){ return '$' + (Number(n||0).toFixed(2)); }
+    function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 
-  const mpSelect = $('metodo_pago');
-
-  function fmt(n){ return '$' + (Number(n||0).toFixed(2)); }
-  function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
-
-  function _isEfectivoVal(value, label=''){
-    const v = (value||'').toString().toUpperCase();
-    const t = (label||'').toString().toUpperCase();
-    return v === '01' || v === 'EFECTIVO' || t.includes('EFECT');
-  }
-  function _isCreditoVal(value, label=''){
-    const v = (value||'').toString().toUpperCase();
-    const t = (label||'').toString().toUpperCase();
-    return v === '17' || v === 'CREDITO' || v === 'CRÉDITO' || t.includes('CRED');
-  }
-
-  function lineTotal(it){
-    const subtotal = (+it.precio) * it.cantidad;
-    const desc = subtotal * (Math.min(100, Math.max(0, +it.desc_pct))/100);
-    const base = subtotal - desc;
-    const iva = it.aplica_iva ? base * 0.13 : 0;
-    return base + iva;
-  }
-
-  // --- Número de control por tipo DTE ---
-  const tipoDteSelect = document.getElementById('tipo_documento_seleccionado');
-  const ncText  = document.getElementById('numero_control_text');
-  const ncInput = document.getElementById('numero_control_input');
-
-  async function actualizarNumeroControl() {
-    if (!tipoDteSelect) return;
-    const tipo = tipoDteSelect.value;
-    try {
-      if (ncText) ncText.textContent = '…';
-      const url = "{% url 'obtener_numero_control_ajax' %}?tipo_dte=" + encodeURIComponent(tipo);
-      const resp = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' });
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      const data = await resp.json();
-      const nuevo = data?.numero_control || '';
-      if (ncText)  ncText.textContent  = nuevo || '—';
-      if (ncInput) ncInput.value = nuevo;
-    } catch (err) {
-      console.error('Error obteniendo número de control:', err);
-      if (ncText) ncText.textContent = 'Error';
+    function _isEfectivoVal(value, label=''){
+      const v = (value||'').toString().toUpperCase();
+      const t = (label||'').toString().toUpperCase();
+      return v === '01' || v === 'EFECTIVO' || t.includes('EFECT');
     }
-  }
-  tipoDteSelect?.addEventListener('change', actualizarNumeroControl);
-  actualizarNumeroControl();
-
-  // ======= Hidden para backend =======
-  function syncHidden(){
-    hiddenItems.innerHTML = POS.items.map(it => `
-      <input type="hidden" name="item_id[]" value="${it.id}">
-      <input type="hidden" name="item_cantidad[]" value="${it.cantidad}">
-      <input type="hidden" name="item_precio[]" value="${(+it.precio).toFixed(2)}">
-      <input type="hidden" name="item_descuento[]" value="${it.desc_pct}">
-      <input type="hidden" name="item_iva[]" value="${it.aplica_iva ? '1':'0'}">
-      <input type="hidden" name="item_stock[]" value="${Number.isFinite(+it.stock)? it.stock : ''}">
-    `).join('');
-  }
-
-  // ======= Render tabla =======
-  function renderItems(){
-    const items = POS.items;
-    if (!items.length){
-      tbody.innerHTML = `<tr class="empty"><td colspan="6" class="text-center text-muted py-3">Sin productos agregados.</td></tr>`;
-      hiddenItems.innerHTML = '';
-      return;
-    }
-    tbody.innerHTML = items.map((it, i) => {
-      const stockTxt = Number.isFinite(+it.stock) ? it.stock : '-';
-      const stockClass = (Number(it.stock) <= 0) ? 'stock-low' : 'stock-ok';
-      return `
-        <tr data-idx="${i}">
-          <td>
-            <div class="fw-semibold">${escapeHtml(it.nombre)}</div>
-            <div class="small ${stockClass}">#${escapeHtml(it.codigo||'-')} · Stock: ${stockTxt}</div>
-          </td>
-          <td class="text-end">
-            <input type="number" step="0.01" min="0" class="form-control form-control-sm text-end inp-precio" value="${(+it.precio).toFixed(2)}" aria-label="Precio unitario">
-          </td>
-          <td class="text-end">
-            <input type="number" min="1" class="form-control form-control-sm text-end inp-cant" value="${it.cantidad}" aria-label="Cantidad">
-          </td>
-          <td class="text-center">
-            <input class="form-check-input chk-iva" type="checkbox" ${it.aplica_iva ? 'checked':''} aria-label="Aplica IVA">
-          </td>
-          <td class="text-end cel-total">${fmt(lineTotal(it))}</td>
-          <td class="text-end">
-            <button type="button" class="btn btn-sm btn-outline-danger btn-del"><i class="bi bi-x-lg"></i></button>
-          </td>
-        </tr>
-      `;
-    }).join('');
-
-    tbody.querySelectorAll('tr').forEach(tr=>{
-      const idx = +tr.dataset.idx;
-      const item = POS.items[idx];
-      tr.querySelector('.inp-precio').addEventListener('input', (e)=>{
-        item.precio = parseFloat(e.target.value||'0')||0;
-        tr.querySelector('.cel-total').textContent = fmt(lineTotal(item));
-        calcTotals();
-      });
-      tr.querySelector('.inp-cant').addEventListener('input', (e)=>{
-        item.cantidad = Math.max(1, parseInt(e.target.value||'1',10));
-        tr.querySelector('.cel-total').textContent = fmt(lineTotal(item));
-        calcTotals();
-      });
-      tr.querySelector('.chk-iva').addEventListener('change', (e)=>{
-        item.aplica_iva = e.target.checked;
-        tr.querySelector('.cel-total').textContent = fmt(lineTotal(item));
-        calcTotals();
-      });
-      tr.querySelector('.btn-del').addEventListener('click', ()=>{
-        POS.items.splice(idx,1);
-        renderItems();
-        calcTotals();
-      });
-    });
-
-    syncHidden();
-  }
-  window.renderItems = renderItems;
-
-  // ======= Totales =======
-  function calcTotals(){
-    let subtotal = 0, descuentos = 0, iva = 0, total = 0;
-    POS.items.forEach(it=>{
-      const st = (+it.precio) * it.cantidad;
-      const ds = st * (Math.min(100, Math.max(0, +it.desc_pct))/100);
-      const base = st - ds;
-      const iv = it.aplica_iva ? base * 0.13 : 0;
-      subtotal += base;
-      descuentos += ds;
-      iva += iv;
-      total += base + iv;
-    });
-
-    // Extras (si existen en DOM)
-    const retIvaOn = $('ret_iva_sw')?.checked;
-    const retRentaOn = $('ret_renta_sw')?.checked;
-    let retIvaMto = retIvaOn ? parseFloat($('ret_iva_mto')?.value||'0')||0 : 0;
-    let retRentaMto = retRentaOn ? parseFloat($('ret_renta_mto')?.value||'0')||0 : 0;
-
-    const totalPagar = total - retIvaMto - retRentaMto;
-
-    sumSub.textContent  = fmt(subtotal);
-    sumIva.textContent  = fmt(iva);
-    sumDesc.textContent = fmt(descuentos);
-    sumTot.textContent  = fmt(totalPagar);
-
-    if ($('retencion_iva_monto'))   $('retencion_iva_monto').value   = retIvaMto.toFixed(2);
-    if ($('retencion_renta_monto')) $('retencion_renta_monto').value = retRentaMto.toFixed(2);
-
-    // Efectivo: calcular cambio
-    const val   = mpSelect?.value || '';
-    const label = mpSelect?.options[mpSelect.selectedIndex]?.text || '';
-    if (_isEfectivoVal(val, label)) {
-      const recibido = parseFloat($('montoRecibido')?.value||'0')||0;
-      const cambio = Math.max(0, recibido - totalPagar);
-      $('montoCambio') && ($('montoCambio').textContent = fmt(cambio));
+    function _isCreditoVal(value, label=''){
+      const v = (value||'').toString().toUpperCase();
+      const t = (label||'').toString().toUpperCase();
+      return v === '17' || v === 'CREDITO' || v === 'CRÉDITO' || t.includes('CRED');
     }
 
-    // Reglas MH: exigir cliente si total > umbral
-    enforceClienteRequirement(totalPagar);
-    syncHidden();
-  }
-  window.calcTotals = calcTotals;
-
-
-  // Eventos extras (si existen) y efectivo
-  ['ret_iva_sw','ret_iva_mto','ret_renta_sw','ret_renta_mto','montoRecibido'].forEach(id=>{
-    $(id)?.addEventListener?.('input', calcTotals);
-    $(id)?.addEventListener?.('change', calcTotals);
-  });
-
-  // Agregar item desde picker
-  function addItemFromProduct(sel){
-    if(!sel) return;
-    const cant   = Math.max(1, parseInt(qtyInput.value||'1',10));
-    const aplica = ivaChk.checked;
-    const precio = parseFloat(priceInput.value || sel.precio || '0') || 0;
-
-    const idx = POS.items.findIndex(x => x.id === sel.id);
-    if (idx >= 0) {
-      POS.items[idx].cantidad += cant;
-      if (!priceInput.value) POS.items[idx].precio = +sel.precio;
-    } else {
-      POS.items.push({
-        id: sel.id,
-        codigo: sel.codigo,
-        nombre: sel.nombre,
-        precio: precio,
-        cantidad: cant,
-        desc_pct: 0,
-        aplica_iva: aplica,
-        stock: sel.stock
-      });
+    function lineTotal(it){
+      const subtotal = (+it.precio) * it.cantidad;
+      const desc = subtotal * (Math.min(100, Math.max(0, +it.desc_pct))/100);
+      const base = subtotal - desc;
+      const iva = it.aplica_iva ? base * 0.13 : 0;
+      return base + iva;
     }
 
-    qtyInput.value = 1;
-    renderItems();
-    calcTotals();
-  }
-  window.addItem = () => {};
+    // --- Número de control por tipo DTE ---
+    const tipoDteSelect = document.getElementById('tipo_documento_seleccionado');
+    const ncText  = document.getElementById('numero_control_text');
+    const ncInput = document.getElementById('numero_control_input');
 
-  // ======= Product Picker =======
-  class ProductPicker {
-    constructor({input, menu, apiUrl, onChoose}){
-      this.input = input; this.menu = menu; this.apiUrl = apiUrl; this.onChoose = onChoose || (()=>{});
-      this.items = []; this.activeIndex = -1; this.selected = null;
-
-      this.input.addEventListener('focus', ()=> this.search(''));
-      this.input.addEventListener('input',  (e)=> this.debouncedSearch(e.target.value.trim()));
-      this.input.addEventListener('keydown',(e)=> this.onKey(e));
-      document.addEventListener('click', (e)=>{ if(!this.menu.contains(e.target) && e.target!==this.input){ this.hide(); }});
+    async function actualizarNumeroControl() {
+      if (!tipoDteSelect) return;
+      const tipo = tipoDteSelect.value;
+      try {
+        if (ncText) ncText.textContent = '…';
+        const url = "{% url 'obtener_numero_control_ajax' %}?tipo_dte=" + encodeURIComponent(tipo);
+        const resp = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const data = await resp.json();
+        const nuevo = data?.numero_control || '';
+        if (ncText)  ncText.textContent  = nuevo || '—';
+        if (ncInput) ncInput.value = nuevo;
+      } catch (err) {
+        console.error('Error obteniendo número de control:', err);
+        if (ncText) ncText.textContent = 'Error';
+      }
     }
-    debouncedSearch(q){ clearTimeout(this._t); this._t = setTimeout(()=>this.search(q), 180); }
-    async search(q){
-      try{
-        const url = `${this.apiUrl}?q=${encodeURIComponent(q)}&page_size=25`;
-        const res = await fetch(url, {headers:{'X-Requested-With':'XMLHttpRequest'}, credentials: 'same-origin'});
-        const data = await res.json();
-        this.items = (data.results||[]).map(p=>{
-          const precio = parseFloat(p.precio||'0')||0;
-          const neto = p.con_iva ? (precio/1.13) : precio;
-          return { id:p.id, codigo:p.codigo, nombre:p.nombre, precio:neto, con_iva: !!p.con_iva, stock:p.stock, imagen:p.imagen||'' };
+    tipoDteSelect?.addEventListener('change', actualizarNumeroControl);
+    actualizarNumeroControl();
+
+    // ======= Hidden para backend =======
+    function syncHidden(){
+      hiddenItems.innerHTML = POS.items.map(it => `
+        <input type="hidden" name="item_id[]" value="${it.id}">
+        <input type="hidden" name="item_cantidad[]" value="${it.cantidad}">
+        <input type="hidden" name="item_precio[]" value="${(+it.precio).toFixed(2)}">
+        <input type="hidden" name="item_descuento[]" value="${it.desc_pct}">
+        <input type="hidden" name="item_iva[]" value="${it.aplica_iva ? '1':'0'}">
+        <input type="hidden" name="item_stock[]" value="${Number.isFinite(+it.stock)? it.stock : ''}">
+      `).join('');
+    }
+
+    // ======= Render tabla =======
+    function renderItems(){
+      const items = POS.items;
+      if (!items.length){
+        tbody.innerHTML = `<tr class="empty"><td colspan="6" class="text-center text-muted py-3">Sin productos agregados.</td></tr>`;
+        hiddenItems.innerHTML = '';
+        return;
+      }
+
+      tbody.innerHTML = items.map((it, i) => {
+        const stockTxt = Number.isFinite(+it.stock) ? it.stock : '-';
+        const stockClass = (Number(it.stock) <= 0) ? 'stock-low' : 'stock-ok';
+        return `
+          <tr data-idx="${i}">
+            <td>
+              <div class="fw-semibold">${escapeHtml(it.nombre)}</div>
+              <div class="small ${stockClass}">#${escapeHtml(it.codigo||'-')} · Stock: ${stockTxt}</div>
+            </td>
+            <td class="text-end">
+              <input type="number" step="0.01" min="0" class="form-control form-control-sm text-end inp-precio" value="${(+it.precio).toFixed(2)}" aria-label="Precio unitario">
+            </td>
+            <td class="text-end">
+              <input type="number" min="1" class="form-control form-control-sm text-end inp-cant" value="${it.cantidad}" aria-label="Cantidad">
+            </td>
+            <td class="text-center">
+              <input class="form-check-input chk-iva" type="checkbox" ${it.aplica_iva ? 'checked':''} aria-label="Aplica IVA">
+            </td>
+            <td class="text-end cel-total">${fmt(lineTotal(it))}</td>
+            <td class="text-end">
+              <button type="button" class="btn btn-sm btn-outline-danger btn-del"><i class="bi bi-x-lg"></i></button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      tbody.querySelectorAll('tr').forEach(tr=>{
+        const idx = +tr.dataset.idx;
+        const item = POS.items[idx];
+
+        tr.querySelector('.inp-precio').addEventListener('input', (e)=>{
+          item.precio = parseFloat(e.target.value||'0')||0;
+          tr.querySelector('.cel-total').textContent = fmt(lineTotal(item));
+          calcTotals();
         });
-        this.activeIndex = this.items.length ? 0 : -1;
-        this.render(); this.show();
-      }catch(_e){ this.items=[]; this.activeIndex=-1; this.render(); this.show(); }
+        tr.querySelector('.inp-cant').addEventListener('input', (e)=>{
+          item.cantidad = Math.max(1, parseInt(e.target.value||'80',10));
+          tr.querySelector('.cel-total').textContent = fmt(lineTotal(item));
+          calcTotals();
+        });
+        tr.querySelector('.chk-iva').addEventListener('change', (e)=>{
+          item.aplica_iva = e.target.checked;
+          tr.querySelector('.cel-total').textContent = fmt(lineTotal(item));
+          calcTotals();
+        });
+        tr.querySelector('.btn-del').addEventListener('click', ()=>{
+          POS.items.splice(idx,1);
+          renderItems();
+          calcTotals();
+        });
+      });
+
+      syncHidden();
     }
-    render(){
-      if(!this.items.length){ this.menu.innerHTML = `<div class="combo-empty p-2 text-muted">Sin resultados…</div>`; return; }
-      this.menu.innerHTML = this.items.map((it,i)=>`
-        <div class="combo-item ${i===this.activeIndex?'active':''} p-2" role="option" data-idx="${i}" style="cursor:pointer;">
-          <div class="d-flex align-items-center justify-content-between gap-3">
-            <div class="me-3">
-              <div class="fw-semibold">${this.escape(it.nombre)}</div>
-              <div class="small ${(+it.stock)<=0?'text-danger':'text-success'}">
-                #${this.escape(it.codigo||'-')} · Stock: ${Number.isFinite(+it.stock)?it.stock:'-'}
+    window.renderItems = renderItems;
+
+    // ======= Totales =======
+    function calcTotals(){
+      let subtotal = 0, descuentos = 0, iva = 0, total = 0;
+      POS.items.forEach(it=>{
+        const st = (+it.precio) * it.cantidad;
+        const ds = st * (Math.min(100, Math.max(0, +it.desc_pct))/100);
+        const base = st - ds;
+        const iv = it.aplica_iva ? base * 0.13 : 0;
+        subtotal += base;
+        descuentos += ds;
+        iva += iv;
+        total += base + iv;
+      });
+
+      // Extras (si existen en DOM)
+      const retIvaOn = $('ret_iva_sw')?.checked;
+      const retRentaOn = $('ret_renta_sw')?.checked;
+      let retIvaMto = retIvaOn ? parseFloat($('ret_iva_mto')?.value||'0')||0 : 0;
+      let retRentaMto = retRentaOn ? parseFloat($('ret_renta_mto')?.value||'0')||0 : 0;
+
+      const totalPagar = total - retIvaMto - retRentaMto;
+
+      sumSub.textContent  = fmt(subtotal);
+      sumIva.textContent  = fmt(iva);
+      sumDesc.textContent = fmt(descuentos);
+      sumTot.textContent  = fmt(totalPagar);
+
+      if ($('retencion_iva_monto'))   $('retencion_iva_monto').value   = retIvaMto.toFixed(2);
+      if ($('retencion_renta_monto')) $('retencion_renta_monto').value = retRentaMto.toFixed(2);
+
+      // Efectivo: calcular cambio
+      const val   = mpSelect?.value || '';
+      const label = mpSelect?.options[mpSelect.selectedIndex]?.text || '';
+      if (_isEfectivoVal(val, label)) {
+        const recibido = parseFloat($('montoRecibido')?.value||'0')||0;
+        const cambio = Math.max(0, recibido - totalPagar);
+        $('montoCambio') && ($('montoCambio').textContent = fmt(cambio));
+      }
+
+      // Reglas MH: exigir cliente si total > umbral
+      enforceClienteRequirement(totalPagar);
+      syncHidden();
+    }
+    window.calcTotals = calcTotals;
+
+
+    // Eventos extras (si existen) y efectivo
+    ['ret_iva_sw','ret_iva_mto','ret_renta_sw','ret_renta_mto','montoRecibido'].forEach(id=>{
+      $(id)?.addEventListener?.('input', calcTotals);
+      $(id)?.addEventListener?.('change', calcTotals);
+    });
+
+    // Agregar item desde picker
+    function addItemFromProduct(sel){
+      if(!sel) return;
+      const cant   = Math.max(1, parseInt(qtyInput.value||'1',10));
+      const aplica = ivaChk.checked;
+      const precio = parseFloat(priceInput.value || sel.precio || '0') || 0;
+
+      const idx = POS.items.findIndex(x => x.id === sel.id);
+      if (idx >= 0) {
+        POS.items[idx].cantidad += cant;
+        if (!priceInput.value) POS.items[idx].precio = +sel.precio;
+      } else {
+        POS.items.push({
+          id: sel.id,
+          codigo: sel.codigo,
+          nombre: sel.nombre,
+          precio: precio,
+          cantidad: cant,
+          desc_pct: 0,
+          aplica_iva: aplica,
+          stock: sel.stock
+        });
+      }
+
+      qtyInput.value = 1;
+      renderItems();
+      calcTotals();
+    }
+    window.addItem = () => {};
+
+    // ======= Product Picker =======
+    class ProductPicker {
+      constructor({input, menu, apiUrl, onChoose}){
+        this.input = input; this.menu = menu; this.apiUrl = apiUrl; this.onChoose = onChoose || (()=>{});
+        this.items = []; this.activeIndex = -1; this.selected = null;
+
+        this.input.addEventListener('focus', ()=> this.search(''));
+        this.input.addEventListener('input',  (e)=> this.debouncedSearch(e.target.value.trim()));
+        this.input.addEventListener('keydown',(e)=> this.onKey(e));
+        document.addEventListener('click', (e)=>{ if(!this.menu.contains(e.target) && e.target!==this.input){ this.hide(); }});
+      }
+      debouncedSearch(q){ clearTimeout(this._t); this._t = setTimeout(()=>this.search(q), 180); }
+      async search(q){
+        try{
+          const url = `${this.apiUrl}?q=${encodeURIComponent(q)}&page_size=25`;
+          const res = await fetch(url, {headers:{'X-Requested-With':'XMLHttpRequest'}, credentials: 'same-origin'});
+          const data = await res.json();
+          this.items = (data.results||[]).map(p=>{
+            const precio = parseFloat(p.precio||'0')||0;
+            const neto = p.con_iva ? (precio/1.13) : precio;
+            const stockValue = parseFloat(p.stock);
+            const stockFinal = Number.isFinite(stockValue) ? stockValue : 0;
+
+            return { id:p.id, codigo:p.codigo, nombre:p.nombre||p.descripcion, precio:neto, stock:stockFinal };
+          });
+          this.activeIndex = this.items.length ? 0 : -1;
+          this.render(); this.show();
+        }catch(_e){ this.items=[]; this.activeIndex=-1; this.render(); this.show(); }
+      }
+      render(){
+        if(!this.items.length){ this.menu.innerHTML = `<div class="combo-empty p-2 text-muted">Sin resultados…</div>`; return; }
+        this.menu.innerHTML = this.items.map((it,i)=>`
+          <div class="combo-item ${i===this.activeIndex?'active':''} p-2" role="option" data-idx="${i}" style="cursor:pointer;">
+            <div class="d-flex align-items-center justify-content-between gap-3">
+              <div class="me-3">
+                <div class="fw-semibold">${this.escape(it.nombre)}</div>
+                <div class="small ${(+it.stock)<=0?'text-danger':'text-success'}">
+                  #${this.escape(it.codigo||'-')} · Stock: ${Number.isFinite(+it.stock)?it.stock:'-'}
+                </div>
+              </div>
+              <div class="ms-auto text-nowrap">
+                <span class="badge text-bg-light">$${(+it.precio).toFixed(2)}</span>
               </div>
             </div>
-            <div class="ms-auto text-nowrap">
-              <span class="badge text-bg-light">$${(+it.precio).toFixed(2)}</span>
-            </div>
           </div>
-        </div>
-      `).join('');
-      this.menu.querySelectorAll('.combo-item').forEach(el=>{
-        el.addEventListener('click', ()=>{
-          const idx = +el.dataset.idx; this.choose(idx);
-        });
-      });
-    }
-    onKey(e){
-      if(!this.isOpen()) this.show();
-      if(e.key==='ArrowDown'){ e.preventDefault(); this.move(1); }
-      else if(e.key==='ArrowUp'){ e.preventDefault(); this.move(-1); }
-      else if(e.key==='Enter'){ e.preventDefault(); this.choose(this.activeIndex); }
-      else if(e.key==='Escape'){ this.hide(); }
-    }
-    move(delta){
-      if(!this.items.length) return;
-      this.activeIndex = (this.activeIndex + delta + this.items.length) % this.items.length;
-      this.render();
-      this.menu.querySelector('.combo-item.active')?.scrollIntoView({block:'nearest'});
-    }
-    choose(idx){
-      const item = this.items[idx]; if(!item) return;
-      this.selected = item;
-      this.input.value = `${item.codigo} | ${item.nombre}`;
-      this.onChoose(item);
-      this.hide();
-    }
-    getSelected(){ return this.selected; }
-    focus(){ this.input.focus(); }
-    isOpen(){ return this.menu.style.display!=='none'; }
-    show(){ this.menu.style.display='block'; }
-    hide(){ this.menu.style.display='none'; }
-    escape(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
-  }
-
-  const picker = new ProductPicker({
-    input: $('productoPickerInput'),
-    menu:  $('productoPickerMenu'),
-    apiUrl: POS.apiUrl,
-    onChoose: (prod)=>{
-      priceInput.value = (+prod.precio).toFixed(2);
-      priceInput.dataset.sticky = '1';
-      ivaChk.checked = !prod.con_iva;
-      setTimeout(()=>{ addItemFromProduct(prod); }, 10);
-    }
-  });
-  window.PRODUCT_PICKER = picker;
-
-  // Enter del input → agrega
-  $('productoPickerInput')?.addEventListener('keydown', (e)=>{
-    const sel = picker.getSelected();
-    if(e.key==='Enter' && sel){
-      e.preventDefault();
-      addItemFromProduct(sel);
-    }
-  });
-
-  // Botón Agregar
-  $('btnAgregarProducto')?.addEventListener('click', ()=>{
-    const sel = picker.getSelected();
-    if(!sel){ picker.focus(); return; }
-    addItemFromProduct(sel);
-  });
-
-  // Método de pago: mostrar/ocultar bloques
-  function togglePago(){
-    const val   = mpSelect?.value || '';
-    const label = mpSelect?.options[mpSelect.selectedIndex]?.text || '';
-    const isEf = _isEfectivoVal(val, label);
-    const isCr = _isCreditoVal(val, label);
-    const $ef = $('wrap-efectivo');
-    const $cr = $('wrap-credito');
-    if ($ef) $ef.style.display = isEf ? '' : 'none';
-    if ($cr) $cr.style.display = isCr ? '' : 'none';
-    calcTotals();
-  }
-  mpSelect?.addEventListener('change', togglePago);
-  $('montoRecibido')?.addEventListener('input', calcTotals);
-  togglePago();
-
-  // ======= Modal de MH (si existe en el DOM) =======
-  const MHModalEl = document.getElementById('mhModal');
-  const MHModal   = MHModalEl && window.bootstrap ? new bootstrap.Modal(MHModalEl) : null;
-  const $mTitle   = document.getElementById('mhModalTitle');
-  const $mMsg     = document.getElementById('mhModalMsg');
-  const $mDet     = document.getElementById('mhModalDet');
-  const $mDetPre  = document.getElementById('mhModalDetPre');
-  const $btnReint = document.getElementById('btnReintentar');
-  const $btnCont  = document.getElementById('btnContingencia');
-
-  function showMhModal(payload){
-    if (!MHModal) {
-      // Fallback si no hay modal en el DOM
-      const msg = (payload?.titulo ? (payload.titulo + ': ') : '') + (payload?.mensaje || 'Error');
-      alert(msg);
-      return;
-    }
-    const titulo = payload?.titulo || 'No se pudo enviar a Hacienda';
-    const mensaje = payload?.mensaje || 'Ocurrió un error al intentar enviar el DTE.';
-    const detalles = payload?.detalles || payload?.respuesta || '';
-    const puedeConting = !!payload?.puede_contingencia;
-    const puedeGuardar = !!payload?.puede_guardar;
-    const facturaId = payload?.factura_id;
-    const enviarUrl = payload?.enviar_mh_url;
-    const redirectUrl = payload?.redirect;
-
-    $mTitle && ($mTitle.textContent = titulo);
-    $mMsg && ($mMsg.textContent = mensaje);
-
-    if ($mDet && $mDetPre) {
-      if (detalles) {
-        $mDet.style.display = '';
-        $mDetPre.textContent = typeof detalles === 'string' ? detalles : JSON.stringify(detalles, null, 2);
-      } else {
-        $mDet.style.display = 'none';
-        $mDetPre.textContent = '';
-      }
-    }
-    const aviso = document.getElementById('mhModalAviso');
-    if (aviso) aviso.style.display = puedeConting ? '' : 'none';
-
-    // MOSTRAR/OCULTAR MODAL DE GUARDAR SIN Enviar
-    if ($btnguardar){
-      $btnGuardar.style.display = puedeGuardar ? '' : 'none';
-      $btnGuardar.onclick = () => {
-        MHModal.hide();
-        if (redirectUrl) window.location.href = redirectUrl;
-        else window.location.reload();
-      };
-    }
-
-    if ($btnReint) {
-      $btnReint.onclick = () => {
-        setTimeout(()=> form.requestSubmit(), 120);
-      };
-    }
-
-    if ($btnCont) {
-      $btnCont.onclick = async () => {
-        if (!enviarUrl || !facturaId) return;
-        const csrf = form.querySelector('input[name="csrfmiddlewaretoken"]')?.value || '';
-        $btnCont.disabled = true;
-        $btnCont.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Enviando…`;
-        try {
-          const idem = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-          const fd = new FormData();
-          fd.append('csrfmiddlewaretoken', csrf);
-          fd.append('crear_evento', 'true');
-          fd.append('idempotency_key', idem);
-
-          const resp = await fetch(`${enviarUrl}${enviarUrl.endsWith('/')?'':'/'}?crear_evento=true`, {
-            method: 'POST',
-            body: fd,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' },
-            credentials: 'same-origin'
+        `).join('');
+        this.menu.querySelectorAll('.combo-item').forEach(el=>{
+          el.addEventListener('click', ()=>{
+            const idx = +el.dataset.idx; this.choose(idx);
           });
-
-          const ct = resp.headers.get('content-type') || '';
-          const data = ct.includes('application/json') ? await resp.json() : {};
-          if (resp.ok && (data.ok || data.redirect)) {
-            MHModal.hide();
-            if (data.redirect) window.location.href = data.redirect;
-            else window.location.reload();
-          } else {
-            showMhModal({
-              titulo: 'No se pudo crear contingencia',
-              mensaje: data?.error || `HTTP ${resp.status}`,
-              detalles: data
-              //puede_guardar: true,
-              //puede_contingencia: false
-            });
-          }
-        } catch(e) {
-          showMhModal({ titulo: 'Error de red', mensaje: String(e) });
-        } finally {
-          $btnCont.disabled = false;
-          $btnCont.textContent = 'Enviar en contingencia';
-        }
-      };
+        });
+      }
+      onKey(e){
+        if(!this.isOpen()) this.show();
+        if(e.key==='ArrowDown'){ e.preventDefault(); this.move(1); }
+        else if(e.key==='ArrowUp'){ e.preventDefault(); this.move(-1); }
+        else if(e.key==='Enter'){ e.preventDefault(); this.choose(this.activeIndex); }
+        else if(e.key==='Escape'){ this.hide(); }
+      }
+      move(delta){
+        if(!this.items.length) return;
+        this.activeIndex = (this.activeIndex + delta + this.items.length) % this.items.length;
+        this.render();
+        this.menu.querySelector('.combo-item.active')?.scrollIntoView({block:'nearest'});
+      }
+      choose(idx){
+        const item = this.items[idx]; if(!item) return;
+        this.selected = item;
+        this.input.value = `${item.codigo} | ${item.nombre}`;
+        this.onChoose(item);
+        this.hide();
+      }
+      getSelected(){ return this.selected; }
+      focus(){ this.input.focus(); }
+      isOpen(){ return this.menu.style.display!=='none'; }
+      show(){ this.menu.style.display='block'; }
+      hide(){ this.menu.style.display='none'; }
+      escape(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
     }
 
-    MHModal.show();
-  }
-
-  // ======= Submit con fetch (anti-doble click + idempotencia + modal) =======
-  const form = document.getElementById('form-pos');
-  const genBtn = () => form.querySelector('button[type="submit"]');
-  let SUBMITTING = false;
-
-  function setSubmitting(on) {
-    const b = genBtn();
-    if (!b) return;
-    if (on) {
-      SUBMITTING = true;
-      b.disabled = true;
-      b.dataset.prev = b.innerHTML;
-      b.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Generando…`;
-    } else {
-      SUBMITTING = false;
-      b.disabled = false;
-      if (b.dataset.prev) b.innerHTML = b.dataset.prev;
-    }
-  }
-
-  form.addEventListener('submit', async (e) => {
-    if (window.POS.items.length === 0) {
-      e.preventDefault();
-      alert('Agrega al menos un producto.');
-      return;
-    }
-    if (SUBMITTING) { e.preventDefault(); return; }
-
-    // >>> Bloqueo MH: total > 20 no permite "Clientes varios" (ID=1)
-    // Recalcula totals por si el DOM no está actualizado al milisegundo
-    let total = 0;
-    window.POS.items.forEach(it=>{
-      const st = (+it.precio) * it.cantidad;
-      const ds = st * (Math.min(100, Math.max(0, +it.desc_pct))/100);
-      const base = st - ds;
-      const iv = it.aplica_iva ? base * 0.13 : 0;
-      total += base + iv;
+    const picker = new ProductPicker({
+      input: $('productoPickerInput'),
+      menu:  $('productoPickerMenu'),
+      apiUrl: POS.apiUrl,
+      onChoose: (prod)=>{
+        priceInput.value = (+prod.precio).toFixed(2);
+        priceInput.dataset.sticky = '1';
+        ivaChk.checked = !prod.con_iva;
+        setTimeout(()=>{ addItemFromProduct(prod); }, 10);
+      }
     });
-    // Restar retenciones si las usas en el total a pagar:
-    const retIvaOn = document.getElementById('ret_iva_sw')?.checked;
-    const retRentaOn = document.getElementById('ret_renta_sw')?.checked;
-    let retIvaMto = retIvaOn ? parseFloat(document.getElementById('ret_iva_mto')?.value||'0')||0 : 0;
-    let retRentaMto = retRentaOn ? parseFloat(document.getElementById('ret_renta_mto')?.value||'0')||0 : 0;
-    const totalPagar = total - retIvaMto - retRentaMto;
+    window.PRODUCT_PICKER = picker;
 
-    if (totalPagar > THRESHOLD_MH && (!receptorSel || !receptorSel.value || isClientesVariosSelected())) {
-      e.preventDefault();
-      alert(`El total supera $${THRESHOLD_MH.toFixed(2)}.\nDebes seleccionar un cliente registrado (no "Clientes varios").`);
-      receptorSel?.focus();
-      return;
+    // Enter del input → agrega
+    $('productoPickerInput')?.addEventListener('keydown', (e)=>{
+      const sel = picker.getSelected();
+      if(e.key==='Enter' && sel){
+        e.preventDefault();
+        addItemFromProduct(sel);
+      }
+    });
+
+    // Botón Agregar
+    $('btnAgregarProducto')?.addEventListener('click', ()=>{
+      const sel = picker.getSelected();
+      if(!sel){ picker.focus(); return; }
+      addItemFromProduct(sel);
+    });
+
+    // Método de pago: mostrar/ocultar bloques
+    function togglePago(){
+      const val   = mpSelect?.value || '';
+      const label = mpSelect?.options[mpSelect.selectedIndex]?.text || '';
+      const isEf = _isEfectivoVal(val, label);
+      const isCr = _isCreditoVal(val, label);
+      const $ef = $('wrap-efectivo');
+      const $cr = $('wrap-credito');
+      if ($ef) $ef.style.display = isEf ? '' : 'none';
+      if ($cr) $cr.style.display = isCr ? '' : 'none';
+      calcTotals();
     }
-    // <<< Fin bloqueo MH
-    setSubmitting(true);
+    mpSelect?.addEventListener('change', togglePago);
+    $('montoRecibido')?.addEventListener('input', calcTotals);
+    togglePago();
 
-    try {
-      const fd = new FormData(form);
-      // Idempotencia (el backend debe ignorar duplicados con misma key)
-      fd.append('idempotency_key', `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    // ======= Modal de MH (si existe en el DOM) =======
+    const MHModalEl = document.getElementById('mhModal');
+    const MHModal   = MHModalEl && window.bootstrap ? new bootstrap.Modal(MHModalEl) : null;
+    const $mTitle   = document.getElementById('mhModalTitle');
+    const $mMsg     = document.getElementById('mhModalMsg');
+    const $mDet     = document.getElementById('mhModalDet');
+    const $mDetPre  = document.getElementById('mhModalDetPre');
+    const $btnReint = document.getElementById('btnReintentar');
+    const $btnCont  = document.getElementById('btnContingencia');
 
-      const resp = await fetch(form.action || location.href, {
-        method: 'POST',
-        body: fd,
-        headers: { 'X-Requested-With':'XMLHttpRequest' },
-        credentials: 'same-origin'
+    function showMhModal(payload){
+      if (!MHModal) {
+        // Fallback si no hay modal en el DOM
+        const msg = (payload?.titulo ? (payload.titulo + ': ') : '') + (payload?.mensaje || 'Error');
+        alert(msg);
+        return;
+      }
+      const titulo = payload?.titulo || 'No se pudo enviar a Hacienda';
+      const mensaje = payload?.mensaje || 'Ocurrió un error al intentar enviar el DTE.';
+      const detalles = payload?.detalles || payload?.respuesta || '';
+      const puedeConting = !!payload?.puede_contingencia;
+      const puedeGuardar = !!payload?.puede_guardar;
+      const facturaId = payload?.factura_id;
+      const enviarUrl = payload?.enviar_mh_url;
+      const redirectUrl = payload?.redirect;
+
+      $mTitle && ($mTitle.textContent = titulo);
+      $mMsg && ($mMsg.textContent = mensaje);
+
+      if ($mDet && $mDetPre) {
+        if (detalles) {
+          $mDet.style.display = '';
+          $mDetPre.textContent = typeof detalles === 'string' ? detalles : JSON.stringify(detalles, null, 2);
+        } else {
+          $mDet.style.display = 'none';
+          $mDetPre.textContent = '';
+        }
+      }
+      const aviso = document.getElementById('mhModalAviso');
+      if (aviso) aviso.style.display = puedeConting ? '' : 'none';
+
+      // MOSTRAR/OCULTAR MODAL DE GUARDAR SIN Enviar
+      if ($btnguardar){
+        $btnGuardar.style.display = puedeGuardar ? '' : 'none';
+        $btnGuardar.onclick = () => {
+          MHModal.hide();
+          if (redirectUrl) window.location.href = redirectUrl;
+          else window.location.reload();
+        };
+      }
+
+      if ($btnReint) {
+        $btnReint.onclick = () => {
+          setTimeout(()=> form.requestSubmit(), 120);
+        };
+      }
+
+      if ($btnCont) {
+        $btnCont.onclick = async () => {
+          if (!enviarUrl || !facturaId) return;
+          const csrf = form.querySelector('input[name="csrfmiddlewaretoken"]')?.value || '';
+          $btnCont.disabled = true;
+          $btnCont.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Enviando…`;
+          try {
+            const idem = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+            const fd = new FormData();
+            fd.append('csrfmiddlewaretoken', csrf);
+            fd.append('crear_evento', 'true');
+            fd.append('idempotency_key', idem);
+
+            const resp = await fetch(`${enviarUrl}${enviarUrl.endsWith('/')?'':'/'}?crear_evento=true`, {
+              method: 'POST',
+              body: fd,
+              headers: { 'X-Requested-With': 'XMLHttpRequest' },
+              credentials: 'same-origin'
+            });
+
+            const ct = resp.headers.get('content-type') || '';
+            const data = ct.includes('application/json') ? await resp.json() : {};
+            if (resp.ok && (data.ok || data.redirect)) {
+              MHModal.hide();
+              if (data.redirect) window.location.href = data.redirect;
+              else window.location.reload();
+            } else {
+              showMhModal({
+                titulo: 'No se pudo crear contingencia',
+                mensaje: data?.error || `HTTP ${resp.status}`,
+                detalles: data
+                //puede_guardar: true,
+                //puede_contingencia: false
+              });
+            }
+          } catch(e) {
+            showMhModal({ titulo: 'Error de red', mensaje: String(e) });
+          } finally {
+            $btnCont.disabled = false;
+            $btnCont.textContent = 'Enviar en contingencia';
+          }
+        };
+      }
+
+      MHModal.show();
+    }
+
+    // ======= Submit con fetch (anti-doble click + idempotencia + modal) =======
+    const form = document.getElementById('form-pos');
+    const genBtn = () => form.querySelector('button[type="submit"]');
+    let SUBMITTING = false;
+
+    function setSubmitting(on) {
+      const b = genBtn();
+      if (!b) return;
+      if (on) {
+        SUBMITTING = true;
+        b.disabled = true;
+        b.dataset.prev = b.innerHTML;
+        b.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Generando…`;
+      } else {
+        SUBMITTING = false;
+        b.disabled = false;
+        if (b.dataset.prev) b.innerHTML = b.dataset.prev;
+      }
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (window.POS.items.length === 0) {
+        e.preventDefault();
+        alert('Agrega al menos un producto.');
+        return;
+      }
+      if (SUBMITTING) { e.preventDefault(); return; }
+
+      // >>> Bloqueo MH: total > 20 no permite "Clientes varios" (ID=1)
+      // Recalcula totals por si el DOM no está actualizado al milisegundo
+      let total = 0;
+      window.POS.items.forEach(it => {
+        const st = (+it.precio) * it.cantidad;
+        const ds = st * (Math.min(100, Math.max(0, +it.desc_pct)) / 100);
+        const base = st - ds;
+        const iv = it.aplica_iva ? base * 0.13 : 0;
+        total += base + iv;
       });
 
-      const ct = resp.headers.get('content-type') || '';
-      const isJson = ct.includes('application/json');
-      const data = isJson ? await resp.json() : null;
+      const retIvaOn   = document.getElementById('ret_iva_sw')?.checked;
+      const retRentaOn = document.getElementById('ret_renta_sw')?.checked;
+      let retIvaMto    = retIvaOn   ? parseFloat(document.getElementById('ret_iva_mto')?.value || '0')   || 0 : 0;
+      let retRentaMto  = retRentaOn ? parseFloat(document.getElementById('ret_renta_mto')?.value || '0') || 0 : 0;
+      const totalPagar = total - retIvaMto - retRentaMto;
 
-      // 1) Éxito normal
-      if (resp.ok && data && (data.ok || data.print_url || data.redirect)) {
-        if (data.print_url && window.AndroidPrinter?.printFactura) {
-          try { window.AndroidPrinter.printFactura(data.print_url); } catch(_e){}
+      if (totalPagar > THRESHOLD_MH && (!receptorSel || !receptorSel.value || isClientesVariosSelected())) {
+        e.preventDefault();
+        alert(`El total supera $${THRESHOLD_MH.toFixed(2)}.\nDebes seleccionar un cliente registrado (no "Clientes varios").`);
+        receptorSel?.focus();
+        return;
+      }
+
+      if (typeof enforceClienteRequirement === 'function') {
+        enforceClienteRequirement(totalPagar);
+      }
+
+      const submitBtn = form.querySelector('button[type="submit"]');
+      if (submitBtn && submitBtn.disabled) {
+        receptorSel?.focus();
+        return;
+      }
+      // <<< Fin bloqueo MH
+      setSubmitting(true);
+
+      try {
+        const fd = new FormData(form);
+        // Idempotencia (el backend debe ignorar duplicados con misma key)
+        fd.append('idempotency_key', `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+
+        const resp = await fetch(form.action || location.href, {
+          method: 'POST',
+          body: fd,
+          headers: { 'X-Requested-With':'XMLHttpRequest' },
+          credentials: 'same-origin'
+        });
+
+        const ct = resp.headers.get('content-type') || '';
+        const isJson = ct.includes('application/json');
+        const data = isJson ? await resp.json() : null;
+
+        // 1) Éxito normal
+        if (resp.ok && data && (data.ok || data.print_url || data.redirect)) {
+          if (data.print_url && window.AndroidPrinter?.printFactura) {
+            try { window.AndroidPrinter.printFactura(data.print_url); } catch(_e){}
+          }
+          if (data.redirect) { window.location.href = data.redirect; return; }
+          setSubmitting(false); // dejamos habilitado el botón por si hace otra venta
+          alert(data?.mensaje || 'Operación completada.');
+          return;
         }
-        if (data.redirect) { window.location.href = data.redirect; return; }
-        setSubmitting(false); // dejamos habilitado el botón por si hace otra venta
-        alert(data?.mensaje || 'Operación completada.');
-        return;
-      }
 
-      // 2) Error controlado → Modal
-      if (data && (data.mostrar_modal || data.puede_contingencia || data.mensaje)) {
+        // 2) Error controlado → Modal
+        if (data && (data.mostrar_modal || data.puede_contingencia || data.mensaje)) {
+          setSubmitting(false);
+          showMhModal(data);
+          return;
+        }
+
+        // 3) Error genérico (con/sin JSON)
+        if (!resp.ok) {
+          setSubmitting(false);
+          alert((data && (data.error||data.mensaje)) || `Error al generar: HTTP ${resp.status}`);
+          return;
+        }
+
+        // 4) Si no fue JSON (HTML), fallback a submit normal
+        
+      } catch (err) {
+        console.error('Submit error:', err);
         setSubmitting(false);
-        showMhModal(data);
-        return;
+        alert('Error de red, intenta de nuevo.');
       }
+    });
 
-      // 3) Error genérico (con/sin JSON)
-      if (!resp.ok) {
-        setSubmitting(false);
-        alert((data && (data.error||data.mensaje)) || `Error al generar: HTTP ${resp.status}`);
-        return;
-      }
+    // Atajo F9 (respeta bloqueo)
+    document.addEventListener('keydown', (e)=>{
+      if (e.key === 'F9') { e.preventDefault(); if (!SUBMITTING) form.requestSubmit(); }
+    });
 
-      // 4) Si no fue JSON (HTML), fallback a submit normal
-      if (!isJson) {
-        setSubmitting(false); // mejor reactivamos por si el submit tarda
-        form.submit();
-        return;
-      }
-    } catch (err) {
-      console.error('Submit error:', err);
-      setSubmitting(false);
-      alert('Error de red, intenta de nuevo.');
-    }
-  });
-
-  // Atajo F9 (respeta bloqueo)
-  document.addEventListener('keydown', (e)=>{
-    if (e.key === 'F9') { e.preventDefault(); if (!SUBMITTING) form.requestSubmit(); }
-  });
-
-  // Sticky del precio si se edita manualmente
-  priceInput?.addEventListener('input', ()=> priceInput.dataset.sticky = priceInput.value ? '1' : '');
-})();
+    // Sticky del precio si se edita manualmente
+    priceInput?.addEventListener('input', ()=> priceInput.dataset.sticky = priceInput.value ? '1' : '');
+  })();
 </script>
 
 {% if prefill_factura %}
 <script>
-(function(){
-  try{
-    const PF = {{ prefill_factura|safe }};
-    if(PF && PF.receptor_id){
-      const sel = document.getElementById('receptor_id');
-      if(sel){ sel.value = String(PF.receptor_id); sel.dispatchEvent(new Event('change')); }
-    }
-    if(PF && PF.items && PF.items.length){
-      PF.items.forEach(it=>{
-        window.POS.items.push({
-          id: it.id, codigo: it.codigo, nombre: it.nombre,
-          precio: parseFloat(it.precio||'0')||0,
-          cantidad: parseInt(it.cantidad||'1',10),
-          desc_pct: parseFloat(it.desc_pct||'0')||0,
-          aplica_iva: !!it.iva_on, stock: null
+  (function(){
+    try{
+      const PF = {{ prefill_factura|safe }};
+      if(PF && PF.receptor_id){
+        const sel = document.getElementById('receptor_id');
+        if(sel){ sel.value = String(PF.receptor_id); sel.dispatchEvent(new Event('change')); }
+      }
+      if(PF && PF.items && PF.items.length){
+        PF.items.forEach(it=>{
+          window.POS.items.push({
+            id: it.id, codigo: it.codigo, nombre: it.nombre,
+            precio: parseFloat(it.precio||'0')||0,
+            cantidad: parseInt(it.cantidad||'1',10),
+            desc_pct: parseFloat(it.desc_pct||'0')||0,
+            aplica_iva: !!it.iva_on, stock: null,
+            stock: it.stock,
+          });
         });
-      });
-      if(typeof window.renderItems==='function') window.renderItems();
-      if(typeof window.calcTotals==='function') window.calcTotals();
-    }
-  }catch(e){ console.error('prefill_cart error', e); }
-})();
+        if(typeof window.renderItems==='function') window.renderItems();
+        if(typeof window.calcTotals==='function') window.calcTotals();
+      }
+    }catch(e){ console.error('prefill_cart error', e); }
+  })();
 </script>
 {% endif %}
 

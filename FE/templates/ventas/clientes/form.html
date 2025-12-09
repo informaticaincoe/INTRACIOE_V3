@@ -164,6 +164,13 @@
 
 <script>
 (function(){
+  //borrar espacios en correo automaticamente cuando se deseleccione el input de correo
+  const correo = document.getElementById("correo")
+  correo.addEventListener('focusout', ()=>{
+    correo.value = correo.value.replace(/\s/g,'')
+  })
+
+
   const $ = (s,root=document)=>root.querySelector(s);
   const $$= (s,root=document)=>Array.from(root.querySelectorAll(s));
 
@@ -232,6 +239,7 @@
       }
       const help = document.getElementById('help_tipo_doc');
       if (help) help.style.display = 'none';
+
     }
   }
 

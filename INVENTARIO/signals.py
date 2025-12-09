@@ -32,12 +32,17 @@ def _signed_delta(tipo, qty):
 @receiver(pre_save, sender=MovimientoInventario)
 def _store_old_values(sender, instance, **kwargs):
     """ Guarda valores previos para recalcular delta en updates. """
-    if instance.pk:
+    print("<<<<_store_old_values")
+    print(f"<<<<<_store_old_values {instance} - {sender}")
+    
+    if instance.pk:        
         old = sender.objects.get(pk=instance.pk)
+        
         instance._old_producto_id = old.producto_id
         instance._old_tipo = old.tipo
         instance._old_cantidad = old.cantidad
-    else:
+        
+    else:        
         instance._old_producto_id = None
 
 
@@ -48,22 +53,31 @@ def _apply_stock_on_save(sender, instance, created, **kwargs):
     - update: revierte delta viejo y aplica delta nuevo
     (con tope en 0 para no negativos)
     """
+    print(">>> Devolucion o asignacion de stock")
+    
     if created:
         delta = _signed_delta(instance.tipo, instance.cantidad)
+        print(f">>> cantidad a agregar {Value(delta)}")
+        
         Producto.objects.filter(pk=instance.producto_id).update(
             stock=Greatest(F('stock') + Value(delta), Value(0))
         )
+        
         return
+    
+    
 
     # Update
-    if getattr(instance, '_old_producto_id', None) is not None:
+    if getattr(instance, '_old_producto_id', None) is not None:            
         old_delta = _signed_delta(getattr(instance, '_old_tipo'), getattr(instance, '_old_cantidad'))
+        
         # Revertir el viejo (tope en 0)
         Producto.objects.filter(pk=instance._old_producto_id).update(
             stock=Greatest(F('stock') - Value(old_delta), Value(0))
         )
 
     new_delta = _signed_delta(instance.tipo, instance.cantidad)
+    
     Producto.objects.filter(pk=instance.producto_id).update(
         stock=Greatest(F('stock') + Value(new_delta), Value(0))
     )
@@ -116,6 +130,8 @@ def crear_movimiento_salida_devolucion_compra(sender, instance, created, **kwarg
     almacen = producto.almacenes.first()
     if not almacen:
         return
+    
+    print(f"Decolucion de compra {instance}")
 
     ref = f'Devolución Compra #{instance.devolucion_id} - det #{instance.id}'
     if not MovimientoInventario.objects.filter(referencia=ref, producto=producto).exists():
@@ -127,12 +143,14 @@ def crear_movimiento_salida_devolucion_compra(sender, instance, created, **kwarg
             referencia=ref
         )
 
+
 @receiver(post_save, sender=DevolucionCompra)
 def on_cambio_estado_devolucion(sender, instance, created, **kwargs):
-    # Si cambió a Aprobada, crear salidas para detalles que aún no las tengan
+    # Si cambió a Aprobada, crear salidas para detalles que aún no las tengan    
     if not created and instance.estado == 'Aprobada':
-        for d in instance.detalles.all():
+        for d in instance.detalles.all():            
             ref = f'Devolución Compra #{instance.id} - det #{d.id}'
+            
             if not MovimientoInventario.objects.filter(referencia=ref, producto=d.producto).exists():
                 MovimientoInventario.objects.create(
                     producto=d.producto,
@@ -141,12 +159,12 @@ def on_cambio_estado_devolucion(sender, instance, created, **kwargs):
                     cantidad=d.cantidad,
                     referencia=ref
                 )
+                
     # Si cambió a Rechazada, eliminar salidas existentes (pre_delete de Movimiento revertirá stock)
     if not created and instance.estado == 'Rechazada':
         MovimientoInventario.objects.filter(
             referencia__startswith=f'Devolución Compra #{instance.id}'
         ).delete()
-
 
 @receiver(post_save, sender=DetalleDevolucionVenta)
 def crear_movimiento_entrada_devolucion_venta(sender, instance, created, **kwargs):
@@ -157,7 +175,11 @@ def crear_movimiento_entrada_devolucion_venta(sender, instance, created, **kwarg
     if not almacen:
         return
 
-    ref = f'Devolución Venta #{instance.devolucion_id} - det #{instance.id}'
+    num_factura = instance.devolucion.num_factura or "SIN_NUM_FACTURA"
+
+    # Puedes diseñar la referencia como quieras
+    ref = f'Dev Venta #{instance.devolucion_id} (Fact: {num_factura}) - det #{instance.id}'
+        
     if not MovimientoInventario.objects.filter(referencia=ref, producto=producto).exists():
         MovimientoInventario.objects.create(
             producto=producto,
@@ -170,6 +192,7 @@ def crear_movimiento_entrada_devolucion_venta(sender, instance, created, **kwarg
 
 @receiver(post_save, sender=AjusteInventario)
 def crear_movimiento_por_ajuste(sender, instance, created, **kwargs):
+    print("Creando movimiento por ajuste")
     if not created:
         return
     qty = instance.cantidad_ajustada
