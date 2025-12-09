@@ -211,7 +211,9 @@ class Receptor_fe(models.Model):
     nombreComercial = models.CharField(max_length=150, null=True, verbose_name=None, blank=True)
     pais = models.ForeignKey(Pais, on_delete=models.CASCADE, null=True)
     tipo_persona = models.ForeignKey(TipoPersona, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Tipo de Persona")
-
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
     #nuevos campos para georeferencia de cliente
     lat = models.DecimalField(
         max_digits=9, decimal_places=6, null=True, blank=True,

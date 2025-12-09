@@ -55,7 +55,18 @@
         aria-controls="{{ uid_prefix }}-conting">
   <span><i class="bi bi-exclamation-triangle me-2"></i> Listado contingencias</span>
 </button>
+
+<!-- Generar Facturas no enviadas del mes -->
+<button class="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#{{ uid_prefix }}-month-fact"
+        aria-expanded="false"
+        aria-controls="{{ uid_prefix }}-month-fact">
+  <span><i class="bi bi-file-earmark-plus me-2"></i>Consolidación facturas del mes</span>
+</button>
 {% endif %}
+
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -73,6 +84,8 @@ document.addEventListener('DOMContentLoaded', () => {
     [`#${prefix}-lst-fact`, "{% url 'listar_facturas' %}"],
     [`#${prefix}-suj-exc`, "{% url 'listar_facturas' %}?tipo_dte=14"],  // ajusta si tienes vista propia
     [`#${prefix}-conting`, "{% url 'listar_contingencias' %}"],
+
+    [`#${prefix}-month-fact`, "{% url 'select_tipo_facturas_mes_home' %}"],
   ]);
   document
     .querySelectorAll(`[data-bs-target^="#${prefix}-"]`)
