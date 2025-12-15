@@ -9,7 +9,7 @@ from decimal import Decimal
 from django.db.models import Q
 
 # Modelos que ya tienes
-from FE.models import FacturaElectronica, DetalleFactura, Receptor_fe
+from FE.models import Emisor_fe, FacturaElectronica, DetalleFactura, Receptor_fe
 # Intento de modelos comunes (cámbialos si usas otros)
 try:
     from INVENTARIO.models import Producto  # TODO: ajusta si tu app/modelo tiene otro nombre
@@ -225,8 +225,8 @@ def dashboard(request):
         )
         top_prod_labels = [row["producto__codigo"] or "—" for row in qs]
         top_prod_data = [int(row["c"] or 0) for row in qs]
-    except Exception:
-        pass
+    except Exception as e:
+            pass
 
     context = {
         # KPIs

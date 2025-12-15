@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Areas{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="h5 mb-0 text-gray-800">
+            Gestión de Areas
+        </h5>
+        <div>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#areaModal" data-mode="create">
+                <i class="bi bi-plus-circle me-2" id="clear-search-button"></i>Nueva area
+            </button>
+        </div>
+    </div>
+
+    <div class="mb-4">
+        <div>
+            <form method="GET" action="{% url 'areas' %}" class="row g-3 align-items-center">
+                <div class="col-md-8 position-relative">
+                    <input type="text" class="form-control" id="id_search_name" name="search_name" placeholder="Buscar por nombre..." value="{{ request.GET.search_name|default:'' }}">
+                    <i class="bi bi-x-lg position-absolute top-50 translate-middle-y end-0 me-3 clear-icon" data-target="id_search_name"></i>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="container text-start">
+        <div class="row g-3" >
+            {% for area in areas_list %}
+                    <div class="col-12 col-md-4 col-lg-3">
+                        <div class="card-body border rounded-2">
+                            <div class="d-flex g-3 align-items-center">
+                                <h5 class="card-title mb-0 mt-0">{{area.nombre}}</h5>
+
+                            </div>
+                            <button class="btn btn-link text-success" data-id="{{ area.pk }}" data-nombre="{{area.nombre}}" data-color="{{ area.color }}" data-bs-toggle="modal" data-bs-target="#areaModal" data-mode="edit">Editar</button>
+                            <button class="btn btn-link text-danger" data-id="{{ area.pk }}" data-nombre="{{area.nombre}}" data-bs-toggle="modal" data-bs-target="#eliminarAreaModal" data-mode="delete">Eliminar</button>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="opacity-50">No se ha encontrado ninguna area</p>
+                
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="areaModal" tabindex="-1" aria-labelledby="areaModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="areaModalLabel"></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" id="areaForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="id_nombre" class="form-label">Nombre del area</label>
+                        <input type="text" class="form-control" id="id_nombre" name="nombre" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btnGuardarArea">Guardar area</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="eliminarAreaModal" tabindex="-1" aria-labelledby="eliminarAreaModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5>Eliminar area</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" id="eliminarAreaForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <p>¿Seguro que quiere eliminar el area? "<strong id="nombre_area_eliminar"></strong>"</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btnEliminarGuardarArea">Eliminar categoría</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Lógica del Botón de Limpieza ---
+        const inputField = document.getElementById('id_search_name');
+        const clearIcon = document.querySelector('.clear-icon[data-target="id_search_name"]');
+
+        if (inputField && clearIcon) {
+            // Función para mostrar/ocultar el ícono
+            const toggleClearIcon = () => {
+                if (inputField.value.length > 0) {
+                    clearIcon.style.display = 'block';
+                } else {
+                    clearIcon.style.display = 'none';
+                }
+            };
+
+            // Inicializar al cargar la página (por si hay un valor preexistente de GET)
+            toggleClearIcon();
+
+            // Cada vez que se escribe en el input
+            inputField.addEventListener('input', toggleClearIcon);
+
+            // 2. Limpiar el input al hacer clic en el ícono
+            clearIcon.addEventListener('click', () => {
+                inputField.value = '';        // Borra el contenido
+                toggleClearIcon();            // Oculta el ícono
+                inputField.focus();           // Enfoca el input
+                
+                // inputField.closest('form').submit();
+            });
+        }
+
+        var areaModal = document.getElementById('areaModal');
+        areaModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget; // Botón que activó el modal
+            var mode = button.getAttribute('data-mode'); // 'create' o 'edit'
+            var modalTitle = areaModal.querySelector('.modal-title');
+            var areaForm = document.getElementById('areaForm');
+            var id_nombre = document.getElementById('id_nombre');
+
+            var btnGuardar = document.getElementById('btnGuardarArea');
+
+            // Limpiar formulario previo
+            areaForm.reset();
+            if (mode === 'create') {
+                modalTitle.textContent = 'Crear Nueva Area';
+                areaForm.action = "{% url 'crear-area' %}"; // URL para crear
+                btnGuardar.textContent = 'Crear';
+            } else if (mode === 'edit') {
+                console.log("<>>>>", mode)
+                modalTitle.textContent = 'Editar Area';
+                var areaId = button.getAttribute('data-id');
+                var areaNombre = button.getAttribute('data-nombre');
+                var areaColor = button.getAttribute('data-color');
+
+                id_nombre.value = areaNombre;
+                console.log(areaId)
+                areaForm.action = "{% url 'editar-area' 0 %}".replace('/0/', '/' + areaId + '/'); // URL para editar
+                btnGuardar.textContent = 'Actualizar';
+                
+            }
+        });
+
+        var eliminarAreaModal = document.getElementById('eliminarAreaModal');
+        eliminarAreaModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget; // Botón que activó el modal
+            var mode = button.getAttribute('data-mode'); 
+            var areaForm = document.getElementById('eliminarAreaForm');
+
+            // Limpiar formulario previo
+            eliminarAreaForm.reset();
+            if (mode === 'delete') {
+                var areaId = button.getAttribute('data-id');
+                var areaNombre = button.getAttribute('data-nombre');
+                
+                nombre_area_eliminar.textContent = areaNombre;
+                console.log(areaId)
+                areaForm.action = "{% url 'eliminar-area' 0 %}".replace('/0/', '/' + areaId + '/'); // URL para editar
+            }
+
+        });
+    });
+</script>
+{% endblock %}
+
+{% endblock %}
+

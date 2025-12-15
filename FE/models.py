@@ -273,6 +273,10 @@ class Emisor_fe(models.Model):
         default=False,
         verbose_name="Imprimir en térmica (80mm)"
     )
+    es_restaurante = models.BooleanField(
+        default=False,
+        verbose_name="Es restaurante"
+    )
     
     
     def __str__(self):

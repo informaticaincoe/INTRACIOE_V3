@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  Menú
+{% endblock %}
+
+{% block content %}
+  <style>
+    .menu-img {
+      width: 100%;
+      height: 180px; /* cambia a 160/200 según te guste */
+      object-fit: cover; /* recorta para llenar */
+      display: block;
+    }
+    
+    .card-footer {
+      border-color: #0000000b !important;
+    }
+    
+    .menu-actions {
+      display: flex;
+      width: 100%;
+      border-color: #ff0000ff !important;
+      background-color: white !important;
+      margin: 0; /* sin espacios */
+      padding: 0; /* sin espacios */
+    }
+    
+    .menu-action-btn {
+      flex: 1; /* cada botón ocupa 50% */
+      height: 100%%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent !important;
+      border: 0;
+      padding: 2% 0%;
+      margin: 0;
+    
+      color: #6c757d;
+      font-size: 1.2rem;
+      text-decoration: none;
+    }
+    
+    /* divisor vertical en el segundo botón */
+    .menu-action-btn + .menu-action-btn {
+      border-left: 1px solid rgba(0, 0, 0, 0.12);
+    }
+    
+    .menu-action-btn:hover {
+      background: rgba(0, 0, 0, 0.03) !important;
+      color: #212529;
+    }
+    
+    .menu-action-btn:focus {
+      outline: none;
+      box-shadow: none;
+    }
+  </style>
+  <div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h5 class="h5 mb-0 text-gray-800">Menu</h5>
+      <div>
+        <a href="{% url 'crear-menu' %}" type="button" class="btn btn-primary"><i class="bi bi-plus-circle me-2" id="clear-search-button"></i>Nuevo platillo</a>
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <div>
+        <form method="GET" action="{% url 'menu' %}" class="row g-3 align-items-center">
+          <div class="col-md-8 position-relative">
+            <input type="text" class="form-control" id="id_search_name" name="search_name" placeholder="Buscar por nombre..." value="{{ request.GET.search_name|default:'' }}" />
+            <i class="bi bi-x-lg position-absolute top-50 translate-middle-y end-0 me-3 clear-icon" data-target="id_search_name"></i>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="row g-3">
+        {% for platillo in lista_platillos %}
+          <div class="col-12 col-md-4 col-lg-3">
+            <div class="card shadow-sm">
+              {% if platillo.imagen %}
+                <img src="{{ platillo.imagen.url }}" alt="{{ platillo.nombre }}" class="card-img-top menu-img" />
+              {% else %}
+                <div class="menu-img bg-light d-flex align-items-center justify-content-center text-muted">
+                  <i class="bi bi-image" style="font-size: 4rem;"></i>
+                </div>
+              {% endif %}
+
+              <div class="card-body card-menu">
+                <h6 class="mb-1 fw-semibold text-truncate">{{ platillo.nombre }}</h6>
+
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <div class="fw-semibold">${{ platillo.precio_venta }}</div>
+                  <span class="badge rounded-pill px-3 py-1" style="background-color: {{ platillo.categoria.color }}; color: {{ platillo.categoria_text_color }}">{{ platillo.categoria }}</span>
+                </div>
+
+                <div class="small text-muted mb-3 descripcion-clamp">{{ platillo.descripcion }}</div>
+              </div>
+              <div class="card-footer p-0">
+                <div class="menu-actions">
+                  <a href="{% url 'editar-menu' platillo.id %}" class="menu-action-btn" data-bs-toggle="tooltip" title="Editar"><i class="bi bi-pencil"></i></a>
+                  <button type="button" class="menu-action-btn text-danger" data-id="{{ platillo.id }}" data-nombre="{{ platillo.nombre }}" data-bs-toggle="modal" data-bs-target="#eliminarPlatilloModal"><i class="bi bi-trash" data-bs-toggle="tooltip" title="Eliminar"></i></button>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% empty %}
+          <p class="opacity-50">No se ha encontrado ningún platillo</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="eliminarPlatilloModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">Eliminar platillo</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <form method="post" id="eliminarPlatilloForm">
+          {% csrf_token %}
+          <div class="modal-body">
+            <p>
+              ¿Seguro que quieres eliminar el platillo "<strong id="nombre_platillo_eliminar"></strong>"?
+            </p>
+            <small class="text-muted">Esta acción no se puede deshacer.</small>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-danger">Eliminar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {% block extra_js %}
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        // --- Lógica del Botón de Limpieza ---
+        const inputField = document.getElementById('id_search_name')
+        const clearIcon = document.querySelector('.clear-icon[data-target="id_search_name"]')
+      
+        if (inputField && clearIcon) {
+          // Función para mostrar/ocultar el ícono
+          const toggleClearIcon = () => {
+            if (inputField.value.length > 0) {
+              clearIcon.style.display = 'block'
+            } else {
+              clearIcon.style.display = 'none'
+            }
+          }
+          // Inicializar al cargar la página (por si hay un valor preexistente de GET)
+          toggleClearIcon()
+      
+          // Cada vez que se escribe en el input
+          inputField.addEventListener('input', toggleClearIcon)
+      
+          // 2. Limpiar el input al hacer clic en el ícono
+          clearIcon.addEventListener('click', () => {
+            inputField.value = '' // Borra el contenido
+            toggleClearIcon() // Oculta el ícono
+            inputField.focus() // Enfoca el input
+      
+            // inputField.closest('form').submit();
+          })
+        }
+      })
+      
+      const eliminarPlatilloModal = document.getElementById('eliminarPlatilloModal')
+      
+      eliminarPlatilloModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget // el botón que abrió el modal
+        const platilloId = button.getAttribute('data-id')
+        const platilloNombre = button.getAttribute('data-nombre')
+      
+        const nombreEl = document.getElementById('nombre_platillo_eliminar')
+        const form = document.getElementById('eliminarPlatilloForm')
+      
+        nombreEl.textContent = platilloNombre
+      
+        // arma la URL con el id
+        form.action = "{% url 'eliminar-menu' 0 %}".replace('/0/', '/' + platilloId + '/')
+      })
+    </script>
+  {% endblock %}
+{% endblock %}

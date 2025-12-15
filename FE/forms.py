@@ -72,7 +72,7 @@ class EmisorForm(forms.ModelForm):
             "ambiente", "nombre_establecimiento",
             "tipo_documento", "logo",
             "clave_privada", "clave_publica",
-            "imprime_termica", "imprime_termica",
+            "tipoContribuyente", "imprime_termica", "es_restaurante"
         ]
         labels = {
             "nit": "NIT del Emisor",
@@ -89,6 +89,7 @@ class EmisorForm(forms.ModelForm):
             "clave_privada": "Contraseña/Clave privada (firmador)",
             "clave_publica": "Clave pública / Password Hacienda",
             "tipoContribuyente": "Tipo de Contribuyente",
+            "es_restaurante":"Es restaurante"
         }
         widgets = {
             "nit": forms.TextInput(attrs={"class": "form-control"}),
@@ -110,6 +111,8 @@ class EmisorForm(forms.ModelForm):
             "clave_publica": forms.TextInput(attrs={"class": "form-control", "autocomplete": "off"}),
             "tipoContribuyente": forms.Select(attrs={"class": "form-select"}),
             "imprime_termica": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "es_restaurante": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            
         }
 
     def clean(self):

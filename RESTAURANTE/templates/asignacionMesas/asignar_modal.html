@@ -1,0 +1,50 @@
+{# asignar_modal.html #}
+<div class="modal fade" id="asignarMeseroModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">Asignar mesero</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <form method="post" action="{% url 'asignar-mesa-a-mesero' %}" id="asignarMeseroForm">
+        {% csrf_token %}
+
+        <div class="modal-body">
+          <p class="mb-2">
+            Mesa: <strong id="asignar_mesa_numero">—</strong>
+          </p>
+
+          <input type="hidden" name="mesa_id" id="asignar_mesa_id">
+
+          <div class="mb-3">
+            <label class="form-label" for="asignar_mesero_id">Mesero</label>
+            <select class="form-select" name="mesero_id" id="asignar_mesero_id" required>
+              <option value="" selected disabled>Selecciona un mesero…</option>
+              {% for m in lista_meseros %}
+                <option value="{{ m.id }}">{{ m.nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" id="asignar_es_fija" name="es_fija" value="true">
+            <label class="form-check-label" for="asignar_es_fija">Asignación fija</label>
+          </div>
+
+          <input type="hidden" name="activa" value="true">
+
+          <div class="mb-0">
+            <label class="form-label" for="asignar_fecha_fin">Fecha fin (opcional)</label>
+            <input type="datetime-local" class="form-control" id="asignar_fecha_fin" name="fecha_fin">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Asignar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
