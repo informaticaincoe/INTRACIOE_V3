@@ -37,6 +37,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="{% static 'utilities/css/style_base.css' %}" />
 
     <head>
@@ -47,7 +48,7 @@
             left: 50%;
             transform: translateX(-50%);
           }
-
+          
           .navbar .container-fluid {
             position: relative; /* referencia para el centrado absoluto */
           }
@@ -59,7 +60,7 @@
           .menu-show {
             display: block;
           }
-
+          
           .menu-hidden {
             display: none;
           }
@@ -102,7 +103,7 @@
             align-items: center;
             gap: 0.5rem;
             border-radius: 0.75rem;
-            padding:0rem;
+            padding: 0rem;
             font-size: 0.95rem;
             text-decoration: none;
             margin-bottom: 0.75rem;
@@ -244,8 +245,6 @@
               background: #ffffff;
               color: #374151;
             }
-
-            
           
             .sidebar-submenu .list-group-item:hover {
               background: #e5edff;
@@ -297,71 +296,102 @@
     <div class="container-fluid">
       <div class="row">
         <!-- SIDEBAR DESKTOP (visible desde md) -->
-          {% if user.is_authenticated %}
-            <aside class="col-md-3 col-xl-2 d-none d-md-block p-0 border-end bg-white sidebar sidebar-menu sticky">
-                <div class="sidebar-sticky p-3 d-flex flex-column justify-content-between">
-                  <!-- link directo -->
-                  <div>
-                    <a href="{% url 'index' %}" class="list-group-item list-group-item-action border-0 m-0 rounded-0 d-flex align-items-center gap-2 bg-menu-item"><i class="bi bi-speedometer2"></i> <span class="fw-medium">Dashboard</span></a>
+        {% if user.is_authenticated %}
+          <aside class="col-md-3 col-xl-2 d-none d-md-block p-0 border-end bg-white sidebar sidebar-menu sticky">
+            <div class="sidebar-sticky p-3 d-flex flex-column justify-content-between">
+              <!-- link directo -->
+              <div>
+                <a href="{% url 'index' %}" class="list-group-item list-group-item-action border-0 m-0 rounded-0 d-flex align-items-center gap-2 bg-menu-item">
+                  <i class="bi bi-speedometer2"></i>
+                  <span class="fw-medium">Dashboard</span>
+                </a>
 
-                    <!-- acordeón -->
-                    <div class="accordion accordion-flush sidebar" id="accMenu">
-                      <!-- Compras -->
-                      <div class="accordion-item">
-                        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbCompras"><i class="bi bi-basket me-2"></i> Compras</button></h2>
-                        <div id="sbCompras" class="accordion-collapse collapse" data-bs-parent="#accMenu">
-                          <div class="list-group list-group-flush">
-                            {% include 'opciones_menu/compras.html' with uid='desk' %}
-                          </div>
-                        </div>
-                      </div>
-
-                      <!-- Ventas -->
-                      <div class="accordion-item">
-                        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbVentas"><i class="bi bi-receipt-cutoff me-2"></i> Ventas</button></h2>
-                        <div id="sbVentas" class="accordion-collapse collapse" data-bs-parent="#accMenu">
-                          <div class="list-group list-group-flush">
-                            {% include 'opciones_menu/ventas.html' with uid='deskV' %}
-                          </div>
-                        </div>
-                      </div>
-
-                      <!-- Facturación -->
-                      <div class="accordion-item">
-                        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbFact"><i class="bi bi-file-earmark-text me-2"></i> Facturación</button></h2>
-                        <div id="sbFact" class="accordion-collapse collapse" data-bs-parent="#accMenu">
-                          <div class="list-group list-group-flush">
-                            {% include 'opciones_menu/facturacion.html' with uid='deskF' %}
-                          </div>
-                        </div>
-                      </div>
-
-                      <!-- Inventario -->
-                      <div class="accordion-item">
-                        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbInv"><i class="bi bi-box-seam me-2"></i> Inventario</button></h2>
-                        <div id="sbInv" class="accordion-collapse collapse" data-bs-parent="#accMenu">
-                          <div class="list-group list-group-flush">
-                            {% include 'opciones_menu/inventario.html' with uid='deskI' %}
-                          </div>
-                        </div>
+                <!-- acordeón -->
+                <div class="accordion accordion-flush sidebar" id="accMenu">
+                  <!-- Compras -->
+                  <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbCompras"><i class="bi bi-basket me-2"></i> Compras</button></h2>
+                    <div id="sbCompras" class="accordion-collapse collapse" data-bs-parent="#accMenu">
+                      <div class="list-group list-group-flush">
+                        {% include 'opciones_menu/compras.html' with uid='desk' %}
                       </div>
                     </div>
                   </div>
 
-                  <hr class="my-3" />
-
-                  {% if user.is_staff %}
-                    <div class="list-group list-group-flush">
-                      <a class="list-group-item list-group-item-action d-none"><i class="bi bi-calculator me-2"></i> Contabilidad</a>
-                      <hr class="my-3" />
-                      <a class="list-group-item list-group-item-action d-none"><i class="bi bi-buildings me-2"></i> Empresa</a>
-                      <hr class="my-3" />
-                      <a class="list-group-item list-group-item-action border-0 bg-white" href="{% url 'configurar_empresa' %}"><i class="bi bi-gear me-2"></i> Configurar empresa</a>
+                  <!-- Ventas -->
+                  <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbVentas"><i class="bi bi-receipt-cutoff me-2"></i> Ventas</button></h2>
+                    <div id="sbVentas" class="accordion-collapse collapse" data-bs-parent="#accMenu">
+                      <div class="list-group list-group-flush">
+                        {% include 'opciones_menu/ventas.html' with uid='deskV' %}
+                      </div>
                     </div>
-                  {% endif %}
+                  </div>
+
+                  <!-- Facturación -->
+                  <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbFact"><i class="bi bi-file-earmark-text me-2"></i> Facturación</button></h2>
+                    <div id="sbFact" class="accordion-collapse collapse" data-bs-parent="#accMenu">
+                      <div class="list-group list-group-flush">
+                        {% include 'opciones_menu/facturacion.html' with uid='deskF' %}
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Inventario -->
+                  <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbInv"><i class="bi bi-box-seam me-2"></i> Inventario</button></h2>
+                    <div id="sbInv" class="accordion-collapse collapse" data-bs-parent="#accMenu">
+                      <div class="list-group list-group-flush">
+                        {% include 'opciones_menu/inventario.html' with uid='deskI' %}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-            </aside>
-          {% endif %}
+
+                <hr class="my-3 border border-bottom border-dark-subtle" />
+
+                {% if emisor.es_restaurante %}
+                <h6>Restarurante</h6>
+                  <a href="{% url 'index' %}" class="list-group-item list-group-item-action border-0 m-0 rounded-0 d-flex align-items-center gap-2 bg-menu-item">
+                    <i class="bi bi-fork-knife"></i>
+                    <span class="fw-medium">Cocina</span>
+                  </a>
+
+                  <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#ConfiguracionRestaurante"><i class="bi bi-basket me-2"></i> Configuración restaurante</button></h2>
+                    <div id="ConfiguracionRestaurante" class="accordion-collapse collapse" data-bs-parent="#accMenu">
+                      <div class="list-group list-group-flush">
+                        {% include 'opciones_menu_restaurante/configuracion_restaurante.html' with uid='ped' %}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="accordion-item">
+                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#meseros"><i class="bi bi-basket me-2"></i>Meseros</button></h2>
+                    <div id="meseros" class="accordion-collapse collapse" data-bs-parent="#accMenu">
+                      <div class="list-group list-group-flush">
+                        {% include 'opciones_menu_restaurante/meseros.html' with uid='mes' %}
+                      </div>
+                    </div>
+                  </div>
+                {% endif %}
+              </div>
+
+              <hr class="my-3" />
+
+              {% if user.is_staff %}
+                <div class="list-group list-group-flush">
+                  <a class="list-group-item list-group-item-action d-none"><i class="bi bi-calculator me-2"></i> Contabilidad</a>
+                  <hr class="my-3" />
+                  <a class="list-group-item list-group-item-action d-none"><i class="bi bi-buildings me-2"></i> Empresa</a>
+                  <hr class="my-3" />
+                  <a class="list-group-item list-group-item-action border-0 bg-white" href="{% url 'configurar_empresa' %}"><i class="bi bi-gear me-2"></i> Configurar empresa</a>
+                </div>
+              {% endif %}
+            </div>
+          </aside>
+        {% endif %}
 
         <!-- SIDEBAR MÓVIL (OFFCANVAS) -->
         <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarOff">
@@ -374,9 +404,7 @@
             <div class="offcanvas-body">
               <div class="offcanvas-main pt-4">
                 <!-- Dashboard como tarjeta -->
-                <a href="{% url 'index' %}" class="offcanvas-link">
-                  <span>Dashboard</span>
-                </a>
+                <a href="{% url 'index' %}" class="offcanvas-link"><span>Dashboard</span></a>
 
                 <!-- Acordeón principal -->
                 <div class="accordion accordion-flush offcanvas-accordion d-flex flex-column gap-2" id="accMenuMobile">
@@ -435,7 +463,7 @@
         </div>
 
         <!-- CONTENIDO -->
-         
+
         <main class="col-md-9 col-xl-10 p-3" id="main-content">
           <div class="card shadow-sm">
             <div class="card-body">
@@ -494,33 +522,33 @@
 
           
           {% if user.is_authenticated %}
-      console.log('SI, el usuario está autenticado.')
+            console.log('SI, el usuario está autenticado.')
 
-      if (mainContent) {
-        mainContent.classList.remove('ancho-completo')
-      }
-      if (menu) {
-        menu.classList.add('menu-show')
-        menu.classList.remove('menu-hidden')
-      }
-      if (menuButton) {
-        menuButton.classList.remove('d-none')
-      }
-    {% else %}
-      console.log('NO, el usuario no está autenticado.')
+          if (mainContent) {
+            mainContent.classList.remove('ancho-completo')
+          }
+          if (menu) {
+            menu.classList.add('menu-show')
+            menu.classList.remove('menu-hidden')
+          }
+          if (menuButton) {
+            menuButton.classList.remove('d-none')
+          }
+        {% else %}
+          console.log('NO, el usuario no está autenticado.')
 
-      if (mainContent) {
-        mainContent.classList.add('ancho-completo')
-      }
-      if (menu) {
-        menu.classList.add('menu-hidden')
-        menu.classList.remove('menu-show')
-      }
-      if (menuButton) {
-        menuButton.classList.add('d-none')
-      }
-    {% endif %}
-  })
+          if (mainContent) {
+            mainContent.classList.add('ancho-completo')
+          }
+          if (menu) {
+            menu.classList.add('menu-hidden')
+            menu.classList.remove('menu-show')
+          }
+          if (menuButton) {
+            menuButton.classList.add('d-none')
+          }
+        {% endif %}
+      })
 </script>
   </body>
 </html>

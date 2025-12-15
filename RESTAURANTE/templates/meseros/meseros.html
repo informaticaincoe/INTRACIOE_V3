@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Meseros{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="h5 mb-0 text-gray-800">
+            Lista de meseros
+        </h5>
+        <div>
+            <a href="{% url 'crear-mesero' %}" type="button" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2" id="clear-search-button"></i>Agregar mesero
+            </a>
+        </div>
+    </div>
+
+    <div class="mb-4">
+        <div>
+            <form method="GET" action="{% url 'meseros-lista' %}" class="row g-3 align-items-center">
+                <div class="col-md-8 position-relative">
+                    <input type="text" class="form-control" id="id_search_name" name="search_name" placeholder="Buscar por nombre..." value="{{ request.GET.search_name|default:'' }}">
+                    <i class="bi bi-x-lg position-absolute top-50 translate-middle-y end-0 me-3 clear-icon" data-target="id_search_name"></i>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="container text-start">
+        <div class="row g-3" >
+            {% for mesero in lista_meseros %}
+                    <div class="col-12 col-md-4 col-lg-6">
+                        <div class="card-body border rounded-2">
+                            <div class="d-flex g-3 align-items-center">                                
+                                    {%if mesero.activo%}
+                                        <div style="background-color: green; width: 0.5rem; height: 0.5rem; border-radius: 50%;" class="me-2">
+                                        </div>
+                                        <p class="m-0 p-0 text-success">activo</p>
+                                    {%else%}
+                                        <div style="background-color: red; width: 0.5rem; height: 0.5rem; border-radius: 50%;" class="me-2">
+                                        </div>
+                                        <p class="m-0 p-0 text-danger">Inactivo</p>
+                                    {%endif%}
+                            </div>
+                            <h5 class="card-title mb-0 mt-0">{{mesero.nombre}}</h5>
+                            <p class=" mb-0 mt-0 opacity-50">{{mesero.codigo}}</p>
+                            <a href="{% url 'editar-mesero' mesero.id %}" class="btn btn-link text-success" data-bs-toggle="tooltip" title="Editar">Editar</a>
+                            <button class="btn btn-link text-danger" data-id="{{ mesero.id }}" data-nombre="{{mesero.nombre}}" data-bs-toggle="modal" data-bs-target="#eliminarmeseroModal" data-mode="delete">Eliminar</button>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="opacity-50">No se ha encontrado ningun mesero</p>
+                
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="eliminarmeseroModal" tabindex="-1" aria-labelledby="eliminarmeseroModal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5>Eliminar Mesero</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" id="eliminarMeseroForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <p>¿Seguro que quiere eliminar el registro de ? "<strong id="nombre_mesero_eliminar"></strong>"</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btnEliminarMesero">Eliminar mesero</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Lógica del Botón de Limpieza ---
+        const inputField = document.getElementById('id_search_name');
+        const clearIcon = document.querySelector('.clear-icon[data-target="id_search_name"]');
+
+        if (inputField && clearIcon) {
+            // Función para mostrar/ocultar el ícono
+            const toggleClearIcon = () => {
+                if (inputField.value.length > 0) {
+                    clearIcon.style.display = 'block';
+                } else {
+                    clearIcon.style.display = 'none';
+                }
+            };
+
+            // Inicializar al cargar la página (por si hay un valor preexistente de GET)
+            toggleClearIcon();
+
+            // Cada vez que se escribe en el input
+            inputField.addEventListener('input', toggleClearIcon);
+
+            // 2. Limpiar el input al hacer clic en el ícono
+            clearIcon.addEventListener('click', () => {
+                inputField.value = '';        // Borra el contenido
+                toggleClearIcon();            // Oculta el ícono
+                inputField.focus();           // Enfoca el input
+                
+                // inputField.closest('form').submit();
+            });
+        }
+
+        var eliminarmeseroModal = document.getElementById('eliminarmeseroModal');
+        eliminarmeseroModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget; // Botón que activó el modal
+            var meseroForm = document.getElementById('eliminarMeseroForm');
+            var nombreMeseroEliminar = document.getElementById('nombre_mesero_eliminar');
+        
+            var meseroId = button.getAttribute('data-id');
+            var meseroNombre = button.getAttribute('data-nombre');
+            
+            nombreMeseroEliminar.textContent = meseroNombre;
+
+            meseroForm.action = "{% url 'eliminar-mesero' 0 %}".replace('/0/', '/' + meseroId + '/'); // URL para editar
+
+        });
+    });
+</script>
+{% endblock %}
+
+{% endblock %}
+
