@@ -1,7 +1,10 @@
+from django.conf import settings
 from django.db import models
 from django.db.models import Q
 from django.contrib.auth.models import User
 from decimal import Decimal
+from django.utils import timezone
+from AUTENTICACION.models import Perfilusuario
 
 class CategoriaMenu(models.Model):
     """Define la categoría a la que pertenece un platillo o bebida (e.g., Entrada, Plato Fuerte)."""
@@ -26,6 +29,15 @@ class Mesero(models.Model):
     codigo = models.CharField(max_length=20, unique=True, blank=True, null=True, verbose_name="codigo de identificaciòn") 
     activo = models.BooleanField(default=True, verbose_name="Mesero Activo")
 
+    usuario = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
+
+    def __str__(self):
+        return self.nombre
     class Meta:
         verbose_name = "Mesero"
         verbose_name_plural = "Meseros"
@@ -71,10 +83,11 @@ class Mesa(models.Model):
         return f"Mesa {self.numero} ({self.area})"
 
 class AsignacionMesa(models.Model):
+    
     mesa = models.ForeignKey(Mesa, on_delete=models.CASCADE, related_name="asignaciones")
     mesero = models.ForeignKey(Mesero, on_delete=models.CASCADE, related_name="asignaciones")
     es_fija = models.BooleanField(default=False)
-    fecha_inicio = models.DateTimeField(auto_now_add=True)
+    fecha_inicio = models.DateTimeField(default=timezone.now, verbose_name="fecha inicio")
     fecha_fin = models.DateTimeField(null=True, blank=True)
     activa = models.BooleanField(default=True)
     
@@ -82,13 +95,16 @@ class AsignacionMesa(models.Model):
         verbose_name = "Asignacion de mesa"
         verbose_name_plural = "Asignaciones de mesas"
         
-        constraints = [
-            models.UniqueConstraint(
-                fields=["mesa"],
-                condition=Q(activa=True),
-                name="uniq_mesa_asignacion_activa"
-            )
-        ]
+        # constraints = [
+        #     models.UniqueConstraint(
+        #         fields=["mesa"],
+        #         condition=Q(activa=True),
+        #         name="uniq_mesa_asignacion_activa"
+        #     )
+        # ]
+        
+    def __str__(self):
+        return f"{self.mesa} - {self.mesero} - {self.fecha_inicio} - {self.fecha_fin}"
 
 class Platillo(models.Model):
     """Representa los ítems vendibles del menú."""
@@ -113,3 +129,55 @@ class Platillo(models.Model):
     def __str__(self):
         return self.nombre
     
+###############################################################################################
+# CAJA
+###############################################################################################
+
+class Caja(models.Model):
+    ESTADO_CAJA_CHOICES = [
+        ('ABIERTA', 'Abierta'),
+        ('CERRADA', 'Cerrada'),
+    ]
+
+    usuario = models.ForeignKey(Perfilusuario, on_delete=models.CASCADE)
+    fecha_apertura = models.DateTimeField(default=timezone.now, verbose_name="Fecha de apertura")
+    fecha_cierre = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de cierre")
+
+    monto_inicial = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    monto_cierre = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+
+    total_ventas = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    total_efectivo = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    total_tarjeta = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+
+    monto_final = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    diferencia = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    
+    total_propinas = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADO_CAJA_CHOICES,
+        default='ABIERTA'
+    )
+
+    def __str__(self):
+        return f"Caja #{self.id} - {self.estado}"
+
+class MovimientosCaja(models.Model):
+    TIPO_MOVIMIENTO_CHOICES = [
+        ('INGRESO', 'Ingreso'),
+        ('RETIRO', 'Retiro'),
+    ]
+
+    caja = models.ForeignKey(Caja, on_delete=models.CASCADE, related_name="movimientos")
+    tipo_movimiento = models.CharField(
+        max_length=20,
+        choices=TIPO_MOVIMIENTO_CHOICES
+    )
+    monto = models.DecimalField(max_digits=10, decimal_places=2)
+    motivo = models.CharField(max_length=200)
+    fecha = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f"{self.tipo_movimiento} - {self.monto}"

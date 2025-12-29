@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{% if mesero %}Editar mesa{% else %}Agregar mesa{% endif %} · INTRACOE{% endblock %}
+{% block title %}{% if mesa %}Editar mesa{% else %}Agregar mesa{% endif %} · INTRACOE{% endblock %}
 {% block content %}
 {% load l10n %}
 
@@ -14,7 +14,6 @@
     </div>
     
     <form method="post" id="formMesas" class="needs-validation" novalidate 
-        {% comment %} action="{% if mesa %}{% url 'editar-mesa' mesa.id %}{% else %}{% url 'crear-mesa' %}{% endif %}" {% endcomment %}
         >
         {% csrf_token %}
         <div class="row g-3 d-flex align-items-stretch">
@@ -29,6 +28,7 @@
                     <label class="form-label mb-2">Capacidad</label>
                     <div class="row g-2">
                         <input type="text" name="capacidad" class="form-control" value="{{ mesa.capacidad|default:'' }}" required>
+                        <p>{{mesa.area}}</p>
                         <div class="invalid-feedback">Obligatorio.</div>
                     </div>
                     <div id="categoriaFeedback" class="invalid-feedback">
@@ -43,7 +43,7 @@
                         {% for area in areas_lista %}
                             <option value="{{ area.id }}"
                                     data-nombre="{{ area.nombre|default_if_none:'' }}"
-                                    {% if mesa and mesa.area == area.id %}selected{% endif %}>
+                                    {% if mesa and mesa.area_id == area.id %}selected{% endif %}>
                             {{ area.nombre }}
                             </option>
                         {% endfor %}
