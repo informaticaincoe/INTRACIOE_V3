@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}{% if obj %}Editar{% else %}Nuevo{% endif %} producto{% endblock %}
+{% block content %}
+<div class="card shadow-sm">
+  <div class="card-body">
+    <h1 class="h6 mb-3">{% if obj %}Editar{% else %}Nuevo{% endif %} producto</h1>
+    <form method="post" class="needs-validation" novalidate enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Código (SKU)</label>
+          <input type="text" name="codigo" class="form-control" value="{{ obj.codigo|default:'' }}" required>
+          <div class="invalid-feedback">Obligatorio.</div>
+        </div>
+        <div class="col-md-8">
+          <label class="form-label">Descripción</label>
+          <input type="text" name="descripcion" class="form-control" value="{{ obj.descripcion|default:'' }}" required>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Categoría</label>
+          <select name="categoria" class="form-select">
+            <option value="">Seleccione…</option>
+            {% for c in categorias %}
+              <option value="{{ c.id }}" {% if obj and obj.categoria_id == c.id %}selected{% endif %}>{{ c.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Unidad de medida</label>
+          <select name="unidad_medida" class="form-select">
+            <option value="">Seleccione…</option>
+            {% for u in tipos_um %}
+              <option value="{{ u.id }}" {% if obj and obj.unidad_medida_id == u.id %}selected{% endif %}>{{ u.descripcion }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Precio compra</label>
+          <input type="number" name="precio_compra" class="form-control text-end" step="0.01" min="0" value="{{ obj.precio_compra|default:'0.00' }}">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Precio venta</label>
+          <input type="number" name="precio_venta" class="form-control text-end" step="0.01" min="0" value="{{ obj.precio_venta|default:'0.00' }}">
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label">Stock</label>
+          <input type="number" name="stock" class="form-control text-end" step="1" min="0" value="{{ obj.stock|default:'0' }}">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Stock mínimo</label>
+          <input type="number" name="stock_minimo" class="form-control text-end" step="1" min="0" value="{{ obj.stock_minimo|default:'0' }}">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Stock máximo</label>
+          <input type="number" name="stock_maximo" class="form-control text-end" step="1" min="0" value="{{ obj.stock_maximo|default:'0' }}">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Impuestos</label>
+          <div class="border rounded p-2">
+            {% for imp in impuestos %}
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" name="impuestos" id="imp{{ imp.id }}" value="{{ imp.id }}"
+                  {% if obj and imp in obj.impuestos.all %}checked{% endif %}>
+                <label class="form-check-label" for="imp{{ imp.id }}">{{ imp.nombre }} ({{ imp.porcentaje }}%)</label>
+              </div>
+            {% empty %}
+              <span class="text-muted small">No hay impuestos definidos.</span>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Almacenes</label>
+          <select name="almacenes" class="form-select" multiple>
+            {% for a in almacenes %}
+              <option value="{{ a.id }}"
+                {% if obj and a in obj.almacenes.all %}selected{% endif %}>{{ a.nombre }}</option>
+            {% endfor %}
+          </select>
+          <div class="form-text">Ctrl/Cmd para selección múltiple.</div>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Maneja lotes</label><br>
+          <input type="checkbox" name="maneja_lotes" {% if obj and obj.maneja_lotes %}checked{% endif %}>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Fecha vencimiento</label>
+          <input type="date" name="fecha_vencimiento" class="form-control" value="{{ obj.fecha_vencimiento|date:'Y-m-d' }}">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Imagen</label>
+          <input type="file" name="imagen" class="form-control">
+          {% if obj.imagen %}
+            <div class="small text-muted mt-1">Actual: {{ obj.imagen.url }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="mt-3 d-flex gap-2">
+        <a href="{% url 'inv-productos-lista' %}" class="btn btn-light">Cancelar</a>
+        <button class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

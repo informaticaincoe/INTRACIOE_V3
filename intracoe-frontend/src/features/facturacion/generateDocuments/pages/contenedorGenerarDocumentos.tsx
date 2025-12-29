@@ -83,6 +83,7 @@ export const ContenedorGenerarDocumentos = () => {
                 setListProducts(response.producto);
 
                 console.log("tipo dte selecionado", response)
+                
             } catch (error) {
                 console.log(error);
             } finally {

@@ -81,6 +81,7 @@ from .api_views import (
     DetalleDevolucionCompraListAPIView, DetalleDevolucionCompraCreateAPIView, DetalleDevolucionCompraRetrieveAPIView,
     DetalleDevolucionCompraUpdateAPIView, DetalleDevolucionCompraDestroyAPIView
     )
+
 from . import views
 
 urlpatterns = [
@@ -230,21 +231,59 @@ urlpatterns = [
     # -------------------------------
     # -------------------------------
 
+    path('', views.inv_home, name='inv-home'),
+
+    # Compras
+    path('compras/', views.listar_compras, name='compras-lista'),
+    path('compras/nueva/', views.crear_compra, name='compras-crear'),
+    path('compras/<int:pk>/', views.detalle_compra, name='compras-detalle'),
+    path('compras/<int:pk>/editar/', views.editar_compra, name='compras-editar'),
+    path('compras/<int:pk>/eliminar/', views.eliminar_compra, name='compras-eliminar'),
+    path('compras/<int:pk>/marcar-pagado/', views.marcar_compra_pagado, name='compras-marcar-pagado'),
+    path('compras/<int:pk>/marcar-devuelto/', views.marcar_compra_devuelto, name='compras-marcar-devuelto'),
+
+    # Devoluciones de compra
+    path('compras/<int:compra_id>/devoluciones/nueva/', views.crear_devolucion_compra, name='dev-compra-crear'),
+    path('devoluciones-compra/', views.listar_devoluciones_compra, name='dev-compra-lista'),
+
+    # Proveedores
+    path('proveedores/', views.listar_proveedores, name='proveedores-lista'),
+    path('proveedores/nuevo/', views.crear_proveedor, name='proveedores-crear'),
+    path('proveedores/<int:pk>/', views.detalle_proveedor, name='proveedores-detalle'),
+    path('proveedores/<int:pk>/editar/', views.editar_proveedor, name='proveedores-editar'),
+    path('proveedores/<int:pk>/eliminar/', views.eliminar_proveedor, name='proveedores-eliminar'),
+
+    # Productos de un proveedor
+    path('proveedores/<int:proveedor_id>/productos/nuevo/', views.crear_producto_proveedor, name='prov-prod-crear'),
+    path('proveedores/<int:proveedor_id>/productos/<int:pk>/editar/', views.editar_producto_proveedor, name='prov-prod-editar'),
+    path('proveedores/<int:proveedor_id>/productos/<int:pk>/eliminar/', views.eliminar_producto_proveedor, name='prov-prod-eliminar'),
+
+    # Endpoint AJAX para Municipios por Departamento
+    path('ajax/municipios/', views.municipios_por_departamento, name='ajax-municipios'),
+
     # Productos
-    path('productos/', views.listar_productos, name='productos-lista'),
-    path('productos/crear/', views.crear_producto, name='crear-producto'),
-    path('productos/editar/<int:pk>/', views.editar_producto, name='editar-producto'),
-    path('productos/eliminar/<int:pk>/', views.eliminar_producto, name='eliminar-producto'),
+    path('productos/', views.productos_lista, name='inv-productos-lista'),
+    path('productos/nuevo/', views.productos_crear, name='inv-productos-crear'),
+    path('productos/<int:pk>/editar/', views.productos_editar, name='inv-productos-editar'),
+    path('productos/<int:pk>/eliminar/', views.productos_eliminar, name='inv-productos-eliminar'),
 
-    # Movimientos de Inventario
-    path('inventario/', views.listar_movimientos, name='movimientos-lista'),
-    path('inventario/crear/', views.crear_movimiento, name='crear-movimiento'),
+    # Movimientos de inventario (Kardex)
+    path('movimientos/', views.movimientos_lista, name='inv-movs-lista'),
+    path('movimientos/nuevo/', views.movimientos_crear, name='inv-movs-crear'),
+    path('movimientos/<int:pk>/editar/', views.movimientos_editar, name='inv-movs-editar'),
+    path('movimientos/<int:pk>/eliminar/', views.movimientos_eliminar, name='inv-movs-eliminar'),
 
-    # URLs Categorías
-    path('categorias/', views.listar_categorias, name='categorias-lista'),
-    path('categorias/nuevo/', views.crear_categoria, name='crear-categoria'),
-    path('categorias/editar/<int:pk>/', views.editar_categoria, name='editar-categoria'),
-    path('categorias/eliminar/<int:pk>/', views.eliminar_categoria, name='eliminar-categoria'),
+    # Categorías
+    path('categorias/', views.categorias_lista, name='inv-categorias-lista'),
+    path('categorias/nueva/', views.categorias_crear, name='inv-categorias-crear'),
+    path('categorias/<int:pk>/editar/', views.categorias_editar, name='inv-categorias-editar'),
+    path('categorias/<int:pk>/eliminar/', views.categorias_eliminar, name='inv-categorias-eliminar'),
+
+    # Tipos de unidad de medida (los que usa Producto)
+    path('tipos-unidad/', views.tipos_um_lista, name='inv-tiposum-lista'),
+    path('tipos-unidad/nuevo/', views.tipos_um_crear, name='inv-tiposum-crear'),
+    path('tipos-unidad/<int:pk>/editar/', views.tipos_um_editar, name='inv-tiposum-editar'),
+    path('tipos-unidad/<int:pk>/eliminar/', views.tipos_um_eliminar, name='inv-tiposum-eliminar'),
 
     # URLs Unidades de Medida
     path('unidades/', views.listar_unidades_medida, name='unidades-lista'),
@@ -252,15 +291,16 @@ urlpatterns = [
     path('unidades/editar/<int:pk>/', views.editar_unidad_medida, name='editar-unidad'),
     path('unidades/eliminar/<int:pk>/', views.eliminar_unidad_medida, name='eliminar-unidad'),
 
-    # URLs Impuestos
-    path('impuestos/', views.listar_impuestos, name='impuestos-lista'),
-    path('impuestos/nuevo/', views.crear_impuesto, name='crear-impuesto'),
-    path('impuestos/editar/<int:pk>/', views.editar_impuesto, name='editar-impuesto'),
-    path('impuestos/eliminar/<int:pk>/', views.eliminar_impuesto, name='eliminar-impuesto'),
+    # Impuestos
+    path('impuestos/', views.impuestos_lista, name='inv-impuestos-lista'),
+    path('impuestos/nuevo/', views.impuestos_crear, name='inv-impuestos-crear'),
+    path('impuestos/<int:pk>/editar/', views.impuestos_editar, name='inv-impuestos-editar'),
+    path('impuestos/<int:pk>/eliminar/', views.impuestos_eliminar, name='inv-impuestos-eliminar'),
 
-    # URLs Almacenes
-    path('almacenes/', views.listar_almacenes, name='almacenes-lista'),
-    path('almacenes/nuevo/', views.crear_almacen, name='crear-almacen'),
-    path('almacenes/editar/<int:pk>/', views.editar_almacen, name='editar-almacen'),
-    path('almacenes/eliminar/<int:pk>/', views.eliminar_almacen, name='eliminar-almacen'),
+    # Almacenes
+    path('almacenes/', views.almacenes_lista, name='inv-almacenes-lista'),
+    path('almacenes/nuevo/', views.almacenes_crear, name='inv-almacenes-crear'),
+    path('almacenes/<int:pk>/editar/', views.almacenes_editar, name='inv-almacenes-editar'),
+    path('almacenes/<int:pk>/eliminar/', views.almacenes_eliminar, name='inv-almacenes-eliminar'),
+
 ]

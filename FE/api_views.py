@@ -3,6 +3,7 @@ import time
 from decimal import ROUND_HALF_UP, ConversionSyntax, Decimal
 from itertools import count
 from pyexpat.errors import messages
+from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
@@ -29,7 +30,7 @@ from INVENTARIO.serializers import DescuentoSerializer, ProductoSerializer
 
 from .serializers import (
     AmbienteSerializer, EventoContingenciaSerializer, FacturaListSerializer, FacturaSujetoExcluidoListSerializer, FacturaSujetoExcluidoSerializer, 
-    FormasPagosSerializer, LoteContingenciaSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, 
+    FormasPagosSerializer, LoteContingenciaSerializer, ReceptorSerializer, FacturaElectronicaSerializer, EmisorSerializer, RecintoFiscalSerializer, RegimenSerializer, SecuenciaSerializer, 
     TipoDteSerializer, TiposGeneracionDocumentoSerializer, ActividadEconomicaSerializer, ModelofacturacionSerializer,
     TipoTransmisionSerializer, TipoContingenciaSerializer, TipoRetencionIVAMHSerializer, TiposEstablecimientosSerializer, TiposServicio_MedicoSerializer,
     OtrosDicumentosAsociadoSerializer, TiposDocIDReceptorSerializer, PaisSerializer, DepartamentoSerializer, MunicipioSerializer, CondicionOperacionSerializer,                                                                                                                                                                                             
@@ -38,11 +39,11 @@ from .serializers import (
     )
 from .models import (
     INCOTERMS, ActividadEconomica, Departamento, DetalleFacturaSujetoExcluido, Emisor_fe, EventoContingencia, FacturaSujetoExcluidoElectronica, LoteContingencia, Municipio, OtrosDicumentosAsociado, Pais, Receptor_fe, FacturaElectronica, DetalleFactura,
-    Ambiente, CondicionOperacion, Modelofacturacion, NumeroControl, Tipo_dte, TipoContingencia, TipoDocContingencia, TipoDomicilioFiscal, TipoDonacion, TipoGeneracionDocumento, 
-    TipoMoneda, TipoPersona, TipoRetencionIVAMH, TipoTransmision, TipoTransporte, TipoUnidadMedida, TiposDocIDReceptor, EventoInvalidacion, 
+    Ambiente, CondicionOperacion, Modelofacturacion, NumeroControl, RecintoFiscal, RegimenExportacion, Tipo_dte, TipoContingencia, TipoDocContingencia, TipoDomicilioFiscal, TipoDonacion, TipoGeneracionDocumento, 
+    TipoMoneda, TipoPersona, TipoRetencionIVAMH, TipoTransmision, TipoTransporte, TiposDocIDReceptor, EventoInvalidacion, 
     Receptor_fe, TipoInvalidacion, TiposEstablecimientos, TiposServicio_Medico, Token_data, Descuento, FormasPago, TipoGeneracionDocumento, Plazo
 )
-from INVENTARIO.models import Almacen, DetalleDevolucionVenta, DevolucionVenta, MovimientoInventario, Producto, ProductoProveedor, Proveedor, TipoItem, TipoTributo, Tributo, UnidadMedida, NotaCredito
+from INVENTARIO.models import Almacen, DetalleDevolucionVenta, DevolucionVenta, MovimientoInventario, Producto, ProductoProveedor, Proveedor, TipoItem, TipoTributo, Tributo, UnidadMedida, NotaCredito, TipoUnidadMedida
 from django.db.models import Q
 from django.core.paginator import Paginator  # esta sigue igual
 
@@ -56,7 +57,7 @@ from django.conf import settings
 from xhtml2pdf import pisa
 from io import BytesIO
 from django.template.loader import render_to_string
-from weasyprint import HTML, CSS
+#from weasyprint import HTML, CSS
 from django.db.models import F, Value
 from django.db.models.functions import Greatest
 
@@ -169,6 +170,7 @@ try:
 except (OperationalError, ObjectDoesNotExist):
     emisor_fe = None
 
+#emisor_fe = None
 
 class StandardResultsSetPagination(PageNumberPagination):
     # Número de ítems por página por defecto
@@ -267,28 +269,41 @@ class AutenticacionAPIView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 def autenticacion(request):
+    print("[DEBUG] Ingresando a la vista autenticacion")
 
     tokens_saves = Token_data.objects.all()
+    print(f"[DEBUG] Tokens en base de datos: {tokens_saves.count()}")
 
     if request.method == "POST":
         nit_empresa = request.POST.get("user")
         pwd = request.POST.get("pwd")
+        print(f"[DEBUG] Datos recibidos del formulario: user={nit_empresa}, pwd={'*' * len(pwd) if pwd else None}")
 
         auth_url = URL_AUTH.url_endpoint
         headers = {"User-Agent": HEADERS.valor}
         data = {"user": nit_empresa, "pwd": pwd}
+        print(f"[DEBUG] URL de autenticación: {auth_url}")
+        print(f"[DEBUG] Headers: {headers}")
+        print(f"[DEBUG] Payload de autenticación: {data}")
 
         try:
             response = requests.post(auth_url, headers=headers, data=data)
+            print(f"[DEBUG] Código de respuesta HTTP: {response.status_code}")
+
             if response.status_code == 200:
                 response_data = response.json()
+                print(f"[DEBUG] Respuesta JSON: {response_data}")
+
                 if response_data.get("status") == "OK":
                     token_body = response_data["body"]
                     token = token_body.get("token")
                     token_type = token_body.get("tokenType", "Bearer")
                     roles = token_body.get("roles", [])
 
-                    # Guardar o actualizar los datos del token en la base de datos
+                    print(f"[DEBUG] Token recibido: {token}")
+                    print(f"[DEBUG] Tipo de token: {token_type}")
+                    print(f"[DEBUG] Roles: {roles}")
+
                     token_data, created = Token_data.objects.update_or_create(
                         nit_empresa=nit_empresa,
                         defaults={
@@ -301,7 +316,8 @@ def autenticacion(request):
                         }
                     )
 
-                    # Si el token es nuevo, enviamos un mensaje de éxito
+                    print(f"[DEBUG] Token {'creado' if created else 'actualizado'} en la base de datos")
+
                     if created:
                         messages.success(request, "Autenticación exitosa y token guardado.")
                     else:
@@ -309,13 +325,17 @@ def autenticacion(request):
 
                     return redirect('autenticacion')
                 else:
+                    print(f"[DEBUG] Error en autenticación: {response_data.get('message')}")
                     messages.error(request, "Error en la autenticación: " + response_data.get("message", "Error no especificado"))
             else:
+                print("[DEBUG] Falló la solicitud HTTP")
                 messages.error(request, "Error en la autenticación.")
         except requests.exceptions.RequestException as e:
+            print(f"[DEBUG] Excepción en la solicitud HTTP: {e}")
             messages.error(request, "Error de conexión con el servicio de autenticación.")
 
-    return render(request, "autenticacion.html", {'tokens':tokens_saves})
+    print("[DEBUG] Renderizando página de autenticación")
+    return render(request, "autenticacion.html", {'tokens': tokens_saves})
 
 ######################################################
 ######################################################
@@ -943,6 +963,69 @@ class DescuentoUpdateAPIView(generics.UpdateAPIView):
 class DescuentoDestroyAPIView(generics.DestroyAPIView):
     queryset = Descuento.objects.all()
     serializer_class = DescuentoSerializer
+    
+# ========= SECUENCIA =========
+class SecuenciaListAPIView(generics.ListAPIView):
+    queryset = NumeroControl.objects.all()
+    serializer_class = SecuenciaSerializer
+
+class SecuenciaCreateAPIView(generics.CreateAPIView):
+    queryset = NumeroControl.objects.all()
+    serializer_class = SecuenciaSerializer
+
+class SecuenciaRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = NumeroControl.objects.all()
+    serializer_class = SecuenciaSerializer
+
+class SecuenciaUpdateAPIView(generics.UpdateAPIView):
+    queryset = NumeroControl.objects.all()
+    serializer_class = SecuenciaSerializer
+
+class SecuenciaDestroyAPIView(generics.DestroyAPIView):
+    queryset = NumeroControl.objects.all()
+    serializer_class = SecuenciaSerializer
+
+# ========= Recinto fiscal =========
+class RecintoFiscalListAPIView(generics.ListAPIView):
+    queryset = RecintoFiscal.objects.all()
+    serializer_class = RecintoFiscalSerializer
+
+class RecintoFiscalCreateAPIView(generics.CreateAPIView):
+    queryset = RecintoFiscal.objects.all()
+    serializer_class = RecintoFiscalSerializer
+
+class RecintoFiscalRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = RecintoFiscal.objects.all()
+    serializer_class = RecintoFiscalSerializer
+
+class RecintoFiscalUpdateAPIView(generics.UpdateAPIView):
+    queryset = RecintoFiscal.objects.all()
+    serializer_class = RecintoFiscalSerializer
+
+class RecintoFiscalDestroyAPIView(generics.DestroyAPIView):
+    queryset = RecintoFiscal.objects.all()
+    serializer_class = RecintoFiscalSerializer
+
+# ========= Regimen =========
+class RegimenListAPIView(generics.ListAPIView):
+    queryset = RegimenExportacion.objects.all()
+    serializer_class = RegimenSerializer
+
+class RegimenCreateAPIView(generics.CreateAPIView):
+    queryset = RegimenExportacion.objects.all()
+    serializer_class = RegimenSerializer
+
+class RegimenRetrieveAPIView(generics.RetrieveAPIView):
+    queryset = RegimenExportacion.objects.all()
+    serializer_class = RegimenSerializer
+
+class RegimenUpdateAPIView(generics.UpdateAPIView):
+    queryset = RegimenExportacion.objects.all()
+    serializer_class = RegimenSerializer
+
+class RegimenDestroyAPIView(generics.DestroyAPIView):
+    queryset = RegimenExportacion.objects.all()
+    serializer_class = RegimenSerializer
 
 
 ######################################################

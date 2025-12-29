@@ -1,0 +1,218 @@
+/* =========================
+   INTRACOE – Estilos base
+   Paleta: Azul, Naranja, Blanco
+   ========================= */
+
+/* ---- Paleta / Tokens ---- */
+:root{
+  --brand-primary: #0d47a1;            /* azul */
+  --brand-primary-rgb: 13, 71, 161;
+  --brand-accent:  #ff7a00;            /* naranja */
+  --brand-bg:      #ffffff;            /* blanco base */
+  --brand-surface: #f5f7fb;            /* superficie clara */
+  --text-main:     #111111;            /* texto principal (negro) */
+  --text-muted:    #6c757d;
+  --ring: 0 0 0 .25rem rgba(var(--brand-primary-rgb), .25);
+}
+
+/* ---- Base ---- */
+html, body { height: 100%; }
+body {
+  background-color: #f8f9fa !important;
+  color: var(--text-main);
+}
+a { color: inherit; text-decoration: none; }
+a:hover { text-decoration: none; }
+
+/* ---- Utilidades de marca ---- */
+.text-accent { color: var(--brand-accent) !important; }
+.badge-accent { background: var(--brand-accent); color: #fff; }
+:focus-visible { outline: none; box-shadow: var(--ring); }
+
+/* =========================
+   Navbar
+   ========================= */
+.navbar.bg-primary{
+  background-color: rgb(var(--brand-primary-rgb)) !important;
+}
+.navbar .navbar-brand { letter-spacing:.2px; }
+.navbar .btn-outline-light{
+  border-color: rgba(255,255,255,.65);
+}
+.navbar .btn-outline-light:hover{
+  background: rgba(255,255,255,.12);
+}
+.navbar .btn-link{
+  opacity:.9;
+}
+.navbar .btn-link:hover{
+  opacity:1;
+}
+
+/* =========================
+   Layout principal
+   ========================= */
+.card { background: var(--brand-bg); border: none; }
+.card .card-body { padding: 1.25rem; }
+hr { border-top: 1px solid rgba(0,0,0,.06); }
+
+/* =========================
+   Sidebar
+   ========================= */
+
+/* Fijar bajo topbar y permitir scroll interno */
+.sidebar-sticky{
+  position: sticky;
+  top: 56px; /* altura navbar */
+  height: calc(100vh - 56px);
+  overflow-y: auto;
+  background: #fff;
+}
+
+/* Scrollbar sutil en sidebar */
+.sidebar-sticky::-webkit-scrollbar { width: 8px; }
+.sidebar-sticky::-webkit-scrollbar-thumb {
+  background: rgba(var(--brand-primary-rgb), .25);
+  border-radius: 4px;
+}
+
+/* Título/trigger de cada sección (accordion) */
+.sidebar .accordion-button{
+  padding:.65rem .9rem;
+  background: rgba(var(--brand-primary-rgb), .06);
+  color: var(--text-main);
+  box-shadow:none;
+  transition: background .2s ease, color .2s ease;
+  font-weight:600;
+}
+.sidebar .accordion-button:hover{
+  background: rgba(var(--brand-primary-rgb), .12);
+}
+.sidebar .accordion-button:not(.collapsed){
+  background: var(--brand-primary);
+  color: #fff;
+}
+.sidebar .accordion-button::after{ filter: invert(0); }
+.sidebar .accordion-button:not(.collapsed)::after{ filter: invert(1); }
+
+/* Items dentro de cada sección: estilo “botón” */
+.sidebar .list-group { --bs-list-group-bg: transparent; }
+.sidebar .list-group-item{
+  border: 1px solid rgba(0,0,0,.08);
+  background: #fff;
+  color: var(--text-main);
+  border-radius: .5rem;
+  padding: .55rem .85rem;
+  margin: .25rem .75rem;
+  transition: background .15s ease, border-color .15s ease, transform .05s ease, color .15s ease;
+}
+.sidebar .list-group-item:hover{
+  background: rgba(0,0,0,.03);
+  border-color: rgba(0,0,0,.18);
+}
+.sidebar .list-group-item.active{
+  background: var(--brand-primary) !important;
+  color: #fff !important;
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 .15rem rgba(var(--brand-primary-rgb), .25);
+  transform: translateY(-1px);
+}
+
+/* Links “directos” del sidebar (fuera del accordion) */
+.sidebar > .list-group .list-group-item-action.border-0{
+  border: 1px solid rgba(0,0,0,.08) !important;   /* dar look de botón también */
+  border-radius: .5rem;
+  margin: .25rem .75rem;
+  padding: .55rem .85rem;
+}
+
+/* =========================
+   Offcanvas (menú móvil y perfil)
+   ========================= */
+.offcanvas{
+  background: var(--brand-bg);
+  color: var(--text-main);
+}
+.offcanvas .list-group-item{
+  border: 1px solid rgba(0,0,0,.08);
+  background: #fff;
+  border-radius: .5rem;
+  margin: .25rem .75rem;
+  padding: .55rem .85rem;
+}
+.offcanvas .list-group-item.active{
+  background: var(--brand-primary);
+  color: #fff;
+  border-color: var(--brand-primary);
+}
+
+/* =========================
+   Botones
+   ========================= */
+.btn-primary{
+  --bs-btn-bg: var(--brand-primary);
+  --bs-btn-border-color: var(--brand-primary);
+  --bs-btn-hover-bg: #0b3f90;
+  --bs-btn-hover-border-color: #0b3f90;
+  --bs-btn-active-bg: #0a3a84;
+  --bs-btn-active-border-color: #0a3a84;
+}
+.btn-outline-primary{
+  --bs-btn-color: var(--brand-primary);
+  --bs-btn-border-color: var(--brand-primary);
+  --bs-btn-hover-bg: var(--brand-primary);
+  --bs-btn-hover-border-color: var(--brand-primary);
+  --bs-btn-hover-color: #fff;
+}
+.btn-accent{
+  background: var(--brand-accent);
+  border-color: var(--brand-accent);
+  color: #fff;
+}
+.btn-accent:hover{
+  background: #e56f00;
+  border-color: #e56f00;
+}
+
+/* =========================
+   Formularios / Inputs
+   ========================= */
+.form-control:focus,
+.form-select:focus{
+  box-shadow: var(--ring);
+  border-color: rgba(var(--brand-primary-rgb), .35);
+}
+
+/* =========================
+   Íconos dentro de items
+   ========================= */
+.bi{ vertical-align: -0.125em; }
+.sidebar .list-group-item .bi { opacity:.9; }
+
+/* =========================
+   Footer
+   ========================= */
+footer .vr { height: 1rem; }
+
+/* =========================
+   Pequeños refinamientos
+   ========================= */
+.shadow-sm { box-shadow: 0 .125rem .25rem rgba(0,0,0,.06)!important; }
+.shadow   { box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important; }
+.shadow-lg{ box-shadow: 0 1rem 3rem rgba(0,0,0,.175)!important; }
+
+.border-top    { border-top: 1px solid rgba(0,0,0,.06)!important; }
+.border-bottom { border-bottom: 1px solid rgba(0,0,0,.06)!important; }
+.border-end    { border-right: 1px solid rgba(0,0,0,.06)!important; }
+.border-start  { border-left: 1px solid rgba(0,0,0,.06)!important; }
+
+.text-muted { color: var(--text-muted) !important; }
+
+/* =========================
+   OPCIONAL: “full-bleed”
+   Si quieres que NO haya padding lateral del layout,
+   añade 'px-0' a .container-fluid en el HTML o descomenta:
+   -------------------------
+   .container-fluid { padding-left: 0; padding-right: 0; }
+   .row { --bs-gutter-x: 0; }
+   ------------------------- */

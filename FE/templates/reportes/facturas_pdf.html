@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Reporte de Facturas</title>
+  <!-- Bootstrap para estilos -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { font-size: 12px; }
+    h2 { margin-bottom: 20px; }
+    table { font-size: 12px; }
+    .table thead th { background-color: #f8f9fa; }
+    .totales { margin-top: 25px; }
+    .detalles { margin-top: 10px; font-size: 11px; color: #555; }
+  </style>
+</head>
+<body>
+  <div class="container">
+<h2 class="text-center">
+  Reporte de Facturas — {{ fecha_ini }} a {{ fecha_fin }}
+</h2>
+
+    <!-- Tabla principal -->
+    <table class="table table-bordered table-striped table-sm">
+      <thead class="table-dark text-center">
+        <tr>
+          <th>DTE</th>
+          <th>Generación</th>
+          <th>Tipo</th>
+          <th class="text-end">Total</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in facturas %}
+        <tr>
+          <td>{{ f.numero_control }}</td>
+          <td>{{ f.codigo_generacion }}</td>
+          <td>{{ f.tipo_dte.descripcion }}</td>
+          <td class="text-end">${{ f.total_pagar|default:"0.00" }}</td>
+          <td>
+            {% if f.dte_invalidacion.exists %}
+              <span class="badge bg-danger">Anulada</span>
+            {% else %}
+              <span class="badge bg-success">Viva</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center text-muted">No se encontraron facturas</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Totales -->
+    <div class="totales">
+      <h5>Totales</h5>
+      <table class="table table-bordered table-sm w-50">
+        <tr>
+          <th>Cantidad de Facturas</th>
+          <td>{{ total_facturas }}</td>
+        </tr>
+        <tr>
+          <th>Total a Liquidar</th>
+          <td>${{ total_monto|floatformat:2 }}</td>
+        </tr>
+        <tr class="table-secondary">
+          <th>Total Líneas de Productos</th>
+          <td>{{ total_lineas }}</td>
+        </tr>
+        <tr class="table-secondary">
+          <th>Total Cantidad Vendida</th>
+          <td>{{ total_cantidad }}</td>
+        </tr>
+      </table>
+      <div class="detalles">
+    </div>
+  </div>
+
+  <!-- Firmas -->
+    <div class="firmas">
+      <table class="table table-borderless w-100">
+        <tr>
+          <td class="text-center">
+            <div class="firma-linea">Firma de quien entrega</div>
+            <div><strong>Nombre:</strong> ______________________________</div>
+            <div><strong>Código empleado:</strong> __________</div>
+          </td>
+          <td class="text-center">
+            <div class="firma-linea">Firma de quien recibe</div>
+            <div><strong>Nombre:</strong> ______________________________</div>
+            <div><strong>Código empleado:</strong> __________</div>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+
+   <strong>Nota:</strong> Los totales incluyen todas las facturas listadas en el reporte, 
+                                independientemente de su estado. 
+                                Las facturas anuladas no afectan el total a liquidar. 
+                                Las cantidades reflejan las líneas y unidades vendidas en todas las facturas. 
+                                Verifique los detalles de cada factura para información específica.
+</body>
+</html>

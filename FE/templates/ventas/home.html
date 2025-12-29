@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+  <h3 class="mb-4">Ventas</h3>
+
+  {# === Menú principal === #}
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <a class="text-decoration-none" href="{% url 'clientes_list' %}">
+        <div class="card shadow-sm h-100">
+          <div class="card-body text-center">
+            <div class="display-6">👤</div>
+            <div class="fw-bold mt-2">Clientes</div>
+            <div class="text-muted">Alta / edición / listado</div>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col-md-3">
+      <a class="text-decoration-none" href="{% url 'catalogo_productos' %}">
+        <div class="card shadow-sm h-100">
+          <div class="card-body text-center">
+            <div class="display-6">📦</div>
+            <div class="fw-bold mt-2">Catálogo</div>
+            <div class="text-muted">Productos disponibles</div>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col-md-3">
+      <a class="text-decoration-none" href="{% url 'ventas_list' %}">
+        <div class="card shadow-sm h-100">
+          <div class="card-body text-center">
+            <div class="display-6">🧾</div>
+            <div class="fw-bold mt-2">Ventas</div>
+            <div class="text-muted">Listado y detalle</div>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col-md-3">
+      <a class="text-decoration-none" href="{% url 'devoluciones_list' %}">
+        <div class="card shadow-sm h-100">
+          <div class="card-body text-center">
+            <div class="display-6">↩️</div>
+            <div class="fw-bold mt-2">Devoluciones</div>
+            <div class="text-muted">Gestión de devoluciones</div>
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  {# === NUEVO: Menú de Reportes === #}
+  <div class="d-flex align-items-center mb-2">
+    <h5 class="mb-0">Reportes</h5>
+    <div class="ms-auto">
+      <div class="btn-group">
+        <a href="{% url 'reporte_contabilidad' %}" class="btn btn-sm btn-primary">
+          <i class="bi bi-clipboard-data me-1"></i> Contabilidad (filtros)
+        </a>
+        <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+          Más reportes
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><a class="dropdown-item" href="{% url 'reporte_contabilidad' %}?fini={{ today|default:None }}&ffin={{ today|default:None }}"><i class="bi bi-calendar-day me-2"></i>Contabilidad de hoy</a></li>
+          {# Activa estos cuando tengas las URLs #}
+          {# <li><a class="dropdown-item" href="{% url 'reporte_diario' %}"><i class="bi bi-bar-chart-line me-2"></i>Reporte diario de ventas</a></li> #}
+          {# <li><a class="dropdown-item" href="{% url 'reporte_pendientes_mh' %}"><i class="bi bi-cloud-slash me-2"></i>Pendientes de enviar a MH</a></li> #}
+          {# <li><a class="dropdown-item" href="{% url 'reporte_exportaciones' %}"><i class="bi bi-globe2 me-2"></i>Exportaciones</a></li> #}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <a class="text-decoration-none" href="{% url 'reporte_contabilidad' %}">
+        <div class="card shadow-sm h-100 border-primary">
+          <div class="card-body text-center">
+            <div class="display-6">📊</div>
+            <div class="fw-bold mt-2">Contabilidad INCOE</div>
+            <div class="text-muted">Filtros · paginación · Excel</div>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col-md-3">
+      <a class="text-decoration-none" href="{% url 'reporte_facturacion' %}">
+        <div class="card shadow-sm h-100">
+          <div class="card-body text-center">
+            <div class="display-6">📊</div>
+            <div class="fw-bold mt-2">Reporte Facturación</div>
+            <div class="text-muted">Facturas + ítems</div>
+          </div>
+        </div>
+      </a>
+    </div>    
+    <div class="col-md-3">
+      <a class="text-decoration-none" href="#">
+        <div class="card shadow-sm h-100">
+          <div class="card-body text-center">
+            <div class="display-6">⏳</div>
+            <div class="fw-bold mt-2">Pendientes MH</div>
+            <div class="text-muted">Firma/Envío</div>
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  {# === Resumen de hoy === #}
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card border-success shadow-sm">
+        <div class="card-body text-center">
+          <div class="display-6">💰</div>
+          <h5 class="fw-bold mt-2">Ventas de hoy</h5>
+          <p class="mb-1">Facturas: <span class="fw-bold">{{ ventas_hoy_count }}</span></p>
+          <p class="mb-0">Total: <span class="fw-bold">${{ ventas_hoy_total|floatformat:2 }}</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

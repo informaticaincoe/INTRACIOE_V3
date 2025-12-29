@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="card shadow-sm">
+    <div class="card-header bg-danger text-white">
+      <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Confirmar eliminación</h5>
+    </div>
+    <div class="card-body">
+      <p>¿Estás seguro que deseas <strong>eliminar</strong> al cliente?</p>
+
+      <ul class="list-group mb-3">
+        <li class="list-group-item"><strong>Nombre:</strong> {{ c.nombre }}</li>
+        <li class="list-group-item"><strong>Documento:</strong> {{ c.num_documento }}</li>
+        <li class="list-group-item"><strong>Correo:</strong> {{ c.correo|default:"-" }}</li>
+        <li class="list-group-item"><strong>Teléfono:</strong> {{ c.telefono|default:"-" }}</li>
+      </ul>
+
+      <div class="alert alert-warning">
+        <i class="bi bi-info-circle me-1"></i> Esta acción no se puede deshacer.
+      </div>
+
+      <form method="post">
+        {% csrf_token %}
+        <div class="d-flex justify-content-between">
+          <a href="{% url 'clientes_list' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Cancelar
+          </a>
+          <button type="submit" class="btn btn-danger">
+            <i class="bi bi-trash"></i> Eliminar definitivamente
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

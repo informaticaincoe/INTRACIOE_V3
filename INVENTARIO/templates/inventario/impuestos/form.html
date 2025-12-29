@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{% if obj %}Editar{% else %}Nuevo{% endif %} impuesto{% endblock %}
+{% block content %}
+<div class="card shadow-sm">
+  <div class="card-body">
+    <h1 class="h6 mb-3">{% if obj %}Editar{% else %}Nuevo{% endif %} impuesto</h1>
+    <form method="post" class="needs-validation" novalidate>
+      {% csrf_token %}
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Nombre</label>
+          <input type="text" name="nombre" class="form-control" value="{{ obj.nombre|default:'' }}" required>
+          <div class="invalid-feedback">Obligatorio.</div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Porcentaje</label>
+          <input type="number" name="porcentaje" class="form-control text-end" min="0" step="0.01" value="{{ obj.porcentaje|default:'0.00' }}" required>
+        </div>
+      </div>
+      <div class="mt-3 d-flex gap-2">
+        <a href="{% url 'inv-impuestos-lista' %}" class="btn btn-light">Cancelar</a>
+        <button class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -7,7 +7,7 @@ interface SelectModeloFacturaProps {
   tipoModeloFacturacionSeleccionado?: any
 }
 
-export const SelectModeloFactura:React.FC<SelectModeloFacturaProps> = ({setTipoModeloFacturacionSeleccionado, tipoModeloFacturacionSeleccionado}) => {
+export const SelectModeloFactura: React.FC<SelectModeloFacturaProps> = ({ setTipoModeloFacturacionSeleccionado, tipoModeloFacturacionSeleccionado }) => {
   const [selectedModeloFacturacion, setSelectedModeloFacturacion] =
     useState<any>(''); // valor seleccionado
   const [tipoModeloFacturacion, setTipoModeloFacturacion] = useState<any[]>([]); // Lista de tipos de documentos
@@ -18,9 +18,11 @@ export const SelectModeloFactura:React.FC<SelectModeloFacturaProps> = ({setTipoM
 
   const fetchTipoDte = async () => {
     const response = await getAllModelosDeFacturacion();
-    setTipoModeloFacturacion(response);
-    setSelectedModeloFacturacion(response[0].codigo);
-    setTipoModeloFacturacionSeleccionado(response[0].codigo)
+    if (response) {
+      setTipoModeloFacturacion(response);
+      setSelectedModeloFacturacion(response[0].codigo);
+      setTipoModeloFacturacionSeleccionado("1");
+    }
   };
 
   return (
@@ -31,7 +33,7 @@ export const SelectModeloFactura:React.FC<SelectModeloFacturaProps> = ({setTipoM
       <Dropdown
         id={selectedModeloFacturacion.codigo}
         value={selectedModeloFacturacion}
-        onChange={(e: { value: any }) => {setSelectedModeloFacturacion(e.value), setTipoModeloFacturacionSeleccionado(e.value)}}
+        onChange={(e: { value: any }) => { setSelectedModeloFacturacion(e.value), setTipoModeloFacturacionSeleccionado(e.value) }}
         options={tipoModeloFacturacion}
         optionLabel="descripcion"
         optionValue="codigo"

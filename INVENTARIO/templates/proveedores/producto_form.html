@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}{% if producto %}Editar{% else %}Nuevo{% endif %} producto · {{ proveedor.nombre }}{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h5 mb-0">{% if producto %}Editar{% else %}Nuevo{% endif %} producto de {{ proveedor.nombre }}</h1>
+  <a href="{% url 'proveedores-detalle' proveedor.id %}" class="btn btn-light"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+
+<form method="post" class="needs-validation" novalidate enctype="multipart/form-data">
+  {% csrf_token %}
+  <div class="row g-3">
+    <div class="col-md-4">
+      <label class="form-label">Código (SKU)</label>
+      <input type="text" name="codigo" class="form-control" value="{{ producto.codigo|default:'' }}" required>
+      <div class="invalid-feedback">Ingresa el código.</div>
+    </div>
+    <div class="col-md-8">
+      <label class="form-label">Descripción</label>
+      <input type="text" name="descripcion" class="form-control" value="{{ producto.descripcion|default:'' }}" required>
+      <div class="invalid-feedback">Ingresa la descripción.</div>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Unidad de medida</label>
+      <select name="unidad_medida" class="form-select">
+        <option value="">Seleccione…</option>
+        {% for u in unidades %}
+          <option value="{{ u.id }}" {% if producto and producto.unidad_medida_id == u.id %}selected{% endif %}>{{ u }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Tipo ítem</label>
+      <select name="tipo_item" class="form-select">
+        <option value="">Seleccione…</option>
+        {% for t in tipos_item %}
+          <option value="{{ t.id }}" {% if producto and producto.tipo_item_id == t.id %}selected{% endif %}>{{ t.descripcion }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Precio unitario</label>
+      <input type="number" name="preunitario" class="form-control text-end" min="0" step="0.01" value="{{ producto.preunitario|default:'0.00' }}">
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label">Referencia interna</label>
+      <input type="text" name="referencia_interna" class="form-control" value="{{ producto.referencia_interna|default:'' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Fecha vencimiento</label>
+      <input type="date" name="fecha_vencimiento" class="form-control" value="{{ producto.fecha_vencimiento|date:'Y-m-d' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Imagen</label>
+      <input type="file" name="imagen" class="form-control">
+    </div>
+  </div>
+
+  <div class="mt-3 d-flex justify-content-end">
+    <button class="btn btn-primary"><i class="bi bi-save me-1"></i> Guardar</button>
+  </div>
+</form>
+
+<script>
+  (function(){
+    const form = document.querySelector('form.needs-validation');
+    form?.addEventListener('submit', function (e) {
+      if (!form.checkValidity()) { e.preventDefault(); e.stopPropagation(); }
+      form.classList.add('was-validated');
+    });
+  })();
+</script>
+
+{% endblock %}

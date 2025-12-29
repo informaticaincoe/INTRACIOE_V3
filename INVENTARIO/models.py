@@ -1,4 +1,6 @@
 from decimal import Decimal
+import os
+from django.conf import settings
 from django.db import models
 
 class Categoria(models.Model):
@@ -113,6 +115,11 @@ class Producto(models.Model):
 
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
+    
+    def get_imagen_url(self):
+        if self.imagen:
+            return self.imagen.url
+        return os.path.join(settings.MEDIA_URL, "default.jpg")
 
 # MODELO PARA PROVEEDORES
 class Proveedor(models.Model):
@@ -143,10 +150,7 @@ class Proveedor(models.Model):
         blank=True,
         help_text="Municipio del proveedor"
     )
-    # tipo_documento = models.IntegerField(blank=True, null=True)
-    # actividades_economicas = models.TextField(blank=True, null=True)
-    # departamento = models.IntegerField(blank=True, null=True)
-    # municipio = models.IntegerField(blank=True, null=True)
+
 
     contacto = models.CharField(max_length=100, blank=True, null=True)
     telefono = models.CharField(max_length=20, blank=True, null=True)
@@ -187,14 +191,16 @@ class ProductoProveedor(models.Model):
 
 # MODELO PARA COMPRAS
 class Compra(models.Model):
+    ESTADOS = [
+        ('Pendiente','Pendiente'),
+        ('Pagado','Pagado'),
+        ('Devuelto','Devuelto'),     # <- NUEVO
+        ('Cancelado','Cancelado'),
+    ]
     proveedor = models.ForeignKey(Proveedor, on_delete=models.CASCADE)
     fecha = models.DateTimeField(auto_now_add=True)
     total = models.DecimalField(max_digits=14, decimal_places=2, default=0.00)
-    estado = models.CharField(
-        max_length=20,
-        choices=[('Pendiente','Pendiente'),('Pagado','Pagado'),('Cancelado','Cancelado')],
-        default='Pendiente'
-    )
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='Pendiente')
     # Nuevos campos para Anexo de Compras
     tipo_documento = models.CharField(max_length=10, blank=True, null=True)
     numero_documento = models.CharField(max_length=100, blank=True, null=True)

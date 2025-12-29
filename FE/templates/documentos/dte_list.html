@@ -3,124 +3,130 @@
 
 {% block content %}
 <div class="container my-4">
-  <h1 class="mb-4">Listado de Facturas Emitidas</h1>
+  <h2 class="fw-bold mb-4"><i class="bi bi-receipt-cutoff me-2"></i>Listado de Facturas Emitidas</h2>
   
   <!-- Formulario de filtrado -->
-  <form method="get" class="row g-3 mb-4">
+  <form method="get" class="row g-3 mb-4 bg-light p-3 rounded shadow-sm">
     <div class="col-md-3">
-      <label for="recibido_mh" class="form-label">Recibido por Hacienda:</label>
-      <select name="recibido_mh" id="recibido_mh" class="form-select">
+      <label for="recibido_mh" class="form-label"><i class="bi bi-building-check me-1"></i>Recibido MH</label>
+      <select name="recibido_mh" id="recibido_mh" class="form-select form-select-sm">
         <option value="">Todos</option>
         <option value="True" {% if request.GET.recibido_mh == "True" %}selected{% endif %}>Sí</option>
         <option value="False" {% if request.GET.recibido_mh == "False" %}selected{% endif %}>No</option>
       </select>
     </div>
     <div class="col-md-3">
-      <label for="sello_recepcion" class="form-label">Sello de Recepcion:</label>
-      <input type="text" name="sello_recepcion" id="sello_recepcion" value="{{ request.GET.sello_recepcion }}" class="form-control">
+      <label for="sello_recepcion" class="form-label"><i class="bi bi-fingerprint me-1"></i>Sello de Recepción</label>
+      <input type="text" name="sello_recepcion" id="sello_recepcion" value="{{ request.GET.sello_recepcion }}" class="form-control form-control-sm">
     </div>
     <div class="col-md-3">
-      <label for="has_sello_recepcion" class="form-label">¿Tiene Sello de Recepcion?</label>
-      <select name="has_sello_recepcion" id="has_sello_recepcion" class="form-select">
+      <label for="has_sello_recepcion" class="form-label"><i class="bi bi-check2-square me-1"></i>¿Tiene Sello?</label>
+      <select name="has_sello_recepcion" id="has_sello_recepcion" class="form-select form-select-sm">
         <option value="">Todos</option>
         <option value="yes" {% if request.GET.has_sello_recepcion == "yes" %}selected{% endif %}>Sí</option>
         <option value="no" {% if request.GET.has_sello_recepcion == "no" %}selected{% endif %}>No</option>
       </select>
     </div>
     <div class="col-md-3">
-      <label for="tipo_dte" class="form-label">Tipo de Factura:</label>
-      <select name="tipo_dte" id="tipo_dte" class="form-select">
+      <label for="tipo_dte" class="form-label"><i class="bi bi-file-earmark-text me-1"></i>Tipo de Factura</label>
+      <select name="tipo_dte" id="tipo_dte" class="form-select form-select-sm">
         <option value="">Todos</option>
         {% for tipo in tipos_dte %}
-          <option value="{{ tipo.id }}" {% if request.GET.tipo_dte == tipo.id|stringformat:"s" %}selected{% endif %}>{{ tipo.descripcion }}</option>
+          <option value="{{ tipo.id }}" {% if request.GET.tipo_dte == tipo.id|stringformat:"s" %}selected{% endif %}>
+            {{ tipo.descripcion }}
+          </option>
         {% endfor %}
       </select>
     </div>
-    <div class="col-15">
-      <button type="submit" class="btn btn-primary">Filtrar</button>
+    <div class="col-12 text-end">
+      <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-filter me-1"></i>Filtrar</button>
     </div>
   </form>
   
-  <!-- Botón para invalidar las facturas seleccionadas -->
-  <button id="btnInvalidarSeleccionadas" class="btn btn-danger mb-3">Anular seleccionadas</button>
+  <!-- Botones superiores -->
+  <div class="d-flex justify-content-between mb-3">
+    <div>
+      <button id="btnInvalidarSeleccionadas" class="btn btn-sm btn-danger">
+        <i class="bi bi-x-circle me-1"></i>Anular seleccionadas
+      </button>
+    </div>
+    <div>
+      <a href="{% url 'exportar_facturas_excel' %}" class="btn btn-sm btn-success">
+        <i class="bi bi-file-earmark-excel me-1"></i>Exportar sin anular
+      </a>
+    </div>
+  </div>
 
-  <!-- Botón para invalidar las facturas seleccionadas -->
-  <a href="{% url 'exportar_facturas_excel' %}" class="btn btn-danger">facturas sin anular xlsx</a>
-  
   <!-- Tabla de Facturas -->
   <form id="formInvalidarFacturas">
+    {% csrf_token %}
     <div class="table-responsive">
-      <table class="table table-striped">
+      <table class="table table-hover align-middle">
         <thead class="table-dark">
           <tr>
-            <th>
-              <!-- Checkbox para seleccionar/des-seleccionar todas -->
-              <input type="checkbox" id="seleccionarTodo">
-            </th>
+            <th><input type="checkbox" id="seleccionarTodo"></th>
             <th>Estado</th>
             <th>Número de Control</th>
-            <th>Tipo de Factura</th>
-            <th>Sello Recepcion</th>
-            <th>Fecha de Emisión</th>
-            <th>Total Factura</th>
-            <th>IVA</th>
-            <th>Recibido por Hacienda</th>
-            <th>Acciones</th>
-            <th>Correo enviado</th>
-            <th>Enviar correo</th>
+            <th>Tipo</th>
+            <th>Sello Recepción</th>
+            <th>Fecha</th>
+            <th class="text-end">Total</th>
+            <th class="text-end">IVA</th>
+            <th>MH</th>
+            <th colspan="3" class="text-center">Acciones</th>
           </tr>
         </thead>
         <tbody>
-
-
-          
           {% for factura in dtelist %}
           <tr>
-            <td>
-              <input type="checkbox" name="factura_ids" value="{{ factura.id }}">
-            </td>
+            <td><input type="checkbox" name="factura_ids" value="{{ factura.id }}"></td>
             <td>
               {% if factura.dte_invalidacion.all|length > 0 %}
                 {% with evento=factura.dte_invalidacion.all.0 %}
                   {% if evento.recibido_mh %}
-                    <i class="fa fa-ban text-danger" title="Anulada"></i>
+                    <span class="badge bg-danger"><i class="bi bi-x-octagon me-1"></i>Anulada</span>
                   {% else %}
-                    <i class="fa fa-hourglass-half text-warning" title="En proceso de anulación"></i>
+                    <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>En proceso</span>
                   {% endif %}
                 {% endwith %}
               {% else %}
-                <i class="fa fa-check text-success" title="Viva"></i>
+                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Viva</span>
               {% endif %}
             </td>
             <td>{{ factura.numero_control }}</td>
-            <td>
-              {% if factura.tipo_dte.codigo == "03" %}
-                CCF
-              {% elif factura.tipo_dte.codigo == "01" %}
-                FE
-              {% else %}
-                {{ factura.tipo_dte.codigo }}
-              {% endif %}
-            </td>
-            <td>{{ factura.sello_recepcion }}</td>
+            <td>{{ factura.tipo_dte.descripcion }}</td>
+            <td>{{ factura.sello_recepcion|default:"-" }}</td>
             <td>{{ factura.fecha_emision }}</td>
-            <td>{{ factura.total_pagar }}</td>
-            <td>{{ factura.total_iva }}</td>
-            <td>{% if factura.recibido_mh %}Sí{% else %}No{% endif %}</td>
-            <td>
+            <td class="text-end">${{ factura.total_pagar }}</td>
+            <td class="text-end">${{ factura.total_iva }}</td>
+            <td>{% if factura.recibido_mh %}<i class="bi bi-check2-circle text-success"></i>{% else %}<i class="bi bi-x-circle text-danger"></i>{% endif %}</td>
+            
+            <!-- Acciones con iconos -->
+            <td class="text-center">
               {% if factura.recibido_mh %}
-                <!-- Acción individual (opcional) -->
-                <a href="{% url 'invalidar_dte_unificado' factura.id %}" class="btn btn-sm btn-secondary btn-invalidar" data-factura-id="{{ factura.id }}">Anular</a>
+                <button 
+                  type="button" 
+                  class="btn btn-sm btn-outline-danger btn-invalidar" 
+                  data-factura-id="{{ factura.id }}" 
+                  title="Anular">
+                  <i class="bi bi-x-circle"></i>
+                </button>
               {% endif %}
             </td>
-            <td>{% if factura.envio_correo %}Sí{% else %}No{% endif %}</td>
-            <td>
-              <a href="{% url 'enviar_correo_individual' factura.id %}" class="btn btn-sm btn-secondary btn-invalidar" data-factura-id="{{ factura.id }}">Enviar</a>
+            <td class="text-center">
+              <a href="{% url 'enviar_correo_indiv' factura.id %}" class="btn btn-sm btn-outline-primary" title="Enviar correo">
+                <i class="bi bi-envelope"></i>
+              </a>
+            </td>
+            <td class="text-center">
+              <a href="{% url 'detalle_factura' factura.id %}" class="btn btn-sm btn-outline-secondary" title="Ver detalle">
+                <i class="bi bi-eye"></i>
+              </a>
             </td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="10" class="text-center">No se encontraron facturas.</td>
+            <td colspan="12" class="text-center text-muted">No se encontraron facturas.</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -128,46 +134,21 @@
     </div>
   </form>
   
-  <!-- Modal para mostrar respuesta -->
-  <div class="modal fade" id="respuestaModal" tabindex="-1" aria-labelledby="respuestaModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="respuestaModalLabel">Resultado de la Invalidación</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-        </div>
-        <div class="modal-body">
-          <div id="resultadoInvalidacion"></div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-        </div>
-      </div>
-    </div>
-  </div>
-  
   <!-- Paginación -->
   {% remove_query_param 'page' as query_params %}
   {% if dtelist.has_other_pages %}
   <nav aria-label="Page navigation">
     <ul class="pagination justify-content-center">
-      <!-- Paginación existente -->
       {% if dtelist.has_previous %}
       <li class="page-item">
         <a class="page-link" href="?{{ query_params }}{% if query_params %}&{% endif %}page={{ dtelist.previous_page_number }}" aria-label="Anterior">
           <span aria-hidden="true">&laquo;</span>
         </a>
       </li>
-      {% else %}
-      <li class="page-item disabled">
-        <span class="page-link">&laquo;</span>
-      </li>
       {% endif %}
       
       <li class="page-item disabled">
-        <span class="page-link">
-          Página {{ dtelist.number }} de {{ dtelist.paginator.num_pages }}
-        </span>
+        <span class="page-link">Página {{ dtelist.number }} de {{ dtelist.paginator.num_pages }}</span>
       </li>
       
       {% if dtelist.has_next %}
@@ -176,62 +157,131 @@
           <span aria-hidden="true">&raquo;</span>
         </a>
       </li>
-      {% else %}
-      <li class="page-item disabled">
-        <span class="page-link">&raquo;</span>
-      </li>
       {% endif %}
     </ul>
   </nav>
   {% endif %}
 </div>
 
-<!-- JavaScript para manejar la selección y la llamada AJAX -->
+<!-- Modal de confirmación -->
+<div class="modal fade" id="confirmarModal" tabindex="-1" aria-labelledby="confirmarModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-warning">
+        <h5 class="modal-title" id="confirmarModalLabel"><i class="bi bi-exclamation-triangle me-1"></i> Confirmar acción</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        ¿Está seguro de que desea <strong>anular esta factura</strong>?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" id="btnConfirmarAnular" class="btn btn-danger">Sí, anular</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de resultado -->
+<div class="modal fade" id="resultadoModal" tabindex="-1" aria-labelledby="resultadoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="resultadoModalLabel"><i class="bi bi-check2-circle me-1"></i> Resultado de la invalidación</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <pre id="resultadoInvalidacion" class="bg-light p-3 rounded small"></pre>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
 <script>
-document.addEventListener('DOMContentLoaded', function(){
-  // Seleccionar/des-seleccionar todos los checkboxes
-  const seleccionarTodo = document.getElementById('seleccionarTodo');
-  seleccionarTodo.addEventListener('change', function(){
-    const checkboxes = document.querySelectorAll('input[name="factura_ids"]');
-    checkboxes.forEach(chk => chk.checked = seleccionarTodo.checked);
-  });
+  document.addEventListener("DOMContentLoaded", () => {
+    let facturaId = null;
 
-  // Manejar el click en el botón "Anular seleccionadas"
-  const btnInvalidarSeleccionadas = document.getElementById('btnInvalidarSeleccionadas');
-  btnInvalidarSeleccionadas.addEventListener('click', function(e){
-    e.preventDefault();
-    const form = document.getElementById('formInvalidarFacturas');
-    const formData = new FormData(form);
+    // Detectar clic en botón de anular
+    document.querySelectorAll(".btn-invalidar").forEach(btn => {
+      btn.addEventListener("click", e => {
+        e.preventDefault();
+        facturaId = btn.dataset.facturaId;
 
-    fetch("{% url 'invalidar_varias_dte' %}", {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest',
-        // Si usas CSRF token, inclúyelo; por ejemplo:
-        'X-CSRFToken': '{{ csrf_token }}'
-      }
-    })
-    .then(response => response.json())
-    .then(data => {
-       console.log("Respuesta:", data);
-       let htmlResultado = '';
-       if (data.results && data.results.length) {
-         data.results.forEach(result => {
-           htmlResultado += `<p><strong>Factura ${result.factura_id}:</strong> ${result.mensaje}<br><small>${JSON.stringify(result.detalle)}</small></p>`;
-         });
-       } else {
-         htmlResultado = "<p>No se recibió respuesta.</p>";
-       }
-       document.getElementById('resultadoInvalidacion').innerHTML = htmlResultado;
-       const myModal = new bootstrap.Modal(document.getElementById('respuestaModal'));
-       myModal.show();
-    })
-    .catch(error => {
-       console.error('Error:', error);
+        const modalConfirmar = new bootstrap.Modal(document.getElementById("confirmarModal"));
+        modalConfirmar.show();
+      });
+    });
+
+    // Confirmar anulación
+    document.getElementById("btnConfirmarAnular").addEventListener("click", () => {
+      if (!facturaId) return;
+
+      // Construir la URL usando el name de Django
+      const baseUrl = "{% url 'invalidar_dte_unificado' 0 %}".replace("0", facturaId);
+
+      fetch(baseUrl, {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": "{{ csrf_token }}",
+          "X-Requested-With": "XMLHttpRequest"
+        }
+      })
+      .then(r => {
+        if (!r.ok) throw new Error("Error HTTP " + r.status);
+        return r.json();
+      })
+      .then(data => {
+        const modalRes = new bootstrap.Modal(document.getElementById("resultadoModal"));
+
+        // Caso: ya estaba invalidada
+        if (data.mensaje && data.mensaje.includes("ya se encuentra invalidada")) {
+          let html = `
+            <div class="alert alert-warning">
+              <i class="bi bi-exclamation-triangle me-2"></i>${data.mensaje}
+            </div>
+            <table class="table table-sm">
+              <tr><th>Código Generación</th><td>${data.detalle?.codigoGeneracion || "-"}</td></tr>
+              <tr><th>Fecha</th><td>${data.detalle?.fecha_anulacion || "-"}</td></tr>
+              <tr><th>Hora</th><td>${data.detalle?.hora_anulacion || "-"}</td></tr>
+              <tr><th>Motivo</th><td>${data.detalle?.motivo || "-"}</td></tr>
+              <tr><th>Recibido MH</th><td>${data.detalle?.recibido_mh ? "Sí" : "No"}</td></tr>
+              <tr><th>Sello Recepción</th><td>${data.detalle?.sello || "-"}</td></tr>
+              <tr><th>Estado interno</th><td>${data.detalle?.estado ? "Procesado" : "Pendiente"}</td></tr>
+            </table>
+          `;
+          document.getElementById("resultadoInvalidacion").innerHTML = html;
+          modalRes.show();
+          return;
+        }
+
+        // Caso: invalidación nueva
+        let html = `
+          <p><strong>${data.mensaje}</strong></p>
+          <table class="table table-sm">
+            <tr><th>Estado</th><td>${data.detalle?.respuesta?.estado || "-"}</td></tr>
+            <tr><th>Código Generación</th><td>${data.detalle?.respuesta?.codigoGeneracion || "-"}</td></tr>
+            <tr><th>Sello Recibido</th><td>${data.detalle?.respuesta?.selloRecibido || "-"}</td></tr>
+            <tr><th>Fecha Procesamiento</th><td>${data.detalle?.respuesta?.fhProcesamiento || "-"}</td></tr>
+            <tr><th>Descripción</th><td>${data.detalle?.respuesta?.descripcionMsg || "-"}</td></tr>
+          </table>
+        `;
+        document.getElementById("resultadoInvalidacion").innerHTML = html;
+        modalRes.show();
+
+        // Actualizar estado en la tabla
+        const row = document.querySelector(`.btn-invalidar[data-factura-id="${facturaId}"]`)?.closest("tr");
+        if (row) {
+          row.querySelector("td:nth-child(2)").innerHTML =
+            `<span class="badge bg-danger"><i class="bi bi-x-octagon me-1"></i>Anulada</span>`;
+        }
+      })
+      .catch(err => {
+        document.getElementById("resultadoInvalidacion").innerHTML = `<p class="text-danger">Error: ${err}</p>`;
+        bootstrap.Modal.getOrCreateInstance(document.getElementById("resultadoModal")).show();
+      });
     });
   });
-});
 </script>
-
 {% endblock %}

@@ -8,7 +8,6 @@ export const generarFacturaService = async (data: any) => {
     const response = await api.post(`/factura/generar/`, data);
     return response.data;
   } catch (error: any) {
-    console.log('ERROR:', error.response.data);
     throw new Error();
   }
 };

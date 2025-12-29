@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="container py-5">
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h4 class="mb-4">Configuración inicial – Paso 2: Empresa</h4>
+
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">NIT *</label>
+            <input type="text" name="nit" class="form-control" required>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">NRC</label>
+            <input type="text" name="nrc" class="form-control">
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Razón Social *</label>
+          <input type="text" name="nombre_razon_social" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Nombre Comercial</label>
+          <input type="text" name="nombre_comercial" class="form-control">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Nombre Establecimiento</label>
+          <input type="text" name="nombre_establecimiento" class="form-control">
+        </div>
+
+        <!-- Tipo establecimiento -->
+        <div class="mb-3">
+          <label class="form-label">Tipo Establecimiento *</label>
+          <div class="input-group">
+            <select name="tipoestablecimiento" id="tipoestablecimiento" class="form-select" required>
+              {% for t in tipos_est %}
+                <option value="{{ t.id }}">{{ t.descripcion }}</option>
+              {% endfor %}
+            </select>
+            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalTipoEstablecimiento">
+              <i class="bi bi-plus"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Municipio -->
+        <div class="mb-3">
+          <label class="form-label">Municipio *</label>
+          <div class="input-group">
+            <select name="municipio" id="municipio" class="form-select" required>
+              {% for m in municipios %}
+                <option value="{{ m.id }}">{{ m.descripcion }}</option>
+              {% endfor %}
+            </select>
+            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalMunicipio">
+              <i class="bi bi-plus"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Dirección Comercial *</label>
+          <textarea name="direccion_comercial" class="form-control" rows="2" required></textarea>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Teléfono</label>
+            <input type="text" name="telefono" class="form-control">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Correo</label>
+            <input type="email" name="email" class="form-control">
+          </div>
+        </div>
+
+        <!-- Ambiente -->
+        <div class="mb-3">
+          <label class="form-label">Ambiente *</label>
+          <div class="input-group">
+            <select name="ambiente" id="ambiente" class="form-select" required>
+              {% for a in ambientes %}
+                <option value="{{ a.id }}">{{ a.descripcion }}</option>
+              {% endfor %}
+            </select>
+            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalAmbiente">
+              <i class="bi bi-plus"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Código Establecimiento</label>
+            <input type="text" name="codigo_establecimiento" class="form-control">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Código Punto de Venta</label>
+            <input type="text" name="codigo_punto_venta" class="form-control">
+          </div>
+        </div>
+
+        <!-- Actividades -->
+        <div class="mb-3">
+          <label class="form-label">Buscar Actividad Económica</label>
+          <input type="text" id="buscarActividad" class="form-control mb-2" placeholder="Escribe para filtrar...">
+
+          <select name="actividades_economicas" id="actividades" class="form-select" multiple required>
+            {% for act in actividades %}
+              <option value="{{ act.id }}">{{ act.codigo }} - {{ act.descripcion }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Tipo Documento -->
+        <div class="mb-3">
+          <label class="form-label">Tipo Documento *</label>
+          <div class="input-group">
+            <select name="tipo_documento" id="tipo_documento" class="form-select" required>
+              {% for t in tipos_doc %}
+                <option value="{{ t.id }}">{{ t.descripcion }}</option>
+              {% endfor %}
+            </select>
+            <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalTipoDocumento">
+              <i class="bi bi-plus"></i>
+            </button>
+          </div>
+        </div>
+
+
+        <div class="mb-3">
+          <label class="form-label">Logo</label>
+          <input type="file" name="logo" class="form-control">
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Clave privada</label>
+            <input type="text" name="clave_privada" class="form-control">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Clave pública</label>
+            <input type="text" name="clave_publica" class="form-control">
+          </div>
+        </div>
+
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" name="imprime_termica" id="imprime_termica">
+          <label class="form-check-label" for="imprime_termica">
+            Imprimir en térmica (80mm)
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Guardar y continuar</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById('buscarActividad').addEventListener('keyup', function() {
+    let filter = this.value.toLowerCase();
+    let options = document.querySelectorAll('#actividades option');
+    options.forEach(option => {
+      let text = option.textContent.toLowerCase();
+      option.style.display = text.includes(filter) ? '' : 'none';
+    });
+  });
+</script>
+
+{% include "setup/modales.html" %}
+
+
+{% endblock %}
