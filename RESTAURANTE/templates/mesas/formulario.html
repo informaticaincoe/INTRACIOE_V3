@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}{% if mesero %}Editar mesa{% else %}Agregar mesa{% endif %} · INTRACOE{% endblock %}
+{% block content %}
+{% load l10n %}
+
+<div class="mx-md-5 py-3">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    
+    <div class="d-flex align-items-center mb-3">
+        <a href="{% url 'mesas-lista' %}">
+            <span class="material-symbols-outlined">arrow_back_ios</span>
+        </a>
+        <h1 class="h5 mb-0">{% if mesa %}Editar Mesa {{ mesa.nombre }}{% else %}Agregar mesa{% endif %}</h1>
+    </div>
+    
+    <form method="post" id="formMesas" class="needs-validation" novalidate 
+        {% comment %} action="{% if mesa %}{% url 'editar-mesa' mesa.id %}{% else %}{% url 'crear-mesa' %}{% endif %}" {% endcomment %}
+        >
+        {% csrf_token %}
+        <div class="row g-3 d-flex align-items-stretch">
+            <div class="col-md-6 d-flex flex-column gap-3">
+                <div >
+                    <label class="form-label">Número</label>
+                    <input type="text" name="numero" class="form-control" value="{{ mesa.numero|default:'' }}" required>
+                    <div class="invalid-feedback">Obligatorio.</div>
+                </div>
+    
+                <div>
+                    <label class="form-label mb-2">Capacidad</label>
+                    <div class="row g-2">
+                        <input type="text" name="capacidad" class="form-control" value="{{ mesa.capacidad|default:'' }}" required>
+                        <div class="invalid-feedback">Obligatorio.</div>
+                    </div>
+                    <div id="categoriaFeedback" class="invalid-feedback">
+                        Obligatorio.
+                      </div>
+                </div>
+
+                <div>
+                    <label>Area</label>
+                    <select name="area_id" id="area_id" class="form-select" required>
+                        <option value="">Seleccione…</option>
+                        {% for area in areas_lista %}
+                            <option value="{{ area.id }}"
+                                    data-nombre="{{ area.nombre|default_if_none:'' }}"
+                                    {% if mesa and mesa.area == area.id %}selected{% endif %}>
+                            {{ area.nombre }}
+                            </option>
+                        {% endfor %}
+                        </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="id_estado">Estado</label>
+                    <select class="form-select" id="id_estado" name="estado" required>
+                        {% with estado_actual=mesa.estado|default:"LIBRE" %}
+                            {% for value,label in ESTADO_MESA_CHOICES %}
+                                <option value="{{ value }}" {% if estado_actual == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        {% endwith %}
+                    </select>
+                </div>
+                
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="es_vip" value="on" id="es_vip" {% if mesa.es_vip %}checked{% endif %}>
+                    <label class="form-check-label" for="es_vip">Es VIP</label>
+                </div>
+
+                
+            </div>
+        </div>
+        <button class="btn btn-primary mt-3" id="save_form">Guardar</button>
+    </form>
+    <div>
+    </div>
+
+</div>
+<script>
+(function () {
+    // ----------------------------------------------------
+    // LÓGICA DE VALIDACIÓN DEL FORMULARIO (EJECUCIÓN AL ENVIAR)
+    // ----------------------------------------------------
+    const form = document.getElementById('formMesas');
+    const saveButton = document.getElementById('save_form'); // Obtener el botón
+
+    // Usamos el evento del botón o el evento de submit, pero simplificamos la lógica:
+    form.addEventListener('submit', (e)=>{
+        if (!form.checkValidity()) {
+            e.preventDefault(); // Detiene el envío si hay errores
+            e.stopPropagation();
+        } else {
+            feedback.style.display = 'none';
+        }
+        // Aplica las clases de validación (debe ir aquí o justo antes del if)
+        form.classList.add('was-validated'); 
+    });
+})();
+</script>
+
+{% endblock %}

@@ -159,15 +159,24 @@
     fd.append('desc_pct[]', $('.inp-desc', tr).value);
   });
 
-  const resp = await fetch(url('facturar'), {
+   const resp = await fetch(url('facturar'), {
     method: 'POST',
     headers: { 'X-CSRFToken': csrftoken() },
     body: fd
   });
 
-  const data = await resp.json().catch(()=>({}));
-  if(resp.ok && data.redirect){ window.location.href = data.redirect; }
-  else { toast(data?.error || 'No se pudo facturar.'); }
+  let data = null;
+  try {
+    data = await resp.json();
+  } catch(e) {
+    return toast('Respuesta inválida del servidor.');
+  }
+
+  if (resp.ok && data.ok && data.redirect_url) {
+    window.location.href = data.redirect_url;
+  } else {
+    toast(data?.error || 'No se pudo facturar.');
+  }
 });
 
 
@@ -218,7 +227,7 @@
 (function(){
   const $ = (s, x=document) => x.querySelector(s);
   const menu  = $('#productoPickerMenu');
-  const input = $('#productoPickerInput');
+  const input = $('#productoPickerInput'); 
   const qtyEl = $('#qty');
   const receptorSel = $('#receptor');
   const API_URL = "{% url 'api_productos' %}"; // ajusta si tu nombre de URL es distinto
