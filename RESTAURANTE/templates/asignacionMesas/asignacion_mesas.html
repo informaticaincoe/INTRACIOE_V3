@@ -1,0 +1,273 @@
+{% extends 'base.html' %} 
+{% block title %} Asginación Mesas {% endblock %} 
+{% block content %}
+
+<div class="container-fluid mt-3">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="h5 mb-0 text-gray-800">Asignación mesas</h5>
+    <div>
+      <a
+        href="#"
+        data-bs-toggle="modal"
+        data-bs-target="#asignarMeseroModal"
+        class="btn btn-primary"
+      >
+        <i class="bi bi-plus-circle me-2"></i>Asignar
+      </a>
+    </div>
+  </div>
+
+  <div class="mb-4">
+    <form
+      method="GET"
+      action="{% url 'asignaciones-lista' %}"
+      class="row g-3 align-items-center"
+    >
+      <div class="col-md-8 position-relative">
+        <input
+          type="text"
+          class="form-control"
+          id="id_search_name"
+          name="search_name"
+          placeholder="Buscar por nombre..."
+          value="{{ request.GET.search_name|default:'' }}"
+        />
+        <i
+          class="bi bi-x-lg position-absolute top-50 translate-middle-y end-0 me-3 clear-icon"
+          data-target="id_search_name"
+          style="display: none"
+        ></i>
+      </div>
+    </form>
+  </div>
+
+  <div class="container">
+    <div class="row g-5">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Mesa</th>
+              <th scope="col">Mesero</th>
+              <th scope="col">Fecha de inicio</th>
+              <th scope="col">Fecha fin</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for asignacion in asignaciones_lista %}
+            <tr>
+              <td>{{ asignacion.mesa.numero }}</td>
+              <td>{{ asignacion.mesero.nombre }}</td>
+              <td>{{ asignacion.fecha_inicio }}</td>
+              <td>{{ asignacion.fecha_fin|default:'-'}}</td>
+              {% if asignacion.activa %}
+              <td class="d-flex">
+                <div
+                  class="d-flex align-items-center gap-2 bg-success bg-opacity-25 border-success rounded-pill px-3"
+                >
+                  <div
+                    class="bg-success rounded-circle"
+                    style="height: 0.5rem; width: 0.5rem"
+                  ></div>
+                  Activo
+                </div>
+              </td>
+              {% else %}
+              <td class="d-flex align-items-center gap-2">
+                <div
+                  class="d-flex align-items-center gap-2 bg-danger bg-opacity-25 border-danger rounded-pill px-3"
+                >
+                  <div
+                    class="bg-danger rounded-circle"
+                    style="height: 0.5rem; width: 0.5rem"
+                  ></div>
+                  Inactivo
+                </div>
+              </td>
+              {% endif %}
+              <td>
+                <a
+                  href="#"
+                  data-bs-toggle="modal"
+                  data-bs-target="#asignarMeseroModal"
+                  data-update-url="{% url 'editar-asignacion-mesa-a-mesero' asignacion.id %}"
+                  data-mesa-id="{{ asignacion.mesa_id }}"
+                  data-mesa-numero="{{ asignacion.mesa.numero }}"
+                  data-mesero-id="{{ asignacion.mesero_id }}"
+                  data-es-fija="{{ asignacion.es_fija|yesno:'true,false' }}"
+                  data-activa="{{ asignacion.activa|yesno:'true,false' }}"
+                  data-fecha-inicio="{{ asignacion.fecha_inicio|date:'Y-m-d\TH:i' }}"
+                  data-fecha-fin="{% if asignacion.fecha_fin %}{{ asignacion.fecha_fin|date:'Y-m-d\TH:i' }}{% endif %}"
+                >
+                  <i class="bi bi-pencil"></i>
+                </a>
+
+                <button
+                  type="button"
+                  class="bg-transparent border-0 text-danger"
+                  data-id="{{ asignacion.id }}"
+                  data-mesa="{{ asignacion.mesa.numero }}"
+                  data-mesero="{{ asignacion.mesero.nombre }}"
+                  data-bs-toggle="modal"
+                  data-bs-target="#eliminarMesaModal"
+                >
+                  <i
+                    class="bi bi-trash"
+                    data-bs-toggle="tooltip"
+                    title="Eliminar"
+                  ></i>
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal (solo una vez, fuera del for) -->
+  <div
+    class="modal fade"
+    id="eliminarMesaModal"
+    tabindex="-1"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">Eliminar mesa</h5>
+          <button
+            type="button"
+            class="btn-close btn-close-white"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+
+        <form
+          method="post"
+          id="eliminarAsignacionForm"
+        >
+          {% csrf_token %}
+          <div class="modal-body">
+            <p>
+              ¿Seguro que quieres eliminar la asignacion de la mesa "<strong id="numeroMesa"></strong>" a "<strong id="nombreMesero"></strong>"?</p>
+            <small class="text-muted">Esta acción no se puede deshacer.</small>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="btn btn-danger"
+            >
+              Eliminar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% include "asignacionMesas/asignar_modal.html" %} {% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const modalEl = document.getElementById("asignarMeseroModal");
+    if (!modalEl) return;
+
+    modalEl.addEventListener("show.bs.modal", function (event) {
+      const btn = event.relatedTarget;
+      if (!btn) return;
+
+      const form = document.getElementById("asignarMeseroForm");
+      const createUrl = form.dataset.createUrl;
+      const updateUrl = btn.getAttribute("data-update-url");
+      const isEdit = !!updateUrl;
+
+      // mesa
+      const mesaIdInput = document.getElementById("asignar_mesa_id");
+      const mesaNumero = document.getElementById("asignar_mesa_numero");
+      const mesaWrap = document.getElementById("mesa_select_wrap");
+      const mesaSelect = document.getElementById("asignar_mesa_select");
+
+      const mesaId = btn.getAttribute("data-mesa-id") || "";
+      const mesaNum = btn.getAttribute("data-mesa-numero") || "—";
+
+      mesaIdInput.value = mesaId;
+      mesaNumero.textContent = mesaNum;
+
+      if (!mesaId) {
+        mesaWrap.classList.remove("d-none");
+        if (mesaSelect) mesaSelect.value = "";
+      } else {
+        mesaWrap.classList.add("d-none");
+        if (mesaSelect) mesaSelect.value = mesaId;
+      }
+
+      form.action = isEdit ? updateUrl : createUrl;
+
+      // campos
+      const sel = document.getElementById("asignar_mesero_id");
+      const ini = document.getElementById("asignar_fecha_inicio");
+      const fin = document.getElementById("asignar_fecha_fin");
+      const chkFija = document.getElementById("asignar_es_fija");
+      const chkActiva = document.getElementById("activa");
+
+      if (!isEdit) {
+        form.reset();
+        if (sel) sel.value = "";
+        if (ini) ini.value = "";
+        if (fin) fin.value = "";
+        if (chkFija) chkFija.checked = false;
+        if (chkActiva) chkActiva.checked = true;
+      } else {
+        if (sel) sel.value = btn.getAttribute("data-mesero-id") || "";
+        if (ini) ini.value = btn.getAttribute("data-fecha-inicio") || "";
+        if (fin) fin.value = btn.getAttribute("data-fecha-fin") || "";
+        
+        // CORRECCIÓN CLAVE: Comparación estricta de string "true"
+        if (chkFija) {
+          chkFija.checked = btn.getAttribute("data-es-fija") === "true";
+        }
+        if (chkActiva) {
+          chkActiva.checked = btn.getAttribute("data-activa") === "true";
+        }
+      }
+    }); // <--- ESTA LLAVE FALTABA (Cierra show.bs.modal)
+
+    // --- Modal eliminar mesa ---
+    const eliminarMesaModal = document.getElementById("eliminarMesaModal");
+    if (eliminarMesaModal) {
+      eliminarMesaModal.addEventListener("show.bs.modal", function (event) {
+        const button = event.relatedTarget;
+        if (!button) return;
+        
+        const asignacionId = button.getAttribute("data-id");
+        const mesa = button.getAttribute("data-mesa");
+        const mesero = button.getAttribute("data-mesero");
+
+        const nombreMesero = document.querySelector("#nombreMesero");
+        const numeroMesa = document.querySelector("#numeroMesa");
+        const formEliminar = document.getElementById("eliminarAsignacionForm");
+
+        if (numeroMesa) numeroMesa.textContent = mesa || "";
+        if (nombreMesero) nombreMesero.textContent = mesero || "";
+
+        if (formEliminar && asignacionId) {
+          formEliminar.action = "{% url 'eliminar-asignacion-mesa-a-mesero' 0 %}".replace("/0/", "/" + asignacionId + "/");
+        }
+      });
+    }
+  });
+</script>
+{% endblock extra_js %} 
+{% endblock content %}

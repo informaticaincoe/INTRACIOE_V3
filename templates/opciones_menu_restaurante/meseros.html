@@ -45,8 +45,8 @@
     // Mapa: botón -> URL Django
     const goto = new Map([
       [`#${prefix}-meseros`, "{% url 'meseros-lista' %}"],
-      [`#${prefix}-generar_mesas`, "{% url 'index' %}"],
       [`#${prefix}-mesas`, "{% url 'mesas-lista' %}"],
+      [`#${prefix}-asignar_mesas`, "{% url 'asignaciones-lista' %}"],
     ]);
     document
       .querySelectorAll(`[data-bs-target^="#${prefix}-"]`)

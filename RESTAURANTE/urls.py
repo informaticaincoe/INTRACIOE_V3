@@ -30,10 +30,15 @@ urlpatterns = [
     # Mesas
     path('mesas', views.listar_mesas, name='mesas-lista'),  
     path('mesa/crear', views.crear_mesa, name='crear-mesa'),    
-      
+    path('mesa/<int:pk>/editar', views.editar_mesa, name='editar-mesa'),    
+    path('mesa/<int:pk>/eliminar', views.eliminar_mesa, name='eliminar-mesa'),    
     
     #Asignacion mesas
     path('mesa/mesero/asignar', views.asignar_mesa_a_mesero, name='asignar-mesa-a-mesero'),    
+    path('asignacion/<int:pk>/editar', views.editar_asignacion_mesa_a_mesero, name='editar-asignacion-mesa-a-mesero'),   
+    path('asignacion/<int:pk>/eliminar', views.eliminar_asignacion_mesa_a_mesero, name='eliminar-asignacion-mesa-a-mesero'),     
+    path('asignaciones', views.listar_asignaciones, name='asignaciones-lista'),    
+    
     
     
 ]

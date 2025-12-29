@@ -1,6 +1,80 @@
 {% extends 'base.html' %} 
 {% block title %} Mesas {% endblock %} 
 {% block content %}
+<style>
+  /* layout general */
+.mesa-box { cursor: pointer; }
+.mesa-card{
+  width: 100%;
+  height: 8.5rem;
+  border-radius: 5px;
+  background: #fff;
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  position: relative;
+}
+/* .mesa-card:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 .75rem 1.5rem rgba(0,0,0,.08) !important;
+} */
+
+/* dropdown icon */
+.mesa-actions{
+  position:absolute; top:.4rem; right:.4rem;
+  opacity:.7;
+}
+
+.mesa-card:hover .mesa-actions{ opacity: 1; }
+
+/* estado visual por clase (no inline) */
+.mesa-card.is-libre{ border-color: rgba(0, 0, 0, 0.12) !important; }
+.mesa-card.is-ocupada{ border-color: rgba(255,193,7,.9) !important; }
+.mesa-card.is-pendiente-pago{ border-color: rgba(16,60,7,.9) !important; }
+.mesa-card.is-sinmesero{ border-color: rgba(0,0,0,.20) !important; background: rgba(0,0,0,.02); }
+
+/* círculo estado */
+.mesa-status-circle{
+  width: 3.2rem;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.mesa-status-circle i{ line-height: 1; font-size: 1.6rem; }
+
+
+/* etiqueta estado */
+.mesa-pill{
+  font-size:.85rem;
+  border-radius: 999px;
+  padding: .25rem .75rem;
+  border: 1px solid transparent;
+}
+
+/* header inferior con número */
+.mesa-num{
+  font-weight: 600;
+  font-size: 1rem;
+  color: rgba(0,0,0,.75);
+}
+
+/* VIP tag */
+.vip-tag{
+  position:absolute;
+  top:.55rem;
+  left:.55rem;
+  background:#ffc107;
+  color:#212529;
+  font-weight:700;
+  font-size:.75rem;
+  border-radius:999px;
+  padding:.2rem .55rem;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(0,0,0,.10);
+}
+
+</style>
+
 <div class="container-fluid mt-3">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h5 class="h5 mb-0 text-gray-800">Mesas</h5>
@@ -42,92 +116,121 @@
     <div class="row g-5">
       {% for mesa in lista_mesas %}
       <div
-        class="mesa-box col-12 col-md-4 col-lg-4 d-flex flex-column align-items-center gap-3"
+        class="mesa-box col-12 col-md-4 col-lg-3 d-flex flex-column align-items-center gap-3 "
+        role="button"        
       >
-        <div
-          class="shadow-sm p-3 border rounded-2 d-flex flex-column align-items-center justify-content-center gap-2 position-relative {% if mesa.estado == 'OCUPADA' %} border-warning {% endif %}"
-          style="height: 8rem; width: 15rem"
-        >
+      <div
+        class="mesa-card shadow-sm p-3 border d-flex flex-column align-items-center justify-content-center gap-2
+          {% if not mesa.tiene_mesero %} is-sinmesero
+          {% elif mesa.estado == 'OCUPADA' %} is-ocupada
+          {% else %} is-libre {% endif %}"
+      >
+          <!-- {% if mesa.es_vip %}
+            <div class="vip-ribbon">VIP</div>
+          {% endif %} -->
+
+          {% if mesa.es_vip %}
+            <div 
+              class="position-absolute top-0 start-0 mt-2 ms-2 badge rounded-pill px-3 py-1 text-lowercase fw-normal text-center text-warning fs-6"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" style="enable-background:new 0 0 128 128" width="24" height="24" xml:space="preserve"><path style="fill:#ffc107" d="M128 53.279c0 5.043-4.084 9.136-9.117 9.136-.091 0-.164 0-.255-.018l-8.914 34.06H18.286L8.734 65.01C3.884 64.81 0 60.808 0 55.892c0-5.043 4.084-9.136 9.117-9.136 5.032 0 9.117 4.093 9.117 9.136a9.557 9.557 0 0 1-.492 2.997l22.081 12.919 18.671-34.371a9.1 9.1 0 0 1-4.267-7.729c0-5.043 4.084-9.136 9.117-9.136s9.117 4.093 9.117 9.136a9.1 9.1 0 0 1-4.267 7.729l18.671 34.371 24.05-14.07a9.164 9.164 0 0 1-1.149-4.459c0-5.062 4.084-9.136 9.117-9.136 5.033 0 9.117 4.075 9.117 9.136zm-18.286 46.835H18.286v7.314h91.429v-7.314z"/></svg>
+              VIP
+
+            </div>
+          {% endif %}
+
+          <a class="nav-link mesa-actions" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">
+            <i class="bi bi-three-dots-vertical"></i>
+          </a>
+          
+          <ul class="dropdown-menu dropdown-menu-end">
+            {% if not mesa.tiene_mesero %}
+              <li>
+                <a class="dropdown-item"
+                   href="#"
+                   data-bs-toggle="modal"
+                   data-bs-target="#asignarMeseroModal"
+                   data-mesa-id="{{ mesa.id }}"
+                   data-mesa-numero="{{ mesa.numero }}">
+                  <i class="bi bi-exclamation-triangle-fill text-warning pe-2"></i>
+                  Asignar mesero
+                </a>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+            {% endif %}
+          
+            <li>
+              <a class="dropdown-item" href="{% url 'editar-mesa' mesa.id %}">Editar</a>
+            </li>
+            <li>
+              <a 
+              class="dropdown-item"  
+              type="button"
+              data-bs-toggle="modal"
+              data-bs-target="#eliminarMesaModal"
+              data-id="{{ mesa.id }}"
+              data-nombre="{{ mesa.numero }}">Eliminar</a>
+            </li>
+            <!-- <li>
+              <a class="dropdown-item" href="#">informacion</a>
+            </li> -->
+          </ul>
+          
           <!-- Botón de eliminar (abre modal) -->
           {% if not mesa.tiene_mesero %}
-          <div
-            class="rounded-circle d-flex align-items-center justify-content-center"
-            style="
-              background-color: rgb(69, 69, 69);
-              height: 3rem;
-              width: 3rem;
-            "
-          >
-            <i class="bi bi-exclamation text-white fs-3"></i>
-            <a class="nav-link position-absolute top-0 end-0 pe-2" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false"><i class="bi bi-three-dots-vertical"></i></a>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="#"><i class="bi bi-exclamation-triangle-fill text-warning text-center pe-2"></i>Asignar mesero</a></li>
-              <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="#">Editar</a></li>
-              <li><a class="dropdown-item" href="#">Eliminar</a></li>
-            </ul>
-          </div>
-          <p
-              class="fs-6 m-0 badge rounded-pill px-3 py-1 text-lowercase fw-normal"
-              style="
-                border: 1px rgb(69, 69, 69) solid;
-                color: rgb(69, 69, 69);
-              "
-            >
+            <div class="mesa-status-circle" style="background-color: #47474782;">
+              <i class="bi bi-person-x-fill text-white"></i>
+            </div>
+
+            <p class="fs-6 m-0 badge rounded-pill px-3 py-1 text-lowercase fw-normal"
+              style="color: #47474782;">
               sin mesero asignado
             </p>
-            <button
-            type="button"
-            class="btn btn-outline-dark btn-sm"
-            data-bs-toggle="modal"
-            data-bs-target="#asignarMeseroModal"
-            data-mesa-id="{{ mesa.id }}"
-            data-mesa-numero="{{ mesa.numero }}"
-          >
-            Asignar mesero
-          </button>
-          
-          {% elif mesa.estado == "OCUPADA"%}
-            <div
-              class="rounded-circle d-flex align-items-center justify-content-center"
-              style="
-                background-color: rgb(244, 178, 93);
-                height: 3rem;
-                width: 3rem;
-              "
-            >
-              <i class="bi bi-fork-knife text-white fs-3"></i>
+          {% elif mesa.estado == "OCUPADA" %}
+            <div class="mesa-status-circle" style="background-color: rgb(244, 178, 93);">
+              <i class="bi bi-fork-knife text-white"></i>
             </div>
-            <p
-              class="fs-6 m-0 badge rounded-pill px-3 py-1 text-lowercase fw-normal"
-              style="
-                border: 1px rgb(244, 178, 93) solid;
-                color: rgb(244, 178, 93);
-              "
-            >
+
+            <p class="fs-6 m-0 badge rounded-pill px-3 py-1 text-lowercase fw-normal"
+              style="border: 1px rgb(244, 178, 93) solid; color: rgb(244, 178, 93);">
               {{ mesa.estado }}
             </p>
-          {% endif %} 
-          
+          {% elif mesa.estado == "LIBRE" %}
+            <!-- <div class="mesa-status-circle" style="border: 0.2rem rgba(0, 0, 0, 0.100) solid;">
+              <p class="h2" style="color: rgba(0, 0, 0, 0.100)">{{mesa.numero}}</p>
+            </div> -->
+
+            <p class="fs-6 m-0 badge rounded-pill px-3 py-1 text-lowercase fw-normal"
+              style="color: rgba(0, 0, 0, 0.200)">
+              {{ mesa.estado }}
+            </p>
+            <p class="fs-6 position-absolute start-0 bottom-0 ps-2 text-lowercase fw-normal d-flex align-items-center gap-1 m-0"
+              style="color: rgba(0, 0, 0, 0.200)">
+              <i class="bi bi-person"></i>  <span>{{ mesa.capacidad|default:"0" }}</span>
+            </p>
+
+          {% elif mesa.estado == "PENDIENTE_PAGO" %}
+            <!-- <div class="mesa-status-circle" style="border: 0.2rem rgba(0, 0, 0, 0.100) solid;">
+              <p class="h2" style="color: rgba(0, 0, 0, 0.100)">{{mesa.numero}}</p>
+            </div> -->
+
+            <div class="mesa-status-circle" style="background-color: rgb(16, 60, 191);">
+              <i class="bi bi-cash text-white"></i>
+            </div>
+
+            <p class="fs-6 m-0 badge rounded-pill px-3 py-1 text-lowercase fw-normal"
+              style="border: 1px rgb(16, 60, 191) solid; color: rgb(16, 60, 191);">
+              Pendiente de pago
+            </p>
+
+          {% endif %}          
           
         </div>
-
         <div class="p-0 m-0 text-center">
           <p class="m-0">{{ mesa.numero}}</p>
         </div>
 
-        {% comment %}
-        <button
-          type="button"
-          class="btn btn-outline-danger btn-sm"
-          data-bs-toggle="modal"
-          data-bs-target="#eliminarMesaModal"
-          data-id="{{ mesa.id }}"
-          data-nombre="{{ mesa.numero }}"
-        >
-          Eliminar
-        </button>
-        {% endcomment %}
+        
       </div>
 
       {% empty %}
@@ -197,7 +300,6 @@
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     const modalEl = document.getElementById("asignarMeseroModal");
-    console.log("MODAAAAl")
     if (!modalEl) return;
   
     modalEl.addEventListener("show.bs.modal", function (event) {
@@ -286,7 +388,7 @@
 
         if (nombreEl) nombreEl.textContent = mesasNombre || "";
         if (form && mesasId) {
-          form.action = "{% url 'eliminar-menu' 0 %}".replace(
+          form.action = "{% url 'eliminar-mesa' 0 %}".replace(
             "/0/",
             "/" + mesasId + "/"
           );
