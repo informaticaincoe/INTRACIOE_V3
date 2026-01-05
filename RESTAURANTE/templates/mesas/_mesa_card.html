@@ -1,0 +1,114 @@
+{# templates/mesas/_mesa_card.html #}
+
+<div class="mesa-box col-12 col-md-4 col-lg-3 d-flex flex-column align-items-center gap-3" role="button">
+
+  <div class="mesa-card shadow-sm p-3 border d-flex flex-column align-items-center justify-content-center gap-2 position-relative
+      {% if not mesa.tiene_mesero %} is-sinmesero
+      {% elif mesa.estado == 'PENDIENTE_ORDEN' %} is-pendiente-orden
+      {% elif mesa.estado == 'OCUPADA' %} is-ocupada
+      {% elif mesa.estado == 'PENDIENTE_PAGO' %} is-pendiente-pago
+      {% else %} is-libre {% endif %}">
+
+    {% if mesa.es_vip %}
+      <div class="position-absolute top-0 start-0 mt-2 ms-2 badge rounded-pill px-3 py-1 text-warning fs-6">
+        VIP
+      </div>
+    {% endif %}
+
+    {# Dropdown de acciones #}
+    {% if acciones %}
+      <a class="nav-link mesa-actions position-absolute top-0 end-0 mt-1 me-1" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">
+        <i class="bi bi-three-dots-vertical"></i>
+      </a>
+
+      <ul class="dropdown-menu dropdown-menu-end">
+        {% for a in acciones %}
+          {% if a.divider_before %}<li><hr class="dropdown-divider"></li>{% endif %}
+
+          <li>
+            {% if a.type == "link" %}
+              <a class="dropdown-item" href="{{ a.href }}">
+                {% if a.icon %}<i class="{{ a.icon }} pe-2"></i>{% endif %}
+                {{ a.label }}
+              </a>
+
+            {% elif a.type == "modal" %}
+              <a class="dropdown-item"
+                 href="#"
+                 data-bs-toggle="modal"
+                 data-bs-target="{{ a.target }}"
+                 {% for k,v in a.data.items %}
+                   data-{{ k }}="{{ v }}"
+                 {% endfor %}
+              >
+                {% if a.icon %}<i class="{{ a.icon }} pe-2"></i>{% endif %}
+                {{ a.label }}
+              </a>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {# ===== Estado visual ===== #}
+
+    {# 1) Sin mesero asignado #}
+    {% if not mesa.tiene_mesero %}
+      <div class="mesa-status-circle" style="background-color: #47474782;">
+        <i class="bi bi-person-x-fill text-white"></i>
+      </div>
+      <p class="fs-6 m-0 badge rounded-pill px-3 py-1 text-lowercase fw-normal" style="color:#47474782;">
+        sin mesero asignado
+      </p>
+
+    {# 2) Libre #}
+    {% elif mesa.estado == "LIBRE" %}
+      <div class="mesa-status-circle" style="background-color: rgba(0,0,0,.12);">
+        <i class="bi bi-door-open text-white"></i>
+      </div>
+      <p class="fs-6 m-0 badge rounded-pill px-3 py-1 text-lowercase fw-normal"
+         style="border: 1px rgba(0,0,0,.18) solid; color: rgba(0,0,0,.35);">
+        libre
+      </p>
+      <p class="fs-6 position-absolute start-0 bottom-0 ps-2 text-lowercase fw-normal d-flex align-items-center gap-1 m-0"
+         style="color: rgba(0,0,0,.25)">
+        <i class="bi bi-person"></i> <span>{{ mesa.capacidad|default:"0" }}</span>
+      </p>
+
+    {# 3) Pendiente de orden (recién ocupada, sin pedido aún) #}
+    {% elif mesa.estado == "PENDIENTE_ORDEN" %}
+      <div class="mesa-status-circle" style="background-color: rgb(244, 178, 93);">
+        <i class="bi bi-clipboard-check text-white"></i>
+      </div>
+      <p class="fs-6 m-0 badge rounded-pill px-3 py-1 text-lowercase fw-normal"
+         style="border: 1px rgb(244, 178, 93) solid; color: rgb(244, 178, 93);">
+        pendiente de orden
+      </p>
+
+    {# 4) Ocupada (ya hay pedido/comandas activas) #}
+    {% elif mesa.estado == "OCUPADA" %}
+      <div class="mesa-status-circle" style="background-color: rgb(34, 197, 94);">
+        <i class="bi bi-fork-knife text-white"></i>
+      </div>
+      <p class="fs-6 m-0 badge rounded-pill px-3 py-1 text-lowercase fw-normal"
+         style="border: 1px rgb(34, 197, 94) solid; color: rgb(34, 197, 94);">
+        ocupada
+      </p>
+
+    {# 5) Pendiente de pago #}
+    {% elif mesa.estado == "PENDIENTE_PAGO" %}
+      <div class="mesa-status-circle" style="background-color: rgb(16, 60, 191);">
+        <i class="bi bi-cash text-white"></i>
+      </div>
+      <p class="fs-6 m-0 badge rounded-pill px-3 py-1 text-lowercase fw-normal"
+         style="border: 1px rgb(16, 60, 191) solid; color: rgb(16, 60, 191);">
+        pendiente de pago
+      </p>
+    {% endif %}
+
+  </div>
+
+  <div class="p-0 m-0 text-center">
+    <p class="m-0">{{ mesa.numero }}</p>
+  </div>
+</div>

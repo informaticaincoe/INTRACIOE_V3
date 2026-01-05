@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Iniciar sesión · INTRACOE{% endblock %} 
+
+{% block content %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center p-3">
+  <div class="col-12 col-sm-10 col-md-6 col-lg-5 col-xl-4">
+    <div class="card shadow-sm border-0">
+      <div class="card-body p-4 p-md-5">
+        <div class="text-center mb-4">
+          <h1 class="h4 mb-1">Ingreso Mesero</h1>
+          <p class="text-muted mb-0">
+            Ingresa únicamente tu código de empleado
+          </p>
+        </div>
+
+        {% if messages %} {% for message in messages %}
+        <div
+          class="alert alert-{{ message.tags }} mb-3"
+          role="alert"
+        >
+          {{ message }}
+        </div>
+        {% endfor %} {% endif %}
+
+        <form
+          method="post"
+          novalidate
+        >
+          {% csrf_token %}
+
+          <div class="mb-3">
+            <label
+              for="id_codigo"
+              class="form-label"
+              >Código</label
+            >
+            <input
+              type="text"
+              name="codigo"
+              id="id_codigo"
+              class="form-control {% if form.codigo.errors %}is-invalid{% endif %}"
+              placeholder="Ej: M001"
+              value="{{ form.codigo.value|default_if_none:'' }}"
+              autocomplete="off"
+              required
+            />
+            {% if form.codigo.errors %}
+            <div class="invalid-feedback">
+              {{ form.codigo.errors|striptags }}
+            </div>
+            {% endif %}
+          </div>
+
+          {% if form.non_field_errors %}
+          <div class="alert alert-danger py-2">
+            {{ form.non_field_errors|striptags }}
+          </div>
+          {% endif %}
+
+          <div class="d-grid">
+            <button
+              type="submit"
+              class="btn btn-primary btn-lg"
+            >
+              Ingresar
+            </button>
+          </div>
+
+          <div class="text-center mt-3">
+            <small class="text-muted"
+              >Si no puedes ingresar, solicita tu código al
+              administrador.</small
+            >
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap JS (opcional) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  // Auto-focus al abrir
+  const inp = document.getElementById("id_codigo");
+  if (inp) inp.focus();
+</script>
+
+{% endblock content %}
