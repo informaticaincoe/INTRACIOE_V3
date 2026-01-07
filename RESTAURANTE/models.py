@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, Max
 from django.contrib.auth.models import User
 from decimal import ROUND_HALF_UP, Decimal
 from django.utils import timezone
@@ -45,6 +45,27 @@ class Mesero(models.Model):
     
     def __str__(self):
         return self.codigo 
+    
+class Cocinero(models.Model):
+    """Perfil que liga un usuario del sistema al rol de mesero."""
+    # Se usa OneToOneField para asegurar que cada usuario sea un Mesero único.
+    nombre = models.CharField(max_length=120, null=False, verbose_name="Nombre cocinero")
+    pin = models.CharField(max_length=20, unique=True, verbose_name="codigo de identificaciòn") 
+    activo = models.BooleanField(default=True, verbose_name="Mesero Activo")
+    
+    usuario = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
+
+    class Meta:
+        verbose_name = "Cocinero"
+        verbose_name_plural = "Cocineros"
+    
+    def __str__(self):
+        return self.pin 
 
 class Area(models.Model):
     """Areas del restaurante donde se encuntran las mesas"""
@@ -62,6 +83,7 @@ class Mesa(models.Model):
     ESTADO_MESA_CHOICES = [
         ('LIBRE', 'Libre'),
         ('OCUPADA', 'Ocupada'),
+        ("ENTREGADO", "Entregado"),
         ('PENDIENTE_ORDEN', 'Pendiente de Orden'),
         ('PENDIENTE_PAGO', 'Pendiente de Pago'),
     ]
@@ -355,8 +377,7 @@ class Pedido(models.Model):
 
         return factura
 
-
-class DetallePedido(models.Model):
+class DetallePedido(models.Model):    
     pedido = models.ForeignKey("RESTAURANTE.Pedido", on_delete=models.CASCADE, related_name="detalles")
     platillo = models.ForeignKey("RESTAURANTE.Platillo", on_delete=models.PROTECT, related_name="detalles_pedido")
 
@@ -411,3 +432,73 @@ class DetallePedido(models.Model):
         super().save(*args, **kwargs)
         # cada vez que cambia una línea, recalcula totales del pedido
         self.pedido.recalcular_totales(save=True)
+
+class Comanda(models.Model):
+    ESTADO_COMANDA = [
+        ("ENVIADA", "Enviada"),
+        ("EN_PREPARACION", "En preparación"),
+        ("CERRADA", "Cerrada"),
+        ("ANULADA", "Anulada"),
+    ]
+
+    pedido = models.ForeignKey("RESTAURANTE.Pedido", on_delete=models.CASCADE, related_name="comandas")
+    numero = models.PositiveIntegerField(default=1)
+    estado = models.CharField(max_length=20, choices=ESTADO_COMANDA, default="ENVIADA")
+
+    creada_el = models.DateTimeField(default=timezone.now)
+    iniciada_el = models.DateTimeField(null=True, blank=True)
+    cerrada_el = models.DateTimeField(null=True, blank=True)
+
+    notas = models.CharField(max_length=250, blank=True, default="")
+
+    class Meta:
+        ordering = ["-creada_el"]
+        constraints = [
+            models.UniqueConstraint(fields=["pedido", "numero"], name="uniq_comanda_por_pedido_numero")
+        ]
+
+    @classmethod
+    @transaction.atomic
+    def crear_para_pedido(cls, pedido, *, notas=""):
+        last_num = (
+            cls.objects
+            .select_for_update()
+            .filter(pedido=pedido)
+            .aggregate(m=Max("numero"))
+            .get("m") or 0
+        )
+        return cls.objects.create(
+            pedido=pedido,
+            numero=last_num + 1,
+            notas=notas
+        )
+
+class ComandaItem(models.Model):
+
+    comanda = models.ForeignKey("RESTAURANTE.Comanda", on_delete=models.CASCADE, related_name="items")
+    detalle_pedido = models.ForeignKey("RESTAURANTE.DetallePedido", on_delete=models.PROTECT, related_name="comanda_items")
+
+    # snapshot
+    nombre = models.CharField(max_length=160)
+    cantidad = models.PositiveIntegerField(default=1)
+    notas = models.CharField(max_length=250, blank=True, default="")
+
+
+    enviado_el = models.DateTimeField(default=timezone.now)
+    iniciado_el = models.DateTimeField(null=True, blank=True)
+    listo_el = models.DateTimeField(null=True, blank=True)
+    entregado_el = models.DateTimeField(null=True, blank=True)
+
+
+    class Meta:
+        ordering = ["id"]
+
+    @classmethod
+    def from_detalle(cls, comanda, detalle, *, notas=""):
+        return cls.objects.create(
+            comanda=comanda,
+            detalle_pedido=detalle,
+            nombre=detalle.platillo.nombre,
+            cantidad=detalle.cantidad,
+            notas=(notas or detalle.notas or ""),
+        )

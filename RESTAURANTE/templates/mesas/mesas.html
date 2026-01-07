@@ -25,12 +25,6 @@
 
 .mesa-card:hover .mesa-actions{ opacity: 1; }
 
-/* Colores de Borde y Fondo segun estado */
-.mesa-libre { border: 2px solid #28a745 !important; background-color: #f8fff9; }           /* Verde */
-.mesa-ocupada { border: 2px solid #007bff !important; background-color: #f0f7ff; }         /* Azul */
-.mesa-pendiente_orden { border: 2px solid #ffc107 !important; background-color: #fffdf5; } /* Amarillo */
-.mesa-pendiente_pago { border: 2px solid #dc3545 !important; background-color: #fff5f6; }  /* Rojo */
-
 /* Colores según el estado */
   .is-libre { 
     border-color: rgba(0,0,0,.12) !important; 
@@ -49,6 +43,11 @@
   .is-ocupada { 
     border-color: rgb(34, 197, 94) !important; 
     background-color: rgba(34, 197, 94, 0.05);
+  }
+
+  .is-entregado { 
+    border-color:  rgb(13, 148, 136) !important; 
+    background-color: rgba(13, 148, 136, 0.05);
   }
 
   .is-pendiente-pago { 
@@ -212,6 +211,7 @@
 </div>
 {% include "pedidos/_toma_pedido.html" %}
 {% include "asignacionMesas/asignar_modal.html" %}
+{% include "pedidos/_ver_pedido.html" %}
 {% block extra_js %}
 <script>
   document.addEventListener("DOMContentLoaded", function () {
@@ -237,32 +237,6 @@
       if (sel) sel.value = "";
       if (chk) chk.checked = false;
       if (fin) fin.value = "";
-    });
-
-    // --- Logica para clases segun el estado de la mesa --//
-    const boxes = document.querySelectorAll(".mesa-box");
-
-    const borderByEstado = {
-      LIBRE: "border-success",
-      OCUPADA: "border-warning",
-      PENDIENTE_PAGO: "border-secondary",
-    };
-
-    boxes.forEach((box) => {
-      const estado = (box.dataset.estado || "").trim().toUpperCase();
-
-      // quita bordes anteriores por si recargas o re-renderizas
-      box.classList.remove(
-        "border-success",
-        "border-warning",
-        "border-danger",
-        "border-primary",
-        "border-secondary"
-      );
-      box.classList.add("border-3"); // grosor opcional
-
-      const borderClass = borderByEstado[estado] || "border-secondary";
-      box.classList.add(borderClass);
     });
 
     // --- Lógica del botón de limpieza del input ---

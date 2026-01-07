@@ -7,6 +7,7 @@ from django.views.decorators.http import require_POST
 from django.db import transaction
 from FE.models import Receptor_fe
 from RESTAURANTE.models import DetallePedido, Mesa, Mesero, Pedido, Platillo
+from RESTAURANTE.services_comandas import enviar_pedido_a_cocina
 
 """
 MANEJO DE:
@@ -192,7 +193,6 @@ def pedido_agregar_item(request, pedido_id):
         "total": str(pedido.total),
     })
 
-
 @login_required
 @require_POST
 @transaction.atomic
@@ -248,23 +248,23 @@ def pedido_cerrar(request, pedido_id):
 @transaction.atomic
 def pedido_crear_desde_mesa(request):
     if request.method == "POST":
-        print(">>>>>>>>> request ", request.method)
-        if getattr(request.user, "role", None) != "mesero":
+        if getattr(request.user, "role", None) != "mesero": # solo los meseros podra realizar toda la ruta de los pedidos
             messages.error(request, "No autorizado.")
             return redirect("mesas-lista")
 
-        mesero = get_mesero_from_user(request.user)
+        mesero = get_mesero_from_user(request.user) # obtener el mesero que esta loggeado
         if not mesero:
             messages.error(request, "No tienes un mesero asociado o estás inactivo.")
             return redirect("mesas-lista")
 
-        mesa_id = request.POST.get("mesa_id")
+        # obtener datos para realizar pedido
+        mesa_id = request.POST.get("mesa_id") 
         notas = (request.POST.get("notas") or "").strip()
         receptor_id = request.POST.get("receptor_id") or None
 
         mesa = get_object_or_404(Mesa.objects.select_for_update(), id=mesa_id)
 
-        # Solo permitir si la mesa está pendiente de orden (o libre si tú quieres permitirlo)
+        # Solo permitir si la mesa está pendiente de orden
         if mesa.estado not in ("PENDIENTE_ORDEN", "OCUPADA"):
             messages.error(request, f"No se puede tomar el pedido en una mesa en estado: {mesa.estado}")
             return redirect("mesas-lista")
@@ -301,8 +301,60 @@ def pedido_crear_desde_mesa(request):
             if mesa.estado != "PENDIENTE_ORDEN":
                 mesa.estado = "PENDIENTE_ORDEN"
                 mesa.save(update_fields=["estado"])
+        
+        if pedido.detalles.exists():
+            comanda = enviar_pedido_a_cocina(pedido, notas=notas)
+            if comanda:
+                messages.success(request, f"Pedido enviado a cocina (Comanda #{comanda.numero}).")
+            else:
+                messages.info(request, "No hay items pendientes por enviar a cocina.")
+        else:
+            messages.error(request, "No se enviaron items a cocina porque el pedido está vacío.")
 
         return redirect("mesas-lista")
     
+def ver_pedido_mesa(request, pk):    
+    mesa = get_object_or_404(Mesa, pk=pk)
     
+    mesero = get_mesero_from_user(request.user)
+    if getattr(request.user, "role", None) != "mesero" or not mesero:
+        return JsonResponse({"ok": False, "error": "No autorizado"}, status=403)
+
+    pedido = (Pedido.objects
+              .filter(mesa_id=mesa.id, estado="ABIERTO", mesero=mesero)
+              .prefetch_related("detalles__platillo")
+              .order_by("-creado_el")
+              .first())
+
+    if not pedido:
+        return JsonResponse({"ok": False, "error": "No hay pedido abierto"}, status=404)
+    
+    detalles = []
+    for d in pedido.detalles.select_related("platillo").all():
+        img = ""
+        if d.platillo.imagen:
+            img = d.platillo.imagen.url 
+        detalles.append({
+            "id": d.id,
+            "platillo_id": d.platillo_id,
+            "nombre": d.platillo.nombre,
+            "qty": d.cantidad,
+            "precio": float(d.precio_unitario),
+            "total": float(d.total_linea),
+            "imagen_url": img,
+        })
+
+    return JsonResponse({
+        "ok": True,
+        "pedido": {
+            "id": pedido.id,
+            "mesa_id": pedido.mesa_id,
+            "estado": pedido.estado,
+            "notas": pedido.notas,
+            "subtotal": float(pedido.subtotal),
+            "iva_total": float(pedido.iva_total),
+            "total": float(pedido.total),
+        },
+        "detalles": detalles
+    })
     

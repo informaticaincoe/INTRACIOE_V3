@@ -1,6 +1,6 @@
 from django.urls import path
 
-from RESTAURANTE.views import views_config_restaurante, views_mesas, views_meseros, views_pedidos
+from RESTAURANTE.views import views_cocineros, views_comandas, views_config_restaurante, views_mesas, views_meseros, views_pedidos
 
 
 urlpatterns = [
@@ -17,6 +17,7 @@ urlpatterns = [
     path('menu/<int:pk>/eliminar/', views_config_restaurante.eliminar_menu, name='eliminar-menu'), 
     
     # Meseros
+    path("mesero/login/", views_meseros.login_mesero, name="login_mesero"),
     path('meseros', views_meseros.listar_meseros, name='meseros-lista'),
     path('mesero/nuevo', views_meseros.crear_mesero, name='crear-mesero'),
     path('mesero/<int:pk>/eliminar/', views_meseros.eliminar_mesero, name='eliminar-mesero'),
@@ -27,7 +28,6 @@ urlpatterns = [
     path('area/nuevo', views_config_restaurante.crear_area, name='crear-area'),
     path('area/<int:pk>/eliminar/', views_config_restaurante.eliminar_area, name='eliminar-area'),
     path('area/<int:pk>/editar/', views_config_restaurante.editar_area, name='editar-area'),
-    path("mesero/login/", views_meseros.login_mesero, name="login_mesero"),
     
     # Mesas
     path('mesas', views_mesas.listar_mesas, name='mesas-lista'),  
@@ -49,4 +49,19 @@ urlpatterns = [
     path("pedido/<int:pedido_id>/quitar/<int:detalle_id>/", views_pedidos.pedido_quitar_item, name="pedido_quitar_item"),
     path("pedido/<int:pedido_id>/cerrar/", views_pedidos.pedido_cerrar, name="pedido_cerrar"),
     path("pedidos/crear-desde-mesa/", views_pedidos.pedido_crear_desde_mesa, name="pedido_crear_desde_mesa"),
+    
+    path("pedidos/pedido/<int:pk>/", views_pedidos.ver_pedido_mesa, name="ver_pedido_mesa"),
+    
+    # Cocineros
+    path("cocinero/login/", views_cocineros.login_cocinero, name="login_cocinero"),
+    path("cocineros", views_cocineros.listar_cocineros, name="cocineros-lista"),
+    path("cocinero/nuevo", views_cocineros.crear_cocinero, name="crear-cocinero"),
+    path("cocinero/<int:pk>/eliminar/", views_cocineros.eliminar_cocinero, name="eliminar-cocinero"),
+    path("cocinero/<int:pk>/editar/", views_cocineros.editar_cocinero, name="editar-cocinero"),
+
+    #Comandas
+    path("cocina/comanda/", views_comandas.comanda_cocina, name="comanda-cocina"),
+    path("cocina/comanda/item/<int:item_id>/preparacion/", views_comandas.comanda_item_en_preparacion, name="comanda-item-preparacion"),
+    path("cocina/comanda/item/<int:item_id>/listo/", views_comandas.comanda_item_listo, name="comanda-item-listo"),
+
 ]

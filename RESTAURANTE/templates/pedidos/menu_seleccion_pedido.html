@@ -27,7 +27,7 @@
 
   /* Columna orden “pegada” y con scroll propio */
   .orden-panel{
-    height: 62vh;                 /* ajusta a gusto (55–70vh) */
+    height: 62vh;                 
     display: flex;
     flex-direction: column;
   }
@@ -173,7 +173,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // + / - / remove
+
   ordenList.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-act]");
     if(!btn) return;

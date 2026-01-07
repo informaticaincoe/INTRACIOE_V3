@@ -6,6 +6,9 @@ from RESTAURANTE.models import (
     AsignacionMesa,
     Caja,
     CategoriaMenu,
+    Cocinero,
+    Comanda,
+    ComandaItem,
     DetallePedido,
     Mesa,
     Mesero,
@@ -204,3 +207,43 @@ class DetallePedidoAdmin(admin.ModelAdmin):
     search_fields = ("pedido__id", "pedido__mesa__numero", "platillo__nombre", "platillo__codigo")
     autocomplete_fields = ("pedido", "platillo")
     readonly_fields = ("subtotal_linea", "descuento_monto", "iva_monto", "total_linea", "creado_el")
+    
+@admin.register(Comanda)
+class ComandaAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "pedido",
+        "numero",
+        "estado",
+        "creada_el",
+        "iniciada_el",
+        "cerrada_el",
+    )
+    list_filter = ("numero", "estado", "pedido")
+    search_fields = ("pedido__id", "pedido__mesa__numero")
+    readonly_fields = ("creada_el", "iniciada_el", "cerrada_el")
+    
+@admin.register(ComandaItem)
+class ComandaItemAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "comanda",
+        "detalle_pedido",
+        "nombre",
+        "cantidad",
+        "notas",
+        "enviado_el",
+        "iniciado_el",
+        "entregado_el",
+        "listo_el"
+    )
+    list_filter = ("comanda", "detalle_pedido", "nombre")
+    search_fields = ("pedido__id", "pedido__mesa__numero")
+    autocomplete_fields = ("comanda", "detalle_pedido")
+    readonly_fields = ("enviado_el", "iniciado_el", "entregado_el", "listo_el")
+    
+@admin.register(Cocinero)
+class CocineroAdmin(admin.ModelAdmin):
+    list_display = ("nombre", "pin", "activo")
+    search_fields = ("nombre", "pin")
+    list_filter = ("activo",)

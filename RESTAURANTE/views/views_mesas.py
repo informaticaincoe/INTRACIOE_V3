@@ -77,6 +77,8 @@ def listar_mesas(request):
         if search_query:
             mesas = mesas.filter(numero__icontains=search_query)
 
+        
+
         # Opcional: marcar que tiene mesero (para tu UI)
         for m in mesas:
             m.tiene_mesero = True
@@ -112,10 +114,34 @@ def listar_mesas(request):
 
             elif m.estado == 'OCUPADA':
                 acciones_mesero.append({
-                    "type": "link",
+                    "type": "modal",
                     "label": "Ver / agregar pedido",
                     "icon": "bi bi-receipt",
-                    # "href": reverse("ver_pedido_mesa", args=[m.id])  # ajusta a tu url real
+                    "target": "#verOrdenModal",
+                    "data": {
+                        "mesa-id": m.id,
+                        "mesa-numero": m.numero,
+                        "modo": "ver",  # opcional
+                    }
+                })
+                acciones_mesero.append({
+                    "type": "link",
+                    "label": "Entregar",
+                    "icon": "bi bi-x-circle text-danger",
+                    "href": reverse("cambiar_estado_mesa", args=[m.id, "ENTREGADO"])
+                })
+                
+            elif m.estado == 'ENTREGADO':
+                acciones_mesero.append({
+                    "type": "modal",
+                    "label": "Ver / agregar pedido",
+                    "icon": "bi bi-receipt",
+                    "target": "#verOrdenModal",
+                    "data": {
+                        "mesa-id": m.id,
+                        "mesa-numero": m.numero,
+                        "modo": "ver",  # opcional
+                    }
                 })
                 acciones_mesero.append({
                     "type": "link",
@@ -123,8 +149,6 @@ def listar_mesas(request):
                     "icon": "bi bi-cash-coin",
                     "href": reverse("cambiar_estado_mesa", args=[m.id, "PENDIENTE_PAGO"])
                 })
-                # opcional: cancelar solo si NO hay pedido todavía (si quieres permitirlo)
-                # acciones_mesero.append({...})
 
             elif m.estado == 'PENDIENTE_PAGO':
                 acciones_mesero.append({
@@ -146,7 +170,7 @@ def listar_mesas(request):
         context = {
             "lista_mesas": mesas,
             "modo": "mesero",
-            "platillos": platillos
+            "platillos": platillos,
         }
         return render(request, "mesas/mesas.html", context)
 
@@ -334,7 +358,6 @@ def editar_asignacion_mesa_a_mesero(request,pk):
     
     asignacion = get_object_or_404(AsignacionMesa, pk=pk)
     print(">>>>>>>>>>> asignacion ", asignacion )
-    # print(">>>>>>>>>>> request.POST.get(activa)", asignacion. )
     
 
     if request.method == "POST":
@@ -345,13 +368,6 @@ def editar_asignacion_mesa_a_mesero(request,pk):
         fecha_inicio = _parse_dt(request.POST.get("fecha_inicio"))
         fecha_fin = _parse_dt(request.POST.get("fecha_fin"))
 
-        print(">>>>>>>>>>> activa", request.POST.get("activa") )
-        print(">>>>>>>>>>> es_fija", request.POST.get("es_fija") )
-        print(">>>>>>>>>>> es_fija 2", es_fija )
-
-        print(">>>>>>>>>>> objeto ", activa )
-        print(">>>>>>>>>>> objeto ", activa )
-        
         # Si no mandan fecha_inicio, usa ahora
         if not fecha_inicio:
             fecha_inicio = timezone.now()

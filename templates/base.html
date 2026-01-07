@@ -366,10 +366,14 @@
                 {% if emisor.es_restaurante and user.is_authenticated %}
                   {% if user.role == 'admin' or user.role == 'supervisor' %}
                     <h6>Restarurante</h6>
-                    <a href="{% url 'index' %}" class="list-group-item list-group-item-action border-0 m-0 rounded-0 d-flex align-items-center gap-2 bg-menu-item">
-                      <i class="bi bi-fork-knife"></i>
-                      <span class="fw-medium">Cocina</span>
-                    </a>
+                    <div class="accordion-item">
+                      <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#Cocina"><i class="bi bi-basket me-2"></i> Cocina</button></h2>
+                      <div id="Cocina" class="accordion-collapse collapse" data-bs-parent="#accMenu">
+                        <div class="list-group list-group-flush">
+                          {% include 'opciones_menu_restaurante/cocina.html' with uid='cocina' %}
+                        </div>
+                      </div>
+                    </div>
                   {% endif %}
 
                   {% if user.role == 'admin' or user.role == 'supervisor' %}
