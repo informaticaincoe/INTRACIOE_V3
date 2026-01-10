@@ -1,0 +1,203 @@
+<style>
+  .checkbox-lg .custom-check-input{
+    transform: scale(1.4);
+    top: .8rem;
+  }
+  .custom-check-input:checked{ accent-color: #0b3f90;; }
+
+  .card-menu-select.is-selected{
+    outline: 2px solid #0b3f90;
+    outline-offset: 2px;
+  }
+
+  /* ✅ GRID RESPONSIVE: llena el espacio automáticamente */
+  .menu-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+  }
+
+  /* Altura consistente para que no se vea “chueco” */
+  .menu-card img{
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: .5rem;
+  }
+
+  /* Columna orden “pegada” y con scroll propio */
+  .orden-panel{
+    height: 62vh;                 
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Lista con scroll */
+  .orden-scroll{
+    flex: 1;                      /* ocupa todo lo que pueda */
+    overflow: auto;               /* ✅ scroll */
+    padding-right: .25rem;        /* evita que tape scrollbar */
+  }
+
+  /* Footer fijo abajo dentro del panel */
+  .orden-footer{
+    border-top: 1px solid rgba(0,0,0,.08);
+    padding-top: .75rem;
+    margin-top: .75rem;
+    background: white;
+  }
+</style>
+
+<div class="row g-3">
+  <!-- ✅ PRODUCTOS -->
+  <div class="col-12 col-lg-8">
+    <div class="menu-grid">
+      {% for platillo in platillos %}
+        <div class="card shadow-sm border card-menu-select menu-card"
+             data-id="{{ platillo.id }}"
+             data-nombre="{{ platillo.nombre|escapejs }}"
+             data-precio="{{ platillo.precio_venta }}"
+             id="platillo-{{ platillo.id }}">
+
+          <label class="position-relative w-100 h-100 p-2" style="cursor:pointer;">
+            <div class="checkbox-lg position-relative">
+              <input type="checkbox"
+                     class="custom-check-input position-absolute ms-2 mt-1 js-platillo-check"/>
+            </div>
+
+            <img src="{{ platillo.imagen.url }}" alt="{{ platillo.nombre }}"/>
+
+            <div class="mt-2">
+              <h6 class="mb-1 fw-semibold text-truncate">{{ platillo.nombre }}</h6>
+              <p class="opacity-75 mb-0">$ {{ platillo.precio_venta }}</p>
+            </div>
+          </label>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ✅ ORDEN -->
+<div class="col-12 col-lg-4">
+  <div class="orden-panel">
+
+    <p class="fw-semibold mb-2">Orden</p>
+
+    <!-- ✅ SOLO ESTA PARTE SCROLLEA -->
+    <div class="orden-scroll">
+      <ul id="ordenList" class="list-group gap-4 mb-0"></ul>
+    </div>
+
+    <!-- ✅ SIEMPRE ABAJO -->
+    <div class="orden-footer">
+      <div class="d-flex justify-content-between">
+        <span class="fw-semibold">Total</span>
+        <span id="ordenTotal" class="fw-semibold">$0.00</span>
+      </div>
+
+      <div class="mt-2">
+        <label class="form-label mb-1">Notas</label>
+        <textarea class="form-control" name="notas" rows="2" placeholder="Ej: 3 personas, cumpleaños, etc."></textarea>
+      </div>
+
+      <input type="hidden" name="platillos_json" id="platillos_json" value="[]">
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const selected = []; // [{id, nombre, precio, qty}]
+  const ordenList = document.getElementById("ordenList");
+  const ordenTotal = document.getElementById("ordenTotal");
+  const platillosJson = document.getElementById("platillos_json");
+  const money = (n) => "$" + Number(n || 0).toFixed(2);
+  const findIdx = (id) => selected.findIndex(x => x.id === id);
+
+  function render(){
+    ordenList.innerHTML = "";
+    let total = 0;
+
+    selected.forEach(item => {
+      const lineTotal = item.precio * item.qty;
+      total += lineTotal;
+
+      ordenList.insertAdjacentHTML("beforeend", `
+        <li class="list-group-item d-flex justify-content-between align-items-center" data-id="${item.id}">
+          <div class="me-2">
+            <div class="fw-semibold">${item.nombre}</div>
+            <div class="text-muted small">${money(item.precio)} c/u · <span class="fw-semibold">${money(lineTotal)}</span></div>
+          </div>
+
+          <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-sm border rounded-circle" data-act="minus" ${item.qty<=1?"disabled":""}>
+              <i class="bi bi-dash"></i>
+            </button>
+            <span style="min-width:22px; text-align:center;">${item.qty}</span>
+            <button type="button" class="btn btn-sm border rounded-circle" data-act="plus">
+              <i class="bi bi-plus"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-danger" data-act="remove">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+        </li>
+      `);
+    });
+
+    ordenTotal.textContent = money(total);
+    platillosJson.value = JSON.stringify(selected.map(x => ({id: x.id, qty: x.qty})));
+  }
+
+  // Checkboxes
+  document.querySelectorAll(".card-menu-select").forEach(card => {
+    const chk = card.querySelector(".js-platillo-check");
+    chk.addEventListener("change", () => {
+      const id = card.dataset.id;
+      const nombre = card.dataset.nombre;
+      const precio = parseFloat(card.dataset.precio || "0");
+      const idx = findIdx(id);
+
+      if (chk.checked && idx === -1){
+        selected.push({id, nombre, precio, qty: 1});
+        card.classList.add("is-selected");
+      }
+      if (!chk.checked && idx !== -1){
+        selected.splice(idx, 1);
+        card.classList.remove("is-selected");
+      }
+      render();
+    });
+  });
+
+
+  ordenList.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-act]");
+    if(!btn) return;
+    const li = btn.closest("li[data-id]");
+    const id = li.dataset.id;
+    const idx = findIdx(id);
+    if(idx === -1) return;
+
+    const act = btn.dataset.act;
+    if(act === "plus") selected[idx].qty++;
+    if(act === "minus") selected[idx].qty = Math.max(1, selected[idx].qty - 1);
+
+    if(act === "remove"){
+      selected.splice(idx, 1);
+      const card = document.querySelector(`.card-menu-select[data-id="${id}"]`);
+      if(card){
+        card.classList.remove("is-selected");
+        const chk = card.querySelector(".js-platillo-check");
+        if(chk) chk.checked = false;
+      }
+    }
+    render();
+  });
+
+  render();
+});
+</script>

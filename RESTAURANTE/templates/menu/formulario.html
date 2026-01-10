@@ -126,6 +126,11 @@
             </div>
             <div class="col-md-6 d-flex flex-column gap-3">
                 <div >
+                    <label class="form-label">Codigo</label>
+                    <input type="text" name="codigo" class="form-control" value="{{ obj.codigo|default:'' }}" required>
+                    <div class="invalid-feedback">Obligatorio.</div>
+                </div>
+                <div>
                     <label class="form-label">Nombre</label>
                     <input type="text" name="nombre" class="form-control" value="{{ obj.nombre|default:'' }}" required>
                     <div class="invalid-feedback">Obligatorio.</div>
