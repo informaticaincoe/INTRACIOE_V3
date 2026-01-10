@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Comanda · Cocina{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0">Comandas en cocina</h5>
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'comanda-cocina' %}">Refrescar</a>
+  </div>
+
+  {% if comandas %}
+    <div class="row g-3">
+      {% for c in comandas %}
+        <div class="col-12 col-md-6 col-xl-4">
+          <div class="card shadow-sm">
+
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <div>
+                <div class="fw-bold">
+                  Mesa #{{ c.pedido.mesa.numero }} · Comanda #{{ c.numero }}
+                </div>
+                <div class="text-muted small">
+                  {{ c.creada_el|date:"d/m/Y H:i" }}
+                  {% if c.notas %} · {{ c.notas }}{% endif %}
+                </div>
+              </div>
+
+              <div>
+                  <span class="badge
+                  {% if c.estado == 'ENVIADA' %} bg-primary
+                  {% elif c.estado == 'EN_PREPARACION' %} bg-warning text-dark
+                  {% elif c.estado == 'LISTA' %} bg-success
+                  {% else %} bg-secondary {% endif %}">
+                  {{ c.get_estado_display }}
+                </span>
+                <button class="
+                  {% if c.estado == 'ENVIADA' %} text-primary border-primary rounded"{% endif %}>
+                  {% if c.estado == 'ENVIADA' %} Iniciar pedido {% endif %}
+                </button>
+              </div>
+              
+            </div>
+
+            <div class="card-body p-0">
+              <ul class="list-group list-group-flush">
+                {% for it in c.items.all %}
+                  {% if it.estado != "ENTREGADO" and it.estado != "CANCELADO" %}
+                  <li class="list-group-item d-flex justify-content-between align-items-start">
+                    <div class="me-2">
+                      <div class="fw-semibold">{{ it.cantidad }} × {{ it.nombre }}</div>
+                      {% if it.notas %}
+                        <div class="text-muted small">Nota: {{ it.notas }}</div>
+                      {% endif %}
+                      <div class="text-muted small">Estado: {{ it.get_estado_display }}</div>
+                    </div>
+
+                    <div class="d-flex flex-column gap-2">
+                      {% if it.estado == "ENVIADO" %}
+                        <form method="post" action="{% url 'comanda-item-preparacion' it.id %}" class="js-item-form">
+                          {% csrf_token %}
+                          <button class="btn btn-sm btn-outline-warning">Tomar</button>
+                        </form>
+                      {% endif %}
+
+                      {% if it.estado == "EN_PREPARACION" or it.estado == "ENVIADO" %}
+                        <form method="post" action="{% url 'comanda-item-listo' it.id %}" class="js-item-form">
+                          {% csrf_token %}
+                          <button class="btn btn-sm btn-outline-success">Marcar listo</button>
+                        </form>
+                      {% endif %}
+                    </div>
+                  </li>
+                  {% endif %}
+                {% empty %}
+                  <li class="list-group-item text-muted">Sin items</li>
+                {% endfor %}
+              </ul>
+            </div>
+
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="alert alert-info">No hay comandas pendientes.</div>
+  {% endif %}
+</div>
+
+<script>
+  document.querySelectorAll(".js-item-form").forEach(f => {
+    f.addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const resp = await fetch(f.action, {
+        method: "POST",
+        headers: {"X-Requested-With": "XMLHttpRequest"},
+        body: new FormData(f)
+      });
+      if (resp.ok) location.reload();
+      {% comment %} else alert("No se pudo actualizar el estado."); {% endcomment %}
+    });
+  });
+</script>
+{% endblock %}

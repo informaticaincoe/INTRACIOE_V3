@@ -1,0 +1,161 @@
+<style>
+    .estado-badge{
+        font-size: 0.8rem;
+        padding: 0% 1%;
+    }
+    .estado-abierto { 
+        background-color: #48aa3b3b !important;
+        color: #48aa3b !important;
+        border: 1px solid #48aa3b;
+    }
+    .estado-cerrado { background-color: #3b62aa !important; }
+    .estado-pagado  { background-color: #6029ae !important; }
+    .estado-anulado { background-color: #982828 !important; }
+</style>
+
+<div class="modal fade" id="verOrdenModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-lg">
+      <div class="modal-content">
+  
+        <div class="modal-header">
+          <h5 class="modal-title d-flex align-items-center gap-2">
+            <i class="bi bi-receipt"></i>
+            <span>Ver orden mesa</span>
+            <span id="vo_mesa_numero" class="fw-semibold"></span>
+          </h5>
+          <div class="badget estado-badge rounded-pill text-muted text-lowercase ms-2" id="vo_estado"></div> 
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+  
+        <div class="modal-body">
+          <input type="hidden" id="vo_mesa_id">
+  
+          <ul id="vo_detalles" class="list-group"></ul>
+          <div class="d-flex justify-content-end align-items-center mb-2 mt-4">
+            <span class="fw-semibold">Subtotal: </span>
+            <div class="fw-semibold" id="vo_total">0.00</div>
+          </div>
+        </div>
+  
+        <div class="modal-footer">
+          <a id="vo_ir_a_agregar" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i> Agregar productos
+          </a>
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+  
+      </div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const modalEl = document.getElementById("verOrdenModal");
+      if (!modalEl) return;
+    
+      modalEl.addEventListener("show.bs.modal", async (ev) => {
+        const trigger = ev.relatedTarget;
+        if (!trigger) return;
+    
+        const mesaId = trigger.getAttribute("data-mesa-id");
+        const mesaNumero = trigger.getAttribute("data-mesa-numero");
+    
+        document.getElementById("vo_mesa_id").value = mesaId || "";
+        document.getElementById("vo_mesa_numero").textContent = mesaNumero ? `#${mesaNumero}` : "";
+    
+        const ul = document.getElementById("vo_detalles");
+        const estadoEl = document.getElementById("vo_estado");
+        const totalEl = document.getElementById("vo_total");
+    
+        ul.innerHTML = `<li class="list-group-item text-muted">Cargando…</li>`;
+        estadoEl.textContent = "";
+        totalEl.textContent = "$0.00";
+    
+
+        console.log("MESA ID:", mesaId);
+        
+        const urlPedido = `pedidos/pedido/${mesaId}/`
+        console.log(urlPedido);
+    
+        try {
+          const res = await fetch( urlPedido, {
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+          });
+    
+          console.log("Res estatus 1 ",res.status)
+          console.log("Res ",res)
+
+
+          // si devuelve HTML por 404/redirect, esto te lo delata
+          if (!res.ok) {
+            console.log("Res estatus 2 ",res.status)
+            ul.innerHTML = `<li class="list-group-item text-danger">Error HTTP ${res.status}</li>`;
+            return;
+          }
+    
+          const data = await res.json();
+    
+          if (!data.ok) {
+            ul.innerHTML = `<li class="list-group-item text-danger">${data.error || "Error"}</li>`;
+            return;
+          }
+          
+          const estado = (data.pedido.estado || "").toUpperCase().trim();
+
+          estadoEl.textContent = estado.toLowerCase(); // si lo quieres en minúscula
+          
+          estadoEl.classList.remove("estado-abierto","estado-cerrado","estado-pagado","estado-anulado","text-muted");
+          
+          const map = {
+            ABIERTO: "estado-abierto",
+            CERRADO: "estado-cerrado",
+            PAGADO:  "estado-pagado",
+            ANULADO: "estado-anulado",
+          };
+          
+          estadoEl.classList.add(map[estado] || "estado-cerrado");
+
+          totalEl.textContent = `$${Number(data.pedido.total || 0).toFixed(2)}`;
+    
+          if (!data.detalles || data.detalles.length === 0) {
+            ul.innerHTML = `<li class="list-group-item">Sin productos todavía.</li>`;
+          } else {
+            ul.innerHTML = "";
+            data.detalles.forEach(d => {
+              ul.insertAdjacentHTML("beforeend", `
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  <div class="d-flex gap-2">
+                    <div class="flex-shrink-0">
+                        ${d.imagen_url ? `
+                          <img src="${d.imagen_url}" alt="${d.nombre}"
+                               class="rounded-3"
+                               style="width:5rem;height:5rem;object-fit:cover;"
+                               />
+                            ` : `
+                          <div class="rounded-3 bg-light" style="width:64px;height:64px;"></div>
+                        `}
+                    </div>
+                    
+                    <div class="d-flex flex-column">
+                        <p class="fw-semibold m-0">${d.nombre}</p>
+                        <p class="small text-muted m-0">$${Number(d.precio).toFixed(2)} c/u</p>
+                    </div>
+                  </div>
+                  <div class="text-end">
+                    <div class="fw-semibold">x${d.qty}</div>
+                    <div class="small">$${Number(d.total).toFixed(2)}</div>
+                  </div>
+                </li>
+              `);
+            });
+          }
+    
+          {% comment %} document.getElementById("vo_ir_a_agregar").href = urlTomar; {% endcomment %}
+    
+        } catch (err) {
+          console.error(err);
+          ul.innerHTML = `<li class="list-group-item text-danger">Error cargando la orden.</li>`;
+        }
+      });
+    });
+    </script>
+    

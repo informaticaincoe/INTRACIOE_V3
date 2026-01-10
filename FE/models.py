@@ -4,6 +4,9 @@ from datetime import timedelta, datetime
 from decimal import ROUND_HALF_UP, Decimal
 from django.core.validators import MinValueValidator, MaxValueValidator
 import uuid
+from django.db.models import UniqueConstraint
+from django.db.models.functions import ExtractYear
+from django.core.exceptions import ValidationError
 
 class ActividadEconomica(models.Model):
     codigo = models.CharField(max_length=50, verbose_name="Código de Actividad Económica")
@@ -346,7 +349,7 @@ class FacturaElectronica(models.Model):
     version = models.CharField(max_length=50)
     #ambiente = models.ForeignKey(Ambiente, on_delete=models.CASCADE, null=True)
     tipo_dte = models.ForeignKey(Tipo_dte, on_delete=models.CASCADE, null=True)
-    numero_control = models.CharField(max_length=31, unique=True, blank=True)
+    numero_control = models.CharField(max_length=31, blank=True)
     codigo_generacion = models.UUIDField(default=uuid.uuid4, unique=True)
     tipomodelo = models.ForeignKey(Modelofacturacion, on_delete=models.CASCADE, null=True)
     #tipooperacion = models.ForeignKey(CondicionOperacion, on_delete=models.CASCADE, null=True)
@@ -416,11 +419,41 @@ class FacturaElectronica(models.Model):
     flete_exportacion = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     incoterms = models.ForeignKey(INCOTERMS, on_delete=models.CASCADE, null=True)
     
+    def clean(self):
+        if self.numero_control and self.fecha_emision:
+            coincidencias = FacturaElectronica.objects.filter(numero_control=self.numero_control)
+            if self.pk:
+                coincidencias = coincidencias.exclude(pk=self.pk)
+            for factura in coincidencias:
+                if factura.fecha_emision.year == self.fecha_emision.year:
+                    raise ValidationError(
+                        f"El número de control {self.numero_control} ya existe"
+                    )
+
+
     def save(self, *args, **kwargs):
+        # Asignar fecha_emision si no existe
+        if not self.fecha_emision:
+            self.fecha_emision = timezone.now().date()
+
+        # Asignar numero_control si no existe
         if not self.numero_control:
             super().save(*args, **kwargs)
             self.numero_control = f"DTE-01-{uuid.uuid4().hex[:8].upper()}-{str(self.pk).zfill(15)}"
+
+        # Validar número de control contra facturas existentes del mismo año
+        if self.numero_control:
+            coincidencias = FacturaElectronica.objects.filter(numero_control=self.numero_control)
+            if self.pk:
+                coincidencias = coincidencias.exclude(pk=self.pk)
+            for factura in coincidencias:
+                if factura.fecha_emision and factura.fecha_emision.year == self.fecha_emision.year:
+                    raise ValidationError(
+                        f"El número de control {self.numero_control} ya existe."
+                    )
+
         super().save(*args, **kwargs)
+
 
     def __str__(self):
         return f"Factura {self.numero_control}"

@@ -7,14 +7,17 @@ User = get_user_model()
 
 @receiver(post_save, sender=Mesero)
 def crear_usuario_mesero(sender, instance, created, **kwargs):
-    if created and instance.usuario is None:
-        # Crear USER (no Perfilusuario)
+    if created and not instance.usuario:
+        # 1. Crear el usuario de Django
+        # El username será el código para que sea único
         user = User.objects.create_user(
             username=instance.codigo,
-            password=instance.codigo,  # contraseña temporal
-            role="mesero"
+            password=instance.codigo, # El código sirve de pass inicial
         )
+        # Si tu modelo User tiene el campo role, lo asignamos
+        if hasattr(user, 'role'):
+            user.role = "mesero"
+            user.save()
 
-        # Vincular con mesero
-        instance.usuario = user
-        instance.save()
+        # 2. Vincular usando update para NO disparar post_save de nuevo
+        Mesero.objects.filter(id=instance.id).update(usuario=user)

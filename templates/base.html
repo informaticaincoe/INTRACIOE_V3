@@ -301,80 +301,102 @@
             <div class="sidebar-sticky p-3 d-flex flex-column justify-content-between">
               <!-- link directo -->
               <div>
-                <a href="{% url 'index' %}" class="list-group-item list-group-item-action border-0 m-0 rounded-0 d-flex align-items-center gap-2 bg-menu-item">
-                  <i class="bi bi-speedometer2"></i>
-                  <span class="fw-medium">Dashboard</span>
-                </a>
+                {% if user.role == 'admin' or user.role == 'supervisor' %}
+                  <a href="{% url 'index' %}" class="list-group-item list-group-item-action border-0 m-0 rounded-0 d-flex align-items-center gap-2 bg-menu-item">
+                    <i class="bi bi-speedometer2"></i>
+                    <span class="fw-medium">Dashboard</span>
+                  </a>
+                {% endif %}
 
                 <!-- acordeón -->
                 <div class="accordion accordion-flush sidebar" id="accMenu">
                   <!-- Compras -->
-                  <div class="accordion-item">
-                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbCompras"><i class="bi bi-basket me-2"></i> Compras</button></h2>
-                    <div id="sbCompras" class="accordion-collapse collapse" data-bs-parent="#accMenu">
-                      <div class="list-group list-group-flush">
-                        {% include 'opciones_menu/compras.html' with uid='desk' %}
+                  {% if user.role == 'admin' or user.role == 'supervisor' %}
+                    <div class="accordion-item">
+                      <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbCompras"><i class="bi bi-basket me-2"></i> Compras</button></h2>
+                      <div id="sbCompras" class="accordion-collapse collapse" data-bs-parent="#accMenu">
+                        <div class="list-group list-group-flush">
+                          {% include 'opciones_menu/compras.html' with uid='desk' %}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  {% endif %}
 
                   <!-- Ventas -->
-                  <div class="accordion-item">
-                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbVentas"><i class="bi bi-receipt-cutoff me-2"></i> Ventas</button></h2>
-                    <div id="sbVentas" class="accordion-collapse collapse" data-bs-parent="#accMenu">
-                      <div class="list-group list-group-flush">
-                        {% include 'opciones_menu/ventas.html' with uid='deskV' %}
+                  {% if user.role == 'admin' or user.role == 'supervisor' %}
+                    <div class="accordion-item">
+                      <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbVentas"><i class="bi bi-receipt-cutoff me-2"></i> Ventas</button></h2>
+                      <div id="sbVentas" class="accordion-collapse collapse" data-bs-parent="#accMenu">
+                        <div class="list-group list-group-flush">
+                          {% include 'opciones_menu/ventas.html' with uid='deskV' %}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  {% endif %}
+
 
                   <!-- Facturación -->
-                  <div class="accordion-item">
-                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbFact"><i class="bi bi-file-earmark-text me-2"></i> Facturación</button></h2>
-                    <div id="sbFact" class="accordion-collapse collapse" data-bs-parent="#accMenu">
-                      <div class="list-group list-group-flush">
-                        {% include 'opciones_menu/facturacion.html' with uid='deskF' %}
+                  {% if user.role == 'admin' or user.role == 'supervisor' %}
+                    <div class="accordion-item">
+                      <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbFact"><i class="bi bi-file-earmark-text me-2"></i> Facturación</button></h2>
+                      <div id="sbFact" class="accordion-collapse collapse" data-bs-parent="#accMenu">
+                        <div class="list-group list-group-flush">
+                          {% include 'opciones_menu/facturacion.html' with uid='deskF' %}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  {% endif %}
 
                   <!-- Inventario -->
-                  <div class="accordion-item">
-                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbInv"><i class="bi bi-box-seam me-2"></i> Inventario</button></h2>
-                    <div id="sbInv" class="accordion-collapse collapse" data-bs-parent="#accMenu">
-                      <div class="list-group list-group-flush">
-                        {% include 'opciones_menu/inventario.html' with uid='deskI' %}
+                  {% if user.role == 'admin' or user.role == 'supervisor' %}
+                    <div class="accordion-item">
+                      <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbInv"><i class="bi bi-box-seam me-2"></i> Inventario</button></h2>
+                      <div id="sbInv" class="accordion-collapse collapse" data-bs-parent="#accMenu">
+                        <div class="list-group list-group-flush">
+                          {% include 'opciones_menu/inventario.html' with uid='deskI' %}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  {% endif %}
+
                 </div>
 
                 <hr class="my-3 border border-bottom border-dark-subtle" />
 
-                {% if emisor.es_restaurante %}
-                <h6>Restarurante</h6>
-                  <a href="{% url 'index' %}" class="list-group-item list-group-item-action border-0 m-0 rounded-0 d-flex align-items-center gap-2 bg-menu-item">
-                    <i class="bi bi-fork-knife"></i>
-                    <span class="fw-medium">Cocina</span>
-                  </a>
-
-                  <div class="accordion-item">
-                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#ConfiguracionRestaurante"><i class="bi bi-basket me-2"></i> Configuración restaurante</button></h2>
-                    <div id="ConfiguracionRestaurante" class="accordion-collapse collapse" data-bs-parent="#accMenu">
-                      <div class="list-group list-group-flush">
-                        {% include 'opciones_menu_restaurante/configuracion_restaurante.html' with uid='ped' %}
+                {% if emisor.es_restaurante and user.is_authenticated %}
+                  {% if user.role == 'admin' or user.role == 'supervisor' %}
+                    <h6>Restarurante</h6>
+                    <div class="accordion-item">
+                      <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#Cocina"><i class="bi bi-basket me-2"></i> Cocina</button></h2>
+                      <div id="Cocina" class="accordion-collapse collapse" data-bs-parent="#accMenu">
+                        <div class="list-group list-group-flush">
+                          {% include 'opciones_menu_restaurante/cocina.html' with uid='cocina' %}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  {% endif %}
 
-                  <div class="accordion-item">
-                    <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#meseros"><i class="bi bi-basket me-2"></i>Meseros</button></h2>
-                    <div id="meseros" class="accordion-collapse collapse" data-bs-parent="#accMenu">
-                      <div class="list-group list-group-flush">
-                        {% include 'opciones_menu_restaurante/meseros.html' with uid='mes' %}
+                  {% if user.role == 'admin' or user.role == 'supervisor' %}
+                    <div class="accordion-item">
+                      <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#ConfiguracionRestaurante"><i class="bi bi-basket me-2"></i> Configuración restaurante</button></h2>
+                      <div id="ConfiguracionRestaurante" class="accordion-collapse collapse" data-bs-parent="#accMenu">
+                        <div class="list-group list-group-flush">
+                          {% include 'opciones_menu_restaurante/configuracion_restaurante.html' with uid='ped' %}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  {% endif %}
+
+                  {% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'mesero' %}
+                    <div class="accordion-item">
+                      <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#meseros"><i class="bi bi-basket me-2"></i>Meseros</button></h2>
+                      <div id="meseros" class="accordion-collapse collapse" data-bs-parent="#accMenu">
+                        <div class="list-group list-group-flush">
+                          {% include 'opciones_menu_restaurante/meseros.html' with uid='mes' %}
+                        </div>
+                      </div>
+                    </div>
+                  {% endif %}
                 {% endif %}
               </div>
 

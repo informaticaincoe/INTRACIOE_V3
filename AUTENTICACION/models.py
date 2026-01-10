@@ -15,15 +15,20 @@ class User(AbstractUser):
         
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='cliente')
-
+    
+    @property
     def is_admin(self):
         return self.role == 'admin'
-
+    @property
     def is_vendedor(self):
         return self.role == 'vendedor'
-
+    @property
     def is_supervisor(self):
         return self.role == 'supervisor'
+    @property
+    def is_mesero_role(self):
+        return self.role == 'mesero'
+    
 
 class PasswordResetCode(models.Model):
     #NEW

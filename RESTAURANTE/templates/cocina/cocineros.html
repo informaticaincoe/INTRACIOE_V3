@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Cocineros{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="h5 mb-0 text-gray-800">Lista de cocineros</h5>
+    <div>
+      <a href="{% url 'crear-cocinero' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-2"></i>Agregar cocinero
+      </a>
+    </div>
+  </div>
+
+  <div class="mb-4">
+    <form method="GET" action="{% url 'cocineros-lista' %}" class="row g-3 align-items-center">
+      <div class="col-md-8 position-relative">
+        <input type="text"
+               class="form-control"
+               id="id_search_name"
+               name="search_name"
+               placeholder="Buscar por nombre..."
+               value="{{ request.GET.search_name|default:'' }}">
+        <i class="bi bi-x-lg position-absolute top-50 translate-middle-y end-0 me-3 clear-icon"
+           data-target="id_search_name"></i>
+      </div>
+    </form>
+  </div>
+
+  <div class="container text-start">
+    <div class="row g-3">
+      {% for cocinero in lista_cocineros %}
+        <div class="col-12 col-md-4 col-lg-6">
+          <div class="card-body border rounded-2">
+            <div class="d-flex g-3 align-items-center">
+              {% if cocinero.activo %}
+                <div style="background-color: green; width: .5rem; height: .5rem; border-radius: 50%;" class="me-2"></div>
+                <p class="m-0 p-0 text-success">activo</p>
+              {% else %}
+                <div style="background-color: red; width: .5rem; height: .5rem; border-radius: 50%;" class="me-2"></div>
+                <p class="m-0 p-0 text-danger">Inactivo</p>
+              {% endif %}
+            </div>
+
+            <h5 class="card-title mb-0 mt-0">{{ cocinero.nombre }}</h5>
+            <p class="mb-0 mt-0 opacity-50">{{ cocinero.pin }}</p>
+
+            <a href="{% url 'editar-cocinero' cocinero.id %}" class="btn btn-link text-success" data-bs-toggle="tooltip" title="Editar">Editar</a>
+            <button class="btn btn-link text-danger"
+                    data-id="{{ cocinero.id }}"
+                    data-nombre="{{ cocinero.nombre }}"
+                    data-bs-toggle="modal"
+                    data-bs-target="#eliminarCocineroModal"
+                    data-mode="delete">
+              Eliminar
+            </button>
+          </div>
+        </div>
+      {% empty %}
+        <p class="opacity-50">No se ha encontrado ningún cocinero</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="eliminarCocineroModal" tabindex="-1" aria-labelledby="eliminarCocineroModal" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5>Eliminar Cocinero</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <form method="post" id="eliminarCocineroForm">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <p>¿Seguro que quiere eliminar el registro de "<strong id="nombre_cocinero_eliminar"></strong>"?</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btnEliminarCocinero">Eliminar cocinero</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // limpiar input
+  const inputField = document.getElementById('id_search_name');
+  const clearIcon = document.querySelector('.clear-icon[data-target="id_search_name"]');
+
+  if (inputField && clearIcon) {
+    const toggleClearIcon = () => {
+      clearIcon.style.display = inputField.value.length > 0 ? 'block' : 'none';
+    };
+    toggleClearIcon();
+    inputField.addEventListener('input', toggleClearIcon);
+    clearIcon.addEventListener('click', () => {
+      inputField.value = '';
+      toggleClearIcon();
+      inputField.focus();
+    });
+  }
+
+  // modal eliminar
+  var modal = document.getElementById('eliminarCocineroModal');
+  modal.addEventListener('show.bs.modal', function (event) {
+    var button = event.relatedTarget;
+    var form = document.getElementById('eliminarCocineroForm');
+    var nombreSpan = document.getElementById('nombre_cocinero_eliminar');
+
+    var id = button.getAttribute('data-id');
+    var nombre = button.getAttribute('data-nombre');
+
+    nombreSpan.textContent = nombre;
+    form.action = "{% url 'eliminar-cocinero' 0 %}".replace('/0/', '/' + id + '/');
+  });
+});
+</script>
+{% endblock %}
+
+{% endblock %}

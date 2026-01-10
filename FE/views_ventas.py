@@ -2,6 +2,7 @@
 #   VENTAS (front-office)
 # =========================
 from datetime import datetime, date, timedelta
+import json
 from django.contrib import messages
 from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
