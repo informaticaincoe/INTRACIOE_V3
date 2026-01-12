@@ -1,0 +1,401 @@
+{% extends 'base.html' %} 
+{% block title %} Mesas {% endblock %} 
+{% block content %}
+<style>
+  /* layout general */
+.mesa-box { cursor: pointer; }
+.mesa-card{
+  width: 100%;
+  height: 8.5rem;
+  border-radius: 5px;
+  background: #fff;
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  position: relative;
+}
+/* .mesa-card:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 .75rem 1.5rem rgba(0,0,0,.08) !important;
+} */
+
+/* dropdown icon */
+.mesa-actions{
+  position:absolute; top:.4rem; right:.4rem;
+  opacity:.7;
+}
+
+.mesa-card:hover .mesa-actions{ opacity: 1; }
+
+/* estado visual por clase (no inline) */
+.mesa-card.is-libre{ border-color: rgba(0, 0, 0, 0.12) !important; }
+.mesa-card.is-ocupada{ border-color: rgba(255,193,7,.9) !important; }
+.mesa-card.is-pendiente-pago{ border-color: rgba(16,60,7,.9) !important; }
+.mesa-card.is-sinmesero{ border-color: rgba(0,0,0,.20) !important; background: rgba(0,0,0,.02); }
+
+/* círculo estado */
+.mesa-status-circle{
+  width: 3.2rem;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.mesa-status-circle i{ line-height: 1; font-size: 1.6rem; }
+
+
+/* etiqueta estado */
+.mesa-pill{
+  font-size:.85rem;
+  border-radius: 999px;
+  padding: .25rem .75rem;
+  border: 1px solid transparent;
+}
+
+/* header inferior con número */
+.mesa-num{
+  font-weight: 600;
+  font-size: 1rem;
+  color: rgba(0,0,0,.75);
+}
+
+/* VIP tag */
+.vip-tag{
+  position:absolute;
+  top:.55rem;
+  left:.55rem;
+  background:#ffc107;
+  color:#212529;
+  font-weight:700;
+  font-size:.75rem;
+  border-radius:999px;
+  padding:.2rem .55rem;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(0,0,0,.10);
+}
+
+</style>
+
+<div class="container-fluid mt-3">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="h5 mb-0 text-gray-800">Mesas</h5>
+    <div>
+      <a
+        href="{% url 'crear-mesa' %}"
+        class="btn btn-primary"
+      >
+        <i class="bi bi-plus-circle me-2"></i>Agregar mesa
+      </a>
+    </div>
+  </div>
+
+  <div class="mb-4">
+    <form
+      method="GET"
+      action="{% url 'mesas-lista' %}"
+      class="row g-3 align-items-center"
+    >
+      <div class="col-md-8 position-relative">
+        <input
+          type="text"
+          class="form-control"
+          id="id_search_name"
+          name="search_name"
+          placeholder="Buscar por nombre..."
+          value="{{ request.GET.search_name|default:'' }}"
+        />
+        <i
+          class="bi bi-x-lg position-absolute top-50 translate-middle-y end-0 me-3 clear-icon"
+          data-target="id_search_name"
+          style="display: none"
+        ></i>
+      </div>
+    </form>
+  </div>
+
+  <div class="container">
+    <div class="row g-5">
+      {% for mesa in lista_mesas %}
+      <div
+        class="mesa-box col-12 col-md-4 col-lg-3 d-flex flex-column align-items-center gap-3 "
+        role="button"        
+      >
+      <div
+        class="mesa-card shadow-sm p-3 border d-flex flex-column align-items-center justify-content-center gap-2
+          {% if not mesa.tiene_mesero %} is-sinmesero
+          {% elif mesa.estado == 'OCUPADA' %} is-ocupada
+          {% else %} is-libre {% endif %}"
+      >
+          <!-- {% if mesa.es_vip %}
+            <div class="vip-ribbon">VIP</div>
+          {% endif %} -->
+
+          {% if mesa.es_vip %}
+            <div 
+              class="position-absolute top-0 start-0 mt-2 ms-2 badge rounded-pill px-3 py-1 text-lowercase fw-normal text-center text-warning fs-6"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" style="enable-background:new 0 0 128 128" width="24" height="24" xml:space="preserve"><path style="fill:#ffc107" d="M128 53.279c0 5.043-4.084 9.136-9.117 9.136-.091 0-.164 0-.255-.018l-8.914 34.06H18.286L8.734 65.01C3.884 64.81 0 60.808 0 55.892c0-5.043 4.084-9.136 9.117-9.136 5.032 0 9.117 4.093 9.117 9.136a9.557 9.557 0 0 1-.492 2.997l22.081 12.919 18.671-34.371a9.1 9.1 0 0 1-4.267-7.729c0-5.043 4.084-9.136 9.117-9.136s9.117 4.093 9.117 9.136a9.1 9.1 0 0 1-4.267 7.729l18.671 34.371 24.05-14.07a9.164 9.164 0 0 1-1.149-4.459c0-5.062 4.084-9.136 9.117-9.136 5.033 0 9.117 4.075 9.117 9.136zm-18.286 46.835H18.286v7.314h91.429v-7.314z"/></svg>
+              VIP
+
+            </div>
+          {% endif %}
+
+          <a class="nav-link mesa-actions" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">
+            <i class="bi bi-three-dots-vertical"></i>
+          </a>
+          
+          <ul class="dropdown-menu dropdown-menu-end">
+            {% if not mesa.tiene_mesero %}
+              <li>
+                <a class="dropdown-item"
+                   href="#"
+                   data-bs-toggle="modal"
+                   data-bs-target="#asignarMeseroModal"
+                   data-mesa-id="{{ mesa.id }}"
+                   data-mesa-numero="{{ mesa.numero }}">
+                  <i class="bi bi-exclamation-triangle-fill text-warning pe-2"></i>
+                  Asignar mesero
+                </a>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+            {% endif %}
+          
+            <li>
+              <a class="dropdown-item" href="{% url 'editar-mesa' mesa.id %}">Editar</a>
+            </li>
+            <li>
+              <a 
+              class="dropdown-item"  
+              type="button"
+              data-bs-toggle="modal"
+              data-bs-target="#eliminarMesaModal"
+              data-id="{{ mesa.id }}"
+              data-nombre="{{ mesa.numero }}">Eliminar</a>
+            </li>
+            <!-- <li>
+              <a class="dropdown-item" href="#">informacion</a>
+            </li> -->
+          </ul>
+          
+          <!-- Botón de eliminar (abre modal) -->
+          {% if not mesa.tiene_mesero %}
+            <div class="mesa-status-circle" style="background-color: #47474782;">
+              <i class="bi bi-person-x-fill text-white"></i>
+            </div>
+
+            <p class="fs-6 m-0 badge rounded-pill px-3 py-1 text-lowercase fw-normal"
+              style="color: #47474782;">
+              sin mesero asignado
+            </p>
+          {% elif mesa.estado == "OCUPADA" %}
+            <div class="mesa-status-circle" style="background-color: rgb(244, 178, 93);">
+              <i class="bi bi-fork-knife text-white"></i>
+            </div>
+
+            <p class="fs-6 m-0 badge rounded-pill px-3 py-1 text-lowercase fw-normal"
+              style="border: 1px rgb(244, 178, 93) solid; color: rgb(244, 178, 93);">
+              {{ mesa.estado }}
+            </p>
+          {% elif mesa.estado == "LIBRE" %}
+            <!-- <div class="mesa-status-circle" style="border: 0.2rem rgba(0, 0, 0, 0.100) solid;">
+              <p class="h2" style="color: rgba(0, 0, 0, 0.100)">{{mesa.numero}}</p>
+            </div> -->
+
+            <p class="fs-6 m-0 badge rounded-pill px-3 py-1 text-lowercase fw-normal"
+              style="color: rgba(0, 0, 0, 0.200)">
+              {{ mesa.estado }}
+            </p>
+            <p class="fs-6 position-absolute start-0 bottom-0 ps-2 text-lowercase fw-normal d-flex align-items-center gap-1 m-0"
+              style="color: rgba(0, 0, 0, 0.200)">
+              <i class="bi bi-person"></i>  <span>{{ mesa.capacidad|default:"0" }}</span>
+            </p>
+
+          {% elif mesa.estado == "PENDIENTE_PAGO" %}
+            <!-- <div class="mesa-status-circle" style="border: 0.2rem rgba(0, 0, 0, 0.100) solid;">
+              <p class="h2" style="color: rgba(0, 0, 0, 0.100)">{{mesa.numero}}</p>
+            </div> -->
+
+            <div class="mesa-status-circle" style="background-color: rgb(16, 60, 191);">
+              <i class="bi bi-cash text-white"></i>
+            </div>
+
+            <p class="fs-6 m-0 badge rounded-pill px-3 py-1 text-lowercase fw-normal"
+              style="border: 1px rgb(16, 60, 191) solid; color: rgb(16, 60, 191);">
+              Pendiente de pago
+            </p>
+
+          {% endif %}          
+          
+        </div>
+        <div class="p-0 m-0 text-center">
+          <p class="m-0">{{ mesa.numero}}</p>
+        </div>
+
+        
+      </div>
+
+      {% empty %}
+      <div class="col-12">
+        <p class="opacity-50 mb-0">No se ha encontrado ninguna mesa</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Modal (solo una vez, fuera del for) -->
+  <div
+    class="modal fade"
+    id="eliminarMesaModal"
+    tabindex="-1"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">Eliminar mesa</h5>
+          <button
+            type="button"
+            class="btn-close btn-close-white"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+
+        <form
+          method="post"
+          id="eliminarMesaForm"
+        >
+          {% csrf_token %}
+          <div class="modal-body">
+            <p>
+              ¿Seguro que quieres eliminar la mesa "<strong
+                id="nombre_mesa_eliminar"
+              ></strong
+              >"?
+            </p>
+            <small class="text-muted">Esta acción no se puede deshacer.</small>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="btn btn-danger"
+            >
+              Eliminar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% include "asignacionMesas/asignar_modal.html" %}
+{% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const modalEl = document.getElementById("asignarMeseroModal");
+    if (!modalEl) return;
+  
+    modalEl.addEventListener("show.bs.modal", function (event) {
+      const btn = event.relatedTarget;
+      if (!btn) return;
+  
+      const mesaId = btn.getAttribute("data-mesa-id");
+      const mesaNumero = btn.getAttribute("data-mesa-numero");
+
+      console.log("Mesa numero", mesaNumero)
+  
+      document.getElementById("asignar_mesa_id").value = mesaId || "";
+      document.getElementById("asignar_mesa_numero").textContent = mesaNumero || "—";
+  
+      // limpiar selección / campos
+      const sel = document.getElementById("asignar_mesero_id");
+      const chk = document.getElementById("asignar_es_fija");
+      const fin = document.getElementById("asignar_fecha_fin");
+      if (sel) sel.value = "";
+      if (chk) chk.checked = false;
+      if (fin) fin.value = "";
+    });
+
+    // --- Logica para clases segun el estado de la mesa --//
+    const boxes = document.querySelectorAll(".mesa-box");
+
+    const borderByEstado = {
+      LIBRE: "border-success",
+      OCUPADA: "border-warning",
+      PENDIENTE_PAGO: "border-secondary",
+    };
+
+    boxes.forEach((box) => {
+      const estado = (box.dataset.estado || "").trim().toUpperCase();
+
+      // quita bordes anteriores por si recargas o re-renderizas
+      box.classList.remove(
+        "border-success",
+        "border-warning",
+        "border-danger",
+        "border-primary",
+        "border-secondary"
+      );
+      box.classList.add("border-3"); // grosor opcional
+
+      const borderClass = borderByEstado[estado] || "border-secondary";
+      box.classList.add(borderClass);
+    });
+
+    // --- Lógica del botón de limpieza del input ---
+    const inputField = document.getElementById("id_search_name");
+    const clearIcon = document.querySelector(
+      '.clear-icon[data-target="id_search_name"]'
+    );
+
+    if (inputField && clearIcon) {
+      const toggleClearIcon = () => {
+        clearIcon.style.display =
+          inputField.value.length > 0 ? "block" : "none";
+      };
+
+      toggleClearIcon();
+      inputField.addEventListener("input", toggleClearIcon);
+
+      clearIcon.addEventListener("click", () => {
+        inputField.value = "";
+        toggleClearIcon();
+        inputField.focus();
+        // Si quieres auto-buscar al limpiar:
+        // inputField.closest('form').submit();
+      });
+    }
+
+    // --- Modal eliminar mesa ---
+    const eliminarMesaModal = document.getElementById("eliminarMesaModal");
+    if (eliminarMesaModal) {
+      eliminarMesaModal.addEventListener("show.bs.modal", function (event) {
+        const button = event.relatedTarget;
+        if (!button) return;
+
+        const mesasId = button.getAttribute("data-id");
+        const mesasNombre = button.getAttribute("data-nombre");
+
+        const nombreEl = document.getElementById("nombre_mesa_eliminar");
+        const form = document.getElementById("eliminarMesaForm");
+
+        if (nombreEl) nombreEl.textContent = mesasNombre || "";
+        if (form && mesasId) {
+          form.action = "{% url 'eliminar-mesa' 0 %}".replace(
+            "/0/",
+            "/" + mesasId + "/"
+          );
+        }
+      });
+    }
+  });
+</script>
+{% endblock extra_js %}
+{% endblock content %} 

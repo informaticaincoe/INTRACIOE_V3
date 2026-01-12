@@ -63,6 +63,9 @@ from AUTENTICACION.models import ConfiguracionServidor, UsuarioEmisor
 from django.db.utils import OperationalError
 from django.core.exceptions import ObjectDoesNotExist
 
+import json
+from django.core.serializers.json import DjangoJSONEncoder
+
 try:
     FIRMADOR_URL = ConfiguracionServidor.objects.filter(clave="firmador").first()
 except (OperationalError, ObjectDoesNotExist):
@@ -238,6 +241,13 @@ def facturacion_correcciones_home(request):
     """
     return render(request, 'facturacion/correcciones/home.html')
 
+@login_required
+def facturacion_generar_home(request):
+    """
+    Pantalla inicial para elegir el tipo de DTE a generar (Factura, CCF, Exportación, …).
+    Usa la plantilla: templates/facturacion/generar/home.html
+    """
+    return render(request, 'facturacion/generar/home.html')
 
 #vistas para actividad economica
 def cargar_actividades(request):
@@ -652,9 +662,11 @@ def q2(d):  # 2 decimales HALF_UP
 @csrf_exempt
 @transaction.atomic
 def generar_factura_view(request):
+    req_id = str(uuid.uuid4())[:8]
     print("DTE: ====== INICIO generar_factura_view ======")
     print("DTE: method=", request.method, " content_type=", request.content_type)
-
+    
+    
     if request.method == 'GET':
         prefill = None
         if request.GET.get("from_cart") == "1":
@@ -662,7 +674,11 @@ def generar_factura_view(request):
             request.session.modified = True
             print("DTE: prefill recuperado =", prefill)
 
-        tipo_dte = globals().get('tipo_documento_dte', '01')
+        # tipo_dte = globals().get('tipo_documento_dte', '01')
+        tipo_dte = request.GET.get("tipo_documento_dte", '01')
+        
+        
+        
         print("DTE: GET tipo_dte=", tipo_dte)
         if not tipo_dte:
             messages.error(request, "No se ha especificado el tipo de documento.")
@@ -679,13 +695,7 @@ def generar_factura_view(request):
             estab=(emisor_obj.codigo_establecimiento or "0000") if emisor_obj else "0000",
             pv=(emisor_obj.codigo_punto_venta or "0001") if emisor_obj else "0001",
         )
-
-        # prefill otra vez por si viene del carrito (protección)
-        prefill = None
-        if request.GET.get("from_cart") == "1":
-            prefill = request.session.pop("facturacion_prefill", None)
-            request.session.modified = True
-
+        
         context = {
             "prefill_factura": prefill,
             "numero_control": nuevo_numero,
@@ -710,13 +720,15 @@ def generar_factura_view(request):
             "formasPago": FormasPago.objects.all(),
             "tipoGenDocumentos": TipoGeneracionDocumento.objects.all(),
             "prefill_factura": json.dumps(prefill, ensure_ascii=False) if prefill else None,
+            "dte_select": tipo_dte
         }
         print("DTE: Renderizar template generar_dte.html")
+        print(f"DTE: Renderizar template generar_dte.html {context}")
+        
         return render(request, "generar_dte.html", context)
 
     elif request.method == 'POST':
         
-
         # ---------- Parse body (JSON o form) ----------
         is_json = (request.content_type or '').startswith('application/json')
         if is_json:
@@ -1181,6 +1193,7 @@ def generar_factura_view(request):
             print("DTE: ==== INICIO FIRMA (función existente) ====")
             try:
                 resp_firma = firmar_factura_view(request, factura.id, interno=True)
+                print("STATUS CODE", resp_firma,  "code", resp_firma.status_code)
                 if hasattr(resp_firma, "status_code") and int(resp_firma.status_code) >= 400:
                     return JsonResponse({
                         "mostrar_modal": True,
@@ -1207,7 +1220,7 @@ def generar_factura_view(request):
                     "puede_contingencia": False,
                     "enviar_mh_url": reverse('enviar_factura_hacienda', args=[factura.id]),
                 }, status=200)
-
+            
             # ---------- ENVÍO ----------
             print("DTE: ==== INICIO ENVÍO a MH (función existente) ====")
             try:
@@ -1259,6 +1272,131 @@ def generar_factura_view(request):
     print("DTE: Metodo no permitido")
     return JsonResponse({"error": "Método no permitido"}, status=405)
 # --------------------------------------------------------------------
+
+@login_required
+def select_tipo_facturas_mes_home(request):
+    """
+    Controlador maestro para el proceso de reenvío por lote.
+    1. Si no hay filtros GET: Muestra la pantalla de selección (Mes/Año + DTE).
+    2. Si hay filtros GET: Muestra la tabla de documentos pendientes (Listado).
+    """
+    tipo_dte = request.GET.get('tipo_documento_dte')
+    mes_filtro = request.GET.get('mes')
+    year_filtro = request.GET.get('year')
+
+    print("ifffffffffffffffff")
+    print("mes_filtro", mes_filtro)
+
+    
+    # === Lógica para mostrar la PANTALLA DE SELECCIÓN (Paso 1) ===
+    if not tipo_dte or not mes_filtro or not year_filtro:
+        
+        now = timezone.now()
+        current_year = now.year
+        current_month = now.month
+
+        print("current_month", current_month)
+        print("current_year", current_year)
+        
+        mes_nombre = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+        
+        # 1. Preparar la lista de meses para el selector
+        meses = []
+        for i in range(1, 13):
+            # mes_nombre = date(current_year, i, 1).strftime('%B').capitalize()
+            meses.append({'id': str(i).zfill(2), 'nombre': mes_nombre[i-1]}) # Usamos zfill(2) para el formato 01, 02...
+            
+        # 2. Preparar la lista de años (ej. últimos 3 años)
+        years = [str(y) for y in range(current_year, current_year - 3, -1)]
+        print("meses", mes_filtro or str(current_month).zfill(2))
+
+        context = {
+            'meses': meses,
+            # Se usan los valores GET o los valores actuales como defecto
+            'current_mes': mes_filtro or str(current_month).zfill(2), 
+            'years': years,
+            'current_year': year_filtro or str(current_year), 
+            # Aquí podrías pasar la lista de todos los tipos de DTE disponibles para las tarjetas si fuera dinámico
+        }
+        
+        # Renderiza la plantilla de selección
+        return render(request, 'facturacion/generar/home_reenvio_mes.html', context)
+
+    
+@login_required
+def listar_documentos_pendientes(request):
+    # La vista DEBE usar request.GET para obtener los filtros enviados por AJAX
+    tipo_dte = request.GET.get('tipo_documento_dte')
+    mes_filtro = request.GET.get('mes')
+    year_filtro = request.GET.get('year')
+    cliente_filtro = request.GET.get('cliente_filtro')
+    
+    documentos_pendientes = FacturaElectronica.objects.filter(
+        tipo_dte__codigo=tipo_dte,
+        sello_recepcion=None
+    )
+    
+    clientes_disponibles = documentos_pendientes.values('dtereceptor__num_documento', 'dtereceptor__nombre').distinct()
+    
+    clientes_list = [
+        {'num_documento': c['dtereceptor__num_documento'], 'nombre': c['dtereceptor__nombre']}
+        for c in clientes_disponibles if c['dtereceptor__num_documento'] is not None and c['dtereceptor__nombre'] is not None
+    ]
+    
+    print(" >>> CLIENTES DISPONIBLES ", clientes_disponibles)
+    print(" >>> CLIENTES clientes_list ", clientes_list)
+    
+    print("Lista facturas pendientes de envio: ", documentos_pendientes)
+    print("Mes filtro", mes_filtro)
+    
+    # 1. 📅 Filtrar por AÑO
+    if year_filtro and year_filtro.isdigit():
+        try:
+            year_int = int(year_filtro)
+            documentos_pendientes = documentos_pendientes.filter(
+                fecha_emision__year=year_int
+            )
+            print(f"DEBUG: Aplicado filtro YEAR: {year_int}")
+        except ValueError:
+            # Esto maneja si isdigit() pasa pero int() falla (aunque es raro)
+            pass
+            
+    # 2. 🗓️ Filtrar por MES
+    if mes_filtro and mes_filtro.isdigit():
+        try:
+            mes_int = int(mes_filtro)
+            # Los meses en DB son 1-12. El filtro debe ser 1-12
+            if 1 <= mes_int <= 12: 
+                documentos_pendientes = documentos_pendientes.filter(
+                    fecha_emision__month=mes_int
+                )
+                print(f"DEBUG: Aplicado filtro MONTH: {mes_int}")
+            else:
+                print(f"DEBUG: Mes inválido: {mes_int}")
+        except ValueError:
+            pass
+    if cliente_filtro:
+        documentos_pendientes = documentos_pendientes.filter(
+            dtereceptor__num_documento=cliente_filtro
+        )
+        print(f"DEBUG: Aplicado filtro CLIENTE: {cliente_filtro}")
+    
+    # 3. Optimización y ordenamiento
+    documentos_pendientes = documentos_pendientes.prefetch_related(
+        'detalles',
+        'detalles__producto' 
+    ).order_by('-fecha_emision')
+
+    context = {
+        'documentos_pendientes': documentos_pendientes, # <--- Usar la lista serializada
+        'tipo_dte': tipo_dte,
+        'mes': mes_filtro,
+        'clientes_list': clientes_list,
+        'cliente_seleccionado': cliente_filtro,
+        'year': year_filtro,
+    }
+    
+    return render(request, 'facturacion/generar/documentos_pendientes_modal.html', context)
 
 # --------------------------------------------------------------------
 # Asegura precisión suficiente en cálculos intermedios
@@ -1547,8 +1685,7 @@ def generar_json(
         if saldo_favor is not None and saldo_favor != "" and saldo_favor > 0:
             condicion_operacion_codigo = 1
 
-        pagos = _normaliza_pagos(formas_pago or getattr(factura, "formas_Pago", []),
-                                 condicion_operacion_codigo, total_a_pagar)
+        pagos = _normaliza_pagos(formas_pago or getattr(factura, "formas_Pago", []), condicion_operacion_codigo, total_a_pagar)
 
         json_resumen = {
             "totalNoSuj":          float(_q2(total_no_suj)),
@@ -1933,10 +2070,17 @@ def firmar_factura_view(request, factura_id, interno=False):
     while intento <= intentos_max and not factura.firmado and intentos_modal <=2:
         print(f"Inicio Intento {intento} de {intentos_max}")
         token_data = Token_data.objects.filter(activado=True).first()
+        print(f"token_data:   {token_data} ")
+        
         if not token_data:
+            print(f"NO HAY TOKEN:   {token_data} ")
+            
             return JsonResponse({"error": "No hay token activo."}, status=401)
 
         if not os.path.exists(CERT_PATH):
+            print("sssssss: ")
+            print(f"sssssss: {CERT_PATH}")
+            
             return JsonResponse({"error": "Certificado no encontrado."}, status=400)
 
         try:
@@ -1960,8 +2104,12 @@ def firmar_factura_view(request, factura_id, interno=False):
             "passwordPri": emisor.clave_privada,
             "dteJson": dte_json_obj,
         }
+        
+        print("payload-------------- ", payload)
 
         try:
+            print("dentro try-------------- ")
+            
             response = requests.post(FIRMADOR_URL.url_endpoint, json=payload, headers={"Content-Type": CONTENT_TYPE.valor})
             print("Response envio: ", response)
             print("Response envio status: ", response.status_code)
@@ -2081,7 +2229,7 @@ def firmar_factura_view(request, factura_id, interno=False):
 
 @csrf_exempt
 @require_POST
-def enviar_factura_hacienda_view(request, factura_id, uso_interno=False):
+def enviar_factura_hacienda_view(request, factura_id, uso_interno=False, consolidacion=False):
     HACIENDA_URL_PROD = get_config("hacienda_url_prod", campo="url_endpoint")
     #Bloquear creacion de eventos por reintentos
     crear_evento = request.GET.get('crear_evento', 'false').lower() == 'true'
@@ -2311,7 +2459,6 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False):
                     # crear el movimeinto de inventario
                     # Se asume que la factura tiene una relación a sus detalles, 
                     # donde se encuentran los productos y cantidades
-
                     for detalle in factura.detalles.all():
                         if detalle is not None and detalle.producto.almacenes.exists():
                             almacen = detalle.producto.almacenes.first() or Almacen.objects.first()
@@ -2322,7 +2469,7 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False):
                                 cantidad=detalle.cantidad,
                                 referencia=f"Factura {factura.codigo_generacion}",
                             )
-                        # ¡El stock baja solo gracias al signal!
+                            # ¡El stock baja solo gracias al signal!
                         
                     #Si la factura fue recibida por mh detener los eventos en contingencia activos
                     finalizar_contigencia_view(request)
@@ -2970,26 +3117,15 @@ def enviar_factura_invalidacion_hacienda_view(request, factura_id):
                     estado="Aprobada",
                     usuario=request.user.username if request.user.is_authenticated else None
                 )
-                for det in factura.detalles.all():
+                
+                for det in factura.detalles.all():                    
                     DetalleDevolucionVenta.objects.create(
                         devolucion=devolucion,
                         producto=det.producto,
                         cantidad=det.cantidad,
                         motivo_detalle="Reingreso automático por invalidación"
                     )
-                    if det and det.producto.almacenes.exists():
-                        almacen = det.producto.almacenes.first() or Almacen.objects.first()
-                        MovimientoInventario.objects.create(
-                            producto=det.producto,
-                            almacen=almacen,
-                            tipo='Entrada',
-                            cantidad=det.cantidad,
-                            referencia=f"Invalidación Factura {factura.codigo_generacion}",
-                        )
-                    # Ajuste de stock
-                    Producto.objects.filter(pk=det.producto.pk).update(
-                        stock=F('stock') + det.cantidad
-                    )
+                    
             except Exception as inv_ex:
                 print("ANU: WARN reingreso inventario:", inv_ex)
 
@@ -3494,6 +3630,8 @@ def invalidar_varias_dte_view(request):
                                     cantidad=detalle.cantidad,
                                     referencia=f"Reingreso invalidación Factura {factura.numero_control}"
                                 )
+                                
+                                print("INVALIDAR VARIAS DTE " )
                                 # Ajuste de stock atómico
                                 Producto.objects.filter(pk=detalle.producto.pk).update(
                                     stock=F('stock') + detalle.cantidad
@@ -4391,6 +4529,8 @@ def generar_documento_ajuste_view(request):
                             cantidad=det.cantidad,
                             referencia=f"Reingreso NC {factura.numero_control}"
                         )
+                    print("DEVOLUCION DESDE VIEW AJUSTE")
+                        
                     # 2c) Ajuste de stock atómico
                     Producto.objects.filter(pk=det.producto.pk).update(
                         stock=F('stock') + det.cantidad
@@ -6111,8 +6251,6 @@ def enviar_correo_individual_view(request, factura_id, archivo_pdf=None, archivo
         os.unlink(pdf_temp_path)
 
     return redirect('detalle_factura', factura_id=factura_id)
-
-
 
 ####################################################################################################
 # VISTAS DE CONFIGURACION DE EMPRESA

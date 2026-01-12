@@ -16,6 +16,8 @@ from .views import (
     obtener_receptor,
     generar_documento_ajuste_view, 
     obtener_listado_productos_view,
+    select_tipo_facturas_mes_home,
+    listar_documentos_pendientes
     #generar_factura_exportacion_view
 )
 
@@ -39,6 +41,13 @@ urlpatterns = [
 
     #path('detalle/<int:factura_id>/', views.detalle_factura_view, name='detalle_factura'),
     path('listar_facturas/', views.factura_list, name='listar_facturas'),
+
+    path('facturas_mes/', views.select_tipo_facturas_mes_home, name='select_tipo_facturas_mes_home'),
+    path('facturas/consolidar-a-dte/', views_ventas.consolidar_y_redirigir_a_dte, name='consolidar_y_redirigir_a_dte'),
+    
+    path('documentos_pendientes/', views.listar_documentos_pendientes, name='listar_documentos_pendientes'),
+    path('almacenar_documentos_pendientes/', views.listar_documentos_pendientes, name='almacenar_documentos_pendientes'),
+
 
     path('firmar/<int:factura_id>/', firmar_factura_view, name='firmar_factura'),
     path('enviar/<int:factura_id>/', enviar_factura_hacienda_view, name='enviar_factura_hacienda'),

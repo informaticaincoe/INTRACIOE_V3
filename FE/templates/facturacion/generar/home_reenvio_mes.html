@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="container py-4">
+    <h4 class="mb-4">Consolidación</h4>
+    <h5 class="mb-3">Paso 1: Seleccione el periodo de consolidación</h5>
+
+    <form method="GET" id="filtro_form" class="mb-5 mt-4">
+        <input type="hidden" name="tipo_documento_dte" id="hidden_tipo_dte_filter">
+        <div class="row g-3 align-items-end w-100">
+            <div class="col-md-4 flex-fill">
+                <label class="form-label" for="mes_filtro">Mes de Emisión</label>
+                <select id="mes_filtro" name="mes" class="form-select">
+                    {% for mes in meses %}
+                        <option value="{{ mes.id }}" {% if mes.id == current_mes_id %}selected{% endif %}> <!-- Seleccionar automaticamente el mes actual-->
+                            {{ mes.nombre }}
+                        </option>
+                    {% endfor %}
+                    
+                </select>
+            </div>
+            
+            <div class="col-md-4 flex-fill">
+                <label class="form-label" for="year_filtro">Año</label>
+                <select id="year_filtro" name="year" class="form-select">
+                    {% for year in years %}
+                    <option value="{{ year }}" {% if year == current_year %}selected{% endif %}> <!-- Seleccionar automaticamente el año actual-->
+                        {{ year }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </form>
+
+    <h5 class="mt-4 mb-3">Paso 2: Seleccione el Tipo de Documento</h5>
+    <div class="d-flex flex-column flex-md-row gap-4 mb-5">
+        <div class="flex-fill">
+            <div> 
+                <button class="card h-100 text-decoration-none card-dte-select border w-100" data-tipo-dte="01"> 
+                    <div class="card-body d-flex align-items-center">
+                        <i class="bi bi-file-earmark-text fs-1 me-3"></i>
+                        <div>
+                            <div class="fw-semibold text-start">Facturas consumidor final</div>
+                            <div class="text-muted small text-start">DTE 01</div>
+                        </div>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex-fill">
+            <div>
+                <button class="card h-100 text-decoration-none card-dte-select border w-100" data-tipo-dte="03">
+                    <div class="card-body d-flex align-items-center">
+                        <i class="bi bi-file-earmark-text fs-1 me-3"></i>
+                        <div>
+                            <div class="fw-semibold text-start">Credito Fiscal</div>
+                            <div class="text-muted small text-start">DTE 03</div>
+                        </div>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mt-4">
+        <button type="button" class="btn btn-secondary w-100 disabled" id="btn_listar_documentos">
+            Listar Documentos Pendientes
+        </button>
+    </div>
+</div>
+
+<div class="modal fade" id="reenvioListadoModal" tabindex="-1" aria-labelledby="reenvioListadoModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reenvioListadoModalLabel">
+                    Documentos Pendientes de Reenvío (DTE <span id="tipo_doc_reenvio"></span>)
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modal_listado_content">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando documentos...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    let reenvioModal;
+    const GENERAR_FACTURA_URL = "{% url 'generar_factura' %}";
+    let tipo_doc_selecionado;
+    let documentosSeleccionados = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const dteCards = document.querySelectorAll('.card-dte-select');
+        const hiddenTipoDte = document.getElementById('hidden_tipo_dte_filter');
+        const btnListarDocumentos = document.getElementById('btn_listar_documentos');
+        const mesFiltro = document.getElementById('mes_filtro');
+        const yearFiltro = document.getElementById('year_filtro');
+        const modalListadoContent = document.getElementById('modal_listado_content');
+        const modalTituloSpan = document.getElementById('tipo_doc_reenvio')
+
+        // Instanciar modal
+        reenvioModal = new bootstrap.Modal(
+            document.getElementById('reenvioListadoModal')
+        );
+
+        // ========= Selección de tipo DTE =========
+        dteCards.forEach(card => {
+            card.addEventListener('click', (event) => {
+                const tipoDte = card.getAttribute('data-tipo-dte');
+                tipo_doc_selecionado = tipoDte;
+                hiddenTipoDte.value = tipoDte;
+
+                dteCards.forEach(c => c.classList.remove('border-primary', 'border-3'));
+                card.classList.add('border', 'border-primary', 'border-2'); //añadir borde azul cuando se selecione el tipo de documento
+
+                btnListarDocumentos.textContent = `Listar DTEs ${tipoDte}`; // Agregar al boton el tipo de documento a listar
+                btnListarDocumentos.classList.add('btn', 'btn-primary'); // cambiar el estilo del boton listar
+                btnListarDocumentos.classList.remove('disabled'); // habilitar el boton de listar
+
+                modalTituloSpan.textContent = tipoDte
+            });
+        });
+
+        // ========= Botón "Listar Documentos Pendientes" =========
+        btnListarDocumentos.addEventListener('click', (event) => {
+            if (btnListarDocumentos.classList.contains('disabled')) return;
+
+            const tipoDte = hiddenTipoDte.value;
+            const mes = mesFiltro.value;
+            const year = yearFiltro.value;
+
+            //pantalla de carga de documentos
+            modalListadoContent.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando documentos...</p>
+                </div>
+            `;
+            reenvioModal.show(); // mostrar el modal
+
+            const url = `/fe/documentos_pendientes/?${new URLSearchParams({ //direccion para listar productos pendientes
+                tipo_documento_dte: tipoDte,
+                mes: mes,
+                year: year
+            })}`;
+
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error al obtener la lista de documentos.');
+                    }
+                    return response.text();
+                })
+                .then(htmlContent => {
+                    modalListadoContent.innerHTML = htmlContent;
+                    setupModalEvents();
+                })
+                .catch(error => {
+                    console.error('FETCH ERROR:', error);
+                    modalListadoContent.innerHTML = `<p class="alert alert-danger text-center">Error al cargar el listado: ${error.message}</p>`;
+                });
+        });
+
+        // ========= Delegación: cambio de cliente_filtro dentro del modal =========
+        document.addEventListener('change', (event) => {
+            if (event.target && event.target.id === 'clientes_filtro') {
+                const cliente = event.target.value;
+                console.log('Cambio de clientes_filtro =', cliente);
+                recargarDocumentos(cliente);
+            }
+        });
+
+        // ========= Función para recargar documentos al cambiar de cliente =========
+        function recargarDocumentos(cliente_filtro) {
+            const tipoDte = hiddenTipoDte.value || tipo_doc_selecionado || '';
+            const mes = mesFiltro.value;
+            const year = yearFiltro.value;
+
+            const params = new URLSearchParams({
+                tipo_documento_dte: tipoDte,
+                mes: mes,
+                year: year,
+            });
+            if (cliente_filtro) {
+                params.append('cliente_filtro', cliente_filtro);
+            }
+
+            const url = `/fe/documentos_pendientes/?${params.toString()}`;
+
+            // Mostrar nuevamente el spinner mientras se recarga
+            modalListadoContent.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando documentos filtrados...</p>
+                </div>
+            `;
+
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error al obtener la lista de documentos (filtro cliente).');
+                    }
+                    return response.text();
+                })
+                .then(htmlContent => {
+                    modalListadoContent.innerHTML = htmlContent;
+                    console.log('HTML del modal recargado con filtro cliente:', cliente_filtro);
+                    setupModalEvents();   // volver a enganchar los checkboxes
+                })
+                .catch(error => {
+                    console.error('FETCH ERROR (cliente_filtro):', error);
+                    modalListadoContent.innerHTML = `<p class="alert alert-danger text-center">Error al recargar documentos: ${error.message}</p>`;
+                });
+        }
+    });
+
+    // ========= Eventos del contenido del modal (checkboxes / botón consolidar) =========
+    function setupModalEvents() {
+        const selectAll = document.getElementById('select_all_docs');
+        const checkboxes = document.querySelectorAll('.select-doc');
+        const btnConsolidar = document.getElementById('btn_consolidar_datos');
+
+        const updateConsolidarButton = () => {
+            const checkedCount = document.querySelectorAll('.select-doc:checked').length;
+            if (btnConsolidar) {
+                btnConsolidar.disabled = checkedCount === 0;
+            }
+        };
+
+        if (selectAll) {
+            selectAll.addEventListener('change', () => {
+                checkboxes.forEach(cb => cb.checked = selectAll.checked);
+                updateConsolidarButton();
+            });
+        }
+
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', updateConsolidarButton);
+        });
+
+        if (btnConsolidar) {
+            btnConsolidar.addEventListener('click', () => {
+                let documentosSeleccionados = [];
+                const checkedDocs = document.querySelectorAll('.select-doc:checked');
+
+                checkedDocs.forEach(cb => {
+                    documentosSeleccionados.push(cb.value);
+                });
+
+                if (documentosSeleccionados.length === 0) {
+                    alert('Por favor, selecciona al menos un documento.');
+                    return;
+                }
+
+                const CONSOLIDAR_URL = "{% url 'consolidar_y_redirigir_a_dte' %}";
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                fetch(CONSOLIDAR_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: new URLSearchParams({
+                        'documentos_ids': documentosSeleccionados.join(','),
+                        'tipo_dte': tipo_doc_selecionado
+                    })
+                })
+                .then(async response => {
+                    let data;
+                    try {
+                        data = await response.json();
+                    } catch (e) {
+                        throw new Error(`Respuesta inválida o error HTTP: ${response.statusText}`);
+                    }
+                    if (response.ok && data.ok && data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    } else {
+                        throw new Error(data.error || 'Fallo desconocido en la consolidación.');
+                    }
+                })
+                .catch(error => {
+                    console.error('ERROR de Consolidación:', error);
+                    alert(`Error al consolidar: ${error.message}`);
+                });
+            });
+        }
+    }
+</script>
+{% endblock %}
+{% endblock %}

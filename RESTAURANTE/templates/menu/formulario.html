@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+{% block title %}{% if obj %}Editar platillo{% else %}Nuevo platillo{% endif %} · INTRACOE{% endblock %}
+{% block content %}
+{% load l10n %}
+{% block extra_css %}
+<style>
+/* 1. Ocultar el radio button nativo */
+.category-radio-input {
+    position: absolute; opacity: 0; width: 1px; height: 1px; margin: -1px;
+    padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;
+}
+
+/* 2. Estilo base de la Tarjeta (Label) - Mantenemos el look de pastilla */
+.category-select-card {
+    cursor: pointer;
+    transition: all 0.2s; 
+    white-space: nowrap; 
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0; 
+    padding: 8px 15px !important; /* Ajuste para look de píldora */
+    font-size: 0.95rem; 
+}
+
+/* 3. Estilo al pasar el ratón por encima (Hover) */
+.category-select-card:hover {
+    border-color: #adb5bd; 
+}
+
+/* 4. Estilo del Marcador de Selección (El círculo de radio) */
+.radio-select-marker {
+    width: 0.8rem;
+    height: 0.8rem;
+    border: 1px solid #ccc; /* Borde gris por defecto */
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+    transition: all 0.2s;
+    background-color: white; /* Fondo blanco por defecto */
+}
+
+/* 5. ESTADO SELECCIONADO: La Tarjeta (Label) */
+.category-radio-input:checked + .category-select-card {
+    /* Usamos el color de selección azul de Bootstrap para el borde y fondo */
+    border-color: #0d6efd !important;
+    background-color: #eaf3ff !important; /* Fondo azul muy claro */
+    box-shadow: none !important; 
+}
+
+/* 6. ESTADO SELECCIONADO: El Marcador (Relleno de color azul) */
+.category-radio-input:checked + .category-select-card .radio-select-marker {
+    border-color: #0d6dfdaf; /* Borde azul */
+    background-color: #0d6dfdaf; /* ¡RELLENO AZUL COMPLETO! */
+    box-shadow: 0 0 0 1px transparent; /* Sombra sutil si se desea (opcional) */
+}
+
+/* 7. Estilo del texto seleccionado */
+.category-radio-input:checked + .category-select-card span {
+    color: #0d6efd;
+    font-weight: 600 !important;
+}
+
+.category-radio-input:checked + .category-select-card span {
+    color: #0d6efd;
+    font-weight: 600 !important;
+}
+
+.image-preview-container img {
+    /* El contenedor es flexible, ahora la imagen debe usar esa altura */
+    height: 80% !important; 
+    
+    /* Asegura que no se desborde, manteniendo el 100% de la altura de su contenedor */
+    max-height: 30vh !important; 
+    
+    /* Permite que el ancho se ajuste proporcionalmente y centra */
+    max-width: 100%%;
+    width: auto;
+    object-fit: contain;
+}
+
+.was-validated .category-radio-input:invalid ~ label + .invalid-feedback,
+.was-validated .category-radio-input:invalid ~ .invalid-feedback { display: block; }
+
+.border-red-error {
+    border-color: red !important;
+}
+
+/* Ocultar por defecto */
+.invalid-feedback { display: none; }
+</style>
+{% endblock %}
+
+<div class="mx-md-5 py-3">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    
+    <div class="d-flex align-items-center mb-3">
+        <a href="{% url 'menu' %}">
+            <span class="material-symbols-outlined">arrow_back_ios</span>
+        </a>
+        <h1 class="h5 mb-0">{% if obj %}Editar platillo {{ obj.nombre }}{% else %}Nuevo platillo{% endif %}</h1>
+    </div>
+    
+    <form method="post" id="formPlatillo" class="needs-validation" novalidate enctype="multipart/form-data" action="{% if obj %}{% url 'editar-menu' obj.id %}{% else %}{% url 'crear-menu' %}{% endif %}">
+        {% csrf_token %}
+        <div class="row g-3 d-flex align-items-stretch">
+            <div class="col-md-6 d-flex flex-column h-100 ">
+                <div class="mb-3">
+                    <label for="imagen" class="form-label">Imagen</label>
+                    <input type="file" name="imagen" class="form-control" id="id_imagen_input">
+                    {% if obj.imagen %}
+                      <div class="small text-muted mt-1">Actual: {{ obj.imagen.url }}</div>
+                    {% endif %}
+                </div>
+            
+                <div class="image-preview-container border rounded d-flex justify-content-center align-items-center flex-grow-1" style="overflow: hidden;">                    
+            
+                    {% if obj.imagen %}
+                        <img id="imagen-preview" src="{{ obj.imagen.url }}" alt="{{ obj.nombre }}" class="img-fluid">
+                    {% else %}
+                        <div id="imagen-preview-placeholder" class="text-muted text-center p-3">
+                            Vista previa de la imagen aquí.
+                        </div>
+                        <img id="imagen-preview" src="" alt="Vista previa" class="img-fluid d-none">
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-6 d-flex flex-column gap-3">
+                <div >
+                    <label class="form-label">Nombre</label>
+                    <input type="text" name="nombre" class="form-control" value="{{ obj.nombre|default:'' }}" required>
+                    <div class="invalid-feedback">Obligatorio.</div>
+                </div>
+    
+                <div>
+                    <label class="form-label mb-2">Categoría</label>
+                    <div class="row g-2">
+                        {% for categoria in categorias %}
+                        <div class="col-auto">
+                            <input type="radio" 
+                                name="categoria" 
+                                id="cat_{{ categoria.id }}" 
+                                value="{{ categoria.id }}"
+                                class="category-radio-input"
+                                required
+                                {% if obj and obj.categoria_id == categoria.id %}checked{% endif %}
+                            />
+                            
+                            <label 
+                                for="cat_{{ categoria.id }}" 
+                                class="category-select-card w-100 p-2 rounded-pill d-flex align-items-center justify-content-between"
+                                
+                                style="
+                                    /* Definimos variables CSS para el estado :checked */
+                                    --categoria-color: {{ categoria.color }};
+                                    --categoria-fondo-claro: {{ categoria.color }}33;
+                                    
+                                    /* Estilo base (no seleccionado) */
+                                    border: #dee2e6 solid 1px;
+                                    background-color: white;
+                                "
+                            >
+                                <span class="radio-select-marker me-2"></span> 
+                                <span class="fw-normal">{{ categoria.nombre }}</span>
+                                
+                                
+                            </label>
+                        </div>
+
+                        {% endfor %}
+                    </div>
+                    <div id="categoriaFeedback" class="invalid-feedback">
+                        Obligatorio.
+                      </div>
+                </div>
+                <div>
+                    <label class="form-label">Descripción</label>
+                    <textarea name="descripcion" class="form-control" rows="3" required>{{ obj.descripcion|default:'' }}</textarea>
+                    
+                    <div class="invalid-feedback">Obligatorio.</div>
+                </div>
+                <div>
+                    <label class="form-label">Precio</label>
+                    {% localize off %}
+                    <input 
+                        type="number" 
+                        name="precio_venta" 
+                        class="form-control"
+                        value="{{ obj.precio_venta }}"
+                        step="0.01" min="0" placeholder="0.00">
+                        {% endlocalize %}
+                    <div class="invalid-feedback">Obligatorio.</div>
+                </div>
+                <div class="d-flex gap-5">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="disponible" value="on" id="disponible_venta_checkbox" 
+                               {% if obj.disponible %}checked{% endif %}>
+                        <label class="form-check-label" for="disponible_venta_checkbox">
+                          Disponible para venta
+                        </label>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="es_preparado" value="on" id="es_preparado_checkbox"
+                               {% if obj.es_preparado %}checked{% endif %}>
+                        <label class="form-check-label" for="es_preparado_checkbox">
+                            Es preparado
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="btn btn-primary mt-3" id="save_form">Guardar</button>
+    </form>
+    <div>
+    </div>
+
+</div>
+<script>
+(function () {
+  // Validación BS
+    const fileInput = document.getElementById('id_imagen_input');
+    const previewImage = document.getElementById('imagen-preview');
+    const placeholder = document.getElementById('imagen-preview-placeholder');
+
+    if (fileInput) {
+        // Escucha el evento 'change' (cuando se selecciona un archivo)
+        fileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            
+            if (file) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    // 1. Oculta el placeholder si existe
+                    if (placeholder) {
+                        placeholder.classList.add('d-none');
+                    }
+                    // 2. Asigna el resultado (URL de datos) al src de la etiqueta <img>
+                    previewImage.src = e.target.result;
+                    // 3. Muestra la imagen (si estaba oculta)
+                    previewImage.classList.remove('d-none');
+                };
+                
+                // Lee el archivo como una URL de datos (para mostrar la vista previa local)
+                reader.readAsDataURL(file);
+            } else {
+                // Si se cancela la selección o se borra el archivo
+                previewImage.src = "";
+                previewImage.classList.add('d-none');
+                if (placeholder) {
+                    placeholder.classList.remove('d-none');
+                }
+            }
+        });
+    }
+
+    // ----------------------------------------------------
+    // 2. LÓGICA DE VALIDACIÓN DEL FORMULARIO (EJECUCIÓN AL ENVIAR)
+    // ----------------------------------------------------
+    const form = document.getElementById('formPlatillo');
+    const saveButton = document.getElementById('save_form'); // Obtener el botón
+
+    // Usamos el evento del botón o el evento de submit, pero simplificamos la lógica:
+    form.addEventListener('submit', (e)=>{
+        const radios = form.querySelectorAll('input[name="categoria"]');
+        const feedback = document.getElementById('categoriaFeedback');
+        const checked = Array.from(radios).some(r => r.checked);
+        const checkbox = document.querySelectorAll('.category-select-card')
+        const radioCheckbox = document.querySelectorAll('.radio-select-marker')
+
+        console.log("c", radioCheckbox)
+
+        if (!form.checkValidity()) {
+            e.preventDefault(); // Detiene el envío si hay errores
+            
+            feedback.style.display = 'block';
+            checkbox.forEach((c)=>{
+                c.classList.add("border-red-error")
+            })
+            radioCheckbox.forEach((r)=>{
+                r.classList.add("border-red-error")
+            })
+            e.stopPropagation();
+        } else {
+            checkbox.forEach((c)=>{
+                c.classList.remove("border-red-error")
+              
+            })
+            radioCheckbox.forEach((r)=>{
+                r.classList.remove("border-red-error")
+            })
+            feedback.style.display = 'none';
+        }
+        // Aplica las clases de validación (debe ir aquí o justo antes del if)
+        form.classList.add('was-validated'); 
+    });
+})();
+</script>
+
+{% endblock %}
