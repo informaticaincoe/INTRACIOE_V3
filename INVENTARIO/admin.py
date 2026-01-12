@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import AjusteInventario, Compra, DetalleCompra, DetalleDevolucionCompra, DetalleDevolucionVenta, DevolucionCompra, DevolucionVenta, NotaCredito, Producto, ProductoProveedor, Proveedor
 from .models import TipoItem
-from .models import TipoValor, Tributo, TipoTributo, Impuesto, Almacen, MovimientoInventario
+from .models import TipoValor, Tributo, TipoTributo, Impuesto, Almacen, MovimientoInventario, Categoria
 # Register your models here.
 
 @admin.register(Almacen)
@@ -100,3 +100,7 @@ class DevolucionCompraAdmin(admin.ModelAdmin):
 class DetalleDevolucionCompraAdmin(admin.ModelAdmin):
     list_display = ('devolucion', 'producto', 'cantidad', 'motivo_detalle')
     search_fields = ('producto__descripcion', 'motivo_detalle')
+
+@admin.register(Categoria)
+class CategoriaAdmin(admin.ModelAdmin):
+    pass

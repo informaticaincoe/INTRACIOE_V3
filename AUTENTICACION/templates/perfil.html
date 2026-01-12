@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Perfil de usuario{% endblock %}
+
+{% block content %}
+<div class="container py-3">
+  <div class="row g-3">
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="mb-3">Mi perfil</h5>
+
+          {% if messages %}
+            {% for m in messages %}
+              <div class="alert alert-{{ m.tags }} py-2">{{ m }}</div>
+            {% endfor %}
+          {% endif %}
+
+          <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label small">Nombre</label>
+                {{ form.nombre|add_class:"form-control" }}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small">Apellido</label>
+                {{ form.apellido|add_class:"form-control" }}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small">Teléfono</label>
+                {{ form.telefono|add_class:"form-control" }}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small">Fecha de nacimiento</label>
+                {{ form.fecha_nacimiento|add_class:"form-control" }}
+              </div>
+              <div class="col-12">
+                <label class="form-label small">Dirección</label>
+                {{ form.direccion|add_class:"form-control" }}
+              </div>
+              <div class="col-12">
+                <label class="form-label small">Emisor activo</label>
+                {{ form.emisor_activo|add_class:"form-select" }}
+                <div class="form-text">
+                  Selecciona el emisor con el que emitirás tus DTE.
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex gap-2 mt-3">
+              <button class="btn btn-primary">Guardar cambios</button>
+              <a href="{% url 'perfil_usuario' %}" class="btn btn-light">Cancelar</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Columna lateral -->
+    <div class="col-lg-4">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h6 class="mb-2">Usuario</h6>
+          <div class="small text-muted mb-2">
+            {{ request.user.get_full_name|default:request.user.username }}<br>
+            {{ request.user.email }}
+          </div>
+          <hr>
+          <h6 class="mb-2">Emisor actual</h6>
+          {% if perfil.emisor_activo %}
+            <div class="small">
+              <strong>{{ perfil.emisor_activo.nombre_razon_social }}</strong><br>
+              NIT: {{ perfil.emisor_activo.nit }}<br>
+              NRC: {{ perfil.emisor_activo.nrc|default:"—" }}
+            </div>
+          {% else %}
+            <div class="small text-muted">No has seleccionado un emisor activo.</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card shadow-sm mt-3">
+        <div class="card-body">
+          <h6 class="mb-2">Emisores permitidos</h6>
+          {% if emisores_permitidos %}
+            <ul class="list-group list-group-flush">
+              {% for link in emisores_permitidos %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  <span class="small">
+                    {{ link.emisor.nombre_razon_social }}<br>
+                    <span class="text-muted">NIT {{ link.emisor.nit }}</span>
+                  </span>
+                  {% if perfil.emisor_activo and link.emisor.id == perfil.emisor_activo.id %}
+                    <span class="badge text-bg-primary">Activo</span>
+                  {% elif link.es_predeterminado %}
+                    <span class="badge text-bg-secondary">Pred.</span>
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <div class="small text-muted">No tienes emisores asignados.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

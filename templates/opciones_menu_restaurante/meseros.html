@@ -1,0 +1,64 @@
+{% with uid_prefix=uid|default:"mes" %}
+
+<!-- menu -->
+{% if user.is_staff %}
+<!-- Registro de meseros -->
+<button
+  class="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
+  type="button"
+  data-bs-toggle="collapse"
+  data-bs-target="#{{ uid_prefix }}-meseros"
+  aria-expanded="false"
+  aria-controls="{{ uid_prefix }}-meseros"
+>
+  <span><i class="bi bi-tablet me-2"></i> Meseros</span>
+</button>
+
+<!-- administracion de mesas -->
+<button
+  class="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
+  type="button"
+  data-bs-toggle="collapse"
+  data-bs-target="#{{ uid_prefix }}-mesas"
+  aria-expanded="false"
+  aria-controls="{{ uid_prefix }}-mesas"
+>
+  <span><i class="bi bi-person-x me-2"></i> Mesas</span>
+</button>
+
+<!-- Asignacion de mesas a meseros -->
+<button
+  class="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
+  type="button"
+  data-bs-toggle="collapse"
+  data-bs-target="#{{ uid_prefix }}-asignar_mesas"
+  aria-expanded="false"
+  aria-controls="{{ uid_prefix }}-asignar_mesas"
+>
+  <span><i class="bi bi-tablet me-2"></i> Asignacion de mesas</span>
+</button>
+
+{% endif %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const prefix = "{{ uid_prefix|default:'mes' }}";
+    // Mapa: botón -> URL Django
+    const goto = new Map([
+      [`#${prefix}-meseros`, "{% url 'meseros-lista' %}"],
+      [`#${prefix}-mesas`, "{% url 'mesas-lista' %}"],
+      [`#${prefix}-asignar_mesas`, "{% url 'asignaciones-lista' %}"],
+    ]);
+    document
+      .querySelectorAll(`[data-bs-target^="#${prefix}-"]`)
+      .forEach((btn) => {
+        btn.addEventListener("click", (ev) => {
+          ev.preventDefault();
+          const target = btn.getAttribute("data-bs-target");
+          const href = goto.get(target);
+          if (href) window.location.href = href;
+        });
+      });
+  });
+</script>
+
+{% endwith %}

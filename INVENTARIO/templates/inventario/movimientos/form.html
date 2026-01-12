@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}{% if mov %}Editar{% else %}Nuevo{% endif %} movimiento{% endblock %}
+{% block content %}
+<div class="card shadow-sm">
+  <div class="card-body">
+    <h1 class="h6 mb-3">{% if mov %}Editar{% else %}Nuevo{% endif %} movimiento</h1>
+    <form method="post" class="needs-validation" novalidate>
+      {% csrf_token %}
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Producto</label>
+          <select name="producto" class="form-select" required>
+            <option value="">Seleccione…</option>
+            {% for p in productos %}
+              <option value="{{ p.id }}" {% if mov and mov.producto_id == p.id %}selected{% endif %}>{{ p.codigo }} — {{ p.descripcion }}</option>
+            {% endfor %}
+          </select>
+          <div class="invalid-feedback">Obligatorio.</div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Almacén</label>
+          <select name="almacen" class="form-select" required>
+            <option value="">Seleccione…</option>
+            {% for a in almacenes %}
+              <option value="{{ a.id }}" {% if mov and mov.almacen_id == a.id %}selected{% endif %}>{{ a.nombre }}</option>
+            {% endfor %}
+          </select>
+          <div class="invalid-feedback">Obligatorio.</div>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Tipo</label>
+          <select name="tipo" class="form-select" required>
+            <option value="">Seleccione…</option>
+            {# tipos = [('Entrada','Entrada'), ('Salida','Salida'), ('Ajuste','Ajuste')] #}
+            {% for value,label in tipos %}
+              <option value="{{ value }}"
+                {% if mov and mov.tipo == value %}
+                  selected
+                {% elif not mov and preselect_tipo == value %}
+                  selected
+                {% endif %}
+              >{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Cantidad</label>
+          <input type="number" name="cantidad" class="form-control text-end" step="1" required value="{{ mov.cantidad|default:'' }}">
+          <div class="form-text">En **Ajuste**, números negativos disminuyen stock.</div>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Referencia</label>
+          <input type="text" name="referencia" class="form-control" value="{{ mov.referencia|default:'' }}">
+        </div>
+      </div>
+      <div class="mt-3 d-flex gap-2">
+        <a href="{% url 'inv-movs-lista' %}" class="btn btn-light">Cancelar</a>
+        <button class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

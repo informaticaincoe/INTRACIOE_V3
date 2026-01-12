@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="container py-3">
+  <h4 class="mb-3">Carrito de compras</h4>
+
+  <div class="row g-3">
+    <div class="col-lg-4">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <label class="form-label small">Cliente</label>
+          <select id="receptor" class="form-select">
+            <option value="">— Seleccione —</option>
+            {% for r in receptores %}
+              <option value="{{ r.id }}" {% if receptor_actual == r.id %}selected{% endif %}>
+                {{ r.num_documento }} — {{ r.nombre }}
+              </option>
+            {% endfor %}
+          </select>
+
+          <hr class="my-3">
+
+          <label class="form-label small">Agregar producto</label>
+          <div class="combobox" id="productoPicker">
+            <input type="text" class="form-control" id="productoPickerInput" placeholder="Busca por código o nombre…">
+            <div class="combo-menu" id="productoPickerMenu" role="listbox" aria-label="Productos" style="display:none;max-height:240px;overflow:auto;border:1px solid #e5e7eb;border-radius:.5rem;margin-top:.25rem;background:#fff"></div>
+          </div>
+          <div class="input-group mt-2">
+            <input id="qty" type="number" class="form-control" value="1" min="1" style="max-width:120px">
+            <button id="btnAdd" class="btn btn-primary">Agregar</button>
+          </div>
+          <div class="form-text">Escribe y presiona Enter para elegir, luego “Agregar”.</div>
+
+          <hr class="my-3">
+          <div class="d-grid gap-2">
+            <button id="btnVaciar" class="btn btn-outline-danger">Vaciar carrito</button>
+            <button id="btnFacturar" class="btn btn-success">Facturar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Producto</th>
+                  <th class="text-end" style="width:120px">Precio</th>
+                  <th class="text-end" style="width:100px">Cant.</th>
+                  <th class="text-center" style="width:80px">IVA</th>
+                  <th class="text-end" style="width:110px">Desc %</th>
+                  <th class="text-end" style="width:110px">Total</th>
+                  <th style="width:60px"></th>
+                </tr>
+              </thead>
+              <tbody id="tbody">
+                {% if items %}
+                  {% for it in items %}
+                  <tr data-id="{{ it.id }}">
+                    <td><strong>{{ it.codigo }}</strong><br>{{ it.nombre }}</td>
+                    <td class="text-end">
+                      <input class="form-control form-control-sm text-end inp-precio" value="{{ it.precio }}">
+                    </td>
+                    <td class="text-end">
+                      <input class="form-control form-control-sm text-end inp-cant" type="number" min="1" value="{{ it.qty }}">
+                    </td>
+                    <td class="text-center">
+                      <input class="form-check-input chk-iva" type="checkbox" {% if it.iva_on %}checked{% endif %}>
+                    </td>
+                    <td class="text-end">
+                      <input class="form-control form-control-sm text-end inp-desc" type="number" min="0" max="100" value="{{ it.desc_pct }}">
+                    </td>
+                    <td class="text-end cel-total">${{ it.total }}</td>
+                    <td class="text-end">
+                      <button class="btn btn-sm btn-outline-danger btn-del"><i class="bi bi-x-lg"></i></button>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr><td colspan="7" class="text-muted text-center py-3">Sin productos.</td></tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+          <hr>
+          <div class="d-flex justify-content-end fs-5">
+            <div>Total: <strong id="sum">${{ total }}</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const $ = (s, x=document) => x.querySelector(s);
+  const $$ = (s, x=document) => Array.from(x.querySelectorAll(s));
+  const url = (name) => {
+    const map = {
+      'agregar': '{% url "carrito_agregar" %}',
+      'actualizar': '{% url "carrito_actualizar" %}',
+      'quitar': '{% url "carrito_quitar" %}',
+      'vaciar': '{% url "carrito_vaciar" %}',
+      'facturar': '{% url "carrito_facturar" %}',
+      'ver': '{% url "carrito_ver" %}',
+    }; return map[name];
+  };
+  function csrftoken(){
+    const m = document.cookie.match(/csrftoken=([^;]+)/);
+    return m ? m[1] : '';
+  }
+  function rid(){ return $('#receptor')?.value || ''; }
+  function toast(msg){ alert(msg); }
+
+  $('#receptor')?.addEventListener('change', e=>{
+    const r = rid();
+    location.href = r ? (url('ver') + '?receptor_id=' + encodeURIComponent(r)) : url('ver');
+  });
+
+  $('#btnAdd')?.addEventListener('click', async ()=>{
+    const r = rid();
+    if(!r) return toast('Selecciona un cliente primero');
+    const pid = $('#pid').value.trim();
+    const qty = Math.max(1, parseInt($('#qty').value||'1',10));
+    if(!pid) return;
+    const resp = await fetch(url('agregar'), {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrftoken() },
+      body: new URLSearchParams({ receptor_id:r, producto_id:pid, cantidad:String(qty) })
+    });
+    if(resp.ok){ location.reload(); } else { toast(await resp.text()); }
+  });
+
+  $('#btnVaciar')?.addEventListener('click', async ()=>{
+    const r = rid(); if(!r) return;
+    const resp = await fetch(url('vaciar'), {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrftoken() },
+      body: new URLSearchParams({ receptor_id:r })
+    });
+    if(resp.ok){ location.reload(); } else { toast(await resp.text()); }
+  });
+
+  $('#btnFacturar')?.addEventListener('click', async ()=>{
+  const r = rid(); if(!r) return toast('Selecciona un cliente.');
+  
+  // recoge productos directamente de la tabla
+  const rows = $$('#tbody tr[data-id]');
+  const fd = new URLSearchParams({ receptor_id:r });
+  rows.forEach(tr=>{
+    fd.append('producto_id[]', tr.dataset.id);
+    fd.append('precio[]', $('.inp-precio', tr).value);
+    fd.append('cantidad[]', $('.inp-cant', tr).value);
+    fd.append('iva_on[]', $('.chk-iva', tr).checked ? '1':'0');
+    fd.append('desc_pct[]', $('.inp-desc', tr).value);
+  });
+
+   const resp = await fetch(url('facturar'), {
+    method: 'POST',
+    headers: { 'X-CSRFToken': csrftoken() },
+    body: fd
+  });
+
+  let data = null;
+  try {
+    data = await resp.json();
+  } catch(e) {
+    return toast('Respuesta inválida del servidor.');
+  }
+
+  if (resp.ok && data.ok && data.redirect_url) {
+    window.location.href = data.redirect_url;
+  } else {
+    toast(data?.error || 'No se pudo facturar.');
+  }
+});
+
+
+  // listeners por fila
+  $$('#tbody tr').forEach(tr=>{
+    const pid = tr.dataset.id;
+    const precioEl = $('.inp-precio', tr);
+    const cantEl   = $('.inp-cant', tr);
+    const ivaEl    = $('.chk-iva', tr);
+    const descEl   = $('.inp-desc', tr);
+    const delBtn   = $('.btn-del', tr);
+
+    async function push(){
+      const r = rid(); if(!r) return;
+      const params = new URLSearchParams({
+        receptor_id:r,
+        producto_id:pid,
+        precio: precioEl.value,
+        cantidad: cantEl.value,
+        iva_on: ivaEl.checked ? '1':'0',
+        desc_pct: descEl.value
+      });
+      const resp = await fetch(url('actualizar'), {
+        method: 'POST', headers: { 'X-CSRFToken': csrftoken() }, body: params
+      });
+      if(resp.ok){ location.reload(); } else { alert(await resp.text()); }
+    }
+    precioEl?.addEventListener('change', push);
+    cantEl?.addEventListener('change', push);
+    ivaEl?.addEventListener('change', push);
+    descEl?.addEventListener('change', push);
+
+    delBtn?.addEventListener('click', async ()=>{
+      const r = rid(); if(!r) return;
+      const resp = await fetch(url('quitar'), {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrftoken() },
+        body: new URLSearchParams({ receptor_id:r, producto_id:pid })
+      });
+      if(resp.ok){ location.reload(); } else { alert(await resp.text()); }
+    });
+  });
+
+})();
+</script>
+
+<script>
+(function(){
+  const $ = (s, x=document) => x.querySelector(s);
+  const menu  = $('#productoPickerMenu');
+  const input = $('#productoPickerInput'); 
+  const qtyEl = $('#qty');
+  const receptorSel = $('#receptor');
+  const API_URL = "{% url 'api_productos' %}"; // ajusta si tu nombre de URL es distinto
+
+  let items = [], active = -1, selected = null, t;
+
+  function show(){ menu.style.display = 'block'; }
+  function hide(){ menu.style.display = 'none'; }
+  function render(){
+    if(!items.length){ menu.innerHTML = '<div class="p-2 text-muted">Sin resultados</div>'; return; }
+    menu.innerHTML = items.map((it,i)=>`
+      <div class="combo-item ${i===active?'bg-light':''} p-2" data-i="${i}" style="cursor:pointer">
+        <div class="d-flex justify-content-between">
+          <div>
+            <div class="fw-semibold">${escapeHtml(it.nombre)}</div>
+            <div class="small ${(+it.stock)<=0?'text-danger':'text-success'}">#${escapeHtml(it.codigo||'-')} · Stock: ${Number.isFinite(+it.stock)?it.stock:'-'}</div>
+          </div>
+          <span class="badge text-bg-light">$${(+it.precio).toFixed(2)}</span>
+        </div>
+      </div>
+    `).join('');
+    menu.querySelectorAll('.combo-item').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        choose(+el.dataset.i);
+      });
+    });
+  }
+  function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+
+  async function search(q){
+    try{
+      const url = `${API_URL}?q=${encodeURIComponent(q)}&page_size=20`;
+      const res = await fetch(url, {headers:{'X-Requested-With':'XMLHttpRequest'}});
+      const data = await res.json();
+      items = (data.results||[]).map(p=>{
+        const precio = parseFloat(p.precio||'0')||0;
+        const neto = p.con_iva ? (precio/1.13) : precio; // normaliza a neto
+        return { id:p.id, codigo:p.codigo, nombre:p.nombre||p.descripcion, precio:neto, stock:p.stock||0 };
+      });
+      active = items.length ? 0 : -1;
+      render(); show();
+    }catch(_e){
+      items = []; active = -1; render(); show();
+    }
+  }
+
+  function choose(i){
+    selected = items[i] || null;
+    if(selected){
+      input.value = `${selected.codigo} | ${selected.nombre}`;
+      hide();
+    }
+  }
+
+  input.addEventListener('input', e=>{
+    clearTimeout(t);
+    t = setTimeout(()=> search(e.target.value.trim()), 200);
+  });
+  input.addEventListener('keydown', e=>{
+    if(e.key==='ArrowDown'){ e.preventDefault(); if(!items.length) return; active=(active+1)%items.length; render(); show(); }
+    else if(e.key==='ArrowUp'){ e.preventDefault(); if(!items.length) return; active=(active-1+items.length)%items.length; render(); show(); }
+    else if(e.key==='Enter'){ e.preventDefault(); if(active>=0) choose(active); }
+    else if(e.key==='Escape'){ hide(); }
+  });
+  document.addEventListener('click', (e)=>{ if(!menu.contains(e.target) && e.target!==input) hide(); });
+
+  // “Agregar” seleccionado al carrito
+  $('#btnAdd')?.addEventListener('click', async ()=>{
+    if(!receptorSel?.value){ alert('Selecciona un cliente primero'); return; }
+    if(!selected){ input.focus(); return; }
+    const fd = new URLSearchParams({
+      receptor_id: receptorSel.value,
+      producto_id: selected.id,
+      cantidad: String(Math.max(1, parseInt(qtyEl.value||'1',10)))
+    });
+    const resp = await fetch("{% url 'carrito_agregar' %}", {
+      method:'POST',
+      headers:{'X-CSRFToken': (document.cookie.match(/csrftoken=([^;]+)/)||[])[1]||''},
+      body: fd
+    });
+    if(resp.ok){ window.location.reload(); } else { alert(await resp.text()); }
+  });
+})();
+</script>
+
+{% endblock %}

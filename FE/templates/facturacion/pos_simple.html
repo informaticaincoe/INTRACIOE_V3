@@ -1,0 +1,571 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container py-3">
+  <form method="post" action="" id="form-pos" autocomplete="off">
+    {% csrf_token %}
+
+    <!-- Encabezado compacto -->
+    <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+      <div class="me-auto">
+        <h4 class="mb-0">Facturación rápida</h4>
+        <small class="text-muted">Flujo simple: documento → cliente → productos → pago → extras</small>
+      </div>
+
+      <!-- Número / Código (solo lectura si lo envías desde la vista) -->
+      <div class="text-end">
+        {% if numero_control %}
+          <div class="small text-muted">No. control</div>
+          <div class="fw-semibold">{{ numero_control }}</div>
+          <input type="hidden" name="numero_control" value="{{ numero_control }}">
+        {% endif %}
+        {% if codigo_generacion %}
+          <input type="hidden" name="codigo_generacion" value="{{ codigo_generacion }}">
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <!-- Columna izquierda: flujo principal -->
+      <div class="col-lg-8">
+        <!-- 1) Tipo de documento -->
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="mb-0">1) Tipo de documento</h6>
+              <small class="text-muted">Obligatorio</small>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+              {% for d in tipoDocumentos %}
+                <input type="radio" class="btn-check" name="tipo_documento_seleccionado" id="doc-{{ d.codigo }}" value="{{ d.codigo }}" {% if documento_seleccionado == d.codigo or forloop.first and not documento_seleccionado %}checked{% endif %}>
+                <label class="btn btn-outline-primary" for="doc-{{ d.codigo }}">{{ d.descripcion }}</label>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <!-- 2) Cliente -->
+        <div class="card shadow-sm mt-3">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="mb-0">2) Cliente</h6>
+              <small class="text-muted">Obligatorio</small>
+            </div>
+            <div class="row g-2">
+              <div class="col-md-8">
+                <label class="form-label small mb-1">Seleccione cliente</label>
+                <select name="receptor_id" id="receptor_id" class="form-select" required>
+                  <option value="">— Seleccione —</option>
+                  {% for r in receptores %}
+                    <option value="{{ r.id }}">{{ r.num_documento }} — {{ r.nombre }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small mb-1">Condición</label>
+                <select name="condicion_operacion" id="condicion_op" class="form-select" required>
+                  {% for t in tipooperaciones %}
+                    <option value="{{ t.id }}">{{ t.descripcion }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="small text-muted mt-2">Si necesitas crear/editar clientes, ábrelo en otra pestaña para no perder la venta.</div>
+          </div>
+        </div>
+
+        <!-- 3) Productos -->
+        <div class="card shadow-sm mt-3">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="mb-0">3) Productos</h6>
+              <small class="text-muted">Busca por código o nombre. Enter agrega.</small>
+            </div>
+
+            <!-- Línea de entrada rápida -->
+            <div class="row g-2 align-items-end">
+              <div class="col-md-6">
+                <label class="form-label small mb-1">Producto</label>
+                <input type="text" id="buscarProducto" class="form-control" placeholder="Escanea o escribe..." list="productosList">
+                <datalist id="productosList"><!-- JS inyecta opciones --></datalist>
+                <div class="form-text">Sugerencias automáticas.</div>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label small mb-1">Cant.</label>
+                <input type="number" min="1" value="1" id="cantidadProducto" class="form-control text-center">
+              </div>
+              <div class="col-md-2">
+                <label class="form-label small mb-1">Precio</label>
+                <div class="input-group">
+                  <span class="input-group-text">$</span>
+                  <input type="number" step="0.01" min="0" id="precioProducto" class="form-control">
+                </div>
+              </div>
+              <div class="col-md-2 d-grid">
+                <button type="button" id="btnAgregarProducto" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i> Agregar</button>
+              </div>
+              <div class="col-12">
+                <div class="form-check mt-1">
+                  <input class="form-check-input" type="checkbox" id="aplicaIvaProducto" checked>
+                  <label class="form-check-label" for="aplicaIvaProducto">Aplica IVA (13%)</label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tabla de ítems -->
+            <div class="table-responsive mt-3">
+              <table class="table table-sm align-middle" id="tabla-items">
+                <thead class="table-light">
+                  <tr>
+                    <th style="width:40%">Producto</th>
+                    <th class="text-end" style="width:10%">P. Unit</th>
+                    <th class="text-end" style="width:10%">Cant.</th>
+                    <th class="text-end" style="width:10%">Desc. (%)</th>
+                    <th class="text-center" style="width:10%">IVA</th>
+                    <th class="text-end" style="width:10%">Total</th>
+                    <th class="text-end" style="width:10%"></th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-items">
+                  <tr class="empty">
+                    <td colspan="7" class="text-center text-muted py-3">Sin productos agregados.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 4) Método de pago -->
+        <div class="card shadow-sm mt-3">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="mb-0">4) Método de pago</h6>
+            </div>
+            <div class="row g-2 align-items-center">
+              <div class="col-md-8">
+                <div class="d-flex flex-wrap gap-2">
+                  <input class="btn-check" type="radio" name="metodo_pago" id="mp-efectivo" value="EFECTIVO" checked>
+                  <label class="btn btn-outline-secondary" for="mp-efectivo">Efectivo</label>
+
+                  <input class="btn-check" type="radio" name="metodo_pago" id="mp-tarjeta" value="TARJETA">
+                  <label class="btn btn-outline-secondary" for="mp-tarjeta">Tarjeta</label>
+
+                  <input class="btn-check" type="radio" name="metodo_pago" id="mp-transfer" value="TRANSFERENCIA">
+                  <label class="btn btn-outline-secondary" for="mp-transfer">Transferencia</label>
+
+                  <input class="btn-check" type="radio" name="metodo_pago" id="mp-credito" value="CREDITO">
+                  <label class="btn btn-outline-secondary" for="mp-credito">Crédito</label>
+                </div>
+              </div>
+
+              <!-- Campo recibido / cambio solo para efectivo -->
+              <div class="col-md-4" id="wrap-efectivo">
+                <div class="input-group">
+                  <span class="input-group-text">Recibido</span>
+                  <input type="number" step="0.01" min="0" class="form-control" id="montoRecibido" value="">
+                </div>
+                <div class="small mt-1">Cambio: <span id="montoCambio">$0.00</span></div>
+              </div>
+
+              <!-- Campos crédito -->
+              <div class="col-12 mt-2" id="wrap-credito" style="display:none">
+                <div class="row g-2">
+                  <div class="col-md-3">
+                    <label class="form-label small mb-1">Días crédito</label>
+                    <input type="number" name="dias_credito" id="dias_credito" class="form-control" value="30" min="1">
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label small mb-1">Fecha venc.</label>
+                    <input type="date" name="fecha_vencimiento" id="fecha_vencimiento" class="form-control">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small mb-1">Notas de pago</label>
+                    <input type="text" name="notas_pago" class="form-control" placeholder="Opcional">
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- 5) Extras (colapsable) -->
+        <div class="card shadow-sm mt-3">
+          <div class="card-body">
+            <a class="d-flex align-items-center justify-content-between text-decoration-none" data-bs-toggle="collapse" href="#extrasCollapse" role="button" aria-expanded="false" aria-controls="extrasCollapse">
+              <h6 class="mb-0">5) Extras</h6>
+              <i class="bi bi-chevron-down"></i>
+            </a>
+            <div class="collapse mt-3" id="extrasCollapse">
+              <div class="row g-3">
+                <!-- Retenciones -->
+                <div class="col-md-6">
+                  <div class="border rounded p-3">
+                    <div class="form-check form-switch mb-2">
+                      <input class="form-check-input" type="checkbox" id="ret_iva_sw">
+                      <label class="form-check-label" for="ret_iva_sw">Retención IVA</label>
+                    </div>
+                    <div class="row g-2">
+                      <div class="col-6">
+                        <label class="form-label small mb-1">Porcentaje</label>
+                        <input type="number" step="0.01" min="0" id="ret_iva_pct" class="form-control" value="1.00">
+                      </div>
+                      <div class="col-6">
+                        <label class="form-label small mb-1">Monto</label>
+                        <input type="number" step="0.01" min="0" id="ret_iva_mto" class="form-control" value="0.00">
+                      </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <div class="form-check form-switch mb-2">
+                      <input class="form-check-input" type="checkbox" id="ret_renta_sw">
+                      <label class="form-check-label" for="ret_renta_sw">Retención Renta</label>
+                    </div>
+                    <div class="row g-2">
+                      <div class="col-6">
+                        <label class="form-label small mb-1">Porcentaje</label>
+                        <input type="number" step="0.01" min="0" id="ret_renta_pct" class="form-control" value="10.00">
+                      </div>
+                      <div class="col-6">
+                        <label class="form-label small mb-1">Monto</label>
+                        <input type="number" step="0.01" min="0" id="ret_renta_mto" class="form-control" value="0.00">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Documentos Relacionados / Extensión -->
+                <div class="col-md-6">
+                  <div class="border rounded p-3">
+                    <label class="form-label small">Documento relacionado (opcional)</label>
+                    <input type="text" name="doc_relacionado_codigo" class="form-control mb-2" placeholder="Código generación o referencia física">
+                    <label class="form-label small mb-1">Extensión (responsable)</label>
+                    <div class="row g-2">
+                      <div class="col-6">
+                        <input type="text" name="resp_nombre_input" class="form-control" placeholder="Nombre responsable">
+                      </div>
+                      <div class="col-6">
+                        <input type="text" name="resp_documento_input" class="form-control" placeholder="DUI/NIT">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div><!-- row -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Columna derecha: Totales y emitir -->
+      <div class="col-lg-4">
+        <div class="card shadow-sm sticky-top" style="top: 76px;">
+          <div class="card-body">
+            <h6 class="mb-3">Resumen</h6>
+
+            <div class="d-flex justify-content-between small">
+              <span>SubTotal Neto</span>
+              <strong id="sum_subtotal">$0.00</strong>
+            </div>
+            <div class="d-flex justify-content-between small">
+              <span>IVA</span>
+              <strong id="sum_iva">$0.00</strong>
+            </div>
+            <div class="d-flex justify-content-between small">
+              <span>Descuentos</span>
+              <strong id="sum_desc">$0.00</strong>
+            </div>
+            <hr>
+            <div class="d-flex justify-content-between fs-5">
+              <span>Total a pagar</span>
+              <strong id="sum_total">$0.00</strong>
+            </div>
+
+            <!-- inputs ocultos para el backend -->
+            <div id="hidden-items"></div>
+            <input type="hidden" name="retencion_iva_monto" id="retencion_iva_monto">
+            <input type="hidden" name="retencion_renta_monto" id="retencion_renta_monto">
+
+            <div class="d-grid mt-3">
+              <button type="submit" class="btn btn-primary btn-lg">
+                <i class="bi bi-check2-circle me-1"></i> Generar DTE
+              </button>
+              <button type="button" class="btn btn-light mt-2" id="btnBorrador">
+                Guardar borrador
+              </button>
+            </div>
+            <div class="small text-muted mt-2">Atajos: Enter agrega producto · F9 genera · ESC limpia línea.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Script POS simple (sin modales) -->
+<script>
+(function(){
+  // ----- Estado -----
+  const state = {
+    items: [], // {id, codigo, nombre, precio, cantidad, desc_pct, aplica_iva}
+    lastResults: [], // resultados de la API para datalist
+    apiUrl: "{% url 'api_productos' %}",
+  };
+
+  // ----- Helpers DOM -----
+  const el = (id) => document.getElementById(id);
+  const tbody = el('tbody-items');
+  const hiddenItems = el('hidden-items');
+
+  // ----- Búsqueda productos -----
+  const buscarInput = el('buscarProducto');
+  const datalist = document.getElementById('productosList');
+  let searchTimer = null;
+
+  function loadSugerencias(q){
+    const url = state.apiUrl + '?q=' + encodeURIComponent(q) + '&page_size=20';
+    fetch(url, { headers: {'X-Requested-With': 'XMLHttpRequest'} })
+      .then(r=>r.json())
+      .then(data=>{
+        state.lastResults = data.results || [];
+        datalist.innerHTML = (state.lastResults.map(p => {
+          const v = `${p.codigo} | ${p.nombre}`;
+          return `<option value="${v}"></option>`;
+        }).join(''));
+      });
+  }
+
+  buscarInput.addEventListener('input', (e)=>{
+    const q = e.target.value.trim();
+    clearTimeout(searchTimer);
+    if (!q) { datalist.innerHTML=''; state.lastResults=[]; return; }
+    searchTimer = setTimeout(() => loadSugerencias(q), 200);
+  });
+
+  // ----- Agregar línea -----
+  const btnAdd = el('btnAgregarProducto');
+  const qtyInput = el('cantidadProducto');
+  const priceInput = el('precioProducto');
+  const ivaChk = el('aplicaIvaProducto');
+
+  function pickProductoFromInput(){
+    const val = buscarInput.value.trim();
+    if (!val) return null;
+
+    // Si val es "CODIGO | NOMBRE", intenta exacto por código
+    const code = val.split('|')[0].trim();
+    let found = state.lastResults.find(p => (p.codigo||'').toLowerCase() === code.toLowerCase());
+
+    // Si no, y si solo vino un resultado, úsalo
+    if (!found && state.lastResults.length === 1) found = state.lastResults[0];
+
+    // Fallback: intenta coincidencia por nombre
+    if (!found) {
+      found = state.lastResults.find(p => (p.nombre||'').toLowerCase() === val.toLowerCase());
+    }
+    return found || null;
+  }
+
+  function addItem(){
+    const sel = pickProductoFromInput();
+    if (!sel) return;
+
+    const cant = Math.max(1, parseInt(qtyInput.value||'1',10));
+    const precio = parseFloat(priceInput.value || sel.precio || '0') || 0;
+    const aplicaIva = !!ivaChk.checked;
+
+    // Si ya existe el ítem, acumula cantidad
+    const idx = state.items.findIndex(x => x.id === sel.id);
+    if (idx >= 0) {
+      state.items[idx].cantidad += cant;
+      if (!priceInput.value) state.items[idx].precio = +sel.precio; // respeta precio catálogo si no escribieron
+    } else {
+      state.items.push({
+        id: sel.id,
+        codigo: sel.codigo,
+        nombre: sel.nombre,
+        precio: precio,
+        cantidad: cant,
+        desc_pct: 0,
+        aplica_iva: aplicaIva
+      });
+    }
+
+    // Limpieza rápida
+    buscarInput.value = '';
+    qtyInput.value = 1;
+    if (!priceInput.dataset.sticky) priceInput.value = '';
+
+    renderItems();
+    calcTotals();
+    buscarInput.focus();
+  }
+
+  btnAdd.addEventListener('click', addItem);
+  buscarInput.addEventListener('keydown', (e)=>{
+    if (e.key === 'Enter') { e.preventDefault(); addItem(); }
+    if (e.key === 'Escape') { e.preventDefault(); buscarInput.value=''; }
+  });
+
+  // Mantener precio mientras el usuario escribe (para no limpiarlo al agregar)
+  priceInput.addEventListener('input', ()=> priceInput.dataset.sticky = priceInput.value ? '1' : '');
+
+  // ----- Render de tabla -----
+  function fmt(n){ return '$' + (Number(n||0).toFixed(2)); }
+
+  function renderItems(){
+    if (state.items.length === 0) {
+      tbody.innerHTML = `<tr class="empty"><td colspan="7" class="text-center text-muted py-3">Sin productos agregados.</td></tr>`;
+      hiddenItems.innerHTML = '';
+      return;
+    }
+    tbody.innerHTML = state.items.map((it, i) => {
+      return `
+        <tr data-idx="${i}">
+          <td>
+            <div class="fw-semibold">${escapeHtml(it.nombre)}</div>
+            <div class="small text-muted">#${escapeHtml(it.codigo||'-')}</div>
+            <input type="hidden" name="item_id[]" value="${it.id}">
+          </td>
+          <td class="text-end">
+            <input type="number" step="0.01" min="0" class="form-control form-control-sm text-end inp-precio" value="${(+it.precio).toFixed(2)}" aria-label="Precio unitario">
+          </td>
+          <td class="text-end">
+            <input type="number" min="1" class="form-control form-control-sm text-end inp-cant" value="${it.cantidad}" aria-label="Cantidad">
+          </td>
+          <td class="text-end">
+            <input type="number" min="0" max="100" class="form-control form-control-sm text-end inp-desc" value="${it.desc_pct}" aria-label="Descuento (%)">
+          </td>
+          <td class="text-center">
+            <input class="form-check-input chk-iva" type="checkbox" ${it.aplica_iva ? 'checked':''} aria-label="Aplica IVA">
+          </td>
+          <td class="text-end cel-total">${fmt(lineTotal(it))}</td>
+          <td class="text-end">
+            <button type="button" class="btn btn-sm btn-outline-danger btn-del"><i class="bi bi-x-lg"></i></button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    // listeners por fila
+    tbody.querySelectorAll('tr').forEach(tr=>{
+      const idx = +tr.dataset.idx;
+      tr.querySelector('.inp-precio').addEventListener('input', (e)=>{
+        state.items[idx].precio = parseFloat(e.target.value||'0')||0; tr.querySelector('.cel-total').textContent = fmt(lineTotal(state.items[idx])); calcTotals();
+      });
+      tr.querySelector('.inp-cant').addEventListener('input', (e)=>{
+        state.items[idx].cantidad = Math.max(1, parseInt(e.target.value||'1',10)); tr.querySelector('.cel-total').textContent = fmt(lineTotal(state.items[idx])); calcTotals();
+      });
+      tr.querySelector('.inp-desc').addEventListener('input', (e)=>{
+        let v = parseFloat(e.target.value||'0')||0; v = Math.max(0, Math.min(100, v)); state.items[idx].desc_pct = v; tr.querySelector('.cel-total').textContent = fmt(lineTotal(state.items[idx])); calcTotals();
+      });
+      tr.querySelector('.chk-iva').addEventListener('change', (e)=>{
+        state.items[idx].aplica_iva = e.target.checked; tr.querySelector('.cel-total').textContent = fmt(lineTotal(state.items[idx])); calcTotals();
+      });
+      tr.querySelector('.btn-del').addEventListener('click', ()=>{
+        state.items.splice(idx,1); renderItems(); calcTotals();
+      });
+    });
+
+    // hidden inputs para backend
+    hiddenItems.innerHTML = state.items.map(it => `
+      <input type="hidden" name="item_cantidad[]" value="${it.cantidad}">
+      <input type="hidden" name="item_precio[]" value="${(+it.precio).toFixed(2)}">
+      <input type="hidden" name="item_descuento[]" value="${it.desc_pct}">
+      <input type="hidden" name="item_iva[]" value="${it.aplica_iva ? '1':'0'}">
+    `).join('');
+  }
+
+  function lineTotal(it){
+    const subtotal = (+it.precio) * it.cantidad;
+    const desc = subtotal * (Math.min(100, Math.max(0, +it.desc_pct))/100);
+    const base = subtotal - desc;
+    const iva = it.aplica_iva ? base * 0.13 : 0;
+    return base + iva;
+  }
+
+  // ----- Totales -----
+  const sumSub = document.getElementById('sum_subtotal');
+  const sumIva = document.getElementById('sum_iva');
+  const sumDesc = document.getElementById('sum_desc');
+  const sumTot = document.getElementById('sum_total');
+
+  function calcTotals(){
+    let subtotal = 0, descuentos = 0, iva = 0, total = 0;
+    state.items.forEach(it=>{
+      const st = (+it.precio) * it.cantidad;
+      const ds = st * (Math.min(100, Math.max(0, +it.desc_pct))/100);
+      const base = st - ds;
+      const iv = it.aplica_iva ? base * 0.13 : 0;
+      subtotal += base;
+      descuentos += ds;
+      iva += iv;
+      total += base + iv;
+    });
+
+    // Retenciones manuales (si el usuario pone monto, se resta del total)
+    const retIvaOn = el('ret_iva_sw')?.checked;
+    const retRentaOn = el('ret_renta_sw')?.checked;
+    let retIvaMto = retIvaOn ? parseFloat(el('ret_iva_mto').value||'0')||0 : 0;
+    let retRentaMto = retRentaOn ? parseFloat(el('ret_renta_mto').value||'0')||0 : 0;
+
+    sumSub.textContent = fmt(subtotal);
+    sumIva.textContent = fmt(iva);
+    sumDesc.textContent = fmt(descuentos);
+    sumTot.textContent = fmt(total - retIvaMto - retRentaMto);
+
+    // guarda hidden
+    el('retencion_iva_monto').value = retIvaMto.toFixed(2);
+    el('retencion_renta_monto').value = retRentaMto.toFixed(2);
+
+    // cambio si efectivo
+    if (document.querySelector('input[name="metodo_pago"]:checked')?.value === 'EFECTIVO') {
+      const recibido = parseFloat(el('montoRecibido').value||'0')||0;
+      const cambio = Math.max(0, recibido - (total - retIvaMto - retRentaMto));
+      el('montoCambio').textContent = fmt(cambio);
+    }
+  }
+
+  ['ret_iva_sw','ret_iva_mto','ret_renta_sw','ret_renta_mto','montoRecibido'].forEach(id=>{
+    el(id)?.addEventListener('input', calcTotals);
+    el(id)?.addEventListener('change', calcTotals);
+  });
+
+  // ----- Método de pago toggles -----
+  function togglePago(){
+    const mp = document.querySelector('input[name="metodo_pago"]:checked')?.value;
+    el('wrap-efectivo').style.display = (mp === 'EFECTIVO') ? '' : 'none';
+    el('wrap-credito').style.display  = (mp === 'CREDITO')  ? '' : 'none';
+    calcTotals();
+  }
+  document.querySelectorAll('input[name="metodo_pago"]').forEach(r => r.addEventListener('change', togglePago));
+  togglePago();
+
+  // ----- Submit -----
+  document.getElementById('form-pos').addEventListener('submit', (e)=>{
+    if (state.items.length === 0) {
+      e.preventDefault();
+      alert('Agrega al menos un producto.');
+      buscarInput.focus();
+      return;
+    }
+    // aquí ya llevas los arrays item_* para tu vista existente
+  });
+
+  // util
+  function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+
+  // Atajos sencillos
+  document.addEventListener('keydown', (e)=>{
+    if (e.key === 'F9') { e.preventDefault(); document.getElementById('form-pos').requestSubmit(); }
+  });
+
+})();
+</script>
+
+{% endblock %}

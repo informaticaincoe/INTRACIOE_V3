@@ -471,6 +471,13 @@ export interface Descuento {
   estdo: boolean;
 }
 
+export interface Secuencias {
+  id: number;
+  anio: number;
+  secuencia: number;
+  tipo_dte: string;
+}
+
 export const DescuentoDefault = {
   id: 0,
   porcentaje: 0,
@@ -478,6 +485,13 @@ export const DescuentoDefault = {
   fecha_inicio: '',
   fecha_fin: '',
   estdo: false,
+};
+
+export const SecuenciasDefault = {
+  id: 0,
+  anio: 0,
+  secuencia: 0,
+  tipo_dte: '',
 };
 
 export interface FacturaDetalleItem {
@@ -559,6 +573,8 @@ export interface PagoPayload {
 }
 
 export interface OtrosDocumentosAsociados {
+  id: string,
+  nombreDocAsociado:string,
   codDocAsociado: any,
   descDocumento?: any,
   detalleDocumento?:any,
@@ -566,4 +582,11 @@ export interface OtrosDocumentosAsociados {
   placaTrans?: any,
   numConductor?:any,
   nombreConductor?:any,
+  descripcionTipo?: string;
+}
+
+export interface OtrosDocumentosAsociadosResponse {
+  id: string,
+  codigo: string,
+  descripcion: string
 }

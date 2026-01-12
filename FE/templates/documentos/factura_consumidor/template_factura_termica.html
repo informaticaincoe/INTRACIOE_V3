@@ -1,0 +1,203 @@
+{% load static %}
+{% load qr_tags %}
+{% load i18n %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Factura Térmica</title>
+  <style>
+    body {
+      font-family: monospace, sans-serif;
+      font-size: 11px;
+      width: 80mm;
+      margin: auto auto;
+      color: #000;
+    }
+    .center { text-align: center; }
+    .right { text-align: right; }
+    .line { border-top: 1px dashed #000; margin: 4px 0; }
+    img.logo { max-width: 60px; margin-bottom: 5px; }
+    img.qr { max-width: 80px; display:block; margin: 3px auto; }
+    table { width: 100%; border-collapse: collapse; }
+    td, th { padding: 2px 0; }
+    th { border-bottom: 1px solid #000; }
+    .totales td { padding: 2px 0; }
+    @media print {
+      .btn-print, .noprint { display: none !important; }
+      @page { size: 80mm auto; margin: auto; }
+    }
+    /* --- Promo / catálogo --- */
+  .promo { margin-top: 6px; }
+  .promo .title { font-weight: bold; display:block; margin: 4px 0 2px; }
+  .promo .mono-link { font-weight: bold; word-break: break-all; }
+  .promo small { display:block; margin-top: 2px; }
+  img.qr-sm { max-width: 80px; display:block; margin: 3px auto; }
+
+  .qr-row{ display:flex; justify-content:space-between; gap:4px; margin-top:4px; }
+  .qr-col{ width:calc(33.333% - 4px); text-align:center; }
+  .qr-col img{ width:100%; display:block; margin:0 auto; }
+    </style>
+</head>
+<body>
+
+
+  <div class="center">
+    <img src="{% static 'img/logo_empresa.png' %}" class="logo" alt="Logo">
+    <div><h2>{{ factura.dteemisor.nombre_comercial }}</h2></div>
+    <br
+    <div>{{ factura.dteemisor.direccion_comercial }}</div>
+    <div>Tel: {{ factura.dteemisor.telefono }}</div>
+    <div>NIT: {{ factura.dteemisor.nit }}</div>
+    <div>NRC: {{ factura.dteemisor.nrc }}</div>
+  </div>
+  <div class="line"></div>
+  <div class="line"></div>
+  <div><strong>DTE:</strong> {{ factura.numero_control }}</div><br>
+  <div><strong>Código:</strong>{{ factura.codigo_generacion|upper }}</div><br>
+  <div><strong>Sello:</strong>{{ factura.sello_recepcion|upper }}</div><br>
+  <div><strong>Fecha y Hora:</strong> {{ factura.fecha_emision|date:"d/m/Y" }} {{ factura.hora_emision }}</div>
+  <br>
+  <div><strong>Tipo de Contribuyente:</strong> {{ factura.dteemisor.tipoContribuyente }}</div>
+  <div><strong>Tipo:</strong> {{ factura.tipotransmision.descripcion }}</div>
+  <div><strong>Modelo:</strong> {{ factura.tipomodelo.descripcion }}</div>
+  <div class="line"></div>
+  <div class="line"></div>
+
+  <div>
+    <strong>Cliente:</strong> {{ factura.dtereceptor.nombre }}<br>
+    <strong>Documento:</strong> {{ factura.dtereceptor.num_documento }}<br>
+    <strong>Tel:</strong> {{ factura.dtereceptor.telefono }}<br>
+    <strong>Dirección:</strong> {{ factura.dtereceptor.direccion }}
+
+  </div>
+  <div class="line"></div>
+  <div class="line"></div>
+  <table>
+    <thead>
+      <tr>
+        <th>Cant</th>
+        <th>Desc</th>
+        <th class="right">P.Uni</th>
+        <th class="right">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in factura.json_original.cuerpoDocumento %}
+      <tr>
+        <td>{{ item.cantidad }}</td>
+        <td>{{ item.descripcion|truncatechars:20 }}</td>
+        <td class="right">${{ item.precioUni|floatformat:2 }}</td>
+        <td class="right">${{ item.ventaGravada|floatformat:2 }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="line"></div>
+
+  <table class="totales">
+    <tr><td>Sub Total</td><td class="right">${{ factura.sub_total|floatformat:2 }}</td></tr>
+    <tr><td>IVA</td><td class="right">${{ factura.total_iva|floatformat:2 }}</td></tr>
+    {% if factura.retencion_renta and factura.retencion_renta > 0 %}
+    <tr><td>Ret. Renta</td><td class="right">- ${{ factura.retencion_renta|floatformat:2 }}</td></tr>
+    {% endif %}
+    {% if factura.iva_retenido and factura.iva_retenido > 0 %}
+    <tr><td>Ret. IVA</td><td class="right">- ${{ factura.iva_retenido|floatformat:2 }}</td></tr>
+    {% endif %}
+    <tr><td><strong>Total</strong></td><td class="right"><strong>${{ factura.total_pagar|floatformat:2 }}</strong></td></tr>
+  </table>
+  <br>
+
+  <div><em><strong>Son: {{ factura.json_original.resumen.totalLetras }}</strong></em></div>
+
+  <br>
+
+  {% if factura.json_original.resumen.pagos.0 %}
+    <div class="mt xs">
+      <span class="bold">Pago:</span>
+      Cód {{ factura.json_original.resumen.pagos.0.codigo }}
+      · ${{ factura.total_pagar|floatformat:2 }}
+    </div>
+  {% endif %}
+
+  <div class="cut xs">
+     <br>
+    Gracias por su compra
+  </div>
+
+  <br>
+  
+<div class="line"></div>
+<div class="qr-row">
+  <div class="qr-col">
+    <img src="{% qr_src 'https://admin.factura.gob.sv/consultaPublica' 90 1 'M' %}" alt="QR Consulta pública">
+    <small>Consulta pública</small>
+  </div>
+  <div class="qr-col">
+    <img src="{% qr_src factura.codigo_generacion|upper 90 1 'M' %}" alt="QR Código">
+    <small>Código</small>
+  </div>
+  <div class="qr-col">
+    <img src="{% qr_src factura.sello_recepcion|upper 90 1 'M' %}" alt="QR Sello">
+    <small>Sello</small>
+  </div>
+</div>
+<div class="center">
+  <small>Documento Tributario Electrónico</small><br>
+  <small>Generado por INTRACOE</small>
+</div>
+  <div class="line"></div>
+
+<div class=" promo">
+  <span class="title">¡Conoce nuestro catálogo!</span>
+  <div>Visita:</div>
+  <div class="mono-link">
+   incoe.net/category/all-products
+  </div>
+  <br>
+  <small>WhatsApp: +503 7069 5594</small>
+  <small>Facebook: INCOE</small>
+  <small>Instagram: @INCOE</small>
+  <small>Tel: +503 2345 3900</small>
+  <small>Web: incoe.net</small>
+</div>
+
+
+  <div class="noprint center mt">
+      <div class="line"></div>
+    <button onclick="triggerPrint()" style="font-size:14px;padding:6px 10px">
+      Imprimir
+    </button>
+  </div>
+
+
+<script>
+  function triggerPrint() {
+    const url = String(location.href); // siempre la URL actual
+    const hasAndroid = !!(window.AndroidPrinter && typeof AndroidPrinter.printFactura === 'function');
+
+    if (hasAndroid) {
+      try {
+        AndroidPrinter.printFactura(url);
+      } catch (e) {
+        alert("No se pudo invocar AndroidPrinter: " + e);
+      }
+    } else {
+      // No estás dentro de la app (o estás en una WebView sin el puente)
+      // usa el print normal del navegador
+      window.print();
+    }
+  }
+
+  (function auto(){
+    const usp = new URLSearchParams(location.search);
+    if (usp.get('autoprint') === '1') {
+      setTimeout(triggerPrint, 200);
+    }
+  })();
+</script>
+
+
+</body>
+</html>

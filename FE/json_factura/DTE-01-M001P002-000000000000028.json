@@ -1,0 +1,148 @@
+{
+  "emisor": {
+    "nit": "06142811001040",
+    "nrc": "1278913",
+    "correo": "informatica@grupoincoe.com",
+    "nombre": "Inversiones Comerciales Escobar SA de CV",
+    "telefono": "77462310",
+    "direccion": {
+      "municipio": "25",
+      "complemento": "Carretera a Sonsonate, km 27 ½ Zona Industrial Lourdes, Calle Antigua Hda, La Libertad, El Salvador C.A",
+      "departamento": "05"
+    },
+    "codEstable": "0001",
+    "codActividad": "46375",
+    "codEstableMH": "M001",
+    "codPuntoVenta": "0001",
+    "descActividad": "Venta al por  mayor de productos lácteos",
+    "codPuntoVentaMH": "P002",
+    "nombreComercial": "Inversiones Comerciales Escobar SA de CV",
+    "tipoEstablecimiento": "02"
+  },
+  "resumen": {
+    "pagos": [
+      {
+        "plazo": null,
+        "codigo": "01",
+        "periodo": null,
+        "montoPago": 7.4,
+        "referencia": null
+      }
+    ],
+    "ivaRete1": 0.0,
+    "subTotal": 7.4,
+    "totalIva": 0.85,
+    "tributos": null,
+    "reteRenta": 0.0,
+    "descuNoSuj": 0.0,
+    "saldoFavor": 0.0,
+    "totalDescu": 0.0,
+    "totalNoSuj": 0.0,
+    "totalPagar": 7.4,
+    "descuExenta": 0.0,
+    "totalExenta": 0.0,
+    "totalLetras": "Ocho con 37/100 USD",
+    "descuGravada": 0.0,
+    "totalGravada": 7.4,
+    "subTotalVentas": 7.4,
+    "totalNoGravado": 0.0,
+    "condicionOperacion": 3,
+    "numPagoElectronico": null,
+    "montoTotalOperacion": 7.4,
+    "porcentajeDescuento": 0.0
+  },
+  "apendice": null,
+  "receptor": {
+    "nrc": null,
+    "correo": "ventasdetalleincoe@gmail.com",
+    "nombre": "Ruta mayoreo",
+    "telefono": "77462310",
+    "direccion": {
+      "municipio": "25",
+      "complemento": "Lourdes",
+      "departamento": "05"
+    },
+    "codActividad": "10005",
+    "numDocumento": "01397103-2",
+    "descActividad": "Otros",
+    "tipoDocumento": "13"
+  },
+  "extension": {
+    "docuRecibe": null,
+    "nombRecibe": null,
+    "docuEntrega": null,
+    "nombEntrega": null,
+    "observaciones": "",
+    "placaVehiculo": null
+  },
+  "ventaTercero": null,
+  "identificacion": {
+    "fecEmi": "2025-09-29",
+    "horEmi": "12:24:18",
+    "tipoDte": "01",
+    "version": 1,
+    "ambiente": "01",
+    "tipoModelo": 1,
+    "tipoMoneda": "USD",
+    "motivoContin": null,
+    "numeroControl": "DTE-01-M001P002-000000000000028",
+    "tipoOperacion": 1,
+    "codigoGeneracion": "B93194D4-C332-4316-92FF-95369DAEB5A7",
+    "tipoContingencia": null
+  },
+  "cuerpoDocumento": [
+    {
+      "psv": 2.12,
+      "codigo": "PCH068.1",
+      "ivaItem": 0.24,
+      "numItem": 1,
+      "cantidad": 1.0,
+      "tipoItem": 1,
+      "tributos": null,
+      "noGravado": 0.0,
+      "precioUni": 2.12,
+      "uniMedida": 59,
+      "codTributo": null,
+      "montoDescu": 0.0,
+      "ventaNoSuj": 0.0,
+      "descripcion": "Tira de 12u de leche de 26g",
+      "ventaExenta": 0.0,
+      "ventaGravada": 2.12,
+      "numeroDocumento": null
+    },
+    {
+      "psv": 0.88,
+      "codigo": "PCH005.1",
+      "ivaItem": 0.61,
+      "numItem": 2,
+      "cantidad": 6.0,
+      "tipoItem": 1,
+      "tributos": null,
+      "noGravado": 0.0,
+      "precioUni": 0.88,
+      "uniMedida": 59,
+      "codTributo": null,
+      "montoDescu": 0.0,
+      "ventaNoSuj": 0.0,
+      "descripcion": "Leche entera ira 120 gramos",
+      "ventaExenta": 0.0,
+      "ventaGravada": 5.28,
+      "numeroDocumento": null
+    }
+  ],
+  "jsonRespuestaMh": {
+    "estado": "PROCESADO",
+    "version": 2,
+    "ambiente": "01",
+    "codigoMsg": "001",
+    "versionApp": 2,
+    "clasificaMsg": "10",
+    "observaciones": [],
+    "selloRecibido": "2025A5AC358D108A43D092930E0E279DD45BIXCX",
+    "descripcionMsg": "RECIBIDO",
+    "fhProcesamiento": "29/09/2025 12:24:19",
+    "codigoGeneracion": "B93194D4-C332-4316-92FF-95369DAEB5A7"
+  },
+  "otrosDocumentos": null,
+  "documentoRelacionado": null
+}

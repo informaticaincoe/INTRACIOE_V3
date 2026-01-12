@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4>Catálogo de productos</h4>
+
+    <div class="d-flex gap-2">
+      <!-- Selector de vista -->
+      <button id="btnVistaLista" class="btn btn-sm btn-outline-primary active">
+        <i class="bi bi-list"></i>
+      </button>
+      <button id="btnVistaGrid" class="btn btn-sm btn-outline-primary">
+        <i class="bi bi-grid"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <form class="d-flex align-items-center gap-2 mb-3" method="get">
+    <select name="receptor_id" id="receptor" class="form-select">
+      <option value="">— Cliente —</option>
+      {% for r in receptores %}
+        <option value="{{ r.id }}" {% if receptor_actual|stringformat:"s" == r.id|stringformat:"s" %}selected{% endif %}>
+          {{ r.num_documento }} — {{ r.nombre }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <input class="form-control" name="q" placeholder="Buscar…" value="{{ q }}">
+    <button class="btn btn-outline-secondary">Buscar</button>
+  </form>
+
+  <!-- Vista LISTA -->
+  <div id="vistaLista" class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Descripción</th>
+          <th>Precio</th>
+          <th>Stock</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in productos %}
+        <tr>
+          <td>{{ p.codigo }}</td>
+          <td>{{ p.descripcion }}</td>
+          <td>${{ p.preunitario }}</td>
+          <td>{{ p.stock }}</td>
+          <td class="text-end">
+            <form class="agregar-carrito" data-pid="{{ p.id }}">
+              <input type="hidden" name="rid" value="{{ receptor_actual }}">
+              <button type="submit" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-cart-plus"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center text-muted">Sin productos</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Vista GRID -->
+  <div id="vistaGrid" class="row g-3 d-none">
+    {% for p in productos %}
+    <div class="col-6 col-md-4 col-lg-3">
+      <div class="card h-100 shadow-sm">
+        {% if p.imagen %}
+          <img src="{{ p.imagen.url }}" class="card-img-top" style="object-fit: cover; height: 160px;">
+        {% else %}
+          <img src="/media/default.jpg" class="card-img-top" style="object-fit: cover; height: 160px;">
+        {% endif %}
+        <div class="card-body d-flex flex-column">
+          <h6 class="card-title">{{ p.descripcion }}</h6>
+          <p class="mb-1 text-muted small">{{ p.codigo }}</p>
+          <p class="fw-bold mb-1">${{ p.preunitario }}</p>
+          <p class="small text-muted">Stock: {{ p.stock }}</p>
+          <form class="agregar-carrito mt-auto" data-pid="{{ p.id }}">
+            <input type="hidden" name="rid" value="{{ receptor_actual }}">
+            <button type="submit" class="btn btn-sm btn-primary w-100">
+              <i class="bi bi-cart-plus"></i> Agregar
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="text-muted small mt-3">
+    Tip: si pasas ?receptor_id=ID en la URL podrás agregar directo al carrito del cliente.
+  </div>
+</div>
+
+<script>
+const receptorSel = document.getElementById('receptor');
+
+// Cambiar vista
+const btnLista = document.getElementById("btnVistaLista");
+const btnGrid = document.getElementById("btnVistaGrid");
+const vistaLista = document.getElementById("vistaLista");
+const vistaGrid = document.getElementById("vistaGrid");
+
+btnLista.addEventListener("click", () => {
+  vistaLista.classList.remove("d-none");
+  vistaGrid.classList.add("d-none");
+  btnLista.classList.add("active");
+  btnGrid.classList.remove("active");
+});
+
+btnGrid.addEventListener("click", () => {
+  vistaLista.classList.add("d-none");
+  vistaGrid.classList.remove("d-none");
+  btnGrid.classList.add("active");
+  btnLista.classList.remove("active");
+});
+
+// Cuando cambie el cliente, recarga con ?receptor_id
+receptorSel?.addEventListener('change', ()=>{
+  const params = new URLSearchParams(window.location.search);
+  if (receptorSel.value) params.set('receptor_id', receptorSel.value);
+  else params.delete('receptor_id');
+  window.location.search = params.toString();
+});
+
+// Sincronizar hidden "rid" en todos los forms
+function syncRidHidden(){
+  document.querySelectorAll('form.agregar-carrito input[name="rid"]').forEach(h=>{
+    h.value = receptorSel?.value || '';
+  });
+}
+syncRidHidden();
+receptorSel?.addEventListener('change', syncRidHidden);
+
+// Acción de agregar
+document.querySelectorAll('form.agregar-carrito').forEach(f=>{
+  f.addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const pid = f.dataset.pid;
+    const rid = (new FormData(f)).get('rid');
+    if(!rid){ alert('Seleccione un cliente.'); return; }
+    window.location.href = "{% url 'carrito_add_go' %}" +
+      "?pid=" + encodeURIComponent(pid) +
+      "&rid=" + encodeURIComponent(rid) +
+      "&qty=1";
+  });
+});
+</script>
+{% endblock %}

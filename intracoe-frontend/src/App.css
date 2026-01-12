@@ -40,3 +40,9 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Forzar el toggle del acordeón a la derecha */
+:accordeon-documentos .p-accordion-header .p-accordion-header-link {
+  flex-direction: row-reverse !important;
+  justify-content: space-between !important;
+}

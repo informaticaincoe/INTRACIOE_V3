@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container my-4">
+  <div class="d-flex align-items-center mb-3">
+    <h4 class="mb-0">Reporte Facturación · INCOE</h4>
+    <div class="ms-auto">
+      <a class="btn btn-success btn-sm" href="?{{ qs_no_page }}&export=excel">
+        <i class="bi bi-file-earmark-excel me-1"></i> Exportar Excel
+      </a>
+    </div>
+  </div>
+
+  <form class="card card-body shadow-sm mb-3" method="get">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label">Desde</label>
+        <input type="date" name="fini" value="{{ fini }}" class="form-control">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Hasta</label>
+        <input type="date" name="ffin" value="{{ ffin }}" class="form-control">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Buscar (No. control / Sello / Código)</label>
+        <input type="text" name="q" value="{{ buscar }}" class="form-control" placeholder="Texto a buscar…">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Por página</label>
+        <input type="number" min="5" name="per_page" value="{{ per_page }}" class="form-control">
+      </div>
+      <div class="col-12">
+        <label class="form-label">Tipo de documento</label>
+        <div class="d-flex flex-wrap gap-3">
+          {% for v, lbl in tipos_opciones %}
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="{{ v }}" name="tipo" id="t{{ v }}" {% if v in tipos %}checked{% endif %}>
+            <label class="form-check-label" for="t{{ v }}">{{ lbl }}</label>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="col-12">
+        <button class="btn btn-primary">
+          <i class="bi bi-funnel me-1"></i> Filtrar
+        </button>
+        {% if page_obj.paginator.count %}
+        <span class="ms-3 text-muted">
+          {{ page_obj.paginator.count }} resultado{{ page_obj.paginator.count|pluralize:"s" }}
+        </span>
+        {% endif %}
+      </div>
+    </div>
+  </form>
+
+  {% if page_obj.object_list %}
+    {% for f in page_obj.object_list %}
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <div class="d-flex flex-wrap gap-4">
+            <div><span class="text-muted">Fecha:</span> <strong>{{ f.fecha_emision }}</strong></div>
+            <div><span class="text-muted">Tipo:</span> <strong>{{ f.tipo_dte.codigo }}</strong></div>
+            <div class="flex-grow-1"><span class="text-muted">No. control:</span> <strong>{{ f.numero_control }}</strong></div>
+          </div>
+          <div class="small text-muted mt-1">
+            <span class="me-3">Sello: {{ f.sello_recepcion|default:"—" }}</span>
+            <span>Código: <span class="text-monospace">{{ f.codigo_generacion }}</span></span>
+          </div>
+
+          <div class="table-responsive mt-3">
+            <table class="table table-sm align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th style="width:12%">Código</th>
+                  <th>Descripción</th>
+                  <th class="text-end" style="width:10%">Cant.</th>
+                  <th class="text-end" style="width:14%">Precio unit.</th>
+                  <th class="text-end" style="width:16%">Total ítem</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for it in f.detalles_anno %}
+                  <tr>
+                    <td>{{ it.producto.codigo|default:"—" }}</td>
+                    <td class="text-truncate" style="max-width:280px">
+                      {{ it.producto.descripcion|default:it.producto|default:"—" }}
+                    </td>
+                    <td class="text-end">{{ it.cantidad|default_if_none:"0" }}</td>
+                    <td class="text-end">${{ it.precio_unitario|default_if_none:"0"|floatformat:2 }}</td>
+                    <td class="text-end">${{ it.total_pagar_item|default_if_none:"0"|floatformat:2 }}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="5" class="text-center text-muted">Sin ítems.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+
+    {% if page_obj.paginator.num_pages > 1 %}
+    <nav aria-label="Paginación">
+      <ul class="pagination">
+        <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+          {% if page_obj.has_previous %}
+            <a class="page-link" href="?page=1&{{ qs_no_page }}">« Primero</a>
+          {% else %}<span class="page-link">« Primero</span>{% endif %}
+        </li>
+        <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+          {% if page_obj.has_previous %}
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ qs_no_page }}">‹ Anterior</a>
+          {% else %}<span class="page-link">‹ Anterior</span>{% endif %}
+        </li>
+        <li class="page-item disabled">
+          <span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+        </li>
+        <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+          {% if page_obj.has_next %}
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ qs_no_page }}">Siguiente ›</a>
+          {% else %}<span class="page-link">Siguiente ›</span>{% endif %}
+        </li>
+        <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+          {% if page_obj.has_next %}
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&{{ qs_no_page }}">Último »</a>
+          {% else %}<span class="page-link">Último »</span>{% endif %}
+        </li>
+      </ul>
+    </nav>
+    {% endif %}
+  {% else %}
+    <div class="alert alert-light border text-center">Sin resultados.</div>
+  {% endif %}
+</div>
+{% endblock %}
