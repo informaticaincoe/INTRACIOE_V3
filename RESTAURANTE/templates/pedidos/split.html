@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid mt-4 px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-white"><i class="bi bi-layout-split me-2 text-warning"></i>Dividir Cuentas - Mesa {{ pedido.mesa.numero }}</h2>
+        <a href="{% url 'pedido-checkout' pedido.mesa.id %}" class="btn btn-primary">
+            <i class="bi bi-check-all"></i> Finalizar División
+        </a>
+    </div>
+
+    <div class="row g-4">
+        
+        <div class="col-md-6">
+            <div class="card border-secondary h-100 shadow">
+                <div class="card-header border-secondary d-flex justify-content-between align-items-center py-3">
+                    <h5 class="mb-0 text-white">Productos en el Pedido</h5>
+                    <span class="badge bg-secondary">Total: ${{ pedido.total }}</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for det in detalles %}
+                        <div class="list-group-item text-white border-secondary d-flex justify-content-between align-items-center p-3">
+                            <div>
+                                <span class="fw-bold">{{ det.cantidad }}x</span> {{ det.platillo.nombre }}
+                                <div class="small text-muted">Cuenta actual: {{ det.cuenta.nombre|default:"Sin asignar" }}</div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="me-3">${{ det.total_linea }}</span>
+                                <div class="btn-group btn-group-sm">
+                                    {% for cuenta in cuentas %}
+                                        {% if det.cuenta_id != cuenta.id %}
+                                        <button class="btn btn-outline-warning btn-move" 
+                                                data-detalle-id="{{ det.id }}" 
+                                                data-cuenta-id="{{ cuenta.id }}"
+                                                title="Mover a {{ cuenta.nombre }}">
+                                            <i class="bi bi-arrow-right-short"></i> A {{ cuenta.nombre }}
+                                        </button>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="row g-3">
+                {% for cuenta in cuentas %}
+                <div class="col-12">
+                    <div class="card border-info shadow-sm">
+                        <div class="card-header bg-info bg-opacity-10 border-info d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 text-info font-monospace">{{ cuenta.nombre }}</h6>
+                            <span class="fw-bold text-white fs-5" id="total-cuenta-{{ cuenta.id }}">${{ cuenta.total }}</span>
+                        </div>
+                        <div class="card-body py-2">
+                            <div class="text-muted small" id="items-cuenta-{{ cuenta.id }}">
+                                {% for d in cuenta.detalles.all %}
+                                    <div class="d-flex justify-content-between border-bottom border-secondary py-1">
+                                        <span>{{ d.cantidad }}x {{ d.platillo.nombre }}</span>
+                                        <span>${{ d.total_linea }}</span>
+                                    </div>
+                                {% empty %}
+                                    <p class="text-center my-2 italic">Cuenta vacía</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <div class="col-12 text-center mt-3">
+                    <button class="btn btn-outline-secondary w-100 border-dashed" id="btn-nueva-cuenta">
+                        <i class="bi bi-plus-circle me-2"></i>Añadir otra cuenta separada
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .border-dashed { border-style: dashed !important; }
+    .btn-move:hover { background-color: #ffc107; color: black; }
+    .card { background-color: #212121 !important; }
+    .list-group-item:hover { background-color: #2a2a2a !important; }
+</style>
+
+<script>
+    document.getElementById('btn-nueva-cuenta').addEventListener('click', function() {
+        // Usamos un formulario simple oculto o enviamos por fetch
+        const url = "{% url 'crear-cuenta-extra' pedido.id %}";
+        
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = url;
+        
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = '{{ csrf_token }}';
+        
+        form.appendChild(csrfInput);
+        document.body.appendChild(form);
+        form.submit();
+    });
+</script>
+{% endblock %}

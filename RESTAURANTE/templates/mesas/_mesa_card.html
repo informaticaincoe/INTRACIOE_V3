@@ -3,13 +3,16 @@
 <div class="mesa-box col-12 col-md-4 col-lg-3 d-flex flex-column align-items-center gap-3" role="button">
 
   <div class="mesa-card shadow-sm p-3 border d-flex flex-column align-items-center justify-content-center gap-2 position-relative
-      {% if not mesa.tiene_mesero %} is-sinmesero
-      {% elif mesa.estado == 'PENDIENTE_ORDEN' %} is-pendiente-orden
-      {% elif mesa.estado == 'OCUPADA' %} is-ocupada
-      {% elif mesa.estado == 'ENTREGADO' %} is-entregado
-      {% elif mesa.estado == 'PENDIENTE_PAGO' %} is-pendiente-pago
-      {% else %} is-libre {% endif %}">
-
+      {% if not mesa.tiene_mesero %} is-sinmesero-card
+      {% elif mesa.estado == 'PENDIENTE_ORDEN' %} is-pendiente-orden-card 
+      {% elif mesa.estado == 'OCUPADA' %} is-ocupada-orden-card
+      {% elif mesa.estado == 'ENTREGADO' %} is-entregado-orden-card 
+      {% elif mesa.estado == 'PENDIENTE_PAGO' %} is-pendiente-pago-orden-card 
+      {% elif mesa.estado == 'PAGADO' %} is-pagado-orden-card 
+      {% else %} is-libre-card {% endif %}" data-mesa-id="{{ mesa.id }}">
+      {% comment %} Estilo de la tarjeta segnu su estado{% endcomment %}
+      
+      
     {% if mesa.es_vip %}
       <div class="position-absolute top-0 start-0 mt-2 ms-2 badge rounded-pill px-3 py-1 text-warning fs-6">
         VIP
@@ -55,66 +58,69 @@
 
     {# 1) Sin mesero asignado #}
     {% if not mesa.tiene_mesero %}
-      <div class="mesa-status-circle" style="background-color: #47474782;">
+      <div class="mesa-status-circle is-sinmesero-icon">
         <i class="bi bi-person-x-fill text-white"></i>
       </div>
-      <p class="fs-6 m-0 badge rounded-pill px-3 py-1 text-lowercase fw-normal" style="color:#47474782;">
+      <p class="fs-6 m-0 badge badget-is-sinmesero rounded-pill px-3 py-1 text-lowercase fw-normal">
         sin mesero asignado
       </p>
-
     {# 2) Libre #}
     {% elif mesa.estado == "LIBRE" %}
-      <div class="mesa-status-circle" style="background-color: rgba(0,0,0,.12);">
+      <div class="mesa-status-circle is-libre-icon">
         <i class="bi bi-door-open text-white"></i>
       </div>
-      <p class="fs-6 m-0 badge rounded-pill px-3 py-1 text-lowercase fw-normal"
-         style="border: 1px rgba(0,0,0,.18) solid; color: rgba(0,0,0,.35);">
+      <p class="fs-6 m-0 badge badget-is-libre rounded-pill px-3 py-1 text-lowercase fw-normal">
         libre
       </p>
-      <p class="fs-6 position-absolute start-0 bottom-0 ps-2 text-lowercase fw-normal d-flex align-items-center gap-1 m-0"
-         style="color: rgba(0,0,0,.25)">
-        <i class="bi bi-person"></i> <span>{{ mesa.capacidad|default:"0" }}</span>
-      </p>
-
     {# 3) Pendiente de orden (recién ocupada, sin pedido aún) #}
     {% elif mesa.estado == "PENDIENTE_ORDEN" %}
-      <div class="mesa-status-circle" style="background-color: rgb(244, 178, 93);">
+      <div class="mesa-status-circle is-pendiente-orden-icon" >
         <i class="bi bi-clipboard-check text-white"></i>
       </div>
-      <p class="fs-6 m-0 badge rounded-pill px-3 py-1 text-lowercase fw-normal"
-         style="border: 1px rgb(244, 178, 93) solid; color: rgb(244, 178, 93);">
+      <p class="fs-6 m-0 badge badget-is-pendiente-orden rounded-pill px-3 py-1 text-lowercase fw-normal">
         pendiente de orden
       </p>
 
     {# 4) Ocupada (ya hay pedido/comandas activas) #}
     {% elif mesa.estado == "OCUPADA" %}
-      <div class="mesa-status-circle" style="background-color: rgb(34, 197, 94);">
+      <div class="mesa-status-circle is-ocupada-icon">
         <i class="bi bi-fork-knife text-white"></i>
       </div>
-      <p class="fs-6 m-0 badge rounded-pill px-3 py-1 text-lowercase fw-normal"
-         style="border: 1px rgb(34, 197, 94) solid; color: rgb(34, 197, 94);">
+      <p class="fs-6 m-0 badge badget-is-ocupada rounded-pill px-3 py-1 text-lowercase fw-normal">
         ocupada
       </p>
-    
-      {% elif mesa.estado == "ENTREGADO" %}
-      <div class="mesa-status-circle" style="background-color: rgb(13, 148, 136);">
+
+    {# 5) Entregado (Ya se entrego el pedido/comanda cerrada) #}
+    {% elif mesa.estado == "ENTREGADO" %}
+      <div class="mesa-status-circle is-entregado-icon">
         <i class="bi bi-check2-circle text-white"></i>
       </div>
-      <p class="fs-6 m-0 badge rounded-pill px-3 py-1 text-lowercase fw-normal"
-        style="border: 1px rgb(13, 148, 136) solid; color: rgb(13, 148, 136);">
+      <p class="fs-6 m-0 badge badget-is-entregado rounded-pill px-3 py-1 text-lowercase fw-normal">
         entregada
       </p>
 
-    {# 5) Pendiente de pago #}
+      {# 6) Pendiente de pago (Ya se cerro el pedido / imprimir ticket) #}
     {% elif mesa.estado == "PENDIENTE_PAGO" %}
-      <div class="mesa-status-circle" style="background-color: rgb(16, 60, 191);">
+      <div class="mesa-status-circle is-pendiente-pago-icon">
         <i class="bi bi-cash text-white"></i>
       </div>
-      <p class="fs-6 m-0 badge rounded-pill px-3 py-1 text-lowercase fw-normal"
-         style="border: 1px rgb(16, 60, 191) solid; color: rgb(16, 60, 191);">
+      <p class="fs-6 m-0 badge badget-is-pendiente-pago rounded-pill px-3 py-1 text-lowercase fw-normal">
         pendiente de pago
       </p>
+      {# 7) Pagado (ya se realizo la factura electronica) #}
+      {% elif mesa.estado == "PAGADO" %}
+        <div class="mesa-status-circle is-pagado-icon">
+          <i class="bi bi-check-circle-fill text-white"></i>
+        </div>
+        <p class="fs-6 m-0 badge badget-is-pagado rounded-pill px-3 py-1 text-lowercase fw-normal"
+  >
+          Pagado
+        </p>
+        
     {% endif %}
+    <p class="fs-6 position-absolute start-0 bottom-0 ps-2 text-lowercase fw-normal d-flex align-items-center gap-1 m-0">
+      <i class="bi bi-person"></i> <span>{{ mesa.capacidad|default:"0" }}</span>
+    </p>
 
   </div>
 
@@ -122,3 +128,36 @@
     <p class="m-0">{{ mesa.numero }}</p>
   </div>
 </div>
+
+<script>
+  (function () {
+    const protocol = (window.location.protocol === "https:") ? "wss" : "ws";
+    const wsUrl = `${protocol}://${window.location.host}/ws/mesero/notifs/`;
+    const socket = new WebSocket(wsUrl);
+  
+    function toast(msg) {
+      const el = document.createElement("div");
+      el.textContent = msg;
+      el.style.position = "fixed";
+      el.style.right = "16px";
+      el.style.bottom = "16px";
+      el.style.background = "#198754";
+      el.style.color = "white";
+      el.style.padding = "10px 12px";
+      el.style.borderRadius = "10px";
+      el.style.zIndex = 99999;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 5000);
+    }
+  
+    socket.onmessage = (event) => {
+      const payload = JSON.parse(event.data);
+      if (payload.type !== "pedido_listo") return;
+  
+      const data = payload.data;
+      toast(data.mensaje);
+  
+    };
+  })();
+  </script>
+  

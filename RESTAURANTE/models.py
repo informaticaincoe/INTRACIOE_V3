@@ -86,6 +86,8 @@ class Mesa(models.Model):
         ("ENTREGADO", "Entregado"),
         ('PENDIENTE_ORDEN', 'Pendiente de Orden'),
         ('PENDIENTE_PAGO', 'Pendiente de Pago'),
+        ('PAGADO', 'Pagado'),
+        
     ]
     numero = models.CharField(max_length=10, unique=True, verbose_name="Número de Mesa")
     capacidad = models.PositiveSmallIntegerField(default=4, verbose_name="Capacidad de personas")
@@ -381,6 +383,14 @@ class DetallePedido(models.Model):
     pedido = models.ForeignKey("RESTAURANTE.Pedido", on_delete=models.CASCADE, related_name="detalles")
     platillo = models.ForeignKey("RESTAURANTE.Platillo", on_delete=models.PROTECT, related_name="detalles_pedido")
 
+    cuenta = models.ForeignKey(
+        "RESTAURANTE.CuentaPedido",
+        on_delete=models.PROTECT,
+        related_name="detalles",
+        null=True,
+        blank=True,
+    )
+
     cantidad = models.PositiveIntegerField(default=1)
     precio_unitario = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
 
@@ -399,6 +409,9 @@ class DetallePedido(models.Model):
 
     class Meta:
         ordering = ["id"]
+        indexes = [
+            models.Index(fields=["pedido", "cuenta"]),
+        ]
 
     def __str__(self):
         return f"{self.pedido_id} - {self.platillo.nombre} x {self.cantidad}"
@@ -474,7 +487,6 @@ class Comanda(models.Model):
         )
 
 class ComandaItem(models.Model):
-
     comanda = models.ForeignKey("RESTAURANTE.Comanda", on_delete=models.CASCADE, related_name="items")
     detalle_pedido = models.ForeignKey("RESTAURANTE.DetallePedido", on_delete=models.PROTECT, related_name="comanda_items")
 
@@ -502,3 +514,49 @@ class ComandaItem(models.Model):
             cantidad=detalle.cantidad,
             notas=(notas or detalle.notas or ""),
         )
+        
+class CuentaPedido(models.Model):
+    ESTADO = [
+        ("ABIERTA", "Abierta"),
+        ("CERRADA", "Cerrada"),  # lista para cobrar esa cuenta
+        ("PAGADA", "Pagada"),
+        ("ANULADA", "Anulada"),
+    ]
+
+    pedido = models.ForeignKey("RESTAURANTE.Pedido", on_delete=models.CASCADE, related_name="cuentas")
+    nombre = models.CharField(max_length=60, default="Cuenta")
+    estado = models.CharField(max_length=20, choices=ESTADO, default="ABIERTA")
+
+    creado_el = models.DateTimeField(default=timezone.now)
+    cerrado_el = models.DateTimeField(null=True, blank=True)
+    pagado_el = models.DateTimeField(null=True, blank=True)
+
+    # totales por cuenta (igual que Pedido)
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    descuento_total = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    iva_total = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    propina = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    total = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+
+    class Meta:
+        indexes = [models.Index(fields=["pedido", "estado"])]
+        
+    def recalcular_totales(self, save=True):
+        agg = self.detalles.aggregate(
+            sub=Sum("subtotal_linea"),
+            desc=Sum("descuento_monto"),
+            iva=Sum("iva_monto"),
+            tot=Sum("total_linea"),
+        )
+        self.subtotal = (agg["sub"] or Decimal("0.00")).quantize(Decimal("0.01"))
+        self.descuento_total = (agg["desc"] or Decimal("0.00")).quantize(Decimal("0.01"))
+        self.iva_total = (agg["iva"] or Decimal("0.00")).quantize(Decimal("0.01"))
+
+        base_total = (agg["tot"] or Decimal("0.00"))
+        self.total = (base_total + (self.propina or Decimal("0.00"))).quantize(Decimal("0.01"))
+
+        if save:
+            self.save(update_fields=["subtotal", "descuento_total", "iva_total", "total"])
+
+        return self.total
+    

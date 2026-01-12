@@ -1,37 +1,41 @@
 {% with uid_prefix=uid|default:"cocina" %}
 
+{% if user.role == 'admin' or user.role == 'supervisor' %}
 <button class="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
         type="button"
         data-bs-target="#{{ uid_prefix }}-cocineros">
-  <span><i class="bi bi-file-earmark-plus me-2"></i> Cocineros</span>
+  <span><i class="bi bi-person me-1 fs-6"></i> Cocineros</span>
 </button>
+{% endif %}
 
+{% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'cocinero' %}
 <button class="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
         type="button"
         data-bs-target="#{{ uid_prefix }}-comanda">
-  <span><i class="bi bi-file-earmark-plus me-2"></i> Comanda</span>
+  <span><i class="bi bi-file-earmark-plus me-1"></i> Comanda</span>
 </button>
+{% endif %}
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const prefix = "{{ uid_prefix|default:'cocina' }}";
+  document.addEventListener('DOMContentLoaded', () => {
+    const prefix = "{{ uid_prefix|default:'cocina' }}";
 
-  const goto = new Map([
-    [`#${prefix}-cocineros`, "{% url 'cocineros-lista' %}"],
-    [`#${prefix}-comanda`, "{% url 'comanda-cocina' %}"],
-  ]);
+    const goto = new Map([
+      [`#${prefix}-cocineros`, "{% url 'cocineros-lista' %}"],
+      [`#${prefix}-comanda`, "{% url 'comanda-cocina' %}"],
+    ]);
 
-  document
-    .querySelectorAll(`[data-bs-target^="#${prefix}-"]`)
-    .forEach(btn => {
-      btn.addEventListener('click', (ev) => {
-        ev.preventDefault();
-        const target = btn.getAttribute('data-bs-target');
-        const href = goto.get(target);
-        if (href) window.location.href = href;
+    document
+      .querySelectorAll(`[data-bs-target^="#${prefix}-"]`)
+      .forEach(btn => {
+        btn.addEventListener('click', (ev) => {
+          ev.preventDefault();
+          const target = btn.getAttribute('data-bs-target');
+          const href = goto.get(target);
+          if (href) window.location.href = href;
+        });
       });
-    });
-});
+  });
 </script>
 
 {% endwith %}

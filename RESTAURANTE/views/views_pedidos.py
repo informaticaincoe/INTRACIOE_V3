@@ -1,3 +1,4 @@
+from datetime import timezone
 import json
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.contrib import messages
@@ -6,8 +7,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from django.db import transaction
 from FE.models import Receptor_fe
-from RESTAURANTE.models import DetallePedido, Mesa, Mesero, Pedido, Platillo
+from RESTAURANTE.models import CuentaPedido, DetallePedido, Mesa, Mesero, Pedido, Platillo
 from RESTAURANTE.services_comandas import enviar_pedido_a_cocina
+from RESTAURANTE.services_pedidos import split_or_move_detalle
 
 """
 MANEJO DE:
@@ -21,6 +23,13 @@ def get_mesero_from_user(user):
     if not user.is_authenticated:
         return None
     return Mesero.objects.filter(usuario=user, activo=True).first()
+
+def get_or_create_cuenta_default(pedido):
+    cuenta = pedido.cuentas.filter(estado="ABIERTA").order_by("creado_el").first()
+    if cuenta:
+        return cuenta
+    return CuentaPedido.objects.create(pedido=pedido, nombre="Cuenta 1", estado="ABIERTA")
+
 
 def guardar_detalles_desde_json(pedido, platillos_json: str, *, modo="set"):
     try:
@@ -46,10 +55,11 @@ def guardar_detalles_desde_json(pedido, platillos_json: str, *, modo="set"):
     platillos = Platillo.objects.filter(id__in=list(qty_map.keys()), disponible=True)
     platillo_map = {str(p.id): p for p in platillos}
 
+    cuenta_default = get_or_create_cuenta_default(pedido)
     # Bloquea detalles existentes para evitar carreras
     existentes = {
         str(d.platillo_id): d
-        for d in pedido.detalles.select_for_update().select_related("platillo")
+        for d in pedido.detalles.select_for_update().filter(cuenta=cuenta_default).select_related("platillo")
     }
 
     nuevos = []
@@ -73,6 +83,7 @@ def guardar_detalles_desde_json(pedido, platillos_json: str, *, modo="set"):
             d = DetallePedido(
                 pedido=pedido,
                 platillo=p,
+                cuenta=cuenta_default,
                 cantidad=qty,
                 precio_unitario=p.precio_venta,
                 aplica_iva=True,
@@ -164,6 +175,7 @@ def pedido_agregar_item(request, pedido_id):
 
     platillo = get_object_or_404(Platillo, id=platillo_id, disponible=True)
 
+    cuenta_default = get_or_create_cuenta_default(pedido)
     # Si ya existe el platillo en el pedido, sumamos cantidad
     detalle = pedido.detalles.filter(platillo=platillo).first()
     if detalle:
@@ -173,6 +185,7 @@ def pedido_agregar_item(request, pedido_id):
         DetallePedido.objects.create(
             pedido=pedido,
             platillo=platillo,
+            cuenta=cuenta_default,
             cantidad=qty,
             precio_unitario=platillo.precio_venta,
             aplica_iva=True,
@@ -224,6 +237,29 @@ def pedido_quitar_item(request, pedido_id, detalle_id):
     })
 
 @login_required
+@transaction.atomic
+def solicitar_cuenta(request, mesa_id):
+    """
+    Busca el pedido abierto de la mesa y lo cierra 
+    reutilizando la lógica de pedido_cerrar.
+    """
+    mesa = get_object_or_404(Mesa, id=mesa_id)
+    
+    # Buscamos el pedido abierto más reciente de esta mesa
+    pedido = Pedido.objects.filter(mesa=mesa, estado="ABIERTO").first()
+
+    if not pedido:
+        messages.warning(request, f"No se encontró un pedido abierto para la Mesa {mesa.numero}.")
+        return redirect("mesas-lista")
+
+    # Llamamos a tu función existente para no repetir lógica
+    # Nota: Si pedido_cerrar tiene @require_POST, podrías llamar a pedido.cerrar()
+    # directamente aquí para evitar conflictos de método HTTP.
+    mesa.estado="PENDIENTE_PAGO"
+    mesa.save()
+    return pedido_cerrar(request, pedido.id)
+
+@login_required
 @require_POST
 @transaction.atomic
 def pedido_cerrar(request, pedido_id):
@@ -240,6 +276,10 @@ def pedido_cerrar(request, pedido_id):
         return HttpResponseBadRequest("El pedido no está ABIERTO.")
 
     pedido.cerrar()  # cambia a CERRADO y mesa a PENDIENTE_PAGO
+    
+    
+    #TODO: AGREGAR EL TICKET CON EL TOTAL DE LA CUENTA
+    
     messages.success(request, "Pedido enviado a cobro (pendiente de pago).")
     return redirect("mesas-lista")
 
@@ -357,4 +397,200 @@ def ver_pedido_mesa(request, pk):
         },
         "detalles": detalles
     })
+
+@login_required
+@transaction.atomic
+def pedido_split(request, pedido_id):
+    if getattr(request.user, "role", None) != "mesero":
+        return HttpResponseForbidden("Solo meseros.")
+    mesero = get_mesero_from_user(request.user)
+
+    pedido = get_object_or_404(
+        Pedido.objects.select_for_update(),
+        id=pedido_id,
+        mesero=mesero,
+        estado="CERRADO",
+    )
+
+    cuentas = pedido.cuentas.all().order_by("creado_el")
+    detalles = pedido.detalles.select_related("platillo", "cuenta").order_by("cuenta_id", "id")
+
+    return render(request, "pedidos/split.html", {
+        "pedido": pedido,
+        "cuentas": cuentas,
+        "detalles": detalles,
+    })
     
+    
+@login_required
+def enviar_facturacion(request, pedido_id): # <-- Cambiado a pedido_id para coincidir con la URL
+    # Si lo que recibes es el ID del pedido, busca el pedido primero
+    print(f"DEBUG: Intentando facturar Pedido ID: {pedido_id}")
+    try:
+        pedido = Pedido.objects.get(id=pedido_id)
+    except Pedido.DoesNotExist:
+        # En lugar de un 404 seco, damos un mensaje amigable
+        messages.error(request, f"El pedido #{pedido_id} no existe en el sistema.")
+        return redirect('mesas-lista') # O la vista principal de restaurante
+    
+    # Si necesitas la cuenta, búscala a través del pedido
+    cuenta = pedido.cuentas.first() 
+    print(f"DEBUG: Intentando facturar cuenta ID: {cuenta}")
+    
+    if not cuenta:
+        messages.error(request, "El pedido no tiene una cuenta asociada.")
+        return redirect('pedido-detalle', pedido_id=pedido.id)
+
+    # Buscar al receptor "Clientes Varios"
+    receptor = Receptor_fe.objects.filter(num_documento="00000000-0").first()
+    
+    if not receptor:
+        messages.error(request, "No se encontró el receptor por defecto (00000000-0).")
+        return redirect('pedido-detalle', pedido_id=pedido.id)
+
+    items = []
+    # Usamos los detalles del PEDIDO (o de la cuenta, según tu lógica)
+    for detalle in pedido.detalles.all():
+        items.append({
+            "id": detalle.platillo.producto_id,
+            "codigo": getattr(detalle.platillo, 'codigo', 'SERV'),
+            "nombre": detalle.platillo.nombre,
+            "precio": float(detalle.precio_unitario),
+            "cantidad": int(detalle.cantidad),
+            "desc_pct": 0.0,
+            "iva_on": True,
+            "stock": 999 
+        })
+
+    request.session["facturacion_prefill"] = {
+        "receptor_id": receptor.id,
+        "items": items,
+        "origen": "restaurante",
+        "pedido_id": pedido.id
+    }
+    request.session.modified = True
+
+    return redirect("/fe/generar/?from_cart=1&restaurante=1")
+    
+@login_required
+@require_POST
+@transaction.atomic
+def detalle_mover_a_cuenta(request):
+    detalle_id = int(request.POST["detalle_id"])
+    cuenta_destino_id = int(request.POST["cuenta_destino_id"])
+    qty = int(request.POST.get("qty") or "1")
+
+    res = split_or_move_detalle(detalle_id, cuenta_destino_id, qty)
+
+    return JsonResponse({"ok": True, **res})
+
+@login_required
+@transaction.atomic
+def cuenta_pagar(request, cuenta_id):
+    if getattr(request.user, "role", None) != "mesero":
+        return HttpResponseForbidden("Solo meseros.")
+    mesero = get_mesero_from_user(request.user)
+
+    cuenta = get_object_or_404(
+        CuentaPedido.objects.select_for_update().select_related("pedido", "pedido__mesa"),
+        id=cuenta_id,
+        pedido__mesero=mesero,
+    )
+    pedido = cuenta.pedido
+
+    if pedido.estado != "CERRADO":
+        messages.error(request, "El pedido debe estar CERRADO para cobrar.")
+        return redirect("mesas-lista")
+
+    if cuenta.estado != "ABIERTA":
+        messages.error(request, "Esta cuenta no está ABIERTA.")
+        return redirect("pedido-checkout", pedido.mesa_id)
+
+    # Aquí renderizas form de pago y al POST:
+    if request.method == "POST":
+        # TODO: aquí registras caja, formas de pago, etc.
+        cuenta.estado = "PAGADA"
+        cuenta.pagado_el = timezone.now()
+        cuenta.save(update_fields=["estado", "pagado_el"])
+
+        # Si todas las cuentas están pagadas → pedido PAGADO y mesa libre
+        if not pedido.cuentas.exclude(estado="PAGADA").exists():
+            pedido.estado = "PAGADO"
+            pedido.pagado_el = timezone.now()
+            pedido.save(update_fields=["estado", "pagado_el"])
+            pedido._sync_estado_mesa()  # libera mesa
+
+        messages.success(request, f"{cuenta.nombre} pagada.")
+        return redirect("pedido-checkout", pedido.mesa_id)
+
+    return render(request, "pedidos/pagar_cuenta.html", {"cuenta": cuenta, "pedido": pedido})
+
+@login_required
+@transaction.atomic
+def pedido_checkout(request, mesa_id):
+   
+    if getattr(request.user, "role", None) != "mesero":
+        return HttpResponseForbidden("Solo meseros.")
+
+    mesero = get_mesero_from_user(request.user)
+    if not mesero:
+        messages.error(request, "No tienes mesero asociado o estás inactivo.")
+        return redirect("mesas-lista")
+
+    mesa = get_object_or_404(Mesa, id=mesa_id)
+    
+    print("MESA ", mesa)
+    print("mesero ", mesero)
+
+    pedido = (
+        Pedido.objects
+        .select_for_update()
+        .filter(mesa=mesa, mesero=mesero)
+        .order_by("-creado_el")
+        .first()
+    )
+    
+    print("pedido ", pedido)
+    
+    if not pedido:
+        print(request, "No hay pedido pendiente de pago en esa mesa.")
+        return redirect("mesas-lista")
+
+    # Asegurar cuenta 1 y que todos los detalles tengan cuenta (por si vienen de datos viejos)
+    cuenta_default = get_or_create_cuenta_default(pedido)
+    pedido.detalles.filter(cuenta__isnull=True).update(cuenta=cuenta_default)
+
+    # Recalcular totales del pedido y de cuentas (opcional, pero recomendado)
+    pedido.recalcular_totales(save=True)
+    for c in pedido.cuentas.all():
+        # si ya agregaste recalcular_totales en CuentaPedido
+        try:
+            c.recalcular_totales(save=True)
+        except Exception:
+            pass
+
+    cuentas = pedido.cuentas.all().order_by("creado_el")
+
+    return render(request, "pedidos/checkout.html", {
+        "mesa": mesa,
+        "pedido": pedido,
+        "cuentas": cuentas,
+    })
+
+@login_required
+@require_POST
+@transaction.atomic
+def crear_cuenta_extra(request, pedido_id):
+    pedido = get_object_or_404(Pedido, id=pedido_id)
+    
+    # Contamos cuántas cuentas existen para ponerle nombre "Cuenta 2", "Cuenta 3", etc.
+    num_cuentas = pedido.cuentas.count() + 1
+    
+    CuentaPedido.objects.create(
+        pedido=pedido,
+        nombre=f"Cuenta {num_cuentas}",
+        estado="ABIERTA"
+    )
+    
+    messages.success(request, f"Cuenta {num_cuentas} creada.")
+    return redirect("pedido-split", pedido_id=pedido.id)

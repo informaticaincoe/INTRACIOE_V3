@@ -45,10 +45,14 @@ urlpatterns = [
     path('mesas/cambiar_estado_mesa/<int:pk>/<str:estado>/', views_mesas.cambiar_estado_mesa, name='cambiar_estado_mesa'),
 
     path("pedido/<int:mesa_id>/tomar/", views_pedidos.tomar_pedido, name="tomar_pedido"),
+    path("pedidos/crear-desde-mesa/", views_pedidos.pedido_crear_desde_mesa, name="pedido_crear_desde_mesa"),
     path("pedido/<int:pedido_id>/agregar/", views_pedidos.pedido_agregar_item, name="pedido_agregar_item"),
     path("pedido/<int:pedido_id>/quitar/<int:detalle_id>/", views_pedidos.pedido_quitar_item, name="pedido_quitar_item"),
     path("pedido/<int:pedido_id>/cerrar/", views_pedidos.pedido_cerrar, name="pedido_cerrar"),
-    path("pedidos/crear-desde-mesa/", views_pedidos.pedido_crear_desde_mesa, name="pedido_crear_desde_mesa"),
+    #Pagos
+    # path("pedido/<int:pedido_id>/cerrar/", views_pedidos.pedido_cerrar, name="pedido_cerrar"),
+    
+    
     
     path("pedidos/pedido/<int:pk>/", views_pedidos.ver_pedido_mesa, name="ver_pedido_mesa"),
     
@@ -59,9 +63,19 @@ urlpatterns = [
     path("cocinero/<int:pk>/eliminar/", views_cocineros.eliminar_cocinero, name="eliminar-cocinero"),
     path("cocinero/<int:pk>/editar/", views_cocineros.editar_cocinero, name="editar-cocinero"),
 
-    #Comandas
+    # Comandas
     path("cocina/comanda/", views_comandas.comanda_cocina, name="comanda-cocina"),
-    path("cocina/comanda/item/<int:item_id>/preparacion/", views_comandas.comanda_item_en_preparacion, name="comanda-item-preparacion"),
-    path("cocina/comanda/item/<int:item_id>/listo/", views_comandas.comanda_item_listo, name="comanda-item-listo"),
+    path("cocina/comanda/<int:id>/preparacion/", views_comandas.comanda_en_preparacion, name="comanda-item-preparacion"),
+    path("cocina/comanda/<int:id>/listo/", views_comandas.comanda_listo, name="comanda-item-listo"),
 
+    path('mesa/<int:mesa_id>/solicitar-cuenta/', views_pedidos.solicitar_cuenta, name='solicitar_cuenta'),
+    path("mesa/<int:mesa_id>/checkout/", views_pedidos.pedido_checkout, name="pedido-checkout"),
+    path("pedido/<int:pedido_id>/split/", views_pedidos.pedido_split, name="pedido-split"),
+    path("pedido/<int:pedido_id>/pagar/", views_pedidos.enviar_facturacion, name="enviar-facturacion"),
+    
+
+    path("detalle/mover/", views_pedidos.detalle_mover_a_cuenta, name="detalle-mover-a-cuenta"),
+
+    path('cuenta/<int:cuenta_id>/pagar/', views_pedidos.cuenta_pagar, name='cuenta_pagar'),
+    path('pedido/<int:pedido_id>/nueva-cuenta/', views_pedidos.crear_cuenta_extra, name='crear-cuenta-extra'),
 ]

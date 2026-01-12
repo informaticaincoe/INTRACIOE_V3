@@ -2,19 +2,19 @@
 
 {% if user.role == 'admin' or user.role == 'supervisor'%}
 <a href="{% url 'meseros-lista' %}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">
-    <span><i class="bi bi-person-badge me-2"></i> Meseros</span>
+    <span><i class="bi bi-person me-1"></i> Meseros</span>
 </a>
 {% endif %}
 
 {% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'mesero' %}
 <a href="{% url 'mesas-lista' %}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">
-    <span><i class="bi bi-grid-3x3-gap me-2"></i> Mesas</span>
+    <span><i class="bi bi-grid-3x3-gap me-1"></i> Mesas</span>
 </a>
 {% endif %}
 
 {% if user.role == 'admin' or user.role == 'supervisor' %}
 <a href="{% url 'asignaciones-lista' %}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">
-    <span><i class="bi bi-arrow-left-right me-2"></i> Asignación de mesas</span>
+    <span><i class="bi bi-arrow-left-right me-1"></i> Asignación de mesas</span>
 </a>
 {% endif %}
 
