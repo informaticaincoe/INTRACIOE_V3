@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import timezone
 import json
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
@@ -8,8 +9,9 @@ from django.views.decorators.http import require_POST
 from django.db import transaction
 from FE.models import Receptor_fe
 from RESTAURANTE.models import CuentaPedido, DetallePedido, Mesa, Mesero, Pedido, Platillo
-from RESTAURANTE.services_comandas import enviar_pedido_a_cocina
-from RESTAURANTE.services_pedidos import split_or_move_detalle
+from RESTAURANTE.services.services_comandas import enviar_pedido_a_cocina
+from RESTAURANTE.services.services_pedidos import split_or_move_detalle
+
 
 """
 MANEJO DE:
@@ -176,8 +178,8 @@ def pedido_agregar_item(request, pedido_id):
     platillo = get_object_or_404(Platillo, id=platillo_id, disponible=True)
 
     cuenta_default = get_or_create_cuenta_default(pedido)
-    # Si ya existe el platillo en el pedido, sumamos cantidad
-    detalle = pedido.detalles.filter(platillo=platillo).first()
+    detalle = pedido.detalles.filter(platillo=platillo, cuenta=cuenta_default).first()
+
     if detalle:
         detalle.cantidad += qty
         detalle.save()
@@ -239,8 +241,9 @@ def pedido_quitar_item(request, pedido_id, detalle_id):
 @login_required
 @transaction.atomic
 def solicitar_cuenta(request, mesa_id):
+    print("METHOD >>>> ", request.method)
     """
-    Busca el pedido abierto de la mesa y lo cierra 
+    Busca el pedido abierto de la mesa y lo cierra
     reutilizando la lógica de pedido_cerrar.
     """
     mesa = get_object_or_404(Mesa, id=mesa_id)
@@ -260,9 +263,10 @@ def solicitar_cuenta(request, mesa_id):
     return pedido_cerrar(request, pedido.id)
 
 @login_required
-@require_POST
+# @require_POST
 @transaction.atomic
 def pedido_cerrar(request, pedido_id):
+    print("REQUEST METHOD ", request.method)
     if getattr(request.user, "role", None) != "mesero":
         return HttpResponseForbidden("Solo meseros.")
 
@@ -403,28 +407,76 @@ def ver_pedido_mesa(request, pk):
 def pedido_split(request, pedido_id):
     if getattr(request.user, "role", None) != "mesero":
         return HttpResponseForbidden("Solo meseros.")
+
     mesero = get_mesero_from_user(request.user)
 
     pedido = get_object_or_404(
         Pedido.objects.select_for_update(),
         id=pedido_id,
         mesero=mesero,
-        estado="CERRADO",
     )
 
-    cuentas = pedido.cuentas.all().order_by("creado_el")
-    detalles = pedido.detalles.select_related("platillo", "cuenta").order_by("cuenta_id", "id")
+    cuentas = list(pedido.cuentas.all().order_by("creado_el"))
+    cuenta_base = cuentas[0]
 
-    return render(request, "pedidos/split.html", {
+    detalles = (
+        pedido.detalles
+        .select_related("platillo", "cuenta")
+        .all()
+    )
+
+    from collections import defaultdict
+    import json
+
+    def key_of(d):
+        return (
+            d.platillo_id,
+            str(d.precio_unitario),
+            str(d.descuento_pct),
+            str(int(d.aplica_iva)),
+            d.notas or "",
+        )
+
+    def key_str(d):
+        return f"{d.platillo_id}|{d.precio_unitario}|{d.descuento_pct}|{int(d.aplica_iva)}|{d.notas or ''}"
+
+    items_map = {}
+
+    for d in detalles:
+        k = key_of(d)
+        if k not in items_map:
+            items_map[k] = {
+                "platillo": d.platillo,
+                "precio": d.precio_unitario,
+                "notas": d.notas,
+                "por_cuenta": defaultdict(lambda: {"qty": 0, "detalle_id": None}),
+            }
+
+        items_map[k]["por_cuenta"][d.cuenta_id]["qty"] += d.cantidad
+        items_map[k]["por_cuenta"][d.cuenta_id]["detalle_id"] = d.id
+
+    items = []
+    for v in items_map.values():
+        v["map_json"] = json.dumps({
+            str(cid): {
+                "qty": data["qty"],
+                "detalle_id": data["detalle_id"],
+            }
+            for cid, data in v["por_cuenta"].items()
+        })
+        items.append(v)
+
+    return render(request, "pedidos/split_tabs.html", {
         "pedido": pedido,
         "cuentas": cuentas,
-        "detalles": detalles,
+        "cuenta_base": cuenta_base,
+        "items": items,
     })
-    
     
 @login_required
 def enviar_facturacion(request, pedido_id): # <-- Cambiado a pedido_id para coincidir con la URL
     # Si lo que recibes es el ID del pedido, busca el pedido primero
+        
     print(f"DEBUG: Intentando facturar Pedido ID: {pedido_id}")
     try:
         pedido = Pedido.objects.get(id=pedido_id)
@@ -471,18 +523,6 @@ def enviar_facturacion(request, pedido_id): # <-- Cambiado a pedido_id para coin
     request.session.modified = True
 
     return redirect("/fe/generar/?from_cart=1&restaurante=1")
-    
-@login_required
-@require_POST
-@transaction.atomic
-def detalle_mover_a_cuenta(request):
-    detalle_id = int(request.POST["detalle_id"])
-    cuenta_destino_id = int(request.POST["cuenta_destino_id"])
-    qty = int(request.POST.get("qty") or "1")
-
-    res = split_or_move_detalle(detalle_id, cuenta_destino_id, qty)
-
-    return JsonResponse({"ok": True, **res})
 
 @login_required
 @transaction.atomic
@@ -502,8 +542,8 @@ def cuenta_pagar(request, cuenta_id):
         messages.error(request, "El pedido debe estar CERRADO para cobrar.")
         return redirect("mesas-lista")
 
-    if cuenta.estado != "ABIERTA":
-        messages.error(request, "Esta cuenta no está ABIERTA.")
+    if cuenta.estado not in ("ABIERTA", "CERRADA"):
+        messages.error(request, "Esta cuenta no está disponible para cobro.")
         return redirect("pedido-checkout", pedido.mesa_id)
 
     # Aquí renderizas form de pago y al POST:
@@ -525,6 +565,7 @@ def cuenta_pagar(request, cuenta_id):
 
     return render(request, "pedidos/pagar_cuenta.html", {"cuenta": cuenta, "pedido": pedido})
 
+# Seleccionar pago en una sola cuenta o cuentas separadas y añadir cuenta predeterminada (una sola cuenta)
 @login_required
 @transaction.atomic
 def pedido_checkout(request, mesa_id):
@@ -577,6 +618,7 @@ def pedido_checkout(request, mesa_id):
         "cuentas": cuentas,
     })
 
+# Agregar mas cuentas en la division de cuentas
 @login_required
 @require_POST
 @transaction.atomic
@@ -594,3 +636,121 @@ def crear_cuenta_extra(request, pedido_id):
     
     messages.success(request, f"Cuenta {num_cuentas} creada.")
     return redirect("pedido-split", pedido_id=pedido.id)
+
+@login_required
+@require_POST
+@transaction.atomic
+def detalle_mover_a_cuenta(request):
+    print(">>>>>>>>>>> request.method", request.method)
+    print(">>>>>>>>>>> request", request)
+    
+    if getattr(request.user, "role", None) != "mesero":
+        return JsonResponse({"ok": False, "error": "Solo meseros."}, status=403)
+
+    mesero = get_mesero_from_user(request.user)
+
+    try:
+        detalle_id = int(request.POST["detalle_id"])
+        print(">>>>>>>>>>> detalle_id", detalle_id)
+        
+        cuenta_destino_id = int(request.POST["cuenta_destino_id"])
+        print(">>>>>>>>>>> cuenta_destino_id", cuenta_destino_id)
+        
+        qty = int(request.POST.get("qty") or "1")
+        print(">>>>>>>>>>> qty", qty)
+        
+    except Exception as e:
+        print(">>>>>>>>>>> ERROR split_or_move_detalle:", repr(e))
+        return JsonResponse({"ok": False, "error": str(e)}, status=400)
+
+    # Validar que el detalle pertenece a un pedido del mesero
+    if not DetallePedido.objects.filter(id=detalle_id, pedido__mesero=mesero).exists():
+        print(">>>>>>>>>>> exp 1")
+        
+        return JsonResponse({"ok": False, "error": "No autorizado."}, status=403)
+
+    try:
+        print(">>>>>>>>>>> exp 2")
+        res = split_or_move_detalle(detalle_id=detalle_id, cuenta_destino_id=cuenta_destino_id, qty=qty)
+    except Exception as e:
+        print(">>>>>>>>>>> ERROR split_or_move_detalle:", type(e), repr(e))
+        return JsonResponse({"ok": False, "error": str(e)}, status=400)
+
+
+    return JsonResponse({"ok": True, **res})
+
+# Cerrar cuenta
+@login_required
+@require_POST
+@transaction.atomic
+def confirmar_division(request, pedido_id):
+    if getattr(request.user, "role", None) != "mesero":
+        return HttpResponseForbidden("Solo meseros.")
+
+    mesero = get_mesero_from_user(request.user)
+    pedido = get_object_or_404(Pedido.objects.select_for_update(), id=pedido_id, mesero=mesero, estado="CERRADO")
+
+    # (Opcional) evita cuentas vacías
+    if pedido.cuentas.filter(detalles__isnull=True).exists():
+        messages.error(request, "Hay cuentas vacías. Elimínalas o asigna productos.")
+        return redirect("pedido-split", pedido_id=pedido.id)
+
+    pedido.division_confirmada = True
+    pedido.save(update_fields=["division_confirmada"])
+
+    pedido.cuentas.filter(estado="ABIERTA").update(estado="CERRADA")
+    messages.success(request, "División confirmada. Ya puedes facturar por cuenta.")
+    return redirect("pedido-checkout", mesa_id=pedido.mesa_id)
+
+# Enviar cuenta deparada a facturacion
+@login_required
+@transaction.atomic
+def enviar_facturacion_cuenta(request, cuenta_id):
+    if getattr(request.user, "role", None) != "mesero":
+        return HttpResponseForbidden("Solo meseros.")
+    mesero = get_mesero_from_user(request.user)
+
+    cuenta = get_object_or_404(
+        CuentaPedido.objects.select_for_update().select_related("pedido"),
+        id=cuenta_id,
+        pedido__mesero=mesero,
+    )
+    pedido = cuenta.pedido
+
+    if pedido.estado != "CERRADO":
+        messages.error(request, "El pedido debe estar CERRADO para facturar.")
+        return redirect("mesas-lista")
+
+    # si es split confirmado, exigimos CERRADA
+    if pedido.division_confirmada and cuenta.estado != "CERRADA":
+        messages.error(request, "La cuenta debe estar CERRADA (confirmada) para facturar.")
+        return redirect("pedido-checkout", mesa_id=pedido.mesa_id)
+
+    receptor = Receptor_fe.objects.filter(num_documento="00000000-0").first()
+    if not receptor:
+        messages.error(request, "No se encontró receptor por defecto (00000000-0).")
+        return redirect("pedido-checkout", mesa_id=pedido.mesa_id)
+
+    items = []
+    for detalle in cuenta.detalles.select_related("platillo").all():
+        items.append({
+            "id": detalle.platillo.producto_id,
+            "codigo": getattr(detalle.platillo, 'codigo', 'SERV'),
+            "nombre": detalle.platillo.nombre,
+            "precio": float(detalle.precio_unitario),
+            "cantidad": int(detalle.cantidad),
+            "desc_pct": float(detalle.descuento_pct or 0),
+            "iva_on": bool(detalle.aplica_iva),
+            "stock": 999,
+        })
+
+    request.session["facturacion_prefill"] = {
+        "receptor_id": receptor.id,
+        "items": items,
+        "origen": "restaurante",
+        "pedido_id": pedido.id,
+        "cuenta_id": cuenta.id,
+    }
+    request.session.modified = True
+    return redirect("/fe/generar/?from_cart=1&restaurante=1")
+

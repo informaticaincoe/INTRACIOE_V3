@@ -52,8 +52,6 @@ urlpatterns = [
     #Pagos
     # path("pedido/<int:pedido_id>/cerrar/", views_pedidos.pedido_cerrar, name="pedido_cerrar"),
     
-    
-    
     path("pedidos/pedido/<int:pk>/", views_pedidos.ver_pedido_mesa, name="ver_pedido_mesa"),
     
     # Cocineros
@@ -78,4 +76,8 @@ urlpatterns = [
 
     path('cuenta/<int:cuenta_id>/pagar/', views_pedidos.cuenta_pagar, name='cuenta_pagar'),
     path('pedido/<int:pedido_id>/nueva-cuenta/', views_pedidos.crear_cuenta_extra, name='crear-cuenta-extra'),
+    
+    path("pedido/<int:pedido_id>/confirmar-division/", views_pedidos.confirmar_division, name="pedido-confirmar-division"),
+    path("cuenta/<int:cuenta_id>/facturar/", views_pedidos.enviar_facturacion_cuenta, name="cuenta-facturar"),
+
 ]

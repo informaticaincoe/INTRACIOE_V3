@@ -4,14 +4,13 @@
 
   <div class="mesa-card shadow-sm p-3 border d-flex flex-column align-items-center justify-content-center gap-2 position-relative
       {% if not mesa.tiene_mesero %} is-sinmesero-card
-      {% elif mesa.estado == 'PENDIENTE_ORDEN' %} is-pendiente-orden-card 
+      {% elif mesa.estado == 'PENDIENTE_ORDEN' %} is-pendiente-orden-card
       {% elif mesa.estado == 'OCUPADA' %} is-ocupada-orden-card
-      {% elif mesa.estado == 'ENTREGADO' %} is-entregado-orden-card 
-      {% elif mesa.estado == 'PENDIENTE_PAGO' %} is-pendiente-pago-orden-card 
-      {% elif mesa.estado == 'PAGADO' %} is-pagado-orden-card 
+      {% elif mesa.estado == 'ENTREGADO' %} is-entregado-orden-card
+      {% elif mesa.estado == 'PENDIENTE_PAGO' %} is-pendiente-pago-orden-card
+      {% elif mesa.estado == 'PAGADO' %} is-pagado-orden-card
       {% else %} is-libre-card {% endif %}" data-mesa-id="{{ mesa.id }}">
       {% comment %} Estilo de la tarjeta segnu su estado{% endcomment %}
-      
       
     {% if mesa.es_vip %}
       <div class="position-absolute top-0 start-0 mt-2 ms-2 badge rounded-pill px-3 py-1 text-warning fs-6">

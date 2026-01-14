@@ -277,7 +277,8 @@ class Pedido(models.Model):
     iva_total = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
     propina = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
     total = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
-
+    division_confirmada = models.BooleanField(default=False)
+    
     class Meta:
         ordering = ["-creado_el"]
         indexes = [
@@ -339,45 +340,6 @@ class Pedido(models.Model):
         self.save(update_fields=["estado", "cerrado_el"])
         self._sync_estado_mesa()
 
-    @transaction.atomic
-    def pagar_y_generar_factura_cf(self, *, usuario, caja, formas_pago_json=None, receptor=None):
-        """
-        1) valida estado
-        2) recalcula totales
-        3) crea FacturaElectronica (DTE 01) + DetalleFactura
-        4) vincula pedido.factura
-        5) marca PAGADO y libera mesa
-        6) aquí también puedes registrar movimientos de caja
-        """
-        if self.estado != "CERRADO":
-            raise ValueError("El pedido debe estar CERRADO (pendiente de pago) para poder pagarse.")
-
-        if receptor:
-            self.receptor = receptor
-
-        self.caja = caja
-        self.recalcular_totales(save=True)
-
-        # --- Crear Factura CF desde el pedido ---
-        # Import interno para evitar ciclos entre apps
-        from FE.services import crear_factura_cf_desde_pedido  # lo definimos abajo
-
-        factura = crear_factura_cf_desde_pedido(
-            pedido=self,
-            usuario=usuario,
-            receptor=self.receptor,
-            formas_pago_json=(formas_pago_json or []),
-        )
-
-        self.factura = factura
-        self.estado = "PAGADO"
-        self.pagado_el = timezone.now()
-        self.save(update_fields=["factura", "estado", "pagado_el", "caja", "receptor"])
-
-        # Mesa libre
-        self._sync_estado_mesa()
-
-        return factura
 
 class DetallePedido(models.Model):    
     pedido = models.ForeignKey("RESTAURANTE.Pedido", on_delete=models.CASCADE, related_name="detalles")
@@ -411,6 +373,12 @@ class DetallePedido(models.Model):
         ordering = ["id"]
         indexes = [
             models.Index(fields=["pedido", "cuenta"]),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(cantidad__gt=0),
+                name="detallepedido_cantidad_gt_0",
+            ),
         ]
 
     def __str__(self):

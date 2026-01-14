@@ -5,7 +5,7 @@
     <div class="row mb-4">
         <div class="col-12 d-flex justify-content-between align-items-center">
             <div>
-                <h1 class="h3 mb-0 text-black">
+                <h1 class="h3 mb-0 text-black fs-4 d-flex justify-center items-align-center">
                     <i class="bi bi-cash-stack text-success me-2"></i>Finalizar Pedido - Mesa {{ mesa.numero }}
                 </h1>
                 {% comment %} <nav aria-label="breadcrumb">
@@ -23,9 +23,9 @@
     </div>
 
     <div class="row g-4">
-        <div class="col-lg-7">
-            <div class="card shadow" style="color: #000; border: 1px solid #333;">
-                <div class="card-header bg-transparent border-secondary py-3">
+        <div class="col-lg-5">
+            <div class="card shadow" style="color: #000; border: 1px solid #3333332e;">
+                <div class="card-header bg-transparent py-3" style="border-bottom: 1px solid #33333371;">
                     <h5 class="mb-0 text-black"><i class="bi bi-list-ul me-2"></i>Resumen de Productos</h5>
                 </div>
                 <div class="card-body p-0">
@@ -40,7 +40,7 @@
                             </thead>
                             <tbody>
                                 {% for detalle in pedido.detalles.all %}
-                                <tr class="border-secondary">
+                                <tr style="border: 1px solid #3333332e;">
                                     <td class="ps-4">
                                         {{ detalle.platillo.nombre }}
                                         {% if detalle.notas %}
@@ -107,7 +107,7 @@
                 <hr class="border-secondary">
                 {% for c in cuentas %}
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="text-light">{{ c.nombre }}</span>
+                        <span class="">{{ c.nombre }}</span>
                         <span class="badge {% if c.estado == 'ABIERTA' %}bg-warning text-dark{% else %}bg-success{% endif %}">
                             {{ c.estado }}
                         </span>

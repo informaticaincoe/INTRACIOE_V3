@@ -1259,24 +1259,30 @@ def generar_factura_view(request):
                     from RESTAURANTE.models import Pedido, Mesa
                     Pedido.objects.filter(id=prefill.get("pedido_id")).update(estado='PAGADO')
                     # Asumiendo que quieres liberar la mesa (ponerla disponible)
-                    # Si tu estado de mesa libre es 'PAGADO' o 'DISPONIBLE':
-                    mesa_id = prefill.get("mesa_id") # Asegúrate que venga en el prefill
+                    pedido = get_object_or_404(Pedido, id=prefill.get("pedido_id") )
+                    pedido.estado = "PAGADO"
+                    pedido.save()
+                    print("<<<<<<<<<<<< ",pedido)
+                    print(">>>>>>>>>>>>", prefill.get("pedido_id"))
+                    
+                    mesa_id = pedido.mesa_id # Asegúrate que venga en el prefill
+                    print(mesa_id)
                     if mesa_id:
-                        Mesa.objects.filter(id=mesa_id).update(estado='DISPONIBLE')
+                        Mesa.objects.filter(id=mesa_id).update(estado='PAGADO')
                     
                     request.session.pop("facturacion_prefill", None)
                 except Exception as e:
                     print(f"Error post-facturación: {e}")
 
-                 # 6. RESPUESTA FINAL ÚNICA
-                if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or is_json:
-                    return JsonResponse({
-                        "status": "OK",
-                        "redirect": reverse('mesas-lista') if prefill else reverse('detalle_factura', args=[factura.id]),
-                        "factura_id": factura.id
-                    })
+                # 6. RESPUESTA FINAL ÚNICA
+                # if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or is_json:
+                #     return JsonResponse({
+                #         "status": "OK",
+                #         "redirect": reverse('mesas-lista') if prefill else reverse('detalle_factura', args=[factura.id]),
+                #         "factura_id": factura.id
+                #     })
             
-                return redirect('mesas-lista') if prefill else redirect('detalle_factura', factura.id)
+                # return redirect('mesas-lista') if prefill else redirect('detalle_factura', factura.id)
 
             print("DTE: ====== FIN generar+firmar+enviar OK ======")
 
