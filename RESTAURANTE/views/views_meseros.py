@@ -17,6 +17,7 @@ def login_mesero(request):
         form = MeseroLoginForm(request.POST)
         if form.is_valid():
             codigo = form.cleaned_data["codigo"]
+            print("Codigo ", codigo)
             user = authenticate(request, codigo=codigo)  # autenticacion por codigo
             if user:
                 login(request, user)

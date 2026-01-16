@@ -1,7 +1,7 @@
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
-from INVENTARIO.models import Producto
+from INVENTARIO.models import Producto, TipoItem, TipoUnidadMedida
 from RESTAURANTE.models import Area, CategoriaMenu, Platillo
 
 ###############################################################################################################
@@ -189,12 +189,18 @@ def crear_menu(request):
         es_preparado = request.POST.get('es_preparado') == 'on'
         imagen = request.FILES.get('imagen')
         
+        tipo_item = get_object_or_404(TipoItem, codigo="1") #tipo bien
+        unidad_medida = get_object_or_404(TipoUnidadMedida, codigo="59") #tipo bien
+        
         if nombre and precio_venta:
                 Platillo.objects.create(
                     codigo = codigo,
                     nombre = nombre,
                     categoria_id = categoria,
+                    referencia_interna = codigo,
                     imagen=imagen,
+                    tipo_item=tipo_item,
+                    unidad_medida=unidad_medida,
                     descripcion = descripcion,
                     precio_venta = precio_venta,
                     disponible = disponible,

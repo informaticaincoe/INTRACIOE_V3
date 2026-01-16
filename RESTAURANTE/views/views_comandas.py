@@ -3,7 +3,8 @@ from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponseForbidden, JsonResponse
 from django.views.decorators.http import require_POST
 from django.db import transaction
-from RESTAURANTE.models import Comanda, ComandaItem
+from RESTAURANTE.models import Comanda
+from RESTAURANTE.realtime import broadcast_pedido_listo
 
 @login_required
 def comanda_cocina(request):
@@ -23,27 +24,40 @@ def comanda_cocina(request):
 @login_required
 @require_POST
 @transaction.atomic
-def comanda_item_en_preparacion(request, item_id):
+def comanda_en_preparacion(request, id):
     if getattr(request.user, "role", None) not in ("cocinero"):
         return HttpResponseForbidden("No autorizado.")
 
-    item = get_object_or_404(ComandaItem.objects.select_for_update(), id=item_id)
-    print("*** item: ", item)
-    item.marcar_en_preparacion(request.user)
-    print("*** item: ", item)
+    comanda = get_object_or_404(Comanda.objects.select_for_update(), id=id)
+    comanda.estado = "EN_PREPARACION"
+    comanda.save()
     
     return JsonResponse({"ok": True})
 
 @login_required
 @require_POST
 @transaction.atomic
-def comanda_item_listo(request, item_id):
+def comanda_listo(request, id):
     if getattr(request.user, "role", None) not in ("cocinero"):
         return HttpResponseForbidden("No autorizado.")
 
-    item = get_object_or_404(ComandaItem.objects.select_for_update(), id=item_id)
-    item.marcar_listo(request.user)
-        
+    comanda = get_object_or_404(Comanda.objects.select_for_update(), id=id)
+    comanda.estado = "CERRADA"
+    comanda.save()
     
+    # Datos para notificar
+    pedido = comanda.pedido
+    mesa = pedido.mesa
+
+    # OJO: ajusta esta ruta según tu modelo (mesero->user)
+    mesero_user_id = pedido.mesero.usuario_id  # si tu Pedido tiene FK mesero y Mesero tiene user
+
+    print("mesero_user_id: ", mesero_user_id)
+    transaction.on_commit(lambda: broadcast_pedido_listo(
+        mesero_user_id=mesero_user_id,
+        mesa_id=mesa.id,
+        mesa_numero=mesa.numero,
+        comanda_id=comanda.id
+    ))
     
     return JsonResponse({"ok": True})

@@ -17,30 +17,28 @@
 
             <div class="card-header d-flex justify-content-between align-items-center">
               <div>
-                <div class="fw-bold">
-                  Mesa #{{ c.pedido.mesa.numero }} · Comanda #{{ c.numero }}
-                </div>
-                <div class="text-muted small">
-                  {{ c.creada_el|date:"d/m/Y H:i" }}
-                  {% if c.notas %} · {{ c.notas }}{% endif %}
-                </div>
+                  <div class="fw-bold">Mesa #{{ c.pedido.mesa.numero }} · Comanda #{{ c.numero }}</div>
+                  <span class="badge {% if c.estado == 'ENVIADA' %} bg-primary {% elif c.estado == 'EN_PREPARACION' %} bg-warning text-dark {% elif c.estado == 'LISTA' %} bg-success {% endif %}">
+                      {{ c.get_estado_display }}
+                  </span>
               </div>
-
+          
               <div>
-                  <span class="badge
-                  {% if c.estado == 'ENVIADA' %} bg-primary
-                  {% elif c.estado == 'EN_PREPARACION' %} bg-warning text-dark
-                  {% elif c.estado == 'LISTA' %} bg-success
-                  {% else %} bg-secondary {% endif %}">
-                  {{ c.get_estado_display }}
-                </span>
-                <button class="
-                  {% if c.estado == 'ENVIADA' %} text-primary border-primary rounded"{% endif %}>
-                  {% if c.estado == 'ENVIADA' %} Iniciar pedido {% endif %}
-                </button>
+                  {% if c.estado == 'ENVIADA' %}
+                      <button class="btn btn-sm btn-primary btn-accion" 
+                              data-id="{{ c.id }}" 
+                              data-url="{% url 'comanda-item-preparacion' id=c.id %}">
+                          Iniciar pedido
+                      </button>
+                  {% elif c.estado == 'EN_PREPARACION' %}
+                      <button class="btn btn-sm btn-success btn-accion" 
+                              data-id="{{ c.id }}" 
+                              data-url="{% url 'comanda-item-listo' id=c.id %}">
+                          Finalizar
+                      </button>
+                  {% endif %}
               </div>
-              
-            </div>
+          </div>
 
             <div class="card-body p-0">
               <ul class="list-group list-group-flush">
@@ -53,22 +51,6 @@
                         <div class="text-muted small">Nota: {{ it.notas }}</div>
                       {% endif %}
                       <div class="text-muted small">Estado: {{ it.get_estado_display }}</div>
-                    </div>
-
-                    <div class="d-flex flex-column gap-2">
-                      {% if it.estado == "ENVIADO" %}
-                        <form method="post" action="{% url 'comanda-item-preparacion' it.id %}" class="js-item-form">
-                          {% csrf_token %}
-                          <button class="btn btn-sm btn-outline-warning">Tomar</button>
-                        </form>
-                      {% endif %}
-
-                      {% if it.estado == "EN_PREPARACION" or it.estado == "ENVIADO" %}
-                        <form method="post" action="{% url 'comanda-item-listo' it.id %}" class="js-item-form">
-                          {% csrf_token %}
-                          <button class="btn btn-sm btn-outline-success">Marcar listo</button>
-                        </form>
-                      {% endif %}
                     </div>
                   </li>
                   {% endif %}
@@ -88,17 +70,64 @@
 </div>
 
 <script>
-  document.querySelectorAll(".js-item-form").forEach(f => {
-    f.addEventListener("submit", async (ev) => {
-      ev.preventDefault();
-      const resp = await fetch(f.action, {
-        method: "POST",
-        headers: {"X-Requested-With": "XMLHttpRequest"},
-        body: new FormData(f)
+  document.addEventListener("DOMContentLoaded", function() {
+      // Seleccionamos todos los botones con la clase btn-accion
+      const botones = document.querySelectorAll(".btn-accion");
+  
+      botones.forEach(btn => {
+          btn.addEventListener("click", function() {
+              const urlDestino = this.dataset.url; // Obtenemos la URL del atributo data-url
+              
+              // Feedback visual: deshabilitar para evitar doble click
+              btn.disabled = true;
+              const textoOriginal = btn.innerHTML;
+              btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>...';
+  
+              fetch(urlDestino, {
+                  method: "POST",
+                  headers: {
+                      "X-Requested-With": "XMLHttpRequest",
+                      "X-CSRFToken": "{{ csrf_token }}"
+                  }
+              })
+              .then(res => {
+                  if (!res.ok) throw new Error('Error en el servidor');
+                  return res.json();
+              })
+              .then(data => {
+                  if (data.ok) {
+                      // Refrescamos la página para mostrar los nuevos estados y colores
+                      location.reload();
+                  } else {
+                      alert("No se pudo actualizar: " + (data.error || "error desconocido"));
+                      btn.disabled = false;
+                      btn.innerHTML = textoOriginal;
+                  }
+              })
+              .catch(err => {
+                  console.error("Error:", err);
+                  alert("Error de conexión en comanda.html");
+                  btn.disabled = false;
+                  btn.innerHTML = textoOriginal;
+              });
+          });
       });
-      if (resp.ok) location.reload();
-      {% comment %} else alert("No se pudo actualizar el estado."); {% endcomment %}
-    });
   });
+  (function () {
+    const protocol = (window.location.protocol === "https:") ? "wss" : "ws";
+    const wsUrl = `${protocol}://${window.location.host}/ws/cocina/comandas/`;
+    const socket = new WebSocket(wsUrl);
+  
+    socket.onopen = () => console.log("✅ WS conectado", wsUrl);
+    socket.onerror = (e) => console.error("❌ WS error", e);
+    socket.onclose = (e) => console.warn("⚠️ WS cerrado", e.code, e.reason);
+  
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === "comanda_created") {
+        location.reload();
+      }
+    };
+  })();
 </script>
 {% endblock %}

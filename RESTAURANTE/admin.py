@@ -9,6 +9,7 @@ from RESTAURANTE.models import (
     Cocinero,
     Comanda,
     ComandaItem,
+    CuentaPedido,
     DetallePedido,
     Mesa,
     Mesero,
@@ -196,6 +197,7 @@ class DetallePedidoAdmin(admin.ModelAdmin):
         "id",
         "pedido",
         "platillo",
+        "cuenta",
         "cantidad",
         "precio_unitario",
         "descuento_pct",
@@ -205,7 +207,7 @@ class DetallePedidoAdmin(admin.ModelAdmin):
     )
     list_filter = ("aplica_iva", "creado_el")
     search_fields = ("pedido__id", "pedido__mesa__numero", "platillo__nombre", "platillo__codigo")
-    autocomplete_fields = ("pedido", "platillo")
+    autocomplete_fields = ("pedido", "platillo", "cuenta")
     readonly_fields = ("subtotal_linea", "descuento_monto", "iva_monto", "total_linea", "creado_el")
     
 @admin.register(Comanda)
@@ -247,3 +249,22 @@ class CocineroAdmin(admin.ModelAdmin):
     list_display = ("nombre", "pin", "activo")
     search_fields = ("nombre", "pin")
     list_filter = ("activo",)
+    
+@admin.register(CuentaPedido)
+class CuentaPedidoAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "pedido",
+        "nombre",
+        "estado",
+        "creado_el",
+        "cerrado_el",
+        "pagado_el",
+        "subtotal",
+        "total",
+        "propina"
+    )
+    list_filter = ("pedido", "nombre", "estado")
+    search_fields = ("pedido__id", "pedido__mesa__numero")
+    readonly_fields = ("creado_el", "cerrado_el", "pagado_el", "subtotal", "total", "propina")
+    
