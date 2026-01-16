@@ -147,7 +147,7 @@ def listar_mesas(request):
                     "type": "link",
                     "label": "Solicitar cuenta",
                     "icon": "bi bi-cash-coin",
-                    "href": reverse("cambiar_estado_mesa", args=[m.id, "PENDIENTE_PAGO"])
+                    "href": reverse("solicitar_cuenta", args=[m.id])
                 })
 
             elif m.estado == 'PENDIENTE_PAGO':
@@ -155,14 +155,14 @@ def listar_mesas(request):
                     "type": "link",
                     "label": "Realizar pago",
                     "icon": "bi bi-cash-coin",
-                    # "href": reverse("pagar_mesa", args=[m.id])  # ajusta a tu url real
+                    "href": reverse("pedido-checkout", args=[m.id])
                 })
-                # opcional: reabrir si el cliente pidió algo más
+            elif m.estado == 'PAGADO':
                 acciones_mesero.append({
                     "type": "link",
                     "label": "Reabrir mesa",
                     "icon": "bi bi-arrow-counterclockwise",
-                    "href": reverse("cambiar_estado_mesa", args=[m.id, "OCUPADA"])
+                    "href": reverse("cambiar_estado_mesa", args=[m.id, "LIBRE"])
                 })
 
             m.acciones = acciones_mesero

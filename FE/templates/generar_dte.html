@@ -480,8 +480,9 @@
 
     if (selVal && selVal === variosId) return true;
     if (selTxt.includes('VARIOS')) return true;
+    if (selTxt.includes('RUTA MAYOREO')) return true;
     if (selTxt.includes('0000000-0')) return true;
-
+    if (selTxt.includes('222222222')) return true;
 
     return false;
   }

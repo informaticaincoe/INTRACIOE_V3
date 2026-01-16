@@ -2,6 +2,7 @@ from datetime import timezone
 from django.db import transaction
 from django.db.models import Sum
 from RESTAURANTE.models import Comanda, ComandaItem, DetallePedido, Pedido
+from RESTAURANTE.realtime import broadcast_comanda_created
 
 @transaction.atomic
 def enviar_pedido_a_cocina(pedido, *, notas=""):
@@ -44,6 +45,7 @@ def enviar_pedido_a_cocina(pedido, *, notas=""):
         comanda.delete()
         return None
 
+    transaction.on_commit(lambda: broadcast_comanda_created(comanda))
     return comanda
 
 @transaction.atomic
@@ -65,7 +67,7 @@ def marcar_pedido_entregado_por_mesa(mesa, *, usuario):
     if not pedido:
         return (False, "No hay pedido ABIERTO para esta mesa.")
 
-    # 🚫 regla recomendada: no permitir ENTREGADO si hay items en cocina
+    # no permitir ENTREGADO si hay items en cocina
     hay_pendientes = ComandaItem.objects.filter(
         comanda__pedido=pedido
     ).exclude(

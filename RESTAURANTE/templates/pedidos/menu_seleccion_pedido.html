@@ -13,7 +13,7 @@
   /* ✅ GRID RESPONSIVE: llena el espacio automáticamente */
   .menu-grid{
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
     gap: 1rem;
   }
 
@@ -46,6 +46,17 @@
     margin-top: .75rem;
     background: white;
   }
+
+  @media (max-width: 992px) {
+    .orden-panel {
+      height: auto; /* Solo aquí fijamos la altura */
+    }
+    .orden-scroll {
+      height: auto; /* En desktop estira para que el footer quede abajo */
+    }
+  }
+
+
 </style>
 
 <div class="row g-3">
@@ -78,7 +89,7 @@
   </div>
 
   <!-- ✅ ORDEN -->
-<div class="col-12 col-lg-4">
+<div class="col-12 col-lg-4 ">
   <div class="orden-panel">
 
     <p class="fw-semibold mb-2">Orden</p>
@@ -99,13 +110,10 @@
         <label class="form-label mb-1">Notas</label>
         <textarea class="form-control" name="notas" rows="2" placeholder="Ej: 3 personas, cumpleaños, etc."></textarea>
       </div>
-
       <input type="hidden" name="platillos_json" id="platillos_json" value="[]">
       </div>
-
     </div>
   </div>
-
 </div>
 
 <script>

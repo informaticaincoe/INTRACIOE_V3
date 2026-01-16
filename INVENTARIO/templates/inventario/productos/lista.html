@@ -53,5 +53,36 @@
     {% endfor %}
     </tbody>
   </table>
+  
+  <!-- Paginacion -->
+  <nav aria-label="Navegación de páginas" class="mt-4">
+    <ul class="pagination justify-content-center">
+      {% if productos.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ productos.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if f_cat %}&cat={{ f_cat }}{% endif %}">Anterior</a>
+        </li>
+      {% else %}
+          <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+        {% endif %}
+
+        {% for i in productos.paginator.page_range %}
+          {% if productos.number == i %}
+            <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+          {% elif i > productos.number|add:'-3' and i < productos.number|add:'3' %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ i }}{% if q %}&q={{ q }}{% endif %}{% if f_cat %}&cat={{ f_cat }}{% endif %}">{{ i }}</a>
+            </li>
+          {% endif %}
+        {% endfor %}
+
+        {% if productos.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ productos.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if f_cat %}&cat={{ f_cat }}{% endif %}">Siguiente</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
+        {% endif %}
+    </ul>
+  </nav>
 </div>
 {% endblock %}

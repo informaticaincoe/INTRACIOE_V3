@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .disable-row{
+    background-color: #00000010;
+  }
+</style>
+
+<div class="container-fluid mt-4 px-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="text-black">
+      <i class="bi bi-layout-split me-2 text-warning"></i>
+      Dividir Cuentas - Mesa {{ pedido.mesa.numero }}
+    </h2>
+    <a href="{% url 'pedido-checkout' pedido.mesa.id %}" class="btn btn-primary">
+      <i class="bi bi-check-all"></i> Finalizar División
+    </a>
+  </div>
+
+  <!-- TABS DE CUENTAS -->
+  <ul class="nav nav-tabs" id="cuentasTabs">
+    {% for c in cuentas %}
+      <li class="nav-item ">
+        <button
+          class="nav-link {% if c.id == cuenta_base.id %}active{% endif %}"
+          data-bs-toggle="tab"
+          data-bs-target="#tab-{{ c.id }}"
+          data-cuenta-id="{{ c.id }}"
+          type="button">
+          {% if c.id == cuenta_base.id %}
+            <i class="bi bi-inbox me-1"></i> Sin asignar
+          {% else %}
+            <i class="bi bi-person me-1"></i> {{ c.nombre }}
+          {% endif %}
+          <span class="badge bg-secondary ms-2">$ {{ c.total }}</span>
+        </button>
+      </li>
+    {% endfor %}
+  </ul>
+
+  <div class="mt-3 text-center">
+    <button id="btn-nueva-cuenta" class="btn btn-outline-secondary" type="button">
+      <i class="bi bi-plus-circle me-2"></i>
+      Añadir otra cuenta
+    </button>
+  </div>
+
+  <div class="tab-content border border-top-0 p-3 bg-white">
+    {% for c in cuentas %}
+      <div class="tab-pane fade {% if c.id == cuenta_base.id %}show active{% endif %}" id="tab-{{ c.id }}">
+        <div class="d-flex justify-content-between">
+          <div class="text-muted">
+            Cuenta activa:
+            <b>
+              {% if c.id == cuenta_base.id %}
+                Sin asignar (POOL)
+              {% else %}
+                {{ c.nombre }}
+              {% endif %}
+            </b>
+            <span class="badge bg-info text-dark">
+              {{c.estado}}
+            </span>
+            <div>
+              <a href="{% url 'cuenta-facturar' c.id %}" class="btn btn-success">
+                <i class="bi bi-receipt"></i> Realizar factura
+              </a>
+            </div>
+          </div>
+          
+          <div class="fw-bold">
+            Total: ${{ c.total }}
+          </div>
+        </div>
+
+        {% if c.id == cuenta_base.id %}
+          <div class="small text-muted mt-2">
+            <i class="bi bi-info-circle me-1"></i>
+            Este POOL contiene lo que aún no se ha asignado a ninguna cuenta. Usa las pestañas para repartir.
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- PRODUCTOS -->
+  <div class="card shadow mt-4">
+    <div class="card-header d-flex justify-content-between">
+      <b>Productos del pedido</b>
+      <span class="text-muted small">Agregado en cuenta / Disponible</span>
+    </div>
+
+    <div class="list-group list-group-flush">
+      {% for it in items %}
+        <div class="list-group-item d-flex justify-content-between align-items-center" id={{ it.id }}>
+          <div class="me-3">
+            <div class="fw-bold">{{ it.platillo.nombre }}</div>
+            {% if it.notas %}
+              <div class="small text-warning">{{ it.notas }}</div>
+            {% endif %}
+            <div class="small text-muted">
+              Precio: ${{ it.precio }}
+            </div>
+          </div>
+
+          <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-outline-secondary btn-sm btn-minus"
+                    type="button"
+                    data-item-key="{{ it.item_key|escape }}"
+                    data-map="{{ it.map_json|escape }}">
+              <i class="bi bi-dash"></i>
+            </button>
+
+            <span class="badge bg-info text-dark qty-badge"
+                  data-item-key="{{ it.item_key|escape }}"
+                  data-map="{{ it.map_json|escape }}">
+              0 / 0
+            </span>
+
+            <button class="btn btn-outline-warning btn-sm btn-plus"
+                    data-item-key="{{ it.item_key|escape }}"
+                    type="button"
+                    data-map="{{ it.map_json|escape }}">
+              <i class="bi bi-plus"></i>
+            </button>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+  function getCookie(name) {
+    let cookieValue = null;
+    document.cookie.split(";").forEach(c => {
+      c = c.trim();
+      if (c.startsWith(name + "=")) {
+        cookieValue = decodeURIComponent(c.substring(name.length + 1));
+      }
+    });
+    return cookieValue;
+  }
+
+  // Crear cuenta extra
+  document.getElementById("btn-nueva-cuenta").onclick = async () => {
+    const resp = await fetch("{% url 'crear-cuenta-extra' pedido.id %}", {
+      method: "POST",
+      headers: { "X-CSRFToken": getCookie("csrftoken") }
+    });
+    if (resp.ok) location.reload();
+    else alert("No se pudo crear la cuenta");
+  };
+
+  // IMPORTANT: cuenta activa inicia en POOL (cuenta_base)
+  let activeCuentaId = "{{ cuenta_base.id }}";
+  const cuentaBaseId = "{{ cuenta_base.id }}";
+
+  function safeParseMap(s) {
+    try { return JSON.parse(s); } catch { return {}; }
+  }
+
+  function getQty(map, cuentaId) {
+    const k = String(cuentaId);
+    return map[k]?.qty ? parseInt(map[k].qty, 10) : 0;
+  }
+
+  function getDetalleId(map, cuentaId) {
+    const k = String(cuentaId);
+    return map[k]?.detalle_id || null;
+  }
+
+  // Recalcular datos de la cuenta (pestaña) en la que se este 
+  // Badge: en activa / disponible(pool) / total
+  function refreshQtyBadges() {
+    document.querySelectorAll(".qty-badge").forEach(el => {
+      const map = JSON.parse(el.dataset.map);
+  
+      const enActiva = map[activeCuentaId]?.qty || 0;
+      const disponible = map[cuentaBaseId]?.qty || 0;
+  
+      el.textContent = `Act: ${enActiva} · Disp: ${disponible}`;
+
+      // Toggle clase en el row
+      const row = el.closest(".list-group-item");
+      if (row) {
+        if (disponible <= 0) row.classList.add("disable-row");
+        else row.classList.remove("disable-row");
+      }
+    });
+  }  
+
+  document.addEventListener("DOMContentLoaded", refreshQtyBadges);
+
+  // Cambiar tab
+  document.querySelectorAll("#cuentasTabs button[data-cuenta-id]").forEach(btn => {
+    btn.addEventListener("shown.bs.tab", e => {
+      activeCuentaId = e.target.dataset.cuentaId;
+      refreshQtyBadges();
+    });
+  });
+  
+  async function mover(detalleId, cuentaDestinoId) {
+    const fd = new FormData();
+    fd.append("detalle_id", detalleId);
+    fd.append("cuenta_destino_id", cuentaDestinoId);
+    fd.append("qty", 1);
+   
+    const resp = await fetch("{% url 'detalle-mover-a-cuenta' %}", {
+      method: "POST",
+      headers: { "X-CSRFToken": getCookie("csrftoken") },
+      body: fd
+    });
+
+    const data = await resp.json();
+    if (!resp.ok || !data.ok) throw new Error(data.error || "Error moviendo detalle");
+    return data
+  }
+
+  // PLUS: POOL -> cuenta activa
+  document.querySelectorAll(".btn-plus").forEach(btn => {
+    btn.onclick = async () => {
+      if (String(activeCuentaId) === String(cuentaBaseId)) {
+        return alert("Selecciona una cuenta (persona) para asignar. Estás en 'Sin asignar'.");
+      }
+
+      const badge = btn.parentElement.querySelector(".qty-badge");
+      const map = safeParseMap(badge.dataset.map);
+
+      const baseQty = getQty(map, cuentaBaseId);
+      const baseDetalleId = getDetalleId(map, cuentaBaseId);
+
+      if (!baseDetalleId || baseQty <= 0) {
+        return alert("No hay unidades disponibles en 'Sin asignar'.");
+      }
+
+      try {
+        btn.disabled = true;
+      
+        const result = await mover(baseDetalleId, activeCuentaId);
+        applyServerMap(btn.closest(".list-group-item"), result.map);
+        refreshQtyBadges();
+      
+      } catch (e) {
+        alert(e.message || "Error");
+      } finally {
+        btn.disabled = false;
+      }
+      
+    };
+  });
+
+  // MINUS: cuenta activa -> POOL
+  document.querySelectorAll(".btn-minus").forEach(btn => {
+    btn.onclick = async () => {
+      if (String(activeCuentaId) === String(cuentaBaseId)) {
+        return alert("Estás en 'Sin asignar'. Cambia a una cuenta para devolver desde esa cuenta.");
+      }
+
+      const badge = btn.parentElement.querySelector(".qty-badge");
+      const map = safeParseMap(badge.dataset.map);
+
+      const actQty = getQty(map, activeCuentaId);
+      const actDetalleId = getDetalleId(map, activeCuentaId);
+
+      if (!actDetalleId || actQty <= 0) {
+        return alert("Este producto no está asignado en la cuenta activa.");
+      }
+
+      try {
+        btn.disabled = true;
+      
+        const result = await mover(actDetalleId, cuentaBaseId);
+        applyServerMap(btn.closest(".list-group-item"), result.map);
+        refreshQtyBadges();
+      
+      } catch (e) {
+        alert(e.message || "Error");
+      } finally {
+        btn.disabled = false;
+      }
+      
+    };
+  });
+
+  function applyServerMap(containerEl, newMap) {
+    const mapStr = JSON.stringify(newMap || {});
+    const badge = containerEl.querySelector(".qty-badge");
+    const btnPlus = containerEl.querySelector(".btn-plus");
+    const btnMinus = containerEl.querySelector(".btn-minus");
+  
+    if (badge) badge.dataset.map = mapStr;
+    if (btnPlus) btnPlus.dataset.map = mapStr;
+    if (btnMinus) btnMinus.dataset.map = mapStr;
+  }
+  
+</script>
+
+{% endblock %}

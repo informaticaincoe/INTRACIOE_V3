@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 mb-0 text-black fs-4 d-flex justify-center items-align-center">
+                    <i class="bi bi-cash-stack text-success me-2"></i>Finalizar Pedido - Mesa {{ mesa.numero }}
+                </h1>
+                {% comment %} <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="{% url 'mesas-lista' %}" class="text-muted">Mesas</a></li>
+                        <li class="breadcrumb-item active">Checkout</li>
+                    </ol>
+                </nav> {% endcomment %}
+            </div>
+            <div class="text-end">
+                <span class="badge bg-secondary">Pedido #{{ pedido.id }}</span>
+                <div class="text-muted small">{{ pedido.creado_el|date:"d/m/Y H:i" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="card shadow" style="color: #000; border: 1px solid #3333332e;">
+                <div class="card-header bg-transparent py-3" style="border-bottom: 1px solid #33333371;">
+                    <h5 class="mb-0 text-black"><i class="bi bi-list-ul me-2"></i>Resumen de Productos</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" style="color: #000;">
+                            <thead class="text-muted">
+                                <tr>
+                                    <th class="ps-4">Producto</th>
+                                    <th class="text-center">Cant.</th>
+                                    <th class="text-end pe-4">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for detalle in pedido.detalles.all %}
+                                <tr style="border: 1px solid #3333332e;">
+                                    <td class="ps-4">
+                                        {{ detalle.platillo.nombre }}
+                                        {% if detalle.notas %}
+                                            <small class="d-block text-warning italic">{{ detalle.notas }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">{{ detalle.cantidad }}</td>
+                                    <td class="text-end pe-4">${{ detalle.total_linea }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot style="background-color: #1a1a1a;">
+                                <tr>
+                                    <td colspan="2" class="text-end text-muted ps-4">Subtotal:</td>
+                                    <td class="text-end pe-4">${{ pedido.subtotal }}</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="text-end text-muted ps-4">IVA (13%):</td>
+                                    <td class="text-end pe-4">${{ pedido.iva_total }}</td>
+                                </tr>
+                                <tr class="fs-4 fw-bold text-success border-top border-secondary">
+                                    <td colspan="2" class="text-end ps-4">TOTAL:</td>
+                                    <td class="text-end pe-4">${{ pedido.total }}</td>
+                                </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <h4 class="mb-3 text-black"></h4>
+            
+            <div class="card mb-3 action-card border-secondary shadow-sm" 
+                onclick="location.href='{% url 'enviar-facturacion' pedido.id %}';"
+                style="cursor:pointer;">
+                <div class="card-body d-flex align-items-center p-4">
+                    <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-4 d-flex justify-content-between" style="width: 5rem; height: 5rem;">
+                        <i class="bi bi-person-fill fs-1 text-primary"></i>
+                    </div>
+                    <div>
+                        <h5 class="text-black mb-1">Una sola cuenta</h5>
+                        <p class="text-muted small mb-0">Se cobrará el total de ${{ pedido.total }} en un solo ticket.</p>
+                    </div>
+                    <i class="bi bi-chevron-right ms-auto text-muted"></i>
+                </div>
+            </div>
+
+            <div class="card mb-4 action-card border-secondary shadow-sm" onclick="location.href='{% url 'pedido-split' pedido.id %}';" style="cursor:pointer; transition: 0.3s;">
+                <div class="card-body d-flex align-items-center p-4">
+                    <div class="rounded-circle bg-warning bg-opacity-10 p-3 me-4">
+                        <i class="bi bi-people-fill fs-1 text-warning"></i>
+                    </div>
+                    <div>
+                        <h5 class="text-black mb-1">Cuentas separadas</h5>
+                        <p class="text-muted small mb-0">Dividir productos por persona o grupos específicos.</p>
+                    </div>
+                    <i class="bi bi-chevron-right ms-auto text-muted"></i>
+                </div>
+            </div>
+
+            <div class="alert border-secondary " style="background-color: #ffffff;">
+                <h6 class="alert-heading"><i class="bi bi-info-circle me-2 text-info"></i>Estado de Cuentas</h6>
+                <hr class="border-secondary">
+                {% for c in cuentas %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="">{{ c.nombre }}</span>
+                        <span class="badge {% if c.estado == 'ABIERTA' %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                            {{ c.estado }}
+                        </span>
+                        <span class="fw-bold text-black">${{ c.total }}</span>
+                    </div>
+                {% empty %}
+                    <p class="small text-muted mb-0">No hay cuentas generadas aún.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Efecto Hover para las opciones de pago */
+    .action-card:hover {
+        transform: translateY(-3px);
+    }
+    .breadcrumb-item + .breadcrumb-item::before {
+        color: #666;
+    }
+</style>
+{% endblock %}

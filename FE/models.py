@@ -420,12 +420,12 @@ class FacturaElectronica(models.Model):
     incoterms = models.ForeignKey(INCOTERMS, on_delete=models.CASCADE, null=True)
     
     def clean(self):
-        if self.numero_control and self.fecha_emision:
-            coincidencias = FacturaElectronica.objects.filter(numero_control=self.numero_control)
+        if self.numero_control and self.fecha_emision and self.tipo_dte:
+            coincidencias = FacturaElectronica.objects.filter(numero_control=self.numero_control, tipo_dte=self.tipo_dte)
             if self.pk:
                 coincidencias = coincidencias.exclude(pk=self.pk)
             for factura in coincidencias:
-                if factura.fecha_emision.year == self.fecha_emision.year:
+                if factura.fecha_emision.year == self.fecha_emision.year and factura.tipo_dte == self.tipo_dte:
                     raise ValidationError(
                         f"El número de control {self.numero_control} ya existe"
                     )
@@ -440,14 +440,18 @@ class FacturaElectronica(models.Model):
         if not self.numero_control:
             super().save(*args, **kwargs)
             self.numero_control = f"DTE-01-{uuid.uuid4().hex[:8].upper()}-{str(self.pk).zfill(15)}"
+        
 
         # Validar número de control contra facturas existentes del mismo año
         if self.numero_control:
-            coincidencias = FacturaElectronica.objects.filter(numero_control=self.numero_control)
+            coincidencias = FacturaElectronica.objects.filter(numero_control=self.numero_control, tipo_dte=self.tipo_dte)
+            print("COINCIDENCIAS: ", coincidencias)
             if self.pk:
                 coincidencias = coincidencias.exclude(pk=self.pk)
             for factura in coincidencias:
-                if factura.fecha_emision and factura.fecha_emision.year == self.fecha_emision.year:
+                print("factura.tipo_dte: ", factura.tipo_dte)
+                
+                if factura.fecha_emision and factura.fecha_emision.year == self.fecha_emision.year and factura.tipo_dte == self.tipo_dte:
                     raise ValidationError(
                         f"El número de control {self.numero_control} ya existe."
                     )

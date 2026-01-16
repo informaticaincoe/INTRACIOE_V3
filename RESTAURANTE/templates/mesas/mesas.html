@@ -3,7 +3,23 @@
 {% block content %}
 <style>
   /* layout general */
-.mesa-box { cursor: pointer; }
+.mesa-box { 
+  cursor: pointer; 
+  --sinmesero-color: #606060;
+  --sinmesero-color-fondo: #6060601C;
+  --libre-color: #bdbdbd;
+  --libre-color-fondo: ##BDBDBD0a;
+  --pendiente-orden-color: #FF9800;
+  --pendiente-orden-color-fondo: #FF98000a;
+  --ocupada-color: #E53935;
+  --ocupada-color-fondo: #E539350a;
+  --entregado-color: #0D9488;
+  --entregado-color-fondo: #0D94880a;
+  --pendiente-pago-color: #453ed1;
+  --pendiente-pago-color-fondo: #453ed10a;
+  --pagado-color: #4CAF50;
+  --pagado-color-fondo: #4CAF500a;
+}
 .mesa-card{
   width: 100%;
   height: 8.5rem;
@@ -12,10 +28,6 @@
   transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
   position: relative;
 }
-/* .mesa-card:hover{
-  transform: translateY(-2px);
-  box-shadow: 0 .75rem 1.5rem rgba(0,0,0,.08) !important;
-} */
 
 /* dropdown icon */
 .mesa-actions{
@@ -26,41 +38,112 @@
 .mesa-card:hover .mesa-actions{ opacity: 1; }
 
 /* Colores según el estado */
-  .is-libre { 
-    border-color: rgba(0,0,0,.12) !important; 
-  }
-  
-  .is-sinmesero { 
-    border-color: #474747 !important;
-    border-style: dashed !important; /* Opcional: borde punteado para destacar que falta algo */
+  {% comment %} Estilos para mesa libre {% endcomment %}
+  .is-sinmesero-card { 
+    border-color: var(--sinmesero-color) !important; 
+    border-style: dashed !important;
+    background-color: var(--sinmesero-color-fondo) !important;
   }
 
-  .is-pendiente-orden { 
-    border-color: rgb(244, 178, 93) !important; 
-    background-color: rgba(244, 178, 93, 0.05); 
+  .badget-is-sinmesero {
+    border: 1px var(--sinmesero-color) solid !important; 
+    color: var(--sinmesero-color) !important;
   }
 
-  .is-ocupada { 
-    border-color: rgb(34, 197, 94) !important; 
-    background-color: rgba(34, 197, 94, 0.05);
+  .is-sinmesero-icon { 
+    background-color: var(--sinmesero-color) !important; 
   }
 
-  .is-entregado { 
-    border-color:  rgb(13, 148, 136) !important; 
-    background-color: rgba(13, 148, 136, 0.05);
+  {% comment %} Estilos para mesa libre {% endcomment %}
+  .is-libre-card { 
+    border-color: var(--libre-color) !important; 
+    background-color: var(--libre-color-fondo) !important;
   }
 
-  .is-pendiente-pago { 
-    border-color: rgb(16, 60, 191) !important; 
-    background-color: rgba(16, 60, 191, 0.05);
-  } 
+  .badget-is-libre {
+    border: 1px var(--libre-color) solid !important; 
+    color: var(--libre-color) !important;
+  }
 
-/* Alerta cuando NO hay mesero asignado */
-.sin-mesero {
-    position: relative;
-    animation: pulse-red 2s infinite;
-    box-shadow: 0 0 10px rgba(220, 53, 69, 0.2);
-}
+  .is-libre-icon { 
+    background-color: var(--libre-color) !important; 
+  }
+
+  {% comment %} Estilos para mesa orden pendiente {% endcomment %}
+  .is-pendiente-orden-card { 
+    border-color: var(--pendiente-orden-color) !important; 
+    background-color: var(--pendiente-orden-color-fondo) !important;
+  }
+
+  .badget-is-pendiente-orden{
+    border: 1px var(--pendiente-orden-color) solid !important; 
+    color: var(--pendiente-orden-color) !important;
+  }
+
+  .is-pendiente-orden-icon { 
+    background-color: var(--pendiente-orden-color) !important; 
+  }
+
+  {% comment %} Estilos para mesa ocupada {% endcomment %}
+  .is-ocupada-orden-card { 
+    border-color: var(--ocupada-color) !important; 
+    background-color: var(--ocupada-color-fondo) !important;
+  }
+
+  .badget-is-ocupada {
+    border: 1px var(--ocupada-color) solid !important; 
+    color: var(--ocupada-color) !important;
+  }
+
+  .is-ocupada-icon { 
+    background-color: var(--ocupada-color) !important; 
+  }
+
+  {% comment %} Estilos para mesa entregada {% endcomment %}
+  .is-entregado-orden-card { 
+    border-color: var(--entregado-color) !important; 
+    background-color: var(--entregado-color-fondo) !important;
+  }
+
+  .badget-is-entregado {
+    border: 1px var(--entregado-color) solid !important; 
+    color: var(--entregado-color) !important;
+  }
+
+  .is-entregado-icon { 
+    background-color: var(--entregado-color) !important; 
+  }
+
+  {% comment %} Estilos para mesa pendiente de pago {% endcomment %}
+  .is-pendiente-pago-orden-card { 
+    border-color: var(--pendiente-pago-color) !important; 
+    background-color: var(--pendiente-pago-color-fondo) !important;
+  }
+
+  .badget-is-pendiente-pago {
+    border: 1px var(--pendiente-pago-color) solid !important; 
+    color: var(--pendiente-pago-color) !important;
+  }
+
+  .is-pendiente-pago-icon { 
+    background-color: var(--pendiente-pago-color) !important; 
+  }
+
+  {% comment %} Estilos para mesa pagada {% endcomment %}
+  .is-pagado-orden-card { 
+    border-color: var(--pagado-color) !important; 
+    background-color: var(--pagado-color-fondo) !important;
+  }
+
+  .badget-is-pagado {
+    border: 1px var(--pagado-color) solid !important; 
+    color: var(--pagado-color) !important;
+  }
+
+  .is-pagado-icon { 
+    background-color: var(--pagado-color) !important; 
+  }
+
 
 /* círculo estado */
 .mesa-status-circle{
@@ -286,6 +369,48 @@
       });
     }
   });
+
+  (function () {
+    const protocol = (window.location.protocol === "https:") ? "wss" : "ws";
+    const wsUrl = `${protocol}://${window.location.host}/ws/mesero/notifs/`;
+    const socket = new WebSocket(wsUrl);
+  
+    socket.onopen = () => console.log("✅ WS mesero conectado");
+    socket.onclose = (e) => console.warn("⚠️ WS mesero cerrado", e.code, e.reason);
+    socket.onerror = (e) => console.error("❌ WS mesero error", e);
+  
+    function showToast(msg) {
+      // simple (puedes cambiar a Bootstrap Toast si ya lo usas)
+      const div = document.createElement("div");
+      div.textContent = msg;
+      div.style.position = "fixed";
+      div.style.right = "16px";
+      div.style.bottom = "16px";
+      div.style.padding = "10px 12px";
+      div.style.background = "#198754";
+      div.style.color = "white";
+      div.style.borderRadius = "10px";
+      div.style.zIndex = 99999;
+      document.body.appendChild(div);
+      setTimeout(() => div.remove(), 3000);
+    }
+  
+    socket.onmessage = (event) => {
+      const payload = JSON.parse(event.data);
+  
+      if (payload.type === "pedido_listo") {
+        const data = payload.data;
+        showToast(data.mensaje);
+  
+        // Mostrar icono en la tarjeta de la mesa
+        const card = document.querySelector(`.mesa-card[data-mesa-id="${data.mesa_id}"]`);
+        if (card) {
+          const icon = card.querySelector(".pedido-listo-icon");
+          if (icon) icon.classList.remove("d-none");
+        }
+      }
+    };
+  })();
 </script>
 {% endblock extra_js %}
 {% endblock content %} 
