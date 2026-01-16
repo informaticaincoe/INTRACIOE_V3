@@ -32,6 +32,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from decimal import ROUND_HALF_UP, ConversionSyntax, Decimal, getcontext
 from FE.utils import _get_emisor_for_user
+from RESTAURANTE.services.services_pedidos import pagar_cuenta
 from intracoe import settings
 from .models import FacturaSujetoExcluidoElectronica, Token_data, Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica,  Receptor_fe, Tipo_dte, TipoMoneda, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos, Descuento, FormasPago, Plazo, TipoGeneracionDocumento, TipoContingencia, EventoContingencia, TipoTransmision, LoteContingencia, representanteEmisor
 from INVENTARIO.models import Almacen, DetalleDevolucionVenta, DevolucionVenta, MovimientoInventario, NotaCredito, Producto, TipoItem, Tributo, TipoUnidadMedida
@@ -670,15 +671,10 @@ def generar_factura_view(request):
     if request.method == 'GET':
         prefill = None
         if request.GET.get("from_cart") == "1":
-            # prefill = request.session.pop("facturacion_prefill", None)
-            # request.session.modified = True
             prefill = request.session.get("facturacion_prefill", None)
             print("DTE: prefill recuperado =", prefill)
 
-        # tipo_dte = globals().get('tipo_documento_dte', '01')
         tipo_dte = request.GET.get("tipo_documento_dte", '01')
-        
-        
         
         print("DTE: GET tipo_dte=", tipo_dte)
         if not tipo_dte:
@@ -724,7 +720,6 @@ def generar_factura_view(request):
             "dte_select": tipo_dte
         }
         print("DTE: Renderizar template generar_dte.html")
-        print(f"DTE: Renderizar template generar_dte.html {context}")
         
         return render(request, "generar_dte.html", context)
 
@@ -1256,33 +1251,16 @@ def generar_factura_view(request):
             prefill = request.session.get("facturacion_prefill")
             if prefill and prefill.get("origen") == "restaurante":
                 try:
-                    from RESTAURANTE.models import Pedido, Mesa
-                    Pedido.objects.filter(id=prefill.get("pedido_id")).update(estado='PAGADO')
-                    # Asumiendo que quieres liberar la mesa (ponerla disponible)
-                    pedido = get_object_or_404(Pedido, id=prefill.get("pedido_id") )
-                    pedido.estado = "PAGADO"
-                    pedido.save()
-                    print("<<<<<<<<<<<< ",pedido)
-                    print(">>>>>>>>>>>>", prefill.get("pedido_id"))
-                    
-                    mesa_id = pedido.mesa_id # Asegúrate que venga en el prefill
-                    print(mesa_id)
-                    if mesa_id:
-                        Mesa.objects.filter(id=mesa_id).update(estado='PAGADO')
-                    
+                    cuenta_id = prefill.get("cuenta_id") 
+                    if cuenta_id:
+                        pagar_cuenta(cuenta_id=cuenta_id)
+                    else:
+                        print("Error post-facturación: falta cuenta_id en prefill")
+
                     request.session.pop("facturacion_prefill", None)
+
                 except Exception as e:
                     print(f"Error post-facturación: {e}")
-
-                # 6. RESPUESTA FINAL ÚNICA
-                # if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or is_json:
-                #     return JsonResponse({
-                #         "status": "OK",
-                #         "redirect": reverse('mesas-lista') if prefill else reverse('detalle_factura', args=[factura.id]),
-                #         "factura_id": factura.id
-                #     })
-            
-                # return redirect('mesas-lista') if prefill else redirect('detalle_factura', factura.id)
 
             print("DTE: ====== FIN generar+firmar+enviar OK ======")
 

@@ -301,10 +301,7 @@ class Pedido(models.Model):
             if self.mesa.estado != "PENDIENTE_PAGO":
                 self.mesa.estado = "PENDIENTE_PAGO"
                 self.mesa.save(update_fields=["estado"])
-        elif self.estado in ("PAGADO", "ANULADO"):
-            if self.mesa.estado != "LIBRE":
-                self.mesa.estado = "LIBRE"
-                self.mesa.save(update_fields=["estado"])
+        
 
     # ---------- Totales ----------
     def recalcular_totales(self, save=True):
@@ -339,6 +336,34 @@ class Pedido(models.Model):
         self.recalcular_totales(save=True)
         self.save(update_fields=["estado", "cerrado_el"])
         self._sync_estado_mesa()
+        
+    @transaction.atomic
+    def marcar_pagado_si_corresponde(self):
+        """
+        Marca el pedido como PAGADO si todas las cuentas del pedido
+        están en estado PAGADA o ANULADA.
+        """
+        # Releer con lock para evitar race conditions
+        pedido = Pedido.objects.select_for_update().get(id=self.id)
+
+        # Si ya está pagado, no hagas nada
+        if pedido.estado == "PAGADO":
+            return False
+
+        # Considera como "resueltas" las cuentas PAGADAS o ANULADAS
+        pendientes = pedido.cuentas.exclude(estado__in=["PAGADA", "ANULADA"]).exists()
+        if pendientes:
+            return False
+
+        pedido.estado = "PAGADO"
+        pedido.pagado_el = timezone.now()
+        pedido.save(update_fields=["estado", "pagado_el"])
+
+        # tu mesa: si quieres LIBRE, usa LIBRE. Si tienes PAGADO, úsalo.
+        pedido.mesa.estado = "PAGADO"  # o "PAGADO" si así lo manejas
+        pedido.mesa.save(update_fields=["estado"])
+
+        return True
 
 
 class DetallePedido(models.Model):    
@@ -376,8 +401,8 @@ class DetallePedido(models.Model):
         ]
         constraints = [
             models.CheckConstraint(
-                condition=Q(cantidad__gt=0),
-                name="detallepedido_cantidad_gt_0",
+                condition=Q(cantidad__gte=0),
+                name="detallepedido_cantidad_gte_0",
             ),
         ]
 
