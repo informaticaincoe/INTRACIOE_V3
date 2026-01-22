@@ -1,6 +1,7 @@
 from django.urls import path
 
 from RESTAURANTE.views import views_cocineros, views_comandas, views_config_restaurante, views_mesas, views_meseros, views_pedidos
+from RESTAURANTE.views.views_cuentas import cambiar_estado_cuenta
 
 
 urlpatterns = [
@@ -71,6 +72,7 @@ urlpatterns = [
     path("pedido/<int:pedido_id>/split/", views_pedidos.pedido_split, name="pedido-split"),
     path("pedido/<int:pedido_id>/pagar/", views_pedidos.enviar_facturacion, name="enviar-facturacion"),
     
+    path('entregar/<int:mesa_id>/', views_pedidos.entregar_pedido, name='entregar_pedido'),
 
     path("detalle/mover/", views_pedidos.detalle_mover_a_cuenta, name="detalle-mover-a-cuenta"),
 
@@ -79,5 +81,8 @@ urlpatterns = [
     
     path("pedido/<int:pedido_id>/confirmar-division/", views_pedidos.confirmar_division, name="pedido-confirmar-division"),
     path("cuenta/<int:cuenta_id>/facturar/", views_pedidos.enviar_facturacion_cuenta, name="cuenta-facturar"),
+
+    # Agregamos el parámetro <str:estado> al final
+    path("cuenta/<int:cuenta_id>/cambiar-estado/<str:estado>/", cambiar_estado_cuenta, name="cambiar-estado-cuenta")
 
 ]

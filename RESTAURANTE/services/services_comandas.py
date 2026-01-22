@@ -18,8 +18,11 @@ def enviar_pedido_a_cocina(pedido, *, notas=""):
         .select_related("platillo")
         .order_by("id")
     )
+    
+    print(">>>>>>detalles pedido: ", detalles)
 
     comanda = Comanda.crear_para_pedido(pedido, notas=notas)
+    print(">>>>>>dcomanda: ", comanda)
 
     creados = 0
     for det in detalles:
