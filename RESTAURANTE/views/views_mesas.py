@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.db.models import Exists, OuterRef, Q
-from RESTAURANTE.models import Area, AsignacionMesa, Comanda, Mesa, Mesero, Pedido, Platillo
+from RESTAURANTE.models import Area, AsignacionMesa, Caja, Comanda, Mesa, Mesero, Pedido, Platillo
 from django.utils.dateparse import parse_datetime
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
@@ -19,8 +19,14 @@ MANEJO DE:
 #                                                  Mesas                                                      #
 ###############################################################################################################
 def cambiar_estado_mesa(request, pk, estado):
-    mesa = get_object_or_404(Mesa, pk=pk)
-    # Quitamos la validación estricta de POST para que funcione con el enlace
+    
+    if not Caja.objects.filter(estado="ABIERTA").exists():
+        print("No hay caja abierta 2")
+        messages.error(request, "Denegado: No hay una caja abierta.", extra_tags="error-caja-cerrada")
+        return redirect("mesas-lista")
+        
+    mesa = get_object_or_404(Mesa, pk=pk)   
+    
     mesa.estado = estado
     mesa.save()
     messages.success(request, f'Mesa {mesa.numero} ahora está OCUPADA.')
@@ -206,6 +212,12 @@ def listar_mesas(request):
             {"type": "link", "label": "Editar", "icon": "bi bi-pencil", "href": reverse("editar-mesa", args=[m.id])},
             {"type": "modal", "label": "Eliminar", "icon": "bi bi-trash", "target": "#eliminarMesaModal",
              "data": {"id": m.id, "nombre": m.numero}},
+            {
+                    "type": "link",
+                    "label": "Realizar pago",
+                    "icon": "bi bi-cash-coin",
+                    "href": reverse("pedido-checkout", args=[m.id])
+                }
         ]
         m.acciones = acciones
 

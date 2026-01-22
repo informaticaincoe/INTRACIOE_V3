@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login
 
 from RESTAURANTE.formsLogin import CocineroLoginForm
-from RESTAURANTE.models import Cocinero
+from RESTAURANTE.models import AreaCocina, Cocinero
 
 
 def login_cocinero(request):
@@ -17,7 +17,6 @@ def login_cocinero(request):
             user = authenticate(request, pin=pin)  # autenticación por PIN
             if user:
                 login(request, user)
-                # cambia este redirect al módulo/pantalla de cocina que tengas
                 return redirect("comanda-cocina")
             form.add_error("pin", "PIN inválido o cocinero inactivo.")
     else:
@@ -28,43 +27,57 @@ def login_cocinero(request):
 
 def listar_cocineros(request):
     search_query = request.GET.get("search_name")
+
+    # Siempre definir las variables
+    cocineros = Cocinero.objects.all().order_by("pk")
+    areas_cocina_lista = AreaCocina.objects.all()
+
     if search_query:
-        cocineros = Cocinero.objects.filter(nombre__icontains=search_query).order_by("pk")
-    else:
-        cocineros = Cocinero.objects.all()
-    
-    print(">>>>>>>>> Cocineros: ", cocineros)
+        cocineros = cocineros.filter(nombre__icontains=search_query)
 
-    return render(request, "cocina/cocineros.html", {"lista_cocineros": cocineros})
+    print("LISTA AREAS ", areas_cocina_lista)
+    context = {
+        "lista_cocineros": cocineros,
+        "lista_areas": areas_cocina_lista
+    }
 
+    return render(request, "cocina/cocineros.html", context)
 
 def crear_cocinero(request):
     if request.method == "POST":
         nombre = (request.POST.get("nombre") or "").strip()
         pin = (request.POST.get("pin") or "").strip()
+        area_cocina = (request.POST.get("area_cocina") or "").strip()
         activo = request.POST.get("activo") == "on"
 
         if nombre and pin:
             if Cocinero.objects.filter(pin=pin).exists():
                 messages.error(request, "Ya existe un cocinero con ese PIN.")
             else:
-                Cocinero.objects.create(nombre=nombre, pin=pin, activo=activo)
+                Cocinero.objects.create(nombre=nombre, pin=pin, activo=activo, area_cocina=area_cocina )
                 messages.success(request, "Cocinero creado con éxito.")
             return redirect("cocineros-lista")
 
         messages.error(request, "El nombre y el PIN no pueden estar vacíos.")
         return redirect("cocineros-lista")
+    
+    areas_cocina_lista = AreaCocina.objects.all()
+    context = {
+        "lista_areas": areas_cocina_lista
+    }
 
-    return render(request, "cocina/formulario_cocinero.html")
+    return render(request, "cocina/formulario_cocinero.html", context)
 
 
 def editar_cocinero(request, pk):
     cocinero = get_object_or_404(Cocinero, pk=pk)
-
+    areas_cocina_lista = AreaCocina.objects.all()
+    
     if request.method == "POST":
         nombre = (request.POST.get("nombre") or "").strip()
         pin = (request.POST.get("pin") or "").strip()
         activo = request.POST.get("activo") == "on"
+        area_cocina_id = request.POST.get("area_cocina")
 
         if not (nombre and pin):
             messages.error(request, "El nombre y el PIN no pueden estar vacíos.")
@@ -78,12 +91,19 @@ def editar_cocinero(request, pk):
         cocinero.nombre = nombre
         cocinero.pin = pin
         cocinero.activo = activo
+        cocinero.area_cocina_id = area_cocina_id
         cocinero.save()
 
-        messages.success(request, "Cocinero actualizado con éxito.")
         return redirect("cocineros-lista")
 
-    return render(request, "cocina/formulario_cocinero.html", {"cocinero": cocinero})
+    context = {
+        "lista_areas": areas_cocina_lista,
+        "cocinero": cocinero
+    }
+
+    messages.success(request, "Cocinero actualizado con éxito.")
+
+    return render(request, "cocina/formulario_cocinero.html", context)
 
 
 def eliminar_cocinero(request, pk):

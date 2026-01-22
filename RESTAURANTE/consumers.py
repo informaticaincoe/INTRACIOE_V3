@@ -12,9 +12,18 @@ class CocinaComandasConsumer(AsyncJsonWebsocketConsumer):
         if role not in ("cocinero", "admin", "supervisor"):
             await self.close(code=4403)
             return
+        
+        cocinero = getattr(user, "cocinero", None)
+        if not cocinero or not cocinero.area_cocina:
+            await self.close(code=4403)
+            return
 
-        self.group_name = "cocina_comandas"
-        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        self.group_name = f"cocina_area_{cocinero.area_cocina.id}"
+
+        await self.channel_layer.group_add(
+            self.group_name,
+            self.channel_name
+        )
         await self.accept()
 
     async def disconnect(self, close_code):

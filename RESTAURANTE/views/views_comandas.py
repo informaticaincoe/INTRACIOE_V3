@@ -8,18 +8,42 @@ from RESTAURANTE.realtime import broadcast_pedido_listo
 
 @login_required
 def comanda_cocina(request):
-    if getattr(request.user, "role", None) not in ("cocinero", "admin", "supervisor"):
+    print("REQUEST ROLE ", request.user.role)
+    if request.user.role not in ("cocinero", "admin", "supervisor"):
         return HttpResponseForbidden("No autorizado.")
+        
 
-    # Trae comandas activas con sus items (pendientes de cocina)
-    comandas = (
-        Comanda.objects
-        .select_related("pedido", "pedido__mesa")
-        .prefetch_related("items")
-        .exclude(estado__in=["CERRADA", "ANULADA"])
-        .order_by("-creada_el")
-    )
-    return render(request, "cocina/comanda.html", {"comandas": comandas})
+    if request.user.role == "cocinero": #Si es cocinero mostrar solo las comandas de su area
+        cocinero = request.user.cocinero
+        
+        comandas = (
+            Comanda.objects
+                .filter(
+                    area_cocina=cocinero.area_cocina
+                )
+                .select_related("pedido", "pedido__mesa")
+                .prefetch_related("items")
+                .exclude(estado__in=["CERRADA", "ANULADA"])
+                .order_by("-creada_el")
+        )
+
+        return render(
+            request,
+            "cocina/comanda.html",
+            {"comandas": comandas}
+        )    
+    else: # si es administrador mostrar todas para temas de administracion
+        comandas = (
+            Comanda.objects.all().order_by("-creada_el")
+        )
+
+        return render(
+            request,
+            "cocina/comanda.html",
+            {"comandas": comandas}
+        ) 
+
+    
 
 @login_required
 @require_POST
@@ -49,8 +73,7 @@ def comanda_listo(request, id):
     pedido = comanda.pedido
     mesa = pedido.mesa
 
-    # OJO: ajusta esta ruta según tu modelo (mesero->user)
-    mesero_user_id = pedido.mesero.usuario_id  # si tu Pedido tiene FK mesero y Mesero tiene user
+    mesero_user_id = pedido.mesero.usuario_id
 
     print("mesero_user_id: ", mesero_user_id)
     transaction.on_commit(lambda: broadcast_pedido_listo(

@@ -2,6 +2,7 @@ from zoneinfo import ZoneInfo
 from django.forms import modelform_factory
 import openpyxl
 import requests
+from RESTAURANTE.services.service_factura import finalizar_venta_exitosa
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.models import User
@@ -32,6 +33,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from decimal import ROUND_HALF_UP, ConversionSyntax, Decimal, getcontext
 from FE.utils import _get_emisor_for_user
+from RESTAURANTE.models import Pedido
 from RESTAURANTE.services.services_pedidos import pagar_cuenta
 from intracoe import settings
 from .models import FacturaSujetoExcluidoElectronica, Token_data, Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica,  Receptor_fe, Tipo_dte, TipoMoneda, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos, Descuento, FormasPago, Plazo, TipoGeneracionDocumento, TipoContingencia, EventoContingencia, TipoTransmision, LoteContingencia, representanteEmisor
@@ -871,6 +873,7 @@ def generar_factura_view(request):
                 tipotransmision=tipotransmision_obj,
                 flete_exportacion=Decimal("0.00"),
                 seguro_exportacion=Decimal("0.00"),
+                usuario_id=request.user.id,
             )
             print("DTE: Factura creada id=", factura.id)
 
@@ -1247,21 +1250,25 @@ def generar_factura_view(request):
                     "enviar_mh_url": reverse('enviar_factura_hacienda', args=[factura.id]),
                     }, status=200)
                 
-            # 5. LÓGICA DE RESTAURANTE (Solo si todo lo anterior fue exitoso)
+            # --- VINCULACIÓN DE RESTAURANTE ---
             prefill = request.session.get("facturacion_prefill")
             if prefill and prefill.get("origen") == "restaurante":
-                try:
-                    cuenta_id = prefill.get("cuenta_id") 
-                    if cuenta_id:
-                        pagar_cuenta(cuenta_id=cuenta_id)
-                    else:
-                        print("Error post-facturación: falta cuenta_id en prefill")
+                pedido_id = prefill.get("pedido_id")
+                
+                from RESTAURANTE.models import CuentaPedido
+                cuenta = (CuentaPedido.objects
+                        .filter(pedido_id=pedido_id)
+                        .exclude(estado__in=["PAGADA", "ANULADO"])
+                        .order_by("id")
+                        .first())
 
-                    request.session.pop("facturacion_prefill", None)
-
-                except Exception as e:
-                    print(f"Error post-facturación: {e}")
-
+                if cuenta:
+                    cuenta.factura = factura
+                    cuenta.save(update_fields=["factura"])
+                print(">>>>>>>>>> FACTURA id ", factura.id)
+                
+                finalizar_venta_exitosa(factura.id)
+            
             print("DTE: ====== FIN generar+firmar+enviar OK ======")
 
             # Respuesta final

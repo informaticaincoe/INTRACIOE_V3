@@ -3,8 +3,10 @@ from django.contrib import admin
 from FE.models import FacturaElectronica, Receptor_fe
 from RESTAURANTE.models import (
     Area,
+    AreaCocina,
     AsignacionMesa,
     Caja,
+    CajaDetalleArqueo,
     CategoriaMenu,
     Cocinero,
     Comanda,
@@ -16,6 +18,7 @@ from RESTAURANTE.models import (
     MovimientosCaja,
     Pedido,
     Platillo,
+    BilletesYMonedas
 )
 
 @admin.register(CategoriaMenu)
@@ -63,16 +66,11 @@ class CajaAdmin(admin.ModelAdmin):
     list_display = ("id", "usuario", "estado", "fecha_apertura", "fecha_cierre", "total_ventas", "total_efectivo", "total_tarjeta")
     list_filter = ("estado", "fecha_apertura")
     date_hierarchy = "fecha_apertura"
-
-    # ✅ mínimo para que autocomplete_fields funcione (con esto ya pasan los checks)
-    search_fields = ("id",)
-
-    # Si quieres que busque por usuario también (ajusta el campo real):
-    # search_fields = ("id", "usuario__nombre", "usuario__user__username")
+    search_fields = ("id", "usuario__nombre", "usuario__user__username")
     
 @admin.register(MovimientosCaja)
 class MovimientosCajaAdmin(admin.ModelAdmin):
-    list_display = ("id", "caja", "tipo_movimiento", "monto", "motivo", "fecha")
+    list_display = ("id", "caja", "tipo_movimiento", "monto", "motivo", "fecha", "categoria", "autorizado_por")
     list_filter = ("tipo_movimiento", "fecha")
     search_fields = ("motivo", "caja__id")
     autocomplete_fields = ("caja",)
@@ -117,7 +115,6 @@ class PedidoAdmin(admin.ModelAdmin):
         "iva_total",
         "propina",
         "total",
-        "factura",
     )
     list_filter = ("estado", "mesa", "mesero", "creado_el")
     date_hierarchy = "creado_el"
@@ -128,7 +125,6 @@ class PedidoAdmin(admin.ModelAdmin):
         "mesero__nombre",
         "receptor__num_documento",
         "receptor__nombre",
-        "factura__numero_control",
     )
     autocomplete_fields = ("mesa", "mesero", "caja")
 
@@ -262,9 +258,22 @@ class CuentaPedidoAdmin(admin.ModelAdmin):
         "pagado_el",
         "subtotal",
         "total",
-        "propina"
+        "propina",
+        "factura",
     )
     list_filter = ("pedido", "nombre", "estado")
     search_fields = ("pedido__id", "pedido__mesa__numero")
     readonly_fields = ("creado_el", "cerrado_el", "pagado_el", "subtotal", "total", "propina")
     
+@admin.register(BilletesYMonedas)
+class BilletesYMonedasAdmin(admin.ModelAdmin):
+    list_display = ("id","valor", "nombre")
+    search_fields = ("nombre", "valor")
+    list_filter = ("valor","nombre")
+
+
+@admin.register(CajaDetalleArqueo)
+class CajaDetalleArqueoAdmin(admin.ModelAdmin):
+    list_display = ("id","caja", "denominacion", "tipo", "cantidad")
+    search_fields = ("caja", "denominacion")
+    list_filter = ("caja","tipo")

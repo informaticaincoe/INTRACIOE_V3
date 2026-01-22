@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from django.db import transaction
 from FE.models import Receptor_fe
-from RESTAURANTE.models import Comanda, CuentaPedido, DetallePedido, Mesa, Mesero, Pedido, Platillo
+from RESTAURANTE.models import Caja, Comanda, CuentaPedido, DetallePedido, Mesa, Mesero, Pedido, Platillo
 from RESTAURANTE.services.services_comandas import enviar_pedido_a_cocina
 from RESTAURANTE.services.services_pedidos import crear_map_json_por_item
 from django.db.models import Sum
@@ -261,6 +261,10 @@ def pedido_cerrar(request, pedido_id):
 @login_required
 @transaction.atomic
 def pedido_crear_desde_mesa(request):
+    if not Caja.objects.filter(estado="ABIERTA").exists():
+        messages.error(request, "Denegado: No hay una caja abierta.", extra_tags="error-caja-cerrada")
+        return redirect("mesas-lista")
+    
     if request.method == "POST":
         mesero = get_mesero_from_user(request.user) # obtener el mesero que esta loggeado
         if not mesero:
@@ -310,7 +314,7 @@ def pedido_crear_desde_mesa(request):
             print("comanda ", comanda)
             
             if comanda:
-                messages.success(request, f"Pedido enviado a cocina (Comanda #{comanda.numero}).")
+                messages.success(request, f"Pedido enviado a cocina (Comanda).")
             else:
                 # Si enviar_pedido_a_cocina devuelve None, revisa esa función. 
                 # Puede que esté marcando los items como 'ya enviados'.
@@ -372,16 +376,16 @@ def ver_pedido_mesa(request, pk):
 @transaction.atomic
 def pedido_split(request, pedido_id):
     # 1. Seguridad
-    if getattr(request.user, "role", None) != "mesero":
-        return HttpResponseForbidden("Solo meseros.")
+    # if getattr(request.user, "role", None) != "mesero":
+    #     return HttpResponseForbidden("Solo meseros.")
 
-    mesero = get_mesero_from_user(request.user)
+    # mesero = get_mesero_from_user(request.user)
 
     # 2. Pedido con lock
     pedido = get_object_or_404(
         Pedido.objects.select_for_update(),
         id=pedido_id,
-        mesero=mesero,
+        # mesero=mesero,
         estado="CERRADO",  # solo se divide cuando ya pidió la cuenta
     )
 
@@ -396,7 +400,6 @@ def pedido_split(request, pedido_id):
     )
 
     from collections import defaultdict
-    import json
 
     def key_of(d):
         """
@@ -453,51 +456,44 @@ def pedido_split(request, pedido_id):
 
     
 @login_required
-def enviar_facturacion(request, pedido_id): # <-- Cambiado a pedido_id para coincidir con la URL
-    # Si lo que recibes es el ID del pedido, busca el pedido primero
-        
-    print(f"DEBUG: Intentando facturar Pedido ID: {pedido_id}")
-    try:
-        pedido = Pedido.objects.get(id=pedido_id)
-    except Pedido.DoesNotExist:
-        # En lugar de un 404 seco, damos un mensaje amigable
-        messages.error(request, f"El pedido #{pedido_id} no existe en el sistema.")
-        return redirect('mesas-lista') # O la vista principal de restaurante
-    
-    # Si necesitas la cuenta, búscala a través del pedido
-    cuenta = pedido.cuentas.first() 
-    print(f"DEBUG: Intentando facturar cuenta ID: {cuenta}")
-    
-    if not cuenta:
-        messages.error(request, "El pedido no tiene una cuenta asociada.")
-        return redirect('pedido-detalle', pedido_id=pedido.id)
+def enviar_facturacion(request, pedido_id, cuenta_id=None):
+    pedido = get_object_or_404(Pedido, id=pedido_id)
 
-    # Buscar al receptor "Clientes Varios"
-    receptor = Receptor_fe.objects.filter(num_documento="00000000-0").first()
-    
-    if not receptor:
-        messages.error(request, "No se encontró el receptor por defecto (00000000-0).")
-        return redirect('pedido-detalle', pedido_id=pedido.id)
+    if cuenta_id:
+        cuenta = get_object_or_404(CuentaPedido, id=cuenta_id, pedido=pedido)
+    else:
+        # Si no hay cuenta, intentamos obtener la primera o crear una global
+        cuenta = pedido.cuentas.first()
+        if not cuenta:
+            # Lógica para crear la cuenta única si no se ha dividido
+            cuenta = CuentaPedido.objects.create(pedido=pedido, nombre="Cuenta Única")
+            # Asignar todos los detalles del pedido a esta cuenta
+            pedido.detalles.update(cuenta=cuenta)
+            cuenta.recalcular_totales()
 
+    # 2. Usar los detalles de LA CUENTA, no de todo el pedido
+    detalles_a_facturar = cuenta.detalles.all()
+    
     items = []
-    # Usamos los detalles del PEDIDO (o de la cuenta, según tu lógica)
-    for detalle in pedido.detalles.all():
+    for detalle in detalles_a_facturar:
         items.append({
             "id": detalle.platillo.producto_id,
             "codigo": getattr(detalle.platillo, 'codigo', 'SERV'),
             "nombre": detalle.platillo.nombre,
             "precio": float(detalle.precio_unitario),
             "cantidad": int(detalle.cantidad),
-            "desc_pct": 0.0,
-            "iva_on": True,
+            "desc_pct": float(detalle.descuento_pct),
+            "iva_on": detalle.aplica_iva,
             "stock": 999 
         })
 
+    # IMPORTANTE: Guardar el ID de la cuenta en la sesión para el receiver
     request.session["facturacion_prefill"] = {
-        "receptor_id": receptor.id,
+        # "receptor_id": receptor.id,
         "items": items,
         "origen": "restaurante",
-        "pedido_id": pedido.id
+        "pedido_id": pedido.id,
+        "cuenta_id": cuenta.id  # <-- Clave para cerrar la cuenta correcta
     }
     request.session.modified = True
 
@@ -506,14 +502,14 @@ def enviar_facturacion(request, pedido_id): # <-- Cambiado a pedido_id para coin
 @login_required
 @transaction.atomic
 def cuenta_pagar(request, cuenta_id):
-    if getattr(request.user, "role", None) != "mesero":
-        return HttpResponseForbidden("Solo meseros.")
-    mesero = get_mesero_from_user(request.user)
+    # if getattr(request.user, "role", None) != "mesero":
+    #     return HttpResponseForbidden("Solo meseros.")
+    # mesero = get_mesero_from_user(request.user)
 
     cuenta = get_object_or_404(
         CuentaPedido.objects.select_for_update().select_related("pedido", "pedido__mesa"),
         id=cuenta_id,
-        pedido__mesero=mesero,
+        # pedido__mesero=mesero,
     )
     pedido = cuenta.pedido
 
@@ -549,13 +545,13 @@ def cuenta_pagar(request, cuenta_id):
 @transaction.atomic
 def pedido_checkout(request, mesa_id):
     # 1. Seguridad: solo meseros
-    if getattr(request.user, "role", None) != "mesero":
-        return HttpResponseForbidden("Solo meseros.")
+    # if getattr(request.user, "role", None) not in ("mesero", "admin"):
+    #     return HttpResponseForbidden("Solo meseros.")
 
-    mesero = get_mesero_from_user(request.user)
-    if not mesero:
-        messages.error(request, "No tienes mesero asociado o estás inactivo.")
-        return redirect("mesas-lista")
+    # mesero = get_mesero_from_user(request.user)
+    # if not mesero:
+    #     messages.error(request, "No tienes mesero asociado o estás inactivo.")
+    #     return redirect("mesas-lista")
 
     # 2. Mesa
     mesa = get_object_or_404(Mesa, id=mesa_id)
@@ -566,7 +562,7 @@ def pedido_checkout(request, mesa_id):
         .select_for_update()
         .filter(
             mesa=mesa,
-            mesero=mesero,
+            # mesero=mesero,
             estado__in=["ABIERTO", "CERRADO"],
         )
         .order_by("-creado_el")
@@ -828,6 +824,10 @@ def enviar_facturacion_cuenta(request, cuenta_id):
 @login_required
 @transaction.atomic
 def entregar_pedido(request, mesa_id):
+    if not Caja.objects.filter(estado="ABIERTA").exists():
+        messages.error(request, "Denegado: No hay una caja abierta.", extra_tags="error-caja-cerrada")
+        return redirect("mesas-lista")
+    
     mesa = get_object_or_404(Mesa, id=mesa_id)
     pedido = Pedido.objects.filter(mesa=mesa, estado='ABIERTO').first()
     

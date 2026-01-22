@@ -4,6 +4,9 @@ from channels.layers import get_channel_layer
 def broadcast_comanda_created(comanda):
     channel_layer = get_channel_layer()
 
+    area = comanda.area_cocina
+    group_name = f"cocina_area_{area.id}"
+    
     payload = {
         "id": comanda.id,
         "numero": comanda.numero,
@@ -11,6 +14,10 @@ def broadcast_comanda_created(comanda):
         "estado_display": comanda.get_estado_display(),
         "mesa_numero": comanda.pedido.mesa.numero,
         "pedido_id": comanda.pedido_id,
+        "area_cocina": {
+            "id": area.id,
+            "nombre": area.area_cocina,
+        },
         "items": [
             {
                 "id": it.id,
@@ -23,11 +30,13 @@ def broadcast_comanda_created(comanda):
     }
 
     async_to_sync(channel_layer.group_send)(
-        "cocina_comandas",
-        {"type": "comanda_created", "comanda": payload},
+        group_name,
+        {
+            "type": "comanda_created",
+            "comanda": payload,
+        },
     )
     
-
     
 def broadcast_pedido_listo(*, mesero_user_id: int, mesa_id: int, mesa_numero: int, comanda_id: int):
     try:

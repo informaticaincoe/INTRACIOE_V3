@@ -69,8 +69,8 @@
       <div>
         <form method="GET" action="{% url 'menu' %}" class="row g-3 align-items-center">
           <div class="col-md-8 position-relative">
-            <input type="text" class="form-control" id="id_search_name" name="search_name" placeholder="Buscar por nombre..." value="{{ request.GET.search_name|default:'' }}" />
-            <i class="bi bi-x-lg position-absolute top-50 translate-middle-y end-0 me-3 clear-icon" data-target="id_search_name"></i>
+            <input type="text" class="form-control" id="id_q" name="q" placeholder="Buscar por nombre..." value="{{ request.GET.q|default:'' }}" />
+            <i class="bi bi-x-lg position-absolute top-50 translate-middle-y end-0 me-3 clear-icon" data-target="id_q"></i>
           </div>
         </form>
       </div>
@@ -111,6 +111,36 @@
           <p class="opacity-50">No se ha encontrado ningún platillo</p>
         {% endfor %}
       </div>
+      <!-- Paginacion -->
+      <nav aria-label="Navegación de páginas" class="mt-4">
+        <ul class="pagination justify-content-center">
+          {% if lista_platillos.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ lista_platillos.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if f_cat %}&cat={{ f_cat }}{% endif %}"><i class="bi bi-chevron-left"></i></a>
+            </li>
+          {% else %}
+              <li class="page-item disabled"><span class="page-link"><i class="bi bi-chevron-left"></i></span></li>
+            {% endif %}
+
+            {% for i in lista_platillos.paginator.page_range %}
+              {% if lista_platillos.number == i %}
+                <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+              {% elif i > lista_platillos.number|add:'-3' and i < lista_platillos.number|add:'3' %}
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ i }}{% if q %}&q={{ q }}{% endif %}{% if f_cat %}&cat={{ f_cat }}{% endif %}">{{ i }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+
+            {% if lista_platillos.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ lista_platillos.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if f_cat %}&cat={{ f_cat }}{% endif %}"><i class="bi bi-chevron-right"></i></a>
+              </li>
+            {% else %}
+              <li class="page-item disabled"><span class="page-link"><i class="bi bi-chevron-right"></i></span></li>
+            {% endif %}
+        </ul>
+      </nav>
     </div>
   </div>
 
@@ -144,8 +174,8 @@
     <script>
       document.addEventListener('DOMContentLoaded', function () {
         // --- Lógica del Botón de Limpieza ---
-        const inputField = document.getElementById('id_search_name')
-        const clearIcon = document.querySelector('.clear-icon[data-target="id_search_name"]')
+        const inputField = document.getElementById('id_q')
+        const clearIcon = document.querySelector('.clear-icon[data-target="id_q"]')
       
         if (inputField && clearIcon) {
           // Función para mostrar/ocultar el ícono

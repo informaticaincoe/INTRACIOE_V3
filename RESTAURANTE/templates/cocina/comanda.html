@@ -24,18 +24,20 @@
               </div>
           
               <div>
-                  {% if c.estado == 'ENVIADA' %}
-                      <button class="btn btn-sm btn-primary btn-accion" 
-                              data-id="{{ c.id }}" 
-                              data-url="{% url 'comanda-item-preparacion' id=c.id %}">
-                          Iniciar pedido
-                      </button>
-                  {% elif c.estado == 'EN_PREPARACION' %}
-                      <button class="btn btn-sm btn-success btn-accion" 
-                              data-id="{{ c.id }}" 
-                              data-url="{% url 'comanda-item-listo' id=c.id %}">
-                          Finalizar
-                      </button>
+                  {% if user.role == "cocinero" %}
+                    {% if c.estado == 'ENVIADA' %}
+                        <button class="btn btn-sm btn-primary btn-accion" 
+                                data-id="{{ c.id }}" 
+                                data-url="{% url 'comanda-item-preparacion' id=c.id %}">
+                            Iniciar pedido
+                        </button>
+                    {% elif c.estado == 'EN_PREPARACION' %}
+                        <button class="btn btn-sm btn-success btn-accion" 
+                                data-id="{{ c.id }}" 
+                                data-url="{% url 'comanda-item-listo' id=c.id %}">
+                            Finalizar
+                        </button>
+                    {% endif %}
                   {% endif %}
               </div>
           </div>

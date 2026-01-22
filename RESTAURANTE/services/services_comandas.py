@@ -1,55 +1,98 @@
 from datetime import timezone
 from django.db import transaction
-from django.db.models import Sum
+from django.db.models import Sum, Max
 from RESTAURANTE.models import Comanda, ComandaItem, DetallePedido, Pedido
 from RESTAURANTE.realtime import broadcast_comanda_created
+from collections import defaultdict
 
 @transaction.atomic
 def enviar_pedido_a_cocina(pedido, *, notas=""):
     """
-    Crea una Comanda por pedido y crea ComandaItems SOLO por cantidad pendiente.
-
-    Pendiente = detalle.cantidad - sum(comanda_items.cantidad) (excluyendo CANCELADO)
+    Crea UNA comanda por cada área de cocina involucrada
+    y agrega SOLO los items pendientes de esa área.
     """
+
     detalles = (
         DetallePedido.objects
         .select_for_update()
-        .filter(pedido=pedido)
-        .select_related("platillo")
+        .filter(
+            pedido=pedido,
+            platillo__es_preparado=True,
+            platillo__area_cocina__isnull=False
+        )
+        .select_related("platillo", "platillo__area_cocina")
         .order_by("id")
     )
-    
-    print(">>>>>>detalles pedido: ", detalles)
 
-    comanda = Comanda.crear_para_pedido(pedido, notas=notas)
-    print(">>>>>>dcomanda: ", comanda)
-
-    creados = 0
+    detalles_por_area = defaultdict(list)
     for det in detalles:
-        enviados = (
-            det.comanda_items
-            .aggregate(s=Sum("cantidad"))
-            .get("s") or 0
-        )
-        pendiente = int(det.cantidad or 0) - int(enviados)
+        detalles_por_area[det.platillo.area_cocina].append(det)
 
-        if pendiente > 0:
-            ComandaItem.objects.create(
-                comanda=comanda,
-                detalle_pedido=det,
-                nombre=det.platillo.nombre,
-                cantidad=pendiente,
-                notas=(det.notas or "")
+    comandas_creadas = []
+
+    for area, detalles_area in detalles_por_area.items():
+
+        # ¿Ya existe comanda activa para esta área?
+        comanda = (
+            Comanda.objects
+            .select_for_update()
+            .filter(
+                pedido=pedido,
+                area_cocina=area,
+                estado__in=["ENVIADA", "EN_PREPARACION"]
             )
-            creados += 1
+            .first()
+        )
 
-    # si no hubo nada nuevo, no creamos comanda “vacía”
-    if creados == 0:
-        comanda.delete()
-        return None
+        if not comanda:
+            last_num = (
+                Comanda.objects
+                .filter(pedido=pedido)
+                .aggregate(m=Max("numero"))
+                .get("m") or 0
+            )
 
-    transaction.on_commit(lambda: broadcast_comanda_created(comanda))
-    return comanda
+            comanda = Comanda.objects.create(
+                pedido=pedido,
+                area_cocina=area,
+                numero=last_num + 1,
+                notas=notas,
+            )
+
+        creados = 0
+
+        for det in detalles_area:
+            enviados = (
+                det.comanda_items
+                .filter(comanda__area_cocina=area)
+                .aggregate(s=Sum("cantidad"))
+                .get("s") or 0
+            )
+
+            pendiente = int(det.cantidad or 0) - int(enviados)
+
+            if pendiente > 0:
+                ComandaItem.objects.create(
+                    comanda=comanda,
+                    detalle_pedido=det,
+                    nombre=det.platillo.nombre,
+                    cantidad=pendiente,
+                    notas=(det.notas or "")
+                )
+                creados += 1
+
+        if creados == 0:
+            comanda.delete()
+            continue
+
+        transaction.on_commit(
+            lambda c=comanda: broadcast_comanda_created(c)
+        )
+
+        comandas_creadas.append(comanda)
+
+    return comandas_creadas
+
 
 @transaction.atomic
 def marcar_pedido_entregado_por_mesa(mesa, *, usuario):
