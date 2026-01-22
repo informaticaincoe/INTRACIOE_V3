@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.db.models import Exists, OuterRef, Q
-from RESTAURANTE.models import Area, AsignacionMesa, Mesa, Mesero, Platillo
+from RESTAURANTE.models import Area, AsignacionMesa, Comanda, Mesa, Mesero, Pedido, Platillo
 from django.utils.dateparse import parse_datetime
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
@@ -72,15 +72,15 @@ def listar_mesas(request):
             id__in=asignacion_activa.values("mesa_id")
         ).order_by("numero")
         platillos = Platillo.objects.all()
+       
 
         print("PLATILLOS ", platillos)
         if search_query:
             mesas = mesas.filter(numero__icontains=search_query)
-
         
-
         # Opcional: marcar que tiene mesero (para tu UI)
         for m in mesas:
+            
             m.tiene_mesero = True
             acciones_mesero = []
 
@@ -89,7 +89,6 @@ def listar_mesas(request):
                     "type": "link",
                     "label": "Ocupar mesa",
                     "icon": "bi bi-journal-plus",
-                    # al ocupar: pasa a PENDIENTE_ORDEN
                     "href": reverse("cambiar_estado_mesa", args=[m.id, "PENDIENTE_ORDEN"])
                 })
 
@@ -128,7 +127,7 @@ def listar_mesas(request):
                     "type": "link",
                     "label": "Entregar",
                     "icon": "bi bi-x-circle text-danger",
-                    "href": reverse("cambiar_estado_mesa", args=[m.id, "ENTREGADO"])
+                    "href": reverse("entregar_pedido", args=[m.id])
                 })
                 
             elif m.estado == 'ENTREGADO':
@@ -458,4 +457,3 @@ def listar_asignaciones(request):
         "lista_areas":lista_areas,
     }
     return render(request, 'asignacionMesas/asignacion_mesas.html', context)
-

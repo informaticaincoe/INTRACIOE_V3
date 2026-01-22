@@ -27,6 +27,8 @@ def broadcast_comanda_created(comanda):
         {"type": "comanda_created", "comanda": payload},
     )
     
+
+    
 def broadcast_pedido_listo(*, mesero_user_id: int, mesa_id: int, mesa_numero: int, comanda_id: int):
     try:
         channel_layer = get_channel_layer()
@@ -47,3 +49,4 @@ def broadcast_pedido_listo(*, mesero_user_id: int, mesa_id: int, mesa_numero: in
         )
     except Exception:
         print("No se pudo enviar notificación al mesero (Redis/ChannelLayer no disponible).")
+        
