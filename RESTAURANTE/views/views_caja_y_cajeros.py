@@ -14,6 +14,7 @@ from RESTAURANTE.models import (
     CajaDetalleArqueo,
     Cajero,
     MovimientosCaja,
+    Pedido,
 )
 
 def caja(request):
@@ -91,45 +92,51 @@ def caja_dashboard(request):
 
 @transaction.atomic
 def apertura_caja(request):
-    # 1. Seguridad de perfil (Evita Error 500)
-    perfil = getattr(request.user, 'perfilusuario', None)
-    if not perfil:
-        messages.error(request, "Tu usuario no tiene un perfil asignado para manejar caja.")
-        return redirect("home")
-
-    # 2. Evitar doble apertura
+    # 1. Obtener el PERFIL real, no el User
+    # Usamos la función que ya tienes definida o el related_name
+    try:
+        perfil_instancia = request.user.perfilusuario 
+    except AttributeError:
+        messages.error(request, "Tu usuario no tiene un perfil asociado.")
+        return redirect("index")
+    print("USUsARIO CAJA ", perfil_instancia)
+    print("user role ", request.user.role)
+    
+    # 2. Seguridad de rol (Corregido el error de lógica anterior)
+    if request.user.role not in ("cajero", "admin", "supervisor"):
+        messages.error(request, "No tienes permisos para manejar caja.")
+        print("No tiene permisos caja")
+        
+        return redirect("index")
+        
+    # 3. Evitar doble apertura
     if Caja.objects.filter(estado="ABIERTA").exists():
+        print("Cajaa ya abierta")
         messages.info(request, "Ya existe una caja abierta.")
         return redirect("caja-dashboard")
-
+        
     denominaciones = BilletesYMonedas.objects.all().order_by("-valor")
     
     # Buscamos la denominación de $1.00 para usarla como "Monto Global" si el usuario no desglosa
     den_global = BilletesYMonedas.objects.filter(valor=Decimal("1.00")).first()
 
     if request.method == "POST":
-        monto_inicial = Decimal(request.POST.get("monto_inicial") or "0").quantize(Decimal("0.01"))
-
-        # Crear la instancia de caja primero
-        caja = Caja.objects.create(
-            usuario=perfil,
-            monto_inicial=monto_inicial,
-            estado="ABIERTA",
-        )
-
+        # Capturamos lo que viene del input "Monto Global"
+        monto_input = Decimal(request.POST.get("monto_inicial") or "0").quantize(Decimal("0.01"))
+        
         total_desglose = Decimal("0.00")
         registros_detalles = []
         hubo_desglose_manual = False
 
-        # 3. Procesar desglose del formulario
+        # 1. Procesar billetes primero
         for den in denominaciones:
             qty_str = request.POST.get(f"den_{den.id}")
             if qty_str and int(qty_str) > 0:
                 qty = int(qty_str)
                 hubo_desglose_manual = True
                 
+                # Solo preparamos el objeto, no lo guardamos aún
                 registros_detalles.append(CajaDetalleArqueo(
-                    caja=caja,
                     denominacion=den,
                     tipo="APERTURA",
                     cantidad=qty
@@ -138,36 +145,43 @@ def apertura_caja(request):
 
         total_desglose = total_desglose.quantize(Decimal("0.01"))
 
-        # 4. Lógica de Cuadratura Automática (Monto Global)
-        # Si puso monto inicial > 0 pero no desglosó billetes, usamos la den_global
-        if monto_inicial > 0 and not hubo_desglose_manual:
+        # 2. DEFINIR MONTO REAL DE APERTURA
+        # Si el usuario desglosó billetes, el monto real es esa suma.
+        # Si no desglosó, usamos el monto escrito manualmente.
+        monto_final_apertura = total_desglose if hubo_desglose_manual else monto_input
+
+        if monto_final_apertura <= 0:
+            messages.error(request, "El monto de apertura debe ser mayor a 0.")
+            return render(request, "caja/apertura_caja.html", {"denominaciones": denominaciones})
+
+        # 3. CREAR LA CAJA
+        caja = Caja.objects.create(
+            usuario=perfil_instancia,
+            monto_inicial=monto_final_apertura,
+            estado="ABIERTA",
+        )
+
+        # 4. GUARDAR DETALLES
+        if hubo_desglose_manual:
+            # Asignamos la caja creada a cada detalle
+            for detalle in registros_detalles:
+                detalle.caja = caja
+            CajaDetalleArqueo.objects.bulk_create(registros_detalles)
+        else:
+            # Si no hubo desglose, usamos la moneda de $1.00 como comodín
             if den_global:
                 CajaDetalleArqueo.objects.create(
                     caja=caja,
                     denominacion=den_global,
                     tipo="APERTURA",
-                    cantidad=monto_inicial # Asumimos cantidad = monto porque vale $1.00
+                    cantidad=monto_final_apertura
                 )
-                total_desglose = monto_inicial
             else:
                 transaction.set_rollback(True)
-                messages.error(request, "No se encontró denominación de $1.00 para el ingreso global.")
+                messages.error(request, "Falta configuración de denominación de $1.00.")
                 return render(request, "caja/apertura_caja.html", {"denominaciones": denominaciones})
 
-        # 5. Validación final de cuadratura (solo si hubo algún intento de desglose)
-        if total_desglose != monto_inicial:
-            transaction.set_rollback(True)
-            messages.error(
-                request, 
-                f"El desglose (${total_desglose}) no coincide con el monto inicial (${monto_inicial})."
-            )
-            return render(request, "caja/apertura_caja.html", {"denominaciones": denominaciones})
-
-        # Si todo cuadra, guardamos los desgloses manuales si existen
-        if registros_detalles:
-            CajaDetalleArqueo.objects.bulk_create(registros_detalles)
-
-        messages.success(request, f"Caja abierta exitosamente con ${monto_inicial}")
+        messages.success(request, f"Caja abierta exitosamente con ${monto_final_apertura}")
         return redirect("caja-dashboard")
 
     return render(request, "caja/apertura_caja.html", {"denominaciones": denominaciones})
@@ -218,6 +232,16 @@ def cierre_caja(request):
     caja = get_object_or_404(Caja, estado='ABIERTA', usuario=perfil)
 
     # Calcular totales de movimientos usando Sum y Coalesce (como lo tienes arriba)
+    pedidos_abiertos = Pedido.objects.filter(estado="ABIERTO")
+    
+    if pedidos_abiertos.exists():
+        # Cambié success por error porque es un impedimento
+        messages.error(
+            request, 
+            "No se puede cerrar la caja: Existen pedidos abiertos en el sistema.", 
+            extra_tags="cierre_pedidos_pendientes"
+        )
+        return redirect('caja-dashboard')
     
     ingresos_manuales = (
         MovimientosCaja.objects
@@ -230,7 +254,6 @@ def cierre_caja(request):
         .filter(caja=caja, tipo_movimiento="RETIRO")
         .aggregate(s=Coalesce(Sum("monto"), Decimal("0.00")))["s"]
     )
-    
     
     # SALDO ESPERADO = Inicial + Efectivo + Ingresos - Retiros
     # Usamos valores por defecto en caso de que algún campo sea None
@@ -288,7 +311,6 @@ def cierre_caja(request):
     }
     return render(request, 'caja/cierre_caja.html', context)
 
-
 ##########################################################################################################
 #                                        Billetes y monedas views                                        #
 ##########################################################################################################
@@ -343,6 +365,8 @@ def listar_cajeros(request):
         cajero = Cajero.objects.filter(nombre__icontains=search_query) # Filtrar cajero por nombre
     else:
         cajero = Cajero.objects.all().order_by("pk")
+        
+    print(">>>>>>>>>> CAJERO ", cajero)
     context = {
         'lista_cajero': cajero  # Lista de cajero
     }
@@ -352,18 +376,20 @@ def listar_cajeros(request):
 def crear_cajero(request):
     if request.method == 'POST':
         nombre = request.POST.get('nombre') or ''
-        codigo = request.POST.get('codigo') or ''
+        pin = request.POST.get('pin') or ''
         activo = request.POST.get('activo') == "on"
         
-        if nombre and codigo:
+        print("pin")
+        
+        if nombre and pin:
                 Cajero.objects.create(
                     nombre = nombre,
-                    codigo = codigo,
+                    pin = pin,
                     activo=activo,
                 )
-                messages.success(request, f'Mesero creado con exito.')
+                messages.success(request, f'Cajero creado con exito.')
         else:
-            messages.error(request, 'El nombre y codigo del mesero no pueden estar vacíos.')
+            messages.error(request, 'El nombre y pin del cajero no pueden estar vacíos.')
             
         # Redirigir después de POST para evitar reenvío del formulario
         return redirect('cajero-lista')
@@ -373,20 +399,20 @@ def crear_cajero(request):
 def editar_cajero(request, pk):
     if request.method == "POST":
         nombre = request.POST.get('nombre') or ''
-        codigo = request.POST.get('codigo') or ''
+        pin = request.POST.get('pin') or ''
         activo = request.POST.get('activo') == "on"
         
         
-        if nombre and codigo:
+        if nombre and pin:
             cajero = get_object_or_404(Cajero, pk=pk)
             cajero.nombre = nombre
-            cajero.codigo = codigo            
+            cajero.pin = pin            
             cajero.activo = activo
             cajero.save()
 
-            messages.success(request, f'Mesero creado con éxito.')
+            messages.success(request, f'Cajero ha sido creado con éxito.')
         else:
-            messages.error(request, 'El nombre y codigo del mesero no puede estar vacío.')
+            messages.error(request, 'El nombre y pin del cajeros no puede estar vacío.')
             
         # redirigir después de POST para evitar reenvío del formulario
         return redirect('cajero-lista')

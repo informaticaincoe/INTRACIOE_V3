@@ -85,6 +85,7 @@ def enviar_pedido_a_cocina(pedido, *, notas=""):
             comanda.delete()
             continue
 
+        print("DENTRO ENVIAR PEDIDO COCINA ", comanda)
         transaction.on_commit(
             lambda c=comanda: broadcast_comanda_created(c)
         )

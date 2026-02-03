@@ -174,5 +174,43 @@
     </div>
   </div>
 
+  <div class="modal fade" id="modalPedidosPendientes" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content ">
+        <div class="modal-header bg-light">
+          <h5 class="modal-title text-danger">
+              <i class="bi bi-exclamation-triangle-fill"></i> Acción Denegada
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center py-4">
+          {% for message in messages %}
+            {% if "cierre_pedidos_pendientes" in message.tags %}
+              <p class="fs-5">{{ message }}</p>
+            {% endif %}
+          {% endfor %}
+          <p class="text-muted small">Por favor, cierre o cancele todos los pedidos de las mesas antes de proceder al cierre de caja.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Entendido</button>
+          <a href="{% url 'mesas-lista' %}" class="btn btn-primary">Ir a Mesas</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    {% if messages %}
+      {% for message in messages %}
+        {% if "cierre_pedidos_pendientes" in message.tags %}
+          var myModal = new bootstrap.Modal(document.getElementById('modalPedidosPendientes'));
+          myModal.show();
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  });
+</script>
 {% endblock %}

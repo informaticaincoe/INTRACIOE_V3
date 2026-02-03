@@ -48,13 +48,15 @@ def crear_cocinero(request):
         nombre = (request.POST.get("nombre") or "").strip()
         pin = (request.POST.get("pin") or "").strip()
         area_cocina = (request.POST.get("area_cocina") or "").strip()
+        
+        print("************ area_cocina ", area_cocina)
         activo = request.POST.get("activo") == "on"
 
         if nombre and pin:
             if Cocinero.objects.filter(pin=pin).exists():
                 messages.error(request, "Ya existe un cocinero con ese PIN.")
             else:
-                Cocinero.objects.create(nombre=nombre, pin=pin, activo=activo, area_cocina=area_cocina )
+                Cocinero.objects.create(nombre=nombre, pin=pin, activo=activo, area_cocina_id=area_cocina )
                 messages.success(request, "Cocinero creado con éxito.")
             return redirect("cocineros-lista")
 

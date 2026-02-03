@@ -7,6 +7,7 @@ from RESTAURANTE.models import (
     AsignacionMesa,
     Caja,
     CajaDetalleArqueo,
+    Cajero,
     CategoriaMenu,
     Cocinero,
     Comanda,
@@ -143,8 +144,8 @@ class PedidoAdmin(admin.ModelAdmin):
         ("Datos del pedido", {
             "fields": ("mesa", "mesero", "estado", "notas")
         }),
-        ("Cliente / Caja / Factura", {
-            "fields": ("receptor", "caja", "factura")
+        ("Cliente / Caja", {
+            "fields": ("receptor", "caja")
         }),
         ("Totales", {
             "fields": ("subtotal", "descuento_total", "iva_total", "propina", "total")
@@ -277,3 +278,10 @@ class CajaDetalleArqueoAdmin(admin.ModelAdmin):
     list_display = ("id","caja", "denominacion", "tipo", "cantidad")
     search_fields = ("caja", "denominacion")
     list_filter = ("caja","tipo")
+
+@admin.register(Cajero)
+class CajeroAdmin(admin.ModelAdmin):
+    list_display = ("id", "pin", "nombre", "activo")
+    list_filter = ("activo",)
+    search_fields = ("pin", "nombre")
+    ordering = ("nombre",)

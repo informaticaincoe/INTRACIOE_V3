@@ -67,12 +67,28 @@
 
     <div class="mb-4">
       <div>
-        <form method="GET" action="{% url 'menu' %}" class="row g-3 align-items-center">
+        <form method="GET" action="{% url 'menu' %}" class="row g-3 align-items-center" id="menuSearchForm">
           <div class="col-md-8 position-relative">
-            <input type="text" class="form-control" id="id_q" name="q" placeholder="Buscar por nombre..." value="{{ request.GET.q|default:'' }}" />
-            <i class="bi bi-x-lg position-absolute top-50 translate-middle-y end-0 me-3 clear-icon" data-target="id_q"></i>
+            <input type="text"
+                   class="form-control"
+                   id="id_q"
+                   name="q"
+                   placeholder="Buscar por nombre..."
+                   value="{{ request.GET.q|default:'' }}" />
+            <i class="bi bi-x-lg position-absolute top-50 translate-middle-y end-0 me-3 clear-icon"
+                role="button"
+               data-target="id_q"
+               role="button"
+               style="cursor:pointer;"></i>
+          </div>
+        
+          <div class="col-md-4">
+            <button type="submit" class="btn btn-outline-primary w-auto">
+              <i class="bi bi-search"></i>
+            </button>
           </div>
         </form>
+        
       </div>
     </div>
 
@@ -176,16 +192,13 @@
         // --- Lógica del Botón de Limpieza ---
         const inputField = document.getElementById('id_q')
         const clearIcon = document.querySelector('.clear-icon[data-target="id_q"]')
-      
+        const searchForm = document.getElementById('menuSearchForm');
+
         if (inputField && clearIcon) {
           // Función para mostrar/ocultar el ícono
           const toggleClearIcon = () => {
-            if (inputField.value.length > 0) {
-              clearIcon.style.display = 'block'
-            } else {
-              clearIcon.style.display = 'none'
-            }
-          }
+            clearIcon.style.display = inputField.value.length > 0 ? 'block' : 'none';
+          };
           // Inicializar al cargar la página (por si hay un valor preexistente de GET)
           toggleClearIcon()
       
@@ -196,7 +209,7 @@
           clearIcon.addEventListener('click', () => {
             inputField.value = '' // Borra el contenido
             toggleClearIcon() // Oculta el ícono
-            inputField.focus() // Enfoca el input
+            searchForm.submit() // Enfoca el input
           })
         }
       })

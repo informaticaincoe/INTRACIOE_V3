@@ -40,7 +40,6 @@ def listar_meseros(request):
     }
     return render(request, 'meseros/meseros.html', context)
 
-
 def crear_mesero(request):
     if request.method == 'POST':
         nombre = request.POST.get('nombre') or ''

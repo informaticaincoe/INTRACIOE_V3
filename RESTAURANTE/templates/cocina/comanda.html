@@ -126,6 +126,8 @@
   
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
+      console.log(data)
+      console.log(data.type)
       if (data.type === "comanda_created") {
         location.reload();
       }

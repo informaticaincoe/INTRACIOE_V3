@@ -22,6 +22,19 @@
                 <div class="card-header bg-transparent py-3" style="border-bottom: 1px solid #33333371;">
                     <h5 class="mb-0 text-black"><i class="bi bi-list-ul me-2"></i>Resumen de Productos</h5>
                 </div>
+                <div class="container mt-3">
+                    {% if messages %}
+                        {% for message in messages %}
+                            {% if "error-caja-cerrada" in message.tags%}
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover mb-0" style="color: #000;">
@@ -122,6 +135,7 @@
                     <p class="small text-muted mb-0">No hay cuentas generadas aún.</p>
                 {% endfor %}
             </div>
+            
         </div>
     </div>
 </div>

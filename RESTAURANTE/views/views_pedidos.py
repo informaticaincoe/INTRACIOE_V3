@@ -13,6 +13,8 @@ from django.db.models import Sum
 
 from RESTAURANTE.views.views_cuentas import _build_item_map, _consume_qty, _get_or_create_dest
 
+from django.core.paginator import Paginator
+from django.db.models import Q
 """
 MANEJO DE:
     - Pedidos
@@ -130,15 +132,32 @@ def tomar_pedido(request, mesa_id):
     platillos = Platillo.objects.filter(disponible=True).select_related("categoria").order_by("categoria__nombre", "nombre")
     detalles = pedido.detalles.select_related("platillo").all().order_by("id")
 
-    print("PLATILLOS ", platillos)
-
+    queryset = Platillo.objects.all().order_by('nombre')
+    
+    # 2. Configurar el Paginador (ejemplo: 8 platillos por página)
+    paginator = Paginator(queryset, 2) 
+    
+    # 3. Obtener el número de página de la URL
+    page_number = request.GET.get('page')
+    
+    # 4. Obtener el objeto de la página actual
+    platillos_paginados = paginator.get_page(page_number)
+    
     context = {
         "mesa": mesa,
         "pedido": pedido,
-        "platillos": platillos,
+        "platillos": platillos_paginados,
         "detalles": detalles,
+        
+        'q': request.GET.get('q', ''),
+        'f_cat': request.GET.get('cat', ''),
     }
+    # al final de tu view tomar_pedido
+    if request.headers.get("HX-Request"):
+        return render(request, "pedidos/menu_seleccion_pedido.html", context)
+
     return render(request, "pedidos/_toma_pedido.html", context)
+
 
 @login_required
 @require_POST
@@ -216,6 +235,11 @@ def solicitar_cuenta(request, mesa_id):
     Busca el pedido abierto de la mesa y lo cierra
     reutilizando la lógica de pedido_cerrar.
     """
+    
+    if not Caja.objects.filter(estado="ABIERTA").exists():
+        messages.error(request, "Denegado: No hay una caja abierta.", extra_tags="error-caja-cerrada")
+        return redirect("mesas-lista")
+    
     mesa = get_object_or_404(Mesa, id=mesa_id)
     
     # Buscamos el pedido abierto más reciente de esta mesa
@@ -554,6 +578,11 @@ def pedido_checkout(request, mesa_id):
     #     return redirect("mesas-lista")
 
     # 2. Mesa
+    
+    if not Caja.objects.filter(estado="ABIERTA").exists():
+        messages.error(request, "Denegado: No hay una caja abierta.", extra_tags="error-caja-cerrada")
+        return redirect("mesas-lista")
+    
     mesa = get_object_or_404(Mesa, id=mesa_id)
 
     # 3. Pedido activo de esa mesa y mesero

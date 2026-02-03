@@ -21,7 +21,6 @@ MANEJO DE:
 def cambiar_estado_mesa(request, pk, estado):
     
     if not Caja.objects.filter(estado="ABIERTA").exists():
-        print("No hay caja abierta 2")
         messages.error(request, "Denegado: No hay una caja abierta.", extra_tags="error-caja-cerrada")
         return redirect("mesas-lista")
         
@@ -52,180 +51,92 @@ def _parse_dt(value: str | None):
 
 @login_required
 def listar_mesas(request):
+    rol = getattr(request.user, "role", None)
     search_query = request.GET.get('search_name') or ""
     ahora = timezone.localtime()
-
-    # --- Si es MESERO: solo sus mesas asignadas ---
-    if getattr(request.user, "role", None) == "mesero":
+    
+    # 1. Determinar opciones segun el rol
+    if rol == "mesero":
         mesero = get_mesero_from_user(request.user)
         if not mesero:
             messages.error(request, "No tienes un mesero asociado o estás inactivo.")
             return redirect("login_mesero")
-
-        # Asignaciones activas del mesero
-        asignacion_activa = (
-            AsignacionMesa.objects
-            .filter(mesero=mesero)
-            .filter(
-                Q(fecha_inicio__lte=ahora, fecha_fin__gte=ahora) |
-                Q(fecha_inicio__lte=ahora, fecha_fin__isnull=True) |
-                Q(es_fija=True)
-            )
-        )
-
-        # Mesas asignadas
-        mesas = Mesa.objects.filter(
-            id__in=asignacion_activa.values("mesa_id")
-        ).order_by("numero")
-        platillos = Platillo.objects.all()
-       
-
-        print("PLATILLOS ", platillos)
-        if search_query:
-            mesas = mesas.filter(numero__icontains=search_query)
         
-        # Opcional: marcar que tiene mesero (para tu UI)
-        for m in mesas:
-            
-            m.tiene_mesero = True
-            acciones_mesero = []
+        # Filtrar solo mesas asignadas al mesero
+        asignaciones = AsignacionMesa.objects.filter(mesero=mesero).filter(
+            Q(fecha_inicio__lte=ahora, fecha_fin__gte=ahora) |
+            Q(fecha_inicio__lte=ahora, fecha_fin__isnull=True) |
+            Q(es_fija=True)
+        )
+        mesas = Mesa.objects.filter(id__in=asignaciones.values("mesa_id"))
+        # Admin, Supervisor ven todas las mesas
+    if rol == "admin" or rol == "supervisor" or rol == "cajero":
+        mesas = Mesa.objects.all()
 
-            if m.estado == 'LIBRE':
-                acciones_mesero.append({
-                    "type": "link",
-                    "label": "Ocupar mesa",
-                    "icon": "bi bi-journal-plus",
-                    "href": reverse("cambiar_estado_mesa", args=[m.id, "PENDIENTE_ORDEN"])
-                })
-
-            elif m.estado == 'PENDIENTE_ORDEN':
-                acciones_mesero.append({
-                    "type": "modal",
-                    "label": "Tomar orden",
-                    "icon": "bi bi-clipboard-check",
-                    "target": "#tomarOrdenModal",
-                    "href": reverse("pedido_crear_desde_mesa"),
-                    "data": {
-                        "mesa-id": m.id,
-                        "mesa-numero": m.numero,
-                    }
-                })
-                acciones_mesero.append({
-                    "type": "link",
-                    "label": "Cancelar",
-                    "icon": "bi bi-x-circle text-danger",
-                    "href": reverse("cambiar_estado_mesa", args=[m.id, "LIBRE"])
-                })
-
-            elif m.estado == 'OCUPADA':
-                acciones_mesero.append({
-                    "type": "modal",
-                    "label": "Ver / agregar pedido",
-                    "icon": "bi bi-receipt",
-                    "target": "#verOrdenModal",
-                    "data": {
-                        "mesa-id": m.id,
-                        "mesa-numero": m.numero,
-                        "modo": "ver",  # opcional
-                    }
-                })
-                acciones_mesero.append({
-                    "type": "link",
-                    "label": "Entregar",
-                    "icon": "bi bi-x-circle text-danger",
-                    "href": reverse("entregar_pedido", args=[m.id])
-                })
-                
-            elif m.estado == 'ENTREGADO':
-                acciones_mesero.append({
-                    "type": "modal",
-                    "label": "Ver / agregar pedido",
-                    "icon": "bi bi-receipt",
-                    "target": "#verOrdenModal",
-                    "data": {
-                        "mesa-id": m.id,
-                        "mesa-numero": m.numero,
-                        "modo": "ver",  # opcional
-                    }
-                })
-                acciones_mesero.append({
-                    "type": "link",
-                    "label": "Solicitar cuenta",
-                    "icon": "bi bi-cash-coin",
-                    "href": reverse("solicitar_cuenta", args=[m.id])
-                })
-
-            elif m.estado == 'PENDIENTE_PAGO':
-                acciones_mesero.append({
-                    "type": "link",
-                    "label": "Realizar pago",
-                    "icon": "bi bi-cash-coin",
-                    "href": reverse("pedido-checkout", args=[m.id])
-                })
-            elif m.estado == 'PAGADO':
-                acciones_mesero.append({
-                    "type": "link",
-                    "label": "Reabrir mesa",
-                    "icon": "bi bi-arrow-counterclockwise",
-                    "href": reverse("cambiar_estado_mesa", args=[m.id, "LIBRE"])
-                })
-
-            m.acciones = acciones_mesero
-
-        context = {
-            "lista_mesas": mesas,
-            "modo": "mesero",
-            "platillos": platillos,
-        }
-        return render(request, "mesas/mesas.html", context)
-
-    # --- Si NO es mesero: admin ve todas ---
-    mesas = Mesa.objects.all()
-
+    # 2. Búsqueda y filtros
     if search_query:
         mesas = mesas.filter(numero__icontains=search_query)
 
-    asignacion_activa = AsignacionMesa.objects.filter(mesa=OuterRef("pk")).filter(
+    asignacion_global = AsignacionMesa.objects.filter(mesa=OuterRef("pk")).filter(
         Q(fecha_inicio__lte=ahora, fecha_fin__gte=ahora) |
         Q(fecha_inicio__lte=ahora, fecha_fin__isnull=True) |
         Q(es_fija=True)
     )
+    mesas = mesas.annotate(tiene_mesero=Exists(asignacion_global)).order_by("numero")
 
-    mesas = mesas.annotate(tiene_mesero=Exists(asignacion_activa)).order_by("numero")
-
-    lista_meseros = Mesero.objects.filter(activo=True)
-
-    # Acciones admin por mesa
+    # 3. Definir acciones por mesa segun rol
     for m in mesas:
         acciones = []
-        if not m.tiene_mesero:
-            acciones.append({
-                "type": "modal",
-                "label": "Asignar mesero",
-                "icon": "bi bi-exclamation-triangle-fill text-warning",
-                "target": "#asignarMeseroModal",
-                "data": {"mesa-id": m.id, "mesa-numero": m.numero},
-            })
-            acciones.append({"type": "divider"})
+        
+        # --- LÓGICA DE MESERO (Basada en Estados) ---
+        if rol == "mesero":
+            if m.estado == 'LIBRE':
+                acciones.append({"type": "link", "label": "Ocupar mesa", "icon": "bi bi-journal-plus", "href": reverse("cambiar_estado_mesa", args=[m.id, "PENDIENTE_ORDEN"])})
+            elif m.estado == 'PENDIENTE_ORDEN':
+                acciones.append({"type": "modal", "label": "Tomar orden", "icon": "bi bi-clipboard-check", "target": "#tomarOrdenModal", "data": {"mesa-id": m.id, "mesa-numero": m.numero}})
+                acciones.append({"type": "link", "label": "Cancelar", "icon": "bi bi-x-circle text-danger", "href": reverse("cambiar_estado_mesa", args=[m.id, "LIBRE"])})
+            elif m.estado in ['OCUPADA', 'ENTREGADO']:
+                acciones.append({"type": "modal", "label": "Ver / agregar pedido", "icon": "bi bi-receipt", "target": "#verOrdenModal", "data": {"mesa-id": m.id, "mesa-numero": m.numero}})
+                if m.estado == 'OCUPADA':
+                    acciones.append({"type": "link", "label": "Entregar", "icon": "bi bi-check-all", "href": reverse("entregar_pedido", args=[m.id])})
+                else:
+                    acciones.append({"type": "link", "label": "Solicitar cuenta", "icon": "bi bi-cash-coin", "href": reverse("solicitar_cuenta", args=[m.id])})
+            elif m.estado == 'PENDIENTE_PAGO':
+                acciones.append({"type": "link", "label": "Realizar pago", "icon": "bi bi-cash-coin", "href": reverse("pedido-checkout", args=[m.id])})
+            elif m.estado == 'PAGADO':
+                acciones.append({"type": "link", "label": "Reabrir mesa", "icon": "bi bi-arrow-counterclockwise", "href": reverse("cambiar_estado_mesa", args=[m.id, "LIBRE"])})
 
-        acciones += [
-            {"type": "link", "label": "Editar", "icon": "bi bi-pencil", "href": reverse("editar-mesa", args=[m.id])},
-            {"type": "modal", "label": "Eliminar", "icon": "bi bi-trash", "target": "#eliminarMesaModal",
-             "data": {"id": m.id, "nombre": m.numero}},
-            {
-                    "type": "link",
-                    "label": "Realizar pago",
-                    "icon": "bi bi-cash-coin",
-                    "href": reverse("pedido-checkout", args=[m.id])
-                }
-        ]
+        # --- LÓGICA DE CAJERO ---
+        elif rol == "cajero":
+            # El cajero solo puede realizar el pago (típicamente si el estado permite cobrar)
+            if m.estado in ['ENTREGADO', 'PENDIENTE_PAGO']:
+                acciones.append({"type": "link", "label": "Realizar pago", "icon": "bi bi-cash-coin", "href": reverse("pedido-checkout", args=[m.id])})
+
+        # --- LÓGICA DE ADMIN / SUPERVISOR ---
+        elif rol in ("admin", "supervisor"):
+            # 1. Asignar mesero si no tiene
+            if not m.tiene_mesero:
+                acciones.append({"type": "modal", "label": "Asignar mesero", "icon": "bi bi-person-plus text-warning", "target": "#asignarMeseroModal", "data": {"mesa-id": m.id, "mesa-numero": m.numero}})
+                acciones.append({"type": "divider"})
+            
+            # 2. Opciones de gestión
+            acciones.append({"type": "link", "label": "Editar", "icon": "bi bi-pencil", "href": reverse("editar-mesa", args=[m.id])})
+            acciones.append({"type": "modal", "label": "Eliminar", "icon": "bi bi-trash text-danger", "target": "#eliminarMesaModal", "data": {"id": m.id, "nombre": m.numero}})
+            
+            # 3. Pago (siempre disponible para admin o según estado)
+            if m.estado != 'LIBRE':
+                acciones.append({"type": "link", "label": "Realizar pago", "icon": "bi bi-cash-coin", "href": reverse("pedido-checkout", args=[m.id])})
+
         m.acciones = acciones
 
+    # 4. Contexto final
     context = {
         "lista_mesas": mesas,
-        "lista_meseros": lista_meseros,
-        "modo": "admin",
+        "modo": rol,
+        "platillos": Platillo.objects.all() if rol == "mesero" else None,
+        "lista_meseros": Mesero.objects.filter(activo=True) if rol in ("admin", "supervisor", "cajero") else None,
     }
+    
     return render(request, "mesas/mesas.html", context)
 
 def crear_mesa(request):

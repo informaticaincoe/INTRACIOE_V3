@@ -90,5 +90,12 @@ urlpatterns = [
     path("billetes-monedas/", views_caja_y_cajeros.billetes_y_monedas_list, name="billetes-y-monedas-list"),
     path("billetes-monedas/crear/", views_caja_y_cajeros.billetes_y_monedas_crear, name="billetes-y-monedas-crear"),
     path("billetes-monedas/<int:pk>/editar/", views_caja_y_cajeros.billetes_y_monedas_editar, name="billetes-y-monedas-editar"),
-    path("billetes-monedas/<int:pk>/eliminar/", views_caja_y_cajeros.billetes_y_monedas_eliminar, name="billetes-y-monedas-eliminar")
+    path("billetes-monedas/<int:pk>/eliminar/", views_caja_y_cajeros.billetes_y_monedas_eliminar, name="billetes-y-monedas-eliminar"),
+
+    # Cajero
+    # path("cajero/login/", views_cajeros.login_cajero, name="login_cajero"),
+    path("cajeros", views_caja_y_cajeros.listar_cajeros, name="cajero-lista"),
+    path("cajero/nuevo", views_caja_y_cajeros.crear_cajero, name="crear-cajero"),
+    path("cajero/<int:pk>/eliminar/", views_caja_y_cajeros.eliminar_cajero, name="eliminar-cajero"),
+    path("cajero/<int:pk>/editar/", views_caja_y_cajeros.editar_cajero, name="editar-cajero"),
 ]

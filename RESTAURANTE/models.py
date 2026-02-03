@@ -711,7 +711,6 @@ class Cajero(models.Model):
     nombre = models.CharField(max_length=120, null=False, verbose_name="Nombre Cajero")
     pin = models.CharField(max_length=20, unique=True, verbose_name="codigo de identificaciòn") 
     activo = models.BooleanField(default=True, verbose_name="Cajero activo")
-    area_cocina = models.ForeignKey("RESTAURANTE.AreaCocina",on_delete=models.SET_NULL,null=True, blank=True )
     usuario = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,

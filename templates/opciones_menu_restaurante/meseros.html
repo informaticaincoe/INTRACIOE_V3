@@ -6,7 +6,7 @@
 </a>
 {% endif %}
 
-{% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'mesero' %}
+{% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'mesero' or user.role == 'cajero' %}
 <a href="{% url 'mesas-lista' %}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">
     <span><i class="bi bi-grid-3x3-gap me-1"></i> Mesas</span>
 </a>
