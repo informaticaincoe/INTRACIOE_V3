@@ -22,6 +22,7 @@
           </div>
 
         </div>
+        
 
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -39,17 +40,32 @@
     const modal = ev.target;
     if (!modal || modal.id !== "tomarOrdenModal") return;
 
+    console.log("🚀 Modal Abierto: Reseteando selección global");
+    window.__tomarOrdenSelected = []; 
+
     const trigger = ev.relatedTarget;
     if (!trigger) return;
 
     const mesaId = trigger.getAttribute("data-mesa-id");
     const mesaNumero = trigger.getAttribute("data-mesa-numero");
+    // Si estás usando agregar item, asegúrate de capturar el pedido_id aquí si es necesario
+    // const pedidoId = trigger.getAttribute("data-pedido-id");
+
+    console.log(`📍 Mesa Seleccionada: ${mesaId} (#${mesaNumero})`);
 
     document.getElementById("to_mesa_id").value = mesaId || "";
     document.getElementById("to_mesa_numero").textContent = mesaNumero || "";
 
-    // ✅ Cargar el menú (página 1) desde el servidor dentro del modal
     const url = "{% url 'tomar_pedido' 0 %}".replace("/0/", `/${mesaId}/`);
+    console.log(`📡 Llamando a HTMX: ${url}`);
     htmx.ajax("GET", url, "#tomarOrdenBody");
   });
+
+  // Opcional: Log antes de enviar el formulario
+  document.getElementById("tomarOrdenForm").onsubmit = function(e) {
+    const data = document.getElementById("platillos_json").value;
+    console.log("📦 ENVIANDO FORMULARIO POST...");
+    console.log("Contenido de platillos_json:", data);
+    // Si data es "[]" aquí, el problema es que el input no se está llenando
+  };
 </script>

@@ -4,6 +4,7 @@ from django.db import models
 from django.db.models import Q, Max
 from django.contrib.auth.models import User
 from decimal import ROUND_HALF_UP, Decimal
+from django.forms import ValidationError
 from django.utils import timezone
 from AUTENTICACION.models import Perfilusuario
 from INVENTARIO.models import Producto
@@ -130,8 +131,8 @@ class Platillo(models.Model):
             )
 
     class Meta:
-        verbose_name = "Platillo / Ítem del Menú"
-        verbose_name_plural = "Platillos / Ítems del Menú"
+        verbose_name = "Platillo"
+        verbose_name_plural = "Platillos"
 
     def __str__(self):
         return self.nombre
@@ -272,26 +273,29 @@ class Pedido(models.Model):
 
     # ---------- Totales ----------
     def recalcular_totales(self, save=True):
-        """
-        Recalcula subtotal/descuento/iva/total desde DetallePedido.
-        """
+        print(f"--- Recalculando Cuenta ID: {self.id} ---")
+        
+        # Ver cuántos detalles encuentra realmente
+        print(f"Cantidad de detalles asociados: {self.detalles.count()}")
+        
         agg = self.detalles.aggregate(
             sub=Sum("subtotal_linea"),
             desc=Sum("descuento_monto"),
             iva=Sum("iva_monto"),
             tot=Sum("total_linea"),
         )
+        
+        print(f"Valores obtenidos en aggregate: {agg}")
+        
+        # Asignación
         self.subtotal = (agg["sub"] or Decimal("0.00")).quantize(Decimal("0.01"))
-        self.descuento_total = (agg["desc"] or Decimal("0.00")).quantize(Decimal("0.01"))
-        self.iva_total = (agg["iva"] or Decimal("0.00")).quantize(Decimal("0.01"))
-
-        base_total = (agg["tot"] or Decimal("0.00"))
-        self.total = (base_total + (self.propina or Decimal("0.00"))).quantize(Decimal("0.01"))
+        self.total = ((agg["tot"] or Decimal("0.00")) + self.propina).quantize(Decimal("0.01"))
+        
+        print(f"Subtotal final a guardar: {self.subtotal}")
+        print(f"Total final a guardar: {self.total}")
 
         if save:
-            self.save(update_fields=["subtotal", "descuento_total", "iva_total", "total"])
-
-        return self.total
+            self.save() # Prueba guardando todo el objeto primero para descartar
 
     # ---------- Flujo ----------
     @transaction.atomic
@@ -465,9 +469,55 @@ class DetallePedido(models.Model):
     def save(self, *args, **kwargs):
         self._calc()
         super().save(*args, **kwargs)
-        # cada vez que cambia una línea, recalcula totales del pedido
+
+        # pedido siempre
         self.pedido.recalcular_totales(save=True)
 
+        # cuenta solo si existe
+        if self.cuenta:
+            self.cuenta.recalcular_totales(save=True)
+    
+    def clean(self):
+        if self.cantidad <= 0:
+            raise ValidationError("La cantidad debe ser mayor a cero")
+
+    def clonar_para_cuenta(self, cuenta, cantidad):
+        if cantidad <= 0:
+            return None
+
+        return DetallePedido.objects.create(
+            pedido=self.pedido,
+            platillo=self.platillo,
+            cuenta=cuenta,
+            cantidad=cantidad,
+            precio_unitario=self.precio_unitario,
+            descuento_pct=self.descuento_pct,
+            aplica_iva=self.aplica_iva,
+            notas=self.notas,
+        )
+        
+    @transaction.atomic
+    def split(self, distribucion):
+        """
+        distribucion = {
+            cuenta_id: cantidad,
+            cuenta_id: cantidad,
+        }
+        """
+        total = sum(distribucion.values())
+        if total != self.cantidad:
+            raise ValueError("La suma del split no coincide con la cantidad original")
+
+        # eliminar el detalle original
+        self.delete()
+
+        nuevos = []
+        for cuenta_id, qty in distribucion.items():
+            cuenta = CuentaPedido.objects.get(id=cuenta_id)
+            nuevo = self.clonar_para_cuenta(cuenta, qty)
+            nuevos.append(nuevo)
+
+        return nuevos
 
 class Comanda(models.Model):
     """Lista de platillos a preparar en cocina"""
@@ -500,11 +550,6 @@ class Comanda(models.Model):
             models.UniqueConstraint(
                 fields=["pedido", "numero"], 
                 name="uniq_comanda_por_pedido_numero"
-            ),
-            models.UniqueConstraint(
-                fields=["pedido", "area_cocina", "estado"],
-                condition=Q(estado__in=["ENVIADA", "EN_PREPARACION"]),
-                name="uniq_comanda_activa_por_area"
             )
         ]
 
@@ -685,6 +730,8 @@ class CuentaPedido(models.Model):
 
     class Meta:
         indexes = [models.Index(fields=["pedido", "estado"])]
+        verbose_name = "Cuenta"
+        verbose_name_plural = "Cuentas"
         
     def recalcular_totales(self, save=True):
         print("RECALCULAR")
@@ -694,13 +741,16 @@ class CuentaPedido(models.Model):
             iva=Sum("iva_monto"),
             tot=Sum("total_linea"),
         )
+        
+        print("agg")
+        
         self.subtotal = (agg["sub"] or Decimal("0.00")).quantize(Decimal("0.01"))
         self.descuento_total = (agg["desc"] or Decimal("0.00")).quantize(Decimal("0.01"))
         self.iva_total = (agg["iva"] or Decimal("0.00")).quantize(Decimal("0.01"))
 
         base_total = (agg["tot"] or Decimal("0.00"))
         self.total = (base_total + (self.propina or Decimal("0.00"))).quantize(Decimal("0.01"))
-
+        print("subtotal ", self.subtotal)
         if save:
             self.save(update_fields=["subtotal", "descuento_total", "iva_total", "total"])
 

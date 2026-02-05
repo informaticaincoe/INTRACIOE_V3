@@ -101,8 +101,6 @@ def listar_mesas(request):
                     acciones.append({"type": "link", "label": "Entregar", "icon": "bi bi-check-all", "href": reverse("entregar_pedido", args=[m.id])})
                 else:
                     acciones.append({"type": "link", "label": "Solicitar cuenta", "icon": "bi bi-cash-coin", "href": reverse("solicitar_cuenta", args=[m.id])})
-            elif m.estado == 'PENDIENTE_PAGO':
-                acciones.append({"type": "link", "label": "Realizar pago", "icon": "bi bi-cash-coin", "href": reverse("pedido-checkout", args=[m.id])})
             elif m.estado == 'PAGADO':
                 acciones.append({"type": "link", "label": "Reabrir mesa", "icon": "bi bi-arrow-counterclockwise", "href": reverse("cambiar_estado_mesa", args=[m.id, "LIBRE"])})
 
@@ -197,7 +195,7 @@ def editar_mesa(request, pk):
         return redirect('mesas-lista')
         
     area = Area.objects.all()
-   
+    
     context = {
         "areas_lista": area,
         "ESTADO_MESA_CHOICES": Mesa.ESTADO_MESA_CHOICES,

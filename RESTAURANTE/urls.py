@@ -52,10 +52,10 @@ urlpatterns = [
     path("pedidos/crear-desde-mesa/", views_pedidos.pedido_crear_desde_mesa, name="pedido_crear_desde_mesa"),
     path("pedido/<int:pedido_id>/agregar/", views_pedidos.pedido_agregar_item, name="pedido_agregar_item"),
     path("pedido/<int:pedido_id>/quitar/<int:detalle_id>/", views_pedidos.pedido_quitar_item, name="pedido_quitar_item"),
-    path("pedido/<int:pedido_id>/cerrar/", views_pedidos.pedido_cerrar, name="pedido_cerrar"),
+    # path("pedido/<int:pedido_id>/cerrar/", views_pedidos.pedido_cerrar, name="pedido_cerrar"),
     path("pedidos/pedido/<int:pk>/", views_pedidos.ver_pedido_mesa, name="ver_pedido_mesa"),
     path('entregar/<int:mesa_id>/', views_pedidos.entregar_pedido, name='entregar_pedido'),
-    
+    # path('pedido/<int:mesa_id>/', views_pedidos.obtener_detalle_pedido, name='detalle_pedido'),
     # Cocineros
     path("cocinero/login/", views_cocineros.login_cocinero, name="login_cocinero"),
     path("cocineros", views_cocineros.listar_cocineros, name="cocineros-lista"),
@@ -73,13 +73,15 @@ urlpatterns = [
     path("mesa/<int:mesa_id>/checkout/", views_pedidos.pedido_checkout, name="pedido-checkout"),
     path("pedido/<int:pedido_id>/split/", views_pedidos.pedido_split, name="pedido-split"),
     path("pedido/<int:pedido_id>/pagar/", views_pedidos.enviar_facturacion, name="enviar-facturacion"),
-    path("detalle/mover/", views_pedidos.detalle_mover_a_cuenta, name="detalle-mover-a-cuenta"), # para cuentas separads
+    path("detalle/mover/", views_pedidos.mover_detalle, name="mover_detalle"), # para cuentas separads
     path('cuenta/<int:cuenta_id>/pagar/', views_pedidos.cuenta_pagar, name='cuenta_pagar'),
     path('cuenta/<int:cuenta_id>/<str:estado>/cambiar-estado/', views_cuentas.cambiar_estado_cuenta, name='cambiar-estado-cuenta'),
     path('pedido/<int:pedido_id>/nueva-cuenta/', views_pedidos.crear_cuenta_extra, name='crear-cuenta-extra'),
     path("pedido/<int:pedido_id>/confirmar-division/", views_pedidos.confirmar_division, name="pedido-confirmar-division"),
     path("cuenta/<int:cuenta_id>/facturar/", views_pedidos.enviar_facturacion_cuenta, name="cuenta-facturar"),
-
+    path("cuenta/<int:cuenta_id>/cambio-nombre/", views_pedidos.cambio_nombre_cuenta, name="cambio_nombre_cuenta"),
+    path("cuenta/<int:cuenta_id>/eliminar-cuenta/", views_pedidos.eliminar_cuenta_extra, name="eliminar_cuenta_extra"),
+    
     # Caja
     path("caja/", views_caja_y_cajeros.apertura_caja, name="caja"),
     path("caja/dashboard/", views_caja_y_cajeros.caja_dashboard, name="caja-dashboard"),
