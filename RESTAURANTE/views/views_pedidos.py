@@ -422,8 +422,30 @@ def split_detalle_pedido(request):
     return JsonResponse({
         "ok": True,
         "pedido_id": pedido.id,
-        "detalles_creados": [d.id for d in nuevos]
+        "cuentas": [
+            {
+                "id": c.id,
+                "total": float(c.total),
+                "detalles": [
+                    {
+                        "id": d.id,
+                        "platillo": d.platillo.nombre,
+                        "platillo_id": d.platillo_id,
+                        "cantidad": d.cantidad,
+                        "precio": float(d.precio_unitario),
+                    }
+                    for d in c.detalles.all()
+                ]
+            }
+            for c in pedido.cuentas.all()
+        ],
+        "pool": list(
+            pedido.detalles
+            .filter(cuenta__isnull=True)
+            .values("platillo_id", "cantidad")
+        )
     })
+
     
 @login_required
 @transaction.atomic
@@ -461,7 +483,8 @@ def pedido_split(request, pedido_id):
     }
 
     return render(request, "pedidos/split_tabs.html", context)
-
+    
+    
     
 @login_required
 def enviar_facturacion(request, pedido_id, cuenta_id=None):
@@ -818,7 +841,44 @@ def mover_detalle(request):
         pool.save()
 
     pedido.recalcular_totales(save=True)
-    return JsonResponse({"ok": True})
+
+    cuenta = None
+    if delta > 0:
+        cuenta = detalle_cuenta.cuenta
+    else:
+        cuenta = detalle.cuenta
+
+    return JsonResponse({
+        "ok": True,
+        "cuenta": {
+            "id": cuenta.id,
+            "total": float(cuenta.total),
+            "detalles": [
+                {
+                    "id": d.id,
+                    "platillo_id": d.platillo_id,
+                    "platillo__nombre": d.platillo.nombre,
+                    "cantidad": d.cantidad,
+                    "precio_unitario": float(d.precio_unitario),
+                }
+                for d in cuenta.detalles.select_related("platillo")
+            ]
+        },
+        "pool": [
+            {
+                "platillo_id": p["platillo_id"],
+                "cantidad": p["cantidad"],
+            }
+            for p in (
+                pedido.detalles
+                .filter(cuenta__isnull=True)
+                .values("platillo_id")
+                .annotate(cantidad=Sum("cantidad"))
+                .filter(cantidad__gt=0)
+            )
+        ]
+    })
+
 
 
 @login_required
@@ -900,29 +960,41 @@ def confirmar_division(request, pedido_id):
 @transaction.atomic
 def enviar_facturacion_cuenta(request, cuenta_id):
     # if getattr(request.user, "role", None) != "mesero":
-    #     return HttpResponseForbidden("Solo meseros.")
-    mesero = get_mesero_from_user(request.user)
-
+    #     return HttpResponseForbidden("Solo meseros.")    
+    print("CUENTA_ID ", cuenta_id)
+    
     cuenta = get_object_or_404(
         CuentaPedido.objects.select_for_update().select_related("pedido"),
         id=cuenta_id,
-        pedido__mesero=mesero,
     )
+    
+    print("CUENTA ", cuenta)
+    
     pedido = cuenta.pedido
 
-    if pedido.estado != "CERRADO":
-        messages.error(request, "El pedido debe estar CERRADO para facturar.")
-        return redirect("mesas-lista")
+    print("pedido ", pedido)
+
+    # if pedido.estado != "CERRADO":
+    #     messages.error(request, "El pedido debe estar CERRADO para facturar.")
+
+    #     return redirect("mesas-lista")
+    print("pedido 2 ", pedido)
 
     # si es split confirmado, exigimos CERRADA
     if pedido.division_confirmada and cuenta.estado != "CERRADA":
         messages.error(request, "La cuenta debe estar CERRADA (confirmada) para facturar.")
+        print("pedido.division_confirmada 2 ", pedido.division_confirmada)
+        
         return redirect("pedido-checkout", mesa_id=pedido.mesa_id)
+
+    print("pedido.division_confirmada ", pedido.division_confirmada)
+
 
     receptor = Receptor_fe.objects.filter(num_documento="00000000-0").first()
     if not receptor:
         messages.error(request, "No se encontró receptor por defecto (00000000-0).")
         return redirect("pedido-checkout", mesa_id=pedido.mesa_id)
+    print("cuenta.estado ", cuenta.estado)
 
     items = []
     for detalle in cuenta.detalles.select_related("platillo").all():
@@ -945,6 +1017,7 @@ def enviar_facturacion_cuenta(request, cuenta_id):
         "cuenta_id": cuenta.id,
     }
     request.session.modified = True
+    print("REDIRIGIENDO A FACTURACION... ")
     return redirect("/fe/generar/?from_cart=1&restaurante=1")
 
 @login_required
