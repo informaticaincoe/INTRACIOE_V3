@@ -694,3 +694,16 @@ class LoteContingencia(models.Model):
     hora_modificacion = models.TimeField(auto_now_add=True, null=True)
     #evento = models.ForeignKey(EventoContingencia, related_name='lotecontingencia', on_delete=models.CASCADE)
     
+
+# ------------------------ RESTAURANTE ------------------------ #
+class ConfigTipDte(models.Model):
+    emisor = models.OneToOneField(
+        'Emisor_fe', 
+        on_delete=models.CASCADE, 
+        related_name='config_tip'
+    )
+    porcentaje = models.DecimalField(decimal_places=2,default=0.00, max_digits=5) 
+    
+    class Meta:
+        verbose_name = "Tip"
+        verbose_name_plural = "Tips"

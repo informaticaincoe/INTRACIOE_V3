@@ -1,0 +1,8 @@
+<div class="mb-3">
+    <label class="form-label">Grupos</label>
+    <select name="role" class="form-select" required>
+      {% for g in grupos %}
+        <option value="{{ g.name }}">{{ g.name }}</option>
+      {% endfor %}
+    </select>
+  </div>

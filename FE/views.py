@@ -36,7 +36,7 @@ from FE.utils import _get_emisor_for_user
 from RESTAURANTE.models import Pedido
 from RESTAURANTE.services.services_pedidos import pagar_cuenta
 from intracoe import settings
-from .models import FacturaSujetoExcluidoElectronica, Token_data, Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica,  Receptor_fe, Tipo_dte, TipoMoneda, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos, Descuento, FormasPago, Plazo, TipoGeneracionDocumento, TipoContingencia, EventoContingencia, TipoTransmision, LoteContingencia, representanteEmisor
+from .models import ConfigTipDte, FacturaSujetoExcluidoElectronica, Token_data, Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica,  Receptor_fe, Tipo_dte, TipoMoneda, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos, Descuento, FormasPago, Plazo, TipoGeneracionDocumento, TipoContingencia, EventoContingencia, TipoTransmision, LoteContingencia, representanteEmisor
 from INVENTARIO.models import Almacen, DetalleDevolucionVenta, DevolucionVenta, MovimientoInventario, NotaCredito, Producto, TipoItem, Tributo, TipoUnidadMedida
 from .forms import EmisorForm, ExcelUploadForm, RepresentanteEmisorForm
 from django.db import transaction
@@ -6277,32 +6277,35 @@ def enviar_correo_individual_view(request, factura_id, archivo_pdf=None, archivo
 @login_required
 @transaction.atomic
 def configurar_empresa_view(request):
-
-    """
-    Una sola pantalla para crear/editar:
-      - Emisor_fe (único registro 'mi empresa')
-      - representanteEmisor vinculado (FK en Emisor_fe)
-    """
-    # 1) Cargar el emisor ligado al usuario (si existe)
     emisor = _get_emisor_for_user(request.user, estricto=False)
-    rep_inst = getattr(emisor, "representante", None) if emisor else None
-
     rep_instance = emisor.representante if emisor and emisor.representante_id else None
-
+    
+    config_tip = None
+    if emisor:
+        config_tip, _ = ConfigTipDte.objects.get_or_create(emisor=emisor)
+    
     if request.method == "POST":
         emisor_form = EmisorForm(request.POST, request.FILES, instance=emisor)
         rep_form = RepresentanteEmisorForm(request.POST, instance=rep_instance)
+        tip_val = request.POST.get("tip_porcentaje") # Traemos el valor del POST
 
         if emisor_form.is_valid() and rep_form.is_valid():
-            # Guardar representante primero
+            # 1. Guardar representante primero
             representante = rep_form.save()
-
-            # Guardar emisor y enlazar representante
+            
+            # 2. Preparar y guardar el emisor (AHORA SÍ DEFINIMOS emisor_obj)
             emisor_obj = emisor_form.save(commit=False)
             emisor_obj.representante = representante
             emisor_obj.save()
-            emisor_form.save_m2m()  # actividades_economicas
-
+            emisor_form.save_m2m() 
+            
+            # 3. Ahora que emisor_obj existe, procesamos la propina
+            if emisor_obj.es_restaurante and tip_val:
+                ConfigTipDte.objects.update_or_create(
+                    emisor=emisor_obj,
+                    defaults={'porcentaje': tip_val}
+                )
+            
             messages.success(request, "Configuración de la empresa guardada correctamente.")
             return redirect(reverse("configurar_empresa"))
         else:
@@ -6313,6 +6316,7 @@ def configurar_empresa_view(request):
 
     context = {
         "emisor_form": emisor_form,
+        "config_tip": config_tip,
         "rep_form": rep_form,
         "tiene_emisor": bool(emisor),
         "emisor": emisor,

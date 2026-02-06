@@ -1,11 +1,13 @@
 from datetime import timezone
+from decimal import Decimal
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from django.db import transaction
-from FE.models import Receptor_fe
+from FE.models import Emisor_fe, Receptor_fe
+from FE.utils import _get_emisor_for_user
 from RESTAURANTE.models import Caja, CategoriaMenu, Comanda, CuentaPedido, DetallePedido, Mesa, Mesero, Pedido, Platillo
 from RESTAURANTE.services.services_comandas import enviar_pedido_a_cocina
 from RESTAURANTE.services.services_pedidos import crear_map_json_por_item
@@ -222,7 +224,6 @@ def pedido_quitar_item(request, pedido_id, detalle_id):
 @login_required
 @transaction.atomic
 def solicitar_cuenta(request, mesa_id):
-    print("METHOD >>>> ", request.method)
     """
     Cambia el estado de la mesa a Pendiente de pago e imprime el ticket de prefactura
     """
@@ -242,13 +243,39 @@ def solicitar_cuenta(request, mesa_id):
 
     mesa.estado="PENDIENTE_PAGO"
     mesa.save()
-    print(">>>MESA ", mesa)
-    print(">>>MESA ", mesa)
     
-    messages.success(request, f'Mesa {mesa.numero} ahora está OCUPADA.')
+    emisor = _get_emisor_for_user(request.user, estricto=False)
     
-    messages.success(request, "Pedido enviado a cobro (pendiente de pago).")
-    return redirect("mesas-lista")
+    # --- Lógica de Propina ---
+    propina_monto = Decimal("0.00")
+    total_con_propina = pedido.total # total es un DecimalField del Pedido
+    
+    if emisor.es_restaurante:
+        # Accedemos a la configuración que creamos (related_name='config_tip')
+        config = getattr(emisor, 'config_tip', None)
+        if config:
+            porcentaje = config.porcentaje / Decimal("100")
+            propina_monto = pedido.total * porcentaje
+            total_con_propina = pedido.total + propina_monto
+
+    detalles = DetallePedido.objects.filter(pedido=pedido)
+    
+    print("DETALLES ******* ", detalles)
+    
+    return render(request, "documentos/template_ticket_cuenta_total.html", {
+        "pedido": pedido,
+        "detalle_items": detalles,
+        "emisor": emisor,
+        "propina_monto": propina_monto,
+        "total_con_propina": total_con_propina
+    })
+    # print(">>>MESA ", mesa)
+    # print(">>>MESA ", mesa)
+    
+    # messages.success(request, f'Mesa {mesa.numero} ahora está OCUPADA.')
+    
+    # messages.success(request, "Pedido enviado a cobro (pendiente de pago).")
+    # return redirect("mesas-lista")
 
 @login_required
 @transaction.atomic
@@ -268,7 +295,6 @@ def pedido_crear_desde_mesa(request):
         receptor_id = request.POST.get("receptor_id") or None
 
         mesa = get_object_or_404(Mesa.objects.select_for_update(), id=mesa_id)
-        print("****** mesa", mesa)
 
         if mesa.estado not in ("PENDIENTE_ORDEN", "OCUPADA"):
             messages.error(request, f"Estado de mesa no válido: {mesa.estado}")
@@ -280,7 +306,6 @@ def pedido_crear_desde_mesa(request):
             mesero=mesero,
             defaults={'estado': 'ABIERTO'}
         )
-        print("****** pedido", pedido)
 
         if receptor_id:
             pedido.receptor = get_object_or_404(Receptor_fe, id=receptor_id)

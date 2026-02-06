@@ -38,7 +38,6 @@ class User(AbstractUser):
     
 
 class PasswordResetCode(models.Model):
-    #NEW
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
