@@ -1,9 +1,11 @@
 
+from django.forms import ValidationError
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from INVENTARIO.models import Producto, TipoItem, TipoUnidadMedida
-from RESTAURANTE.models import Area, CategoriaMenu, Platillo
-
+from RESTAURANTE.models import Area, AreaCocina, CategoriaMenu, Platillo
+from django.core.paginator import Paginator
+from django.db.models import Q
 ###############################################################################################################
 #                                            CONFIG RESTAURANTE                                               #
 ###############################################################################################################
@@ -101,8 +103,8 @@ def crear_area(request):
         nombre = request.POST.get('nombre') or ''
         
         if nombre:
-                Area.objects.create(nombre=nombre)
-                messages.success(request, f'Aera "{nombre}" creada con éxito.')
+            Area.objects.create(nombre=nombre)
+            messages.success(request, f'Area "{nombre}" creada con éxito.')
         else:
             messages.error(request, 'El nombre del area no puede estar vacío.')
             
@@ -147,6 +149,78 @@ def eliminar_area(request, pk):
         
     return redirect('areas')
 
+
+###############################################################################################################
+#                                                    Areas                                                    #
+###############################################################################################################
+def listar_areas_cocina(request):
+    search_query = request.GET.get('search_name')
+    if search_query:
+        # Filtrar categorías por nombre que contenga la búsqueda (case-insensitive)
+        areas_cocina = AreaCocina.objects.filter(area_cocina__icontains=search_query)
+    else:
+        areas_cocina = AreaCocina.objects.all().order_by("pk")
+    
+    context = {
+        'areas_cocina_list': areas_cocina  # lista de areas
+    }
+    return render(request, 'area_cocina/list.html', context)
+
+def crear_area_cocina(request):
+    if request.method == 'POST':
+        print("AAAAAA")
+        
+        nombre = request.POST.get('nombre') or ''
+        print("nombre ", nombre)
+        
+        if nombre:
+            AreaCocina.objects.create(area_cocina=nombre)
+            messages.success(request, f'Area de cocina "{nombre}" creada con éxito.')
+            
+        else:
+            messages.error(request, 'El nombre del area no puede estar vacío.')
+            
+        # Redirigir después de POST para evitar reenvío del formulario
+        return redirect('areas-cocina')
+        
+    # Si se accede por GET, simplemente redirecciona
+    return redirect('areas-cocina')
+
+def editar_area_cocina(request, pk):
+    area_cocina = get_object_or_404(AreaCocina, pk=pk)
+    
+    if request.method == "POST":
+        nombre = request.POST.get("nombre")
+        
+        if area_cocina:
+            area_cocina.area_cocina = nombre
+        
+            area_cocina.save()
+            
+            messages.success(request, f'Area "{nombre}" actualizada con éxito.')
+        else:
+            messages.error(request, 'El nombre del area no puede estar vacío.')
+        
+        return redirect('areas-cocina')
+        
+    # Redirigir después de POST para evitar reenvío del formulario 
+    return redirect('areas-cocina')
+            
+            
+def eliminar_area_cocina(request, pk):
+    print("delete")
+    print("request.method", request.method)
+    
+    if request.method == "POST":
+        print("delete")
+        
+        area = get_object_or_404(AreaCocina, pk=pk)
+        area_cocina = area.area_cocina
+        area.delete()
+        messages.success(request, f'Categoría "{area_cocina}" eliminada correctamente.')
+        
+    return redirect('areas-cocina')
+
 ###############################################################################################################
 #                                                     MENU                                                    #
 ###############################################################################################################
@@ -163,17 +237,22 @@ def _is_light(hex_color: str) -> bool:
     return luminance > 160  # umbral (ajustable)
 
 def listar_menu(request):
-    search_query = request.GET.get('search_name')
-    if search_query:
-        menu = Platillo.objects.filter(nombre__icontains=search_query) # Filtrar categorías por nombre
-    else:
-        menu = Platillo.objects.all().order_by("pk")
+    q = (request.GET.get('q') or '').strip()
+    print("Filtros q: ", q)
+    qs = Platillo.objects.filter(nombre__icontains=q) # Filtrar categorías por nombre
+    if q:
+        qs = qs.filter(Q(nombre__contains=q) | Q(codigo__contains=q))
+    qs = qs.order_by('id')
+    paginator = Paginator(qs, 10)
+    page = paginator.get_page(request.GET.get('page'))
     
-    for p in menu:
-        p.categoria_text_color = "#111" if _is_light(p.categoria.color) else "#fff"
+    for platillo in qs:
+        platillo.categoria_text_color = "#111" if _is_light(platillo.categoria.color) else "#fff"
 
     context = {
-        'lista_platillos': menu  # Usamos 'categorias_list' como clave para la plantilla
+        'lista_platillos': page,
+        'q': q,
+        'page':page,        
     }
     return render(request, 'menu/menu.html', context)
 
@@ -188,10 +267,14 @@ def crear_menu(request):
         disponible = request.POST.get('disponible') == 'on'
         es_preparado = request.POST.get('es_preparado') == 'on'
         imagen = request.FILES.get('imagen')
+        area_cocina_id = request.POST.get("area_cocina") or None
         
         tipo_item = get_object_or_404(TipoItem, codigo="1") #tipo bien
         unidad_medida = get_object_or_404(TipoUnidadMedida, codigo="59") #tipo bien
         
+        if es_preparado and not platillo.area_cocina:
+            raise ValidationError("El platillo preparado debe tener un área de cocina.")
+
         if nombre and precio_venta:
                 Platillo.objects.create(
                     codigo = codigo,
@@ -205,6 +288,7 @@ def crear_menu(request):
                     precio_venta = precio_venta,
                     disponible = disponible,
                     es_preparado = es_preparado,
+                    area_cocina = area_cocina_id 
                 )
                 messages.success(request, f'Platillo creado con éxito.')
         else:
@@ -214,9 +298,11 @@ def crear_menu(request):
         return redirect('menu')
         
     categorias = CategoriaMenu.objects.all()
+    areas_cocina = AreaCocina.objects.all()
    
     context = {
-        "categorias": categorias    
+        "categorias": categorias,
+        'areas_cocina': areas_cocina,
     }
     return render(request, 'menu/formulario.html', context)
 
@@ -230,6 +316,7 @@ def editar_menu(request, pk):
         disponible = request.POST.get('disponible') == 'on'
         es_preparado = request.POST.get('es_preparado') == 'on'
         imagen = request.FILES.get('imagen')
+        area_cocina_id = request.POST.get("area_cocina") or None
         
         if nombre and precio_venta:
             platillo = get_object_or_404(Platillo, pk=pk)
@@ -242,6 +329,7 @@ def editar_menu(request, pk):
             platillo.precio_venta = precio_venta
             platillo.disponible = disponible
             platillo.es_preparado = es_preparado
+            platillo.area_cocina = area_cocina_id 
             
             producto = get_object_or_404(Producto, codigo=codigo)
             
@@ -250,6 +338,9 @@ def editar_menu(request, pk):
             producto.preunitario = precio_venta
             producto.precio_venta = precio_venta
             producto.imagen = imagen
+
+            if platillo.es_preparado and not platillo.area_cocina:
+                raise ValidationError("El platillo preparado debe tener un área de cocina.")
 
             platillo.save()
             producto.save()
@@ -265,13 +356,14 @@ def editar_menu(request, pk):
    
     platillo = get_object_or_404(Platillo, pk=pk)
     categorias = CategoriaMenu.objects.all()
-   
+    areas_cocina = AreaCocina.objects.all()
+
     context = {
         "obj": platillo,
-        "categorias": categorias    
+        "categorias": categorias,    
+        'areas_cocina': areas_cocina,
     }
     return render(request, 'menu/formulario.html', context)
-            
             
 def eliminar_menu(request, pk):
     print("pk ", pk)

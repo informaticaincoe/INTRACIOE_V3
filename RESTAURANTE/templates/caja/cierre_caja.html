@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% load l10n %}
+{% block title %}Cierre de Caja{% endblock %}
+
+{% block content %}
+<style>
+    .bi-chevron-down {
+        display: inline-block;
+        transition: transform 0.3s ease-in-out;
+    }
+
+    /* Cuando el botón NO tiene la clase .collapsed (es decir, está abierto) */
+    a:not(.collapsed) .bi-chevron-down {
+        transform: rotate(180deg);
+    }
+</style>
+
+<div class="container mt-3">
+    <div class="mb-4">
+        <h4 class="text-danger">Cierre de Caja #{{ caja.id }}</h4>
+        <p class="text-muted">Realice el arqueo físico para finalizar el turno.</p>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-dark text-white">
+                        <h6 class="mb-0">Conteo de Efectivo (Arqueo)</h6>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Denominación</th>
+                                    <th class="text-center" style="width: 150px;">Cantidad</th>
+                                    <th class="text-end">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for den in denominaciones %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ den.nombre }}</strong>
+                                            <small class="text-muted d-block">${{ den.valor }}</small>
+                                        </td>
+                                        <td>
+                                            <input type="number" 
+                                                name="den_{{ den.id }}" 
+                                                class="form-control form-control-sm text-center cantidad-input" 
+                                                data-valor="{{ den.valor|unlocalize }}" 
+                                                value="0" 
+                                                min="0">
+                                        </td>
+                                        <td class="text-end">
+                                            $<span class="subtotal-linea">0.00</span>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-warning fw-bold">
+                                    <td colspan="2">TOTAL FÍSICO EN CAJA</td>
+                                    <td class="text-end">$<span id="total-fisico">0.00</span></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header">Resumen de Sistema</div>
+                    <div class="card-body">
+                        <h6>Efectivo</h6>
+                        <div style="padding-left: 1rem;">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Monto apertura:</span>
+                                <span>${{ caja.monto_inicial|floatformat:2 }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2 text-success">
+                                <span>Ventas con pago en efectivo:</span>
+                                <span>+ ${{ caja.total_efectivo|floatformat:2 }}</span>
+                            </div>
+                            <p class="d-flex justify-content-between mb-2 text-success">
+                                <a data-bs-toggle="collapse" 
+                                    href="#collapseIngresos" 
+                                    role="button" 
+                                    aria-expanded="false"
+                                    class="text-decoration-none text-success collapsed"> <i class="bi bi-chevron-down pe-2"></i> Ingresos
+                                </a>
+                                <span>+ ${{ tot_ingresos|floatformat:2 }}</span>
+                            </p>
+                            
+                            <div class="collapse px-4" id="collapseIngresos">
+                                {% for ingreso in ingresos_lista %}
+                                    <div class=" mb-1 ">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>{{ ingreso.motivo }}</span>
+                                            <span>+ ${{ ingreso.monto|floatformat:2 }}</span>
+                                        </div>
+                                    </div>
+                                {% empty %}
+                                    <div class="card card-body text-muted">No hay ingresos registrados</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <h6>Tarjeta</h6>
+                        <div style="padding-left: 1rem;">
+                            <div class="d-flex justify-content-between mb-2 text-success">
+                                <span>Ingresos:</span>
+                                <span>+ ${{ caja.total_tarjeta|floatformat:2 }}</span>
+                            </div>
+                        </div>
+
+                        <h6>Retiros</h6>
+                        <div style="padding-left: 1rem;">
+                            <p class="d-flex justify-content-between mb-2 text-danger">
+                                <a data-bs-toggle="collapse" 
+                                    href="#collapseRetiros" 
+                                    role="button" 
+                                    aria-expanded="false"
+                                    class="text-decoration-none text-danger collapsed"> <i class="bi bi-chevron-down pe-2"></i> Retiros
+                                </a>
+                                <span>+ ${{ tot_retiros|floatformat:2 }}</span>
+                            </p>
+                            
+                            <div class="collapse px-4" id="collapseRetiros">
+                                {% for retiro in retiros_lista %}
+                                    <div class=" mb-1 ">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>{{ retiro.motivo }}</span>
+                                            <span>- ${{ retiro.monto|floatformat:2 }}</span>
+                                        </div>
+                                    </div>
+                                {% empty %}
+                                    <div class="card card-body text-muted">No hay ingresos registrados</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        
+                        <div class="d-flex justify-content-between fw-bold fs-5">
+                            <span>Esperado:</span>
+                            <span id="monto-esperado" data-esperado="{{ esperado }}">${{ esperado|floatformat:2 }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-info mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">Diferencia:</h6>
+                            <span id="diferencia-display" class="fs-4 fw-bold text-primary">$0.00</span>
+                        </div>
+                        <small id="diferencia-label" class="text-muted">La caja está cuadrada</small>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Observaciones de cierre</label>
+                    <textarea name="observaciones" class="form-control" rows="3" placeholder="Ej: Faltante por error en cambio..."></textarea>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-danger btn-lg">
+                        Confirmar y Cerrar Caja
+                    </button>
+                    <a href="{% url 'caja-dashboard' %}" class="btn btn-link text-muted">Cancelar</a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('input', function (e) {
+        if (e.target.classList.contains('cantidad-input')) {
+            let totalFisico = 0;
+            const esperado = parseFloat(document.getElementById('monto-esperado').dataset.esperado);
+            
+            // Calcular cada línea y el total
+            document.querySelectorAll('tr').forEach(row => {
+                const input = row.querySelector('.cantidad-input');
+                const subtotalSpan = row.querySelector('.subtotal-linea');
+                
+                if (input && subtotalSpan) {
+                    const valor = parseFloat(input.dataset.valor);
+                    const cantidad = parseInt(input.value) || 0;
+                    const subtotal = valor * cantidad;
+                    subtotalSpan.textContent = subtotal.toFixed(2);
+                    totalFisico += subtotal;
+                }
+            });
+
+            // Actualizar Total Físico
+            document.getElementById('total-fisico').textContent = totalFisico.toFixed(2);
+
+            // Calcular Diferencia
+            const diferencia = totalFisico - esperado;
+            const diffDisplay = document.getElementById('diferencia-display');
+            const diffLabel = document.getElementById('diferencia-label');
+
+            diffDisplay.textContent = (diferencia >= 0 ? '+' : '') + diferencia.toFixed(2);
+            
+            if (diferencia === 0) {
+                diffDisplay.className = "fs-4 fw-bold text-primary";
+                diffLabel.textContent = "La caja está cuadrada";
+            } else if (diferencia > 0) {
+                diffDisplay.className = "fs-4 fw-bold text-success";
+                diffLabel.textContent = "Sobrante de dinero";
+            } else {
+                diffDisplay.className = "fs-4 fw-bold text-danger";
+                diffLabel.textContent = "Faltante de dinero";
+            }
+        }
+    });
+</script>
+{% endblock %}

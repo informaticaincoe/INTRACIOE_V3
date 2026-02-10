@@ -45,6 +45,7 @@
 
             <h5 class="card-title mb-0 mt-0">{{ cocinero.nombre }}</h5>
             <p class="mb-0 mt-0 opacity-50">{{ cocinero.pin }}</p>
+            {% comment %} <p class="mb-0 mt-0 opacity-50">{{ cocinero.area_cocina }}</p> {% endcomment %}
 
             <a href="{% url 'editar-cocinero' cocinero.id %}" class="btn btn-link text-success" data-bs-toggle="tooltip" title="Editar">Editar</a>
             <button class="btn btn-link text-danger"

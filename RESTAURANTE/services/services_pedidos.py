@@ -1,113 +1,48 @@
+from django.utils import timezone
+from decimal import Decimal
 from django.db import transaction
+from django.core.exceptions import ValidationError
 from django.db.models import Sum, Min
-
-from RESTAURANTE.models import CuentaPedido, DetallePedido
+from RESTAURANTE.models import CuentaPedido, DetallePedido, Pedido
+from collections import defaultdict
+import json
 
 def _assert_cuenta_abierta(cuenta: CuentaPedido):
     if cuenta.estado != "ABIERTA":
         raise ValueError("La cuenta debe estar ABIERTA para poder modificarla.")
 
-def build_map_for_signature(*, pedido_id, platillo_id, precio_unitario, descuento_pct, aplica_iva, notas):
-    qs = (DetallePedido.objects
-          .filter(
-              pedido_id=pedido_id,
-              platillo_id=platillo_id,
-              precio_unitario=precio_unitario,
-              descuento_pct=descuento_pct,
-              aplica_iva=aplica_iva,
-              notas=notas,
-          )
-          .values("cuenta_id")
-          .annotate(qty=Sum("cantidad"), detalle_id=Min("id")))
 
-    out = {}
-    for r in qs:
-        cid = str(r["cuenta_id"])
-        out[cid] = {"qty": int(r["qty"] or 0), "detalle_id": int(r["detalle_id"]) if r["detalle_id"] else None}
-    return out
-
-
-@transaction.atomic
-def split_or_move_detalle(*, detalle_id: int, cuenta_destino_id: int, qty: int):
-    det = (DetallePedido.objects.select_for_update().get(id=detalle_id))
-
-    sig = dict(
-        pedido_id=det.pedido_id,
-        platillo_id=det.platillo_id,
-        precio_unitario=det.precio_unitario,
-        descuento_pct=det.descuento_pct,
-        aplica_iva=det.aplica_iva,
-        notas=det.notas,
-    )
-
-    if det.cuenta_id == cuenta_destino_id:
-        raise ValueError("El detalle ya está en esa cuenta.")
-
-    cuenta_destino = (CuentaPedido.objects.select_for_update()
-                      .get(id=cuenta_destino_id, pedido_id=det.pedido_id))
-
-    if det.cuenta is None:
-        raise ValueError("El detalle no tiene cuenta origen asignada.")
-    if det.cuenta.estado != "ABIERTA" or cuenta_destino.estado != "ABIERTA":
-        raise ValueError("Solo se puede mover entre cuentas ABIERTAS.")
-    if qty > det.cantidad:
-        raise ValueError("No puedes mover más de la cantidad disponible.")
-
-    # MOVE ALL
-    if qty == det.cantidad:
-        det.cuenta = cuenta_destino
-        det.save(update_fields=["cuenta"])
-
-        det.pedido.recalcular_totales(save=True)
-        det.cuenta.recalcular_totales(save=True)
-        cuenta_destino.recalcular_totales(save=True)
-
-        return {
-            "moved_all": True,
-            "detalle_origen_id": None,
-            "detalle_destino_id": det.id,
-            "map": build_map_for_signature(**sig),  # 👈 SIEMPRE
+def crear_map_json_por_item(item):
+    """
+    Construye el JSON con cantidades por cuenta y total para un item (dict).
+    """
+    map_data = {}
+    total_qty = 0
+    for cuenta_id, data in item["por_cuenta"].items():
+        map_data[str(cuenta_id)] = {
+            "qty": data["qty"],
+            "detalle_id": data["detalle_ids"][0] if data["detalle_ids"] else None,
         }
+        total_qty += data["qty"]
+    map_data["total_qty"] = total_qty
+    return json.dumps(map_data)
 
-    # PARTIAL
-    det.cantidad = det.cantidad - qty
-    det.save(update_fields=["cantidad"])
+# CUENTAS -----------------
+@transaction.atomic
+def pagar_cuenta(*, cuenta_id: int):
+    cuenta = CuentaPedido.objects.select_for_update().select_related("pedido").get(id=cuenta_id)
 
-    det_dest = (DetallePedido.objects
-        .filter(
-            pedido_id=det.pedido_id,
-            cuenta_id=cuenta_destino_id,
-            platillo_id=det.platillo_id,
-            precio_unitario=det.precio_unitario,
-            descuento_pct=det.descuento_pct,
-            aplica_iva=det.aplica_iva,
-            notas=det.notas,
-        )
-        .select_for_update().first()
-    )
+    if cuenta.estado == "PAGADA":
+        return
 
-    if det_dest:
-        det_dest.cantidad = det_dest.cantidad + qty
-        det_dest.save(update_fields=["cantidad"])
-    else:
-        det_dest = DetallePedido.objects.create(
-            pedido_id=det.pedido_id,
-            cuenta_id=cuenta_destino_id,
-            platillo_id=det.platillo_id,
-            cantidad=qty,
-            precio_unitario=det.precio_unitario,
-            descuento_pct=det.descuento_pct,
-            aplica_iva=det.aplica_iva,
-            notas=det.notas,
-        )
+    if cuenta.estado not in ["CERRADA", "ABIERTA"]:
+        raise ValueError("La cuenta no se puede pagar en este estado.")
 
-    det.pedido.recalcular_totales(save=True)
-    det.cuenta.recalcular_totales(save=True)
-    cuenta_destino.recalcular_totales(save=True)
+    cuenta.estado = "PAGADA"
+    cuenta.pagado_el = timezone.now()
+    # cuenta.caja_id = caja_id  # si aplica
+    cuenta.save(update_fields=["estado", "pagado_el"])
 
-    return {
-        "moved_all": False,
-        "detalle_origen_id": det.id,
-        "detalle_destino_id": det_dest.id,
-        "map": build_map_for_signature(**sig),  # 👈 SIEMPRE
-    }
+    # 👇 aquí se hace el cierre agregado
+    cuenta.pedido.marcar_pagado_si_corresponde()
+    

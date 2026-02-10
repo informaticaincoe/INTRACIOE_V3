@@ -2,6 +2,7 @@ from zoneinfo import ZoneInfo
 from django.forms import modelform_factory
 import openpyxl
 import requests
+from RESTAURANTE.services.service_factura import finalizar_venta_exitosa
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.models import User
@@ -32,8 +33,10 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from decimal import ROUND_HALF_UP, ConversionSyntax, Decimal, getcontext
 from FE.utils import _get_emisor_for_user
+from RESTAURANTE.models import Pedido
+from RESTAURANTE.services.services_pedidos import pagar_cuenta
 from intracoe import settings
-from .models import FacturaSujetoExcluidoElectronica, Token_data, Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica,  Receptor_fe, Tipo_dte, TipoMoneda, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos, Descuento, FormasPago, Plazo, TipoGeneracionDocumento, TipoContingencia, EventoContingencia, TipoTransmision, LoteContingencia, representanteEmisor
+from .models import ConfigTipDte, FacturaSujetoExcluidoElectronica, Token_data, Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica,  Receptor_fe, Tipo_dte, TipoMoneda, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos, Descuento, FormasPago, Plazo, TipoGeneracionDocumento, TipoContingencia, EventoContingencia, TipoTransmision, LoteContingencia, representanteEmisor
 from INVENTARIO.models import Almacen, DetalleDevolucionVenta, DevolucionVenta, MovimientoInventario, NotaCredito, Producto, TipoItem, Tributo, TipoUnidadMedida
 from .forms import EmisorForm, ExcelUploadForm, RepresentanteEmisorForm
 from django.db import transaction
@@ -670,15 +673,10 @@ def generar_factura_view(request):
     if request.method == 'GET':
         prefill = None
         if request.GET.get("from_cart") == "1":
-            # prefill = request.session.pop("facturacion_prefill", None)
-            # request.session.modified = True
             prefill = request.session.get("facturacion_prefill", None)
             print("DTE: prefill recuperado =", prefill)
 
-        # tipo_dte = globals().get('tipo_documento_dte', '01')
         tipo_dte = request.GET.get("tipo_documento_dte", '01')
-        
-        
         
         print("DTE: GET tipo_dte=", tipo_dte)
         if not tipo_dte:
@@ -724,7 +722,6 @@ def generar_factura_view(request):
             "dte_select": tipo_dte
         }
         print("DTE: Renderizar template generar_dte.html")
-        print(f"DTE: Renderizar template generar_dte.html {context}")
         
         return render(request, "generar_dte.html", context)
 
@@ -876,6 +873,7 @@ def generar_factura_view(request):
                 tipotransmision=tipotransmision_obj,
                 flete_exportacion=Decimal("0.00"),
                 seguro_exportacion=Decimal("0.00"),
+                usuario_id=request.user.id,
             )
             print("DTE: Factura creada id=", factura.id)
 
@@ -1252,38 +1250,25 @@ def generar_factura_view(request):
                     "enviar_mh_url": reverse('enviar_factura_hacienda', args=[factura.id]),
                     }, status=200)
                 
-            # 5. LÓGICA DE RESTAURANTE (Solo si todo lo anterior fue exitoso)
+            # --- VINCULACIÓN DE RESTAURANTE ---
             prefill = request.session.get("facturacion_prefill")
             if prefill and prefill.get("origen") == "restaurante":
-                try:
-                    from RESTAURANTE.models import Pedido, Mesa
-                    Pedido.objects.filter(id=prefill.get("pedido_id")).update(estado='PAGADO')
-                    # Asumiendo que quieres liberar la mesa (ponerla disponible)
-                    pedido = get_object_or_404(Pedido, id=prefill.get("pedido_id") )
-                    pedido.estado = "PAGADO"
-                    pedido.save()
-                    print("<<<<<<<<<<<< ",pedido)
-                    print(">>>>>>>>>>>>", prefill.get("pedido_id"))
-                    
-                    mesa_id = pedido.mesa_id # Asegúrate que venga en el prefill
-                    print(mesa_id)
-                    if mesa_id:
-                        Mesa.objects.filter(id=mesa_id).update(estado='PAGADO')
-                    
-                    request.session.pop("facturacion_prefill", None)
-                except Exception as e:
-                    print(f"Error post-facturación: {e}")
+                pedido_id = prefill.get("pedido_id")
+                
+                from RESTAURANTE.models import CuentaPedido
+                cuenta = (CuentaPedido.objects
+                        .filter(pedido_id=pedido_id)
+                        .exclude(estado__in=["PAGADA", "ANULADO"])
+                        .order_by("id")
+                        .first())
 
-                # 6. RESPUESTA FINAL ÚNICA
-                # if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or is_json:
-                #     return JsonResponse({
-                #         "status": "OK",
-                #         "redirect": reverse('mesas-lista') if prefill else reverse('detalle_factura', args=[factura.id]),
-                #         "factura_id": factura.id
-                #     })
+                if cuenta:
+                    cuenta.factura = factura
+                    cuenta.save(update_fields=["factura"])
+                print(">>>>>>>>>> FACTURA id ", factura.id)
+                
+                finalizar_venta_exitosa(factura.id)
             
-                # return redirect('mesas-lista') if prefill else redirect('detalle_factura', factura.id)
-
             print("DTE: ====== FIN generar+firmar+enviar OK ======")
 
             # Respuesta final
@@ -6292,32 +6277,35 @@ def enviar_correo_individual_view(request, factura_id, archivo_pdf=None, archivo
 @login_required
 @transaction.atomic
 def configurar_empresa_view(request):
-
-    """
-    Una sola pantalla para crear/editar:
-      - Emisor_fe (único registro 'mi empresa')
-      - representanteEmisor vinculado (FK en Emisor_fe)
-    """
-    # 1) Cargar el emisor ligado al usuario (si existe)
     emisor = _get_emisor_for_user(request.user, estricto=False)
-    rep_inst = getattr(emisor, "representante", None) if emisor else None
-
     rep_instance = emisor.representante if emisor and emisor.representante_id else None
-
+    
+    config_tip = None
+    if emisor:
+        config_tip, _ = ConfigTipDte.objects.get_or_create(emisor=emisor)
+    
     if request.method == "POST":
         emisor_form = EmisorForm(request.POST, request.FILES, instance=emisor)
         rep_form = RepresentanteEmisorForm(request.POST, instance=rep_instance)
+        tip_val = request.POST.get("tip_porcentaje") # Traemos el valor del POST
 
         if emisor_form.is_valid() and rep_form.is_valid():
-            # Guardar representante primero
+            # 1. Guardar representante primero
             representante = rep_form.save()
-
-            # Guardar emisor y enlazar representante
+            
+            # 2. Preparar y guardar el emisor (AHORA SÍ DEFINIMOS emisor_obj)
             emisor_obj = emisor_form.save(commit=False)
             emisor_obj.representante = representante
             emisor_obj.save()
-            emisor_form.save_m2m()  # actividades_economicas
-
+            emisor_form.save_m2m() 
+            
+            # 3. Ahora que emisor_obj existe, procesamos la propina
+            if emisor_obj.es_restaurante and tip_val:
+                ConfigTipDte.objects.update_or_create(
+                    emisor=emisor_obj,
+                    defaults={'porcentaje': tip_val}
+                )
+            
             messages.success(request, "Configuración de la empresa guardada correctamente.")
             return redirect(reverse("configurar_empresa"))
         else:
@@ -6328,6 +6316,7 @@ def configurar_empresa_view(request):
 
     context = {
         "emisor_form": emisor_form,
+        "config_tip": config_tip,
         "rep_form": rep_form,
         "tiene_emisor": bool(emisor),
         "emisor": emisor,

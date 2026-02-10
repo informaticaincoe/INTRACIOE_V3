@@ -9,13 +9,12 @@ from django.contrib import messages
 from django.http import HttpResponse
 import pandas as pd
 from .models import (INCOTERMS, ActividadEconomica, NumeroControl, FacturaElectronica, Emisor_fe, 
-                           OtrosDicumentosAsociado, Pais, Receptor_fe, Municipio, Departamento, Tipo_dte, 
-                           Ambiente, Modelofacturacion, TipoDocContingencia, TipoDomicilioFiscal, TipoDonacion, 
-                           TipoInvalidacion, TipoPersona, TipoTransmision, TipoContingencia, TipoRetencionIVAMH, 
-                           TipoGeneracionDocumento, TipoTransporte, TiposDocIDReceptor, TiposEstablecimientos, 
-                           TiposServicio_Medico, CondicionOperacion, FormasPago, Plazo,
-                            Descuento, DetalleFactura, TipoMoneda, EventoInvalidacion, EventoContingencia, LoteContingencia, representanteEmisor, RecintoFiscal, RegimenExportacion)
-
+                            OtrosDicumentosAsociado, Pais, Receptor_fe, Municipio, Departamento, Tipo_dte, 
+                            Ambiente, Modelofacturacion, TipoDocContingencia, TipoDomicilioFiscal, TipoDonacion, 
+                            TipoInvalidacion, TipoPersona, TipoTransmision, TipoContingencia, TipoRetencionIVAMH, 
+                            TipoGeneracionDocumento, TipoTransporte, TiposDocIDReceptor, TiposEstablecimientos, 
+                            TiposServicio_Medico, CondicionOperacion, FormasPago, Plazo,
+                            Descuento, DetalleFactura, TipoMoneda, EventoInvalidacion, EventoContingencia, LoteContingencia, representanteEmisor, RecintoFiscal, RegimenExportacion, ConfigTipDte)
 
 # Lista de todos los modelos a registrar
 models = [
@@ -94,6 +93,9 @@ class FacturaSujetoExcluidoElectronicaAdmin(admin.ModelAdmin):
 
     fields = [f.name for f in FacturaSujetoExcluidoElectronica._meta.fields if f.name != "id"]
 
+@admin.register(ConfigTipDte)
+class ConfigTipDte(admin.ModelAdmin):
+    list_display = ('id', 'porcentaje')
     
 class ActividadEconomicaAdmin(admin.ModelAdmin):
     list_display = ('codigo', 'descripcion')

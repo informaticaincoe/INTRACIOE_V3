@@ -8,6 +8,14 @@
 </button>
 {% endif %}
 
+{% if user.role == 'admin' or user.role == 'supervisor' %}
+<button class="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
+        type="button"
+        data-bs-target="#{{ uid_prefix }}-areas-cocina">
+  <span><i class="bi bi-person me-1 fs-6"></i> Areas cocina</span>
+</button>
+{% endif %}
+
 {% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'cocinero' %}
 <button class="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
         type="button"
@@ -22,6 +30,7 @@
 
     const goto = new Map([
       [`#${prefix}-cocineros`, "{% url 'cocineros-lista' %}"],
+      [`#${prefix}-areas-cocina`, "{% url 'areas-cocina' %}"],
       [`#${prefix}-comanda`, "{% url 'comanda-cocina' %}"],
     ]);
 

@@ -92,3 +92,48 @@ class CocineroPinBackend(BaseBackend):
             return User.objects.get(pk=user_id)
         except User.DoesNotExist:
             return None
+        
+        
+class CocineroPinBackend(BaseBackend):
+    """
+    Autentica SOLO cocineros por su 'pin' (sin contraseña).
+    - Si el cocinero no tiene usuario creado, lo crea automáticamente.
+    """
+    def authenticate(self, request, pin=None, **kwargs):
+        print(">>> CocineroPinBackend llamado con pin:", pin)
+        if not pin:
+            return None
+
+        pin = str(pin).strip()
+
+        try:
+            cocinero = Cocinero.objects.select_related("usuario").get(pin=pin, activo=True)
+        except Cocinero.DoesNotExist:
+            return None
+
+        if not cocinero.usuario:
+            user = User.objects.create(
+                username=pin,   # puedes usar "COC-"+pin si prefieres
+                role="cocinero",
+                is_active=True,
+            )
+            user.set_unusable_password()
+            user.save()
+
+            cocinero.usuario = user
+            cocinero.save(update_fields=["usuario"])
+        else:
+            user = cocinero.usuario
+            if not user.is_active:
+                return None
+            if getattr(user, "role", None) != "cocinero":
+                user.role = "cocinero"
+                user.save(update_fields=["role"])
+
+        return user
+
+    def get_user(self, user_id):
+        try:
+            return User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return None

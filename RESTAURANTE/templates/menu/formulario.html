@@ -178,6 +178,39 @@
                       </div>
                 </div>
                 <div>
+                    <label class="form-label mb-2">Área de cocina</label>
+                    <div class="row g-2">
+                        {% for area in areas_cocina %}
+                        <div class="col-auto">
+                            <input type="radio"
+                                   name="area_cocina"
+                                   id="area_{{ area.id }}"
+                                   value="{{ area.id }}"
+                                   class="category-radio-input"
+                                   {% if obj and obj.area_cocina_id == area.id %}checked{% endif %}
+                            />
+                
+                            <label
+                                for="area_{{ area.id }}"
+                                class="category-select-card w-100 p-2 rounded-pill d-flex align-items-center justify-content-between"
+                                style="
+                                    border: #dee2e6 solid 1px;
+                                    background-color: white;
+                                "
+                            >
+                                <span class="radio-select-marker me-2"></span>
+                                <span class="fw-normal">{{ area.area_cocina }}</span>
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                
+                    <div id="areaCocinaFeedback" class="invalid-feedback">
+                        Selecciona un área de cocina.
+                    </div>
+                </div>
+                
+                <div>
                     <label class="form-label">Descripción</label>
                     <textarea name="descripcion" class="form-control" rows="3" required>{{ obj.descripcion|default:'' }}</textarea>
                     
@@ -257,6 +290,39 @@
             }
         });
     }
+
+    // ----------------------------------------------------
+    // Corroborar areas de cocina
+    // ----------------------------------------------------
+    const areaRadios = form.querySelectorAll('input[name="area_cocina"]');
+    const areaFeedback = document.getElementById('areaCocinaFeedback');
+    const esPreparadoCheckbox = document.getElementById('es_preparado_checkbox');
+
+    const areaChecked = () =>
+        Array.from(areaRadios).some(r => r.checked);
+
+    form.addEventListener('submit', (e) => {
+        if (esPreparadoCheckbox.checked && !areaChecked()) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            areaFeedback.style.display = 'block';
+
+            areaRadios.forEach(r => {
+                const label = form.querySelector(`label[for="${r.id}"]`);
+                if (label) label.classList.add("border-red-error");
+            });
+
+            form.classList.add('was-validated');
+            return;
+        } else {
+            areaFeedback.style.display = 'none';
+            areaRadios.forEach(r => {
+                const label = form.querySelector(`label[for="${r.id}"]`);
+                if (label) label.classList.remove("border-red-error");
+            });
+        }
+    });
 
     // ----------------------------------------------------
     // 2. LÓGICA DE VALIDACIÓN DEL FORMULARIO (EJECUCIÓN AL ENVIAR)

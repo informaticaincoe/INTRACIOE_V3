@@ -1,7 +1,7 @@
 # AUTENTICACION/urls.py
 from django.urls import path
 
-from AUTENTICACION import views_users
+from AUTENTICACION import view_groups, views_users
 
 from . import views_setup
 from .views import perfil_usuario_view
@@ -31,4 +31,7 @@ urlpatterns = [
     path("crear-departamento/", views_setup.crear_departamento, name="crear_departamento"),
     path("crear-pais/", views_setup.crear_pais, name="crear_pais"),
     path("crear_tipo_documento/", views_setup.crear_tipo_documento, name="crear_tipo_documento"),
+
+    #Grupos
+    path("grupos/", view_groups.groups_list, name="group_list")
 ]

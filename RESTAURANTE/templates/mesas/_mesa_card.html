@@ -155,7 +155,24 @@
   
       const data = payload.data;
       toast(data.mensaje);
-  
+      
+
+      socket.onmessage = (event) => {
+        const payload = JSON.parse(event.data);
+        if (payload.type !== "pedido_listo") return;
+      
+        const data = payload.data;
+        
+        // Si la notificación pertenece a ESTA tarjeta de mesa
+        if (data.mesa_id == document.querySelector(`[data-mesa-id="${data.mesa_id}"]`)?.dataset.mesaId) {
+            toast(data.mensaje);
+            
+            // Opción A: Recargar la página automáticamente para ver el botón "Entregar"
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        }
+      };
     };
   })();
   </script>
