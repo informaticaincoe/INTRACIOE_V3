@@ -417,12 +417,10 @@
                     </div>
                   {% endif %}
                 {% endif %}
-              </div>
 
+                <hr class="border border-bottom border-dark-subtle" />
 
-              <hr class="border border-bottom border-dark-subtle" />
-
-                <div class="border">
+                <div class="">
                   {% if emisor.es_restaurante and user.is_authenticated %}
                     <h6>usuarios</h6>
                     {% if user.role == 'admin' %}
@@ -437,6 +435,8 @@
                     {% endif %}
                   {% endif %}
                 </div>
+              </div>
+
               {% if user.is_staff %}
                 <div class="list-group list-group-flush">
                   <a class="list-group-item list-group-item-action d-none"><i class="bi bi-calculator me-2"></i> Contabilidad</a>
@@ -446,7 +446,6 @@
                   <a class="list-group-item list-group-item-action border-0 bg-white" href="{% url 'configurar_empresa' %}"><i class="bi bi-gear me-2"></i> Configurar empresa</a>
                 </div>
               {% endif %}
-
               
             </div>
           </aside>
@@ -455,7 +454,7 @@
         <!-- SIDEBAR MÓVIL (OFFCANVAS) -->
         <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarOff">
           <div class="offcanvas-header">
-            <h4 class="offcanvas-title mb-0">Menú</h4>
+            <h5 class="offcanvas-title mb-0">Menú</h5>
             <button class="btn-close" data-bs-dismiss="offcanvas"></button>
           </div>
 
@@ -555,6 +554,23 @@
                     </div>
                   {% endif %}
                 {% endif %}
+                </div>
+                
+                <div class="">
+                  {% if emisor.es_restaurante and user.is_authenticated %}
+                    <h5 class="offcanvas-title mt-5">Usuarios</h5>
+                    <hr class="my-1 border border-bottom border-dark-subtle" />
+                    {% if user.role == 'admin' %}
+                    <div class="accordion-item">
+                      <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#us"><i class="bi bi-person me-2 fs-6"></i>Grupos</button></h2>
+                      <div id="us" class="accordion-collapse collapse" data-bs-parent="#accMenu">
+                        <div class="list-group list-group-flush">
+                          {% include 'opciones_menu_restaurante/usuarios.html' with uid='us' %}
+                        </div>
+                      </div>
+                    </div>
+                    {% endif %}
+                  {% endif %}
                 </div>
               </div>
 

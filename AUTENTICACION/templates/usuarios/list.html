@@ -1,10 +1,19 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container py-4">
-  <h4>Usuarios</h4>
-  <a href="{% url 'usuarios_crear' %}" class="btn btn-primary mb-3">Nuevo usuario</a>
+ <div class="d-flex w-100 justify-between">
+   <h4>Usuarios</h4>
+   <a href="{% url 'usuarios_crear' %}" class="btn btn-primary mb-3">Nuevo usuario</a>
+ </div>
   <table class="table table-sm table-hover">
-    <thead><tr><th>Usuario</th><th>Email</th><th>Rol</th><th></th></tr></thead>
+    <thead>
+      <tr>
+        <th>Usuario</th>
+        <th>Correo</th>
+        <th>Rol</th>
+        <th></th>
+      </tr>
+    </thead>
     <tbody>
       {% for u in usuarios %}
       <tr>
@@ -21,5 +30,6 @@
       {% endfor %}
     </tbody>
   </table>
+  
 </div>
 {% endblock %}

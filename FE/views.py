@@ -69,11 +69,18 @@ from django.core.exceptions import ObjectDoesNotExist
 import json
 from django.core.serializers.json import DjangoJSONEncoder
 
-try:
-    FIRMADOR_URL = ConfiguracionServidor.objects.filter(clave="firmador").first()
-except (OperationalError, ObjectDoesNotExist):
-    FIRMADOR_URL = None
+# try:
+#     FIRMADOR_URL = ConfiguracionServidor.objects.filter(clave="firmador").first()
+# except (OperationalError, ObjectDoesNotExist):
+#     FIRMADOR_URL = None
 
+def obtener_firmador_url():
+    """Retorna el objeto de configuración o None si no existe o hay error de DB."""
+    try:
+        return ConfiguracionServidor.objects.filter(clave="firmador").first()
+    except Exception:
+        return None
+    
 try:
     CERT_PATH = ConfiguracionServidor.objects.filter(clave="certificado").first()
     CERT_PATH = CERT_PATH.url_endpoint if CERT_PATH else None
@@ -2127,8 +2134,8 @@ def firmar_factura_view(request, factura_id, interno=False):
 
         try:
             print("dentro try-------------- ")
-            
-            response = requests.post(FIRMADOR_URL.url_endpoint, json=payload, headers={"Content-Type": CONTENT_TYPE.valor})
+            config_firmador = obtener_firmador_url()
+            response = requests.post(config_firmador.url_endpoint, json=payload, headers={"Content-Type": CONTENT_TYPE.valor})
             print("Response envio: ", response)
             print("Response envio status: ", response.status_code)
             try:
@@ -2954,7 +2961,8 @@ def _firmar_evento_invalidacion(evento: EventoInvalidacion):
     }
     headers = {"Content-Type": CONTENT_TYPE.valor}
 
-    resp = requests.post(FIRMADOR_URL.url_endpoint, json=payload, headers=headers)
+    config_firmador = obtener_firmador_url()
+    resp = requests.post(config_firmador.url_endpoint, json=payload, headers=headers)
     try:
         data = resp.json()
     except Exception:
@@ -3347,9 +3355,9 @@ def firmar_factura_sujeto_excluido_anulacion_view(request, factura_id):
     }
 
     headers = {"Content-Type": CONTENT_TYPE.valor}
-
+    config_firmador = obtener_firmador_url()
     try:
-        response = requests.post(FIRMADOR_URL.url_endpoint, json=payload, headers=headers)
+        response = requests.post(config_firmador.url_endpoint, json=payload, headers=headers)
         
         # Capturamos la respuesta completa
         try:
@@ -5070,9 +5078,9 @@ def firmar_contingencia_view(request, contingencia_id):
         }
 
         headers = {"Content-Type": CONTENT_TYPE.valor}
-
+        config_firmador = obtener_firmador_url()
         try:
-            response = requests.post(FIRMADOR_URL.url_endpoint, json=payload, headers=headers)
+            response = requests.post(config_firmador.url_endpoint, json=payload, headers=headers)
             
             # Capturamos la respuesta completa
             if response:

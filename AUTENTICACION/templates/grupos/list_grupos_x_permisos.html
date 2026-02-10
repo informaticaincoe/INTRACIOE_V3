@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Grupos{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Gestión de Roles y Permisos</h2>
+        {% comment %} <a href="{% url 'crear_grupo' %}" class="btn btn-primary">+ Nuevo Grupo</a> {% endcomment %}
+        <a href="{% url 'index' %}" class="btn btn-primary">+ Nuevo Grupo</a>
+
+    </div>
+        
+        {% for grupo in grupos %}
+        <div class="row border-top border-bottom py-1">
+            <div class="d-flex align-middle col">
+                <div class="align-self-center px-4" style="width: 15%;">
+                    <i class="bi bi-people-fill fs-1" style="color: #9c9c9c;"></i>
+                </div>
+                <div class="align-self-center" style="width: 15%;">
+                    <span class="text-light rounded px-2 py-1" style="font-size: 0.8rem; background-color: #ffa600;">
+                        Usuarios {{ grupo.user_set.count }}
+                    </span>
+                </div>
+                <div class="align-self-center col">
+                    <span class="d-flex flex-column ">
+                        <span class="fw-semibold">
+                            {{ grupo.name }}
+                        </span>
+                        <span>
+                            {{ grupo.total_permisos }} permisos
+                            
+                        </span>
+                    </span>
+                </div>
+                <div class="btn-group col gap-2 align-self-center">
+                    <a href="{% url 'index' %}" class="text-danger"><i class="bi bi-x-lg fs-5"></i></a>
+                    <a href="{% url 'editar_permisos' grupo.pk  %}" class="text-primary"><i class="bi bi-pencil fs-5"></i></a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+</div>
+
+  {% endblock %}

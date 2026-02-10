@@ -1,8 +1,16 @@
-<div class="mb-3">
-    <label class="form-label">Grupos</label>
-    <select name="role" class="form-select" required>
-      {% for g in grupos %}
-        <option value="{{ g.name }}">{{ g.name }}</option>
-      {% endfor %}
-    </select>
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Grupos{% endblock %}
+
+{% block content %}
+
+    <div class="container py-4">
+    <h4>Grupos</h4>
+
+    {% for g in grupos %}
+      <p>{{ g.name }}</p>
+    {% endfor %}
   </div>
+
+  {% endblock %}
