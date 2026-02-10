@@ -32,6 +32,25 @@
           <div class="invalid-feedback">Obligatorio.</div>
         </div>
 
+        {% comment %} <div>
+          <label class="" for="area_cocina">Area de cocina</label>
+          <input type="text" name="area_cocina" class="form-control" value="{{ cocinero.area_cocina|default:'' }}" required>
+          
+          <div class="invalid-feedback">Obligatorio.</div>
+        </div> {% endcomment %}
+        <div>
+          <label>Área</label>
+            <select name="area_cocina" id="area_cocina" class="form-select" required>
+                <option value="">Seleccione…</option>
+                {% for area in lista_areas %}
+                    <option value="{{ area.id }}"
+                        {% if cocinero and cocinero.area_cocina_id == area.id %}selected{% endif %}>
+                        {{ area.area_cocina }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
         <div class="form-check form-switch">
           <input class="form-check-input" type="checkbox" name="activo" value="on" id="activo" {% if cocinero.activo %}checked{% endif %}>
           <label class="form-check-label" for="activo">Activo</label>

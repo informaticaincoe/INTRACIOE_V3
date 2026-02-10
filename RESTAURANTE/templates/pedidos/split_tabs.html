@@ -1,391 +1,441 @@
-  {% extends "base.html" %}
-  {% block content %}
+{% extends "base.html" %}
+{% block content %}
 
-  <style>
-    .disable-row {
-      background-color: #00000010;
-    } /* Cerrar correctamente */
+<div class="container-fluid mt-4 px-4">
 
-    .disable {
-      background-color: #00000010!important;
-      border: #00000041!important;
-      color: #00000081!important;
-      opacity: 0.5; /* Opcional: para que se vea visualmente desactivado */
-      pointer-events: none; /* Evita clics si no usas el atributo disabled */
-    }
+  <h2 class="mb-3">
+    <i class="bi bi-layout-split text-warning"></i>
+    Dividir Cuentas - Mesa {{ pedido.mesa.numero }}
+  </h2>
 
-    .cerrado {
-      background-color: #0000000d!important;
-      border: #00000041!important;
-      color: #000000b5!important;
-      opacity: 0.5; /* Opcional: para que se vea visualmente desactivado */
-      pointer-events: none; /* Evita clics si no usas el atributo disabled */
-    }
-    
-    .display-none {
-      display: none;
-    }
-  </style>
+  <!-- 🟦 TABS CUENTAS -->
+  <ul class="nav nav-tabs mb-4" id="cuentasTabs" role="tablist">
+    {% for cuenta in cuentas %}
+    <li class="nav-item">
+      <button class="nav-link {% if forloop.first %}active{% endif %}"
+              id="tab-cuenta-{{ cuenta.id }}"
+              data-bs-toggle="tab"
+              data-bs-target="#cuenta-{{ cuenta.id }}"
+              type="button">
+        <i class="bi bi-person"></i>
+        {{ cuenta.nombre }}
 
-  <div class="container-fluid mt-4 px-4">
+        <i class="bi bi-pencil px-1 change-name-icon" 
+          data-bs-toggle="modal" 
+          data-bs-target="#cambioNombreCuentaModal" 
+          data-cuenta-id="{{ cuenta.id }}" 
+          data-cuenta-nombre="{{ cuenta.nombre }}"> 
+        </i> 
+        <i class="bi bi-x-lg px-1 delete-cuenta-icon" 
+          data-bs-toggle="modal" 
+          data-bs-target="#EliminarCuentaModal" 
+          data-cuenta-id="{{ cuenta.id }}" 
+          data-cuenta-nombre="{{ cuenta.nombre }}"> 
+        </i>
+        
+        <span class="badge bg-secondary ms-2">${{ cuenta.total }}</span>
+      </button>
+    </li>
+    {% endfor %}
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h2 class="text-black">
-        <i class="bi bi-layout-split me-2 text-warning"></i>
-        Dividir Cuentas - Mesa {{ pedido.mesa.numero }}
-      </h2>
+    <li class="nav-item ms-auto">
+      <button class="btn btn-sm btn-primary mt-1" id="btn-add-cuenta">
+        <i class="bi bi-plus-lg"></i> Nueva cuenta
+      </button>
+    </li>
+  </ul>
+
+  <!-- 🔵 POOL -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-light">
+      <strong>Productos disponibles</strong>
     </div>
 
-    <!-- TABS DE CUENTAS -->
-    <ul class="nav nav-tabs" id="cuentasTabs">
-      <li class="nav-item">
-        <button class="nav-link active"
-                data-bs-toggle="tab"
-                data-bs-target="#tab-pedido"
-                data-cuenta-id="POOL"
-                type="button">
-          <i class="bi bi-receipt me-1"></i> Pedido
-        </button>
-      </li>
-
-      {% for c in cuentas %}
-      <li class="nav-item">
-        <button class="nav-link"
-                data-bs-toggle="tab"
-                data-bs-target="#tab-cuenta-{{ c.id }}"
-                data-cuenta-id="{{ c.id }}"
-                data-estado="{{ c.estado }}"
-                type="button">
-          <i class="bi bi-person me-1"></i> {{ c.nombre }}
-          <span class="badge bg-secondary ms-2">$ {{ c.total }}</span>
-        </button>
-      </li>
-      {% endfor %}
-      <li>
-        <div class="mt-3 text-center">
-          <button id="btn-nueva-cuenta" class="btn btn-outline-secondary" type="button">
-            <i class="bi bi-plus-circle me-2"></i>
-            Añadir otra cuenta
+    <div class="list-group list-group-flush" id="pool-list">
+      {% for detalle in pool_detalles %}
+      <div class="list-group-item d-flex justify-content-between align-items-center"
+           data-platillo-id="{{ detalle.platillo_id }}">
+        <div>
+          <strong>{{ detalle.platillo__nombre }}</strong>
+          <small class="text-muted">$ {{ detalle.precio_unitario }}</small>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <span class="fw-bold">disp: {{ detalle.cantidad }}</span>
+          <button class="btn btn-sm btn-outline-primary btn-add-from-pool"
+                  data-platillo-id="{{ detalle.platillo_id }}">
+            <i class="bi bi-plus"></i>
           </button>
         </div>
-      </li>
-    </ul>
-    
-
-    <!-- CONTENIDO DE LOS TABS -->
-    <div class="tab-content border border-top-0 p-3 bg-white">
-
-      <!-- TAB PEDIDO -->
-      <div class="tab-pane fade show active" id="tab-pedido">
-        <h5>Resumen del pedido</h5>
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Producto</th>
-              <th>Cant.</th>
-              <th>Precio</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for it in items %}
-            <tr>
-              <td>{{ it.platillo.nombre }}</td>
-              <td>{{ it.cantidad }}</td>
-              <td>${{ it.precio }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
       </div>
+      {% empty %}
+      <div class="list-group-item text-muted">
+        No hay productos disponibles
+      </div>
+      {% endfor %}
+    </div>
+  </div>
 
-      <!-- TABS DE CUENTAS -->
-      {% for c in cuentas %}
-      <div class="tab-pane fade" id="tab-cuenta-{{ c.id }}">
-        <div class="d-flex justify-content-between mb-3">
-          <div>
-            <h5>{{ c.nombre }}</h5>
-            <span class="badge bg-info">{{ c.estado }}</span>
-          </div>
-          <div class="fw-bold fs-5">
-            Total: ${{ c.total }}
-          </div>
+  <!-- 🟩 CUENTAS -->
+  <div class="tab-content">
+    {% for cuenta in cuentas %}
+    <div class="tab-pane fade {% if forloop.first %}show active{% endif %}"
+         id="cuenta-{{ cuenta.id }}">
+      <div class="card shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between">
+          <strong>{{ cuenta.nombre }}</strong>
+          <span class="fw-bold">Total: ${{ cuenta.total }}</span>
         </div>
 
-        <div class="list-group list-group-flush">
-          {% for it in items %}
-          <div class="list-group-item d-flex justify-content-between align-items-center" data-platillo-id="{{ it.platillo.id }}">
-            <div>{{ it.platillo.nombre }} <small>${{ it.precio }}</small></div>
+        <div class="list-group list-group-flush cuenta-detalles"
+             data-cuenta-id="{{ cuenta.id }}">
+          {% for detalle in cuenta.detalles.all %}
+          <div class="list-group-item d-flex justify-content-between align-items-center"
+               data-detalle-id="{{ detalle.id }}">
+            <div>
+              {{ detalle.platillo.nombre }}
+              <small class="text-muted">$ {{ detalle.precio_unitario }}</small>
+            </div>
             <div class="d-flex gap-2 align-items-center">
-              <button class="btn btn-sm btn-outline-primary btn-minus" data-map="{{ it.map_json|escape }}">
+              <button class="btn btn-sm btn-outline-secondary btn-minus"
+                      data-detalle-id="{{ detalle.id }}">
                 <i class="bi bi-dash"></i>
               </button>
-              <span class="qty-badge" data-map="{{ it.map_json|escape }}">0 / 0</span>
-              <button class="btn btn-sm btn-outline-primary btn-plus" data-map="{{ it.map_json|escape }}">
+              <span class="fw-bold">act: {{ detalle.cantidad }}</span>
+              <button class="btn btn-sm btn-outline-primary btn-plus"
+                      data-platillo-id="{{ detalle.platillo_id }}"
+                      data-cuenta-id="{{ cuenta.id }}">
                 <i class="bi bi-plus"></i>
               </button>
             </div>
+          </div>
+          {% empty %}
+          <div class="list-group-item text-muted">
+            Sin productos en esta cuenta
           </div>
           {% endfor %}
         </div>
-
-        <div class="mt-2">
-          <a href="{% url 'cuenta-facturar' c.id %}" class="btn btn-success btn-sm {% if c.estado == "ABIERTA" %}disable {% endif %}">Facturar</a>
-          {% if c.estado == "ABIERTA" %}
-            <a href="#" onclick="cambiarEstado(event, {{ c.id }}, 'CERRADA')" class="btn btn-secondary">
+        <div class="card-footer" id="footer-cuenta-{{cuenta.id}}">
+          {% if cuenta.estado == "ABIERTA" %}
+            <a href="#"
+               onclick="cerrarCuenta(event, {{ cuenta.id }})"
+               class="btn btn-secondary">
               <i class="bi bi-lock"></i> Cerrar cuenta
             </a>
+          {% elif cuenta.estado == "CERRADA" %}
+            <a href="{% url 'cuenta-facturar' cuenta.id %}" 
+              class="btn btn-success btn-sm btn-facturar"> 
+              <i class="bi bi-receipt"></i> Facturar 
+            </a>
+          {% elif cuenta.estado == "PAGADA" %}
+            <span class="badge bg-info px-2 py-1">
+              <i class="bi bi-check-circle me-1"></i> Pagada
+            </span>
           {% endif %}
         </div>
       </div>
-      {% endfor %}
+      </div>
     </div>
-    
-      <!-- TABS DE CUENTAS -->
-      {% for c in cuentas %}
-        <div class="tab-pane fade" id="tab-cuenta-{{ c.id }}">
-    
-          <div class="d-flex justify-content-between mb-3">
-            <div>
-              <h5>{{ c.nombre }}</h5>
-              <span class="badge bg-info text-dark">{{ c.estado }}</span>
-            </div>
-            <div class="fw-bold fs-5">
-              Total: ${{ c.total }}
-            </div>
-          </div>
-          
-          <div class="mb-3">
-            <a href="{% url 'cuenta-facturar' c.id %}"
-              class="btn btn-success btn-sm btn-facturar">
-              <i class="bi bi-receipt"></i> Facturar
-            </a>
-          </div>
-    
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Modal para cambiar nombre --> 
+<div class="modal fade" id="cambioNombreCuentaModal" tabindex="-1" aria-labelledby="cambioNombreCuenta" aria-hidden="true" > 
+  <div class="modal-dialog"> 
+    <div class="modal-content"> 
+      <div class="modal-header"> 
+        <h1 class="modal-title fs-5" id="cambioNombreCuenta">Cambio nombre cuenta</h1> 
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> 
+      </div> 
+      <div class="modal-body"> 
+        <form method="post" id="cambio_nombre_cuenta_form"> 
+          {% csrf_token %} 
+          <div class="mb-3"> 
+            <label for="name" class="col-form-label">Nombre</label> 
+            <input type="text" class="form-control" id="name" name="name"> 
+          </div> 
+        </div> 
+        <div class="modal-footer"> 
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button> 
+          <button type="submit" class="btn btn-primary">Guardar</button> 
+        </div> 
+      </form> 
+    </div> 
+  </div> 
+</div> 
+
+<!-- Modal para eliminar cuenta --> 
+ <div class="modal fade" id="EliminarCuentaModal" tabindex="-1" aria-labelledby="eliminarCuenta" aria-hidden="true" > 
+  <div class="modal-dialog"> 
+    <div class="modal-content"> 
+      <div class="modal-header"> 
+        <h1 class="modal-title fs-5" id="eliminarCuenta">Eliminar</h1> 
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> 
+      </div> 
+      <div class="modal-body"> 
+        <form method="post" id="eliminar_cuenta_form"> 
+          {% csrf_token %} 
+          <p>¿Estas seguro de eliminar la cuenta "<strong id="nombre-cuenta-a-eliminar"></strong>"?</p> 
+          <div class="modal-footer"> 
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button> 
+            <button type="submit" class="btn btn-primary">Eliminar</button> 
+          </div> 
+        </form> 
+      </div> 
+    </div> 
+  </div> 
+</div>
+
+
+<script>
+/* =========================
+   ESTADO GLOBAL
+========================= */
+let cuentaActivaId = null;
+
+function getCookie(name) {
+  return document.cookie.split("; ")
+    .find(row => row.startsWith(name + "="))
+    ?.split("=")[1];
+}
+
+/* =========================
+   TAB ACTIVA
+========================= */
+document.querySelectorAll('#cuentasTabs button')
+  .forEach(tab => {
+    tab.addEventListener('shown.bs.tab', e => {
+      cuentaActivaId = e.target.id.replace("tab-cuenta-", "");
+    });
+  });
+
+const first = document.querySelector('#cuentasTabs .nav-link.active');
+if (first) cuentaActivaId = first.id.replace("tab-cuenta-", "");
+
+/* =========================
+   AJAX HELPERS
+========================= */
+async function moverDetalle(payload) {
+  const resp = await fetch("{% url 'mover_detalle' %}", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken")
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!resp.ok) {
+    const data = await resp.json();
+    alert(data.error || "Error");
+    return null;
+  }
+  return await resp.json();
+}
+
+/* =========================
+   ACTUALIZADORES UI
+========================= */
+function actualizarTotalTab(data) {
+  const tab = document.querySelector(`#tab-cuenta-${data.cuenta.id} .badge`);
+  const header = document.querySelector(`#cuenta-${data.cuenta.id} .fw-bold`);
+  if (tab) tab.textContent = `$${data.cuenta.total.toFixed(2)}`;
+  if (header) header.textContent = `Total: $${data.cuenta.total.toFixed(2)}`;
+}
+
+function actualizarCuenta(data) {
+  const cont = document.querySelector(
+    `.cuenta-detalles[data-cuenta-id="${data.cuenta.id}"]`
+  );
+  cont.innerHTML = "";
+
+  if (!data.cuenta.detalles.length) {
+    cont.innerHTML = `<div class="list-group-item text-muted">Sin productos</div>`;
+    return;
+  }
+
+  data.cuenta.detalles.forEach(d => {
+    cont.insertAdjacentHTML("beforeend", `
+      <div class="list-group-item d-flex justify-content-between align-items-center"
+           data-detalle-id="${d.id}">
+        <div>
+          ${d.platillo__nombre}
+          <small class="text-muted">$ ${parseFloat(d.precio_unitario).toFixed(2)}</small>
         </div>
-      {% endfor %}
-      
-    </div>  
-    
-    <!-- PRODUCTOS -->
-    <div class="card shadow mt-4 cuentas-separadas d-none">
-      <div class="card-header">
-        <b>Asignar productos a la cuenta</b>
+        <div class="d-flex gap-2 align-items-center">
+          <button class="btn btn-sm btn-outline-secondary btn-minus"
+                  data-detalle-id="${d.id}">
+            <i class="bi bi-dash"></i>
+          </button>
+          <span class="fw-bold">act: ${d.cantidad}</span>
+          <button class="btn btn-sm btn-outline-primary btn-plus"
+                  data-platillo-id="${d.platillo_id}"
+                  data-cuenta-id="${data.cuenta.id}">
+            <i class="bi bi-plus"></i>
+          </button>
+        </div>
       </div>
-    
-      <div class="list-group list-group-flush">
-        {% for it in items %}
-          <div class="list-group-item d-flex justify-content-between align-items-center">
-    
-            <div>
-              <div class="fw-bold">{{ it.platillo.nombre }}</div>
-              <small class="text-muted">Precio: ${{ it.precio }}</small>
-            </div>
-    
-            <div class="d-flex align-items-center gap-2">
-              <button class="btn btn-outline-primary btn-sm btn-minus"
-                      data-map="{{ it.map_json|escape }}">
-                <i class="bi bi-dash"></i>
-              </button>
-    
-              <span class="qty-badge"
-                    data-map="{{ it.map_json|escape }}">
-                0 / 0
-              </span>
-    
-              <button class="btn btn-outline-primary btn-sm btn-plus"
-                      data-map="{{ it.map_json|escape }}">
-                <i class="bi bi-plus"></i>
-              </button>
-            </div>
-    
-          </div>
-        {% endfor %}
+    `);
+  });
+
+  rebindBotones();
+}
+
+function actualizarPool(data) {
+  const pool = document.getElementById("pool-list");
+  pool.innerHTML = "";
+
+  if (!data.pool.length) {
+    pool.innerHTML = `<div class="list-group-item text-muted">No hay productos</div>`;
+    return;
+  }
+
+  data.pool.forEach(p => {
+    pool.insertAdjacentHTML("beforeend", `
+      <div class="list-group-item d-flex justify-content-between align-items-center">
+        <strong>Platillo ${p.platillo_id}</strong>
+        <span class="fw-bold">disp: ${p.cantidad}</span>
       </div>
-    </div>
-    
-    <script>
-      function getCookie(name) {
-        let cookieValue = null;
-        document.cookie.split(";").forEach(c => {
-          c = c.trim();
-          if (c.startsWith(name + "=")) {
-            cookieValue = decodeURIComponent(c.substring(name.length + 1));
-          }
-        });
-        return cookieValue;
-      }
+    `);
+  });
+}
 
-      function applyServerMapToAllRows(platilloId, newMap) {
-        const rows = document.querySelectorAll(`[data-platillo-id="${platilloId}"]`);
-        rows.forEach(row => applyServerMap(row, newMap));
-      }
+/* =========================
+   EVENTOS
+========================= */
+function rebindBotones() {
 
-      
-      document.getElementById("btn-nueva-cuenta").onclick = async () => {
-        const resp = await fetch("{% url 'crear-cuenta-extra' pedido.id %}", {
-          method: "POST",
-          headers: { "X-CSRFToken": getCookie("csrftoken") }
-        });
-        if (resp.ok) location.reload();
-        else alert("No se pudo crear la cuenta");
-      };
-    
-    
-      // Cuenta activa (inicia con la primera cuenta si quieres)
-      let activeCuentaId = "{{ cuentas.0.id }}";
-    
-      function safeParseMap(s) {
-        try { return JSON.parse(s); } catch { return {}; }
-      }
-    
-      function refreshQtyBadges() {
-        const activeTabBtn = document.querySelector(`#cuentasTabs button[data-cuenta-id="${activeCuentaId}"]`);
-        const esCerrada = activeTabBtn ? activeTabBtn.dataset.estado === "CERRADA" : false;
-    
-        const pane = document.querySelector(".tab-pane.active");
-        const itemsProductos = pane ? pane.querySelectorAll(".list-group-item") : [];
-
-    
-        itemsProductos.forEach(row => {
-          const badge = row.querySelector(".qty-badge");
-          if (!badge) return;
-      
-          const map = safeParseMap(badge.dataset.map);
-      
-          const enActiva = map[activeCuentaId]?.qty || 0;
-          const disp = map["POOL"]?.qty || 0;
-      
-          badge.textContent = `act: ${enActiva} / disp: ${disp}`;
-      
-          const btnPlus = row.querySelector(".btn-plus");
-          const btnMinus = row.querySelector(".btn-minus");
-      
-          btnPlus.disabled = disp <= 0;
-          btnMinus.disabled = enActiva <= 0;
-      
-          row.classList.toggle("disable-row", false);
-          btnPlus.classList.toggle("disable", btnPlus.disabled);
-          btnMinus.classList.toggle("disable", btnMinus.disabled);
-        });    
-      }
-    
-      function applyServerMap(containerEl, newMap) {
-        const mapStr = JSON.stringify(newMap || {});
-        const badge = containerEl.querySelector(".qty-badge");
-        const btnPlus = containerEl.querySelector(".btn-plus");
-        const btnMinus = containerEl.querySelector(".btn-minus");
-    
-        if (badge) badge.dataset.map = mapStr;
-        if (btnPlus) btnPlus.dataset.map = mapStr;
-        if (btnMinus) btnMinus.dataset.map = mapStr;
-      }
-    
-      async function mover(detalleId, cuentaDestinoId, qty) {
-        const fd = new FormData();
-        fd.append("detalle_id", detalleId);
-        fd.append("cuenta_destino_id", cuentaDestinoId);
-        fd.append("qty", qty);
-    
-        const resp = await fetch("{% url 'detalle-mover-a-cuenta' %}", {
-          method: "POST",
-          headers: { "X-CSRFToken": getCookie("csrftoken") },
-          body: fd
-        });
-    
-        const data = await resp.json();
-        if (!resp.ok || !data.ok) throw new Error(data.error || "Error moviendo detalle");
-        return data;
-      }
-    
-      function bindControls() {
-        document.querySelectorAll(".btn-plus").forEach(btn => {
-          btn.onclick = async () => {
-            const row = btn.closest(".list-group-item");
-            const platilloId = row.dataset.platilloId;
-        
-            const badge = row.querySelector(".qty-badge");
-            const map = safeParseMap(badge.dataset.map);
-        
-            const detalleId = map["POOL"]?.detalle_id;
-            if (!detalleId) return alert("No hay detalle en POOL para mover.");
-        
-            try {
-              btn.disabled = true;
-              const data = await mover(detalleId, activeCuentaId, 1);
-        
-              // ✅ actualizar TODAS las filas del platillo en TODOS los tabs
-              applyServerMapToAllRows(platilloId, data.map);
-        
-              refreshQtyBadges();
-            } catch (e) {
-              alert(e.message || "Error");
-            } finally {
-              btn.disabled = false;
-            }
-          };
-        });
-        
-        document.querySelectorAll(".btn-minus").forEach(btn => {
-          btn.onclick = async () => {
-            const row = btn.closest(".list-group-item");
-            const platilloId = row.dataset.platilloId;
-        
-            const badge = row.querySelector(".qty-badge");
-            const map = safeParseMap(badge.dataset.map);
-        
-            const detalleId = map[activeCuentaId]?.detalle_id;
-            if (!detalleId) return alert("No hay detalle en esta cuenta para devolver.");
-        
-            try {
-              btn.disabled = true;
-              const data = await mover(detalleId, "POOL", 1);
-        
-              // ✅ actualizar TODAS las filas del platillo en TODOS los tabs
-              applyServerMapToAllRows(platilloId, data.map);
-        
-              refreshQtyBadges();
-            } catch (e) {
-              alert(e.message || "Error");
-            } finally {
-              btn.disabled = false;
-            }
-          };
-        });
-        
-        
-      }
-    
-      document.addEventListener("DOMContentLoaded", () => {
-        refreshQtyBadges();
-        bindControls();
+  document.querySelectorAll(".btn-add-from-pool").forEach(btn => {
+    btn.onclick = async () => {
+      const data = await moverDetalle({
+        platillo_id: btn.dataset.platilloId,
+        cuenta_id: cuentaActivaId,
+        delta: 1
       });
-    
-      // Cambio de pestaña
-      document.querySelectorAll("#cuentasTabs button").forEach(btn => {
-        btn.addEventListener("shown.bs.tab", e => {
-          activeCuentaId = e.target.dataset.cuentaId;
-          refreshQtyBadges();
-        });
-      });    
+      if (!data) return;
+      actualizarCuenta(data);
+      actualizarPool(data);
+      actualizarTotalTab(data);
+    };
+  });
 
-      // Cambiar estado a cerrado de una cuenta
-      async function cambiarEstado(event, cuentaId, estado) {
-        event.preventDefault();
+  document.querySelectorAll(".btn-plus").forEach(btn => {
+    btn.onclick = async () => {
+      const data = await moverDetalle({
+        platillo_id: btn.dataset.platilloId,
+        cuenta_id: btn.dataset.cuentaId,
+        delta: 1
+      });
+      if (!data) return;
+      actualizarCuenta(data);
+      actualizarPool(data);
+      actualizarTotalTab(data);
+    };
+  });
+
+  document.querySelectorAll(".btn-minus").forEach(btn => {
+    btn.onclick = async () => {
+      const data = await moverDetalle({
+        detalle_id: btn.dataset.detalleId,
+        delta: -1
+      });
+      if (!data) return;
+      actualizarCuenta(data);
+      actualizarPool(data);
+      actualizarTotalTab(data);
+    };
+  });
+}
+
+  document.querySelectorAll(".change-name-icon").forEach(icon => { 
+    icon.addEventListener("click", () => { 
+      const cuentaId = icon.dataset.cuentaId; 
+      const nombre = icon.dataset.cuentaNombre; 
+      const form = document.getElementById("cambio_nombre_cuenta_form"); 
       
-        const url = `{% url 'cambiar-estado-cuenta' 0 'CERRADA' %}`.replace("/0/", `/${cuentaId}/`).replace("/CERRADA/", `/${estado}/`);
-      
-        const resp = await fetch(url, {
+      form.action = "{% url 'cambio_nombre_cuenta' 0 %}".replace("0", cuentaId); 
+      document.getElementById("name").value = nombre; 
+    }); 
+  }); 
+    
+  document.querySelectorAll(".delete-cuenta-icon").forEach(icon => {  
+    icon.addEventListener("click", () => { 
+      const cuentaId = icon.dataset.cuentaId; 
+      const nombre = icon.dataset.cuentaNombre; 
+      const span_nombre = document.getElementById("nombre-cuenta-a-eliminar") 
+      const form = document.getElementById("eliminar_cuenta_form"); 
+
+      span_nombre.textContent = nombre 
+      form.action = "{% url 'eliminar_cuenta_extra' 0 %}".replace("0", cuentaId); 
+    }); 
+  });
+
+  /* ➕ nueva cuenta */
+document.getElementById("btn-add-cuenta").onclick = async () => {
+  const resp = await fetch("{% url 'crear-cuenta-extra' pedido.id %}", {
+    method: "POST",
+    headers: { "X-CSRFToken": getCookie("csrftoken") }
+  });
+  if (resp.ok) location.reload();
+  else alert("No se pudo crear la cuenta");
+};
+
+/* 🔒 cerrar cuenta */
+async function cerrarCuenta(e, cuentaId) {
+  e.preventDefault();
+  const resp = await fetch(
+    `{% url 'cambiar-estado-cuenta' 0 'CERRADA' %}`.replace("/0/", `/${cuentaId}/`),
+    {
+      method: "POST",
+      headers: { "X-CSRFToken": getCookie("csrftoken") }
+    }
+  );
+  
+  }
+  
+  async function cerrarCuenta(event, cuentaId) {
+    event.preventDefault(); // Evita que el enlace recargue la página
+    
+    try {
+      const response = await fetch(
+        `{% url 'cambiar-estado-cuenta' 0 'CERRADA' %}`.replace("/0/", `/${cuentaId}/`),
+        {
           method: "POST",
           headers: { "X-CSRFToken": getCookie("csrftoken") }
-        });
-      
-        const data = await resp.json().catch(() => ({}));
-        if (resp.ok && data.ok) {
-          location.reload();
+        })
+
+        const data = await response.json();
+        if (response.ok) {
+            // 1. Localizamos el footer de esa cuenta
+            const footer = document.getElementById(`footer-cuenta-${cuentaId}`);
+            
+            // 2. Definimos la URL de facturación (puedes pasarla desde el servidor o construirla)
+            const urlFacturar = "{% url 'cuenta-facturar' 0 %}".replace("0", cuentaId);
+
+            // 3. Cambiamos el contenido del footer dinámicamente
+            footer.innerHTML = `
+                <a href="${urlFacturar}" class="btn btn-success btn-sm animate__animated animate__fadeIn">
+                    <i class="bi bi-receipt"></i> Facturar
+                </a>
+            `;
+
+            // 4. (Opcional) Actualizar un indicador de estado en la cabecera si lo tienes
+            const statusBadge = document.querySelector(`#cuenta-${cuentaId} .badge-estado`);
+            if (statusBadge) {
+                statusBadge.className = "badge bg-warning text-dark";
+                statusBadge.textContent = "CERRADA";
+            }
+
         } else {
-          alert(data.error || "Error al cambiar el estado");
+            alert(data.error || "No se pudo cerrar la cuenta.");
         }
-      }
-      
-    </script>
-  {% endblock %}
+    } catch (error) {
+        console.error("Error:", error);
+        alert("Ocurrió un error al procesar la solicitud.");
+    }
+}
+
+  rebindBotones();
+</script>
+
+{% endblock %}

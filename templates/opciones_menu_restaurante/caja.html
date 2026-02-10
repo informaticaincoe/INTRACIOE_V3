@@ -1,0 +1,50 @@
+{% with uid_prefix=uid|default:"cj" %}
+
+{% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'cajero'%}
+<button class="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
+        type="button"
+        data-bs-target="#{{ uid_prefix }}-caja">
+  <span><i class="bi bi-person me-1 fs-6"></i> Caja</span>
+</button>
+{% endif %}
+
+{% if user.role == 'admin' or user.role == 'supervisor' %}
+<button class="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
+        type="button"
+        data-bs-target="#{{ uid_prefix }}-cajeros">
+  <span><i class="bi bi-person me-1 fs-6"></i> Cajero</span>
+</button>
+{% endif %}
+
+{% if user.role == 'admin' or user.role == 'supervisor' %}
+<button class="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
+        type="button"
+        data-bs-target="#{{ uid_prefix }}-billetes-monedas">
+  <span><i class="bi bi-person me-1 fs-6"></i>Billetes y monedas</span>
+</button>
+{% endif %}
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const prefix = "{{ uid_prefix|default:'cj' }}";
+
+    const goto = new Map([
+      [`#${prefix}-caja`, "{% url 'caja-dashboard' %}"],
+      [`#${prefix}-cajeros`, "{% url 'cajero-lista' %}"],
+      [`#${prefix}-billetes-monedas`, "{% url 'billetes-y-monedas-list' %}"],
+    ]);
+
+    document
+      .querySelectorAll(`[data-bs-target^="#${prefix}-"]`)
+      .forEach(btn => {
+        btn.addEventListener('click', (ev) => {
+          ev.preventDefault();
+          const target = btn.getAttribute('data-bs-target');
+          const href = goto.get(target);
+          if (href) window.location.href = href;
+        });
+      });
+  });
+</script>
+
+{% endwith %}

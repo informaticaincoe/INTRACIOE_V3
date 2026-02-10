@@ -1,211 +1,404 @@
 <style>
-  .checkbox-lg .custom-check-input{
+  .checkbox-lg .custom-check-input {
     transform: scale(1.4);
-    top: .8rem;
+    top: 0.8rem;
   }
-  .custom-check-input:checked{ accent-color: #0b3f90;; }
+  .custom-check-input:checked {
+    accent-color: #0b3f90;
+  }
 
-  .card-menu-select.is-selected{
+  .card-menu-select.is-selected {
     outline: 2px solid #0b3f90;
     outline-offset: 2px;
   }
 
   /* ✅ GRID RESPONSIVE: llena el espacio automáticamente */
-  .menu-grid{
+  .menu-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
     gap: 1rem;
   }
 
   /* Altura consistente para que no se vea “chueco” */
-  .menu-card img{
+  .menu-card img {
     width: 100%;
     height: 120px;
     object-fit: cover;
-    border-radius: .5rem;
+    border-radius: 0.5rem;
   }
 
   /* Columna orden “pegada” y con scroll propio */
-  .orden-panel{
-    height: 62vh;                 
+  .orden-panel {
+    height: 62vh;
     display: flex;
     flex-direction: column;
   }
 
   /* Lista con scroll */
-  .orden-scroll{
-    flex: 1;                      /* ocupa todo lo que pueda */
-    overflow: auto;               /* ✅ scroll */
-    padding-right: .25rem;        /* evita que tape scrollbar */
+  .orden-scroll {
+    flex: 1;
+    overflow: auto;
+    padding-right: 0.25rem;
   }
 
   /* Footer fijo abajo dentro del panel */
-  .orden-footer{
-    border-top: 1px solid rgba(0,0,0,.08);
-    padding-top: .75rem;
-    margin-top: .75rem;
+  .orden-footer {
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    padding-top: 0.75rem;
+    margin-top: 0.75rem;
     background: white;
   }
 
   @media (max-width: 992px) {
     .orden-panel {
-      height: auto; /* Solo aquí fijamos la altura */
+      height: auto;
     }
     .orden-scroll {
-      height: auto; /* En desktop estira para que el footer quede abajo */
+      height: auto;
     }
   }
-
-
 </style>
+<script src="https://unpkg.com/htmx.org@1.9.12"></script>
 
-<div class="row g-3">
+<div
+  class="row g-3"
+  id="menuWrapper"
+>
+  <div class="mb-4">
+    <form method="GET" 
+          hx-get="{% url 'tomar_pedido' mesa.id %}" 
+          hx-target="#tomarOrdenBody" 
+          hx-swap="innerHTML"
+          hx-trigger="submit"
+          class="d-flex align-items-center" 
+          id="menuSearchForm">
+        
+        <div class="input-group">
+            <div class="position-relative flex-grow-1">
+                <input type="text"
+                      class="form-control border-end-0" 
+                      style="border-top-right-radius: 0; border-bottom-right-radius: 0;"
+                      id="id_q"
+                      name="q"
+                      placeholder="Buscar por nombre..."
+                      value="{{ q|default:'' }}" />
+                
+                <i class="bi bi-x-lg position-absolute top-50 translate-middle-y end-0 me-2 clear-icon"
+                  data-target="id_q"
+                  style="cursor:pointer; z-index: 5; font-size: 0.8rem; color: #ccc;"></i>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-search"></i>
+            </button>
+        </div>
+
+        {% if f_cat %}
+        <input type="hidden" name="cat" value="{{ f_cat }}">
+        {% endif %}
+    </form>
+  </div>
+  <!-- ✅ TAGS CATEGORÍAS -->
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    <!-- TODOS -->
+    <a
+      class="btn btn-sm rounded-pill {% if not f_cat %}btn-primary{% else %}btn-outline-primary{% endif %}"
+      hx-get="{% url 'tomar_pedido' mesa.id %}?page=1{% if q %}&q={{ q|urlencode }}{% endif %}"
+      hx-target="#tomarOrdenBody"
+      hx-swap="innerHTML"
+      hx-push-url="false"
+    >
+      Todos
+    </a>
+
+    {% for c in categorias %}
+    <a
+      class="btn btn-sm rounded-pill {% if f_cat|stringformat:'s' == c.id|stringformat:'s' %}btn-primary{% else %}btn-outline-primary{% endif %}"
+      style="{% if f_cat|stringformat:'s' != c.id|stringformat:'s' %}border-color: {{ c.color }}; color: {{ c.color }};{% endif %}{% if f_cat|stringformat:'s' == c.id|stringformat:'s' %}background: {{ c.color }}; border-color: {{ c.color }};{% endif %}"
+      hx-get="{% url 'tomar_pedido' mesa.id %}?page=1&cat={{ c.id }}{% if q %}&q={{ q|urlencode }}{% endif %}"
+      hx-target="#tomarOrdenBody"
+      hx-swap="innerHTML"
+      hx-push-url="false"
+    >
+      {{ c.nombre }}
+    </a>
+    {% endfor %}
+  </div>
+
   <!-- ✅ PRODUCTOS -->
   <div class="col-12 col-lg-8">
-    <div class="menu-grid">
+    <div
+      class="menu-grid"
+      id="menuGrid"
+    >
       {% for platillo in platillos %}
-        <div class="card shadow-sm border card-menu-select menu-card"
-             data-id="{{ platillo.id }}"
-             data-nombre="{{ platillo.nombre|escapejs }}"
-             data-precio="{{ platillo.precio_venta }}"
-             id="platillo-{{ platillo.id }}">
+      <div
+        class="card shadow-sm border card-menu-select menu-card"
+        data-id="{{ platillo.id }}"
+        data-nombre="{{ platillo.nombre|escapejs }}"
+        data-precio="{{ platillo.precio_venta }}"
+        id="platillo-{{ platillo.id }}"
+      >
+        <label
+          class="position-relative w-100 h-100 p-2"
+          style="cursor: pointer"
+        >
+          <div class="checkbox-lg position-relative">
+            <input
+              type="checkbox"
+              class="custom-check-input position-absolute ms-2 mt-1 js-platillo-check"
+            />
+          </div>
 
-          <label class="position-relative w-100 h-100 p-2" style="cursor:pointer;">
-            <div class="checkbox-lg position-relative">
-              <input type="checkbox"
-                     class="custom-check-input position-absolute ms-2 mt-1 js-platillo-check"/>
-            </div>
+          <img
+            src="{{ platillo.imagen.url }}"
+            alt="{{ platillo.nombre }}"
+          />
 
-            <img src="{{ platillo.imagen.url }}" alt="{{ platillo.nombre }}"/>
-
-            <div class="mt-2">
-              <h6 class="mb-1 fw-semibold text-truncate">{{ platillo.nombre }}</h6>
-              <p class="opacity-75 mb-0">$ {{ platillo.precio_venta }}</p>
-            </div>
-          </label>
-        </div>
+          <div class="mt-2">
+            <h6 class="mb-1 fw-semibold text-truncate">
+              {{ platillo.nombre }}
+            </h6>
+            <p class="opacity-75 mb-0">$ {{ platillo.precio_venta }}</p>
+          </div>
+        </label>
+      </div>
       {% endfor %}
     </div>
+
+    <!-- ✅ PAGINACIÓN-->
+    <nav
+      aria-label="Navegación de páginas"
+      class="mt-4 "
+    >
+      <ul class="pagination justify-content-center">
+        {% if platillos.has_previous %}
+        <li class="page-item">
+          <a
+            class="page-link"
+            hx-get="{% url 'tomar_pedido' mesa.id %}?page={{ platillos.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if q %}&q={{ q|urlencode }}{% endif %}"
+            hx-target="#tomarOrdenBody"
+            hx-swap="innerHTML"
+            hx-push-url="false"
+          >
+            <i class="bi bi-chevron-left"></i>
+          </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+          <span class="page-link"><i class="bi bi-chevron-left"></i></span>
+        </li>
+        {% endif %}
+        {% for i in platillos.paginator.page_range %} 
+        {% if platillos.number == i %}
+        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+        {% elif i > platillos.number|add:'-3' and i < platillos.number|add:'3' %}
+        <li class="page-item">
+          <a
+            class="page-link"
+            hx-get="{% url 'tomar_pedido' mesa.id %}?page={{ platillos.next_page_number }}{% if q %}&q={{ q|urlencode }}{% endif %}{% if f_cat %}&cat={{ f_cat }}{% endif %}"
+            hx-target="#tomarOrdenBody"
+            hx-swap="innerHTML"
+            hx-push-url="false"
+            >{{ i }}</a
+          >
+        </li>
+        {% endif %} {% endfor %} {% if platillos.has_next %}
+        <li class="page-item">
+          <a
+            class="page-link"
+            hx-get="{% url 'tomar_pedido' mesa.id %}?page={{ platillos.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if f_cat %}&cat={{ f_cat }}{% endif %}"
+            hx-target="#tomarOrdenBody"
+            hx-swap="innerHTML"
+            hx-push-url="false"
+          >
+            <i class="bi bi-chevron-right"></i>
+          </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+          <span class="page-link"><i class="bi bi-chevron-right"></i></span>
+        </li>
+        {% endif %}
+      </ul>
+    </nav>
   </div>
 
   <!-- ✅ ORDEN -->
-<div class="col-12 col-lg-4 ">
-  <div class="orden-panel">
+  <div class="col-12 col-lg-4">
+    <div class="orden-panel">
+      <p class="fw-semibold mb-2">Orden</p>
 
-    <p class="fw-semibold mb-2">Orden</p>
-
-    <!-- ✅ SOLO ESTA PARTE SCROLLEA -->
-    <div class="orden-scroll">
-      <ul id="ordenList" class="list-group gap-4 mb-0"></ul>
-    </div>
-
-    <!-- ✅ SIEMPRE ABAJO -->
-    <div class="orden-footer">
-      <div class="d-flex justify-content-between">
-        <span class="fw-semibold">Total</span>
-        <span id="ordenTotal" class="fw-semibold">$0.00</span>
+      <!-- ✅ SOLO ESTA PARTE SCROLLEA -->
+      <div class="orden-scroll">
+        <ul
+          id="ordenList"
+          class="list-group gap-4 mb-0"
+        ></ul>
       </div>
 
-      <div class="mt-2">
-        <label class="form-label mb-1">Notas</label>
-        <textarea class="form-control" name="notas" rows="2" placeholder="Ej: 3 personas, cumpleaños, etc."></textarea>
-      </div>
-      <input type="hidden" name="platillos_json" id="platillos_json" value="[]">
+      <div class="orden-footer">
+        <div class="d-flex justify-content-between">
+          <span class="fw-semibold">Total</span>
+          <span
+            id="ordenTotal"
+            class="fw-semibold"
+            >$0.00</span
+          >
+        </div>
+
+        <div class="mt-2">
+          <label class="form-label mb-1">Notas</label>
+          <textarea
+            class="form-control"
+            name="notas"
+            rows="2"
+            placeholder="Ej: 3 personas, cumpleaños, etc."
+          ></textarea>
+        </div>
+
+        <input
+          type="hidden"
+          name="platillos_json"
+          id="platillos_json"
+          value="[]"
+        />
       </div>
     </div>
   </div>
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-  const selected = []; // [{id, nombre, precio, qty}]
-  const ordenList = document.getElementById("ordenList");
-  const ordenTotal = document.getElementById("ordenTotal");
-  const platillosJson = document.getElementById("platillos_json");
-  const money = (n) => "$" + Number(n || 0).toFixed(2);
-  const findIdx = (id) => selected.findIndex(x => x.id === id);
+  (function () {
+    window.__tomarOrdenSelected = window.__tomarOrdenSelected || [];
 
-  function render(){
-    ordenList.innerHTML = "";
-    let total = 0;
-
-    selected.forEach(item => {
-      const lineTotal = item.precio * item.qty;
-      total += lineTotal;
-
-      ordenList.insertAdjacentHTML("beforeend", `
-        <li class="list-group-item d-flex justify-content-between align-items-center" data-id="${item.id}">
-          <div class="me-2">
-            <div class="fw-semibold">${item.nombre}</div>
-            <div class="text-muted small">${money(item.precio)} c/u · <span class="fw-semibold">${money(lineTotal)}</span></div>
-          </div>
-
-          <div class="d-flex align-items-center gap-2">
-            <button type="button" class="btn btn-sm border rounded-circle" data-act="minus" ${item.qty<=1?"disabled":""}>
-              <i class="bi bi-dash"></i>
-            </button>
-            <span style="min-width:22px; text-align:center;">${item.qty}</span>
-            <button type="button" class="btn btn-sm border rounded-circle" data-act="plus">
-              <i class="bi bi-plus"></i>
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-danger" data-act="remove">
-              <i class="bi bi-x-lg"></i>
-            </button>
-          </div>
-        </li>
-      `);
-    });
-
-    ordenTotal.textContent = money(total);
-    platillosJson.value = JSON.stringify(selected.map(x => ({id: x.id, qty: x.qty})));
-  }
-
-  // Checkboxes
-  document.querySelectorAll(".card-menu-select").forEach(card => {
-    const chk = card.querySelector(".js-platillo-check");
-    chk.addEventListener("change", () => {
-      const id = card.dataset.id;
-      const nombre = card.dataset.nombre;
-      const precio = parseFloat(card.dataset.precio || "0");
-      const idx = findIdx(id);
-
-      if (chk.checked && idx === -1){
-        selected.push({id, nombre, precio, qty: 1});
-        card.classList.add("is-selected");
-      }
-      if (!chk.checked && idx !== -1){
-        selected.splice(idx, 1);
-        card.classList.remove("is-selected");
-      }
-      render();
-    });
-  });
-
-
-  ordenList.addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-act]");
-    if(!btn) return;
-    const li = btn.closest("li[data-id]");
-    const id = li.dataset.id;
-    const idx = findIdx(id);
-    if(idx === -1) return;
-
-    const act = btn.dataset.act;
-    if(act === "plus") selected[idx].qty++;
-    if(act === "minus") selected[idx].qty = Math.max(1, selected[idx].qty - 1);
-
-    if(act === "remove"){
-      selected.splice(idx, 1);
-      const card = document.querySelector(`.card-menu-select[data-id="${id}"]`);
-      if(card){
-        card.classList.remove("is-selected");
-        const chk = card.querySelector(".js-platillo-check");
-        if(chk) chk.checked = false;
-      }
+    function money(n) {
+      return "$" + Number(n || 0).toFixed(2);
     }
-    render();
-  });
 
-  render();
-});
+    function initTomarOrden() {
+      console.log("🛠️ Inicializando initTomarOrden...");
+      const selected = window.__tomarOrdenSelected; 
+      console.log("📋 Selección actual recuperada:", JSON.stringify(selected));
+
+      const ordenList = document.getElementById("ordenList");
+      const ordenTotal = document.getElementById("ordenTotal");
+      const platillosJson = document.getElementById("platillos_json");
+
+      if (!ordenList || !ordenTotal || !platillosJson) {
+        console.error("❌ No se encontraron elementos críticos en el DOM (ordenList, ordenTotal o platillosJson)");
+        return;
+      }
+
+      function render() {
+        console.log("🎨 Renderizando lista de orden...");
+        ordenList.innerHTML = "";
+        let total = 0;
+
+        selected.forEach((item) => {
+          const lineTotal = item.precio * item.qty;
+          total += lineTotal;
+          ordenList.insertAdjacentHTML("beforeend", `
+            <li class="list-group-item d-flex justify-content-between align-items-center" data-id="${item.id}">
+              <div class="me-2">
+                <div class="fw-semibold">${item.nombre}</div>
+                <div class="text-muted small">${money(item.precio)} c/u · <span class="fw-semibold">${money(lineTotal)}</span></div>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-sm border rounded-circle" data-act="minus" ${item.qty <= 1 ? "disabled" : ""}>
+                  <i class="bi bi-dash"></i>
+                </button>
+                <span style="min-width:22px; text-align:center;">${item.qty}</span>
+                <button type="button" class="btn btn-sm border rounded-circle" data-act="plus">
+                  <i class="bi bi-plus"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger" data-act="remove">
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </div>
+            </li>
+          `);
+        });
+
+        ordenTotal.textContent = money(total);
+        
+        // Sincronizar con el input hidden
+        const jsonOutput = JSON.stringify(selected.map(x => ({id: x.id, qty: x.qty})));
+        platillos_json.value = jsonOutput;
+        console.log("📤 Input platillos_json actualizado:", jsonOutput);
+        
+        const submitBtn = document.querySelector('button[form="tomarOrdenForm"]') || document.querySelector('#tomarOrdenForm button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = selected.length === 0;
+        }
+      }
+
+      // Sincronizar Checks
+      document.querySelectorAll(".card-menu-select").forEach((card) => {
+        const id = card.dataset.id;
+        const chk = card.querySelector(".js-platillo-check");
+        const idx = selected.findIndex(x => x.id === id);
+
+        if (idx !== -1) {
+          card.classList.add("is-selected");
+          if (chk) chk.checked = true;
+        }
+
+        if (chk) {
+          chk.onchange = () => {
+            const nombre = card.dataset.nombre;
+            const precio = parseFloat(card.dataset.precio || "0");
+            const curIdx = selected.findIndex(x => x.id === id);
+
+            if (chk.checked && curIdx === -1) {
+              console.log(`➕ Agregando: ${nombre}`);
+              selected.push({ id, nombre, precio, qty: 1 });
+              card.classList.add("is-selected");
+            } else if (!chk.checked && curIdx !== -1) {
+              console.log(`➖ Quitando: ${nombre}`);
+              selected.splice(curIdx, 1);
+              card.classList.remove("is-selected");
+            }
+            render();
+          };
+        }
+      });
+
+      ordenList.onclick = (e) => {
+        const btn = e.target.closest("[data-act]");
+        if (!btn) return;
+        const li = btn.closest("li[data-id]");
+        const id = li.dataset.id;
+        const idx = selected.findIndex(x => x.id === id);
+        if (idx === -1) return;
+
+        const act = btn.dataset.act;
+        
+        if (act === "plus") selected[idx].qty++;
+        if (act === "minus") selected[idx].qty = Math.max(1, selected[idx].qty - 1);
+        if (act === "remove") {
+          selected.splice(idx, 1);
+          const card = document.querySelector(`.card-menu-select[data-id="${id}"]`);
+          if (card) {
+            card.classList.remove("is-selected");
+            const chk = card.querySelector(".js-platillo-check");
+            if (chk) chk.checked = false;
+          }
+        }
+        render();
+      };
+
+      render();
+    }
+
+    document.addEventListener("DOMContentLoaded", initTomarOrden);
+    initTomarOrden(); 
+
+    // Y mantén este por si acaso hay navegación interna
+    document.addEventListener("htmx:afterSwap", (ev) => {
+      if (ev.target.id === "tomarOrdenBody") {
+        initTomarOrden();
+      }
+    });
+  })();
 </script>

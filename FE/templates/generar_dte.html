@@ -365,7 +365,7 @@
               <label class="form-label small mb-1">Efectivo</label>
               <div class="input-group">
                 <span class="input-group-text">Recibido</span>
-                <input type="number" step="0.01" min="0" class="form-control" id="montoRecibido" value="">
+                <input type="number" step="0.01" min="0" class="form-control" id="montoRecibido" value="" >
               </div>
               <div class="small mt-1">Cambio: <span id="montoCambio">$0.00</span></div>
             </div>
@@ -929,7 +929,8 @@
       if (aviso) aviso.style.display = puedeConting ? '' : 'none';
 
       // MOSTRAR/OCULTAR MODAL DE GUARDAR SIN Enviar
-      if ($btnguardar){
+      const $btnGuardar = document.getElementById('btnGuardarSinEnviar');
+      if ($btnGuardar){
         $btnGuardar.style.display = puedeGuardar ? '' : 'none';
         $btnGuardar.onclick = () => {
           MHModal.hide();
@@ -1116,7 +1117,6 @@
   })();
 </script>
 
-{% if prefill_factura %}
 <script>
   (function(){
     try{
@@ -1142,8 +1142,5 @@
     }catch(e){ console.error('prefill_cart error', e); }
   })();
 </script>
-{% endif %}
-
-
-
+  
 {% endblock %}

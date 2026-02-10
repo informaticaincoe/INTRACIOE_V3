@@ -8,12 +8,6 @@
                 <h1 class="h3 mb-0 text-black fs-4 d-flex justify-center items-align-center">
                     <i class="bi bi-cash-stack text-success me-2"></i>Finalizar Pedido - Mesa {{ mesa.numero }}
                 </h1>
-                {% comment %} <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb mb-0">
-                        <li class="breadcrumb-item"><a href="{% url 'mesas-lista' %}" class="text-muted">Mesas</a></li>
-                        <li class="breadcrumb-item active">Checkout</li>
-                    </ol>
-                </nav> {% endcomment %}
             </div>
             <div class="text-end">
                 <span class="badge bg-secondary">Pedido #{{ pedido.id }}</span>
@@ -28,6 +22,19 @@
                 <div class="card-header bg-transparent py-3" style="border-bottom: 1px solid #33333371;">
                     <h5 class="mb-0 text-black"><i class="bi bi-list-ul me-2"></i>Resumen de Productos</h5>
                 </div>
+                <div class="container mt-3">
+                    {% if messages %}
+                        {% for message in messages %}
+                            {% if "error-caja-cerrada" in message.tags%}
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover mb-0" style="color: #000;">
@@ -128,6 +135,7 @@
                     <p class="small text-muted mb-0">No hay cuentas generadas aún.</p>
                 {% endfor %}
             </div>
+            
         </div>
     </div>
 </div>

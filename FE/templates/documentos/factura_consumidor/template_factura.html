@@ -105,12 +105,12 @@
                 <i class="bi bi-pencil-square btn-print"></i> Enviar Invalidacion MH
             </button>
         </form>
-        <form action="{% url 'enviar_correo_individual' factura.id %}" method="post" style="display:inline;">
+        {% comment %} <form action="{% url 'enviar_correo_individual' factura.id %}" method="post" style="display:inline;">
             {% csrf_token %}
             <button type="submit" class="btn btn-primary btn-sm me-1 btn-print">
                 <i class="bi bi-pencil-square btn-print"></i> Enviar Correo
             </button>
-        </form>
+        </form> {% endcomment %}
     </div>
     {% endif %}
     

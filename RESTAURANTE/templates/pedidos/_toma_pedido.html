@@ -3,7 +3,9 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title d-flex">
-          <i class="bi bi-clipboard-check me-2"></i> <span class="mb-0">Tomar orden mesa</span> <p id="to_mesa_numero" class="ms-2 mb-0" readonly></p>
+          <i class="bi bi-clipboard-check me-2"></i>
+          <span class="mb-0">Tomar orden mesa</span>
+          <p id="to_mesa_numero" class="ms-2 mb-0" readonly></p>
         </h5>
         <button type="button" class="btn-close mt-0 mb-0" data-bs-dismiss="modal"></button>
       </div>
@@ -13,10 +15,14 @@
 
         <div class="modal-body">
           <input type="hidden" name="mesa_id" id="to_mesa_id">
-          <div class="">
-            {% include "pedidos/menu_seleccion_pedido.html" with platillos=platillos %}
+
+          <!-- ✅ Aquí se inyecta el menú paginado -->
+          <div id="tomarOrdenBody">
+            <div class="text-muted small">Cargando menú...</div>
           </div>
+
         </div>
+        
 
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -28,24 +34,38 @@
     </div>
   </div>
 </div>
-  
-  <script>
-    // Rellena el modal con data-* del dropdown item
-    document.addEventListener("shown.bs.modal", (ev) => {
-      const modal = ev.target;
-      if (!modal || modal.id !== "tomarOrdenModal") return;
-  
-      const trigger = ev.relatedTarget; // el <a> del dropdown
-      if (!trigger) return;
-  
-      const mesaId = trigger.getAttribute("data-mesa-id");
-      const mesaNumero = trigger.getAttribute("data-mesa-numero");
-  
-      document.getElementById("to_mesa_id").value = mesaId || "";
-      console.log(mesaNumero)
-      console.log(document.getElementById("to_mesa_numero"))
+<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+<script>
+  document.addEventListener("shown.bs.modal", (ev) => {
+    const modal = ev.target;
+    if (!modal || modal.id !== "tomarOrdenModal") return;
 
-      document.getElementById("to_mesa_numero").textContent = mesaNumero || "";
-    });
-  </script>
-  
+    console.log("🚀 Modal Abierto: Reseteando selección global");
+    window.__tomarOrdenSelected = []; 
+
+    const trigger = ev.relatedTarget;
+    if (!trigger) return;
+
+    const mesaId = trigger.getAttribute("data-mesa-id");
+    const mesaNumero = trigger.getAttribute("data-mesa-numero");
+    // Si estás usando agregar item, asegúrate de capturar el pedido_id aquí si es necesario
+    // const pedidoId = trigger.getAttribute("data-pedido-id");
+
+    console.log(`📍 Mesa Seleccionada: ${mesaId} (#${mesaNumero})`);
+
+    document.getElementById("to_mesa_id").value = mesaId || "";
+    document.getElementById("to_mesa_numero").textContent = mesaNumero || "";
+
+    const url = "{% url 'tomar_pedido' 0 %}".replace("/0/", `/${mesaId}/`);
+    console.log(`📡 Llamando a HTMX: ${url}`);
+    htmx.ajax("GET", url, "#tomarOrdenBody");
+  });
+
+  // Opcional: Log antes de enviar el formulario
+  document.getElementById("tomarOrdenForm").onsubmit = function(e) {
+    const data = document.getElementById("platillos_json").value;
+    console.log("📦 ENVIANDO FORMULARIO POST...");
+    console.log("Contenido de platillos_json:", data);
+    // Si data es "[]" aquí, el problema es que el input no se está llenando
+  };
+</script>

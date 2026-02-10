@@ -38,9 +38,14 @@
         </div>
   
         <div class="modal-footer">
-          <a id="vo_ir_a_agregar" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i> Agregar productos
-          </a>
+          <button id="vo_ir_a_agregar"
+                type="button"
+                class="btn btn-primary"
+                data-mesa-id=""
+                data-mesa-numero="">
+          <i class="bi bi-plus-circle me-1"></i> Agregar productos
+        </button>
+
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
         </div>
   
@@ -75,6 +80,8 @@
         
         const urlPedido = `pedidos/pedido/${mesaId}/`
         console.log(urlPedido);
+
+       
     
         try {
           const res = await fetch( urlPedido, {
@@ -155,6 +162,38 @@
           console.error(err);
           ul.innerHTML = `<li class="list-group-item text-danger">Error cargando la orden.</li>`;
         }
+
+        // Modal para agregar mas productos
+        const btnAgregar = document.getElementById("vo_ir_a_agregar");
+        btnAgregar.dataset.mesaId = mesaId || "";
+        btnAgregar.dataset.mesaNumero = mesaNumero || "";
+
+        btnAgregar.addEventListener("click", () => {
+          const mesaId = btnAgregar.dataset.mesaId;
+          const mesaNumero = btnAgregar.dataset.mesaNumero;
+
+          // 1) Cierra el modal Ver Orden
+          const verModalEl = document.getElementById("verOrdenModal");
+          const verModal = bootstrap.Modal.getInstance(verModalEl);
+          if (verModal) verModal.hide();
+
+          // 2) Cuando termine de cerrar, abre Tomar Orden
+          verModalEl.addEventListener("hidden.bs.modal", function onHidden() {
+            verModalEl.removeEventListener("hidden.bs.modal", onHidden);
+
+            const tomarEl = document.getElementById("tomarOrdenModal");
+            const tomarModal = new bootstrap.Modal(tomarEl);
+
+            // ✅ Importante: simular "relatedTarget" con data-* para que tu código actual funcione
+            const fakeTrigger = document.createElement("button");
+            fakeTrigger.setAttribute("data-mesa-id", mesaId);
+            fakeTrigger.setAttribute("data-mesa-numero", mesaNumero);
+
+            // Mostramos el modal
+            tomarModal.show(fakeTrigger);
+          });
+        });
+
       });
     });
     </script>

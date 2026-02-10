@@ -25,6 +25,7 @@ urlpatterns = [
     #path('dte/', include('FE.dte.urls')),
 
     path('login/', auth_views.LoginView.as_view(), name='login'),
+    path('staff-login/', views.staff_pin_login, name='staff_login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path("autentications/", include("AUTENTICACION.urls")),
     path('select2/', include('django_select2.urls')),
