@@ -110,7 +110,11 @@ class Platillo(models.Model):
                 descripcion=self.nombre,
                 precio_venta=self.precio_venta,
                 preunitario=self.precio_venta,  # si aplica en tu lógica
-                
+                ### FRANCISCO
+                tipo_item_id = 1,
+                unidad_medida_id = 8,
+                referencia_interna=self.codigo,
+                ###
                 precio_compra=0,
                 stock=0 if self.es_preparado else 0,  # puedes dejar 0 y manejar compras
                 stock_minimo=0,
