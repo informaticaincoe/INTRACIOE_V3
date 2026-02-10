@@ -4,6 +4,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from INVENTARIO.models import Producto, TipoItem, TipoUnidadMedida
 from RESTAURANTE.models import Area, AreaCocina, CategoriaMenu, Platillo
+
 from django.core.paginator import Paginator
 from django.db.models import Q
 ###############################################################################################################
@@ -167,11 +168,9 @@ def listar_areas_cocina(request):
     return render(request, 'area_cocina/list.html', context)
 
 def crear_area_cocina(request):
-    if request.method == 'POST':
-        print("AAAAAA")
-        
+    if request.method == 'POST':        
         nombre = request.POST.get('nombre') or ''
-        print("nombre ", nombre)
+        print("Nombre area de cocina ", nombre)
         
         if nombre:
             AreaCocina.objects.create(area_cocina=nombre)
@@ -257,7 +256,6 @@ def listar_menu(request):
     return render(request, 'menu/menu.html', context)
 
 def crear_menu(request):
-    print(">>>metodo ", request.method)
     if request.method == 'POST':
         codigo = request.POST.get('codigo') or ''
         nombre = request.POST.get('nombre') or ''
@@ -269,28 +267,26 @@ def crear_menu(request):
         imagen = request.FILES.get('imagen')
         area_cocina_id = request.POST.get("area_cocina") or None
         
-        tipo_item = get_object_or_404(TipoItem, codigo="1") #tipo bien
-        unidad_medida = get_object_or_404(TipoUnidadMedida, codigo="59") #tipo bien
+        print("categoria ", categoria)
         
         
+        print("AREA_COCINA_ID ", area_cocina_id)
+        area_cocina = None
+        if area_cocina_id:
+            area_cocina = get_object_or_404(AreaCocina, pk=area_cocina_id)
         
-        if es_preparado and not area_cocina_id:
-            raise ValidationError("El platillo preparado debe tener un área de cocina.")
-
+        print("AERA COCINA PLATILLO ", area_cocina)
         if nombre and precio_venta:
                 Platillo.objects.create(
                     codigo = codigo,
                     nombre = nombre,
                     categoria_id = categoria,
-                    #referencia_interna = codigo,
                     imagen=imagen,
-                    #tipo_item=tipo_item,
-                    #unidad_medida=unidad_medida,
                     descripcion = descripcion,
                     precio_venta = precio_venta,
                     disponible = disponible,
                     es_preparado = es_preparado,
-                    area_cocina = area_cocina_id 
+                    area_cocina = area_cocina 
                 )
                 messages.success(request, f'Platillo creado con éxito.')
         else:
@@ -307,9 +303,6 @@ def crear_menu(request):
         'areas_cocina': areas_cocina,
     }
     return render(request, 'menu/formulario.html', context)
-#####FRAN
-#importacion para AreaCocina
-from RESTAURANTE.models import AreaCocina
 
 def editar_menu(request, pk):
     
@@ -378,8 +371,7 @@ def editar_menu(request, pk):
     return render(request, 'menu/formulario.html', context)
             
 def eliminar_menu(request, pk):
-    print("pk ", pk)
-    print("method ", request.method)
+    print("Menu a eliminar ID ", pk)
     
     if request.method == "POST":
         platillo = get_object_or_404(Platillo, pk=pk)

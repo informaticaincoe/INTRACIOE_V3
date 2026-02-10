@@ -340,6 +340,16 @@ class NumeroControl(models.Model):
             f"{str(current_sequence).zfill(15)}"
         )
 
+class ConsolidacionFactura(models.Model):
+    factura_origen = models.ForeignKey('FE.FacturaElectronica', on_delete=models.CASCADE, related_name='consolidacion_origen')
+    factura_destino = models.ForeignKey('FE.FacturaElectronica', on_delete=models.CASCADE, related_name='facturas_consolidadas')
+    fecha_consolidacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Consolidación de Factura"
+        # Evita que una misma factura se consolide dos veces en destinos distintos
+        unique_together = ('factura_origen',)
+
 # Modelo de Factura Electrónica
 class FacturaElectronica(models.Model):
     #USUARIO QUE CREA EL DOCUMENTO

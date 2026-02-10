@@ -100,7 +100,7 @@
         <h1 class="h5 mb-0">{% if obj %}Editar platillo {{ obj.nombre }}{% else %}Nuevo platillo{% endif %}</h1>
     </div>
     
-    <form method="post" id="formPlatillo" class="needs-validation" novalidate enctype="multipart/form-data" action="{% if obj %}{% url 'editar-menu' obj.id %}{% else %}{% url 'crear-menu' %}{% endif %}">
+    <form method="post" id="form-platillo" class="needs-validation" novalidate enctype="multipart/form-data" action="{% if obj %}{% url 'editar-menu' obj.id %}{% else %}{% url 'crear-menu' %}{% endif %}">
         {% csrf_token %}
         <div class="row g-3 d-flex align-items-stretch">
             <div class="col-md-6 d-flex flex-column h-100 ">
@@ -108,7 +108,7 @@
                     <label for="imagen" class="form-label">Imagen</label>
                     <input type="file" name="imagen" class="form-control" id="id_imagen_input">
                     {% if obj.imagen %}
-                      <div class="small text-muted mt-1">Actual: {{ obj.imagen.url }}</div>
+                        <div class="small text-muted mt-1">Actual: {{ obj.imagen.url }}</div>
                     {% endif %}
                 </div>
             
@@ -175,7 +175,7 @@
                     </div>
                     <div id="categoriaFeedback" class="invalid-feedback">
                         Obligatorio.
-                      </div>
+                    </div>
                 </div>
                 <div>
                     <label class="form-label mb-2">Área de cocina</label>
@@ -183,11 +183,11 @@
                         {% for area in areas_cocina %}
                         <div class="col-auto">
                             <input type="radio"
-                                   name="area_cocina"
-                                   id="area_{{ area.id }}"
-                                   value="{{ area.id }}"
-                                   class="category-radio-input"
-                                   {% if obj and obj.area_cocina_id == area.id %}checked{% endif %}
+                                name="area_cocina"
+                                id="area_{{ area.id }}"
+                                value="{{ area.id }}"
+                                class="category-radio-input"
+                                {% if obj and obj.area_cocina_id == area.id %}checked{% endif %}
                             />
                 
                             <label
@@ -231,14 +231,14 @@
                 <div class="d-flex gap-5">
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" name="disponible" value="on" id="disponible_venta_checkbox" 
-                               {% if obj.disponible %}checked{% endif %}>
+                            {% if obj.disponible %}checked{% endif %}>
                         <label class="form-check-label" for="disponible_venta_checkbox">
-                          Disponible para venta
+                            Disponible para venta
                         </label>
                     </div>
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" name="es_preparado" value="on" id="es_preparado_checkbox"
-                               {% if obj.es_preparado %}checked{% endif %}>
+                            {% if obj.es_preparado %}checked{% endif %}>
                         <label class="form-check-label" for="es_preparado_checkbox">
                             Es preparado
                         </label>
@@ -258,6 +258,7 @@
     const fileInput = document.getElementById('id_imagen_input');
     const previewImage = document.getElementById('imagen-preview');
     const placeholder = document.getElementById('imagen-preview-placeholder');
+    const form = document.getElementById('form-platillo');
 
     if (fileInput) {
         // Escucha el evento 'change' (cuando se selecciona un archivo)
@@ -297,7 +298,7 @@
     const areaRadios = form.querySelectorAll('input[name="area_cocina"]');
     const areaFeedback = document.getElementById('areaCocinaFeedback');
     const esPreparadoCheckbox = document.getElementById('es_preparado_checkbox');
-
+    
     const areaChecked = () =>
         Array.from(areaRadios).some(r => r.checked);
 
@@ -327,7 +328,6 @@
     // ----------------------------------------------------
     // 2. LÓGICA DE VALIDACIÓN DEL FORMULARIO (EJECUCIÓN AL ENVIAR)
     // ----------------------------------------------------
-    const form = document.getElementById('formPlatillo');
     const saveButton = document.getElementById('save_form'); // Obtener el botón
 
     // Usamos el evento del botón o el evento de submit, pero simplificamos la lógica:
@@ -337,8 +337,6 @@
         const checked = Array.from(radios).some(r => r.checked);
         const checkbox = document.querySelectorAll('.category-select-card')
         const radioCheckbox = document.querySelectorAll('.radio-select-marker')
-
-        console.log("c", radioCheckbox)
 
         if (!form.checkValidity()) {
             e.preventDefault(); // Detiene el envío si hay errores
@@ -354,7 +352,6 @@
         } else {
             checkbox.forEach((c)=>{
                 c.classList.remove("border-red-error")
-              
             })
             radioCheckbox.forEach((r)=>{
                 r.classList.remove("border-red-error")
