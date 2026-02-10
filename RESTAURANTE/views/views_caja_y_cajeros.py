@@ -27,7 +27,7 @@ def _get_perfil(request):
 def _get_caja_abierta(perfil):
     return (
         Caja.objects
-        .filter(usuario=perfil, estado="ABIERTA")
+        .filter(estado="ABIERTA")
         .order_by("-fecha_apertura")
         .first()
     )
@@ -110,7 +110,7 @@ def apertura_caja(request):
         return redirect("index")
         
     # 3. Evitar doble apertura
-    if Caja.objects.filter(estado="ABIERTA").exists():
+    if Caja.objects.filter(usuario=perfil_instancia, estado="ABIERTA").exists():
         print("Cajaa ya abierta")
         messages.info(request, "Ya existe una caja abierta.")
         return redirect("caja-dashboard")
