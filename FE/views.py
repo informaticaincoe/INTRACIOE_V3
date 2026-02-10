@@ -36,7 +36,7 @@ from FE.utils import _get_emisor_for_user
 from RESTAURANTE.models import Pedido
 from RESTAURANTE.services.services_pedidos import pagar_cuenta
 from intracoe import settings
-from .models import ConfigTipDte, FacturaSujetoExcluidoElectronica, Token_data, Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica,  Receptor_fe, Tipo_dte, TipoMoneda, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos, Descuento, FormasPago, Plazo, TipoGeneracionDocumento, TipoContingencia, EventoContingencia, TipoTransmision, LoteContingencia, representanteEmisor
+from .models import ConfigTipDte, ConsolidacionFactura, FacturaSujetoExcluidoElectronica, Token_data, Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica,  Receptor_fe, Tipo_dte, TipoMoneda, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos, Descuento, FormasPago, Plazo, TipoGeneracionDocumento, TipoContingencia, EventoContingencia, TipoTransmision, LoteContingencia, representanteEmisor
 from INVENTARIO.models import Almacen, DetalleDevolucionVenta, DevolucionVenta, MovimientoInventario, NotaCredito, Producto, TipoItem, Tributo, TipoUnidadMedida
 from .forms import EmisorForm, ExcelUploadForm, RepresentanteEmisorForm
 from django.db import transaction
@@ -69,11 +69,18 @@ from django.core.exceptions import ObjectDoesNotExist
 import json
 from django.core.serializers.json import DjangoJSONEncoder
 
-try:
-    FIRMADOR_URL = ConfiguracionServidor.objects.filter(clave="firmador").first()
-except (OperationalError, ObjectDoesNotExist):
-    FIRMADOR_URL = None
+# try:
+#     FIRMADOR_URL = ConfiguracionServidor.objects.filter(clave="firmador").first()
+# except (OperationalError, ObjectDoesNotExist):
+#     FIRMADOR_URL = None
 
+def obtener_firmador_url():
+    """Retorna el objeto de configuración o None si no existe o hay error de DB."""
+    try:
+        return ConfiguracionServidor.objects.filter(clave="firmador").first()
+    except Exception:
+        return None
+    
 try:
     CERT_PATH = ConfiguracionServidor.objects.filter(clave="certificado").first()
     CERT_PATH = CERT_PATH.url_endpoint if CERT_PATH else None
@@ -1188,6 +1195,28 @@ def generar_factura_view(request):
 
             print("DTE: ====== FIN generar_factura_view OK ======")
 
+            if request.GET.get("from_cart") == "1":
+                print("DTE: ====== consolidar ======")
+                
+                prefill_data = request.session.get('facturacion_prefill', {})
+                listado_ids = prefill_data.get('ids_consolidados', [])
+        
+                registros_consolidacion = []
+                for f_id in listado_ids:
+                    registros_consolidacion.append(
+                        ConsolidacionFactura(
+                            factura_origen_id=f_id,
+                            factura_destino=factura
+                        )
+                    )
+                
+                # Creamos todos de un solo golpe (más eficiente)
+                if registros_consolidacion:
+                    ConsolidacionFactura.objects.bulk_create(registros_consolidacion)
+                
+                # Limpiamos la sesión después de usarla
+                if 'facturacion_prefill' in request.session:
+                    del request.session['facturacion_prefill']
             # ---------- FIRMA ----------
             print("DTE: ==== INICIO FIRMA (función existente) ====")
             try:
@@ -1250,8 +1279,29 @@ def generar_factura_view(request):
                     "enviar_mh_url": reverse('enviar_factura_hacienda', args=[factura.id]),
                     }, status=200)
                 
-            # --- VINCULACIÓN DE RESTAURANTE ---
-            prefill = request.session.get("facturacion_prefill")
+            # if request.GET.get("from_cart") == "1":
+            #     prefill_data = request.session.get('facturacion_prefill', {})
+            #     listado_ids = prefill_data.get('ids_consolidados', [])
+        
+            #     registros_consolidacion = []
+            #     for f_id in listado_ids:
+            #         registros_consolidacion.append(
+            #             ConsolidacionFactura(
+            #                 factura_origen_id=f_id,  # Usamos _id para ahorrar una consulta
+            #                 factura_destino=factura.id
+            #             )
+            #         )
+                
+            #     # Creamos todos de un solo golpe (más eficiente)
+            #     if registros_consolidacion:
+            #         ConsolidacionFactura.objects.bulk_create(registros_consolidacion)
+                
+            #     # Limpiamos la sesión después de usarla
+            #     if 'facturacion_prefill' in request.session:
+            #         del request.session['facturacion_prefill']
+                
+                
+            # --- VINCULACIÓN DE RESTAURANTE ---            
             if prefill and prefill.get("origen") == "restaurante":
                 pedido_id = prefill.get("pedido_id")
                 
@@ -1265,7 +1315,6 @@ def generar_factura_view(request):
                 if cuenta:
                     cuenta.factura = factura
                     cuenta.save(update_fields=["factura"])
-                print(">>>>>>>>>> FACTURA id ", factura.id)
                 
                 finalizar_venta_exitosa(factura.id)
             
@@ -1343,7 +1392,6 @@ def select_tipo_facturas_mes_home(request):
     
 @login_required
 def listar_documentos_pendientes(request):
-    # La vista DEBE usar request.GET para obtener los filtros enviados por AJAX
     tipo_dte = request.GET.get('tipo_documento_dte')
     mes_filtro = request.GET.get('mes')
     year_filtro = request.GET.get('year')
@@ -1351,9 +1399,10 @@ def listar_documentos_pendientes(request):
     
     documentos_pendientes = FacturaElectronica.objects.filter(
         tipo_dte__codigo=tipo_dte,
-        sello_recepcion=None
+        sello_recepcion=None,
+        consolidacion_origen__isnull = True
     )
-    
+
     clientes_disponibles = documentos_pendientes.values('dtereceptor__num_documento', 'dtereceptor__nombre').distinct()
     
     clientes_list = [
@@ -1362,7 +1411,6 @@ def listar_documentos_pendientes(request):
     ]
     
     print(" >>> CLIENTES DISPONIBLES ", clientes_disponibles)
-    print(" >>> CLIENTES clientes_list ", clientes_list)
     
     print("Lista facturas pendientes de envio: ", documentos_pendientes)
     print("Mes filtro", mes_filtro)
@@ -1376,7 +1424,6 @@ def listar_documentos_pendientes(request):
             )
             print(f"DEBUG: Aplicado filtro YEAR: {year_int}")
         except ValueError:
-            # Esto maneja si isdigit() pasa pero int() falla (aunque es raro)
             pass
             
     # 2. 🗓️ Filtrar por MES
@@ -2127,8 +2174,8 @@ def firmar_factura_view(request, factura_id, interno=False):
 
         try:
             print("dentro try-------------- ")
-            
-            response = requests.post(FIRMADOR_URL.url_endpoint, json=payload, headers={"Content-Type": CONTENT_TYPE.valor})
+            config_firmador = obtener_firmador_url()
+            response = requests.post(config_firmador.url_endpoint, json=payload, headers={"Content-Type": CONTENT_TYPE.valor})
             print("Response envio: ", response)
             print("Response envio status: ", response.status_code)
             try:
@@ -2954,7 +3001,8 @@ def _firmar_evento_invalidacion(evento: EventoInvalidacion):
     }
     headers = {"Content-Type": CONTENT_TYPE.valor}
 
-    resp = requests.post(FIRMADOR_URL.url_endpoint, json=payload, headers=headers)
+    config_firmador = obtener_firmador_url()
+    resp = requests.post(config_firmador.url_endpoint, json=payload, headers=headers)
     try:
         data = resp.json()
     except Exception:
@@ -3347,9 +3395,9 @@ def firmar_factura_sujeto_excluido_anulacion_view(request, factura_id):
     }
 
     headers = {"Content-Type": CONTENT_TYPE.valor}
-
+    config_firmador = obtener_firmador_url()
     try:
-        response = requests.post(FIRMADOR_URL.url_endpoint, json=payload, headers=headers)
+        response = requests.post(config_firmador.url_endpoint, json=payload, headers=headers)
         
         # Capturamos la respuesta completa
         try:
@@ -5070,9 +5118,9 @@ def firmar_contingencia_view(request, contingencia_id):
         }
 
         headers = {"Content-Type": CONTENT_TYPE.valor}
-
+        config_firmador = obtener_firmador_url()
         try:
-            response = requests.post(FIRMADOR_URL.url_endpoint, json=payload, headers=headers)
+            response = requests.post(config_firmador.url_endpoint, json=payload, headers=headers)
             
             # Capturamos la respuesta completa
             if response:

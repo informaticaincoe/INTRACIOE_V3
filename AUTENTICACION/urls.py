@@ -1,7 +1,7 @@
 # AUTENTICACION/urls.py
 from django.urls import path
 
-from AUTENTICACION import view_groups, views_users
+from AUTENTICACION import view_groups_and_permissions, views_users
 
 from . import views_setup
 from .views import perfil_usuario_view
@@ -18,10 +18,10 @@ urlpatterns = [
 
     path("setup/", views_setup.setup_wizard, name="setup_wizard"),
 
-    path("usuarios/", views_users.usuarios_list, name="usuarios_list"),
-    path("usuarios/crear/", views_users.usuarios_crear, name="usuarios_crear"),
-    path("usuarios/<int:pk>/editar/", views_users.usuarios_editar, name="usuarios_editar"),
-    path("usuarios/<int:pk>/eliminar/", views_users.usuarios_eliminar, name="usuarios_eliminar"),
+    # path("usuarios/", views_users.usuarios_list, name="usuarios_list"),
+    # path("usuarios/crear/", views_users.usuarios_crear, name="usuarios_crear"),
+    # path("usuarios/<int:pk>/editar/", views_users.usuarios_editar, name="usuarios_editar"),
+    # path("usuarios/<int:pk>/eliminar/", views_users.usuarios_eliminar, name="usuarios_eliminar"),
 
     # endpoints ajax
     path("crear-ambiente/", views_setup.crear_ambiente, name="crear_ambiente"),
@@ -33,5 +33,13 @@ urlpatterns = [
     path("crear_tipo_documento/", views_setup.crear_tipo_documento, name="crear_tipo_documento"),
 
     #Grupos
-    path("grupos/", view_groups.groups_list, name="group_list")
+    path("grupos/", view_groups_and_permissions.groups_list, name="group_list"),
+    
+    path("permisos/", view_groups_and_permissions.permisos_list, name="permisos_list"),
+    path("permisos-by-group/", view_groups_and_permissions.permisos_ny_grupo_list, name="permisos_goup_list"),
+    
+    path("permisos/<int:grupo_id>/editar/", view_groups_and_permissions.editar_permisos_grupo, name="editar_permisos"),
+    
+    path("permisos/actualizar/", view_groups_and_permissions.actualizar_permiso_ajax, name="actualizar_permiso_ajax"),
+    
 ]

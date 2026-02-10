@@ -58,6 +58,8 @@ from django.db.models import Q
 import re
 from django.contrib.auth import get_user_model
 
+from django.http import HttpResponse
+
 def _none_if_blank(v):
     v = (v or "").strip()
     return v or None
@@ -706,8 +708,11 @@ def consolidar_y_redirigir_a_dte(request):
     
     # Estructura para consolidar productos
     productos_consolidados = {}
+    lista_facturas_id = []
 
     for factura in facturas_seleccionadas:
+        lista_facturas_id.append(factura.id)
+        print("lista_facturas_id ", lista_facturas_id)
         for detalle in factura.detalles.all():
             prod = detalle.producto
             prod_id = str(prod.id)
@@ -738,14 +743,16 @@ def consolidar_y_redirigir_a_dte(request):
         'receptor_id': receptor_obj.id,
         'tipo_dte': tipo_dte_codigo,
         'items': list(productos_consolidados.values()),
-        'consolidado': True
+        'consolidado': True,
+        'ids_consolidados': lista_facturas_id
     }
+    
     # 4. Guardar en la sesión y redirigir
     request.session['facturacion_prefill'] = prefill_data
-    request.session.modified = True
-    redirect_url = f"{reverse('generar_factura')}?tipo_documento_dte={tipo_dte_codigo}&from_cart=1"
+    request.session.modified = True    
+    redirect_url = f"{reverse('generar_factura')}?tipo_documento_dte={tipo_dte_codigo}&from_cart=1"  
     
-    # Redirigir a generar_factura_view con el parámetro from_cart=1
+    # IMPORTANTE: Ya no necesitas set_cookie aquí
     return JsonResponse({
         "ok": True,
         "redirect_url": redirect_url
