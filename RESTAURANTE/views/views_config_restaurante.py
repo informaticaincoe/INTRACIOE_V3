@@ -272,7 +272,9 @@ def crear_menu(request):
         tipo_item = get_object_or_404(TipoItem, codigo="1") #tipo bien
         unidad_medida = get_object_or_404(TipoUnidadMedida, codigo="59") #tipo bien
         
-        if es_preparado and not platillo.area_cocina:
+        
+        
+        if es_preparado and not area_cocina_id:
             raise ValidationError("El platillo preparado debe tener un área de cocina.")
 
         if nombre and precio_venta:
@@ -280,10 +282,10 @@ def crear_menu(request):
                     codigo = codigo,
                     nombre = nombre,
                     categoria_id = categoria,
-                    referencia_interna = codigo,
+                    #referencia_interna = codigo,
                     imagen=imagen,
-                    tipo_item=tipo_item,
-                    unidad_medida=unidad_medida,
+                    #tipo_item=tipo_item,
+                    #unidad_medida=unidad_medida,
                     descripcion = descripcion,
                     precio_venta = precio_venta,
                     disponible = disponible,
@@ -305,8 +307,12 @@ def crear_menu(request):
         'areas_cocina': areas_cocina,
     }
     return render(request, 'menu/formulario.html', context)
+#####FRAN
+#importacion para AreaCocina
+from RESTAURANTE.models import AreaCocina
 
 def editar_menu(request, pk):
+    
     if request.method == "POST":
         codigo = request.POST.get('codigo') or ''
         nombre = request.POST.get('nombre') or ''
@@ -317,6 +323,12 @@ def editar_menu(request, pk):
         es_preparado = request.POST.get('es_preparado') == 'on'
         imagen = request.FILES.get('imagen')
         area_cocina_id = request.POST.get("area_cocina") or None
+        
+        ###FRAN
+        #convertir id en instancia
+        area_cocina = None
+        if area_cocina_id:
+            area_cocina = get_object_or_404(AreaCocina, pk=area_cocina_id)
         
         if nombre and precio_venta:
             platillo = get_object_or_404(Platillo, pk=pk)
@@ -329,7 +341,7 @@ def editar_menu(request, pk):
             platillo.precio_venta = precio_venta
             platillo.disponible = disponible
             platillo.es_preparado = es_preparado
-            platillo.area_cocina = area_cocina_id 
+            platillo.area_cocina = area_cocina
             
             producto = get_object_or_404(Producto, codigo=codigo)
             
