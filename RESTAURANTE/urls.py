@@ -52,10 +52,9 @@ urlpatterns = [
     path("pedidos/crear-desde-mesa/", views_pedidos.pedido_crear_desde_mesa, name="pedido_crear_desde_mesa"),
     path("pedido/<int:pedido_id>/agregar/", views_pedidos.pedido_agregar_item, name="pedido_agregar_item"),
     path("pedido/<int:pedido_id>/quitar/<int:detalle_id>/", views_pedidos.pedido_quitar_item, name="pedido_quitar_item"),
-    # path("pedido/<int:pedido_id>/cerrar/", views_pedidos.pedido_cerrar, name="pedido_cerrar"),
     path("pedidos/pedido/<int:pk>/", views_pedidos.ver_pedido_mesa, name="ver_pedido_mesa"),
     path('entregar/<int:mesa_id>/', views_pedidos.entregar_pedido, name='entregar_pedido'),
-    # path('pedido/<int:mesa_id>/', views_pedidos.obtener_detalle_pedido, name='detalle_pedido'),
+    
     # Cocineros
     path("cocinero/login/", views_cocineros.login_cocinero, name="login_cocinero"),
     path("cocineros", views_cocineros.listar_cocineros, name="cocineros-lista"),
@@ -95,7 +94,6 @@ urlpatterns = [
     path("billetes-monedas/<int:pk>/eliminar/", views_caja_y_cajeros.billetes_y_monedas_eliminar, name="billetes-y-monedas-eliminar"),
 
     # Cajero
-    # path("cajero/login/", views_cajeros.login_cajero, name="login_cajero"),
     path("cajeros", views_caja_y_cajeros.listar_cajeros, name="cajero-lista"),
     path("cajero/nuevo", views_caja_y_cajeros.crear_cajero, name="crear-cajero"),
     path("cajero/<int:pk>/eliminar/", views_caja_y_cajeros.eliminar_cajero, name="eliminar-cajero"),

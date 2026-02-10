@@ -1,12 +1,9 @@
+from traceback import format_tb
 from django.contrib import admin
 
 from INVENTARIO.models import TipoUnidadMedida
-from .models import DetalleFacturaSujetoExcluido, FacturaSujetoExcluidoElectronica, Token_data
+from .models import ConsolidacionFactura, DetalleFacturaSujetoExcluido, FacturaSujetoExcluidoElectronica, Token_data
 from django import forms
-from django.shortcuts import render, redirect
-from django.urls import path
-from django.contrib import messages
-from django.http import HttpResponse
 import pandas as pd
 from .models import (INCOTERMS, ActividadEconomica, NumeroControl, FacturaElectronica, Emisor_fe, 
                             OtrosDicumentosAsociado, Pais, Receptor_fe, Municipio, Departamento, Tipo_dte, 
@@ -220,3 +217,15 @@ class Token_dataAdmin(admin.ModelAdmin):
 admin.site.register(Token_data, Token_dataAdmin)
 admin.site.register(RecintoFiscal)
 admin.site.register(RegimenExportacion)
+
+@admin.register(ConsolidacionFactura)
+class ConsolidacionFacturaAdmin(admin.ModelAdmin):
+    list_display = ('id', 'fecha_consolidacion', 'factura_origen', 'factura_destino')
+    list_filter = ('fecha_consolidacion', 'factura_destino__tipo_dte')
+    
+    search_fields = (
+        'factura_origen__numero_control', 
+        'factura_destino__numero_control',
+        'factura_origen__id',
+        'factura_destino__id'
+    )
