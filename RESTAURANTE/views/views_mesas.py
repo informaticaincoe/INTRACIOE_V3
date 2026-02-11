@@ -107,7 +107,7 @@ def listar_mesas(request):
         # --- LÓGICA DE CAJERO ---
         elif rol == "cajero":
             # El cajero solo puede realizar el pago (típicamente si el estado permite cobrar)
-            if m.estado in ['ENTREGADO', 'PENDIENTE_PAGO']:
+            if m.estado in ['PENDIENTE_PAGO']:
                 acciones.append({"type": "link", "label": "Realizar pago", "icon": "bi bi-cash-coin", "href": reverse("pedido-checkout", args=[m.id])})
 
         # --- LÓGICA DE ADMIN / SUPERVISOR ---
