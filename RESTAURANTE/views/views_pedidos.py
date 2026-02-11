@@ -158,68 +158,68 @@ def tomar_pedido(request, mesa_id):
     return render(request, "pedidos/_toma_pedido.html", context)
 
 
-@login_required
-@require_POST
-@transaction.atomic
-def pedido_agregar_item(request, pedido_id):
-    # 1. Validaciones de seguridad (Caja, Rol, Estado)
-    if not Caja.objects.filter(estado="ABIERTA").exists():
-        return JsonResponse({"ok": False, "error": "Caja cerrada"}, status=400)
+# @login_required
+# @require_POST
+# @transaction.atomic
+# def pedido_agregar_item(request, pedido_id):
+#     # 1. Validaciones de seguridad (Caja, Rol, Estado)
+#     if not Caja.objects.filter(estado="ABIERTA").exists():
+#         return JsonResponse({"ok": False, "error": "Caja cerrada"}, status=400)
 
-    pedido = get_object_or_404(Pedido.objects.select_for_update(), id=pedido_id)
+#     pedido = get_object_or_404(Pedido.objects.select_for_update(), id=pedido_id)
     
-    if pedido.estado != "ABIERTO":
-        return JsonResponse({"ok": False, "error": "El pedido no está ABIERTO."}, status=400)
+#     if pedido.estado != "ABIERTO":
+#         return JsonResponse({"ok": False, "error": "El pedido no está ABIERTO."}, status=400)
 
-    # 2. Reutiliza tu lógica de guardado JSON
-    platillos_json = request.POST.get("platillos_json", "[]")
+#     # 2. Reutiliza tu lógica de guardado JSON
+#     platillos_json = request.POST.get("platillos_json", "[]")
     
-    # para que NO borre lo que ya estaba en el pedido.
-    guardar_detalles_desde_json(pedido, platillos_json, modo="append") 
+#     # para que NO borre lo que ya estaba en el pedido.
+#     guardar_detalles_desde_json(pedido, platillos_json, modo="append") 
 
-    # 3. Notificar a cocina SOLO lo nuevo
-    enviar_pedido_a_cocina(pedido)
+#     # 3. Notificar a cocina SOLO lo nuevo
+#     enviar_pedido_a_cocina(pedido)
 
-    # 4. Actualizar totales
-    pedido.recalcular_totales(save=True)
-    if request.headers.get("HX-Request"):
-            return render(request, "pedidos/menu_seleccion_pedido.html", context)
-    return JsonResponse({
-        "ok": True,
-        "total": str(pedido.total),
-        "mensaje": "Platillos agregados correctamente"
-    })
+#     # 4. Actualizar totales
+#     pedido.recalcular_totales(save=True)
+#     if request.headers.get("HX-Request"):
+#             return render(request, "pedidos/menu_seleccion_pedido.html", context)
+#     return JsonResponse({
+#         "ok": True,
+#         "total": str(pedido.total),
+#         "mensaje": "Platillos agregados correctamente"
+#     })
 
-# NO SE ESTA USANDO
-@login_required
-@require_POST
-@transaction.atomic
-def pedido_quitar_item(request, pedido_id, detalle_id):
-    if getattr(request.user, "role", None) != "mesero":
-        return HttpResponseForbidden("Solo meseros.")
+# # NO SE ESTA USANDO
+# @login_required
+# @require_POST
+# @transaction.atomic
+# def pedido_quitar_item(request, pedido_id, detalle_id):
+#     if getattr(request.user, "role", None) != "mesero":
+#         return HttpResponseForbidden("Solo meseros.")
 
-    mesero = get_mesero_from_user(request.user)
-    pedido = get_object_or_404(Pedido.objects.select_for_update(), id=pedido_id)
-    if pedido.mesero_id != mesero.id:
-        return HttpResponseForbidden("No puedes editar este pedido.")
+#     mesero = get_mesero_from_user(request.user)
+#     pedido = get_object_or_404(Pedido.objects.select_for_update(), id=pedido_id)
+#     if pedido.mesero_id != mesero.id:
+#         return HttpResponseForbidden("No puedes editar este pedido.")
 
-    det = get_object_or_404(DetallePedido, id=detalle_id, pedido=pedido)
-    det.delete()
+#     det = get_object_or_404(DetallePedido, id=detalle_id, pedido=pedido)
+#     det.delete()
 
-    pedido.recalcular_totales(save=True)
+#     pedido.recalcular_totales(save=True)
 
-    # si ya no hay items, regresamos a PENDIENTE_ORDEN
-    if not pedido.detalles.exists():
-        if pedido.mesa.estado != "PENDIENTE_ORDEN":
-            pedido.mesa.estado = "PENDIENTE_ORDEN"
-            pedido.mesa.save(update_fields=["estado"])
+#     # si ya no hay items, regresamos a PENDIENTE_ORDEN
+#     if not pedido.detalles.exists():
+#         if pedido.mesa.estado != "PENDIENTE_ORDEN":
+#             pedido.mesa.estado = "PENDIENTE_ORDEN"
+#             pedido.mesa.save(update_fields=["estado"])
 
-    return JsonResponse({
-        "ok": True,
-        "subtotal": str(pedido.subtotal),
-        "iva_total": str(pedido.iva_total),
-        "total": str(pedido.total),
-    })
+#     return JsonResponse({
+#         "ok": True,
+#         "subtotal": str(pedido.subtotal),
+#         "iva_total": str(pedido.iva_total),
+#         "total": str(pedido.total),
+#     })
 
 @login_required
 @transaction.atomic
@@ -284,19 +284,26 @@ def pedido_crear_desde_mesa(request):
         messages.error(request, "Denegado: No hay una caja abierta.", extra_tags="error-caja-cerrada")
         return redirect("mesas-lista")
     
+    print("request.method ", request.method)
+    
     if request.method == "POST":
         mesero = get_mesero_from_user(request.user) # obtener el mesero que esta loggeado
         if not mesero:
             print(request, "No tienes un mesero asociado o estás inactivo.")
             return redirect("mesas-lista")
 
+        print("mesero ", mesero)
+        
+
         mesa_id = request.POST.get("mesa_id") 
         notas = (request.POST.get("notas") or "").strip()
         receptor_id = request.POST.get("receptor_id") or None
 
         mesa = get_object_or_404(Mesa.objects.select_for_update(), id=mesa_id)
+        print("mesa ", mesa)
+        print("mesa.estado ", mesa.estado)
 
-        if mesa.estado not in ("PENDIENTE_ORDEN", "OCUPADA"):
+        if mesa.estado not in ("PENDIENTE_ORDEN", "OCUPADA", "ENTREGADO"):
             messages.error(request, f"Estado de mesa no válido: {mesa.estado}")
             return redirect("mesas-lista")
 
@@ -306,6 +313,9 @@ def pedido_crear_desde_mesa(request):
             mesero=mesero,
             defaults={'estado': 'ABIERTO'}
         )
+        
+        print("pedido ", pedido)
+        
 
         if receptor_id:
             pedido.receptor = get_object_or_404(Receptor_fe, id=receptor_id)

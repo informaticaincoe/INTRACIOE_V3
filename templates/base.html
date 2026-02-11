@@ -422,8 +422,8 @@
 
                 <div class="">
                   {% if emisor.es_restaurante and user.is_authenticated %}
+                  {% if user.role == 'admin' %}
                     <h6>usuarios</h6>
-                    {% if user.role == 'admin' %}
                     <div class="accordion-item">
                       <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#us"><i class="bi bi-person me-2 fs-6"></i>Grupos</button></h2>
                       <div id="us" class="accordion-collapse collapse" data-bs-parent="#accMenu">

@@ -177,36 +177,36 @@
 </div>
 
 <script>
-    document.addEventListener('input', function (e) {
-        if (e.target.classList.contains('cantidad-input')) {
+    document.addEventListener('DOMContentLoaded', function() {
+        const calcular = () => {
             let totalFisico = 0;
-            const esperado = parseFloat(document.getElementById('monto-esperado').dataset.esperado);
+            const montoEsperadoElem = document.getElementById('monto-esperado');
+            if (!montoEsperadoElem) return;
+    
+            const esperado = parseFloat(montoEsperadoElem.dataset.esperado);
             
-            // Calcular cada línea y el total
-            document.querySelectorAll('tr').forEach(row => {
-                const input = row.querySelector('.cantidad-input');
+            document.querySelectorAll('.cantidad-input').forEach(input => {
+                const row = input.closest('tr');
                 const subtotalSpan = row.querySelector('.subtotal-linea');
                 
-                if (input && subtotalSpan) {
-                    const valor = parseFloat(input.dataset.valor);
-                    const cantidad = parseInt(input.value) || 0;
-                    const subtotal = valor * cantidad;
-                    subtotalSpan.textContent = subtotal.toFixed(2);
-                    totalFisico += subtotal;
-                }
+                const valor = parseFloat(input.dataset.valor);
+                const cantidad = parseInt(input.value) || 0;
+                const subtotal = valor * cantidad;
+                
+                if (subtotalSpan) subtotalSpan.textContent = subtotal.toFixed(2);
+                totalFisico += subtotal;
             });
-
-            // Actualizar Total Físico
+    
             document.getElementById('total-fisico').textContent = totalFisico.toFixed(2);
-
-            // Calcular Diferencia
+    
             const diferencia = totalFisico - esperado;
             const diffDisplay = document.getElementById('diferencia-display');
             const diffLabel = document.getElementById('diferencia-label');
-
+    
             diffDisplay.textContent = (diferencia >= 0 ? '+' : '') + diferencia.toFixed(2);
             
-            if (diferencia === 0) {
+            // Lógica de colores y etiquetas
+            if (Math.abs(diferencia) < 0.01) { // Uso de margen pequeño para evitar errores de punto flotante
                 diffDisplay.className = "fs-4 fw-bold text-primary";
                 diffLabel.textContent = "La caja está cuadrada";
             } else if (diferencia > 0) {
@@ -216,7 +216,17 @@
                 diffDisplay.className = "fs-4 fw-bold text-danger";
                 diffLabel.textContent = "Faltante de dinero";
             }
-        }
+        };
+    
+        // Escuchar cambios
+        document.addEventListener('input', function (e) {
+            if (e.target.classList.contains('cantidad-input')) {
+                calcular();
+            }
+        });
+    
+        // Ejecutar al cargar por primera vez
+        calcular();
     });
 </script>
 {% endblock %}

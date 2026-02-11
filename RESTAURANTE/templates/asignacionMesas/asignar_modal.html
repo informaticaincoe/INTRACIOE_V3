@@ -1,67 +1,206 @@
-<div class="modal fade" id="asignarMeseroModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
+<div
+  class="modal fade"
+  id="asignarMeseroModal"
+  tabindex="-1"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-lg">
     <div class="modal-content">
-      <div class="modal-header bg-primary text-white">
-        <h5 class="modal-title" id="modalTitle">Asignar mesero</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      <div class="modal-header text-black">
+        <h5
+          class="modal-title"
+          id="modalTitle"
+        >
+          Asignar mesero
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
       </div>
 
-      <form method="post" action="{% url 'asignar-mesa-a-mesero' %}" id="asignarMeseroForm" data-create-url="{% url 'asignar-mesa-a-mesero' %}">
+      <form
+        method="post"
+        action="{% url 'asignar-mesa-a-mesero' %}"
+        id="asignarMeseroForm"
+        data-create-url="{% url 'asignar-mesa-a-mesero' %}"
+      >
         {% csrf_token %}
 
-        <div class="modal-body">
-          <p class="mb-2">
-            Mesa: <strong id="asignar_mesa_numero">—</strong>
-          </p>
+        <div class="modal-body d-flex gap-4 justify-content-around">
+          <div class="text-center">
+            <p class="">Mesa #<span id="asignar_mesa_numero">—</span></p>
+            <div
+              class="is-sinmesero-card mesa-card shadow-sm p-3 border d-flex flex-column align-items-center justify-content-center gap-2 position-relative"
+              style="height: 10rem; width: 20rem; position: relative; background-color: #6060601C!important;"
+            >
+              {% if mesa.es_vip %}
+              <div
+                class="position-absolute top-0 start-0 mt-2 ms-2 badge rounded-pill px-3 py-1 text-warning fs-6"
+              >
+                VIP
+              </div>
+              {% endif %} 
 
-          <input type="hidden" name="mesa_id" id="asignar_mesa_id">
+              <div class="mesa-status-circle is-sinmesero-icon" style="background-color: #606060!important;">
+                <i class="bi bi-person-x-fill text-white"></i>
+              </div>
+              <p
+                class="fs-6 m-0 badge badget-is-sinmesero rounded-pill px-3 py-1 text-lowercase fw-normal"
+                style="border: 1px #606060 solid !important; color: #606060!important;"
+              >
+                sin mesero asignado
+              </p>
+              <p
+                class="fs-6 position-absolute start-0 bottom-0 ps-2 text-lowercase fw-normal d-flex align-items-center gap-1 m-0"
+              >
+                <i class="bi bi-person"></i>
+                <span>{{ m.capacidad|default:"0" }}</span>
+              </p>
+            </div>
+            <input
+              type="hidden"
+              name="mesa_id"
+              id="asignar_mesa_id"
+            />
+          </div>
 
-          <div class="mb-3 d-none" id="mesa_select_wrap">
-            <label class="form-label" for="asignar_mesa_select">Selecciona una mesa</label>
-            <select class="form-select" id="asignar_mesa_select">
-              <option value="" selected disabled>Selecciona una mesa…</option>
-              {% for m in lista_mesas %}
+          <div class="flex-grow-1">
+            <div
+              class="mb-3 d-none"
+              id="mesa_select_wrap"
+            >
+              <label
+                class="form-label"
+                for="asignar_mesa_select"
+                >Selecciona una mesa</label
+              >
+              <select
+                class="form-select"
+                id="asignar_mesa_select"
+              >
+                <option
+                  value=""
+                  selected
+                  disabled
+                >
+                  Selecciona una mesa…
+                </option>
+                {% for m in lista_mesas %}
                 <option value="{{ m.id }}">{{ m.numero }}</option>
-              {% endfor %}
-            </select>
-          </div>
+                {% endfor %}
+              </select>
+            </div>
 
-          <div class="mb-3">
-            <label class="form-label" for="asignar_mesero_id">Mesero</label>
-            <select class="form-select" name="mesero_id" id="asignar_mesero_id" required>
-              <option value="" selected disabled>Selecciona un mesero…</option>
-              {% for mesero in lista_meseros %}
+            <div class="mb-3">
+              <label
+                class="form-label"
+                for="asignar_mesero_id"
+                >Mesero</label
+              >
+              <select
+                class="form-select"
+                name="mesero_id"
+                id="asignar_mesero_id"
+                required
+              >
+                <option
+                  value=""
+                  selected
+                  disabled
+                >
+                  Selecciona un mesero…
+                </option>
+                {% for mesero in lista_meseros %}
                 <option value="{{ mesero.id }}">{{ mesero.nombre }}</option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <div class="d-flex gap-5 mb-3">
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" name="es_fija" id="asignar_es_fija">
-                <label class="form-check-label" for="asignar_es_fija">Asignación fija</label>
+                {% endfor %}
+              </select>
             </div>
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" name="activa" id="activa">
-                <label class="form-check-label" for="activa">Activa</label>
+
+            <div class="d-flex gap-4 mb-3">
+              <div class="form-check form-switch">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  name="es_fija"
+                  id="asignar_es_fija"
+                />
+                <label
+                  class="form-check-label"
+                  for="asignar_es_fija"
+                  >Fija</label
+                >
+              </div>
+              <div class="form-check form-switch">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  name="activa"
+                  id="activa"
+                  checked
+                />
+                <label
+                  class="form-check-label"
+                  for="activa"
+                  >Activa</label
+                >
+              </div>
             </div>
-          </div>
 
-          <div class="mb-3">
-            <label class="form-label" for="asignar_fecha_inicio">Fecha inicio</label>
-            <input type="datetime-local" class="form-control" id="asignar_fecha_inicio" name="fecha_inicio" required>
-          </div>
+            <div class="mb-3">
+              <label
+                class="form-label"
+                for="asignar_fecha_inicio"
+                >Fecha inicio</label
+              >
+              <input
+                type="datetime-local"
+                class="form-control"
+                id="asignar_fecha_inicio"
+                name="fecha_inicio"
+                required
+              />
+            </div>
 
-          <div class="mb-0">
-            <label class="form-label" for="asignar_fecha_fin">Fecha fin (opcional)</label>
-            <input type="datetime-local" class="form-control" id="asignar_fecha_fin" name="fecha_fin">
+            <div class="mb-3">
+              <label
+                class="form-label"
+                for="asignar_fecha_fin"
+                >Fecha fin (opcional)</label
+              >
+              <input
+                type="datetime-local"
+                class="form-control"
+                id="asignar_fecha_fin"
+                name="fecha_fin"
+              />
+            </div>
+
+            <input
+              type="checkbox"
+              id="estado"
+              class="d-none"
+            />
           </div>
         </div>
-        <input type="checkbox" id="estado"></input>
 
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-primary" id="submitBtn">Guardar</button>
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            id="submitBtn"
+          >
+            Guardar
+          </button>
         </div>
       </form>
     </div>

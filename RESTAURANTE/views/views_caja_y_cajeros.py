@@ -110,7 +110,7 @@ def apertura_caja(request):
         return redirect("index")
         
     # 3. Evitar doble apertura
-    if Caja.objects.filter(usuario=perfil_instancia, estado="ABIERTA").exists():
+    if Caja.objects.filter(estado="ABIERTA").exists():
         print("Cajaa ya abierta")
         messages.info(request, "Ya existe una caja abierta.")
         return redirect("caja-dashboard")
@@ -229,7 +229,7 @@ def caja_registrar_movimiento(request):
 def cierre_caja(request):
     perfil = _get_perfil(request)
     # Obtener la caja abierta del usuario actual
-    caja = get_object_or_404(Caja, estado='ABIERTA', usuario=perfil)
+    caja = get_object_or_404(Caja, estado='ABIERTA')
 
     # Calcular totales de movimientos usando Sum y Coalesce (como lo tienes arriba)
     pedidos_abiertos = Pedido.objects.filter(estado="ABIERTO")
