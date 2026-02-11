@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container py-4">
- <div class="d-flex w-100 justify-between">
+<div class="container p-4">
+ <div class="d-flex w-100 justify-content-between">
    <h4>Usuarios</h4>
    <a href="{% url 'usuarios_crear' %}" class="btn btn-primary mb-3">Nuevo usuario</a>
  </div>
@@ -11,16 +11,16 @@
         <th>Usuario</th>
         <th>Correo</th>
         <th>Rol</th>
-        <th></th>
+        <th>Acciones</th>
       </tr>
     </thead>
     <tbody>
       {% for u in usuarios %}
-      <tr>
-        <td>{{ u.username }}</td>
-        <td>{{ u.email }}</td>
-        <td>{{ u.get_role_display }}</td>
-        <td>
+      <tr >
+        <td class="py-3 align-middle">{{ u.username }}</td>
+        <td class="align-middle">{% if u.email %} {{u.email }} {% else %} - {% endif %}</td>
+        <td class="align-middle">{{ u.get_role_display }}</td>
+        <td class="align-middle">
           <a href="{% url 'usuarios_editar' u.id %}" class="btn btn-sm btn-outline-primary">Editar</a>
           <a href="{% url 'usuarios_eliminar' u.id %}" class="btn btn-sm btn-outline-danger">Eliminar</a>
         </td>

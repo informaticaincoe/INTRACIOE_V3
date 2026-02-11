@@ -16,7 +16,9 @@ def permisos_list(request):
     content_types_list = ContentType.objects.exclude(
         app_label__in=[ 'sessions', 'contenttypes']
     ).order_by('app_label', 'model')
-    print()
+    
+    
+    
     paginator = Paginator(content_types_list, 30)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
