@@ -45,7 +45,7 @@ def _store_old_values(sender, instance, **kwargs):
     else:        
         instance._old_producto_id = None
 
-
+#################################################################################################################################
 @receiver(post_save, sender=MovimientoInventario)
 def _apply_stock_on_save(sender, instance, created, **kwargs):
     """

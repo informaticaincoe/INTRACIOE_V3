@@ -672,13 +672,14 @@ def q2(d):  # 2 decimales HALF_UP
 @csrf_exempt
 @transaction.atomic
 def generar_factura_view(request):
+    prefill = None
+    
     req_id = str(uuid.uuid4())[:8]
     print("DTE: ====== INICIO generar_factura_view ======")
     print("DTE: method=", request.method, " content_type=", request.content_type)
     
     
     if request.method == 'GET':
-        prefill = None
         if request.GET.get("from_cart") == "1":
             prefill = request.session.get("facturacion_prefill", None)
             print("DTE: prefill recuperado =", prefill)
@@ -1278,28 +1279,6 @@ def generar_factura_view(request):
                     "puede_contingencia": True,
                     "enviar_mh_url": reverse('enviar_factura_hacienda', args=[factura.id]),
                     }, status=200)
-                
-            # if request.GET.get("from_cart") == "1":
-            #     prefill_data = request.session.get('facturacion_prefill', {})
-            #     listado_ids = prefill_data.get('ids_consolidados', [])
-        
-            #     registros_consolidacion = []
-            #     for f_id in listado_ids:
-            #         registros_consolidacion.append(
-            #             ConsolidacionFactura(
-            #                 factura_origen_id=f_id,  # Usamos _id para ahorrar una consulta
-            #                 factura_destino=factura.id
-            #             )
-            #         )
-                
-            #     # Creamos todos de un solo golpe (más eficiente)
-            #     if registros_consolidacion:
-            #         ConsolidacionFactura.objects.bulk_create(registros_consolidacion)
-                
-            #     # Limpiamos la sesión después de usarla
-            #     if 'facturacion_prefill' in request.session:
-            #         del request.session['facturacion_prefill']
-                
                 
             # --- VINCULACIÓN DE RESTAURANTE ---            
             if prefill and prefill.get("origen") == "restaurante":
@@ -2524,17 +2503,25 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False, consoli
                     # crear el movimeinto de inventario
                     # Se asume que la factura tiene una relación a sus detalles, 
                     # donde se encuentran los productos y cantidades
-                    for detalle in factura.detalles.all():
-                        if detalle is not None and detalle.producto.almacenes.exists():
-                            almacen = detalle.producto.almacenes.first() or Almacen.objects.first()
-                            MovimientoInventario.objects.create(
-                                producto=detalle.producto,
-                                almacen=almacen,
-                                tipo='Salida',
-                                cantidad=detalle.cantidad,
-                                referencia=f"Factura {factura.codigo_generacion}",
-                            )
-                            # ¡El stock baja solo gracias al signal!
+                    
+                    # Buscar si la factura es consolidada
+                    es_consolidacion = ConsolidacionFactura.objects.filter(factura_destino_id=factura_id).exists()
+                    
+                    if not es_consolidacion:
+                        for detalle in factura.detalles.all():
+                            if detalle is not None and detalle.producto.almacenes.exists():
+                                almacen = detalle.producto.almacenes.first() or Almacen.objects.first()
+                                MovimientoInventario.objects.create(
+                                    producto=detalle.producto,
+                                    almacen=almacen,
+                                    tipo='Salida',
+                                    cantidad=detalle.cantidad,
+                                    referencia=f"Factura {factura.codigo_generacion}",
+                                )
+                                # ¡El stock baja solo gracias al signal!
+                    else:
+                        #Si es es una factura consolidada no se realiza el movimiento de inventario
+                        print(f"DEBUG: Factura {factura.id} es consolidada, omitiendo descarga de inventario.")
                         
                     #Si la factura fue recibida por mh detener los eventos en contingencia activos
                     finalizar_contigencia_view(request)
