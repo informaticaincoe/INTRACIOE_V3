@@ -114,7 +114,7 @@ def listar_mesas(request):
         elif rol in ("admin", "supervisor"):
             # 1. Asignar mesero si no tiene
             if not m.tiene_mesero:
-                acciones.append({"type": "modal", "label": "Asignar mesero", "icon": "bi bi-person-plus text-warning", "target": "#asignarMeseroModal", "data": {"mesa-id": m.id, "mesa-numero": m.numero}})
+                acciones.append({"type": "modal", "label": "Asignar mesero", "icon": "bi bi-person-plus text-warning", "target": "#asignarMeseroModal", "data": {"mesaid": m.id, "mesa-numero": m.numero, "mesa-capacidad": m.capacidad}})
                 acciones.append({"type": "divider"})
             
             # 2. Opciones de gestión
