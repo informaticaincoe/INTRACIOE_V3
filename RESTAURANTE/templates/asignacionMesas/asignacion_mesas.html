@@ -200,21 +200,28 @@
     const mesaSelect = document.getElementById("asignar_mesa_select");
     const mesaIdInput = document.getElementById("asignar_mesa_id");
     const mesaNumeroText = document.getElementById("asignar_mesa_numero"); // Elemento de texto
-    
+    const mesaCapacidadText = document.getElementById("asignar_mesa_capacidad");
+
     if (mesaSelect && mesaIdInput) {
-        mesaSelect.addEventListener("change", function() {
-            // 1. Actualizamos el ID oculto para el formulario
-            mesaIdInput.value = this.value;
-    
-            // 2. Actualizamos el texto visual de la mesa seleccionada
-            if (mesaNumeroText) {
-                // Obtenemos el texto de la opción seleccionada (ej: "Mesa 10")
-                const textoSeleccionado = this.options[this.selectedIndex].text;
-                
-                // Si el valor está vacío (opción "Seleccione..."), ponemos el guion largo
-                mesaNumeroText.textContent = this.value ? textoSeleccionado : "—";
-            }
-        });
+      mesaSelect.addEventListener("change", function() {
+        // CORRECCIÓN: Declaramos selectedOption correctamente
+        const selectedOption = this.options[this.selectedIndex];
+        
+        // 1. Actualizamos el ID oculto
+        mesaIdInput.value = this.value;
+
+        // 2. Actualizamos el número de mesa visualmente
+        if (mesaNumeroText) {
+            mesaNumeroText.textContent = this.value ? selectedOption.text : "—";
+        }
+
+        // 3. Actualizamos la capacidad visualmente
+        if (mesaCapacidadText) {
+            // Leemos el atributo que agregamos en el HTML
+            const capacidad = selectedOption.getAttribute("data-capacidad") || "0";
+            mesaCapacidadText.textContent = this.value ? capacidad : "0";
+        }
+      });
     }
 
     modalEl.addEventListener("show.bs.modal", function (event) {
