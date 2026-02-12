@@ -93,6 +93,10 @@
                 {% empty %}
                   <tr><td colspan="5" class="text-center text-muted">Sin ítems.</td></tr>
                 {% endfor %}
+                <tr class="table-light">
+                  <td colspan="4" class="text-end fw-bold">TOTAL FACTURA:</td>
+                  <td class="text-end fw-bold">${{ f.total_factura_calc|floatformat:2 }}</td>
+                </tr>
               </tbody>
             </table>
           </div>
