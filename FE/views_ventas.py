@@ -21,12 +21,16 @@ import openpyxl
 from openpyxl.utils import get_column_letter
 from django.http import HttpResponse
 from django.template.loader import render_to_string
+WEASYPRINT_IMPORT_ERROR = None
+
 try:
     from weasyprint import HTML
     WEASYPRINT_OK = True
 except Exception as e:
     HTML = None
     WEASYPRINT_OK = False
+    WEASYPRINT_IMPORT_ERROR = e
+
 
 from django.utils.encoding import smart_str
 
@@ -39,6 +43,7 @@ from django.utils.timezone import now
 
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
+from openpyxl.styles import Font, Alignment, PatternFill
 
 # Modelos FE
 from .models import ActividadEconomica, NumeroControl, Pais, Receptor_fe, TipoPersona, TiposDocIDReceptor, Municipio, Tipo_dte, Modelofacturacion, TipoTransmision
@@ -88,7 +93,7 @@ def _ensure_receptor(receptor_id):
 @login_required
 def exportar_facturas_excel(request):
     # aplicar mismos filtros que en tu lista
-    qs = FacturaElectronica.objects.select_related("dtereceptor", "tipo_dte").all()
+    qs = FacturaElectronica.objects.select_related("dtereceptor", "tipo_dte").exclude(facturas_consolidadas__isnull = False)
 
     if request.GET.get("recibido_mh"):
         qs = qs.filter(recibido_mh=(request.GET["recibido_mh"] == "True"))
@@ -96,15 +101,52 @@ def exportar_facturas_excel(request):
         qs = qs.filter(tipo_dte_id=request.GET["tipo_dte"])
     if request.GET.get("sello_recepcion"):
         qs = qs.filter(sello_recepcion__icontains=request.GET["sello_recepcion"])
+    if request.GET.get("fecha_ini"):
+        qs = qs.filter(fecha_emision__gte=request.GET["fecha_ini"])
+    if request.GET.get("fecha_fin"):
+        qs = qs.filter(fecha_emision__lte=request.GET["fecha_fin"])
+    if request.GET.get("cliente"):
+        qs = qs.filter(dtereceptor__id=request.GET["cliente"])
+    if request.GET.get("producto"):
+        qs = qs.filter(detalles__producto__id=request.GET["cliente"])
+    if request.GET.get("usuario"):
+        qs = qs.filter(usuario__id=request.GET["usuario"])
+    if request.GET.get("estado"):
+        qs = qs.filter(usuario__id=request.GET["estado"])
+    if request.GET.get("monto_min"):
+        qs = qs.filter(total_pagar__gte=request.GET["monto_min"])
+    if request.GET.get("monto_max"):
+        qs = qs.filter(total_pagar__lte=request.GET["monto_max"])
 
     # Crear workbook
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Facturas"
+    
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=8)
+    title = f"REPORTE VENTAS ({request.GET.get('fecha_ini')} a {request.GET.get('fecha_fin')})"
+    c = ws.cell(row=1, column=1, value=title)
+    c.font = Font(bold=True, size=14)
+    c.alignment = Alignment(horizontal="center", vertical="center")
+    ws.row_dimensions[1].height = 30
 
+    ws.append([]) 
+    ws.row_dimensions[2].height = 15
     # Encabezados
     headers = ["Número de Control", "Cliente", "Tipo DTE", "Fecha", "Total", "IVA", "Recibido MH", "Estado"]
     ws.append(headers)
+    
+    header_row = 3
+    header_font = Font(bold=True)
+    # header_fill = PatternFill("solid", fgColor="FFFFFF")
+    
+    for col_num, header_text in enumerate(headers, 1):
+        cell = ws.cell(row=header_row, column=col_num, value=header_text)
+        cell.font = header_font
+        # cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center")
+    
+    ws.row_dimensions[header_row].height = 20
 
     for factura in qs:
         ws.append([
@@ -172,6 +214,11 @@ def exportar_facturas_pdf(request):
         "fecha_ini": fecha_ini,
         "fecha_fin": fecha_fin,
     })
+    
+    if not WEASYPRINT_OK:
+        raise RuntimeError(f"WeasyPrint no está disponible: {WEASYPRINT_IMPORT_ERROR!r}")
+    
+    print("HTML STRING ", html_string)
     pdf_file = HTML(string=html_string).write_pdf()
 
     response = HttpResponse(pdf_file, content_type="application/pdf")
@@ -908,8 +955,8 @@ def ventas_list(request):
     qs = FacturaElectronica.objects.select_related(
         'dtereceptor__municipio__departamento',
         'tipo_dte'
-    ).all().order_by('-fecha_emision', '-id')
-
+    ).exclude(facturas_consolidadas__isnull = False).order_by('-fecha_emision', '-id')
+    
     # --- FILTROS ---
     tipo = request.GET.get('tipo', '')
     cliente = request.GET.get('cliente', '')
@@ -1197,7 +1244,8 @@ def reporte_contabilidad_view(request):
         FacturaElectronica.objects
         .select_related("tipo_dte", "dtereceptor")
         .filter(fecha_emision__range=[fini, ffin],
-                tipo_dte__codigo__in=tipos)
+                tipo_dte__codigo__in=tipos,
+                consolidacion_origen__isnull = True)
         .order_by("-fecha_emision", "-id")
     )
 
@@ -1273,9 +1321,9 @@ def reporte_contabilidad_view(request):
         "qs_no_page": _qs_without_page(request),
         "per_page": per_page,
         "tipos_opciones": [("01", "01 - Factura Electrónica"),
-                           ("03", "03 - Comprobante Crédito Fiscal"),
-                           ("05", "05 - Nota de Crédito"),
-                           ("06", "06 - Nota de Débito")],
+                            ("03", "03 - Comprobante Crédito Fiscal"),
+                            ("05", "05 - Nota de Crédito"),
+                            ("06", "06 - Nota de Débito")],
     }
     return render(request, "reportes/reporte_contabilidad.html", ctx)
 
@@ -1436,6 +1484,12 @@ def reporte_facturacion_view(request):
     paginator = Paginator(qs, per_page)
     page_obj = paginator.get_page(page)
 
+    for f in page_obj.object_list:
+        f.total_factura_calc = sum(
+            (getattr(it, "total_pagar_item", Decimal("0.00")) or Decimal("0.00"))
+            for it in getattr(f, "detalles_anno", []) or []
+        )
+    
     ctx = {
         "fini": fini,
         "ffin": ffin,
@@ -1456,14 +1510,23 @@ def reporte_facturacion_view(request):
 
 def _reporte_facturacion_excel(qs, fini, ffin, tipos=None, buscar=""):
     tipos = tipos or []
-    """
-    Exporta a Excel:
-      Encabezado factura + filas por cada ítem.
-    """
+
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "Facturación INCOE"
+    ws.title = "Facturación"
 
+    title_text = f"REPORTE FACTURACIÓN ({fini} a {ffin})"
+    
+    total_cols = 11
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=total_cols)
+    
+    cell_title = ws.cell(row=1, column=1, value=title_text)
+    cell_title.font = Font(bold=True, size=14)
+    cell_title.alignment = Alignment(horizontal="center", vertical="center")
+    ws.row_dimensions[1].height = 40
+    
+    ws.append([])
+    
     headers = [
         "Fecha emisión",
         "Tipo DTE",
@@ -1478,9 +1541,59 @@ def _reporte_facturacion_excel(qs, fini, ffin, tipos=None, buscar=""):
         "Total ítem",
     ]
     ws.append(headers)
+    header_row = 3
+    # ----- estilos headers -----
+    header_font = Font(bold=True)
+    header_fill = PatternFill("solid", fgColor="F2F2F2")
+    header_align = Alignment(horizontal="center", vertical="center")
+    for col in range(1, len(headers) + 1):
+        cell = ws.cell(row=header_row, column=col)
+        cell.font = header_font
+        cell.alignment = header_align
+        cell.fill = header_fill
+    ws.row_dimensions[1].height = 18
 
+    # ----- estilos separador por factura -----
+    sep_fill = PatternFill("solid", fgColor="D2DBDC")
+    sep_font = Font(bold=True)
+    sep_align = Alignment(horizontal="left", vertical="center")
+
+    # ----- estilos total factura -----
+    total_font = Font(bold=True)
+    total_fill = PatternFill("solid", fgColor="FFF2CC")
+    right_align = Alignment(horizontal="right", vertical="center")
+
+    total_cols = len(headers)  # 11 (A..K)
+    
     for f in qs:
-        for it in getattr(f, "detalles_anno", []):
+        items = list(getattr(f, "detalles_anno", []) or [])
+        n_items = len(items)
+
+        # ✅ reiniciar total por cada factura
+        total_factura = Decimal("0.00")
+
+        # 1) fila separadora
+        texto = f"{smart_str(f.numero_control or '')} ({n_items})"
+        ws.append([texto] + [""] * (total_cols - 1))
+        row_idx = ws.max_row
+
+        ws.merge_cells(start_row=row_idx, start_column=1, end_row=row_idx, end_column=total_cols)
+        ws.row_dimensions[row_idx].height = 18  # ✅ altura para la fila separadora
+
+        for col in range(1, total_cols + 1):
+            c = ws.cell(row=row_idx, column=col)
+            c.fill = sep_fill
+            c.font = sep_font
+            c.alignment = sep_align
+
+        # 2) filas de detalle
+        for it in items:
+            total_item = getattr(it, "total_pagar_item", None)
+            if total_item is None:
+                total_item = (Decimal(it.cantidad or 0) * Decimal(it.precio_unitario or 0)) + Decimal(it.iva_item or 0)
+
+            total_factura += Decimal(total_item)
+
             ws.append([
                 smart_str(f.fecha_emision or ""),
                 smart_str(getattr(f.tipo_dte, "codigo", "")),
@@ -1492,11 +1605,27 @@ def _reporte_facturacion_excel(qs, fini, ffin, tipos=None, buscar=""):
                 float(it.cantidad or 0),
                 float(it.precio_unitario or 0),
                 float(it.iva_item or 0),
-                float(getattr(it, "total_pagar_item", 0) or 0),
+                float(total_item or 0),
             ])
 
-    # Ancho de columnas (opcional)
-    widths = [14, 8, 24, 22, 40, 14, 36, 10, 14, 12, 14]
+        # 3) fila TOTAL FACTURA (como en tu screenshot: label en J y monto en K)
+        ws.append([""] * (total_cols - 2) + ["TOTAL FACTURA:", float(total_factura)])
+        total_row = ws.max_row
+
+        # aplica relleno a toda la fila del total (A..K) para que se vea como barra
+        for col in range(1, total_cols + 1):
+            ws.cell(row=total_row, column=col).fill = total_fill
+
+        # estilo del label (J=10) y del monto (K=11)
+        ws.cell(row=total_row, column=10).font = total_font
+        ws.cell(row=total_row, column=10).alignment = right_align
+
+        ws.cell(row=total_row, column=11).font = total_font
+        ws.cell(row=total_row, column=11).alignment = right_align
+        
+        
+    # anchos
+    widths = [14, 10, 34, 42, 40, 14, 36, 10, 14, 12, 14]
     for i, w in enumerate(widths, start=1):
         ws.column_dimensions[get_column_letter(i)].width = w
 
@@ -1507,5 +1636,3 @@ def _reporte_facturacion_excel(qs, fini, ffin, tipos=None, buscar=""):
     resp["Content-Disposition"] = f'attachment; filename="{fname}"'
     wb.save(resp)
     return resp
-
-

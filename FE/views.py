@@ -561,14 +561,40 @@ def factura_list(request):
 @csrf_exempt
 def export_facturas_excel(request):
     # Calcular el límite de las últimas 24 horas
-    limite = datetime.now() - timedelta(hours=24)
+    fecha_ini = request.GET.get('fecha_ini')
+    fecha_fin = request.GET.get('fecha_fin')
+    cliente_id = request.GET.get('cliente')
+    producto_id = request.GET.get('producto')
+    usuario_id = request.GET.get('usuario')
+    estado = request.GET.get('estado')
+    monto_min = request.GET.get('monto_min')
+    monto_max = request.GET.get('monto_max')
     
     # Consultar las facturas emitidas antes de ese límite y sin evento de invalidación
-    facturas = FacturaElectronica.objects.filter(
-        fecha_emision__lt=limite,
-        dte_invalidacion__isnull=True
-    )
+    facturas = FacturaElectronica.objects.filter(dte_invalidacion__isnull=True)
+
+    # 3. Aplicar filtros dinámicamente
+    if fecha_ini:
+        facturas = facturas.filter(fecha_emision__gte=fecha_ini)
+    if fecha_fin:
+        facturas = facturas.filter(fecha_emision__lte=fecha_fin)
+    if cliente_id:
+        facturas = facturas.filter(dtereceptor_id=cliente_id) # Ajusta según tu campo FK
+    if usuario_id:
+        facturas = facturas.filter(usuario_id=usuario_id)
+    if monto_min:
+        facturas = facturas.filter(total_pagar__gte=monto_min)
+    if monto_max:
+        facturas = facturas.filter(total_pagar__lte=monto_max)
     
+    # Filtro de estado (basado en la lógica de tus badges del HTML)
+    if estado == 'recibido':
+        facturas = facturas.filter(recibido_mh=True)
+    elif estado == 'firmado':
+        facturas = facturas.filter(firmado=True, recibido_mh=False)
+    elif estado == 'borrador':
+        facturas = facturas.filter(firmado=False, recibido_mh=False)
+        
     # Crear el libro y la hoja de cálculo
     wb = openpyxl.Workbook()
     ws = wb.active
