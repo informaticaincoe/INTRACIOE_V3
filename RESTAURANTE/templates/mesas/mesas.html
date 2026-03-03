@@ -3,7 +3,23 @@
 {% block content %}
 <style>
   /* layout general */
-.mesa-box { cursor: pointer; }
+.mesa-box { 
+  cursor: pointer; 
+  --sinmesero-color: #606060;
+  --sinmesero-color-fondo: #6060601C;
+  --libre-color: #bdbdbd;
+  --libre-color-fondo: ##BDBDBD0a;
+  --pendiente-orden-color: #FF9800;
+  --pendiente-orden-color-fondo: #FF98000a;
+  --ocupada-color: #E53935;
+  --ocupada-color-fondo: #E539350a;
+  --entregado-color: #0D9488;
+  --entregado-color-fondo: #0D94880a;
+  --pendiente-pago-color: #453ed1;
+  --pendiente-pago-color-fondo: #453ed10a;
+  --pagado-color: #4CAF50;
+  --pagado-color-fondo: #4CAF500a;
+}
 .mesa-card{
   width: 100%;
   height: 8.5rem;
@@ -12,10 +28,6 @@
   transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
   position: relative;
 }
-/* .mesa-card:hover{
-  transform: translateY(-2px);
-  box-shadow: 0 .75rem 1.5rem rgba(0,0,0,.08) !important;
-} */
 
 /* dropdown icon */
 .mesa-actions{
@@ -25,11 +37,113 @@
 
 .mesa-card:hover .mesa-actions{ opacity: 1; }
 
-/* estado visual por clase (no inline) */
-.mesa-card.is-libre{ border-color: rgba(0, 0, 0, 0.12) !important; }
-.mesa-card.is-ocupada{ border-color: rgba(255,193,7,.9) !important; }
-.mesa-card.is-pendiente-pago{ border-color: rgba(16,60,7,.9) !important; }
-.mesa-card.is-sinmesero{ border-color: rgba(0,0,0,.20) !important; background: rgba(0,0,0,.02); }
+/* Colores según el estado */
+  {% comment %} Estilos para mesa libre {% endcomment %}
+  .is-sinmesero-card { 
+    border-color: var(--sinmesero-color) !important; 
+    border-style: dashed !important;
+    background-color: var(--sinmesero-color-fondo) !important;
+  }
+
+  .badget-is-sinmesero {
+    border: 1px var(--sinmesero-color) solid !important; 
+    color: var(--sinmesero-color) !important;
+  }
+
+  .is-sinmesero-icon { 
+    background-color: var(--sinmesero-color) !important; 
+  }
+
+  {% comment %} Estilos para mesa libre {% endcomment %}
+  .is-libre-card { 
+    border-color: var(--libre-color) !important; 
+    background-color: var(--libre-color-fondo) !important;
+  }
+
+  .badget-is-libre {
+    border: 1px var(--libre-color) solid !important; 
+    color: var(--libre-color) !important;
+  }
+
+  .is-libre-icon { 
+    background-color: var(--libre-color) !important; 
+  }
+
+  {% comment %} Estilos para mesa orden pendiente {% endcomment %}
+  .is-pendiente-orden-card { 
+    border-color: var(--pendiente-orden-color) !important; 
+    background-color: var(--pendiente-orden-color-fondo) !important;
+  }
+
+  .badget-is-pendiente-orden{
+    border: 1px var(--pendiente-orden-color) solid !important; 
+    color: var(--pendiente-orden-color) !important;
+  }
+
+  .is-pendiente-orden-icon { 
+    background-color: var(--pendiente-orden-color) !important; 
+  }
+
+  {% comment %} Estilos para mesa ocupada {% endcomment %}
+  .is-ocupada-orden-card { 
+    border-color: var(--ocupada-color) !important; 
+    background-color: var(--ocupada-color-fondo) !important;
+  }
+
+  .badget-is-ocupada {
+    border: 1px var(--ocupada-color) solid !important; 
+    color: var(--ocupada-color) !important;
+  }
+
+  .is-ocupada-icon { 
+    background-color: var(--ocupada-color) !important; 
+  }
+
+  {% comment %} Estilos para mesa entregada {% endcomment %}
+  .is-entregado-orden-card { 
+    border-color: var(--entregado-color) !important; 
+    background-color: var(--entregado-color-fondo) !important;
+  }
+
+  .badget-is-entregado {
+    border: 1px var(--entregado-color) solid !important; 
+    color: var(--entregado-color) !important;
+  }
+
+  .is-entregado-icon { 
+    background-color: var(--entregado-color) !important; 
+  }
+
+  {% comment %} Estilos para mesa pendiente de pago {% endcomment %}
+  .is-pendiente-pago-orden-card { 
+    border-color: var(--pendiente-pago-color) !important; 
+    background-color: var(--pendiente-pago-color-fondo) !important;
+  }
+
+  .badget-is-pendiente-pago {
+    border: 1px var(--pendiente-pago-color) solid !important; 
+    color: var(--pendiente-pago-color) !important;
+  }
+
+  .is-pendiente-pago-icon { 
+    background-color: var(--pendiente-pago-color) !important; 
+  }
+
+  {% comment %} Estilos para mesa pagada {% endcomment %}
+  .is-pagado-orden-card { 
+    border-color: var(--pagado-color) !important; 
+    background-color: var(--pagado-color-fondo) !important;
+  }
+
+  .badget-is-pagado {
+    border: 1px var(--pagado-color) solid !important; 
+    color: var(--pagado-color) !important;
+  }
+
+  .is-pagado-icon { 
+    background-color: var(--pagado-color) !important; 
+  }
+
 
 /* círculo estado */
 .mesa-status-circle{
@@ -78,12 +192,14 @@
 <div class="container-fluid mt-3">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h5 class="h5 mb-0 text-gray-800">Mesas</h5>
+    {% if not user.role == "mesero" %}
     <div>
       <a
         href="{% url 'crear-mesa' %}"
         class="btn btn-primary"
       >
         <i class="bi bi-plus-circle me-2"></i>Agregar mesa
+      {% endif %}
       </a>
     </div>
   </div>
@@ -115,131 +231,27 @@
   <div class="container">
     <div class="row g-5">
       {% for mesa in lista_mesas %}
-      <div
-        class="mesa-box col-12 col-md-4 col-lg-3 d-flex flex-column align-items-center gap-3 "
-        role="button"        
-      >
-      <div
-        class="mesa-card shadow-sm p-3 border d-flex flex-column align-items-center justify-content-center gap-2
-          {% if not mesa.tiene_mesero %} is-sinmesero
-          {% elif mesa.estado == 'OCUPADA' %} is-ocupada
-          {% else %} is-libre {% endif %}"
-      >
-          <!-- {% if mesa.es_vip %}
-            <div class="vip-ribbon">VIP</div>
-          {% endif %} -->
-
-          {% if mesa.es_vip %}
-            <div 
-              class="position-absolute top-0 start-0 mt-2 ms-2 badge rounded-pill px-3 py-1 text-lowercase fw-normal text-center text-warning fs-6"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" style="enable-background:new 0 0 128 128" width="24" height="24" xml:space="preserve"><path style="fill:#ffc107" d="M128 53.279c0 5.043-4.084 9.136-9.117 9.136-.091 0-.164 0-.255-.018l-8.914 34.06H18.286L8.734 65.01C3.884 64.81 0 60.808 0 55.892c0-5.043 4.084-9.136 9.117-9.136 5.032 0 9.117 4.093 9.117 9.136a9.557 9.557 0 0 1-.492 2.997l22.081 12.919 18.671-34.371a9.1 9.1 0 0 1-4.267-7.729c0-5.043 4.084-9.136 9.117-9.136s9.117 4.093 9.117 9.136a9.1 9.1 0 0 1-4.267 7.729l18.671 34.371 24.05-14.07a9.164 9.164 0 0 1-1.149-4.459c0-5.062 4.084-9.136 9.117-9.136 5.033 0 9.117 4.075 9.117 9.136zm-18.286 46.835H18.286v7.314h91.429v-7.314z"/></svg>
-              VIP
-
-            </div>
-          {% endif %}
-
-          <a class="nav-link mesa-actions" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">
-            <i class="bi bi-three-dots-vertical"></i>
-          </a>
-          
-          <ul class="dropdown-menu dropdown-menu-end">
-            {% if not mesa.tiene_mesero %}
-              <li>
-                <a class="dropdown-item"
-                   href="#"
-                   data-bs-toggle="modal"
-                   data-bs-target="#asignarMeseroModal"
-                   data-mesa-id="{{ mesa.id }}"
-                   data-mesa-numero="{{ mesa.numero }}">
-                  <i class="bi bi-exclamation-triangle-fill text-warning pe-2"></i>
-                  Asignar mesero
-                </a>
-              </li>
-              <li><hr class="dropdown-divider"></li>
-            {% endif %}
-          
-            <li>
-              <a class="dropdown-item" href="{% url 'editar-mesa' mesa.id %}">Editar</a>
-            </li>
-            <li>
-              <a 
-              class="dropdown-item"  
-              type="button"
-              data-bs-toggle="modal"
-              data-bs-target="#eliminarMesaModal"
-              data-id="{{ mesa.id }}"
-              data-nombre="{{ mesa.numero }}">Eliminar</a>
-            </li>
-            <!-- <li>
-              <a class="dropdown-item" href="#">informacion</a>
-            </li> -->
-          </ul>
-          
-          <!-- Botón de eliminar (abre modal) -->
-          {% if not mesa.tiene_mesero %}
-            <div class="mesa-status-circle" style="background-color: #47474782;">
-              <i class="bi bi-person-x-fill text-white"></i>
-            </div>
-
-            <p class="fs-6 m-0 badge rounded-pill px-3 py-1 text-lowercase fw-normal"
-              style="color: #47474782;">
-              sin mesero asignado
-            </p>
-          {% elif mesa.estado == "OCUPADA" %}
-            <div class="mesa-status-circle" style="background-color: rgb(244, 178, 93);">
-              <i class="bi bi-fork-knife text-white"></i>
-            </div>
-
-            <p class="fs-6 m-0 badge rounded-pill px-3 py-1 text-lowercase fw-normal"
-              style="border: 1px rgb(244, 178, 93) solid; color: rgb(244, 178, 93);">
-              {{ mesa.estado }}
-            </p>
-          {% elif mesa.estado == "LIBRE" %}
-            <!-- <div class="mesa-status-circle" style="border: 0.2rem rgba(0, 0, 0, 0.100) solid;">
-              <p class="h2" style="color: rgba(0, 0, 0, 0.100)">{{mesa.numero}}</p>
-            </div> -->
-
-            <p class="fs-6 m-0 badge rounded-pill px-3 py-1 text-lowercase fw-normal"
-              style="color: rgba(0, 0, 0, 0.200)">
-              {{ mesa.estado }}
-            </p>
-            <p class="fs-6 position-absolute start-0 bottom-0 ps-2 text-lowercase fw-normal d-flex align-items-center gap-1 m-0"
-              style="color: rgba(0, 0, 0, 0.200)">
-              <i class="bi bi-person"></i>  <span>{{ mesa.capacidad|default:"0" }}</span>
-            </p>
-
-          {% elif mesa.estado == "PENDIENTE_PAGO" %}
-            <!-- <div class="mesa-status-circle" style="border: 0.2rem rgba(0, 0, 0, 0.100) solid;">
-              <p class="h2" style="color: rgba(0, 0, 0, 0.100)">{{mesa.numero}}</p>
-            </div> -->
-
-            <div class="mesa-status-circle" style="background-color: rgb(16, 60, 191);">
-              <i class="bi bi-cash text-white"></i>
-            </div>
-
-            <p class="fs-6 m-0 badge rounded-pill px-3 py-1 text-lowercase fw-normal"
-              style="border: 1px rgb(16, 60, 191) solid; color: rgb(16, 60, 191);">
-              Pendiente de pago
-            </p>
-
-          {% endif %}          
-          
-        </div>
-        <div class="p-0 m-0 text-center">
-          <p class="m-0">{{ mesa.numero}}</p>
-        </div>
-
-        
-      </div>
-
+        {% include "mesas/_mesa_card.html" with mesa=mesa acciones=mesa.acciones %}
       {% empty %}
-      <div class="col-12">
-        <p class="opacity-50 mb-0">No se ha encontrado ninguna mesa</p>
-      </div>
+        <div class="col-12">
+          <p class="opacity-50 mb-0">No se ha encontrado ninguna mesa</p>
+        </div>
       {% endfor %}
     </div>
   </div>
+
+  <div class="container mt-3">
+    {% if messages %}
+        {% for message in messages %}
+          {% if "error-caja-cerrada" in message.tags%}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+</div>
 
   <!-- Modal (solo una vez, fuera del for) -->
   <div
@@ -295,7 +307,9 @@
     </div>
   </div>
 </div>
+{% include "pedidos/_toma_pedido.html" %}
 {% include "asignacionMesas/asignar_modal.html" %}
+{% include "pedidos/_ver_pedido.html" %}
 {% block extra_js %}
 <script>
   document.addEventListener("DOMContentLoaded", function () {
@@ -308,11 +322,15 @@
   
       const mesaId = btn.getAttribute("data-mesa-id");
       const mesaNumero = btn.getAttribute("data-mesa-numero");
+      const mesaCapacidad = btn.getAttribute("data-mesa-capacidad");
+
 
       console.log("Mesa numero", mesaNumero)
   
       document.getElementById("asignar_mesa_id").value = mesaId || "";
       document.getElementById("asignar_mesa_numero").textContent = mesaNumero || "—";
+      document.getElementById("asignar_mesa_capacidad").textContent = mesaCapacidad || "—";
+
   
       // limpiar selección / campos
       const sel = document.getElementById("asignar_mesero_id");
@@ -321,32 +339,6 @@
       if (sel) sel.value = "";
       if (chk) chk.checked = false;
       if (fin) fin.value = "";
-    });
-
-    // --- Logica para clases segun el estado de la mesa --//
-    const boxes = document.querySelectorAll(".mesa-box");
-
-    const borderByEstado = {
-      LIBRE: "border-success",
-      OCUPADA: "border-warning",
-      PENDIENTE_PAGO: "border-secondary",
-    };
-
-    boxes.forEach((box) => {
-      const estado = (box.dataset.estado || "").trim().toUpperCase();
-
-      // quita bordes anteriores por si recargas o re-renderizas
-      box.classList.remove(
-        "border-success",
-        "border-warning",
-        "border-danger",
-        "border-primary",
-        "border-secondary"
-      );
-      box.classList.add("border-3"); // grosor opcional
-
-      const borderClass = borderByEstado[estado] || "border-secondary";
-      box.classList.add(borderClass);
     });
 
     // --- Lógica del botón de limpieza del input ---
@@ -396,6 +388,48 @@
       });
     }
   });
+
+  (function () {
+    const protocol = (window.location.protocol === "https:") ? "wss" : "ws";
+    const wsUrl = `${protocol}://${window.location.host}/ws/mesero/notifs/`;
+    const socket = new WebSocket(wsUrl);
+  
+    socket.onopen = () => console.log("✅ WS mesero conectado");
+    socket.onclose = (e) => console.warn("⚠️ WS mesero cerrado", e.code, e.reason);
+    socket.onerror = (e) => console.error("❌ WS mesero error", e);
+  
+    function showToast(msg) {
+      // simple (puedes cambiar a Bootstrap Toast si ya lo usas)
+      const div = document.createElement("div");
+      div.textContent = msg;
+      div.style.position = "fixed";
+      div.style.right = "16px";
+      div.style.bottom = "16px";
+      div.style.padding = "10px 12px";
+      div.style.background = "#198754";
+      div.style.color = "white";
+      div.style.borderRadius = "10px";
+      div.style.zIndex = 99999;
+      document.body.appendChild(div);
+      setTimeout(() => div.remove(), 3000);
+    }
+  
+    socket.onmessage = (event) => {
+      const payload = JSON.parse(event.data);
+  
+      if (payload.type === "pedido_listo") {
+        const data = payload.data;
+        showToast(data.mensaje);
+  
+        // Mostrar icono en la tarjeta de la mesa
+        const card = document.querySelector(`.mesa-card[data-mesa-id="${data.mesa_id}"]`);
+        if (card) {
+          const icon = card.querySelector(".pedido-listo-icon");
+          if (icon) icon.classList.remove("d-none");
+        }
+      }
+    };
+  })();
 </script>
 {% endblock extra_js %}
 {% endblock content %} 

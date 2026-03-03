@@ -122,6 +122,7 @@ SESSION_SAVE_EVERY_REQUEST = True
 # Application definition
 
 INSTALLED_APPS = [
+    "daphne",
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -139,7 +140,8 @@ INSTALLED_APPS = [
     'INVENTARIO.apps.InventarioConfig',
     'corsheaders',
     'AUTENTICACION',
-    'RESTAURANTE'
+    "channels",
+    'RESTAURANTE',
 ]
 AUTH_USER_MODEL = "AUTENTICACION.User"
 
@@ -227,9 +229,18 @@ DATABASES = {
     }
 }
 
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend', 
+    'intracoe.backends_login.MultiRoleBackend',
+]
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
+# settings.py
+
+# ... debajo de AUTH_PASSWORD_VALIDATORS ...
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -245,6 +256,7 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
 
 
 # Internationalization
@@ -275,3 +287,11 @@ MEDIA_ROOT = BASE_DIR / 'media'
 #URL LOCAL PARA GUARDAR ARCHIVOS
 
 URL_ARCHIVOS_CORREO = "/factura_pdf"
+
+
+
+ASGI_APPLICATION = "intracoe.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}
+}

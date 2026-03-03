@@ -7,6 +7,10 @@ from django.db.models.functions import TruncMonth, Coalesce
 from django.shortcuts import render
 from decimal import Decimal
 from django.db.models import Q
+from django.contrib import messages
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.views import LoginView
+from django.shortcuts import redirect
 
 # Modelos que ya tienes
 from FE.models import Emisor_fe, FacturaElectronica, DetalleFactura, Receptor_fe
@@ -255,3 +259,63 @@ def dashboard(request):
         "top_prod_data": top_prod_data,
     }
     return render(request, "base.html", context)
+
+
+class CustomLoginView(LoginView):
+    template_name = "login.html"
+
+    def post(self, request, *args, **kwargs):
+        mode = request.POST.get('login_mode')
+        identifier = request.POST.get('username')
+        password = request.POST.get('password')
+
+        if mode == 'staff':
+            user = authenticate(request, username=identifier)
+            if user:
+                login(request, user)
+                return self.form_valid(None) # Redirige según el success_url
+        
+        # Si es admin o falló el staff, usamos el comportamiento normal
+        return super().post(request, *args, **kwargs)
+
+    def get_success_url(self):
+        user = self.request.user
+        # Redirección inteligente por rol
+        role = getattr(user, 'role', None)
+        if role == 'cocinero': return reverse_lazy('comanda-cocina')
+        if role == 'mesero': return reverse_lazy('mesas-lista')
+        return super().get_success_url()
+    
+def staff_pin_login(request):
+    if request.method == "POST":
+        pin = request.POST.get("username")
+        print(f"DEBUG: Intentando login con PIN: {pin}") # Mira tu consola
+        
+        # Especificamos el backend explícitamente para evitar conflictos
+        # Forma correcta de llamar al backend específico
+        user = authenticate(
+            request, 
+            username=pin, 
+            backend='intracoe.backends_login.MultiRoleBackend'
+        )
+        
+        print(f"DEBUG: User: {user}") # Mira tu consola
+        
+        if user is not None:
+            login(request, user)
+            print(f"DEBUG: Login exitoso para {user.username} con rol {user.role}")
+            
+            if user.role == 'cocinero':
+                return redirect('comanda-cocina')
+            elif user.role == 'mesero':
+                return redirect('mesas-lista')
+            elif user.role == 'cajero':
+                return redirect('index')
+            return redirect('index')
+        else:
+            print("DEBUG: Autenticación fallida")
+            print("PIN ", pin)
+            
+            messages.error(request, "PIN incorrecto o empleado inactivo.", extra_tags="usuario_no_encontrado")
+            
+    return render(request, "staff_login.html")

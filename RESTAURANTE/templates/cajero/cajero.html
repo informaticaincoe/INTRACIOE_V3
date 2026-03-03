@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}cajero{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="h5 mb-0 text-gray-800">
+            Lista de cajero
+        </h5>
+        <div>
+            <a href="{% url 'crear-cajero' %}" type="button" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2" id="clear-search-button"></i>Agregar cajero
+            </a>
+        </div>
+    </div>
+
+    <div class="mb-4">
+        <div>
+            <form method="GET" action="{% url 'cajero-lista' %}" class="row g-3 align-items-center">
+                <div class="col-md-8 position-relative">
+                    <input type="text" class="form-control" id="id_search_name" name="search_name" placeholder="Buscar por nombre..." value="{{ request.GET.search_name|default:'' }}">
+                    <i class="bi bi-x-lg position-absolute top-50 translate-middle-y end-0 me-3 clear-icon" data-target="id_search_name"></i>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="container text-start">
+        <div class="row g-3" >
+            {% for cajero in lista_cajero %}
+                    <div class="col-12 col-md-4 col-lg-6">
+                        <div class="card-body border rounded-2">
+                            <div class="d-flex g-3 align-items-center">                                
+                                    {%if cajero.activo%}
+                                        <div style="background-color: green; width: 0.5rem; height: 0.5rem; border-radius: 50%;" class="me-2">
+                                        </div>
+                                        <p class="m-0 p-0 text-success">activo</p>
+                                    {%else%}
+                                        <div style="background-color: red; width: 0.5rem; height: 0.5rem; border-radius: 50%;" class="me-2">
+                                        </div>
+                                        <p class="m-0 p-0 text-danger">Inactivo</p>
+                                    {%endif%}
+                            </div>
+                            <h5 class="card-title mb-0 mt-0">{{cajero.nombre}}</h5>
+                            <p class=" mb-0 mt-0 opacity-50">{{cajero.codigo}}</p>
+                            <a href="{% url 'editar-cajero' cajero.id %}" class="btn btn-link text-success" data-bs-toggle="tooltip" title="Editar">Editar</a>
+                            <button class="btn btn-link text-danger" data-id="{{ cajero.id }}" data-nombre="{{cajero.nombre}}" data-bs-toggle="modal" data-bs-target="#eliminarcajeroModal" data-mode="delete">Eliminar</button>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="opacity-50">No se ha encontrado ningun cajero</p>
+                
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="eliminarcajeroModal" tabindex="-1" aria-labelledby="eliminarcajeroModal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5>Eliminar cajero</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" id="eliminarcajeroForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <p>¿Seguro que quiere eliminar el registro de ? "<strong id="nombre_cajero_eliminar"></strong>"</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btnEliminarcajero">Eliminar cajero</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Lógica del Botón de Limpieza ---
+        const inputField = document.getElementById('id_search_name');
+        const clearIcon = document.querySelector('.clear-icon[data-target="id_search_name"]');
+
+        if (inputField && clearIcon) {
+            // Función para mostrar/ocultar el ícono
+            const toggleClearIcon = () => {
+                if (inputField.value.length > 0) {
+                    clearIcon.style.display = 'block';
+                } else {
+                    clearIcon.style.display = 'none';
+                }
+            };
+
+            // Inicializar al cargar la página (por si hay un valor preexistente de GET)
+            toggleClearIcon();
+
+            // Cada vez que se escribe en el input
+            inputField.addEventListener('input', toggleClearIcon);
+
+            // 2. Limpiar el input al hacer clic en el ícono
+            clearIcon.addEventListener('click', () => {
+                inputField.value = '';        // Borra el contenido
+                toggleClearIcon();            // Oculta el ícono
+                inputField.focus();           // Enfoca el input
+                
+                // inputField.closest('form').submit();
+            });
+        }
+
+        var eliminarcajeroModal = document.getElementById('eliminarcajeroModal');
+        eliminarcajeroModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget; // Botón que activó el modal
+            var cajeroForm = document.getElementById('eliminarcajeroForm');
+            var nombrecajeroEliminar = document.getElementById('nombre_cajero_eliminar');
+        
+            var cajeroId = button.getAttribute('data-id');
+            var cajeroNombre = button.getAttribute('data-nombre');
+            
+            nombrecajeroEliminar.textContent = cajeroNombre;
+
+            cajeroForm.action = "{% url 'eliminar-cajero' 0 %}".replace('/0/', '/' + cajeroId + '/'); // URL para editar
+
+        });
+    });
+</script>
+{% endblock %}
+
+{% endblock %}
+

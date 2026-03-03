@@ -1,0 +1,178 @@
+{# templates/mesas/_mesa_card.html #}
+
+<div class="mesa-box col-12 col-md-4 col-lg-3 d-flex flex-column align-items-center gap-3" role="button">
+
+  <div class="mesa-card shadow-sm p-3 border d-flex flex-column align-items-center justify-content-center gap-2 position-relative
+      {% if not mesa.tiene_mesero %} is-sinmesero-card
+      {% elif mesa.estado == 'PENDIENTE_ORDEN' %} is-pendiente-orden-card
+      {% elif mesa.estado == 'OCUPADA' %} is-ocupada-orden-card
+      {% elif mesa.estado == 'ENTREGADO' %} is-entregado-orden-card
+      {% elif mesa.estado == 'PENDIENTE_PAGO' %} is-pendiente-pago-orden-card
+      {% elif mesa.estado == 'PAGADO' %} is-pagado-orden-card
+      {% else %} is-libre-card {% endif %}" data-mesa-id="{{ mesa.id }}">
+      {% comment %} Estilo de la tarjeta segnu su estado{% endcomment %}
+      
+    {% if mesa.es_vip %}
+      <div class="position-absolute top-0 start-0 mt-2 ms-2 badge rounded-pill px-3 py-1 text-warning fs-6">
+        VIP
+      </div>
+    {% endif %}
+
+    {# Dropdown de acciones #}
+    {% if acciones %}
+      <a class="nav-link mesa-actions position-absolute top-0 end-0 mt-1 me-1" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">
+        <i class="bi bi-three-dots-vertical"></i>
+      </a>
+
+      <ul class="dropdown-menu dropdown-menu-end">
+        {% for a in acciones %}
+          {% if a.divider_before %}<li><hr class="dropdown-divider"></li>{% endif %}
+
+          <li>
+            {% if a.type == "link" %}
+              <a class="dropdown-item" href="{{ a.href }}">
+                {% if a.icon %}<i class="{{ a.icon }} pe-2"></i>{% endif %}
+                {{ a.label }}
+              </a>
+
+            {% elif a.type == "modal" %}
+              <a class="dropdown-item"
+                 href="#"
+                 data-bs-toggle="modal"
+                 data-bs-target="{{ a.target }}"
+                 {% for k,v in a.data.items %}
+                   data-{{ k }}="{{ v }}"
+                 {% endfor %}
+              >
+                {% if a.icon %}<i class="{{ a.icon }} pe-2"></i>{% endif %}
+                {{ a.label }}
+              </a>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {# ===== Estado visual ===== #}
+
+    {# 1) Sin mesero asignado #}
+    {% if not mesa.tiene_mesero %}
+      <div class="mesa-status-circle is-sinmesero-icon">
+        <i class="bi bi-person-x-fill text-white"></i>
+      </div>
+      <p class="fs-6 m-0 badge badget-is-sinmesero rounded-pill px-3 py-1 text-lowercase fw-normal">
+        sin mesero asignado
+      </p>
+    {# 2) Libre #}
+    {% elif mesa.estado == "LIBRE" %}
+      <div class="mesa-status-circle is-libre-icon">
+        <i class="bi bi-door-open text-white"></i>
+      </div>
+      <p class="fs-6 m-0 badge badget-is-libre rounded-pill px-3 py-1 text-lowercase fw-normal">
+        libre
+      </p>
+    {# 3) Pendiente de orden (recién ocupada, sin pedido aún) #}
+    {% elif mesa.estado == "PENDIENTE_ORDEN" %}
+      <div class="mesa-status-circle is-pendiente-orden-icon" >
+        <i class="bi bi-clipboard-check text-white"></i>
+      </div>
+      <p class="fs-6 m-0 badge badget-is-pendiente-orden rounded-pill px-3 py-1 text-lowercase fw-normal">
+        pendiente de orden
+      </p>
+
+    {# 4) Ocupada (ya hay pedido/comandas activas) #}
+    {% elif mesa.estado == "OCUPADA" %}
+      <div class="mesa-status-circle is-ocupada-icon">
+        <i class="bi bi-fork-knife text-white"></i>
+      </div>
+      <p class="fs-6 m-0 badge badget-is-ocupada rounded-pill px-3 py-1 text-lowercase fw-normal">
+        ocupada
+      </p>
+
+    {# 5) Entregado (Ya se entrego el pedido/comanda cerrada) #}
+    {% elif mesa.estado == "ENTREGADO" %}
+      <div class="mesa-status-circle is-entregado-icon">
+        <i class="bi bi-check2-circle text-white"></i>
+      </div>
+      <p class="fs-6 m-0 badge badget-is-entregado rounded-pill px-3 py-1 text-lowercase fw-normal">
+        entregada
+      </p>
+
+      {# 6) Pendiente de pago (Ya se cerro el pedido / imprimir ticket) #}
+    {% elif mesa.estado == "PENDIENTE_PAGO" %}
+      <div class="mesa-status-circle is-pendiente-pago-icon">
+        <i class="bi bi-cash text-white"></i>
+      </div>
+      <p class="fs-6 m-0 badge badget-is-pendiente-pago rounded-pill px-3 py-1 text-lowercase fw-normal">
+        pendiente de pago
+      </p>
+      {# 7) Pagado (ya se realizo la factura electronica) #}
+      {% elif mesa.estado == "PAGADO" %}
+        <div class="mesa-status-circle is-pagado-icon">
+          <i class="bi bi-check-circle-fill text-white"></i>
+        </div>
+        <p class="fs-6 m-0 badge badget-is-pagado rounded-pill px-3 py-1 text-lowercase fw-normal">
+          Pagado
+        </p>
+        
+    {% endif %}
+    <p class="fs-6 position-absolute start-0 bottom-0 ps-2 text-lowercase fw-normal d-flex align-items-center gap-1 m-0">
+      <i class="bi bi-person"></i> <span>{{ mesa.capacidad|default:"0" }}</span>
+    </p>
+
+  </div>
+
+  <div class="p-0 m-0 text-center">
+    <p class="m-0">{{ mesa.numero }}</p>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const protocol = (window.location.protocol === "https:") ? "wss" : "ws";
+    const wsUrl = `${protocol}://${window.location.host}/ws/mesero/notifs/`;
+    const socket = new WebSocket(wsUrl);
+  
+    function toast(msg) {
+      const el = document.createElement("div");
+      el.textContent = msg;
+      el.style.position = "fixed";
+      el.style.right = "16px";
+      el.style.bottom = "16px";
+      el.style.background = "#198754";
+      el.style.color = "white";
+      el.style.padding = "10px 12px";
+      el.style.borderRadius = "10px";
+      el.style.zIndex = 99999;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 5000);
+    }
+  
+    socket.onmessage = (event) => {
+      const payload = JSON.parse(event.data);
+      if (payload.type !== "pedido_listo") return;
+  
+      const data = payload.data;
+      toast(data.mensaje);
+      
+
+      socket.onmessage = (event) => {
+        const payload = JSON.parse(event.data);
+        if (payload.type !== "pedido_listo") return;
+      
+        const data = payload.data;
+        
+        // Si la notificación pertenece a ESTA tarjeta de mesa
+        if (data.mesa_id == document.querySelector(`[data-mesa-id="${data.mesa_id}"]`)?.dataset.mesaId) {
+            toast(data.mensaje);
+            
+            // Opción A: Recargar la página automáticamente para ver el botón "Entregar"
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        }
+      };
+    };
+  })();
+  </script>
+  

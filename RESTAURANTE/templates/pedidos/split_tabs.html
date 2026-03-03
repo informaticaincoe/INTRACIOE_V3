@@ -1,0 +1,441 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container-fluid mt-4 px-4">
+
+  <h2 class="mb-3">
+    <i class="bi bi-layout-split text-warning"></i>
+    Dividir Cuentas - Mesa {{ pedido.mesa.numero }}
+  </h2>
+
+  <!-- 🟦 TABS CUENTAS -->
+  <ul class="nav nav-tabs mb-4" id="cuentasTabs" role="tablist">
+    {% for cuenta in cuentas %}
+    <li class="nav-item">
+      <button class="nav-link {% if forloop.first %}active{% endif %}"
+              id="tab-cuenta-{{ cuenta.id }}"
+              data-bs-toggle="tab"
+              data-bs-target="#cuenta-{{ cuenta.id }}"
+              type="button">
+        <i class="bi bi-person"></i>
+        {{ cuenta.nombre }}
+
+        <i class="bi bi-pencil px-1 change-name-icon" 
+          data-bs-toggle="modal" 
+          data-bs-target="#cambioNombreCuentaModal" 
+          data-cuenta-id="{{ cuenta.id }}" 
+          data-cuenta-nombre="{{ cuenta.nombre }}"> 
+        </i> 
+        <i class="bi bi-x-lg px-1 delete-cuenta-icon" 
+          data-bs-toggle="modal" 
+          data-bs-target="#EliminarCuentaModal" 
+          data-cuenta-id="{{ cuenta.id }}" 
+          data-cuenta-nombre="{{ cuenta.nombre }}"> 
+        </i>
+        
+        <span class="badge bg-secondary ms-2">${{ cuenta.total }}</span>
+      </button>
+    </li>
+    {% endfor %}
+
+    <li class="nav-item ms-auto">
+      <button class="btn btn-sm btn-primary mt-1" id="btn-add-cuenta">
+        <i class="bi bi-plus-lg"></i> Nueva cuenta
+      </button>
+    </li>
+  </ul>
+
+  <!-- 🔵 POOL -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-light">
+      <strong>Productos disponibles</strong>
+    </div>
+
+    <div class="list-group list-group-flush" id="pool-list">
+      {% for detalle in pool_detalles %}
+      <div class="list-group-item d-flex justify-content-between align-items-center"
+           data-platillo-id="{{ detalle.platillo_id }}">
+        <div>
+          <strong>{{ detalle.platillo__nombre }}</strong>
+          <small class="text-muted">$ {{ detalle.precio_unitario }}</small>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <span class="fw-bold">disp: {{ detalle.cantidad }}</span>
+          <button class="btn btn-sm btn-outline-primary btn-add-from-pool"
+                  data-platillo-id="{{ detalle.platillo_id }}">
+            <i class="bi bi-plus"></i>
+          </button>
+        </div>
+      </div>
+      {% empty %}
+      <div class="list-group-item text-muted">
+        No hay productos disponibles
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- 🟩 CUENTAS -->
+  <div class="tab-content">
+    {% for cuenta in cuentas %}
+    <div class="tab-pane fade {% if forloop.first %}show active{% endif %}"
+         id="cuenta-{{ cuenta.id }}">
+      <div class="card shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between">
+          <strong>{{ cuenta.nombre }}</strong>
+          <span class="fw-bold">Total: ${{ cuenta.total }}</span>
+        </div>
+
+        <div class="list-group list-group-flush cuenta-detalles"
+             data-cuenta-id="{{ cuenta.id }}">
+          {% for detalle in cuenta.detalles.all %}
+          <div class="list-group-item d-flex justify-content-between align-items-center"
+               data-detalle-id="{{ detalle.id }}">
+            <div>
+              {{ detalle.platillo.nombre }}
+              <small class="text-muted">$ {{ detalle.precio_unitario }}</small>
+            </div>
+            <div class="d-flex gap-2 align-items-center">
+              <button class="btn btn-sm btn-outline-secondary btn-minus"
+                      data-detalle-id="{{ detalle.id }}">
+                <i class="bi bi-dash"></i>
+              </button>
+              <span class="fw-bold">act: {{ detalle.cantidad }}</span>
+              <button class="btn btn-sm btn-outline-primary btn-plus"
+                      data-platillo-id="{{ detalle.platillo_id }}"
+                      data-cuenta-id="{{ cuenta.id }}">
+                <i class="bi bi-plus"></i>
+              </button>
+            </div>
+          </div>
+          {% empty %}
+          <div class="list-group-item text-muted">
+            Sin productos en esta cuenta
+          </div>
+          {% endfor %}
+        </div>
+        <div class="card-footer" id="footer-cuenta-{{cuenta.id}}">
+          {% if cuenta.estado == "ABIERTA" %}
+            <a href="#"
+               onclick="cerrarCuenta(event, {{ cuenta.id }})"
+               class="btn btn-secondary">
+              <i class="bi bi-lock"></i> Cerrar cuenta
+            </a>
+          {% elif cuenta.estado == "CERRADA" %}
+            <a href="{% url 'cuenta-facturar' cuenta.id %}" 
+              class="btn btn-success btn-sm btn-facturar"> 
+              <i class="bi bi-receipt"></i> Facturar 
+            </a>
+          {% elif cuenta.estado == "PAGADA" %}
+            <span class="badge bg-info px-2 py-1">
+              <i class="bi bi-check-circle me-1"></i> Pagada
+            </span>
+          {% endif %}
+        </div>
+      </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Modal para cambiar nombre --> 
+<div class="modal fade" id="cambioNombreCuentaModal" tabindex="-1" aria-labelledby="cambioNombreCuenta" aria-hidden="true" > 
+  <div class="modal-dialog"> 
+    <div class="modal-content"> 
+      <div class="modal-header"> 
+        <h1 class="modal-title fs-5" id="cambioNombreCuenta">Cambio nombre cuenta</h1> 
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> 
+      </div> 
+      <div class="modal-body"> 
+        <form method="post" id="cambio_nombre_cuenta_form"> 
+          {% csrf_token %} 
+          <div class="mb-3"> 
+            <label for="name" class="col-form-label">Nombre</label> 
+            <input type="text" class="form-control" id="name" name="name"> 
+          </div> 
+        </div> 
+        <div class="modal-footer"> 
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button> 
+          <button type="submit" class="btn btn-primary">Guardar</button> 
+        </div> 
+      </form> 
+    </div> 
+  </div> 
+</div> 
+
+<!-- Modal para eliminar cuenta --> 
+ <div class="modal fade" id="EliminarCuentaModal" tabindex="-1" aria-labelledby="eliminarCuenta" aria-hidden="true" > 
+  <div class="modal-dialog"> 
+    <div class="modal-content"> 
+      <div class="modal-header"> 
+        <h1 class="modal-title fs-5" id="eliminarCuenta">Eliminar</h1> 
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> 
+      </div> 
+      <div class="modal-body"> 
+        <form method="post" id="eliminar_cuenta_form"> 
+          {% csrf_token %} 
+          <p>¿Estas seguro de eliminar la cuenta "<strong id="nombre-cuenta-a-eliminar"></strong>"?</p> 
+          <div class="modal-footer"> 
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button> 
+            <button type="submit" class="btn btn-primary">Eliminar</button> 
+          </div> 
+        </form> 
+      </div> 
+    </div> 
+  </div> 
+</div>
+
+
+<script>
+/* =========================
+   ESTADO GLOBAL
+========================= */
+let cuentaActivaId = null;
+
+function getCookie(name) {
+  return document.cookie.split("; ")
+    .find(row => row.startsWith(name + "="))
+    ?.split("=")[1];
+}
+
+/* =========================
+   TAB ACTIVA
+========================= */
+document.querySelectorAll('#cuentasTabs button')
+  .forEach(tab => {
+    tab.addEventListener('shown.bs.tab', e => {
+      cuentaActivaId = e.target.id.replace("tab-cuenta-", "");
+    });
+  });
+
+const first = document.querySelector('#cuentasTabs .nav-link.active');
+if (first) cuentaActivaId = first.id.replace("tab-cuenta-", "");
+
+/* =========================
+   AJAX HELPERS
+========================= */
+async function moverDetalle(payload) {
+  const resp = await fetch("{% url 'mover_detalle' %}", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken")
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!resp.ok) {
+    const data = await resp.json();
+    alert(data.error || "Error");
+    return null;
+  }
+  return await resp.json();
+}
+
+/* =========================
+   ACTUALIZADORES UI
+========================= */
+function actualizarTotalTab(data) {
+  const tab = document.querySelector(`#tab-cuenta-${data.cuenta.id} .badge`);
+  const header = document.querySelector(`#cuenta-${data.cuenta.id} .fw-bold`);
+  if (tab) tab.textContent = `$${data.cuenta.total.toFixed(2)}`;
+  if (header) header.textContent = `Total: $${data.cuenta.total.toFixed(2)}`;
+}
+
+function actualizarCuenta(data) {
+  const cont = document.querySelector(
+    `.cuenta-detalles[data-cuenta-id="${data.cuenta.id}"]`
+  );
+  cont.innerHTML = "";
+
+  if (!data.cuenta.detalles.length) {
+    cont.innerHTML = `<div class="list-group-item text-muted">Sin productos</div>`;
+    return;
+  }
+
+  data.cuenta.detalles.forEach(d => {
+    cont.insertAdjacentHTML("beforeend", `
+      <div class="list-group-item d-flex justify-content-between align-items-center"
+           data-detalle-id="${d.id}">
+        <div>
+          ${d.platillo__nombre}
+          <small class="text-muted">$ ${parseFloat(d.precio_unitario).toFixed(2)}</small>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+          <button class="btn btn-sm btn-outline-secondary btn-minus"
+                  data-detalle-id="${d.id}">
+            <i class="bi bi-dash"></i>
+          </button>
+          <span class="fw-bold">act: ${d.cantidad}</span>
+          <button class="btn btn-sm btn-outline-primary btn-plus"
+                  data-platillo-id="${d.platillo_id}"
+                  data-cuenta-id="${data.cuenta.id}">
+            <i class="bi bi-plus"></i>
+          </button>
+        </div>
+      </div>
+    `);
+  });
+
+  rebindBotones();
+}
+
+function actualizarPool(data) {
+  const pool = document.getElementById("pool-list");
+  pool.innerHTML = "";
+
+  if (!data.pool.length) {
+    pool.innerHTML = `<div class="list-group-item text-muted">No hay productos</div>`;
+    return;
+  }
+
+  data.pool.forEach(p => {
+    pool.insertAdjacentHTML("beforeend", `
+      <div class="list-group-item d-flex justify-content-between align-items-center">
+        <strong>Platillo ${p.platillo_id}</strong>
+        <span class="fw-bold">disp: ${p.cantidad}</span>
+      </div>
+    `);
+  });
+}
+
+/* =========================
+   EVENTOS
+========================= */
+function rebindBotones() {
+
+  document.querySelectorAll(".btn-add-from-pool").forEach(btn => {
+    btn.onclick = async () => {
+      const data = await moverDetalle({
+        platillo_id: btn.dataset.platilloId,
+        cuenta_id: cuentaActivaId,
+        delta: 1
+      });
+      if (!data) return;
+      actualizarCuenta(data);
+      actualizarPool(data);
+      actualizarTotalTab(data);
+    };
+  });
+
+  document.querySelectorAll(".btn-plus").forEach(btn => {
+    btn.onclick = async () => {
+      const data = await moverDetalle({
+        platillo_id: btn.dataset.platilloId,
+        cuenta_id: btn.dataset.cuentaId,
+        delta: 1
+      });
+      if (!data) return;
+      actualizarCuenta(data);
+      actualizarPool(data);
+      actualizarTotalTab(data);
+    };
+  });
+
+  document.querySelectorAll(".btn-minus").forEach(btn => {
+    btn.onclick = async () => {
+      const data = await moverDetalle({
+        detalle_id: btn.dataset.detalleId,
+        delta: -1
+      });
+      if (!data) return;
+      actualizarCuenta(data);
+      actualizarPool(data);
+      actualizarTotalTab(data);
+    };
+  });
+}
+
+  document.querySelectorAll(".change-name-icon").forEach(icon => { 
+    icon.addEventListener("click", () => { 
+      const cuentaId = icon.dataset.cuentaId; 
+      const nombre = icon.dataset.cuentaNombre; 
+      const form = document.getElementById("cambio_nombre_cuenta_form"); 
+      
+      form.action = "{% url 'cambio_nombre_cuenta' 0 %}".replace("0", cuentaId); 
+      document.getElementById("name").value = nombre; 
+    }); 
+  }); 
+    
+  document.querySelectorAll(".delete-cuenta-icon").forEach(icon => {  
+    icon.addEventListener("click", () => { 
+      const cuentaId = icon.dataset.cuentaId; 
+      const nombre = icon.dataset.cuentaNombre; 
+      const span_nombre = document.getElementById("nombre-cuenta-a-eliminar") 
+      const form = document.getElementById("eliminar_cuenta_form"); 
+
+      span_nombre.textContent = nombre 
+      form.action = "{% url 'eliminar_cuenta_extra' 0 %}".replace("0", cuentaId); 
+    }); 
+  });
+
+  /* ➕ nueva cuenta */
+document.getElementById("btn-add-cuenta").onclick = async () => {
+  const resp = await fetch("{% url 'crear-cuenta-extra' pedido.id %}", {
+    method: "POST",
+    headers: { "X-CSRFToken": getCookie("csrftoken") }
+  });
+  if (resp.ok) location.reload();
+  else alert("No se pudo crear la cuenta");
+};
+
+/* 🔒 cerrar cuenta */
+async function cerrarCuenta(e, cuentaId) {
+  e.preventDefault();
+  const resp = await fetch(
+    `{% url 'cambiar-estado-cuenta' 0 'CERRADA' %}`.replace("/0/", `/${cuentaId}/`),
+    {
+      method: "POST",
+      headers: { "X-CSRFToken": getCookie("csrftoken") }
+    }
+  );
+  
+  }
+  
+  async function cerrarCuenta(event, cuentaId) {
+    event.preventDefault(); // Evita que el enlace recargue la página
+    
+    try {
+      const response = await fetch(
+        `{% url 'cambiar-estado-cuenta' 0 'CERRADA' %}`.replace("/0/", `/${cuentaId}/`),
+        {
+          method: "POST",
+          headers: { "X-CSRFToken": getCookie("csrftoken") }
+        })
+
+        const data = await response.json();
+        if (response.ok) {
+            // 1. Localizamos el footer de esa cuenta
+            const footer = document.getElementById(`footer-cuenta-${cuentaId}`);
+            
+            // 2. Definimos la URL de facturación (puedes pasarla desde el servidor o construirla)
+            const urlFacturar = "{% url 'cuenta-facturar' 0 %}".replace("0", cuentaId);
+
+            // 3. Cambiamos el contenido del footer dinámicamente
+            footer.innerHTML = `
+                <a href="${urlFacturar}" class="btn btn-success btn-sm animate__animated animate__fadeIn">
+                    <i class="bi bi-receipt"></i> Facturar
+                </a>
+            `;
+
+            // 4. (Opcional) Actualizar un indicador de estado en la cabecera si lo tienes
+            const statusBadge = document.querySelector(`#cuenta-${cuentaId} .badge-estado`);
+            if (statusBadge) {
+                statusBadge.className = "badge bg-warning text-dark";
+                statusBadge.textContent = "CERRADA";
+            }
+
+        } else {
+            alert(data.error || "No se pudo cerrar la cuenta.");
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        alert("Ocurrió un error al procesar la solicitud.");
+    }
+}
+
+  rebindBotones();
+</script>
+
+{% endblock %}

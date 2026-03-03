@@ -12,21 +12,32 @@ class User(AbstractUser):
         ('supervisor', 'Supervisor'),
         ('cliente', 'Cliente'),
         ('mesero', 'Mesero'),
-        
+        ('cocinero', 'Cocinero'),
+        ('cajero', 'Cajero')
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='cliente')
-
+    
+    @property
     def is_admin(self):
         return self.role == 'admin'
-
+    @property
     def is_vendedor(self):
         return self.role == 'vendedor'
-
+    @property
     def is_supervisor(self):
         return self.role == 'supervisor'
+    @property
+    def is_mesero_role(self):
+        return self.role == 'mesero'
+    @property
+    def is_cocinero_role(self):
+        return self.role == 'cocinero'
+    @property
+    def is_cajero_role(self):
+        return self.role == 'cajero'
+    
 
 class PasswordResetCode(models.Model):
-    #NEW
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,

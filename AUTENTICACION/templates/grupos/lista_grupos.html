@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Grupos{% endblock %}
+
+{% block content %}
+
+    <div class="container py-4">
+    <h4>Grupos</h4>
+
+    {% for g in grupos %}
+      <p>{{ g.name }}</p>
+    {% endfor %}
+  </div>
+
+  {% endblock %}

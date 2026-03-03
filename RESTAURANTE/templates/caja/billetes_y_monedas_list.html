@@ -1,0 +1,247 @@
+{% extends 'base.html' %} 
+{% load l10n %}
+{% block title %} Billetes y monedas {% endblock %} 
+{% block content %}
+
+<div class="container-fluid mt-3">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="h5 mb-0 text-gray-800">Billetes y monedas</h5>
+    <div>
+      <a
+        href="#"
+        data-bs-toggle="modal"
+        data-bs-target="#EditarMoneda"
+        data-action="crear"
+        class="btn btn-primary"
+      >
+        <i class="bi bi-plus-circle me-2"></i>Agregar
+      </a>
+    </div>
+  </div>
+
+  <div class="mb-4">
+    <form
+      method="GET"
+      action="{% url 'billetes-y-monedas-list' %}"
+      class="row g-3 align-items-center"
+    >
+      <div class="col-md-8 position-relative">
+        <input
+          type="text"
+          class="form-control"
+          id="id_search_name"
+          name="search_name"
+          placeholder="Buscar por nombre..."
+          value="{{ request.GET.search_name|default:'' }}"
+        />
+        <i
+          class="bi bi-x-lg position-absolute top-50 translate-middle-y end-0 me-3 clear-icon"
+          data-target="id_search_name"
+          style="display: none"
+        ></i>
+      </div>
+    </form>
+  </div>
+
+  <div class="container">
+    <div class="row g-5">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Nombre</th>
+              <th scope="col">Valor</th>
+              <th scope="col">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for moneda in billetas_Y_monedas_list %}
+              <tr>
+                <td>{{ moneda.nombre }}</td>
+                <td>{{ moneda.valor }}</td>
+                <td>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-primary"
+                    data-bs-toggle="modal"
+                    data-bs-target="#EditarMoneda"
+                    data-action="editar"
+                    data-id="{{ moneda.id }}"
+                    data-nombre="{{ moneda.nombre }}"
+                    data-valor="{{ moneda.valor|unlocalize }}"
+                  >
+                    <i class="bi bi-pencil"></i>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    data-bs-toggle="modal"
+                    data-bs-target="#eliminarMoneda"
+                    data-id="{{ moneda.id }}"
+                    data-nombre="{{ moneda.nombre }}"
+                  >
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </td>
+              </tr>
+              {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal editar y/o crear billete/moneda -->
+  <div class="modal fade" id="EditarMoneda" tabindex="-1" aria-labelledby="EditarMonedaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="EditarMonedaLabel"></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" id="areaForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="id_nombre" class="form-label">Nombre</label>
+                        <input 
+                        type="text" 
+                        class="form-control" 
+                        id="id_nombre_moneda" 
+                        name="nombre" 
+                        required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_valor_moneda" class="form-label">Valor</label>
+                        <input
+                          type="number" 
+                          class="form-control" 
+                          id="id_valor_moneda" 
+                          name="valor" 
+                          step="0.01" 
+                          min="0" 
+                          required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btnGuardarArea">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+  <!-- Modal Eliminar billete/moneda -->
+  <div
+    class="modal fade"
+    id="eliminarMoneda"
+    tabindex="-1"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">Eliminar moneda</h5>
+          <button
+            type="button"
+            class="btn-close btn-close-white"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+
+        <form
+          method="post"
+          id="eliminarMonedaForm"
+        >
+          {% csrf_token %}
+          <div class="modal-body">
+            <p>
+              ¿Seguro que quieres eliminar el registro "<strong id="billete"></strong>"?</p>
+            <small class="text-muted">Esta acción no se puede deshacer.</small>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="btn btn-danger"
+            >
+              Eliminar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block extra_js %}
+
+{% endblock %}
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    
+    // --- Lógica para EDITAR ---
+    // --- Lógica para CREAR o EDITAR ---
+    const editarModal = document.getElementById("EditarMoneda");
+    if (editarModal) {
+      editarModal.addEventListener("show.bs.modal", function (event) {
+        const button = event.relatedTarget; // Botón que disparó el modal
+        const action = button.getAttribute("data-action");
+        
+        const form = editarModal.querySelector("#areaForm");
+        const title = editarModal.querySelector(".modal-title");
+        const inputNombre = editarModal.querySelector("#id_nombre_moneda");
+        const inputValor = editarModal.querySelector("#id_valor_moneda");
+
+        if (action === "editar") {
+          // MODO EDICIÓN
+          const id = button.getAttribute("data-id");
+          const nombre = button.getAttribute("data-nombre");
+          const valor = button.getAttribute("data-valor");
+          console.log("NOMBRE, ", nombre )
+          console.log("VALOR, ", valor )
+
+          title.textContent = "Editar: " + nombre;
+          inputNombre.value = nombre;
+          inputValor.value = valor;
+          form.action = "{% url 'billetes-y-monedas-editar' 0 %}".replace("0", id);
+        } else {
+          // MODO CREACIÓN
+          title.textContent = "Agregar Nuevo Billete/Moneda";
+          inputNombre.value = ""; // Limpiar campos
+          inputValor.value = "";
+          form.action = "{% url 'billetes-y-monedas-crear' %}";
+        }
+      });
+    }
+
+    // --- Lógica para ELIMINAR ---
+    const eliminarModal = document.getElementById("eliminarMoneda");
+    if (eliminarModal) {
+      eliminarModal.addEventListener("show.bs.modal", function (event) {
+        const button = event.relatedTarget;
+        const id = button.getAttribute("data-id");
+        const nombre = button.getAttribute("data-nombre");
+
+        const form = eliminarModal.querySelector("#eliminarMonedaForm");
+        const spanNombre = eliminarModal.querySelector("#billete");
+
+        spanNombre.textContent = nombre;
+        form.action = "{% url 'billetes-y-monedas-eliminar' 0 %}".replace("0", id);
+      });
+    }
+  });
+</script>
+
+{% endblock content %}

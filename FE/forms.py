@@ -1,6 +1,8 @@
 from django import forms
 
 from django_select2.forms import Select2MultipleWidget
+
+from FE.admin import ConfigTipDte
 from .models import ActividadEconomica, Emisor_fe, representanteEmisor
 
 class ExcelUploadForm(forms.Form):

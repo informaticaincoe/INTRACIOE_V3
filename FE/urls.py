@@ -16,8 +16,6 @@ from .views import (
     obtener_receptor,
     generar_documento_ajuste_view, 
     obtener_listado_productos_view,
-    select_tipo_facturas_mes_home,
-    listar_documentos_pendientes
     #generar_factura_exportacion_view
 )
 
@@ -104,6 +102,7 @@ urlpatterns = [
     
     #ENVIO DE CORREO(DOCUMENTOS ELECTRONICOS)
     path('enviar-correo/<int:factura_id>/', views.enviar_correo_individual_view, name='enviar_correo_indiv'),
+
 
 ]
 

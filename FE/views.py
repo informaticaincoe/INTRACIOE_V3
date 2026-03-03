@@ -2,6 +2,7 @@ from zoneinfo import ZoneInfo
 from django.forms import modelform_factory
 import openpyxl
 import requests
+from RESTAURANTE.services.service_factura import finalizar_venta_exitosa
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.models import User
@@ -32,8 +33,10 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from decimal import ROUND_HALF_UP, ConversionSyntax, Decimal, getcontext
 from FE.utils import _get_emisor_for_user
+from RESTAURANTE.models import Pedido
+from RESTAURANTE.services.services_pedidos import pagar_cuenta
 from intracoe import settings
-from .models import FacturaSujetoExcluidoElectronica, Token_data, Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica,  Receptor_fe, Tipo_dte, TipoMoneda, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos, Descuento, FormasPago, Plazo, TipoGeneracionDocumento, TipoContingencia, EventoContingencia, TipoTransmision, LoteContingencia, representanteEmisor
+from .models import ConfigTipDte, ConsolidacionFactura, FacturaSujetoExcluidoElectronica, Token_data, Ambiente, CondicionOperacion, DetalleFactura, FacturaElectronica, Modelofacturacion, NumeroControl, Emisor_fe, ActividadEconomica,  Receptor_fe, Tipo_dte, TipoMoneda, TiposDocIDReceptor, Municipio, EventoInvalidacion, TipoInvalidacion, TiposEstablecimientos, Descuento, FormasPago, Plazo, TipoGeneracionDocumento, TipoContingencia, EventoContingencia, TipoTransmision, LoteContingencia, representanteEmisor
 from INVENTARIO.models import Almacen, DetalleDevolucionVenta, DevolucionVenta, MovimientoInventario, NotaCredito, Producto, TipoItem, Tributo, TipoUnidadMedida
 from .forms import EmisorForm, ExcelUploadForm, RepresentanteEmisorForm
 from django.db import transaction
@@ -66,11 +69,18 @@ from django.core.exceptions import ObjectDoesNotExist
 import json
 from django.core.serializers.json import DjangoJSONEncoder
 
-try:
-    FIRMADOR_URL = ConfiguracionServidor.objects.filter(clave="firmador").first()
-except (OperationalError, ObjectDoesNotExist):
-    FIRMADOR_URL = None
+# try:
+#     FIRMADOR_URL = ConfiguracionServidor.objects.filter(clave="firmador").first()
+# except (OperationalError, ObjectDoesNotExist):
+#     FIRMADOR_URL = None
 
+def obtener_firmador_url():
+    """Retorna el objeto de configuración o None si no existe o hay error de DB."""
+    try:
+        return ConfiguracionServidor.objects.filter(clave="firmador").first()
+    except Exception:
+        return None
+    
 try:
     CERT_PATH = ConfiguracionServidor.objects.filter(clave="certificado").first()
     CERT_PATH = CERT_PATH.url_endpoint if CERT_PATH else None
@@ -551,14 +561,40 @@ def factura_list(request):
 @csrf_exempt
 def export_facturas_excel(request):
     # Calcular el límite de las últimas 24 horas
-    limite = datetime.now() - timedelta(hours=24)
+    fecha_ini = request.GET.get('fecha_ini')
+    fecha_fin = request.GET.get('fecha_fin')
+    cliente_id = request.GET.get('cliente')
+    producto_id = request.GET.get('producto')
+    usuario_id = request.GET.get('usuario')
+    estado = request.GET.get('estado')
+    monto_min = request.GET.get('monto_min')
+    monto_max = request.GET.get('monto_max')
     
     # Consultar las facturas emitidas antes de ese límite y sin evento de invalidación
-    facturas = FacturaElectronica.objects.filter(
-        fecha_emision__lt=limite,
-        dte_invalidacion__isnull=True
-    )
+    facturas = FacturaElectronica.objects.filter(dte_invalidacion__isnull=True)
+
+    # 3. Aplicar filtros dinámicamente
+    if fecha_ini:
+        facturas = facturas.filter(fecha_emision__gte=fecha_ini)
+    if fecha_fin:
+        facturas = facturas.filter(fecha_emision__lte=fecha_fin)
+    if cliente_id:
+        facturas = facturas.filter(dtereceptor_id=cliente_id) # Ajusta según tu campo FK
+    if usuario_id:
+        facturas = facturas.filter(usuario_id=usuario_id)
+    if monto_min:
+        facturas = facturas.filter(total_pagar__gte=monto_min)
+    if monto_max:
+        facturas = facturas.filter(total_pagar__lte=monto_max)
     
+    # Filtro de estado (basado en la lógica de tus badges del HTML)
+    if estado == 'recibido':
+        facturas = facturas.filter(recibido_mh=True)
+    elif estado == 'firmado':
+        facturas = facturas.filter(firmado=True, recibido_mh=False)
+    elif estado == 'borrador':
+        facturas = facturas.filter(firmado=False, recibido_mh=False)
+        
     # Crear el libro y la hoja de cálculo
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -662,22 +698,19 @@ def q2(d):  # 2 decimales HALF_UP
 @csrf_exempt
 @transaction.atomic
 def generar_factura_view(request):
+    prefill = None
+    
     req_id = str(uuid.uuid4())[:8]
     print("DTE: ====== INICIO generar_factura_view ======")
     print("DTE: method=", request.method, " content_type=", request.content_type)
     
     
     if request.method == 'GET':
-        prefill = None
         if request.GET.get("from_cart") == "1":
-            prefill = request.session.pop("facturacion_prefill", None)
-            request.session.modified = True
+            prefill = request.session.get("facturacion_prefill", None)
             print("DTE: prefill recuperado =", prefill)
 
-        # tipo_dte = globals().get('tipo_documento_dte', '01')
         tipo_dte = request.GET.get("tipo_documento_dte", '01')
-        
-        
         
         print("DTE: GET tipo_dte=", tipo_dte)
         if not tipo_dte:
@@ -723,7 +756,6 @@ def generar_factura_view(request):
             "dte_select": tipo_dte
         }
         print("DTE: Renderizar template generar_dte.html")
-        print(f"DTE: Renderizar template generar_dte.html {context}")
         
         return render(request, "generar_dte.html", context)
 
@@ -875,6 +907,7 @@ def generar_factura_view(request):
                 tipotransmision=tipotransmision_obj,
                 flete_exportacion=Decimal("0.00"),
                 seguro_exportacion=Decimal("0.00"),
+                usuario_id=request.user.id,
             )
             print("DTE: Factura creada id=", factura.id)
 
@@ -1189,6 +1222,28 @@ def generar_factura_view(request):
 
             print("DTE: ====== FIN generar_factura_view OK ======")
 
+            if request.GET.get("from_cart") == "1":
+                print("DTE: ====== consolidar ======")
+                
+                prefill_data = request.session.get('facturacion_prefill', {})
+                listado_ids = prefill_data.get('ids_consolidados', [])
+        
+                registros_consolidacion = []
+                for f_id in listado_ids:
+                    registros_consolidacion.append(
+                        ConsolidacionFactura(
+                            factura_origen_id=f_id,
+                            factura_destino=factura
+                        )
+                    )
+                
+                # Creamos todos de un solo golpe (más eficiente)
+                if registros_consolidacion:
+                    ConsolidacionFactura.objects.bulk_create(registros_consolidacion)
+                
+                # Limpiamos la sesión después de usarla
+                if 'facturacion_prefill' in request.session:
+                    del request.session['facturacion_prefill']
             # ---------- FIRMA ----------
             print("DTE: ==== INICIO FIRMA (función existente) ====")
             try:
@@ -1250,7 +1305,24 @@ def generar_factura_view(request):
                     "puede_contingencia": True,
                     "enviar_mh_url": reverse('enviar_factura_hacienda', args=[factura.id]),
                     }, status=200)
+                
+            # --- VINCULACIÓN DE RESTAURANTE ---            
+            if prefill and prefill.get("origen") == "restaurante":
+                pedido_id = prefill.get("pedido_id")
+                
+                from RESTAURANTE.models import CuentaPedido
+                cuenta = (CuentaPedido.objects
+                        .filter(pedido_id=pedido_id)
+                        .exclude(estado__in=["PAGADA", "ANULADO"])
+                        .order_by("id")
+                        .first())
 
+                if cuenta:
+                    cuenta.factura = factura
+                    cuenta.save(update_fields=["factura"])
+                
+                finalizar_venta_exitosa(factura.id)
+            
             print("DTE: ====== FIN generar+firmar+enviar OK ======")
 
             # Respuesta final
@@ -1325,7 +1397,6 @@ def select_tipo_facturas_mes_home(request):
     
 @login_required
 def listar_documentos_pendientes(request):
-    # La vista DEBE usar request.GET para obtener los filtros enviados por AJAX
     tipo_dte = request.GET.get('tipo_documento_dte')
     mes_filtro = request.GET.get('mes')
     year_filtro = request.GET.get('year')
@@ -1333,9 +1404,10 @@ def listar_documentos_pendientes(request):
     
     documentos_pendientes = FacturaElectronica.objects.filter(
         tipo_dte__codigo=tipo_dte,
-        sello_recepcion=None
+        sello_recepcion=None,
+        consolidacion_origen__isnull = True
     )
-    
+
     clientes_disponibles = documentos_pendientes.values('dtereceptor__num_documento', 'dtereceptor__nombre').distinct()
     
     clientes_list = [
@@ -1344,7 +1416,6 @@ def listar_documentos_pendientes(request):
     ]
     
     print(" >>> CLIENTES DISPONIBLES ", clientes_disponibles)
-    print(" >>> CLIENTES clientes_list ", clientes_list)
     
     print("Lista facturas pendientes de envio: ", documentos_pendientes)
     print("Mes filtro", mes_filtro)
@@ -1358,7 +1429,6 @@ def listar_documentos_pendientes(request):
             )
             print(f"DEBUG: Aplicado filtro YEAR: {year_int}")
         except ValueError:
-            # Esto maneja si isdigit() pasa pero int() falla (aunque es raro)
             pass
             
     # 2. 🗓️ Filtrar por MES
@@ -2109,8 +2179,8 @@ def firmar_factura_view(request, factura_id, interno=False):
 
         try:
             print("dentro try-------------- ")
-            
-            response = requests.post(FIRMADOR_URL.url_endpoint, json=payload, headers={"Content-Type": CONTENT_TYPE.valor})
+            config_firmador = obtener_firmador_url()
+            response = requests.post(config_firmador.url_endpoint, json=payload, headers={"Content-Type": CONTENT_TYPE.valor})
             print("Response envio: ", response)
             print("Response envio status: ", response.status_code)
             try:
@@ -2459,17 +2529,25 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False, consoli
                     # crear el movimeinto de inventario
                     # Se asume que la factura tiene una relación a sus detalles, 
                     # donde se encuentran los productos y cantidades
-                    for detalle in factura.detalles.all():
-                        if detalle is not None and detalle.producto.almacenes.exists():
-                            almacen = detalle.producto.almacenes.first() or Almacen.objects.first()
-                            MovimientoInventario.objects.create(
-                                producto=detalle.producto,
-                                almacen=almacen,
-                                tipo='Salida',
-                                cantidad=detalle.cantidad,
-                                referencia=f"Factura {factura.codigo_generacion}",
-                            )
-                            # ¡El stock baja solo gracias al signal!
+                    
+                    # Buscar si la factura es consolidada
+                    es_consolidacion = ConsolidacionFactura.objects.filter(factura_destino_id=factura_id).exists()
+                    
+                    if not es_consolidacion:
+                        for detalle in factura.detalles.all():
+                            if detalle is not None and detalle.producto.almacenes.exists():
+                                almacen = detalle.producto.almacenes.first() or Almacen.objects.first()
+                                MovimientoInventario.objects.create(
+                                    producto=detalle.producto,
+                                    almacen=almacen,
+                                    tipo='Salida',
+                                    cantidad=detalle.cantidad,
+                                    referencia=f"Factura {factura.codigo_generacion}",
+                                )
+                                # ¡El stock baja solo gracias al signal!
+                    else:
+                        #Si es es una factura consolidada no se realiza el movimiento de inventario
+                        print(f"DEBUG: Factura {factura.id} es consolidada, omitiendo descarga de inventario.")
                         
                     #Si la factura fue recibida por mh detener los eventos en contingencia activos
                     finalizar_contigencia_view(request)
@@ -2936,7 +3014,8 @@ def _firmar_evento_invalidacion(evento: EventoInvalidacion):
     }
     headers = {"Content-Type": CONTENT_TYPE.valor}
 
-    resp = requests.post(FIRMADOR_URL.url_endpoint, json=payload, headers=headers)
+    config_firmador = obtener_firmador_url()
+    resp = requests.post(config_firmador.url_endpoint, json=payload, headers=headers)
     try:
         data = resp.json()
     except Exception:
@@ -3329,9 +3408,9 @@ def firmar_factura_sujeto_excluido_anulacion_view(request, factura_id):
     }
 
     headers = {"Content-Type": CONTENT_TYPE.valor}
-
+    config_firmador = obtener_firmador_url()
     try:
-        response = requests.post(FIRMADOR_URL.url_endpoint, json=payload, headers=headers)
+        response = requests.post(config_firmador.url_endpoint, json=payload, headers=headers)
         
         # Capturamos la respuesta completa
         try:
@@ -5052,9 +5131,9 @@ def firmar_contingencia_view(request, contingencia_id):
         }
 
         headers = {"Content-Type": CONTENT_TYPE.valor}
-
+        config_firmador = obtener_firmador_url()
         try:
-            response = requests.post(FIRMADOR_URL.url_endpoint, json=payload, headers=headers)
+            response = requests.post(config_firmador.url_endpoint, json=payload, headers=headers)
             
             # Capturamos la respuesta completa
             if response:
@@ -6259,32 +6338,35 @@ def enviar_correo_individual_view(request, factura_id, archivo_pdf=None, archivo
 @login_required
 @transaction.atomic
 def configurar_empresa_view(request):
-
-    """
-    Una sola pantalla para crear/editar:
-      - Emisor_fe (único registro 'mi empresa')
-      - representanteEmisor vinculado (FK en Emisor_fe)
-    """
-    # 1) Cargar el emisor ligado al usuario (si existe)
     emisor = _get_emisor_for_user(request.user, estricto=False)
-    rep_inst = getattr(emisor, "representante", None) if emisor else None
-
     rep_instance = emisor.representante if emisor and emisor.representante_id else None
-
+    
+    config_tip = None
+    if emisor:
+        config_tip, _ = ConfigTipDte.objects.get_or_create(emisor=emisor)
+    
     if request.method == "POST":
         emisor_form = EmisorForm(request.POST, request.FILES, instance=emisor)
         rep_form = RepresentanteEmisorForm(request.POST, instance=rep_instance)
+        tip_val = request.POST.get("tip_porcentaje") # Traemos el valor del POST
 
         if emisor_form.is_valid() and rep_form.is_valid():
-            # Guardar representante primero
+            # 1. Guardar representante primero
             representante = rep_form.save()
-
-            # Guardar emisor y enlazar representante
+            
+            # 2. Preparar y guardar el emisor (AHORA SÍ DEFINIMOS emisor_obj)
             emisor_obj = emisor_form.save(commit=False)
             emisor_obj.representante = representante
             emisor_obj.save()
-            emisor_form.save_m2m()  # actividades_economicas
-
+            emisor_form.save_m2m() 
+            
+            # 3. Ahora que emisor_obj existe, procesamos la propina
+            if emisor_obj.es_restaurante and tip_val:
+                ConfigTipDte.objects.update_or_create(
+                    emisor=emisor_obj,
+                    defaults={'porcentaje': tip_val}
+                )
+            
             messages.success(request, "Configuración de la empresa guardada correctamente.")
             return redirect(reverse("configurar_empresa"))
         else:
@@ -6295,6 +6377,7 @@ def configurar_empresa_view(request):
 
     context = {
         "emisor_form": emisor_form,
+        "config_tip": config_tip,
         "rep_form": rep_form,
         "tiene_emisor": bool(emisor),
         "emisor": emisor,

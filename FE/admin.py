@@ -1,21 +1,17 @@
+from traceback import format_tb
 from django.contrib import admin
 
 from INVENTARIO.models import TipoUnidadMedida
-from .models import DetalleFacturaSujetoExcluido, FacturaSujetoExcluidoElectronica, Token_data
+from .models import ConsolidacionFactura, DetalleFacturaSujetoExcluido, FacturaSujetoExcluidoElectronica, Token_data
 from django import forms
-from django.shortcuts import render, redirect
-from django.urls import path
-from django.contrib import messages
-from django.http import HttpResponse
 import pandas as pd
 from .models import (INCOTERMS, ActividadEconomica, NumeroControl, FacturaElectronica, Emisor_fe, 
-                           OtrosDicumentosAsociado, Pais, Receptor_fe, Municipio, Departamento, Tipo_dte, 
-                           Ambiente, Modelofacturacion, TipoDocContingencia, TipoDomicilioFiscal, TipoDonacion, 
-                           TipoInvalidacion, TipoPersona, TipoTransmision, TipoContingencia, TipoRetencionIVAMH, 
-                           TipoGeneracionDocumento, TipoTransporte, TiposDocIDReceptor, TiposEstablecimientos, 
-                           TiposServicio_Medico, CondicionOperacion, FormasPago, Plazo,
-                            Descuento, DetalleFactura, TipoMoneda, EventoInvalidacion, EventoContingencia, LoteContingencia, representanteEmisor, RecintoFiscal, RegimenExportacion)
-
+                            OtrosDicumentosAsociado, Pais, Receptor_fe, Municipio, Departamento, Tipo_dte, 
+                            Ambiente, Modelofacturacion, TipoDocContingencia, TipoDomicilioFiscal, TipoDonacion, 
+                            TipoInvalidacion, TipoPersona, TipoTransmision, TipoContingencia, TipoRetencionIVAMH, 
+                            TipoGeneracionDocumento, TipoTransporte, TiposDocIDReceptor, TiposEstablecimientos, 
+                            TiposServicio_Medico, CondicionOperacion, FormasPago, Plazo,
+                            Descuento, DetalleFactura, TipoMoneda, EventoInvalidacion, EventoContingencia, LoteContingencia, representanteEmisor, RecintoFiscal, RegimenExportacion, ConfigTipDte)
 
 # Lista de todos los modelos a registrar
 models = [
@@ -94,6 +90,9 @@ class FacturaSujetoExcluidoElectronicaAdmin(admin.ModelAdmin):
 
     fields = [f.name for f in FacturaSujetoExcluidoElectronica._meta.fields if f.name != "id"]
 
+@admin.register(ConfigTipDte)
+class ConfigTipDte(admin.ModelAdmin):
+    list_display = ('id', 'porcentaje')
     
 class ActividadEconomicaAdmin(admin.ModelAdmin):
     list_display = ('codigo', 'descripcion')
@@ -218,3 +217,15 @@ class Token_dataAdmin(admin.ModelAdmin):
 admin.site.register(Token_data, Token_dataAdmin)
 admin.site.register(RecintoFiscal)
 admin.site.register(RegimenExportacion)
+
+@admin.register(ConsolidacionFactura)
+class ConsolidacionFacturaAdmin(admin.ModelAdmin):
+    list_display = ('id', 'fecha_consolidacion', 'factura_origen', 'factura_destino')
+    list_filter = ('fecha_consolidacion', 'factura_destino__tipo_dte')
+    
+    search_fields = (
+        'factura_origen__numero_control', 
+        'factura_destino__numero_control',
+        'factura_origen__id',
+        'factura_destino__id'
+    )

@@ -75,3 +75,46 @@ def ver_contenido_tabla(request, nombre_db, nombre_tabla):
         'columnas': columnas,
         'page_obj': page_obj
     })
+
+@login_required
+def ver_contenido_tabla_prod(request, nombre_db="olInventario",nombre_tabla="detFisico"):
+        
+    with connections['brilo_sqlserver'].cursor() as cursor:
+        cursor.execute(f"""
+            SELECT COLUMN_NAME
+            FROM [olInventario].INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_NAME = 'detFisico';
+        """)
+        # columnas = [col[0] for col in cursor.fetchall()]
+        columnas = ['proIdDet','proIdProd','proNombre', 'proCodigo', 'dfiCantidadContada', 'dfiExistencia', 'dfiFecHoraDigitado']
+        
+        sql = f"""
+            SELECT 
+                det.proId, 
+                prod.proId,
+                prod.proNombre, 
+                prod.proCodigo,
+                det.dfiCantidadContada, -- tabla detFisico
+                det.dfiExistencia,     -- tabla detFisico
+                det.dfiFecHoraDigitado
+            FROM [olComun].[dbo].[Productos] as prod
+            INNER JOIN [olInventario].[dbo].[detFisico] as det 
+                ON prod.proId = det.proId
+            ORDER BY det.proId ASC;
+        """
+        
+        cursor.execute(sql)
+        datos = cursor.fetchall()
+
+        print(f"Filas recuperadas: {len(datos)}")
+    # Configurar la paginación
+    paginator = Paginator(datos, 25)  # Muestra 25 filas por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'ver_estructura_tabla.html', {
+        'nombre_db': nombre_db,
+        'nombre_tabla': nombre_tabla,
+        'columnas': columnas,
+        'page_obj': page_obj
+    })
