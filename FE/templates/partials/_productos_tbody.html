@@ -10,11 +10,11 @@
   </td>
 
   <td>
-    <input type="number" class="cantidad-input" value="1" min="1" style="width: 90px;">
+    <input type="number" class="cantidad-input form-control form-control-sm" value="1" min="1" style="width: 90px;">
   </td>
 
   <td>
-    <select class="form-control tipo_item_select">
+    <select class="form-select form-select-sm tipo_item_select">
       {% for item in tipoItems %}
         <option value="{{ item.id }}">{{ item.descripcion }}</option>
       {% endfor %}
@@ -22,7 +22,7 @@
   </td>
 
   <td>
-    <select class="form-control descuento-select">
+    <select class="form-select form-select-sm descuento-select">
       <option value="0">Sin descuento</option>
       {% for d in descuentos %}
         <option value="{{ d.porcentaje }}">{{ d.porcentaje }}</option>

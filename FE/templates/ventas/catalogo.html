@@ -1,108 +1,135 @@
 {% extends "base.html" %}
-{% load static %}
-
+{% block title %}Catálogo de productos · FE{% endblock %}
 {% block content %}
-<div class="container py-4">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4>Catálogo de productos</h4>
 
-    <div class="d-flex gap-2">
-      <!-- Selector de vista -->
-      <button id="btnVistaLista" class="btn btn-sm btn-outline-primary active">
-        <i class="bi bi-list"></i>
-      </button>
-      <button id="btnVistaGrid" class="btn btn-sm btn-outline-primary">
-        <i class="bi bi-grid"></i>
-      </button>
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'ventas_home' %}">Facturación</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Catálogo</li>
+  </ol>
+</nav>
+
+{% if messages %}
+  {% for m in messages %}
+    <div class="alert alert-{{ m.tags }} alert-dismissible py-2" role="alert">
+      {{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
     </div>
-  </div>
+  {% endfor %}
+{% endif %}
 
-  <!-- Filtros -->
-  <form class="d-flex align-items-center gap-2 mb-3" method="get">
-    <select name="receptor_id" id="receptor" class="form-select">
-      <option value="">— Cliente —</option>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Catálogo de productos</h1>
+  <div class="btn-group btn-group-sm">
+    <button id="btnVistaLista" class="btn btn-outline-primary active" aria-label="Vista lista">
+      <i class="bi bi-list"></i>
+    </button>
+    <button id="btnVistaGrid" class="btn btn-outline-primary" aria-label="Vista cuadrícula">
+      <i class="bi bi-grid"></i>
+    </button>
+  </div>
+</div>
+
+<form class="row g-2 mb-3 align-items-end" method="get">
+  <div class="col-md-4">
+    <label class="form-label small fw-semibold" for="selReceptor">Cliente</label>
+    <select id="selReceptor" name="receptor_id" class="form-select form-select-sm">
+      <option value="">— Todos los clientes —</option>
       {% for r in receptores %}
         <option value="{{ r.id }}" {% if receptor_actual|stringformat:"s" == r.id|stringformat:"s" %}selected{% endif %}>
           {{ r.num_documento }} — {{ r.nombre }}
         </option>
       {% endfor %}
     </select>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label small fw-semibold" for="inputQ">Buscar</label>
+    <div class="input-group input-group-sm">
+      <span class="input-group-text"><i class="bi bi-search"></i></span>
+      <input id="inputQ" class="form-control" name="q" placeholder="Código o descripción…" value="{{ q }}">
+    </div>
+  </div>
+  <div class="col-md-2">
+    <button class="btn btn-outline-primary btn-sm w-100">Buscar</button>
+  </div>
+</form>
 
-    <input class="form-control" name="q" placeholder="Buscar…" value="{{ q }}">
-    <button class="btn btn-outline-secondary">Buscar</button>
-  </form>
-
-  <!-- Vista LISTA -->
-  <div id="vistaLista" class="table-responsive">
-    <table class="table table-sm table-hover align-middle">
-      <thead>
+<!-- Vista LISTA -->
+<div id="vistaLista" class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover table-striped align-middle mb-0">
+      <thead class="table-light">
         <tr>
           <th>Código</th>
           <th>Descripción</th>
-          <th>Precio</th>
-          <th>Stock</th>
-          <th></th>
+          <th class="text-end">Precio</th>
+          <th class="text-center">Stock</th>
+          <th style="width:70px;"></th>
         </tr>
       </thead>
       <tbody>
         {% for p in productos %}
         <tr>
-          <td>{{ p.codigo }}</td>
-          <td>{{ p.descripcion }}</td>
-          <td>${{ p.preunitario }}</td>
-          <td>{{ p.stock }}</td>
+          <td><code class="text-muted small">{{ p.codigo }}</code></td>
+          <td class="fw-medium">{{ p.descripcion }}</td>
+          <td class="text-end fw-semibold">${{ p.preunitario }}</td>
+          <td class="text-center">
+            <span class="badge {% if p.stock == 0 %}text-bg-danger{% else %}text-bg-light text-dark border{% endif %}">
+              {{ p.stock }}
+            </span>
+          </td>
           <td class="text-end">
             <form class="agregar-carrito" data-pid="{{ p.id }}">
               <input type="hidden" name="rid" value="{{ receptor_actual }}">
-              <button type="submit" class="btn btn-sm btn-outline-primary">
+              <button type="submit" class="btn btn-sm btn-outline-primary" aria-label="Agregar al carrito">
                 <i class="bi bi-cart-plus"></i>
               </button>
             </form>
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="5" class="text-center text-muted">Sin productos</td></tr>
+        <tr>
+          <td colspan="5" class="text-center py-5 text-muted">
+            <i class="bi bi-box-seam fs-1 d-block mb-2 opacity-50"></i>
+            Sin productos.
+          </td>
+        </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+</div>
 
-  <!-- Vista GRID -->
-  <div id="vistaGrid" class="row g-3 d-none">
-    {% for p in productos %}
-    <div class="col-6 col-md-4 col-lg-3">
-      <div class="card h-100 shadow-sm">
-        {% if p.imagen %}
-          <img src="{{ p.imagen.url }}" class="card-img-top" style="object-fit: cover; height: 160px;">
-        {% else %}
-          <img src="/media/default.jpg" class="card-img-top" style="object-fit: cover; height: 160px;">
-        {% endif %}
-        <div class="card-body d-flex flex-column">
-          <h6 class="card-title">{{ p.descripcion }}</h6>
-          <p class="mb-1 text-muted small">{{ p.codigo }}</p>
-          <p class="fw-bold mb-1">${{ p.preunitario }}</p>
-          <p class="small text-muted">Stock: {{ p.stock }}</p>
-          <form class="agregar-carrito mt-auto" data-pid="{{ p.id }}">
-            <input type="hidden" name="rid" value="{{ receptor_actual }}">
-            <button type="submit" class="btn btn-sm btn-primary w-100">
-              <i class="bi bi-cart-plus"></i> Agregar
-            </button>
-          </form>
+<!-- Vista GRID -->
+<div id="vistaGrid" class="row g-3 d-none">
+  {% for p in productos %}
+  <div class="col-6 col-md-4 col-lg-3">
+    <div class="card h-100 border-0 shadow-sm">
+      {% if p.imagen %}
+        <img src="{{ p.imagen.url }}" class="card-img-top" style="object-fit: cover; height: 160px;" alt="{{ p.descripcion }}">
+      {% else %}
+        <div class="bg-light d-flex align-items-center justify-content-center" style="height:160px;">
+          <i class="bi bi-box-seam fs-1 text-muted opacity-50"></i>
         </div>
+      {% endif %}
+      <div class="card-body d-flex flex-column">
+        <h6 class="card-title fw-semibold">{{ p.descripcion }}</h6>
+        <p class="mb-1 text-muted small"><code>{{ p.codigo }}</code></p>
+        <p class="fw-bold mb-1">${{ p.preunitario }}</p>
+        <p class="small text-muted">Stock: {{ p.stock }}</p>
+        <form class="agregar-carrito mt-auto" data-pid="{{ p.id }}">
+          <input type="hidden" name="rid" value="{{ receptor_actual }}">
+          <button type="submit" class="btn btn-sm btn-primary w-100">
+            <i class="bi bi-cart-plus me-1"></i>Agregar
+          </button>
+        </form>
       </div>
     </div>
-    {% endfor %}
   </div>
-
-  <div class="text-muted small mt-3">
-    Tip: si pasas ?receptor_id=ID en la URL podrás agregar directo al carrito del cliente.
-  </div>
+  {% endfor %}
 </div>
 
 <script>
-const receptorSel = document.getElementById('receptor');
-
-// Cambiar vista
+const receptorSel = document.getElementById('selReceptor');
 const btnLista = document.getElementById("btnVistaLista");
 const btnGrid = document.getElementById("btnVistaGrid");
 const vistaLista = document.getElementById("vistaLista");
@@ -122,30 +149,27 @@ btnGrid.addEventListener("click", () => {
   btnLista.classList.remove("active");
 });
 
-// Cuando cambie el cliente, recarga con ?receptor_id
-receptorSel?.addEventListener('change', ()=>{
+receptorSel?.addEventListener('change', () => {
   const params = new URLSearchParams(window.location.search);
   if (receptorSel.value) params.set('receptor_id', receptorSel.value);
   else params.delete('receptor_id');
   window.location.search = params.toString();
 });
 
-// Sincronizar hidden "rid" en todos los forms
 function syncRidHidden(){
-  document.querySelectorAll('form.agregar-carrito input[name="rid"]').forEach(h=>{
+  document.querySelectorAll('form.agregar-carrito input[name="rid"]').forEach(h => {
     h.value = receptorSel?.value || '';
   });
 }
 syncRidHidden();
 receptorSel?.addEventListener('change', syncRidHidden);
 
-// Acción de agregar
-document.querySelectorAll('form.agregar-carrito').forEach(f=>{
-  f.addEventListener('submit', (e)=>{
+document.querySelectorAll('form.agregar-carrito').forEach(f => {
+  f.addEventListener('submit', e => {
     e.preventDefault();
     const pid = f.dataset.pid;
     const rid = (new FormData(f)).get('rid');
-    if(!rid){ alert('Seleccione un cliente.'); return; }
+    if (!rid) { alert('Seleccione un cliente.'); return; }
     window.location.href = "{% url 'carrito_add_go' %}" +
       "?pid=" + encodeURIComponent(pid) +
       "&rid=" + encodeURIComponent(rid) +
@@ -153,4 +177,5 @@ document.querySelectorAll('form.agregar-carrito').forEach(f=>{
   });
 });
 </script>
+
 {% endblock %}

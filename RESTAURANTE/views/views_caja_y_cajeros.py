@@ -1,4 +1,5 @@
 from decimal import Decimal
+import logging
 
 from django.contrib import messages
 from django.db import transaction
@@ -16,6 +17,8 @@ from RESTAURANTE.models import (
     MovimientosCaja,
     Pedido,
 )
+
+logger = logging.getLogger(__name__)
 
 def caja(request):
     return render(request, "caja/apertura_caja.html")
@@ -99,19 +102,19 @@ def apertura_caja(request):
     except AttributeError:
         messages.error(request, "Tu usuario no tiene un perfil asociado.")
         return redirect("index")
-    print("USUsARIO CAJA ", perfil_instancia)
-    print("user role ", request.user.role)
+    logger.info("USUsARIO CAJA %s", perfil_instancia)
+    logger.info("user role %s", request.user.role)
     
     # 2. Seguridad de rol (Corregido el error de lógica anterior)
     if request.user.role not in ("cajero", "admin", "supervisor"):
         messages.error(request, "No tienes permisos para manejar caja.")
-        print("No tiene permisos caja")
+        logger.warning("No tiene permisos caja")
         
         return redirect("index")
         
     # 3. Evitar doble apertura
     if Caja.objects.filter(estado="ABIERTA").exists():
-        print("Cajaa ya abierta")
+        logger.info("Cajaa ya abierta")
         messages.info(request, "Ya existe una caja abierta.")
         return redirect("caja-dashboard")
         
@@ -296,9 +299,9 @@ def cierre_caja(request):
 
     # GET: Preparar datos para el template
     denominaciones = BilletesYMonedas.objects.all().order_by('-valor')
-    print(">>>>>>>>>>>>>> ", MovimientosCaja.objects.filter(caja=caja, tipo_movimiento="RETIRO"))
-    print(">>>>>>>>>>>>>> ", MovimientosCaja.objects.filter(caja=caja, tipo_movimiento="INGRESO"))
-    print(">>>>>>>>>>>>>> ", ingresos_manuales)
+    logger.debug(">>>>>>>>>>>>>> %s", MovimientosCaja.objects.filter(caja=caja, tipo_movimiento="RETIRO"))
+    logger.debug(">>>>>>>>>>>>>> %s", MovimientosCaja.objects.filter(caja=caja, tipo_movimiento="INGRESO"))
+    logger.debug(">>>>>>>>>>>>>> %s", ingresos_manuales)
     
     context = {
         'caja': caja,
@@ -366,7 +369,7 @@ def listar_cajeros(request):
     else:
         cajero = Cajero.objects.all().order_by("pk")
         
-    print(">>>>>>>>>> CAJERO ", cajero)
+    logger.debug(">>>>>>>>>> CAJERO %s", cajero)
     context = {
         'lista_cajero': cajero  # Lista de cajero
     }
@@ -379,7 +382,7 @@ def crear_cajero(request):
         pin = request.POST.get('pin') or ''
         activo = request.POST.get('activo') == "on"
         
-        print("pin")
+        logger.debug("pin")
         
         if nombre and pin:
                 Cajero.objects.create(
@@ -424,8 +427,8 @@ def editar_cajero(request, pk):
     return render(request, 'cajero/formulario.html', context)
 
 def eliminar_cajero(request, pk):
-    print("pk ", pk)
-    print("method ", request.method)
+    logger.debug("pk %s", pk)
+    logger.debug("method %s", request.method)
     
     if request.method == "POST":
         cajero = get_object_or_404(Cajero, pk=pk)

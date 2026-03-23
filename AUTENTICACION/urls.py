@@ -3,12 +3,13 @@ from django.urls import path
 
 from AUTENTICACION import view_groups_and_permissions, views_users
 
-from . import views_setup
+from . import views_setup, views_config
 from .views import perfil_usuario_view
 from . import views as views_usuarios
 
 urlpatterns = [
     path("cuenta/perfil/", perfil_usuario_view, name="perfil_usuario"),
+    path("configuracion/", views_config.configuracion_empresa, name="configuracion_empresa"),
 
     # Usuarios
     path('usuarios/', views_usuarios.usuarios_list, name='usuarios_list'),

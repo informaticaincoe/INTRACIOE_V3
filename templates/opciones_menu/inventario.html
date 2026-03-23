@@ -1,44 +1,37 @@
-{# Se inserta DENTRO de: <div class="list-group list-group-flush"> ... #}
-{# Prefijo para IDs únicos en desktop / móvil #}
 {% with uid_prefix=uid|default:"inv" %}
 
-{% if user.is_staff %}
-<button id="{{ uid_prefix }}-btn-gestion"
-        class="list-group-item list-group-item-action d-flex align-items-center justify-content-between" type="button">
-  <span><i class="bi bi-arrow-left-right me-2"></i> Gestión</span>
-  <i class="bi bi-chevron-right small"></i>
+{# Inicio del módulo #}
+<button id="{{ uid_prefix }}-btn-home" type="button" class="sb-module-home">
+  <i class="bi bi-house-door-fill"></i> Inicio Inventario
 </button>
 
-<button id="{{ uid_prefix }}-btn-ajuste"
-        class="list-group-item list-group-item-action d-flex align-items-center justify-content-between" type="button">
-  <span><i class="bi bi-sliders me-2"></i> Ajuste de Inventario</span>
-  <i class="bi bi-chevron-right small"></i>
+{% if user.is_staff %}
+<button id="{{ uid_prefix }}-btn-gestion" type="button" class="sb-sub-item">
+  <i class="bi bi-arrow-left-right"></i> Gestión
+</button>
+<button id="{{ uid_prefix }}-btn-ajuste" type="button" class="sb-sub-item">
+  <i class="bi bi-sliders"></i> Ajuste de Inventario
 </button>
 {% endif %}
 
-<button id="{{ uid_prefix }}-btn-prod"
-        class="list-group-item list-group-item-action d-flex align-items-center justify-content-between" type="button">
-  <span><i class="bi bi-box-seam me-2"></i> Productos</span>
-  <i class="bi bi-chevron-right small"></i>
+<button id="{{ uid_prefix }}-btn-prod" type="button" class="sb-sub-item">
+  <i class="bi bi-box-seam"></i> Productos
 </button>
 
-<button id="{{ uid_prefix }}-btn-serv"
-        class="list-group-item list-group-item-action d-flex align-items-center justify-content-between" type="button">
-  <span><i class="bi bi-tools me-2"></i> Servicios</span>
-  <i class="bi bi-chevron-right small"></i>
+<button id="{{ uid_prefix }}-btn-serv" type="button" class="sb-sub-item">
+  <i class="bi bi-tools"></i> Servicios
 </button>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const base = "{{ uid_prefix }}";
-    const go = (id, url) => document.getElementById(base + id)?.addEventListener('click', () => { window.location.href = url; });
-
-    go('-btn-gestion', "{% url 'inv-home' %}");
-    go('-btn-ajuste', "{% url 'inv-movs-lista' %}?tipo=Ajuste");
-    go('-btn-prod', "{% url 'inv-productos-lista' %}");
-    // Ajusta esta URL si tienes módulo propio de servicios:
-    go('-btn-serv', "{% url 'inv-productos-lista' %}?q=servicio");
-  });
+document.addEventListener('DOMContentLoaded', function () {
+  const b = "{{ uid_prefix }}";
+  const go = (id, url) => document.getElementById(b + id)?.addEventListener('click', () => { window.location.href = url; });
+  go('-btn-home',    "{% url 'inv-home' %}");
+  go('-btn-gestion', "{% url 'inv-home' %}");
+  go('-btn-ajuste',  "{% url 'inv-movs-lista' %}?tipo=Ajuste");
+  go('-btn-prod',    "{% url 'inv-productos-lista' %}");
+  go('-btn-serv',    "{% url 'inv-productos-lista' %}?q=servicio");
+});
 </script>
 
 {% endwith %}

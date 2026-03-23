@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Tipos de DTE · FE{% endblock %}
+{% block content %}
+
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'ventas_home' %}">Facturación</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Tipos de DTE</li>
+  </ol>
+</nav>
+
+{% if messages %}
+  {% for m in messages %}
+    <div class="alert alert-{{ m.tags }} alert-dismissible py-2" role="alert">
+      {{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h4 mb-0">Tipos de DTE</h1>
+    <small class="text-muted">Documentos Tributarios Electrónicos</small>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-3">
+  <div class="table-responsive">
+    <table class="table table-hover table-striped align-middle mb-0" id="tablaTipoDte">
+      <thead class="table-light">
+        <tr>
+          <th>Código</th>
+          <th>Descripción</th>
+          <th>Versión</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in tipos %}
+          <tr>
+            <td><code class="text-muted small">{{ t.codigo }}</code></td>
+            <td class="fw-medium">{{ t.descripcion }}</td>
+            <td>{{ t.version }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="3" class="text-center py-5 text-muted">
+              <i class="bi bi-file-earmark-text fs-1 d-block mb-2 opacity-50"></i>
+              No hay tipos de DTE registrados.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+  <div class="card-header bg-transparent border-bottom py-3">
+    <h2 class="h6 mb-0"><i class="bi bi-plus-circle me-2 text-primary"></i>Agregar nuevo Tipo DTE</h2>
+  </div>
+  <div class="card-body">
+    <form id="formTipoDte">
+      {% csrf_token %}
+      <div class="row g-3 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label">Código <span class="text-danger">*</span></label>
+          <input type="text" name="codigo" class="form-control" placeholder="Ej: 01" required autofocus>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Descripción <span class="text-danger">*</span></label>
+          <input type="text" name="descripcion" class="form-control" placeholder="Ej: Factura, CCF, NC…" required>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Versión <span class="text-danger">*</span></label>
+          <input type="number" name="version" class="form-control" placeholder="1" required>
+        </div>
+        <div class="col-md-2 d-grid">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save me-1"></i>Guardar
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+document.getElementById("formTipoDte").addEventListener("submit", function(e){
+  e.preventDefault();
+  const formData = new FormData(this);
+
+  fetch("{% url 'crear_tipo_dte' %}", {
+    method: "POST",
+    body: formData,
+    headers: {"X-Requested-With": "XMLHttpRequest"}
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.id) {
+      const tbody = document.querySelector("#tablaTipoDte tbody");
+      // Remove empty state row if present
+      const emptyRow = tbody.querySelector('td[colspan]');
+      if (emptyRow) emptyRow.closest('tr').remove();
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><code class="text-muted small">${data.codigo}</code></td>
+        <td class="fw-medium">${data.descripcion}</td>
+        <td>${data.version}</td>
+      `;
+      tbody.appendChild(tr);
+      this.reset();
+    } else if (data.error) {
+      alert(data.error);
+    }
+  });
+});
+</script>
+
+{% endblock %}

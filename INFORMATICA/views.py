@@ -1,4 +1,5 @@
 import os
+import logging
 from django.shortcuts import render
 from django.core.paginator import Paginator
 from django.db import connections
@@ -7,6 +8,8 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.http import HttpResponse
 #from weasyprint import HTML
+
+logger = logging.getLogger(__name__)
 
 @login_required
 def listar_bases_datos(request):
@@ -106,7 +109,7 @@ def ver_contenido_tabla_prod(request, nombre_db="olInventario",nombre_tabla="det
         cursor.execute(sql)
         datos = cursor.fetchall()
 
-        print(f"Filas recuperadas: {len(datos)}")
+        logger.info(f"Filas recuperadas: {len(datos)}")
     # Configurar la paginación
     paginator = Paginator(datos, 25)  # Muestra 25 filas por página
     page_number = request.GET.get('page')

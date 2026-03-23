@@ -1,8 +1,11 @@
+import logging
+
 from django.contrib.auth.backends import BaseBackend
 from django.contrib.auth import get_user_model
 from .models import Cocinero, Mesero
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 class MeseroCodeBackend(BaseBackend):
     """
@@ -55,7 +58,7 @@ class CocineroPinBackend(BaseBackend):
     - Si el cocinero no tiene usuario creado, lo crea automáticamente.
     """
     def authenticate(self, request, pin=None, **kwargs):
-        print(">>> CocineroPinBackend llamado con pin:", pin)
+        logger.debug(">>> CocineroPinBackend llamado con pin: %s", pin)
         if not pin:
             return None
 
@@ -100,7 +103,7 @@ class CocineroPinBackend(BaseBackend):
     - Si el cocinero no tiene usuario creado, lo crea automáticamente.
     """
     def authenticate(self, request, pin=None, **kwargs):
-        print(">>> CocineroPinBackend llamado con pin:", pin)
+        logger.debug(">>> CocineroPinBackend llamado con pin: %s", pin)
         if not pin:
             return None
 

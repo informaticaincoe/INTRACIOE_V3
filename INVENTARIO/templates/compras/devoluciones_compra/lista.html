@@ -1,23 +1,76 @@
 {% extends "base.html" %}
-{% block title %}Devoluciones de Compra{% endblock %}
+{% block title %}Devoluciones de compra · Inventario{% endblock %}
 {% block content %}
-<h1 class="h5 mb-3">Devoluciones de Compra</h1>
-<div class="table-responsive">
-  <table class="table align-middle">
-    <thead><tr><th>#</th><th>Fecha</th><th>Compra</th><th>Proveedor</th><th>Estado</th></tr></thead>
-    <tbody>
-    {% for d in devoluciones %}
-      <tr>
-        <td>{{ d.id }}</td>
-        <td>{{ d.fecha|date:"d/m/Y H:i" }}</td>
-        <td><a href="{% url 'compras-detalle' d.compra.id %}">#{{ d.compra.id }}</a></td>
-        <td>{{ d.compra.proveedor.nombre }}</td>
-        <td>{{ d.estado }}</td>
-      </tr>
-    {% empty %}
-      <tr><td colspan="5" class="text-center text-muted">Sin devoluciones</td></tr>
-    {% endfor %}
-    </tbody>
-  </table>
+
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'inv-home' %}">Inventario</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'compras-lista' %}">Compras</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Devoluciones</li>
+  </ol>
+</nav>
+
+{% if messages %}
+  {% for m in messages %}
+    <div class="alert alert-{{ m.tags }} alert-dismissible py-2" role="alert">
+      {{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h4 mb-0">Devoluciones de compra</h1>
+    <small class="text-muted">Registro de mercancía devuelta a proveedores</small>
+  </div>
 </div>
+
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover table-striped align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>#</th>
+          <th>Fecha</th>
+          <th>Compra origen</th>
+          <th>Proveedor</th>
+          <th class="text-center">Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for d in devoluciones %}
+        <tr>
+          <td class="text-muted small fw-semibold">#{{ d.id }}</td>
+          <td class="text-muted small">{{ d.fecha|date:"d/m/Y H:i" }}</td>
+          <td>
+            <a href="{% url 'compras-detalle' d.compra.id %}" class="text-decoration-none">
+              <i class="bi bi-box-arrow-in-up-right me-1"></i>Compra #{{ d.compra.id }}
+            </a>
+          </td>
+          <td class="fw-medium">{{ d.compra.proveedor.nombre }}</td>
+          <td class="text-center">
+            {% if d.estado == 'Aprobada' %}
+              <span class="badge text-bg-success"><i class="bi bi-check-circle me-1"></i>Aprobada</span>
+            {% elif d.estado == 'Pendiente' %}
+              <span class="badge text-bg-warning text-dark"><i class="bi bi-clock me-1"></i>Pendiente</span>
+            {% elif d.estado == 'Rechazada' %}
+              <span class="badge text-bg-danger"><i class="bi bi-x-circle me-1"></i>Rechazada</span>
+            {% else %}
+              <span class="badge text-bg-secondary">{{ d.estado }}</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="5" class="text-center py-5 text-muted">
+            <i class="bi bi-arrow-return-left fs-1 d-block mb-2 opacity-50"></i>
+            No hay devoluciones registradas.
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
 {% endblock %}

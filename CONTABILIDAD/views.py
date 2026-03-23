@@ -2,6 +2,7 @@
 from io import BytesIO
 import io
 import os
+import logging
 from django.db.models import Q
 from django.shortcuts import render
 from django.core.paginator import Paginator
@@ -24,6 +25,8 @@ import csv
 from django.views import View
 from FE.models import FacturaElectronica
 from INVENTARIO.models import Compra
+
+logger = logging.getLogger(__name__)
 
 ###################################################################################################################
 
@@ -427,7 +430,7 @@ class AnexoConsumidorFinalCSV(View):
             tipo_dte__codigo='01'
         ).order_by('fecha_emision')
 
-        print(f"[Anexo CSV] facturas tipo_dte=01: {qs.count()}")
+        logger.info(f"[Anexo CSV] facturas tipo_dte=01: {qs.count()}")
 
         response = HttpResponse(content_type='text/csv; charset=utf-8')
         response['Content-Disposition'] = \
@@ -524,7 +527,7 @@ class AnexoContribuyentesCSV(View):
             tipo_dte__codigo="01"
         ).order_by("fecha_emision")
 
-        print(f"[Anexo Contribuyentes] facturas tipo 01: {qs.count()}")
+        logger.info(f"[Anexo Contribuyentes] facturas tipo 01: {qs.count()}")
 
         resp = HttpResponse(content_type="text/csv; charset=utf-8")
         resp["Content-Disposition"] = 'attachment; filename="anexo_contribuyentes.csv"'
@@ -612,7 +615,7 @@ class AnexoComprasCSV(View):
     """
     def get(self, request, *args, **kwargs):
         qs = Compra.objects.all().order_by('fecha')
-        print(f"[Anexo Compras] compras: {qs.count()}")
+        logger.info(f"[Anexo Compras] compras: {qs.count()}")
 
         resp = HttpResponse(content_type='text/csv; charset=utf-8')
         resp['Content-Disposition'] = 'attachment; filename="anexo_compras.csv"'

@@ -7,6 +7,8 @@ import uuid
 from django.db.models import UniqueConstraint
 from django.db.models.functions import ExtractYear
 from django.core.exceptions import ValidationError
+import logging
+logger = logging.getLogger(__name__)
 
 class ActividadEconomica(models.Model):
     codigo = models.CharField(max_length=50, verbose_name="Código de Actividad Económica")
@@ -66,12 +68,6 @@ class TiposServicio_Medico(models.Model):
     descripcion = models.CharField(max_length=50)
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
-
-"""class TipoItem(models.Model):
-    codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=100)
-    def __str__(self):
-        return f"{self.codigo} - {self.descripcion}"""
 
 class Tipo_dte(models.Model):
     codigo = models.CharField(max_length=50)
@@ -198,6 +194,12 @@ class Descuento(models.Model):
     fecha_inicio = models.DateField()
     fecha_fin = models.DateField()
     estdo = models.BooleanField(default=True)
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.fecha_inicio and self.fecha_fin and self.fecha_fin < self.fecha_inicio:
+            raise ValidationError({"fecha_fin": "La fecha de fin no puede ser anterior a la fecha de inicio."})
+
     def __str__(self):
         return f"{self.descripcion} - {self.porcentaje}%"
 
@@ -302,7 +304,7 @@ class NumeroControl(models.Model):
 
     @staticmethod
     def obtener_numero_control(cod_dte, estab="0000", pv="0001"):
-        print("Inicio asignar numero de control")
+        logger.debug("Inicio asignar numero de control")
         anio_actual = datetime.now().year
         control, _ = NumeroControl.objects.get_or_create(anio=anio_actual, tipo_dte=cod_dte)
 
@@ -317,7 +319,7 @@ class NumeroControl(models.Model):
         control.secuencia += 1
         control.save()
 
-        print("Asignar numero de control:", numero_control, "len=", len(numero_control))
+        logger.debug("Asignar numero de control %s len= %s", numero_control, len(numero_control))
         return numero_control
 
 
@@ -430,6 +432,9 @@ class FacturaElectronica(models.Model):
     incoterms = models.ForeignKey(INCOTERMS, on_delete=models.CASCADE, null=True)
     
     def clean(self):
+        if self.total_pagar is not None and self.total_pagar < 0:
+            raise ValidationError({"total_pagar": "El total a pagar no puede ser negativo."})
+
         if self.numero_control and self.fecha_emision and self.tipo_dte:
             coincidencias = FacturaElectronica.objects.filter(numero_control=self.numero_control, tipo_dte=self.tipo_dte)
             if self.pk:
@@ -455,11 +460,11 @@ class FacturaElectronica(models.Model):
         # Validar número de control contra facturas existentes del mismo año
         if self.numero_control:
             coincidencias = FacturaElectronica.objects.filter(numero_control=self.numero_control, tipo_dte=self.tipo_dte)
-            print("COINCIDENCIAS: ", coincidencias)
+            logger.debug("COINCIDENCIAS %s", coincidencias)
             if self.pk:
                 coincidencias = coincidencias.exclude(pk=self.pk)
             for factura in coincidencias:
-                print("factura.tipo_dte: ", factura.tipo_dte)
+                logger.debug("factura.tipo_dte %s", factura.tipo_dte)
                 
                 if factura.fecha_emision and factura.fecha_emision.year == self.fecha_emision.year and factura.tipo_dte == self.tipo_dte:
                     raise ValidationError(
@@ -584,7 +589,7 @@ class DetalleFacturaSujetoExcluido(models.Model):
     descuento = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0.00'), help_text="Porcentaje de descuento aplicado a esta línea")
    
     def __str__(self):
-        return f"Factura {self.factura.numero_control} - {self.descripcion} ({self.cantidad} x {self.precio_unitario})"
+        return f"Factura {self.factura.numero_control} - {self.producto.descripcion} ({self.cantidad} x {self.precio_unitario})"
     
 class EventoInvalidacion(models.Model):    
     #Identificacion

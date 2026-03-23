@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Autenticación Tributaria · FE{% endblock %}
+{% block content %}
+
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'ventas_home' %}">Facturación</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Autenticación</li>
+  </ol>
+</nav>
+
+{% if messages %}
+  {% for m in messages %}
+    <div class="alert alert-{{ m.tags }} alert-dismissible py-2" role="alert">
+      {{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Autenticación en el Sistema Tributario</h1>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-5">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-transparent border-bottom py-3">
+        <h2 class="h6 mb-0"><i class="bi bi-key me-2 text-primary"></i>Autenticar con Hacienda</h2>
+      </div>
+      <div class="card-body">
+        <form id="auth-form" action="{% url 'autenticacion' %}" method="post" class="needs-validation" novalidate>
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="user" class="form-label">Usuario (NIT Empresa) <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="user" name="user" placeholder="NIT de la empresa" required autofocus>
+            <div class="invalid-feedback">El usuario es obligatorio.</div>
+          </div>
+          <div class="mb-3">
+            <label for="pwd" class="form-label">Contraseña <span class="text-danger">*</span></label>
+            <input type="password" class="form-control" id="pwd" name="pwd" placeholder="Contraseña" required>
+            <div class="invalid-feedback">La contraseña es obligatoria.</div>
+          </div>
+          <div class="d-grid mt-4">
+            <button type="submit" class="btn btn-primary" id="btnAutenticar">
+              <span class="spinner-border spinner-border-sm d-none me-1" id="spnAutenticar" role="status" aria-hidden="true"></span>
+              <i class="bi bi-shield-check me-1" id="iconAutenticar"></i>Autenticar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-7">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h2 class="h5 mb-0">Tokens Registrados</h2>
+    </div>
+    <div class="card border-0 shadow-sm">
+      <div class="table-responsive">
+        <table class="table table-hover table-striped align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>NIT Empresa</th>
+              <th>Token</th>
+              <th>Tipo</th>
+              <th>Caducidad</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for token in tokens %}
+            <tr>
+              <td><code class="small">{{ token.nit_empresa }}</code></td>
+              <td><span class="small text-muted text-truncate d-inline-block" style="max-width:120px;" title="{{ token.token }}">{{ token.token }}</span></td>
+              <td>{{ token.token_type }}</td>
+              <td class="small">{{ token.fecha_caducidad }}</td>
+              <td>
+                {% if token.activado %}
+                  <span class="badge text-bg-success">Activo</span>
+                {% else %}
+                  <span class="badge text-bg-danger">Inactivo</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center py-5 text-muted">
+                <i class="bi bi-key fs-1 d-block mb-2 opacity-50"></i>
+                No hay tokens registrados.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('auth-form').addEventListener('submit', function(e) {
+  if (!this.checkValidity()) {
+    e.preventDefault();
+    e.stopPropagation();
+  } else {
+    document.getElementById('spnAutenticar').classList.remove('d-none');
+    document.getElementById('iconAutenticar').classList.add('d-none');
+    document.getElementById('btnAutenticar').disabled = true;
+  }
+  this.classList.add('was-validated');
+});
+</script>
+
+{% endblock %}

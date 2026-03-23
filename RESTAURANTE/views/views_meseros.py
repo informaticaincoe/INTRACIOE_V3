@@ -3,6 +3,9 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from RESTAURANTE.formsLogin import MeseroLoginForm
 from RESTAURANTE.models import Mesero
+import logging
+
+logger = logging.getLogger(__name__)
 
 """
 MANEJO DE:
@@ -17,7 +20,7 @@ def login_mesero(request):
         form = MeseroLoginForm(request.POST)
         if form.is_valid():
             codigo = form.cleaned_data["codigo"]
-            print("Codigo ", codigo)
+            logger.debug("Codigo %s", codigo)
             user = authenticate(request, codigo=codigo)  # autenticacion por codigo
             if user:
                 login(request, user)
@@ -89,9 +92,9 @@ def editar_mesero(request, pk):
     return render(request, 'meseros/formulario.html', context)
 
 def eliminar_mesero(request, pk):
-    print("pk ", pk)
-    print("method ", request.method)
-    
+    logger.debug("pk %s", pk)
+    logger.debug("method %s", request.method)
+
     if request.method == "POST":
         mesero = get_object_or_404(Mesero, pk=pk)
         mesero_nombre = mesero.nombre

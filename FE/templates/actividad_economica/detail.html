@@ -1,15 +1,36 @@
-<!-- templates/actividad_economica/detail.html -->
 {% extends 'base.html' %}
-
+{% block title %}Detalle Actividad Económica · FE{% endblock %}
 {% block content %}
-  <h2>Detalle de Actividad Económica</h2>
-  <dl class="row">
-    <dt class="col-sm-3">Código</dt>
-    <dd class="col-sm-9">{{ actividad.codigo }}</dd>
-    
-    <dt class="col-sm-3">Descripción</dt>
-    <dd class="col-sm-9">{{ actividad.descripcion }}</dd>
-  </dl>
-  <a href="{% url 'actividad_economica_update' actividad.pk %}" class="btn btn-primary">Editar</a>
-  <a href="{% url 'actividad_economica_delete' actividad.pk %}" class="btn btn-danger">Eliminar</a>
+
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'ventas_home' %}">Facturación</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'actividad_economica_list' %}">Actividades Económicas</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{ actividad.codigo }}</li>
+  </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Detalle de actividad económica</h1>
+  <div class="btn-group btn-group-sm">
+    <a href="{% url 'actividad_economica_update' actividad.pk %}" class="btn btn-outline-secondary" title="Editar">
+      <i class="bi bi-pencil me-1"></i>Editar
+    </a>
+    <a href="{% url 'actividad_economica_delete' actividad.pk %}" class="btn btn-outline-danger" title="Eliminar">
+      <i class="bi bi-trash me-1"></i>Eliminar
+    </a>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+  <div class="card-body">
+    <dl class="row mb-0">
+      <dt class="col-sm-3 text-muted">Código</dt>
+      <dd class="col-sm-9"><code>{{ actividad.codigo }}</code></dd>
+      <dt class="col-sm-3 text-muted">Descripción</dt>
+      <dd class="col-sm-9 fw-medium">{{ actividad.descripcion }}</dd>
+    </dl>
+  </div>
+</div>
+
 {% endblock %}

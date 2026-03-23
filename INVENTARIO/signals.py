@@ -1,7 +1,11 @@
+import logging
+
 from django.db.models import F, Value
 from django.db.models.functions import Greatest
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
+
+logger = logging.getLogger('INVENTARIO')
 
 from .models import (
     DevolucionCompra, MovimientoInventario, Producto,
@@ -32,8 +36,8 @@ def _signed_delta(tipo, qty):
 @receiver(pre_save, sender=MovimientoInventario)
 def _store_old_values(sender, instance, **kwargs):
     """ Guarda valores previos para recalcular delta en updates. """
-    print("<<<<_store_old_values")
-    print(f"<<<<<_store_old_values {instance} - {sender}")
+    logger.debug("<<<<_store_old_values")
+    logger.debug("<<<<<_store_old_values %s - %s", instance, sender)
     
     if instance.pk:        
         old = sender.objects.get(pk=instance.pk)
@@ -53,11 +57,11 @@ def _apply_stock_on_save(sender, instance, created, **kwargs):
     - update: revierte delta viejo y aplica delta nuevo
     (con tope en 0 para no negativos)
     """
-    print(">>> Devolucion o asignacion de stock")
-    
+    logger.debug(">>> Devolucion o asignacion de stock")
+
     if created:
         delta = _signed_delta(instance.tipo, instance.cantidad)
-        print(f">>> cantidad a agregar {Value(delta)}")
+        logger.debug(">>> cantidad a agregar %s", delta)
         
         Producto.objects.filter(pk=instance.producto_id).update(
             stock=Greatest(F('stock') + Value(delta), Value(0))
@@ -131,7 +135,7 @@ def crear_movimiento_salida_devolucion_compra(sender, instance, created, **kwarg
     if not almacen:
         return
     
-    print(f"Decolucion de compra {instance}")
+    logger.debug("Devolución de compra %s", instance)
 
     ref = f'Devolución Compra #{instance.devolucion_id} - det #{instance.id}'
     if not MovimientoInventario.objects.filter(referencia=ref, producto=producto).exists():
@@ -192,7 +196,7 @@ def crear_movimiento_entrada_devolucion_venta(sender, instance, created, **kwarg
 
 @receiver(post_save, sender=AjusteInventario)
 def crear_movimiento_por_ajuste(sender, instance, created, **kwargs):
-    print("Creando movimiento por ajuste")
+    logger.debug("Creando movimiento por ajuste")
     if not created:
         return
     qty = instance.cantidad_ajustada

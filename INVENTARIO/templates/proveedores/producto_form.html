@@ -2,74 +2,116 @@
 {% block title %}{% if producto %}Editar{% else %}Nuevo{% endif %} producto · {{ proveedor.nombre }}{% endblock %}
 {% block content %}
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h1 class="h5 mb-0">{% if producto %}Editar{% else %}Nuevo{% endif %} producto de {{ proveedor.nombre }}</h1>
-  <a href="{% url 'proveedores-detalle' proveedor.id %}" class="btn btn-light"><i class="bi bi-arrow-left"></i> Volver</a>
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'inv-home' %}">Inventario</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'proveedores-lista' %}">Proveedores</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'proveedores-detalle' proveedor.id %}">{{ proveedor.nombre }}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{% if producto %}Editar producto{% else %}Nuevo producto{% endif %}</li>
+  </ol>
+</nav>
+
+{% if messages %}
+  {% for m in messages %}
+    <div class="alert alert-{{ m.tags }} alert-dismissible py-2" role="alert">
+      {{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <div>
+    <h1 class="h4 mb-0">{% if producto %}Editar producto{% else %}Nuevo producto{% endif %}</h1>
+    <small class="text-muted">Proveedor: <strong>{{ proveedor.nombre }}</strong></small>
+  </div>
 </div>
 
-<form method="post" class="needs-validation" novalidate enctype="multipart/form-data">
-  {% csrf_token %}
-  <div class="row g-3">
-    <div class="col-md-4">
-      <label class="form-label">Código (SKU)</label>
-      <input type="text" name="codigo" class="form-control" value="{{ producto.codigo|default:'' }}" required>
-      <div class="invalid-feedback">Ingresa el código.</div>
-    </div>
-    <div class="col-md-8">
-      <label class="form-label">Descripción</label>
-      <input type="text" name="descripcion" class="form-control" value="{{ producto.descripcion|default:'' }}" required>
-      <div class="invalid-feedback">Ingresa la descripción.</div>
-    </div>
-    <div class="col-md-4">
-      <label class="form-label">Unidad de medida</label>
-      <select name="unidad_medida" class="form-select">
-        <option value="">Seleccione…</option>
-        {% for u in unidades %}
-          <option value="{{ u.id }}" {% if producto and producto.unidad_medida_id == u.id %}selected{% endif %}>{{ u }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-md-4">
-      <label class="form-label">Tipo ítem</label>
-      <select name="tipo_item" class="form-select">
-        <option value="">Seleccione…</option>
-        {% for t in tipos_item %}
-          <option value="{{ t.id }}" {% if producto and producto.tipo_item_id == t.id %}selected{% endif %}>{{ t.descripcion }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-md-4">
-      <label class="form-label">Precio unitario</label>
-      <input type="number" name="preunitario" class="form-control text-end" min="0" step="0.01" value="{{ producto.preunitario|default:'0.00' }}">
-    </div>
+<div class="card border-0 shadow-sm">
+  <div class="card-body">
+    <form method="post" class="needs-validation" novalidate enctype="multipart/form-data" id="formProdProv">
+      {% csrf_token %}
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label" for="inputCodigo">Código (SKU) <span class="text-danger">*</span></label>
+          <input type="text" id="inputCodigo" name="codigo" class="form-control"
+                 value="{{ producto.codigo|default:'' }}"
+                 placeholder="Ej. PROV-001" required maxlength="50">
+          <div class="invalid-feedback">El código es obligatorio.</div>
+        </div>
+        <div class="col-md-8">
+          <label class="form-label" for="inputDescripcion">Descripción <span class="text-danger">*</span></label>
+          <input type="text" id="inputDescripcion" name="descripcion" class="form-control"
+                 value="{{ producto.descripcion|default:'' }}"
+                 placeholder="Nombre del producto" required maxlength="255">
+          <div class="invalid-feedback">La descripción es obligatoria.</div>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="selectUM">Unidad de medida</label>
+          <select id="selectUM" name="unidad_medida" class="form-select">
+            <option value="">— Seleccione —</option>
+            {% for u in unidades %}
+              <option value="{{ u.id }}" {% if producto and producto.unidad_medida_id == u.id %}selected{% endif %}>{{ u }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="selectTipoItem">Tipo de ítem</label>
+          <select id="selectTipoItem" name="tipo_item" class="form-select">
+            <option value="">— Seleccione —</option>
+            {% for t in tipos_item %}
+              <option value="{{ t.id }}" {% if producto and producto.tipo_item_id == t.id %}selected{% endif %}>{{ t.descripcion }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="inputPrecio">Precio unitario</label>
+          <div class="input-group">
+            <span class="input-group-text">$</span>
+            <input type="number" id="inputPrecio" name="preunitario" class="form-control text-end"
+                   min="0" step="0.01" value="{{ producto.preunitario|default:'0.00' }}">
+          </div>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="inputRef">Referencia interna</label>
+          <input type="text" id="inputRef" name="referencia_interna" class="form-control"
+                 value="{{ producto.referencia_interna|default:'' }}" placeholder="Opcional">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="inputVencimiento">Fecha de vencimiento</label>
+          <input type="date" id="inputVencimiento" name="fecha_vencimiento" class="form-control"
+                 value="{{ producto.fecha_vencimiento|date:'Y-m-d'|default:'' }}">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="inputImagen">Imagen</label>
+          <input type="file" id="inputImagen" name="imagen" class="form-control" accept="image/*">
+        </div>
+      </div>
 
-    <div class="col-md-4">
-      <label class="form-label">Referencia interna</label>
-      <input type="text" name="referencia_interna" class="form-control" value="{{ producto.referencia_interna|default:'' }}">
-    </div>
-    <div class="col-md-4">
-      <label class="form-label">Fecha vencimiento</label>
-      <input type="date" name="fecha_vencimiento" class="form-control" value="{{ producto.fecha_vencimiento|date:'Y-m-d' }}">
-    </div>
-    <div class="col-md-4">
-      <label class="form-label">Imagen</label>
-      <input type="file" name="imagen" class="form-control">
-    </div>
+      <div class="d-flex gap-2 justify-content-between mt-4">
+        <a href="{% url 'proveedores-detalle' proveedor.id %}" class="btn btn-secondary">
+          <i class="bi bi-x-lg me-1"></i>Cancelar
+        </a>
+        <button class="btn btn-primary" id="btnGuardar" type="submit">
+          <span class="spinner-border spinner-border-sm d-none me-1" id="spnGuardar" role="status" aria-hidden="true"></span>
+          <i class="bi bi-save me-1" id="iconGuardar"></i>Guardar producto
+        </button>
+      </div>
+    </form>
   </div>
-
-  <div class="mt-3 d-flex justify-content-end">
-    <button class="btn btn-primary"><i class="bi bi-save me-1"></i> Guardar</button>
-  </div>
-</form>
+</div>
 
 <script>
-  (function(){
-    const form = document.querySelector('form.needs-validation');
-    form?.addEventListener('submit', function (e) {
-      if (!form.checkValidity()) { e.preventDefault(); e.stopPropagation(); }
-      form.classList.add('was-validated');
-    });
-  })();
+document.getElementById('formProdProv').addEventListener('submit', function(e) {
+  if (!this.checkValidity()) {
+    e.preventDefault();
+    e.stopPropagation();
+  } else {
+    document.getElementById('spnGuardar').classList.remove('d-none');
+    document.getElementById('iconGuardar').classList.add('d-none');
+    document.getElementById('btnGuardar').disabled = true;
+  }
+  this.classList.add('was-validated');
+});
 </script>
 
 {% endblock %}

@@ -1,0 +1,1167 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Documento de Ajuste · FE{% endblock %}
+{% block content %}
+
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'ventas_home' %}">Facturación</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Documento de Ajuste</li>
+  </ol>
+</nav>
+
+<style>
+  .step-num{display:inline-flex;align-items:center;justify-content:center;width:1.55rem;height:1.55rem;border-radius:50%;background:#0d6efd;color:#fff;font-size:.68rem;font-weight:700;flex-shrink:0;line-height:1}
+  .card{border:0!important}
+  .sum-total-box{background:linear-gradient(135deg,#0a58ca,#0d6efd);color:#fff;border-radius:.5rem;padding:.65rem .85rem;margin-top:.5rem}
+  .combo-menu{display:none;max-height:260px;overflow:auto;border:1px solid #e5e7eb;border-radius:.5rem;margin-top:.25rem;background:#fff;z-index:1050}
+</style>
+
+<form onsubmit="validacionesFormulario(event)" autocomplete="off" id="form-ajuste">
+  {% csrf_token %}
+
+  {% if emisor %}
+  <div class="alert alert-light border d-flex align-items-center gap-3 py-2 mb-3">
+    <i class="bi bi-building text-primary fs-5"></i>
+    <div class="small">
+      <strong>{{ emisor.nit }}</strong> · {{ emisor.direccion_comercial }}
+      <span class="text-muted ms-2">{{ emisor.ambiente.descripcion }}</span>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="row g-3">
+
+    <!-- ===== Columna izquierda: pasos ===== -->
+    <div class="col-lg-8">
+
+      <!-- PASO 1: Configuración -->
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h6 class="mb-0 d-flex align-items-center gap-2">
+              <span class="step-num">1</span>Configuración del documento
+            </h6>
+            <small class="text-muted">Obligatorio</small>
+          </div>
+          <div class="row g-2">
+            <div class="col-md-6">
+              <label class="form-label small mb-1">Tipo de Documento</label>
+              <select name="tipo_documento_seleccionado" class="form-select" id="tipo_documento_select" onchange="actualizarProductos()">
+                {% for dte in tipoDocumentos %}
+                  <option value="{{ dte.codigo }}" {% if dte.codigo == documento_seleccionado %}selected{% endif %}>{{ dte.descripcion }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small mb-1">Condición de Operación</label>
+              <select id="condicion_op" name="condicion_operacion" class="form-select">
+                {% for tipo in tipooperaciones %}
+                  <option value="{{ tipo.id }}">{{ tipo.descripcion }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <div class="border rounded p-2 mt-1">
+                <div class="form-check form-switch mb-1">
+                  <input class="form-check-input" type="checkbox" name="retencion_iva" id="retencion_iva_checkbox">
+                  <label class="form-check-label small" for="retencion_iva_checkbox">Retención IVA</label>
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm w-100" id="btn-retencion-iva"
+                  style="display:none;" data-bs-toggle="modal" data-bs-target="#retencionIvaModal">
+                  <i class="bi bi-gear me-1"></i>Configurar
+                </button>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="border rounded p-2 mt-1">
+                <div class="form-check form-switch mb-1">
+                  <input class="form-check-input" type="checkbox" name="retencion_renta" id="retencion_renta_checkbox">
+                  <label class="form-check-label small" for="retencion_renta_checkbox">Retención Renta</label>
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm w-100" id="btn-retencion-renta"
+                  style="display:none;" data-bs-toggle="modal" data-bs-target="#retencionRentaModal">
+                  <i class="bi bi-gear me-1"></i>Configurar
+                </button>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="border rounded p-2 mt-1">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" name="no_gravado" id="no_gravado_checkbox">
+                  <label class="form-check-label small" for="no_gravado_checkbox">Base imponible</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PASO 2: Identificación (read-only) -->
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <h6 class="mb-3 d-flex align-items-center gap-2">
+            <span class="step-num bg-secondary">2</span>Identificación
+            <small class="text-muted fw-normal ms-1">(generado automáticamente)</small>
+          </h6>
+          <div class="row g-2">
+            <div class="col-md-6">
+              <label class="form-label small mb-1">Número de Control</label>
+              <input type="text" name="numero_control" class="form-control form-control-sm bg-light" readonly id="numero_control_input" value="{{ numero_control }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small mb-1">Código de Generación</label>
+              <input type="text" name="codigo_generacion" class="form-control form-control-sm bg-light" readonly value="{{ codigo_generacion }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small mb-1">Fecha</label>
+              <input type="date" name="fecha_generacion" class="form-control form-control-sm bg-light" readonly value="{{ fecha_generacion|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small mb-1">Hora</label>
+              <input type="time" name="hora_generacion" class="form-control form-control-sm bg-light" readonly value="{{ hora_generacion }}">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PASO 3: Receptor -->
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h6 class="mb-0 d-flex align-items-center gap-2">
+              <span class="step-num">3</span>Receptor
+            </h6>
+            <small class="text-muted">Obligatorio</small>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small mb-1">Seleccione un receptor</label>
+            <select class="form-select" id="receptor-select" name="receptor_id">
+              <option value="">— Seleccione —</option>
+              {% for receptor in receptores %}
+                <option value="{{ receptor.id }}">{{ receptor.num_documento }} — {{ receptor.nombre }}</option>
+              {% endfor %}
+              <option value="nuevo">+ Añadir nuevo receptor</option>
+            </select>
+          </div>
+          <div id="nuevo-receptor" style="display:none;">
+            <div class="alert alert-info py-2 mb-3 small"><i class="bi bi-info-circle me-1"></i>Complete los datos del nuevo receptor</div>
+            <div class="row g-2">
+              <div class="col-md-6">
+                <label class="form-label small mb-1">NIT</label>
+                <input type="text" name="nit_receptor" class="form-control" placeholder="NIT">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small mb-1">NRC</label>
+                <input type="text" name="nrc_receptor" class="form-control" placeholder="NRC">
+              </div>
+              <div class="col-12">
+                <label class="form-label small mb-1">Nombre o Razón Social</label>
+                <input type="text" name="nombre_receptor" class="form-control" placeholder="Nombre o Razón Social">
+              </div>
+              <div class="col-12">
+                <label class="form-label small mb-1">Dirección</label>
+                <textarea name="direccion_receptor" class="form-control" rows="2" placeholder="Dirección"></textarea>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small mb-1">Teléfono</label>
+                <input type="text" name="telefono_receptor" class="form-control" placeholder="Teléfono">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small mb-1">Correo Electrónico</label>
+                <input type="email" name="correo_receptor" class="form-control" placeholder="correo@ejemplo.com">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PASO 4: Documento Relacionado -->
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <h6 class="mb-3 d-flex align-items-center gap-2">
+            <span class="step-num">4</span>Documento a relacionar
+          </h6>
+          <div class="row g-2 align-items-end">
+            <div class="col-md-5">
+              <label class="form-label small mb-1">Tipo de documento</label>
+              <select name="documento_seleccionado" class="form-select" id="documento_select">
+                <option value="S">— Seleccione tipo —</option>
+                {% for tipo in tipoGenDocumentos %}
+                  <option value="{{ tipo.codigo }}">{{ tipo.descripcion }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4" id="div-electronic" style="display:none;">
+              <label class="form-label small mb-1">Código de generación</label>
+              <input type="text" name="documento_relacionado" class="form-control" id="documento_relacionado_input" placeholder="Código electrónico">
+            </div>
+            <div class="col-md-4" id="div-physical" style="display:none;">
+              <label class="form-label small mb-1">Documento Físico</label>
+              <button type="button" class="btn btn-outline-secondary w-100" onclick="abrirModalDocFisico()">
+                <i class="bi bi-file-earmark-plus me-1"></i>+ Agregar físico
+              </button>
+            </div>
+            <div class="col-md-3">
+              <button type="button" class="btn btn-primary w-100" id="btn_add_relacion" onclick="cargarFacturaRelacionada()">
+                <i class="bi bi-link-45deg me-1"></i>Agregar
+              </button>
+            </div>
+          </div>
+          <div class="mt-2 small text-muted">
+            Total doc. relacionado: <strong class="text-body" id="total_doc_relacionado">{{ total_pagar_doc_r }}</strong>
+          </div>
+
+          <!-- Acordeón facturas relacionadas -->
+          <div class="mt-3" id="facturasAccordion" class="accordion" style="max-height:380px;overflow-y:auto;">
+            <!-- items added dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <!-- PASO 5: Productos -->
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h6 class="mb-0 d-flex align-items-center gap-2">
+              <span class="step-num">5</span>Productos
+            </h6>
+            <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#productosModal">
+              <i class="bi bi-plus-circle me-1"></i>Agregar productos
+            </button>
+          </div>
+          <div class="table-responsive">
+            <table id="tabla-productos" class="table table-sm align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Producto</th>
+                  <th class="text-end">P. Neto</th>
+                  <th class="text-end">IVA Unit.</th>
+                  <th class="text-end" style="width:90px">Cant.</th>
+                  <th class="text-end">Total Neto</th>
+                  <th class="text-end">Dcto %</th>
+                  <th class="text-end">V. Gravadas</th>
+                  <th class="text-end">IVA</th>
+                  <th class="text-center">c/IVA</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="empty-row">
+                  <td colspan="10" class="text-center text-muted py-4">
+                    <i class="bi bi-cart-x fs-3 d-block mb-1 text-secondary opacity-50"></i>
+                    Sin productos. Usa el botón «Agregar productos».
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PASO 6: Extensión -->
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <a class="d-flex align-items-center justify-content-between text-decoration-none" data-bs-toggle="collapse" href="#extensionCollapse" role="button" aria-expanded="false" aria-controls="extensionCollapse">
+            <h6 class="mb-0 d-flex align-items-center gap-2">
+              <span class="step-num bg-secondary">6</span>Extensión
+              <small class="text-muted fw-normal ms-1">(opcional)</small>
+            </h6>
+            <i class="bi bi-chevron-down text-muted"></i>
+          </a>
+          <div class="collapse mt-3" id="extensionCollapse">
+            <div class="row g-2">
+              <div class="col-md-6">
+                <label class="form-label small mb-1">Nombre del responsable</label>
+                <input type="text" id="nombre_responsable" name="resp_nombre_input" class="form-control" placeholder="Nombre completo">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small mb-1">Número de documento</label>
+                <input type="text" id="documento_responsable" name="resp_documento_input" class="form-control" placeholder="DUI / NIT">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /col-lg-8 -->
+
+    <!-- ===== Columna derecha: Resumen sticky ===== -->
+    <div class="col-lg-4">
+      <div class="card shadow-sm" style="position:sticky;top:76px;">
+        <div class="card-body">
+
+          <h6 class="text-uppercase text-muted small fw-semibold mb-3">Resumen de totales</h6>
+
+          <div class="d-flex justify-content-between small mb-1">
+            <span class="text-muted">SubTotal Neto</span>
+            <strong>$<span id="subtotal-neto">0.00</span></strong>
+          </div>
+          <div class="d-flex justify-content-between small mb-1">
+            <span class="text-muted">IVA (13%)</span>
+            <strong>$<span id="total-iva">0.00</span></strong>
+          </div>
+          <div class="d-flex justify-content-between small mb-1">
+            <span class="text-muted">Sumatoria ventas</span>
+            <strong>$<span id="total-incl">0.00</span></strong>
+          </div>
+
+          <hr class="my-2">
+
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label small mb-1">Descuento global (%)</label>
+              <input type="number" id="descuento_global" name="descuento_global_input" class="form-control form-control-sm" value="0" min="0" max="100" oninput="actualizarResumen()">
+            </div>
+            <div class="col-6">
+              <label class="form-label small mb-1">Dcto. ventas grav. (%)</label>
+              <input type="number" id="descuento_gravado" name="descuento_gravado_input" class="form-control form-control-sm" value="0" min="0" max="100" oninput="actualizarResumen()">
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between small mb-1">
+            <span class="text-muted">Monto descuento</span>
+            <strong class="text-danger">$<span id="monto_descuento" name="monto_descuento_input">0.00</span></strong>
+          </div>
+          <div class="d-flex justify-content-between small mb-1">
+            <span class="text-muted">Sub total</span>
+            <strong>$<span id="sub-total-resumen">0.00</span></strong>
+          </div>
+          <div class="d-flex justify-content-between small mb-1">
+            <span class="text-muted">Valor tributo</span>
+            <strong>$<span id="monto_tributo" name="tributo_input">0.00</span></strong>
+          </div>
+          <div class="d-flex justify-content-between small mb-1">
+            <span class="text-muted">Monto total op.</span>
+            <strong>$<span id="total-operacion">0.00</span></strong>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label small mb-1">Saldo a favor</label>
+            <div class="input-group input-group-sm">
+              <span class="input-group-text">$</span>
+              <input type="number" name="saldo_favor" id="saldo_favor_input" class="form-control" value="0" min="0" step="0.01">
+            </div>
+          </div>
+
+          <div class="sum-total-box d-flex justify-content-between align-items-center fs-5 mb-3">
+            <span class="fw-semibold">Total a pagar</span>
+            <strong>$<span id="total-pagar">0.00</span></strong>
+          </div>
+
+          <!-- Formas de pago -->
+          <div class="mb-3 d-flex align-items-center justify-content-between">
+            <div class="small text-muted">
+              Recibido: $<span id="recibido" class="fw-semibold text-body">0.00</span>
+            </div>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#formasPagoModal">
+              <i class="bi bi-credit-card me-1"></i>Forma de pago
+            </button>
+          </div>
+          <input type="hidden" id="total-pagar-fp" value="0.00">
+
+          <div class="d-grid">
+            <button type="submit" id="btnGenerar" class="btn btn-success btn-lg fw-semibold py-3">
+              <i class="bi bi-check2-circle me-2"></i>Generar Documento
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div><!-- /col-lg-4 -->
+
+  </div><!-- /row -->
+</form>
+
+
+<!-- ===== Modal: Productos ===== -->
+<div class="modal fade" id="productosModal" tabindex="-1" aria-labelledby="productosModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="productosModalLabel"><i class="bi bi-grid me-2"></i>Seleccionar Productos</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body p-0">
+        <div class="table-responsive">
+          <table id="tabla-productos-modal" class="table table-hover align-middle mb-0">
+            <thead class="table-light sticky-top">
+              <tr>
+                <th style="width:40px"></th>
+                <th>Producto</th>
+                <th class="text-end">P. Unitario</th>
+                <th class="text-end" style="width:90px">Cant.</th>
+                <th>Tipo ítem</th>
+                <th>Descuento</th>
+                <th class="text-end">P. c/IVA</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for producto in productos %}
+              <tr data-id="{{ producto.id }}">
+                <td><input type="checkbox" class="form-check-input producto-checkbox"></td>
+                <td>{{ producto.codigo }} — {{ producto.descripcion }}</td>
+                <td class="text-end precio-unitario" data-precio="{{ producto.preunitario|floatformat:'6' }}">{{ producto.preunitario|floatformat:'2' }}</td>
+                <td><input type="number" class="form-control form-control-sm text-end cantidad-input" value="1" min="1" style="width:80px"></td>
+                <td>
+                  <select name="tipo_item_seleccionado" class="form-select form-select-sm tipo_item_select">
+                    {% for item in tipoItems %}
+                      <option value="{{ item.id }}">{{ item.descripcion }}</option>
+                    {% endfor %}
+                  </select>
+                </td>
+                <td>
+                  <select name="descuento_seleccionado" class="form-select form-select-sm descuento-input" onchange="seleccionarDescuento(this)">
+                    <option value="0">Sin descuento</option>
+                    {% for descuento in descuentos %}
+                      <option value="{{ descuento.porcentaje }}">{{ descuento.porcentaje }}%</option>
+                    {% endfor %}
+                  </select>
+                </td>
+                <td class="text-end producto-con-iva" data-prod-iva="{{ producto.precio_iva }}">{{ producto.precio_iva }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-primary" onclick="cargarProductosModal()">
+          <i class="bi bi-check2 me-1"></i>Cargar seleccionados
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== Modal: Documento Físico ===== -->
+<div class="modal fade" id="modalDocFisico" tabindex="-1" aria-labelledby="modalDocFisicoLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalDocFisicoLabel"><i class="bi bi-file-earmark-text me-2"></i>Documento Físico</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label for="fisico-numero-control" class="form-label small mb-1">Número de Control</label>
+          <input type="text" id="fisico-numero-control" class="form-control">
+        </div>
+        <div class="mb-3">
+          <label for="fisico-codigo-generacion" class="form-label small mb-1">Código de Generación</label>
+          <input type="text" id="fisico-codigo-generacion" class="form-control">
+        </div>
+        <div class="mb-3">
+          <label for="fisico-fecha" class="form-label small mb-1">Fecha</label>
+          <input type="date" id="fisico-fecha" class="form-control">
+        </div>
+        <div class="mb-3">
+          <label for="fisico-hora" class="form-label small mb-1">Hora</label>
+          <input type="time" id="fisico-hora" class="form-control">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="guardarDocFisico()">
+          <i class="bi bi-save me-1"></i>Guardar documento
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== Modal: Formas de Pago ===== -->
+<div class="modal fade" id="formasPagoModal" tabindex="-1" aria-labelledby="formasPagoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="formasPagoModalLabel"><i class="bi bi-credit-card me-2"></i>Forma de Pago</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div class="d-flex gap-4 mb-3 p-2 bg-light rounded small">
+          <div>Total a pagar: <strong>$<span id="total-pagar-fp-modal">0.00</span></strong></div>
+          <div>Recibido: <strong>$<span id="recibido-modal">0.00</span></strong></div>
+        </div>
+        <div class="table-responsive">
+          <table id="tabla-formaspago-modal" class="table table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Cód.</th>
+                <th>Forma de Pago</th>
+                <th style="width:100px">Monto</th>
+                <th style="width:90px">Plazo</th>
+                <th style="width:100px"># Referencia</th>
+                <th class="text-center" style="width:50px">Sel.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for fp in formasPago %}
+              <tr data-id="{{ fp.id }}">
+                <td class="small text-muted">{{ fp.codigo }}</td>
+                <td>{{ fp.descripcion }}</td>
+                <td><input type="number" class="form-control form-control-sm monto-input" min="0" step="0.01" value="0"></td>
+                <td><input type="number" class="form-control form-control-sm periodo-input" min="0" value="0"></td>
+                <td><input type="text" class="form-control form-control-sm referencia-input"></td>
+                <td class="text-center"><input type="checkbox" class="form-check-input formapago-checkbox" onclick="cargarFormasPagoModal({{ fp.id }})"></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== Modal: Retención IVA ===== -->
+<div class="modal fade" id="retencionIvaModal" tabindex="-1" aria-labelledby="retencionIvaModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="retencionIvaModalLabel">Configurar Retención de IVA</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label small mb-1">Porcentaje de Retención de IVA</label>
+          <input type="number" id="porcentaje_retencion_iva" class="form-control" min="0" max="100" value="0">
+        </div>
+        <div class="mb-3">
+          <label class="form-label small mb-1">Productos con retención:</label>
+          <div id="productos-retencion-iva"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="guardarRetencionIVA()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== Modal: Retención Renta ===== -->
+<div class="modal fade" id="retencionRentaModal" tabindex="-1" aria-labelledby="retencionRentaModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="retencionRentaModalLabel">Configurar Retención de Renta</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label small mb-1">Porcentaje de Retención de Renta</label>
+          <input type="number" id="porcentaje_retencion_renta" class="form-control" min="0" max="100" value="0">
+        </div>
+        <div class="mb-3">
+          <label class="form-label small mb-1">Productos con retención:</label>
+          <div id="productos-retencion-renta"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="guardarRetencionRenta()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+
+  var facturasRelacionadas = [];
+
+  // ---- Utilidad: obtener instancia BS5 modal ----
+  function bsModal(id) {
+    const el = document.getElementById(id);
+    return el ? (bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el)) : null;
+  }
+
+  // ---- Abrir modal Documento Físico ----
+  function abrirModalDocFisico() {
+    bsModal('modalDocFisico').show();
+  }
+
+  // ---- Mostrar campo según tipo de documento relacionado ----
+  document.getElementById("documento_select").addEventListener("change", function () {
+    const val = this.value;
+    document.getElementById("div-electronic").style.display = (val === "2") ? "block" : "none";
+    document.getElementById("div-physical").style.display   = (val === "1") ? "block" : "none";
+    document.getElementById("btn_add_relacion").style.display = (val === "2") ? "inline-flex" : "none";
+    if (val === "1") abrirModalDocFisico();
+  });
+
+  // ---- Retenciones: mostrar/ocultar botón configurar ----
+  document.getElementById("retencion_iva_checkbox").addEventListener("change", function () {
+    document.getElementById("btn-retencion-iva").style.display = this.checked ? "block" : "none";
+  });
+  document.getElementById("retencion_renta_checkbox").addEventListener("change", function () {
+    document.getElementById("btn-retencion-renta").style.display = this.checked ? "block" : "none";
+  });
+
+  // ---- Receptor nuevo ----
+  document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("receptor-select").addEventListener("change", function () {
+      document.getElementById("nuevo-receptor").style.display = this.value === "nuevo" ? "block" : "none";
+    });
+  });
+
+  // ---- Número de control al cambiar tipo DTE ----
+  document.addEventListener('DOMContentLoaded', function () {
+    const tipoDocumentoSelect = document.getElementById('tipo_documento_select');
+    const numeroControlInput  = document.getElementById('numero_control_input');
+    tipoDocumentoSelect.addEventListener('change', function () {
+      fetch(`/fe/obtener-numero-control/?tipo_dte=${this.value}`)
+        .then(r => r.json())
+        .then(data => { numeroControlInput.value = data.numero_control; })
+        .catch(err => console.error('Error:', err));
+    });
+  });
+
+  // ---- Descuento seleccionado en modal ----
+  let descuento_sel_item = 0;
+  function seleccionarDescuento(porcentajeSelect) {
+    descuento_sel_item = parseFloat(porcentajeSelect.value);
+  }
+
+  // ---- Formas de pago ----
+  let totalCompletado = false;
+  function cargarFormasPagoModal(fpId) {
+    const condicion_operacion = document.getElementById('condicion_op').value;
+    const saldo_favor         = document.getElementById('saldo_favor_input').value;
+    const total_pagar         = document.getElementById("total-pagar").textContent;
+    var modalRows = document.querySelectorAll('#tabla-formaspago-modal tbody tr');
+    var recibido_fp = 0;
+
+    modalRows.forEach(function (row) {
+      var checkbox = row.querySelector('.formapago-checkbox');
+      if (checkbox.checked) {
+        if (totalCompletado) { checkbox.checked = false; return; }
+
+        const fila              = checkbox.closest('tr');
+        const fpId              = fila.getAttribute('data-id');
+        const num_referencia_fp = fila.querySelector('.referencia-input').value;
+        const monto_fp          = fila.querySelector('.monto-input').value;
+        const periodo_plazo     = fila.querySelector('.periodo-input').value;
+        var monto               = parseFloat(monto_fp);
+        var sumatoria_recibido_fp = 0;
+        var total_pagar_resumen = 0;
+
+        if (totalCompletado === false && sumatoria_recibido_fp < total_pagar_resumen) {
+          recibido_fp += monto;
+          total_pagar_resumen = document.getElementById("total-pagar").textContent;
+          sumatoria_recibido_fp = parseFloat(recibido_fp).toFixed(2);
+          document.getElementById("recibido").textContent = sumatoria_recibido_fp;
+          checkbox.checked  = true;
+          checkbox.disabled = false;
+          totalCompletado   = false;
+        } else if (sumatoria_recibido_fp > total_pagar_resumen) {
+          if (checkbox.checked) {
+            totalCompletado   = true;
+            checkbox.disabled = true;
+            document.getElementById("recibido").textContent = parseFloat(recibido_fp).toFixed(2);
+            alert("El monto total ya ha sido alcanzado, no puedes seleccionar más.");
+            return;
+          }
+        } else {
+          recibido_fp += monto;
+          document.getElementById("recibido").textContent = parseFloat(recibido_fp).toFixed(2);
+        }
+
+        fetch(`/fe/obtener-forma-pago/?fp_id=${fpId}&num_ref=${num_referencia_fp}&monto_fp=${monto_fp}&periodo=${periodo_plazo}&saldo_favor_r=${saldo_favor}&condicion_op=${condicion_operacion}&total_pagar=${total_pagar}`)
+          .then(r => { if (!r.ok) throw new Error('Network error'); return r.json(); })
+          .catch(err => console.error('Error:', err));
+      }
+    });
+  }
+
+  // ---- Cargar productos desde modal ----
+  function cargarProductosModal() {
+    const documentoRelacionado = document.getElementById('documento_relacionado_input') ?
+      document.getElementById('documento_relacionado_input').value : '';
+
+    document.querySelectorAll('#tabla-productos-modal tbody tr').forEach(function (row) {
+      var checkbox = row.querySelector('.producto-checkbox');
+      if (checkbox.checked) {
+        var productoId    = row.getAttribute('data-id');
+        var productoText  = row.cells[1].textContent.trim();
+        var precio_con_iva = row.querySelector('.producto-con-iva').getAttribute('data-prod-iva');
+        var precio_incl   = roundHalfUp(row.querySelector('.precio-unitario').getAttribute('data-precio').replace(',', '.'), 6);
+        var cantidad      = row.querySelector('.cantidad-input').value;
+        agregarProductoFilaTabla(productoId, productoText, precio_incl, cantidad, precio_con_iva);
+      }
+    });
+    actualizarResumen();
+
+    // Ocultar fila vacía si hay productos
+    const emptyRow = document.querySelector('#tabla-productos .empty-row');
+    if (emptyRow && document.querySelectorAll('#tabla-productos tbody tr:not(.empty-row)').length > 0) {
+      emptyRow.style.display = 'none';
+    }
+
+    bootstrap.Modal.getInstance(document.getElementById('productosModal'))?.hide();
+  }
+
+  // ---- Agregar fila a tabla de productos ----
+  function agregarProductoFilaTabla(productoId, productoText, precio_incl, cantidad, aplica_iva) {
+    let neto_unitario  = roundHalfUp(precio_incl, 6);
+    let iva_unitario   = roundHalfUp((neto_unitario * 0.13), 6);
+    let qty            = parseFloat(cantidad);
+    let porcentaje_descu = roundHalfUp((descuento_sel_item / 100), 6);
+    let total_neto     = roundHalfUp((neto_unitario * qty), 6);
+    let monto_descuento = roundHalfUp((total_neto * porcentaje_descu), 6);
+    let total_incl     = roundHalfUp((total_neto - roundHalfUp(monto_descuento, 2)), 6);
+    let total_iva      = roundHalfUp((total_incl * 0.13), 6);
+
+    var tableBody = document.querySelector('#tabla-productos tbody');
+    var existe = false;
+    tableBody.querySelectorAll('tr:not(.empty-row)').forEach(function (row) {
+      if (row.getAttribute('data-id') === productoId) {
+        var inputCantidad = row.querySelector('.cantidad-input');
+        inputCantidad.value = parseFloat(inputCantidad.value) + qty;
+        actualizarFila(inputCantidad);
+        existe = true;
+      }
+    });
+    if (existe) return;
+
+    var row = document.createElement('tr');
+    row.setAttribute('data-id', productoId);
+    row.innerHTML = `
+      <td>${productoText}</td>
+      <td class="text-end precio-neto" data-precio-neto="${neto_unitario}">${parseFloat(neto_unitario).toFixed(2)}</td>
+      <td class="text-end iva-unitario" data-iva-unitario="${iva_unitario}">${parseFloat(iva_unitario).toFixed(2)}</td>
+      <td><input type="number" class="form-control form-control-sm text-end cantidad-input" value="${qty}" min="1" oninput="actualizarFila(this)"></td>
+      <td class="text-end total-neto" data-total-neto="${total_neto}">${parseFloat(total_neto).toFixed(2)}</td>
+      <td class="text-end descuento-item">${parseFloat(porcentaje_descu * 100)}%</td>
+      <td class="text-end total-incl" data-total-incl="${total_incl}">${parseFloat(total_incl).toFixed(2)}</td>
+      <td class="text-end total-iva">${parseFloat(total_iva).toFixed(2)}</td>
+      <td class="text-center aplica-iva">${aplica_iva}</td>
+      <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="eliminarProductoFila(this)"><i class="bi bi-x-lg"></i></button></td>
+    `;
+    tableBody.appendChild(row);
+    descuento_sel_item = 0;
+  }
+
+  // ---- Redondeo ROUND_HALF_UP ----
+  function roundHalfUp(value, decimals) {
+    var multiplier = Math.pow(10, decimals);
+    return Math.round(value * multiplier) / multiplier;
+  }
+
+  // ---- Actualizar fila al cambiar cantidad ----
+  function actualizarFila(input) {
+    let row         = input.closest('tr');
+    let precio_neto = roundHalfUp(row.querySelector('.precio-neto').getAttribute('data-precio-neto'), 6);
+    let cantidad    = parseFloat(input.value) || 0;
+    let total_neto  = roundHalfUp((precio_neto * cantidad), 6);
+    let descuento_item = parseFloat((row.querySelector('.descuento-item').textContent).replace('%', '') / 100);
+    let monto_descuento_item = roundHalfUp((total_neto * descuento_item), 6);
+    let total_incl  = roundHalfUp((total_neto - roundHalfUp(monto_descuento_item, 2)), 6);
+    let total_iva   = roundHalfUp((total_incl * 0.13), 6);
+
+    row.querySelector('.total-neto').textContent = roundHalfUp(total_neto, 2);
+    row.querySelector('.total-iva').textContent  = parseFloat(total_iva).toFixed(2);
+    row.querySelector('.total-incl').textContent = parseFloat(total_incl).toFixed(2);
+    actualizarResumen();
+  }
+
+  // ---- Eliminar fila de producto ----
+  function eliminarProductoFila(btn) {
+    btn.closest('tr').remove();
+    actualizarResumen();
+  }
+
+  // ---- Resumen global ----
+  function actualizarResumen() {
+    const tipo_dte = document.getElementById('tipo_documento_select').value;
+    let sumNeto = 0, sumIVA = 0, sumIncl = 0, sumMontoDescu = 0, sumIncIva = 0;
+
+    document.querySelectorAll('#tabla-productos tbody tr:not(.empty-row):not([data-skip-sum])').forEach(function (row) {
+      let netoCell = row.querySelector('.total-neto') ? row.querySelector('.total-neto').getAttribute('data-total-neto') : null;
+      if (netoCell) {
+        sumNeto  += parseFloat(netoCell) || 0;
+        sumIVA   += parseFloat(row.querySelector('.total-iva').textContent) || 0;
+        sumIncl  += roundHalfUp(parseFloat(row.querySelector('.total-incl').textContent) || 0, 6);
+        sumIncIva += roundHalfUp(parseFloat(row.querySelector('.total-incl').getAttribute('data-total-incl')) || 0, 6);
+        let montoNeto      = parseFloat(netoCell) || 0;
+        let porcentajeDescu = (parseFloat(row.querySelector('.descuento-item').textContent || '0') / 100);
+        let montoDescu     = roundHalfUp(montoNeto * porcentajeDescu, 6);
+        sumMontoDescu += roundHalfUp(montoDescu, 2);
+      }
+    });
+
+    document.querySelectorAll('#facturasAccordion .accordion-body table tbody tr').forEach(function (row) {
+      let netoCell = row.querySelector('.total-neto') ? row.querySelector('.total-neto').getAttribute('data-total-neto') : null;
+      if (netoCell) {
+        sumNeto  += parseFloat(netoCell) || 0;
+        sumIVA   += parseFloat(row.querySelector('.total-iva').textContent) || 0;
+        sumIncl  += roundHalfUp(parseFloat(row.querySelector('.total-incl').textContent) || 0, 6);
+        sumIncIva += roundHalfUp(parseFloat(row.querySelector('.total-incl').getAttribute('data-total-incl')) || 0, 6);
+        let montoNeto      = parseFloat(netoCell) || 0;
+        let porcentajeDescu = (parseFloat(row.querySelector('.descuento-item').textContent || '0') / 100);
+        let montoDescu     = roundHalfUp(montoNeto * porcentajeDescu, 6);
+        sumMontoDescu += roundHalfUp(montoDescu, 2);
+      }
+    });
+
+    document.getElementById("subtotal-neto").textContent = roundHalfUp(sumNeto, 2);
+    document.getElementById("total-iva").textContent     = sumIVA.toFixed(2);
+    document.getElementById("total-incl").textContent    = sumIncl.toFixed(2);
+
+    let monto_porc_gravado = parseFloat(document.getElementById("descuento_gravado").value / 100) || 0;
+    let descu_gravado      = roundHalfUp(sumIncl * monto_porc_gravado, 6);
+    let suma_descuentos    = roundHalfUp(sumMontoDescu + descu_gravado, 6);
+
+    let descuentoPorc     = parseFloat(document.getElementById("descuento_global").value) || 0;
+    let montoDescuento    = (sumIncl * descuentoPorc / 100).toFixed(2);
+    let descuentoPorcGravado = parseFloat(document.getElementById("descuento_gravado").value) || 0;
+    let montoDescuGravado = (sumIncl * descuentoPorcGravado / 100).toFixed(2);
+    let subTotal          = (sumIncl - parseFloat(montoDescuGravado) - parseFloat(montoDescuento));
+    let valorTributo      = roundHalfUp(sumIVA, 2);
+    let montoTotalOperacion = subTotal + valorTributo;
+    let totalPagar        = montoTotalOperacion;
+
+    document.getElementById("monto_descuento").textContent   = parseFloat(suma_descuentos).toFixed(2);
+    document.getElementById("total-pagar").textContent       = parseFloat(totalPagar).toFixed(2);
+    document.getElementById("sub-total-resumen").textContent = parseFloat(subTotal).toFixed(2);
+    document.getElementById("monto_tributo").textContent     = parseFloat(valorTributo).toFixed(2);
+    document.getElementById("total-operacion").textContent   = parseFloat(montoTotalOperacion).toFixed(2);
+    // Sync hidden field used by formas de pago
+    const fpEl = document.getElementById("total-pagar-fp");
+    if (fpEl) fpEl.value = parseFloat(totalPagar).toFixed(2);
+    // Sync modal display fields
+    const fpModalEl = document.getElementById("total-pagar-fp-modal");
+    if (fpModalEl) fpModalEl.textContent = parseFloat(totalPagar).toFixed(2);
+
+    let btnGenerar = document.getElementById("btnGenerar");
+    if (document.getElementById("total-pagar").textContent > total_ccf && tipo_dte === "05") {
+      alert("La nota de crédito no debe superar el saldo adeudado del crédito fiscal.");
+      btnGenerar.disabled = true;
+      return;
+    }
+    if (document.getElementById("total-pagar").textContent < total_ccf && tipo_dte === "06") {
+      alert("La nota de débito no debe ser menor del saldo adeudado en el crédito fiscal.");
+      btnGenerar.disabled = true;
+      return;
+    }
+    btnGenerar.disabled = false;
+  }
+
+  // ---- Guardar retenciones (sólo cierra el modal) ----
+  function guardarRetencionIVA() {
+    bootstrap.Modal.getInstance(document.getElementById('retencionIvaModal'))?.hide();
+  }
+  function guardarRetencionRenta() {
+    bootstrap.Modal.getInstance(document.getElementById('retencionRentaModal'))?.hide();
+  }
+
+  // ---- Enviar formulario ----
+  async function enviarFormulario(event) {
+    event.preventDefault();
+    let formData = new FormData(event.target);
+    let jsonData = {};
+    formData.forEach((value, key) => { jsonData[key] = value; });
+
+    jsonData["tipo_documento_select"]       = document.querySelector('select[name="tipo_documento_seleccionado"]').value;
+    jsonData["documento_select"]            = document.getElementById("documento_select") ? document.getElementById("documento_select").value : null;
+    jsonData["documento_relacionado_input"] = document.getElementById("documento_relacionado_input") ? document.getElementById("documento_relacionado_input").value : null;
+    jsonData["descuento_select"]            = document.querySelector('select[name="descuento_seleccionado"]') ? document.querySelector('select[name="descuento_seleccionado"]').value : null;
+    jsonData["tipo_item_select"]            = document.querySelector('select[name="tipo_item_seleccionado"]') ? document.querySelector('select[name="tipo_item_seleccionado"]').value : null;
+    jsonData["monto_descuento"]             = document.getElementById("monto_descuento").textContent;
+    jsonData["descuento_gravado"]           = parseFloat(document.getElementById("descuento_gravado").value) || 0;
+    jsonData["nombre_responsable"]          = document.getElementById("nombre_responsable").value;
+    jsonData["documento_responsable"]       = document.getElementById("documento_responsable").value;
+
+    let productos_ids = [], cantidades = [], totales_incl = [], descuentos = [];
+    document.querySelectorAll('#tabla-productos tbody tr:not(.empty-row)').forEach(function (row) {
+      productos_ids.push(row.getAttribute('data-id') || 0);
+      cantidades.push(row.querySelector('.cantidad-input').value);
+      totales_incl.push(row.querySelector('.total-incl').textContent);
+      descuentos.push(row.querySelector('.descuento-item').textContent.replace('%', '') / 100);
+    });
+
+    jsonData["productos_ids"]    = productos_ids;
+    jsonData["cantidades"]       = cantidades;
+    jsonData["montos_totales"]   = totales_incl;
+    jsonData["saldo_favor_input"] = document.getElementById("saldo_favor_input").value;
+    jsonData["descuento_select"] = descuentos;
+
+    let formas_pago_id = [];
+    document.querySelectorAll('#tabla-formaspago-modal tbody tr').forEach(function (row) {
+      formas_pago_id.push(row.getAttribute('data-id'));
+    });
+    jsonData["formas_pago_ids"] = formas_pago_id;
+
+    jsonData["retencion_iva"]           = document.getElementById("retencion_iva_checkbox").checked;
+    jsonData["porcentaje_retencion_iva"] = document.getElementById("porcentaje_retencion_iva").value;
+    let retencionIvaProducts = [];
+    document.querySelectorAll('.retencion-iva-checkbox:checked').forEach(cb => retencionIvaProducts.push(cb.value));
+    jsonData["productos_retencion_iva"] = retencionIvaProducts;
+
+    jsonData["retencion_renta"]           = document.getElementById("retencion_renta_checkbox").checked;
+    jsonData["porcentaje_retencion_renta"] = document.getElementById("porcentaje_retencion_renta").value;
+    let retencionRentaProducts = [];
+    document.querySelectorAll('.retencion-renta-checkbox:checked').forEach(cb => retencionRentaProducts.push(cb.value));
+    jsonData["productos_retencion_renta"] = retencionRentaProducts;
+
+    jsonData["no_gravado"]           = document.getElementById("no_gravado_checkbox").checked;
+    jsonData["facturas_relacionadas"] = facturasRelacionadas;
+
+    const btn = document.getElementById("btnGenerar");
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Generando…`;
+
+    try {
+      let response = await fetch('/fe/generar_ajuste/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(jsonData)
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error ${response.status}: ${errorText}`);
+      }
+      let data = await response.json();
+      if (data.redirect) {
+        window.location.href = data.redirect;
+      } else {
+        alert("Documento generado con éxito. ID: " + data.factura_id);
+        const ncInput = document.getElementById('numero_control_input');
+        if (ncInput && data.numero_control) ncInput.value = data.numero_control;
+      }
+    } catch (error) {
+      console.error("Error de conexión:", error);
+      alert("Error de conexión: " + error.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<i class="bi bi-check2-circle me-2"></i>Generar Documento`;
+    }
+  }
+
+  // ---- Cargar factura relacionada ----
+  let total_ccf;
+  function cargarFacturaRelacionada() {
+    const codigoGeneracion = document.getElementById('documento_relacionado_input').value.trim();
+    if (!codigoGeneracion) { alert("Por favor, ingresa el código de generación."); return; }
+    fetch(`/fe/documento-relacionado/?codigo_generacion=${codigoGeneracion}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) { alert(data.error); return; }
+        total_ccf = data.total;
+        document.getElementById("total_doc_relacionado").innerText = total_ccf;
+        agregarFacturaAccordion(data);
+      })
+      .catch(err => { console.error('Error:', err); alert("Error al obtener la factura."); });
+    actualizarResumen();
+  }
+
+  // ---- Agregar factura electrónica al acordeón ----
+  function agregarFacturaAccordion(factura) {
+    const facturaId = factura.codigo_generacion;
+    const accordion = document.getElementById('facturasAccordion');
+
+    let porcDescuento   = (parseFloat(factura.descuento_global / factura.total_gravadas).toFixed(2)) * 100;
+    let porcDescGravado = (parseFloat(factura.descuento_gravado / factura.total_gravadas).toFixed(2) * 100);
+    document.getElementById("descuento_gravado").value = parseFloat(porcDescGravado).toFixed(2);
+    document.getElementById("descuento_global").value  = parseFloat(porcDescuento).toFixed(2);
+
+    const accordionItem = document.createElement('div');
+    accordionItem.classList.add('accordion-item');
+    accordionItem.setAttribute('data-factura-id', facturaId);
+    accordionItem.innerHTML = `
+      <h2 class="accordion-header" id="heading-${facturaId}">
+        <div class="d-flex justify-content-between align-items-center w-100 pe-2">
+          <button class="accordion-button collapsed flex-grow-1" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${facturaId}" aria-expanded="false">
+            <small><strong>${factura.codigo_generacion}</strong> &nbsp;|&nbsp; ${factura.fecha_emision} &nbsp;|&nbsp; $${factura.total}</small>
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-danger ms-2 flex-shrink-0" onclick="eliminarFacturaAccordion('${facturaId}')">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+      </h2>
+      <div id="collapse-${facturaId}" class="accordion-collapse collapse" data-bs-parent="#facturasAccordion">
+        <div class="accordion-body p-2">${crearTablaDetalles(factura.detalles)}</div>
+      </div>
+    `;
+    accordion.appendChild(accordionItem);
+    actualizarResumen();
+    facturasRelacionadas.push(factura);
+  }
+
+  // ---- Tabla de detalles (productos de factura relacionada) ----
+  let prod_id_relacionado = 0, cantidad_prod_relacionado = 0;
+  function crearTablaDetalles(detalles) {
+    let detallesFiltrados = detalles.filter(item => !item.producto.toUpperCase().includes("TOTAL"));
+    let tablaHTML = `
+      <div class="table-responsive">
+      <table class="table table-sm table-bordered align-middle mb-0" id="tabla-productos-relacionados">
+        <thead class="table-light">
+          <tr>
+            <th>Producto</th>
+            <th class="text-end">P. Neto</th>
+            <th class="text-end">IVA Unit.</th>
+            <th class="text-end" style="width:80px">Cant.</th>
+            <th class="text-end">Total Neto</th>
+            <th class="text-end">Dcto.</th>
+            <th class="text-end">V. Grav.</th>
+            <th class="text-end">IVA</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>`;
+    detallesFiltrados.forEach(function (prod) {
+      let precioIncl = roundHalfUp(prod.precio_unitario, 6);
+      let neto       = roundHalfUp(precioIncl, 6);
+      let cantidad   = parseFloat(prod.cantidad);
+      let iva        = roundHalfUp(precioIncl * 0.13, 6);
+      let totalNeto  = roundHalfUp(neto * cantidad, 6);
+      let porcDescu  = roundHalfUp(prod.descuento / 100, 6);
+      let montoDescu = roundHalfUp(totalNeto * porcDescu, 6);
+      let totalIncl  = roundHalfUp(totalNeto - roundHalfUp(montoDescu, 2), 6);
+      let totalIVA   = roundHalfUp(totalIncl * 0.13, 6);
+      prod_id_relacionado = prod.id;
+      cantidad_prod_relacionado = prod.cantidad;
+      tablaHTML += `
+        <tr data-id="${prod.id}">
+          <td>${prod.producto}</td>
+          <td class="text-end" data-precio-neto="${neto}">${parseFloat(neto).toFixed(2)}</td>
+          <td class="text-end" data-iva-unitario="${iva}">${parseFloat(iva).toFixed(2)}</td>
+          <td><input type="number" class="form-control form-control-sm text-end cantidad-input-invoice" value="${cantidad}" min="1" onchange="actualizarFilaInvoice(this)"></td>
+          <td class="text-end total-neto" data-total-neto="${totalNeto}">${parseFloat(totalNeto).toFixed(2)}</td>
+          <td class="text-end descuento-item">${parseFloat(prod.descuento || 0)}%</td>
+          <td class="text-end total-incl" data-total-incl="${totalIncl}">${parseFloat(totalIncl).toFixed(2)}</td>
+          <td class="text-end total-iva">${parseFloat(totalIVA).toFixed(2)}</td>
+          <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="eliminarProductoInvoice(this)"><i class="bi bi-x-lg"></i></button></td>
+        </tr>`;
+    });
+    tablaHTML += `</tbody></table></div>`;
+    return tablaHTML;
+  }
+
+  // ---- Actualizar fila del acordeón ----
+  function actualizarFilaInvoice(input) {
+    let row           = input.closest('tr');
+    let precioUnitario = roundHalfUp(row.cells[1].textContent, 6);
+    let cantidad      = parseFloat(input.value) || 0;
+    let totalNeto     = roundHalfUp(precioUnitario * cantidad, 6);
+    let descuento_item = parseFloat(row.cells[5].textContent.replace('%', '') / 100);
+    let monto_descuento_item = roundHalfUp(totalNeto * descuento_item, 6);
+    let totalIncl     = roundHalfUp(totalNeto - roundHalfUp(monto_descuento_item, 2), 6);
+    let totalIVA      = roundHalfUp(totalIncl * 0.13, 6);
+    row.querySelector('.total-neto').textContent = roundHalfUp(totalNeto, 2);
+    row.querySelector('.total-iva').textContent  = parseFloat(totalIVA).toFixed(2);
+    row.querySelector('.total-incl').textContent = parseFloat(totalIncl).toFixed(2);
+    actualizarResumen();
+  }
+
+  function eliminarProductoInvoice(btn) { btn.closest('tr').remove(); actualizarResumen(); }
+
+  // ---- Eliminar ítem del acordeón ----
+  function eliminarFacturaAccordion(facturaId) {
+    const item = document.querySelector(`#facturasAccordion [data-factura-id="${facturaId}"]`);
+    if (item) item.remove();
+    facturasRelacionadas = facturasRelacionadas.filter(f => f.codigo_generacion !== facturaId);
+    actualizarResumen();
+  }
+
+  // ---- Guardar documento físico ----
+  function guardarDocFisico() {
+    const doc = {
+      numero_control:   document.getElementById('fisico-numero-control').value,
+      codigo_generacion: document.getElementById('fisico-codigo-generacion').value,
+      fecha: document.getElementById('fisico-fecha').value,
+      hora:  document.getElementById('fisico-hora').value,
+      total: "0.00",
+      detalles: []
+    };
+    agregarFacturaAccordionFisica(doc);
+    bootstrap.Modal.getInstance(document.getElementById('modalDocFisico'))?.hide();
+  }
+
+  // ---- Agregar documento físico al acordeón ----
+  function agregarFacturaAccordionFisica(doc) {
+    const docId    = doc.codigo_generacion;
+    const accordion = document.getElementById('facturasAccordion');
+    const accordionItem = document.createElement('div');
+    accordionItem.classList.add('accordion-item');
+    accordionItem.setAttribute('data-factura-id', docId);
+    accordionItem.innerHTML = `
+      <h2 class="accordion-header" id="heading-${docId}">
+        <div class="d-flex justify-content-between align-items-center w-100 pe-2">
+          <button class="accordion-button collapsed flex-grow-1" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${docId}" aria-expanded="false">
+            <small><strong>Físico: ${doc.codigo_generacion}</strong> &nbsp;|&nbsp; ${doc.fecha} &nbsp;|&nbsp; $${doc.total}</small>
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-danger ms-2 flex-shrink-0" onclick="eliminarFacturaAccordion('${docId}')">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+      </h2>
+      <div id="collapse-${docId}" class="accordion-collapse collapse" data-bs-parent="#facturasAccordion">
+        <div class="accordion-body p-2">${crearTablaDetalles(doc.detalles)}</div>
+      </div>
+    `;
+    accordion.appendChild(accordionItem);
+    actualizarResumen();
+    facturasRelacionadas.push(doc);
+  }
+
+  // ---- Actualizar lista de productos del modal por tipo DTE ----
+  async function actualizarProductos() {
+    const tipo_dte = document.getElementById('tipo_documento_select').value;
+    try {
+      const response = await fetch(`{% url 'obtener_listado_productos_view' %}?tipo_documento_dte=${tipo_dte}`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      if (response.ok) {
+        const html = await response.text();
+        const parsed = new DOMParser().parseFromString(html, 'text/html');
+        const newTbody = parsed.querySelector('#tabla-productos-modal tbody');
+        if (newTbody) document.querySelector('#tabla-productos-modal tbody').innerHTML = newTbody.innerHTML;
+      }
+    } catch (err) {
+      console.error('Error al actualizar productos:', err);
+    }
+  }
+
+  // ---- Validaciones antes de enviar ----
+  function validacionesFormulario(event) {
+    const tipo_dte    = document.getElementById('tipo_documento_select').value;
+    const receptor    = document.getElementById('receptor-select').value;
+    const total_pagar = parseFloat(document.getElementById('total-pagar').textContent.trim());
+    const fp_recibida = parseFloat(document.getElementById('recibido').textContent.trim());
+
+    if (!receptor) {
+      event.preventDefault();
+      alert('Por favor, seleccione un receptor.');
+    } else if (total_pagar <= 0) {
+      event.preventDefault();
+      alert('Total a pagar debe ser mayor a 0.');
+    } else if (tipo_dte === "03" && total_pagar >= 11428.57 &&
+               !document.getElementById("nombre_responsable").value &&
+               !document.getElementById("documento_responsable").value) {
+      event.preventDefault();
+      alert('Agregar responsable de los documentos electrónicos.');
+    } else {
+      enviarFormulario(event);
+    }
+  }
+
+  // ---- Inicializar al cargar ----
+  document.addEventListener('DOMContentLoaded', function () {
+    actualizarResumen();
+    actualizarProductos();
+  });
+
+</script>
+
+{% endblock %}

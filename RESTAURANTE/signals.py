@@ -3,6 +3,9 @@ from django.dispatch import receiver
 from django.contrib.auth import get_user_model
 from .models import Cajero, Mesero, Cocinero
 from decimal import Decimal, ROUND_HALF_UP
+import logging
+
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
@@ -27,7 +30,7 @@ def crear_usuario_cajero(sender, instance, created, **kwargs):
             username=instance.pin,
             password=instance.pin,
         )
-        print("usuario cajero crear ", instance.pin)
+        logger.info("usuario cajero crear %s", instance.pin)
         if hasattr(user, 'role'):
             user.role = "cajero"
             user.save()
@@ -41,7 +44,7 @@ def crear_usuario_cajero(sender, instance, created, **kwargs):
             username=instance.pin,
             password=instance.pin,
         )
-        print("usuario cocinero crear ", instance.pin)
+        logger.info("usuario cocinero crear %s", instance.pin)
         if hasattr(user, 'role'):
             user.role = "cocinero"
             user.save()

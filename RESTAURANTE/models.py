@@ -9,7 +9,10 @@ from django.utils import timezone
 from AUTENTICACION.models import Perfilusuario
 from INVENTARIO.models import Producto
 from django.db import  transaction
-from django.db.models import Sum 
+from django.db.models import Sum
+import logging
+
+logger = logging.getLogger(__name__)
 
 #####################################################################################################
 #                                 CONFIGURAICÓN RESTAURANTE                                         #
@@ -277,10 +280,10 @@ class Pedido(models.Model):
 
     # ---------- Totales ----------
     def recalcular_totales(self, save=True):
-        print(f"--- Recalculando Cuenta ID: {self.id} ---")
-        
+        logger.debug("--- Recalculando Cuenta ID: %s ---", self.id)
+
         # Ver cuántos detalles encuentra realmente
-        print(f"Cantidad de detalles asociados: {self.detalles.count()}")
+        logger.debug("Cantidad de detalles asociados: %s", self.detalles.count())
         
         agg = self.detalles.aggregate(
             sub=Sum("subtotal_linea"),
@@ -289,14 +292,14 @@ class Pedido(models.Model):
             tot=Sum("total_linea"),
         )
         
-        print(f"Valores obtenidos en aggregate: {agg}")
+        logger.debug("Valores obtenidos en aggregate: %s", agg)
         
         # Asignación
         self.subtotal = (agg["sub"] or Decimal("0.00")).quantize(Decimal("0.01"))
         self.total = ((agg["tot"] or Decimal("0.00")) + self.propina).quantize(Decimal("0.01"))
         
-        print(f"Subtotal final a guardar: {self.subtotal}")
-        print(f"Total final a guardar: {self.total}")
+        logger.debug("Subtotal final a guardar: %s", self.subtotal)
+        logger.debug("Total final a guardar: %s", self.total)
 
         if save:
             self.save() # Prueba guardando todo el objeto primero para descartar
@@ -321,7 +324,7 @@ class Pedido(models.Model):
         # Releer con lock para evitar race conditions
         pedido = Pedido.objects.select_for_update().get(id=self.id)
 
-        print(">>>> PEDIDO PAGADO MODEL ", pedido)
+        logger.debug(">>>> PEDIDO PAGADO MODEL %s", pedido)
         # Si ya está pagado, no hagas nada
         if pedido.estado == "PAGADO":
             return False
@@ -334,7 +337,7 @@ class Pedido(models.Model):
         pedido.estado = "PAGADO"
         pedido.pagado_el = timezone.now()
         pedido.save(update_fields=["estado", "pagado_el"])
-        print(">>>> PEDIDO PAGADO MODEL ", pedido.estado)
+        logger.debug(">>>> PEDIDO PAGADO MODEL estado: %s", pedido.estado)
 
         # tu mesa: si quieres LIBRE, usa LIBRE. Si tienes PAGADO, úsalo.
         pedido.mesa.estado = "PAGADO"  # o "PAGADO" si así lo manejas
@@ -738,7 +741,7 @@ class CuentaPedido(models.Model):
         verbose_name_plural = "Cuentas"
         
     def recalcular_totales(self, save=True):
-        print("RECALCULAR")
+        logger.debug("RECALCULAR totales CuentaPedido id=%s", self.pk)
         agg = self.detalles.aggregate(
             sub=Sum("subtotal_linea"),
             desc=Sum("descuento_monto"),
@@ -746,7 +749,7 @@ class CuentaPedido(models.Model):
             tot=Sum("total_linea"),
         )
         
-        print("agg")
+        logger.debug("agg CuentaPedido: %s", agg)
         
         self.subtotal = (agg["sub"] or Decimal("0.00")).quantize(Decimal("0.01"))
         self.descuento_total = (agg["desc"] or Decimal("0.00")).quantize(Decimal("0.01"))
@@ -754,7 +757,7 @@ class CuentaPedido(models.Model):
 
         base_total = (agg["tot"] or Decimal("0.00"))
         self.total = (base_total + (self.propina or Decimal("0.00"))).quantize(Decimal("0.01"))
-        print("subtotal ", self.subtotal)
+        logger.debug("subtotal CuentaPedido: %s", self.subtotal)
         if save:
             self.save(update_fields=["subtotal", "descuento_total", "iva_total", "total"])
 

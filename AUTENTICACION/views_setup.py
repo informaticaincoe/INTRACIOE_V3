@@ -5,7 +5,6 @@ from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.contrib.auth import get_user_model
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 
 from FE.models import (
     Departamento, Emisor_fe, Ambiente, Municipio, ActividadEconomica,
@@ -15,36 +14,52 @@ from .models import ConfiguracionServidor, UsuarioEmisor
 
 User = get_user_model()
 
-@csrf_exempt
+def _validar_codigo_descripcion(request):
+    """Retorna (codigo, descripcion) o JsonResponse de error si faltan campos."""
+    codigo = (request.POST.get("codigo") or "").strip()
+    descripcion = (request.POST.get("descripcion") or "").strip()
+    if not codigo:
+        return None, None, JsonResponse({"error": "El campo código es obligatorio."}, status=400)
+    if not descripcion:
+        return None, None, JsonResponse({"error": "El campo descripción es obligatorio."}, status=400)
+    return codigo, descripcion, None
+
+
 def crear_tipo_documento(request):
     if request.method == "POST":
-        codigo = request.POST.get("codigo")
-        descripcion = request.POST.get("descripcion")
+        codigo, descripcion, err = _validar_codigo_descripcion(request)
+        if err:
+            return err
         tipo = TiposDocIDReceptor.objects.create(codigo=codigo, descripcion=descripcion)
         return JsonResponse({"id": tipo.id, "descripcion": tipo.descripcion})
-    return JsonResponse({"error": "Método no permitido"}, status=400)
+    return JsonResponse({"error": "Método no permitido"}, status=405)
 
 def crear_pais(request):
     if request.method == "POST":
-        codigo = request.POST.get("codigo")
-        descripcion = request.POST.get("descripcion")
+        codigo, descripcion, err = _validar_codigo_descripcion(request)
+        if err:
+            return err
         pais = Pais.objects.create(codigo=codigo, descripcion=descripcion)
         return JsonResponse({"id": pais.id, "descripcion": pais.descripcion})
     return JsonResponse({"error": "Método no permitido"}, status=405)
 
 def crear_tipo_establecimiento(request):
     if request.method == "POST":
-        codigo = request.POST.get("codigo")
-        descripcion = request.POST.get("descripcion")
+        codigo, descripcion, err = _validar_codigo_descripcion(request)
+        if err:
+            return err
         tipo = TiposEstablecimientos.objects.create(codigo=codigo, descripcion=descripcion)
         return JsonResponse({"id": tipo.id, "descripcion": tipo.descripcion})
     return JsonResponse({"error": "Método no permitido"}, status=405)
 
 def crear_departamento(request):
     if request.method == "POST":
-        codigo = request.POST.get("codigo")
-        descripcion = request.POST.get("descripcion")
-        pais_id = request.POST.get("pais")  # vendrá del select
+        codigo, descripcion, err = _validar_codigo_descripcion(request)
+        if err:
+            return err
+        pais_id = (request.POST.get("pais") or "").strip()
+        if not pais_id:
+            return JsonResponse({"error": "El campo país es obligatorio."}, status=400)
         departamento = Departamento.objects.create(
             codigo=codigo, descripcion=descripcion, pais_id=pais_id
         )
@@ -54,25 +69,32 @@ def crear_departamento(request):
 
 def crear_ambiente(request):
     if request.method == "POST":
-        codigo = request.POST.get("codigo")
-        descripcion = request.POST.get("descripcion")
+        codigo, descripcion, err = _validar_codigo_descripcion(request)
+        if err:
+            return err
         ambiente = Ambiente.objects.create(codigo=codigo, descripcion=descripcion)
         return JsonResponse({"id": ambiente.id, "descripcion": ambiente.descripcion})
     return JsonResponse({"error": "Método no permitido"}, status=405)
 
 def crear_municipio(request):
     if request.method == "POST":
-        codigo = request.POST.get("codigo")
-        descripcion = request.POST.get("descripcion")
-        municipio = Municipio.objects.create(codigo=codigo, descripcion=descripcion, departamento_id=1)  
-        # ⚠️ Aquí debes asignar un departamento válido por defecto o capturar desde el modal
+        codigo, descripcion, err = _validar_codigo_descripcion(request)
+        if err:
+            return err
+        departamento_id = (request.POST.get("departamento") or "").strip()
+        if not departamento_id:
+            return JsonResponse({"error": "El campo departamento es obligatorio."}, status=400)
+        municipio = Municipio.objects.create(
+            codigo=codigo, descripcion=descripcion, departamento_id=departamento_id
+        )
         return JsonResponse({"id": municipio.id, "descripcion": municipio.descripcion})
     return JsonResponse({"error": "Método no permitido"}, status=405)
 
 def crear_actividad(request):
     if request.method == "POST":
-        codigo = request.POST.get("codigo")
-        descripcion = request.POST.get("descripcion")
+        codigo, descripcion, err = _validar_codigo_descripcion(request)
+        if err:
+            return err
         act = ActividadEconomica.objects.create(codigo=codigo, descripcion=descripcion)
         return JsonResponse({"id": act.id, "descripcion": f"{act.codigo} - {act.descripcion}"})
     return JsonResponse({"error": "Método no permitido"}, status=405)
@@ -95,10 +117,23 @@ def setup_wizard(request):
     # Paso 1: Crear usuario admin
     if step == "usuario":
         if request.method == "POST":
-            username = request.POST["username"]
-            email = request.POST["email"]
-            password = request.POST["password"]
-            role = request.POST["role"]
+            username = (request.POST.get("username") or "").strip()
+            email = (request.POST.get("email") or "").strip()
+            password = request.POST.get("password") or ""
+            role = (request.POST.get("role") or "").strip()
+
+            if not username:
+                messages.error(request, "El nombre de usuario es obligatorio.")
+                return redirect("/setup/?step=usuario")
+            if not password or len(password) < 8:
+                messages.error(request, "La contraseña debe tener al menos 8 caracteres.")
+                return redirect("/setup/?step=usuario")
+            if not role:
+                messages.error(request, "El rol es obligatorio.")
+                return redirect("/setup/?step=usuario")
+            if User.objects.filter(username=username).exists():
+                messages.error(request, "Ya existe un usuario con ese nombre.")
+                return redirect("/setup/?step=usuario")
 
             user = User.objects.create_user(
                 username=username,
@@ -121,13 +156,27 @@ def setup_wizard(request):
     # Paso 2: Crear empresa
     elif step == "empresa":
         if request.method == "POST":
+            campos_requeridos = {
+                "nit": "El NIT es obligatorio.",
+                "nombre_razon_social": "La razón social es obligatoria.",
+                "tipoestablecimiento": "El tipo de establecimiento es obligatorio.",
+                "municipio": "El municipio es obligatorio.",
+                "direccion_comercial": "La dirección comercial es obligatoria.",
+                "ambiente": "El ambiente es obligatorio.",
+                "tipo_documento": "El tipo de documento es obligatorio.",
+            }
+            for campo, mensaje in campos_requeridos.items():
+                if not (request.POST.get(campo) or "").strip():
+                    messages.error(request, mensaje)
+                    return redirect("/setup/?step=empresa")
+
             emisor = Emisor_fe.objects.create(
-                nit=request.POST["nit"],
+                nit=request.POST["nit"].strip(),
                 nrc=request.POST.get("nrc"),
-                nombre_razon_social=request.POST["nombre_razon_social"],
+                nombre_razon_social=request.POST["nombre_razon_social"].strip(),
                 tipoestablecimiento_id=request.POST["tipoestablecimiento"],
                 municipio_id=request.POST["municipio"],
-                direccion_comercial=request.POST["direccion_comercial"],
+                direccion_comercial=request.POST["direccion_comercial"].strip(),
                 telefono=request.POST.get("telefono"),
                 email=request.POST.get("email"),
                 codigo_establecimiento=request.POST.get("codigo_establecimiento"),

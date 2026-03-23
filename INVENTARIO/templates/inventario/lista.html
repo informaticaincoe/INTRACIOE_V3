@@ -1,72 +1,121 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+{% block title %}Productos · Inventario{% endblock %}
 {% block content %}
-<div class="container mt-4">
-    <h2>Lista de Productos</h2>
 
-    <!-- Buscador -->
-    <form method="GET" class="mb-3">
-        <div class="input-group">
-            <input type="text" name="q" class="form-control" placeholder="Buscar por código o descripción" value="{{ query }}">
-            <button type="submit" class="btn btn-primary">Buscar</button>
-        </div>
-    </form>
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'inv-home' %}">Inventario</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Productos</li>
+  </ol>
+</nav>
 
-    <!-- Tabla de Productos -->
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Código</th>
-                <th>Descripción</th>
-                <th>Precio Venta</th>
-                <th>Stock</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for producto in productos %}
-                <tr>
-                    <td>{{ producto.codigo }}</td>
-                    <td>{{ producto.descripcion }}</td>
-                    <td>${{ producto.precio_venta }}</td>
-                    <td>{{ producto.stock }}</td>
-                    <td>
-                        <a href="{% url 'editar_producto' producto.id %}" class="btn btn-warning btn-sm">Editar</a>
-                        <a href="{% url 'eliminar_producto' producto.id %}" class="btn btn-danger btn-sm">Eliminar</a>
-                    </td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="5" class="text-center">No se encontraron productos.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+{% if messages %}
+  {% for m in messages %}
+    <div class="alert alert-{{ m.tags }} alert-dismissible py-2" role="alert">
+      {{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+  {% endfor %}
+{% endif %}
 
-    <!-- Paginación -->
-    <nav>
-        <ul class="pagination">
-            {% if productos.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?q={{ query }}&page=1">&laquo; Primero</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="?q={{ query }}&page={{ productos.previous_page_number }}">Anterior</a>
-                </li>
-            {% endif %}
-
-            <li class="page-item disabled">
-                <span class="page-link">Página {{ productos.number }} de {{ productos.paginator.num_pages }}</span>
-            </li>
-
-            {% if productos.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?q={{ query }}&page={{ productos.next_page_number }}">Siguiente</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="?q={{ query }}&page={{ productos.paginator.num_pages }}">Última &raquo;</a>
-                </li>
-            {% endif %}
-        </ul>
-    </nav>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Productos</h1>
 </div>
+
+<form method="GET" class="row g-2 align-items-end mb-3">
+  <div class="col-md-6">
+    <label class="form-label small fw-semibold" for="inputQ">Buscar</label>
+    <div class="input-group input-group-sm">
+      <span class="input-group-text"><i class="bi bi-search"></i></span>
+      <input type="text" id="inputQ" name="q" class="form-control" placeholder="Código o descripción…" value="{{ query }}">
+    </div>
+  </div>
+  <div class="col-md-2">
+    <button type="submit" class="btn btn-outline-primary btn-sm w-100">
+      <i class="bi bi-funnel me-1"></i>Buscar
+    </button>
+  </div>
+</form>
+
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover table-striped align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Código</th>
+          <th>Descripción</th>
+          <th class="text-end">Precio Venta</th>
+          <th class="text-center">Stock</th>
+          <th style="width:100px;"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for producto in productos %}
+        <tr>
+          <td><code class="text-muted small">{{ producto.codigo }}</code></td>
+          <td class="fw-medium">{{ producto.descripcion }}</td>
+          <td class="text-end fw-semibold">${{ producto.precio_venta|floatformat:2 }}</td>
+          <td class="text-center">
+            <span class="badge {% if producto.stock == 0 %}text-bg-danger{% elif producto.stock_minimo and producto.stock <= producto.stock_minimo %}text-bg-warning text-dark{% else %}text-bg-light text-dark border{% endif %}">
+              {{ producto.stock }}
+            </span>
+          </td>
+          <td class="text-end">
+            <div class="btn-group btn-group-sm">
+              <a href="{% url 'editar_producto' producto.id %}" class="btn btn-outline-secondary" aria-label="Editar {{ producto.descripcion }}" title="Editar">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <a href="{% url 'eliminar_producto' producto.id %}" class="btn btn-outline-danger" aria-label="Eliminar {{ producto.descripcion }}" title="Eliminar">
+                <i class="bi bi-trash"></i>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="text-center py-5 text-muted">
+            <i class="bi bi-box-seam fs-1 d-block mb-2 opacity-50"></i>
+            No se encontraron productos.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Paginación -->
+{% if productos.paginator.num_pages > 1 %}
+<nav aria-label="Paginación" class="mt-3">
+  <ul class="pagination pagination-sm justify-content-center mb-0">
+    {% if productos.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?q={{ query }}&page=1" aria-label="Primera">«</a>
+      </li>
+      <li class="page-item">
+        <a class="page-link" href="?q={{ query }}&page={{ productos.previous_page_number }}" aria-label="Anterior">‹</a>
+      </li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link">«</span></li>
+      <li class="page-item disabled"><span class="page-link">‹</span></li>
+    {% endif %}
+
+    <li class="page-item disabled">
+      <span class="page-link">Página {{ productos.number }} de {{ productos.paginator.num_pages }}</span>
+    </li>
+
+    {% if productos.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?q={{ query }}&page={{ productos.next_page_number }}" aria-label="Siguiente">›</a>
+      </li>
+      <li class="page-item">
+        <a class="page-link" href="?q={{ query }}&page={{ productos.paginator.num_pages }}" aria-label="Última">»</a>
+      </li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link">›</span></li>
+      <li class="page-item disabled"><span class="page-link">»</span></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+
 {% endblock %}

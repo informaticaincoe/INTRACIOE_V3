@@ -1,111 +1,267 @@
 {% extends "base.html" %}
-{% block title %}{% if obj %}Editar{% else %}Nuevo{% endif %} producto{% endblock %}
+{% block title %}{% if obj %}Editar{% else %}Nuevo{% endif %} producto · Inventario{% endblock %}
 {% block content %}
-<div class="card shadow-sm">
-  <div class="card-body">
-    <h1 class="h6 mb-3">{% if obj %}Editar{% else %}Nuevo{% endif %} producto</h1>
-    <form method="post" class="needs-validation" novalidate enctype="multipart/form-data">
-      {% csrf_token %}
-      <div class="row g-3">
-        <div class="col-md-4">
-          <label class="form-label">Código (SKU)</label>
-          <input type="text" name="codigo" class="form-control" value="{{ obj.codigo|default:'' }}" required>
-          <div class="invalid-feedback">Obligatorio.</div>
-        </div>
-        <div class="col-md-8">
-          <label class="form-label">Descripción</label>
-          <input type="text" name="descripcion" class="form-control" value="{{ obj.descripcion|default:'' }}" required>
-        </div>
 
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'inv-home' %}">Inventario</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'inv-productos-lista' %}">Productos</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{% if obj %}Editar{% else %}Nuevo{% endif %}</li>
+  </ol>
+</nav>
+
+{% if messages %}
+  {% for m in messages %}
+    <div class="alert alert-{{ m.tags }} alert-dismissible py-2" role="alert">
+      {{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <div>
+    <h1 class="h4 mb-0">{% if obj %}Editar producto{% else %}Nuevo producto{% endif %}</h1>
+    <small class="text-muted">{% if obj %}{{ obj.codigo }} · {{ obj.descripcion }}{% else %}Completa los campos obligatorios (*){% endif %}</small>
+  </div>
+  <a href="{% url 'inv-productos-lista' %}" class="btn btn-secondary btn-sm">
+    <i class="bi bi-arrow-left me-1"></i>Volver
+  </a>
+</div>
+
+<form method="post" class="needs-validation" novalidate enctype="multipart/form-data" id="formProducto">
+  {% csrf_token %}
+
+  <!-- ── Identificación ── -->
+  <div class="card mb-3 border-0 shadow-sm">
+    <div class="card-header py-2 fw-semibold bg-transparent border-bottom">
+      <i class="bi bi-upc-scan me-2 text-primary"></i>Identificación
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label" for="inputCodigo">Código (SKU) <span class="text-danger">*</span></label>
+          <input type="text" id="inputCodigo" name="codigo" class="form-control" value="{{ obj.codigo|default:'' }}"
+                 placeholder="Ej. PROD-001" required maxlength="50">
+          <div class="invalid-feedback">El código es obligatorio.</div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="inputDescripcion">Descripción <span class="text-danger">*</span></label>
+          <input type="text" id="inputDescripcion" name="descripcion" class="form-control" value="{{ obj.descripcion|default:'' }}"
+                 placeholder="Nombre del producto o servicio" required maxlength="255">
+          <div class="invalid-feedback">La descripción es obligatoria.</div>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="inputRef">Ref. interna</label>
+          <input type="text" id="inputRef" name="referencia_interna" class="form-control"
+                 value="{{ obj.referencia_interna|default:'' }}" placeholder="Opcional" maxlength="50">
+        </div>
         <div class="col-md-4">
-          <label class="form-label">Categoría</label>
-          <select name="categoria" class="form-select">
-            <option value="">Seleccione…</option>
+          <label class="form-label" for="selectCategoria">Categoría</label>
+          <select id="selectCategoria" name="categoria" class="form-select">
+            <option value="">— Sin categoría —</option>
             {% for c in categorias %}
               <option value="{{ c.id }}" {% if obj and obj.categoria_id == c.id %}selected{% endif %}>{{ c.nombre }}</option>
             {% endfor %}
           </select>
         </div>
         <div class="col-md-4">
-          <label class="form-label">Unidad de medida</label>
-          <select name="unidad_medida" class="form-select">
-            <option value="">Seleccione…</option>
+          <label class="form-label" for="selectUM">Unidad de medida</label>
+          <select id="selectUM" name="unidad_medida" class="form-select">
+            <option value="">— Sin unidad —</option>
             {% for u in tipos_um %}
               <option value="{{ u.id }}" {% if obj and obj.unidad_medida_id == u.id %}selected{% endif %}>{{ u.descripcion }}</option>
             {% endfor %}
           </select>
         </div>
-        <div class="col-md-2">
-          <label class="form-label">Precio compra</label>
-          <input type="number" name="precio_compra" class="form-control text-end" step="0.01" min="0" value="{{ obj.precio_compra|default:'0.00' }}">
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">Precio venta</label>
-          <input type="number" name="precio_venta" class="form-control text-end" step="0.01" min="0" value="{{ obj.precio_venta|default:'0.00' }}">
-        </div>
-
-        <div class="col-md-2">
-          <label class="form-label">Stock</label>
-          <input type="number" name="stock" class="form-control text-end" step="1" min="0" value="{{ obj.stock|default:'0' }}">
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">Stock mínimo</label>
-          <input type="number" name="stock_minimo" class="form-control text-end" step="1" min="0" value="{{ obj.stock_minimo|default:'0' }}">
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">Stock máximo</label>
-          <input type="number" name="stock_maximo" class="form-control text-end" step="1" min="0" value="{{ obj.stock_maximo|default:'0' }}">
-        </div>
-
-        <div class="col-md-6">
-          <label class="form-label">Impuestos</label>
-          <div class="border rounded p-2">
-            {% for imp in impuestos %}
-              <div class="form-check form-check-inline">
-                <input class="form-check-input" type="checkbox" name="impuestos" id="imp{{ imp.id }}" value="{{ imp.id }}"
-                  {% if obj and imp in obj.impuestos.all %}checked{% endif %}>
-                <label class="form-check-label" for="imp{{ imp.id }}">{{ imp.nombre }} ({{ imp.porcentaje }}%)</label>
-              </div>
-            {% empty %}
-              <span class="text-muted small">No hay impuestos definidos.</span>
-            {% endfor %}
-          </div>
-        </div>
-
-        <div class="col-md-6">
-          <label class="form-label">Almacenes</label>
-          <select name="almacenes" class="form-select" multiple>
-            {% for a in almacenes %}
-              <option value="{{ a.id }}"
-                {% if obj and a in obj.almacenes.all %}selected{% endif %}>{{ a.nombre }}</option>
+        <div class="col-md-4">
+          <label class="form-label" for="selectTipoItem">
+            Tipo de ítem <span class="text-danger">*</span>
+            <span class="ms-1 text-muted" data-bs-toggle="tooltip" title="Requerido para facturación electrónica DTE">
+              <i class="bi bi-info-circle"></i>
+            </span>
+          </label>
+          <select id="selectTipoItem" name="tipo_item" class="form-select" required>
+            <option value="">— Seleccione —</option>
+            {% for t in tipos_item %}
+              <option value="{{ t.id }}" {% if obj and obj.tipo_item_id == t.id %}selected{% endif %}>{{ t.descripcion }}</option>
             {% endfor %}
           </select>
-          <div class="form-text">Ctrl/Cmd para selección múltiple.</div>
+          <div class="invalid-feedback">Requerido para DTE.</div>
         </div>
+      </div>
+    </div>
+  </div>
 
+  <!-- ── Precios ── -->
+  <div class="card mb-3 border-0 shadow-sm">
+    <div class="card-header py-2 fw-semibold bg-transparent border-bottom">
+      <i class="bi bi-currency-dollar me-2 text-success"></i>Precios
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
         <div class="col-md-3">
-          <label class="form-label">Maneja lotes</label><br>
-          <input type="checkbox" name="maneja_lotes" {% if obj and obj.maneja_lotes %}checked{% endif %}>
+          <label class="form-label" for="inputPrecioCompra">Precio de compra</label>
+          <div class="input-group">
+            <span class="input-group-text">$</span>
+            <input type="number" id="inputPrecioCompra" name="precio_compra" class="form-control text-end" step="0.01" min="0"
+                   value="{{ obj.precio_compra|default:'0.00' }}">
+          </div>
         </div>
         <div class="col-md-3">
-          <label class="form-label">Fecha vencimiento</label>
-          <input type="date" name="fecha_vencimiento" class="form-control" value="{{ obj.fecha_vencimiento|date:'Y-m-d' }}">
+          <label class="form-label" for="inputPrecioVenta">Precio de venta <span class="text-danger">*</span></label>
+          <div class="input-group">
+            <span class="input-group-text">$</span>
+            <input type="number" id="inputPrecioVenta" name="precio_venta" class="form-control text-end" step="0.01" min="0"
+                   value="{{ obj.precio_venta|default:'0.00' }}" required>
+          </div>
+          <div class="form-text">0 = calcula automáticamente con IVA 13%.</div>
         </div>
+        <div class="col-md-3">
+          <label class="form-label" for="selectTributo">Tributo (DTE)</label>
+          <select id="selectTributo" name="tributo" class="form-select">
+            <option value="">— Sin tributo —</option>
+            {% for t in tributos %}
+              <option value="{{ t.id }}" {% if obj and obj.tributo_id == t.id %}selected{% elif not obj and forloop.first %}selected{% endif %}>
+                {{ t.descripcion }} ({{ t.valor_tributo }}%)
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3 d-flex align-items-end pb-1">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" name="precio_iva" id="chkPrecioIva"
+                   {% if obj and obj.precio_iva %}checked{% endif %}>
+            <label class="form-check-label" for="chkPrecioIva">Precio incluye IVA</label>
+          </div>
+        </div>
+      </div>
 
+      <div class="mt-3">
+        <label class="form-label fw-semibold small">Impuestos aplicables</label>
+        <div class="border rounded p-3 bg-light">
+          {% for imp in impuestos %}
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="checkbox" name="impuestos"
+                     id="imp{{ imp.id }}" value="{{ imp.id }}"
+                     {% if obj and imp in obj.impuestos.all %}checked{% endif %}>
+              <label class="form-check-label small" for="imp{{ imp.id }}">{{ imp.nombre }} ({{ imp.porcentaje }}%)</label>
+            </div>
+          {% empty %}
+            <span class="text-muted small">No hay impuestos definidos.</span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Stock y Almacenes ── -->
+  <div class="card mb-3 border-0 shadow-sm">
+    <div class="card-header py-2 fw-semibold bg-transparent border-bottom">
+      <i class="bi bi-boxes me-2 text-warning"></i>Stock y almacenes
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-2">
+          <label class="form-label" for="inputStock">Stock actual</label>
+          <input type="number" id="inputStock" name="stock" class="form-control text-end" step="1" min="0"
+                 value="{{ obj.stock|default:'0' }}">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="inputStockMin">Stock mínimo</label>
+          <input type="number" id="inputStockMin" name="stock_minimo" class="form-control text-end" step="1" min="0"
+                 value="{{ obj.stock_minimo|default:'0' }}">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="inputStockMax">Stock máximo</label>
+          <input type="number" id="inputStockMax" name="stock_maximo" class="form-control text-end" step="1" min="0"
+                 value="{{ obj.stock_maximo|default:'0' }}">
+          <div class="form-text">0 = sin límite.</div>
+        </div>
         <div class="col-md-6">
-          <label class="form-label">Imagen</label>
-          <input type="file" name="imagen" class="form-control">
-          {% if obj.imagen %}
-            <div class="small text-muted mt-1">Actual: {{ obj.imagen.url }}</div>
+          <label class="form-label" for="selectAlmacenes">Almacenes</label>
+          <select id="selectAlmacenes" name="almacenes" class="form-select" multiple size="4">
+            {% for a in almacenes %}
+              <option value="{{ a.id }}" {% if obj and a in obj.almacenes.all %}selected{% endif %}>{{ a.nombre }}</option>
+            {% endfor %}
+          </select>
+          <div class="form-text"><i class="bi bi-info-circle me-1"></i>Ctrl/Cmd para selección múltiple.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Opciones adicionales ── -->
+  <div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header py-2 fw-semibold bg-transparent border-bottom">
+      <i class="bi bi-sliders me-2"></i>Opciones adicionales
+    </div>
+    <div class="card-body">
+      <div class="row g-3 align-items-start">
+        <div class="col-md-3">
+          <div class="form-check form-switch mt-2">
+            <input class="form-check-input" type="checkbox" name="maneja_lotes" id="chkLotes"
+                   {% if obj and obj.maneja_lotes %}checked{% endif %}>
+            <label class="form-check-label" for="chkLotes">Maneja lotes</label>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="inputVencimiento">Fecha de vencimiento</label>
+          <input type="date" id="inputVencimiento" name="fecha_vencimiento" class="form-control"
+                 value="{{ obj.fecha_vencimiento|date:'Y-m-d'|default:'' }}">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="inputImagen">Imagen</label>
+          <input type="file" id="inputImagen" name="imagen" class="form-control" accept="image/*">
+          {% if obj and obj.imagen %}
+            <div class="mt-2 d-flex align-items-center gap-2">
+              <img src="{{ obj.imagen.url }}" alt="Imagen actual del producto" class="rounded"
+                   style="height:60px;width:60px;object-fit:cover;border:1px solid #dee2e6;">
+              <small class="text-muted">Imagen actual. Sube una nueva para reemplazarla.</small>
+            </div>
           {% endif %}
         </div>
       </div>
-
-      <div class="mt-3 d-flex gap-2">
-        <a href="{% url 'inv-productos-lista' %}" class="btn btn-light">Cancelar</a>
-        <button class="btn btn-primary">Guardar</button>
-      </div>
-    </form>
+    </div>
   </div>
-</div>
+
+  <div class="d-flex gap-2 justify-content-between">
+    <a href="{% url 'inv-productos-lista' %}" class="btn btn-secondary">
+      <i class="bi bi-x-lg me-1"></i>Cancelar
+    </a>
+    <button class="btn btn-primary" id="btnGuardar" type="submit">
+      <span class="spinner-border spinner-border-sm d-none me-1" id="spnGuardar" role="status" aria-hidden="true"></span>
+      <i class="bi bi-save me-1" id="iconGuardar"></i>Guardar producto
+    </button>
+  </div>
+</form>
+
+<script>
+  // Tooltips
+  document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
+
+  // Validación Bootstrap + spinner
+  document.getElementById('formProducto').addEventListener('submit', function(e) {
+    if (!this.checkValidity()) {
+      e.preventDefault();
+      e.stopPropagation();
+    } else {
+      document.getElementById('spnGuardar').classList.remove('d-none');
+      document.getElementById('iconGuardar').classList.add('d-none');
+      document.getElementById('btnGuardar').disabled = true;
+    }
+    this.classList.add('was-validated');
+  });
+
+  // Advertencia si stock_min > stock_max
+  const minIn = document.getElementById('inputStockMin');
+  const maxIn = document.getElementById('inputStockMax');
+  function checkStock() {
+    const min = parseInt(minIn.value) || 0;
+    const max = parseInt(maxIn.value) || 0;
+    const warn = max > 0 && min > max;
+    [minIn, maxIn].forEach(el => el.classList.toggle('is-invalid', warn));
+  }
+  minIn.addEventListener('input', checkStock);
+  maxIn.addEventListener('input', checkStock);
+</script>
 {% endblock %}

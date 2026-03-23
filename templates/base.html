@@ -1,682 +1,838 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta id="vp" name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<head>
+  <meta charset="UTF-8" />
+  <meta id="vp" name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
-    <!-- Ajuste opcional del viewport en Android WebView en landscape -->
-    <script>
-      ;(function () {
-        const ua = navigator.userAgent || ''
-        // Detecta específicamente WebView de Android (evita afectar a Chrome normal)
-        const isAndroidWV = /\bwv\b/i.test(ua)
-        const isLandscape = () => (screen.orientation?.type || '').includes('landscape') || window.innerWidth > window.innerHeight
-      
-        function apply() {
-          const meta = document.getElementById('vp')
-          if (!meta) return
-          if (isAndroidWV && isLandscape()) {
-            // Si prefieres mantener breakpoints en lg, sube a 1280. Con md, no es estrictamente necesario.
-            meta.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover')
-          } else {
-            meta.setAttribute('content', 'width=device-width, initial-scale=1, viewport-fit=cover')
-          }
-        }
-        apply()
-        window.addEventListener('orientationchange', () => setTimeout(apply, 200))
-        window.addEventListener('resize', () => setTimeout(apply, 200))
-      })()
-    </script>
+  <!-- Ajuste viewport en Android WebView landscape -->
+  <script>
+    ;(function(){
+      const ua = navigator.userAgent||'', isWV=/\bwv\b/i.test(ua)
+      const isLS=()=>(screen.orientation?.type||'').includes('landscape')||window.innerWidth>window.innerHeight
+      function apply(){
+        const m=document.getElementById('vp'); if(!m) return
+        m.setAttribute('content', isWV&&isLS()
+          ? 'width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover'
+          : 'width=device-width,initial-scale=1,viewport-fit=cover')
+      }
+      apply()
+      window.addEventListener('orientationchange',()=>setTimeout(apply,200))
+      window.addEventListener('resize',()=>setTimeout(apply,200))
+    })()
+  </script>
 
-    <title>
-      {% block title %}
-        INTRACOE
-      {% endblock %}
-    </title>
+  <title>{% block title %}INTRACOE{% endblock %}</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
-    <link rel="stylesheet" href="{% static 'utilities/css/style_base.css' %}" />
+  <!-- CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="{% static 'utilities/css/style_base.css' %}" />
 
-    <head>
-      {% block extra_css %}
-        <style>
-          .navbar-brand-center {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-          }
-          
-          .navbar .container-fluid {
-            position: relative; /* referencia para el centrado absoluto */
-          }
-          
-          .ancho-completo {
-            width: 100% !important;
-          }
-          
-          .menu-show {
-            display: block;
-          }
-          
-          .menu-hidden {
-            display: none;
-          }
-          
-          .list-group-item-action.bg-menu-item:hover,
-          .list-group-item-action.bg-menu-item:focus {
-            background-color: #e2e9f4 !important;
-            color: black !important;
-          }
-          
-          /* ==== ESTILOS PARA MENÚ MÓVIL (offcanvas) ==== */
-          .offcanvas-start {
-            max-width: 280px;
-          }
-          
-          .offcanvas-header {
-            border-bottom: 1px solid #e1e5f2;
-          }
-          
-          .offcanvas-body {
-            display: flex;
-            flex-direction: column;
-            padding: 0;
-          }
-          
-          .offcanvas-main {
-            flex: 1;
-            overflow-y: auto;
-            padding: 0.75rem;
-          }
-          
-          .offcanvas-footer {
-            border-top: 1px solid #e1e5f2;
-            padding: 0.75rem;
-          }
-          
-          /* Estilos para menu lateral version movil */
-          .offcanvas-link {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            border-radius: 0.75rem;
-            padding: 0rem;
-            font-size: 0.95rem;
-            text-decoration: none;
-            margin-bottom: 0.75rem;
-            font-weight: 500;
-          }
-          
-          .offcanvas-link i {
-            font-size: 1rem;
-          }
-          
-          /* Acordeón mobile */
-          .offcanvas-accordion .accordion-item {
-            border: 0;
-            background: transparent;
-          }
-          
-          .offcanvas-accordion .accordion-button {
-            background: transparent;
-            padding: 0.35rem 0;
-            font-size: 0.95rem;
-            font-weight: 500;
-            color: #111827;
-          }
-          
-          .offcanvas-accordion .accordion-button::after {
-            transform: scale(0.8);
-          }
-          
-          .offcanvas-accordion .accordion-collapse {
-            margin-bottom: 0.25rem;
-          }
-          
-          .offcanvas-accordion .list-group-item {
-            border: 0;
-            border-radius: 0.5rem;
-            margin: 0.1rem 0.25rem;
-            padding: 0.35rem 0.75rem;
-            font-size: 0.9rem;
-            background: #ffffff;
-            color: #374151;
-          }
-          
-          .offcanvas-accordion .list-group-item:hover {
-            background: #e5edff;
-            color: #111827;
-          }
-          
-          /* ==== ESTILOS ESCRITORIO (sidebar izquierdo) ==== */
-          @media (min-width: 768px) {
-            :root {
-              --navbar-height: 56px;
-              --sidebar-bg: #f5f7fb;
-              --sidebar-border: #e1e5f2;
-            }
-          
-            .sidebar-menu {
-              background: var(--sidebar-bg);
-              border-right: 1px solid var(--sidebar-border);
-            }
-          
-            .sidebar-inner {
-              height: calc(100vh - var(--navbar-height));
-              display: flex;
-              flex-direction: column;
-              padding: 0.75rem;
-              gap: 0.75rem;
-            }
-          
-            .sidebar-main {
-              flex: 1;
-              overflow-y: auto;
-              padding-right: 0.25rem;
-            }
-          
-            .sidebar-footer {
-              border-top: 1px solid var(--sidebar-border);
-              padding-top: 0.75rem;
-            }
-          
-            .sidebar-link {
-              display: flex;
-              align-items: center;
-              gap: 0.5rem;
-              background-color: #ffffff !important;
-              color: #1f2933 !important;
-              border-radius: 0.75rem;
-              border: 1px solid #dde3f0;
-              padding: 0.5rem 0.75rem;
-              font-size: 0.95rem;
-              text-decoration: none;
-            }
-          
-            .sidebar-link i {
-              font-size: 1rem;
-            }
-          
-            .sidebar-link:hover {
-              background-color: #0d47a1 !important;
-              color: #ffffff !important;
-              border-color: #0d47a1;
-            }
-          
-            .sidebar-menu .accordion-item {
-              border: 0;
-              background: transparent;
-              margin-bottom: 0.25rem;
-              border-radius: 0.75rem;
-              overflow: hidden;
-            }
-          
-            .sidebar-menu .accordion-button {
-              background: transparent;
-              padding: 0.4rem 0.75rem;
-              font-size: 0.95rem;
-              font-weight: 500;
-              color: #111827;
-            }
-          
-            .sidebar-menu .accordion-button::after {
-              transform: scale(0.8);
-            }
-          
-            .sidebar-menu .accordion-button:not(.collapsed) {
-              background-color: #0d47a1;
-              color: #ffffff;
-            }
-          
-            .sidebar-menu .accordion-button:not(.collapsed)::after {
-              filter: invert(100);
-              color: black;
-            }
-          
-            .sidebar-submenu .list-group-item {
-              border: 0;
-              border-radius: 0.5rem;
-              margin: 0.15rem 0.4rem;
-              padding: 0.35rem 0.75rem;
-              font-size: 0.9rem;
-              background: #ffffff;
-              color: #374151;
-            }
-          
-            .sidebar-submenu .list-group-item:hover {
-              background: #e5edff;
-              color: #111827;
-            }
-          
-            /* Ocultar offcanvas en desktop */
-            .offcanvas-start {
-              display: none !important;
-            }
-          }
-        </style>
-      {% endblock %}
-    </head>
-  </head>
+  <style>
+    /* ── Variables de layout ───────────────────────────────── */
+    :root {
+      --nav-h: 56px;
+      --sidebar-w: 260px;
+      --sidebar-bg: #ffffff;
+      --sidebar-border: rgba(0,0,0,.07);
+      --item-hover: #f0f4ff;
+      --item-active-bg: #0d47a1;
+      --item-active-color: #ffffff;
+      --section-label: #9ca3af;
+    }
 
-  <body class="bg-light">
-    <!-- TOPBAR -->
-    <nav class="navbar navbar-dark bg-primary sticky-top">
-      <div class="container-fluid">
-        <div class="d-flex gap-4">
-          <!-- Botón menú móvil -->
-          <button class="btn btn-outline-light d-md-none me-2" data-bs-toggle="offcanvas" data-bs-target="#sidebarOff" id="menu-mobil"><i class="bi bi-list"></i></button>
+    /* ── Body / layout base ────────────────────────────────── */
+    body { background: #f4f6fb; }
 
-          <!-- Botón ir atrás -->
-          {% if user.is_authenticated %}
-            <button class="btn btn-outline-light me-2" onclick="window.history.back()"><i class="bi bi-arrow-left"></i></button>
-          {% endif %}
-        </div>
-        <!-- Nombre/logo -->
-        <a class="navbar-brand fw-bold navbar-brand-center" href="{% url 'index' %}">Intra<span class="text-accent">coe</span></a>
+    /* ── Topbar ────────────────────────────────────────────── */
+    .topbar {
+      height: var(--nav-h);
+      background: #0d47a1;
+      position: sticky;
+      top: 0;
+      z-index: 1030;
+      box-shadow: 0 1px 4px rgba(0,0,0,.18);
+    }
+    .topbar .brand { font-size: 1.15rem; font-weight: 700; color: #fff; letter-spacing: .3px; }
+    .topbar .brand span { color: #ff7a00; }
+    .topbar .btn-icon {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.3);
+      background: transparent;
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s;
+      font-size: .95rem;
+    }
+    .topbar .btn-icon:hover { background: rgba(255,255,255,.15); }
+    .topbar .avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: #ff7a00;
+      color: #fff; font-size: .75rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .topbar .user-btn {
+      display: flex; align-items: center; gap: 8px;
+      border: 1px solid rgba(255,255,255,.3);
+      border-radius: 20px;
+      padding: 3px 10px 3px 4px;
+      background: transparent; color: #fff;
+      font-size: .875rem; font-weight: 500;
+      transition: background .15s;
+      cursor: pointer;
+    }
+    .topbar .user-btn:hover { background: rgba(255,255,255,.12); }
 
-        <div class="d-flex align-items-center gap-2">
-          {% if user.is_authenticated %}
-            <div class="d-flex">
-              <button class="btn btn-link text-white"><i class="bi bi-bell"></i></button>
-              <button class="btn btn-outline-light" data-bs-toggle="offcanvas" data-bs-target="#profileOff">
-                <i class="bi bi-person-circle me-1"></i>
-                {{ user.username }}
-              </button>
-            </div>
-          {% else %}
-            <a href="{% url 'login' %}" class="btn btn-primary w-100 mb-2"><i class="bi bi-box-arrow-in-right me-2"></i> Iniciar sesión</a>
-          {% endif %}
-        </div>
-      </div>
-    </nav>
+    /* ── Wrapper principal ─────────────────────────────────── */
+    .layout-wrap {
+      display: flex;
+      min-height: calc(100vh - var(--nav-h));
+    }
 
-    <div class="container-fluid">
-      <div class="row">
-        <!-- SIDEBAR DESKTOP (visible desde md) -->
-        {% if user.is_authenticated %}
-          <aside class="col-md-3 col-xl-2 d-none d-md-block p-0 border-end bg-white sidebar sidebar-menu sticky">
-            <div class="sidebar-sticky p-3 d-flex flex-column justify-content-between">
-              <!-- link directo -->
-              <div>
-                {% if user.role == 'admin' or user.role == 'supervisor' %}
-                  <a href="{% url 'index' %}" class="list-group-item list-group-item-action border-0 m-0 rounded-0 d-flex align-items-center gap-2 bg-menu-item">
-                    <i class="bi bi-speedometer2"></i>
-                    <span class="fw-medium">Dashboard</span>
-                  </a>
-                {% endif %}
+    /* ── Sidebar desktop ───────────────────────────────────── */
+    .sidebar-desk {
+      width: var(--sidebar-w);
+      flex-shrink: 0;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--sidebar-border);
+      position: sticky;
+      top: var(--nav-h);
+      height: calc(100vh - var(--nav-h));
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    @media (max-width: 767.98px) { .sidebar-desk { display: none; } }
 
-                <!-- acordeón -->
-                <div class="accordion accordion-flush sidebar" id="accMenu">
-                  <!-- Compras -->
-                  {% if user.role == 'admin' or user.role == 'supervisor' %}
-                    <div class="accordion-item">
-                      <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbCompras"><i class="bi bi-basket me-2"></i> Compras</button></h2>
-                      <div id="sbCompras" class="accordion-collapse collapse" data-bs-parent="#accMenu">
-                        <div class="list-group list-group-flush">
-                          {% include 'opciones_menu/compras.html' with uid='desk' %}
-                        </div>
-                      </div>
-                    </div>
-                  {% endif %}
+    .sidebar-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: .75rem .5rem;
+    }
+    .sidebar-scroll::-webkit-scrollbar { width: 4px; }
+    .sidebar-scroll::-webkit-scrollbar-thumb {
+      background: rgba(13,71,161,.2); border-radius: 4px;
+    }
+    .sidebar-foot {
+      padding: .75rem;
+      border-top: 1px solid var(--sidebar-border);
+    }
 
-                  <!-- Ventas -->
-                  {% if user.role == 'admin' or user.role == 'supervisor' %}
-                    <div class="accordion-item">
-                      <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbVentas"><i class="bi bi-receipt-cutoff me-2"></i> Ventas</button></h2>
-                      <div id="sbVentas" class="accordion-collapse collapse" data-bs-parent="#accMenu">
-                        <div class="list-group list-group-flush">
-                          {% include 'opciones_menu/ventas.html' with uid='deskV' %}
-                        </div>
-                      </div>
-                    </div>
-                  {% endif %}
+    /* Sección label */
+    .sb-label {
+      font-size: .68rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .8px;
+      color: var(--section-label);
+      padding: .5rem .75rem .25rem;
+      margin-top: .25rem;
+    }
 
+    /* Link directo */
+    .sb-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: .5rem .75rem;
+      border-radius: .5rem;
+      color: #374151; font-size: .875rem; font-weight: 500;
+      text-decoration: none;
+      transition: background .15s, color .15s;
+      position: relative;
+    }
+    .sb-link i { font-size: 1rem; flex-shrink: 0; }
+    .sb-link:hover { background: var(--item-hover); color: #0d47a1; }
+    .sb-link.active {
+      background: var(--item-active-bg); color: var(--item-active-color);
+    }
+    .sb-link.active i { color: var(--item-active-color); }
 
-                  <!-- Facturación -->
-                  {% if user.role == 'admin' or user.role == 'supervisor' %}
-                    <div class="accordion-item">
-                      <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbFact"><i class="bi bi-file-earmark-text me-2"></i> Facturación</button></h2>
-                      <div id="sbFact" class="accordion-collapse collapse" data-bs-parent="#accMenu">
-                        <div class="list-group list-group-flush">
-                          {% include 'opciones_menu/facturacion.html' with uid='deskF' %}
-                        </div>
-                      </div>
-                    </div>
-                  {% endif %}
+    /* Accordion dentro del sidebar */
+    .sb-acc .accordion-item {
+      border: 0; background: transparent; margin-bottom: 2px;
+    }
+    .sb-acc .accordion-button {
+      background: transparent; padding: .5rem .75rem;
+      font-size: .875rem; font-weight: 600; color: #374151;
+      border-radius: .5rem; box-shadow: none;
+      transition: background .15s, color .15s;
+      gap: 10px;
+    }
+    .sb-acc .accordion-button i { font-size: 1rem; flex-shrink: 0; }
+    .sb-acc .accordion-button::after { transform: scale(.75); margin-left: auto; }
+    .sb-acc .accordion-button:hover { background: var(--item-hover); color: #0d47a1; }
+    .sb-acc .accordion-button:not(.collapsed) {
+      background: #eef2ff; color: #0d47a1;
+    }
+    .sb-acc .accordion-button:not(.collapsed)::after { filter: none; }
+    .sb-acc .accordion-collapse { background: transparent; }
+    .sb-acc .accordion-body { padding: .25rem 0 .25rem .5rem; }
 
-                  <!-- Inventario -->
-                  {% if user.role == 'admin' or user.role == 'supervisor' %}
-                    <div class="accordion-item">
-                      <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sbInv"><i class="bi bi-box-seam me-2"></i> Inventario</button></h2>
-                      <div id="sbInv" class="accordion-collapse collapse" data-bs-parent="#accMenu">
-                        <div class="list-group list-group-flush">
-                          {% include 'opciones_menu/inventario.html' with uid='deskI' %}
-                        </div>
-                      </div>
-                    </div>
-                  {% endif %}
+    /* Sub-items — árbol de navegación */
+    .sb-acc .accordion-body {
+      padding: .2rem 0 .3rem .35rem;
+      margin-left: 1.1rem;
+      border-left: 2px solid rgba(13,71,161,.12);
+    }
+    .mob-acc .accordion-collapse > div {
+      padding-left: .4rem;
+      border-left: 2px solid rgba(13,71,161,.12);
+      margin-left: 1rem;
+      padding-bottom: .25rem;
+    }
 
-                </div>
+    /* Botón de inicio de módulo (primer ítem del sub-menú) */
+    .sb-module-home {
+      display: flex; align-items: center; gap: 8px;
+      padding: .38rem .7rem;
+      border-radius: .4rem;
+      color: #1d4ed8; font-size: .82rem; font-weight: 600;
+      background: #eff6ff;
+      border: 0; cursor: pointer; width: 100%; text-align: left;
+      margin-bottom: .3rem;
+      transition: background .12s;
+    }
+    .sb-module-home i { font-size: .9rem; flex-shrink: 0; }
+    .sb-module-home:hover { background: #dbeafe; }
 
-                <hr class="my-3 border border-bottom border-dark-subtle" />
+    /* Sub-ítem estándar */
+    .sb-sub-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: .38rem .7rem;
+      border-radius: .4rem;
+      color: #4b5563; font-size: .84rem;
+      text-decoration: none;
+      transition: background .12s, color .12s, padding-left .1s;
+      cursor: pointer; border: 0; background: transparent; width: 100%;
+      text-align: left;
+    }
+    .sb-sub-item i { font-size: .88rem; flex-shrink: 0; opacity: .65; transition: opacity .12s; }
+    .sb-sub-item:hover { background: var(--item-hover); color: #0d47a1; padding-left: .9rem; }
+    .sb-sub-item:hover i { opacity: 1; }
+    .sb-sub-item.active { background: #dbeafe; color: #1d4ed8; font-weight: 600; }
+    .sb-sub-item.active i { opacity: 1; }
 
-                {% if emisor.es_restaurante and user.is_authenticated %}
-                  <h6>Restarurante</h6>
-                  {% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'cajero' %}
-                    <div class="accordion-item">
-                      <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#cj"><i class="bi bi-cash me-2 fs-6"></i>Caja</button></h2>
-                      <div id="cj" class="accordion-collapse collapse" data-bs-parent="#accMenu">
-                        <div class="list-group list-group-flush">
-                          {% include 'opciones_menu_restaurante/caja.html' with uid='cj' %}
-                        </div>
-                      </div>
-                    </div>
-                  {% endif %}
+    /* Compat. con list-group (partials legacy) */
+    .sb-acc .list-group { --bs-list-group-bg: transparent; --bs-list-group-border-color: transparent; }
+    .sb-acc .list-group-item { border: 0; background: transparent; padding: 0; }
+    .sb-acc .list-group-item-action {
+      display: flex; align-items: center; gap: 8px;
+      padding: .38rem .7rem; border-radius: .4rem;
+      color: #4b5563; font-size: .84rem;
+      transition: background .12s, color .12s;
+    }
+    .sb-acc .list-group-item-action:hover { background: var(--item-hover); color: #0d47a1; }
+    .mob-acc .list-group { --bs-list-group-bg: transparent; --bs-list-group-border-color: transparent; }
+    .mob-acc .list-group-item { border: 0; padding: 0; background: transparent; }
+    .mob-acc .list-group-item-action {
+      display: flex; align-items: center; gap: 8px;
+      padding: .38rem .6rem; border-radius: .4rem;
+      color: #4b5563; font-size: .84rem;
+      transition: background .12s;
+    }
+    .mob-acc .list-group-item-action:hover { background: var(--item-hover); color: #0d47a1; }
 
-                  {% if user.role == 'admin' or user.role == 'supervisor' %}
-                    <div class="accordion-item">
-                      <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#Cocina">
-                        <svg width="17px" height="17px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path fill-rule="evenodd" clip-rule="evenodd" d="M7.25285 4.25547C8.09403 2.47951 9.90263 1.25 12 1.25C14.0974 1.25 15.906 2.47951 16.7471 4.25547C16.831 4.25184 16.9153 4.25 17 4.25C20.1756 4.25 22.75 6.82436 22.75 10C22.75 12.1806 21.5363 14.0762 19.75 15.0508L19.75 18.052C19.75 18.9505 19.7501 19.6997 19.6701 20.2945C19.5857 20.9223 19.4 21.4891 18.9445 21.9445C18.4891 22.4 17.9223 22.5857 17.2945 22.6701C16.6997 22.7501 15.9505 22.75 15.052 22.75H8.94801C8.04952 22.75 7.3003 22.7501 6.70552 22.6701C6.07773 22.5857 5.51093 22.4 5.05546 21.9445C4.59999 21.4891 4.41432 20.9223 4.32991 20.2945C4.24994 19.6997 4.24997 18.9505 4.25 18.052L4.25 15.0508C2.46371 14.0762 1.25 12.1806 1.25 10C1.25 6.82436 3.82436 4.25 7 4.25C7.08469 4.25 7.16899 4.25184 7.25285 4.25547ZM6.80262 5.7545C4.54704 5.85762 2.75 7.71895 2.75 10C2.75 11.7416 3.79769 13.2402 5.30028 13.8967C5.57345 14.016 5.75 14.2859 5.75 14.584V17.25H18.25L18.25 14.584C18.25 14.2859 18.4265 14.016 18.6997 13.8967C20.2023 13.2402 21.25 11.7416 21.25 10C21.25 7.71895 19.453 5.85761 17.1974 5.7545C17.2321 5.99825 17.25 6.24718 17.25 6.5V7C17.25 7.41421 16.9142 7.75 16.5 7.75C16.0858 7.75 15.75 7.41421 15.75 7V6.5C15.75 6.07715 15.6803 5.67212 15.5524 5.29486C15.0502 3.81402 13.6484 2.75 12 2.75C10.3516 2.75 8.94981 3.81402 8.44763 5.29486C8.3197 5.67212 8.25 6.07715 8.25 6.5V7C8.25 7.41421 7.91421 7.75 7.5 7.75C7.08579 7.75 6.75 7.41421 6.75 7V6.5C6.75 6.24717 6.76792 5.99825 6.80262 5.7545ZM18.2482 18.75H5.75181C5.75604 19.3194 5.77008 19.7491 5.81654 20.0946C5.87858 20.5561 5.9858 20.7536 6.11612 20.8839C6.24643 21.0142 6.44393 21.1214 6.90539 21.1835C7.38843 21.2484 8.03599 21.25 9 21.25H15C15.964 21.25 16.6116 21.2484 17.0946 21.1835C17.5561 21.1214 17.7536 21.0142 17.8839 20.8839C18.0142 20.7536 18.1214 20.5561 18.1835 20.0946C18.2299 19.7491 18.244 19.3194 18.2482 18.75Z" fill="#000000"/>
-                          </svg>
-                          <span style="padding-left: 0.4rem;">Cocina</span></button></h2>
-                      <div id="Cocina" class="accordion-collapse collapse" data-bs-parent="#accMenu">
-                        <div class="list-group list-group-flush">
-                          {% include 'opciones_menu_restaurante/cocina.html' with uid='cocina' %}
-                        </div>
-                      </div>
-                    </div>
-                  {% endif %}
+    /* ── Offcanvas móvil ───────────────────────────────────── */
+    .offcanvas.offcanvas-start { width: 272px; }
+    .mob-acc .accordion-item { border: 0; background: transparent; }
+    .mob-acc .accordion-button {
+      background: transparent; padding: .45rem .5rem;
+      font-size: .875rem; font-weight: 600; color: #374151;
+      box-shadow: none;
+    }
+    .mob-acc .accordion-button::after { transform: scale(.75); }
+    .mob-acc .accordion-button:not(.collapsed) { background: #eef2ff; color: #0d47a1; }
+    .mob-acc .list-group { --bs-list-group-bg: transparent; --bs-list-group-border-color: transparent; }
+    .mob-acc .list-group-item { border: 0; padding: 0; background: transparent; }
+    .mob-acc .list-group-item-action {
+      display: flex; align-items: center; gap: 8px;
+      padding: .38rem .6rem; border-radius: .4rem;
+      color: #4b5563; font-size: .85rem;
+      transition: background .12s;
+    }
+    .mob-acc .list-group-item-action:hover { background: var(--item-hover); color: #0d47a1; }
+    .mob-sb-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: .45rem .5rem; border-radius: .5rem;
+      color: #374151; font-size: .875rem; font-weight: 500;
+      text-decoration: none; margin-bottom: 2px;
+      transition: background .15s;
+    }
+    .mob-sb-link:hover { background: var(--item-hover); color: #0d47a1; }
 
-                  {% if user.role == 'admin' or user.role == 'supervisor' %}
-                    <div class="accordion-item">
-                      <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#ConfiguracionRestaurante">
-                        <?xml version="1.0" encoding="utf-8"?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
-                          <svg width="17px" height="17px" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path fill="#000000" d="M480 257.152V192h-96a32 32 0 0 1 0-64h256a32 32 0 1 1 0 64h-96v65.152A448 448 0 0 1 955.52 768H68.48A448 448 0 0 1 480 257.152zM128 704h768a384 384 0 1 0-768 0zM96 832h832a32 32 0 1 1 0 64H96a32 32 0 1 1 0-64z"/></svg>
-                          <span style="padding-left: 0.4rem;">Configuración restaurante</span>
-                        </button></h2>
-                      <div id="ConfiguracionRestaurante" class="accordion-collapse collapse" data-bs-parent="#accMenu">
-                        <div class="list-group list-group-flush">
-                          {% include 'opciones_menu_restaurante/configuracion_restaurante.html' with uid='ped' %}
-                        </div>
-                      </div>
-                    </div>
-                  {% endif %}
+    /* ── Contenido principal ───────────────────────────────── */
+    .main-content {
+      flex: 1;
+      min-width: 0;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+    }
+    @media (max-width: 575.98px) { .main-content { padding: .75rem; } }
 
-                  {% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'mesero' or user.role == 'cajero' %}
-                    <div class="accordion-item">
-                      <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#meseros"><i class="bi bi-person me-2 fs-6"></i>Meseros</button></h2>
-                      <div id="meseros" class="accordion-collapse collapse" data-bs-parent="#accMenu">
-                        <div class="list-group list-group-flush">
-                          {% include 'opciones_menu_restaurante/meseros.html' with uid='mes' %}
-                        </div>
-                      </div>
-                    </div>
-                  {% endif %}
-                {% endif %}
+    /* ── Toast container ───────────────────────────────────── */
+    #toast-container {
+      position: fixed; bottom: 1.25rem; right: 1.25rem;
+      z-index: 9999; display: flex; flex-direction: column; gap: .5rem;
+      min-width: 280px; max-width: 360px;
+    }
+    .app-toast {
+      border-radius: .6rem; padding: .75rem 1rem;
+      display: flex; align-items: center; gap: .6rem;
+      font-size: .875rem; font-weight: 500; color: #fff;
+      box-shadow: 0 4px 12px rgba(0,0,0,.15);
+      animation: slideUp .25s ease;
+    }
+    .app-toast.success { background: #16a34a; }
+    .app-toast.error   { background: #dc2626; }
+    .app-toast.warning { background: #d97706; }
+    .app-toast.info    { background: #0d47a1; }
+    .app-toast .toast-close {
+      margin-left: auto; background: transparent; border: 0;
+      color: rgba(255,255,255,.8); font-size: 1.1rem; cursor: pointer; padding: 0;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(12px); opacity: 0; }
+      to   { transform: translateY(0);   opacity: 1; }
+    }
 
-                <hr class="border border-bottom border-dark-subtle" />
+    /* ── Perfil offcanvas ──────────────────────────────────── */
+    .profile-avatar {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: #0d47a1; color: #fff;
+      font-size: 1.4rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1rem;
+    }
+    .role-badge {
+      display: inline-block; font-size: .7rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .6px;
+      padding: 2px 8px; border-radius: 20px;
+      background: #eef2ff; color: #0d47a1;
+    }
 
-                <div class="">
-                  {% if emisor.es_restaurante and user.is_authenticated %}
-                  {% if user.role == 'admin' %}
-                    <h6>usuarios</h6>
-                    <div class="accordion-item">
-                      <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#us"><i class="bi bi-person me-2 fs-6"></i>Grupos</button></h2>
-                      <div id="us" class="accordion-collapse collapse" data-bs-parent="#accMenu">
-                        <div class="list-group list-group-flush">
-                          {% include 'opciones_menu_restaurante/usuarios.html' with uid='us' %}
-                        </div>
-                      </div>
-                    </div>
-                    {% endif %}
-                  {% endif %}
-                </div>
-              </div>
+    /* ── Footer ────────────────────────────────────────────── */
+    .app-footer {
+      margin-top: auto; padding-top: 1rem;
+      font-size: .78rem; color: #9ca3af;
+      text-align: center;
+    }
+  </style>
 
-              {% if user.is_staff %}
-                <div class="list-group list-group-flush">
-                  <a class="list-group-item list-group-item-action d-none"><i class="bi bi-calculator me-2"></i> Contabilidad</a>
-                  <hr class="my-3" />
-                  <a class="list-group-item list-group-item-action d-none"><i class="bi bi-buildings me-2"></i> Empresa</a>
-                  <hr class="my-3" />
-                  <a class="list-group-item list-group-item-action border-0 bg-white" href="{% url 'configurar_empresa' %}"><i class="bi bi-gear me-2"></i> Configurar empresa</a>
-                </div>
-              {% endif %}
-              
-            </div>
-          </aside>
+  {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+
+  <!-- ══════════════════════════════════════════
+       TOPBAR
+  ══════════════════════════════════════════ -->
+  <nav class="topbar d-flex align-items-center px-3 px-md-4 gap-3">
+
+    <!-- Botón menú móvil -->
+    {% if user.is_authenticated %}
+      <button class="btn-icon d-md-none" data-bs-toggle="offcanvas" data-bs-target="#sidebarOff" aria-label="Menú">
+        <i class="bi bi-list"></i>
+      </button>
+    {% endif %}
+
+    <!-- Botón ir atrás -->
+    {% if user.is_authenticated %}
+      <button class="btn-icon d-none d-md-flex" onclick="window.history.back()" aria-label="Atrás">
+        <i class="bi bi-arrow-left"></i>
+      </button>
+    {% endif %}
+
+    <!-- Marca / Logo -->
+    <a href="{% url 'index' %}" class="brand me-auto text-decoration-none">
+      Intra<span>coe</span>
+      {% if emisor %}
+        <span class="d-none d-lg-inline text-white fw-normal opacity-75 ms-2" style="font-size:.8rem;">
+          | {{ emisor.nombre_comercial|default:emisor.nombre_razon_social }}
+        </span>
+      {% endif %}
+    </a>
+
+    <!-- Notificaciones + Perfil -->
+    {% if user.is_authenticated %}
+      <button class="btn-icon" aria-label="Notificaciones">
+        <i class="bi bi-bell"></i>
+      </button>
+      <button class="user-btn" data-bs-toggle="offcanvas" data-bs-target="#profileOff" aria-label="Perfil">
+        <div class="avatar">{{ user.username|slice:":2"|upper }}</div>
+        <span class="d-none d-sm-inline">{{ user.username }}</span>
+        <i class="bi bi-chevron-down" style="font-size:.7rem;opacity:.7;"></i>
+      </button>
+    {% else %}
+      <a href="{% url 'login' %}" class="btn btn-sm btn-outline-light">
+        <i class="bi bi-box-arrow-in-right me-1"></i> Iniciar sesión
+      </a>
+    {% endif %}
+  </nav>
+
+  <!-- ══════════════════════════════════════════
+       LAYOUT PRINCIPAL
+  ══════════════════════════════════════════ -->
+  <div class="layout-wrap">
+
+    <!-- ── SIDEBAR DESKTOP ─────────────────────────────────── -->
+    {% if user.is_authenticated %}
+    <aside class="sidebar-desk">
+      <div class="sidebar-scroll">
+
+        <!-- Dashboard -->
+        {% if user.role == 'admin' or user.role == 'supervisor' %}
+          <a href="{% url 'index' %}" class="sb-link mb-1">
+            <i class="bi bi-speedometer2"></i> Dashboard
+          </a>
         {% endif %}
 
-        <!-- SIDEBAR MÓVIL (OFFCANVAS) -->
-        <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarOff">
-          <div class="offcanvas-header">
-            <h5 class="offcanvas-title mb-0">Menú</h5>
-            <button class="btn-close" data-bs-dismiss="offcanvas"></button>
-          </div>
+        <!-- ── Sección principal ── -->
+        {% if user.role == 'admin' or user.role == 'supervisor' %}
+          <div class="sb-label">Gestión</div>
+          <div class="accordion accordion-flush sb-acc" id="accDesk">
 
-          {% if user.is_authenticated %}
-            <div class="offcanvas-body">
-              <div class="offcanvas-main pt-4">
-                <!-- Dashboard como tarjeta -->
-                {% if user.role == 'admin' or user.role == 'supervisor' %}
-                  <a href="{% url 'index' %}" class="offcanvas-link"><span>Dashboard</span></a>
-                {% endif %} 
-                <!-- Acordeón principal -->
-                <div class="accordion accordion-flush offcanvas-accordion d-flex flex-column gap-2" id="accMenuMobile">
-                  {% if user.role == 'admin' or user.role == 'supervisor' %}
-                    <div class="accordion-item">
-                      <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mCompras">Compras</button></h2>
-                      <div id="mCompras" class="accordion-collapse collapse" data-bs-parent="#accMenuMobile">
-                        <div class="list-group list-group-flush">
-                          {% include 'opciones_menu/compras.html' with uid='mob' %}
-                        </div>
-                      </div>
-                    </div>
-                  {% endif %} 
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dsk-compras">
+                  <i class="bi bi-basket"></i> Compras
+                </button>
+              </h2>
+              <div id="dsk-compras" class="accordion-collapse collapse" data-bs-parent="#accDesk">
+                <div class="accordion-body">
+                  <div class="list-group list-group-flush">
+                    {% include 'opciones_menu/compras.html' with uid='dsk' %}
+                  </div>
+                </div>
+              </div>
+            </div>
 
-                  {% if user.role == 'admin' or user.role == 'supervisor' %}
-                    <div class="accordion-item">
-                      <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mVentas">Ventas</button></h2>
-                      <div id="mVentas" class="accordion-collapse collapse" data-bs-parent="#accMenuMobile">
-                        <div class="list-group list-group-flush">
-                          {% include 'opciones_menu/ventas.html' with uid='mobV' %}
-                        </div>
-                      </div>
-                    </div>
-                  {% endif %} 
-                
-                  {% if user.role == 'admin' or user.role == 'supervisor' %}
-                    <div class="accordion-item">
-                      <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mFact">Facturación</button></h2>
-                      <div id="mFact" class="accordion-collapse collapse" data-bs-parent="#accMenuMobile">
-                        <div class="list-group list-group-flush">
-                          {% include 'opciones_menu/facturacion.html' with uid='mobF' %}
-                        </div>
-                      </div>
-                    </div>
-                  {% endif %}
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dsk-ventas">
+                  <i class="bi bi-receipt-cutoff"></i> Ventas
+                </button>
+              </h2>
+              <div id="dsk-ventas" class="accordion-collapse collapse" data-bs-parent="#accDesk">
+                <div class="accordion-body">
+                  <div class="list-group list-group-flush">
+                    {% include 'opciones_menu/ventas.html' with uid='dskV' %}
+                  </div>
+                </div>
+              </div>
+            </div>
 
-                  {% if user.role == 'admin' or user.role == 'supervisor' %}
-                  <div class="accordion-item">
-                    <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mInv">Inventario</button></h2>
-                    <div id="mInv" class="accordion-collapse collapse" data-bs-parent="#accMenuMobile">
-                      <div class="list-group list-group-flush">
-                        {% include 'opciones_menu/inventario.html' with uid='mobI' %}
-                      </div>
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dsk-fact">
+                  <i class="bi bi-file-earmark-text"></i> Facturación
+                </button>
+              </h2>
+              <div id="dsk-fact" class="accordion-collapse collapse" data-bs-parent="#accDesk">
+                <div class="accordion-body">
+                  <div class="list-group list-group-flush">
+                    {% include 'opciones_menu/facturacion.html' with uid='dskF' %}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dsk-inv">
+                  <i class="bi bi-box-seam"></i> Inventario
+                </button>
+              </h2>
+              <div id="dsk-inv" class="accordion-collapse collapse" data-bs-parent="#accDesk">
+                <div class="accordion-body">
+                  <div class="list-group list-group-flush">
+                    {% include 'opciones_menu/inventario.html' with uid='dskI' %}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /accordion Gestión -->
+        {% endif %}
+
+        <!-- ── Sección Restaurante ── -->
+        {% if emisor.es_restaurante and user.is_authenticated %}
+          <div class="sb-label mt-2">Restaurante</div>
+          <div class="accordion accordion-flush sb-acc" id="accDeskRest">
+
+            {% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'cajero' %}
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dsk-caja">
+                    <i class="bi bi-cash-stack"></i> Caja
+                  </button>
+                </h2>
+                <div id="dsk-caja" class="accordion-collapse collapse" data-bs-parent="#accDeskRest">
+                  <div class="accordion-body">
+                    <div class="list-group list-group-flush">
+                      {% include 'opciones_menu_restaurante/caja.html' with uid='dskCj' %}
                     </div>
                   </div>
-                  {% endif %}
-                  {% if emisor.es_restaurante and user.is_authenticated %}
-                    <h5 class="offcanvas-title mt-5">Restaurante</h5>
-                    <hr class="my-1 border border-bottom border-dark-subtle" />
-                    
-                      {% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'cajero' %}  
-                        <a href="{% url 'caja' %}" class="offcanvas-link"><span>Caja</span></a>
-                      {% endif %}
-
-                    {% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'cocinero' %}  
-                    <div class="accordion-item">
-                      <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#Cocina">
-                          <span>Cocina</span></button></h2>
-                      <div id="Cocina" class="accordion-collapse collapse" data-bs-parent="#accMenu">
-                        <div class="list-group list-group-flush">
-                          {% include 'opciones_menu_restaurante/cocina.html' with uid='cocina' %}
-                        </div>
-                      </div>
-                    </div>
-                  {% endif %}
-
-                  {% if user.role == 'admin' or user.role == 'supervisor' %}
-                    <div class="accordion-item">
-                      <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#ConfiguracionRestaurante">
-                          <span>Configuración restaurante</span>
-                        </button></h2>
-                      <div id="ConfiguracionRestaurante" class="accordion-collapse collapse" data-bs-parent="#accMenu">
-                        <div class="list-group list-group-flush">
-                          {% include 'opciones_menu_restaurante/configuracion_restaurante.html' with uid='ped' %}
-                        </div>
-                      </div>
-                    </div>
-                  {% endif %}
-
-                  {% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'mesero' %}
-                    <div class="accordion-item">
-                      <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#meseros">Meseros</button></h2>
-                      <div id="meseros" class="accordion-collapse collapse" data-bs-parent="#accMenu">
-                        <div class="list-group list-group-flush">
-                          {% include 'opciones_menu_restaurante/meseros.html' with uid='mes' %}
-                        </div>
-                      </div>
-                    </div>
-                  {% endif %}
-                {% endif %}
                 </div>
-                
-                <div class="">
-                  {% if emisor.es_restaurante and user.is_authenticated %}
-                    <h5 class="offcanvas-title mt-5">Usuarios</h5>
-                    <hr class="my-1 border border-bottom border-dark-subtle" />
-                    {% if user.role == 'admin' %}
-                    <div class="accordion-item">
-                      <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#us"><i class="bi bi-person me-2 fs-6"></i>Grupos</button></h2>
-                      <div id="us" class="accordion-collapse collapse" data-bs-parent="#accMenu">
-                        <div class="list-group list-group-flush">
-                          {% include 'opciones_menu_restaurante/usuarios.html' with uid='us' %}
-                        </div>
-                      </div>
+              </div>
+            {% endif %}
+
+            {% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'cocinero' %}
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dsk-cocina">
+                    <i class="bi bi-fire"></i> Cocina
+                  </button>
+                </h2>
+                <div id="dsk-cocina" class="accordion-collapse collapse" data-bs-parent="#accDeskRest">
+                  <div class="accordion-body">
+                    <div class="list-group list-group-flush">
+                      {% include 'opciones_menu_restaurante/cocina.html' with uid='dskCoc' %}
                     </div>
-                    {% endif %}
-                  {% endif %}
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+
+            {% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'mesero' or user.role == 'cajero' %}
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dsk-meseros">
+                    <i class="bi bi-person-workspace"></i> Meseros
+                  </button>
+                </h2>
+                <div id="dsk-meseros" class="accordion-collapse collapse" data-bs-parent="#accDeskRest">
+                  <div class="accordion-body">
+                    <div class="list-group list-group-flush">
+                      {% include 'opciones_menu_restaurante/meseros.html' with uid='dskMes' %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+
+            {% if user.role == 'admin' or user.role == 'supervisor' %}
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dsk-cfg-rest">
+                    <i class="bi bi-sliders"></i> Configuración
+                  </button>
+                </h2>
+                <div id="dsk-cfg-rest" class="accordion-collapse collapse" data-bs-parent="#accDeskRest">
+                  <div class="accordion-body">
+                    <div class="list-group list-group-flush">
+                      {% include 'opciones_menu_restaurante/configuracion_restaurante.html' with uid='dskCfgR' %}
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {% if user.is_staff %}
-                <div class="offcanvas-footer">
-                  <a class="offcanvas-link" href="{% url 'configurar_empresa' %}">
-                    <i class="bi bi-gear me-2"></i>
-                    Configurar empresa
-                  </a>
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dsk-usuarios-rest">
+                    <i class="bi bi-people"></i> Usuarios
+                  </button>
+                </h2>
+                <div id="dsk-usuarios-rest" class="accordion-collapse collapse" data-bs-parent="#accDeskRest">
+                  <div class="accordion-body">
+                    <div class="list-group list-group-flush">
+                      {% include 'opciones_menu_restaurante/usuarios.html' with uid='dskUs' %}
+                    </div>
+                  </div>
                 </div>
-              {% endif %}
-            </div>
-          {% else %}
-            <div class="p-3">
-              <p class="text-muted small mb-1">Por favor, inicia sesión para ver el menú.</p>
-            </div>
-          {% endif %}
+              </div>
+            {% endif %}
+
+          </div><!-- /accordion Restaurante -->
+        {% endif %}
+
+      </div><!-- /sidebar-scroll -->
+
+      <!-- Pie del sidebar -->
+      {% if user.is_staff %}
+        <div class="sidebar-foot">
+          <a href="{% url 'configurar_empresa' %}" class="sb-link">
+            <i class="bi bi-gear"></i> Configurar empresa
+          </a>
+          <a href="{% url 'usuarios_list' %}" class="sb-link">
+            <i class="bi bi-people"></i> Usuarios
+          </a>
         </div>
+      {% endif %}
+    </aside>
+    {% endif %}
 
-        <!-- CONTENIDO -->
+    <!-- ── CONTENIDO PRINCIPAL ──────────────────────────────── -->
+    <main class="main-content {% if not user.is_authenticated %}col-12{% endif %}" id="main-content">
 
-        <main class="col-md-9 col-xl-10 p-3" id="main-content">
-          <div class="card shadow-sm">
-            <div class="card-body">
-              {% block content %}
-                {% if user.is_authenticated %}
-                  {% include 'index.html' %}
-                {% else %}
-                  <p>Not Login.</p>
-                {% endif %}
-              {% endblock %}
-            </div>
-          </div>
+      {% block breadcrumb %}{% endblock %}
 
-          <p class="small text-muted mt-3">
-            Copyright ©<script>
-                         document.write(new Date().getFullYear())
-                       </script>| Desarrollado por <a class="text-decoration-none">Ing. Francisco Antonio Flores Villalta</a>.
-          </p>
-        </main>
-      </div>
-    </div>
-
-    <!-- PERFIL (offcanvas derecha) -->
-    <div class="offcanvas offcanvas-end" tabindex="-1" id="profileOff" aria-labelledby="profileOffLabel">
-      <div class="offcanvas-header">
-        <h5 class="offcanvas-title" id="profileOffLabel">Perfil</h5>
-        <button class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
-      </div>
-
-      <div class="offcanvas-body mx-4 my-2">
+      {% block content %}
         {% if user.is_authenticated %}
-          <p class="mb-1 fw-semibold">{{ user.get_full_name|default:user.perfilusuario.nombre }}</p>
-          <p class="text-muted small mb-3">{{ user.email }}</p>
-
-          <a href="{% url 'perfil_usuario' %}" class="btn btn-primary w-100 mb-2"><i class="bi bi-person me-2"></i> Ver perfil</a>
-
-          <p class="small text-muted mb-3">Miembro desde: {{ user.date_joined|date:'d M, Y' }}</p>
-          <hr class="my-2" />
-
-          <form action="{% url 'logout' %}" method="post">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-outline-danger w-100"><i class="bi bi-box-arrow-right me-2"></i> Cerrar sesión</button>
-          </form>
-        {% else %}
-          <a href="{% url 'login' %}" class="btn btn-primary w-100 mb-2"><i class="bi bi-box-arrow-in-right me-2"></i> Iniciar sesión</a>
+          {% include 'index.html' %}
         {% endif %}
-      </div>
+      {% endblock %}
+
+      <footer class="app-footer">
+        © <span id="yr"></span> &nbsp;·&nbsp;
+        Desarrollado por <strong>Ing. Francisco Antonio Flores Villalta</strong>
+        &nbsp;·&nbsp; INTRACOE v3
+      </footer>
+    </main>
+
+  </div><!-- /layout-wrap -->
+
+  <!-- ══════════════════════════════════════════
+       SIDEBAR MÓVIL (OFFCANVAS)
+  ══════════════════════════════════════════ -->
+  <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarOff" aria-labelledby="sidebarOffLabel">
+    <div class="offcanvas-header border-bottom py-2">
+      <span class="brand fs-5 fw-bold" style="color:#0d47a1;">
+        Intra<span style="color:#ff7a00;">coe</span>
+      </span>
+      <button class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>      
-      document.addEventListener('DOMContentLoaded', () => {
-          const menu = document.querySelector('.sidebar-menu')
-          const mainContent = document.getElementById("main-content")
-          const menuButton = document.getElementById("menu-mobil")
+    {% if user.is_authenticated %}
+    <div class="offcanvas-body d-flex flex-column p-0">
 
-          
-          {% if user.is_authenticated %}
-            console.log('SI, el usuario está autenticado.')
+      <!-- Scroll area -->
+      <div class="flex-grow-1 overflow-y-auto p-3">
 
-          if (mainContent) {
-            mainContent.classList.remove('ancho-completo')
-          }
-          if (menu) {
-            menu.classList.add('menu-show')
-            menu.classList.remove('menu-hidden')
-          }
-          if (menuButton) {
-            menuButton.classList.remove('d-none')
-          }
-        {% else %}
-          console.log('NO, el usuario no está autenticado.')
-
-          if (mainContent) {
-            mainContent.classList.add('ancho-completo')
-          }
-          if (menu) {
-            menu.classList.add('menu-hidden')
-            menu.classList.remove('menu-show')
-          }
-          if (menuButton) {
-            menuButton.classList.add('d-none')
-          }
+        {% if user.role == 'admin' or user.role == 'supervisor' %}
+          <a href="{% url 'index' %}" class="mob-sb-link"><i class="bi bi-speedometer2"></i> Dashboard</a>
         {% endif %}
-      })
-</script>
-  </body>
+
+        <div class="sb-label mt-1">Gestión</div>
+        <div class="accordion accordion-flush mob-acc" id="accMob">
+          {% if user.role == 'admin' or user.role == 'supervisor' %}
+
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mob-compras">
+                  <i class="bi bi-basket me-2"></i>Compras
+                </button>
+              </h2>
+              <div id="mob-compras" class="accordion-collapse collapse" data-bs-parent="#accMob">
+                <div class="list-group list-group-flush ps-2">
+                  {% include 'opciones_menu/compras.html' with uid='mob' %}
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mob-ventas">
+                  <i class="bi bi-receipt-cutoff me-2"></i>Ventas
+                </button>
+              </h2>
+              <div id="mob-ventas" class="accordion-collapse collapse" data-bs-parent="#accMob">
+                <div class="list-group list-group-flush ps-2">
+                  {% include 'opciones_menu/ventas.html' with uid='mobV' %}
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mob-fact">
+                  <i class="bi bi-file-earmark-text me-2"></i>Facturación
+                </button>
+              </h2>
+              <div id="mob-fact" class="accordion-collapse collapse" data-bs-parent="#accMob">
+                <div class="list-group list-group-flush ps-2">
+                  {% include 'opciones_menu/facturacion.html' with uid='mobF' %}
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mob-inv">
+                  <i class="bi bi-box-seam me-2"></i>Inventario
+                </button>
+              </h2>
+              <div id="mob-inv" class="accordion-collapse collapse" data-bs-parent="#accMob">
+                <div class="list-group list-group-flush ps-2">
+                  {% include 'opciones_menu/inventario.html' with uid='mobI' %}
+                </div>
+              </div>
+            </div>
+
+          {% endif %}
+        </div><!-- /accMob -->
+
+        {% if emisor.es_restaurante and user.is_authenticated %}
+          <div class="sb-label mt-2">Restaurante</div>
+          <div class="accordion accordion-flush mob-acc" id="accMobRest">
+
+            {% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'cajero' %}
+              <a href="{% url 'caja' %}" class="mob-sb-link"><i class="bi bi-cash-stack me-2"></i>Caja</a>
+            {% endif %}
+
+            {% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'cocinero' %}
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mob-cocina">
+                    <i class="bi bi-fire me-2"></i>Cocina
+                  </button>
+                </h2>
+                <div id="mob-cocina" class="accordion-collapse collapse" data-bs-parent="#accMobRest">
+                  <div class="list-group list-group-flush ps-2">
+                    {% include 'opciones_menu_restaurante/cocina.html' with uid='mobCoc' %}
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+
+            {% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'mesero' %}
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mob-meseros">
+                    <i class="bi bi-person-workspace me-2"></i>Meseros
+                  </button>
+                </h2>
+                <div id="mob-meseros" class="accordion-collapse collapse" data-bs-parent="#accMobRest">
+                  <div class="list-group list-group-flush ps-2">
+                    {% include 'opciones_menu_restaurante/meseros.html' with uid='mobMes' %}
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+
+            {% if user.role == 'admin' or user.role == 'supervisor' %}
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mob-cfg-rest">
+                    <i class="bi bi-sliders me-2"></i>Configuración
+                  </button>
+                </h2>
+                <div id="mob-cfg-rest" class="accordion-collapse collapse" data-bs-parent="#accMobRest">
+                  <div class="list-group list-group-flush ps-2">
+                    {% include 'opciones_menu_restaurante/configuracion_restaurante.html' with uid='mobCfgR' %}
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+
+          </div><!-- /accMobRest -->
+        {% endif %}
+
+      </div><!-- /scroll area -->
+
+      <!-- Pie del offcanvas -->
+      {% if user.is_staff %}
+        <div class="border-top p-3">
+          <a href="{% url 'configurar_empresa' %}" class="mob-sb-link">
+            <i class="bi bi-gear me-2"></i> Configurar empresa
+          </a>
+        </div>
+      {% endif %}
+
+    </div><!-- /offcanvas-body -->
+    {% else %}
+      <div class="p-3 text-muted small">Inicia sesión para ver el menú.</div>
+    {% endif %}
+  </div><!-- /sidebarOff -->
+
+  <!-- ══════════════════════════════════════════
+       PERFIL (offcanvas derecha)
+  ══════════════════════════════════════════ -->
+  <div class="offcanvas offcanvas-end" tabindex="-1" id="profileOff" style="width:300px;">
+    <div class="offcanvas-header border-bottom">
+      <h6 class="offcanvas-title mb-0">Mi cuenta</h6>
+      <button class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+      {% if user.is_authenticated %}
+        <div class="text-center mb-3 mt-1">
+          <div class="profile-avatar">{{ user.username|slice:":2"|upper }}</div>
+          <div class="fw-semibold">{{ user.get_full_name|default:user.username }}</div>
+          <div class="text-muted small mb-1">{{ user.email|default:"Sin correo" }}</div>
+          <span class="role-badge">{{ user.role|default:"usuario" }}</span>
+        </div>
+        <hr class="my-3" />
+        <a href="{% url 'perfil_usuario' %}" class="btn btn-outline-primary w-100 mb-2">
+          <i class="bi bi-person me-2"></i> Ver perfil
+        </a>
+        <p class="text-muted small text-center mt-2 mb-3">
+          Miembro desde {{ user.date_joined|date:'d M, Y' }}
+        </p>
+        <hr class="my-3" />
+        <form action="{% url 'logout' %}" method="post">
+          {% csrf_token %}
+          <button class="btn btn-outline-danger w-100">
+            <i class="bi bi-box-arrow-right me-2"></i> Cerrar sesión
+          </button>
+        </form>
+      {% else %}
+        <a href="{% url 'login' %}" class="btn btn-primary w-100">
+          <i class="bi bi-box-arrow-in-right me-2"></i> Iniciar sesión
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       TOAST CONTAINER (mensajes Django)
+  ══════════════════════════════════════════ -->
+  <div id="toast-container"></div>
+
+  {% if messages %}
+    <script>
+      window.__djMessages = [
+        {% for m in messages %}
+          { text: "{{ m.message|escapejs }}", tags: "{{ m.tags }}" },
+        {% endfor %}
+      ]
+    </script>
+  {% endif %}
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // ── Año footer ────────────────────────────────────────
+    document.getElementById('yr').textContent = new Date().getFullYear()
+
+    // ── Toasts de mensajes Django ─────────────────────────
+    const tagMap = { success:'success', error:'error', danger:'error', warning:'warning', info:'info', debug:'info' }
+    const iconMap = { success:'bi-check-circle-fill', error:'bi-x-circle-fill', warning:'bi-exclamation-triangle-fill', info:'bi-info-circle-fill' }
+
+    function showToast(text, type) {
+      const t = tagMap[type] || 'info'
+      const icon = iconMap[t] || 'bi-bell-fill'
+      const el = document.createElement('div')
+      el.className = `app-toast ${t}`
+      el.innerHTML = `<i class="bi ${icon}"></i><span>${text}</span><button class="toast-close" onclick="this.closest('.app-toast').remove()">&times;</button>`
+      document.getElementById('toast-container').appendChild(el)
+      setTimeout(() => el.remove(), 5000)
+    }
+
+    if (window.__djMessages) {
+      window.__djMessages.forEach(m => showToast(m.text, m.tags))
+    }
+
+    // ── Marcar ítem activo en sidebar ─────────────────────
+    const cur = window.location.pathname
+    document.querySelectorAll('.sb-link, .mob-sb-link').forEach(a => {
+      if (a.getAttribute('href') === cur) a.classList.add('active')
+    })
+    document.querySelectorAll('.sb-acc a, .mob-acc a').forEach(a => {
+      if (a.getAttribute('href') === cur) {
+        a.classList.add('active')
+        // Abrir el accordion padre
+        const collapse = a.closest('.accordion-collapse')
+        if (collapse) {
+          collapse.classList.add('show')
+          const btn = document.querySelector(`[data-bs-target="#${collapse.id}"]`)
+          if (btn) btn.classList.remove('collapsed')
+        }
+      }
+    })
+  </script>
+
+  {% block extra_js %}{% endblock %}
+
+</body>
 </html>

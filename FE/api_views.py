@@ -1,8 +1,6 @@
 from datetime import datetime, timedelta
 import time
-from decimal import ROUND_HALF_UP, ConversionSyntax, Decimal
-from itertools import count
-from pyexpat.errors import messages
+from decimal import ROUND_HALF_UP, Decimal
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.decorators import method_decorator
@@ -14,7 +12,9 @@ import os, json, uuid
 from django.db import connection, transaction
 from django.utils import timezone
 from rest_framework import generics, status, permissions
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
+from INVENTARIO.permissions import IsAdminOrSupervisor
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.pagination import PageNumberPagination
@@ -155,22 +155,14 @@ try:
 except (OperationalError, ObjectDoesNotExist):
     UNI_MEDIDA_99 = None
 
-formas_pago = []
-documentos_relacionados = []
-tipo_dte_doc_relacionar = None
-documento_relacionado = False
-productos_ids_r = []
-cantidades_prod_r = []
-descuentos_r = []
-tipo_documento_dte = "01"
-productos_inventario = None
 
-try:
-    emisor_fe = Emisor_fe.objects.get(id=1)
-except (OperationalError, ObjectDoesNotExist):
-    emisor_fe = None
+def _get_emisor():
+    """Obtiene el emisor activo desde la BD en cada request (evita estado global mutable)."""
+    return Emisor_fe.objects.select_related(
+        'representante', 'representante__tipo_documento',
+        'tipo_documento', 'tipoestablecimiento', 'municipio', 'ambiente'
+    ).first()
 
-#emisor_fe = None
 
 class StandardResultsSetPagination(PageNumberPagination):
     # Número de ítems por página por defecto
@@ -195,6 +187,7 @@ class StandardResultsSetPagination(PageNumberPagination):
 ######################################################
 
 class AutenticacionAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     # Límite de intentos de autenticación permitidos
     max_attempts = 2
 
@@ -269,30 +262,30 @@ class AutenticacionAPIView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 def autenticacion(request):
-    print("[DEBUG] Ingresando a la vista autenticacion")
+    logger.debug("[DEBUG] Ingresando a la vista autenticacion")
 
     tokens_saves = Token_data.objects.all()
-    print(f"[DEBUG] Tokens en base de datos: {tokens_saves.count()}")
+    logger.debug(f"[DEBUG] Tokens en base de datos: {tokens_saves.count()}")
 
     if request.method == "POST":
         nit_empresa = request.POST.get("user")
         pwd = request.POST.get("pwd")
-        print(f"[DEBUG] Datos recibidos del formulario: user={nit_empresa}, pwd={'*' * len(pwd) if pwd else None}")
+        logger.debug(f"[DEBUG] Datos recibidos del formulario: user={nit_empresa}, pwd={'*' * len(pwd) if pwd else None}")
 
         auth_url = URL_AUTH.url_endpoint
         headers = {"User-Agent": HEADERS.valor}
         data = {"user": nit_empresa, "pwd": pwd}
-        print(f"[DEBUG] URL de autenticación: {auth_url}")
-        print(f"[DEBUG] Headers: {headers}")
-        print(f"[DEBUG] Payload de autenticación: {data}")
+        logger.debug(f"[DEBUG] URL de autenticación: {auth_url}")
+        logger.debug(f"[DEBUG] Headers: {headers}")
+        logger.debug(f"[DEBUG] Payload de autenticación: {data}")
 
         try:
             response = requests.post(auth_url, headers=headers, data=data)
-            print(f"[DEBUG] Código de respuesta HTTP: {response.status_code}")
+            logger.debug(f"[DEBUG] Código de respuesta HTTP: {response.status_code}")
 
             if response.status_code == 200:
                 response_data = response.json()
-                print(f"[DEBUG] Respuesta JSON: {response_data}")
+                logger.debug(f"[DEBUG] Respuesta JSON: {response_data}")
 
                 if response_data.get("status") == "OK":
                     token_body = response_data["body"]
@@ -300,9 +293,9 @@ def autenticacion(request):
                     token_type = token_body.get("tokenType", "Bearer")
                     roles = token_body.get("roles", [])
 
-                    print(f"[DEBUG] Token recibido: {token}")
-                    print(f"[DEBUG] Tipo de token: {token_type}")
-                    print(f"[DEBUG] Roles: {roles}")
+                    logger.debug(f"[DEBUG] Token recibido: {token}")
+                    logger.debug(f"[DEBUG] Tipo de token: {token_type}")
+                    logger.debug(f"[DEBUG] Roles: {roles}")
 
                     token_data, created = Token_data.objects.update_or_create(
                         nit_empresa=nit_empresa,
@@ -316,7 +309,7 @@ def autenticacion(request):
                         }
                     )
 
-                    print(f"[DEBUG] Token {'creado' if created else 'actualizado'} en la base de datos")
+                    logger.debug(f"[DEBUG] Token {'creado' if created else 'actualizado'} en la base de datos")
 
                     if created:
                         messages.success(request, "Autenticación exitosa y token guardado.")
@@ -325,17 +318,17 @@ def autenticacion(request):
 
                     return redirect('autenticacion')
                 else:
-                    print(f"[DEBUG] Error en autenticación: {response_data.get('message')}")
+                    logger.error(f"[DEBUG] Error en autenticación: {response_data.get('message')}")
                     messages.error(request, "Error en la autenticación: " + response_data.get("message", "Error no especificado"))
             else:
-                print("[DEBUG] Falló la solicitud HTTP")
+                logger.error("[DEBUG] Falló la solicitud HTTP")
                 messages.error(request, "Error en la autenticación.")
         except requests.exceptions.RequestException as e:
-            print(f"[DEBUG] Excepción en la solicitud HTTP: {e}")
+            logger.error(f"[DEBUG] Excepción en la solicitud HTTP: {e}")
             messages.error(request, "Error de conexión con el servicio de autenticación.")
 
-    print("[DEBUG] Renderizando página de autenticación")
-    return render(request, "autenticacion.html", {'tokens': tokens_saves})
+    logger.debug("[DEBUG] Renderizando página de autenticación")
+    return render(request, "configuracion/autenticacion.html", {'tokens': tokens_saves})
 
 ######################################################
 ######################################################
@@ -347,6 +340,7 @@ def autenticacion(request):
 # ========= ACTIVIDAD ECONOMICA =========
 class ActividadEconomicaListAPIView(generics.ListAPIView):
 
+    permission_classes = [IsAuthenticated]
     def get_queryset(self):
         queryset = ActividadEconomica.objects.all()
         filtro = self.request.query_params.get('filtro')
@@ -363,203 +357,251 @@ class ActividadEconomicaListAPIView(generics.ListAPIView):
 
 
 class ActividadEconomicaCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = ActividadEconomica.objects.all()
     serializer_class = ActividadEconomicaSerializer
 
 class ActividadEconomicaRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = ActividadEconomica.objects.all()
     serializer_class = ActividadEconomicaSerializer
 
 class ActividadEconomicaUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = ActividadEconomica.objects.all()
     serializer_class = ActividadEconomicaSerializer
 
 class ActividadEconomicaDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = ActividadEconomica.objects.all()
     serializer_class = ActividadEconomicaSerializer
 
 # ========= AMBIENTE =========
 class AmbienteListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = Ambiente.objects.all()
     serializer_class = AmbienteSerializer
 
 class AmbienteCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = Ambiente.objects.all()
     serializer_class = AmbienteSerializer
 
 class AmbienteRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = Ambiente.objects.all()
     serializer_class = AmbienteSerializer
 
 class AmbienteUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = Ambiente.objects.all()
     serializer_class = AmbienteSerializer
 
 class AmbienteDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = Ambiente.objects.all()
     serializer_class = AmbienteSerializer
 
 # ========= MODELO FACTURACION =========
 class ModelofacturacionListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = Modelofacturacion.objects.all()
     serializer_class = ModelofacturacionSerializer
 
 class ModelofacturacionCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = Modelofacturacion.objects.all()
     serializer_class = ModelofacturacionSerializer
 
 class ModelofacturacionRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = Modelofacturacion.objects.all()
     serializer_class = ModelofacturacionSerializer
 
 class ModelofacturacionUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = Modelofacturacion.objects.all()
     serializer_class = ModelofacturacionSerializer
 
 class ModelofacturacionDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = Modelofacturacion.objects.all()
     serializer_class = ModelofacturacionSerializer
 
 # ========= TIPO TRANSMISION =========
 class TipoTransmisionListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TipoTransmision.objects.all()
     serializer_class = TipoTransmisionSerializer
 
 class TipoTransmisionCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoTransmision.objects.all()
     serializer_class = TipoTransmisionSerializer
 
 class TipoTransmisionRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TipoTransmision.objects.all()
     serializer_class = TipoTransmisionSerializer
 
 class TipoTransmisionUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoTransmision.objects.all()
     serializer_class = TipoTransmisionSerializer
 
 class TipoTransmisionDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoTransmision.objects.all()
     serializer_class = TipoTransmisionSerializer
 
 # ========= TIPO CONTINGENCIA =========
 class TipoContingenciaListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TipoContingencia.objects.all()
     serializer_class = TipoContingenciaSerializer
 
 class TipoContingenciaCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoContingencia.objects.all()
     serializer_class = TipoContingenciaSerializer
 
 class TipoContingenciaRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TipoContingencia.objects.all()
     serializer_class = TipoContingenciaSerializer
 
 class TipoContingenciaUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoContingencia.objects.all()
     serializer_class = TipoContingenciaSerializer
 
 class TipoContingenciaDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoContingencia.objects.all()
     serializer_class = TipoContingenciaSerializer
 
 # ========= TIPO RETENCION IVA MH =========
 class TipoRetencionIVAMHListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TipoRetencionIVAMH.objects.all()
     serializer_class = TipoRetencionIVAMHSerializer
 
 class TipoRetencionIVAMHCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoRetencionIVAMH.objects.all()
     serializer_class = TipoRetencionIVAMHSerializer
 
 class TipoRetencionIVAMHRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TipoRetencionIVAMH.objects.all()
     serializer_class = TipoRetencionIVAMHSerializer
 
 class TipoRetencionIVAMHUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoRetencionIVAMH.objects.all()
     serializer_class = TipoRetencionIVAMHSerializer
 
 class TipoRetencionIVAMHDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoRetencionIVAMH.objects.all()
     serializer_class = TipoRetencionIVAMHSerializer
 
 # ========= TIPO GENERACION DOCUMENTO =========
 class TipoGeneracionDocumentoListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TipoGeneracionDocumento.objects.all()
     serializer_class = TiposGeneracionDocumentoSerializer
 
 class TipoGeneracionDocumentoCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoGeneracionDocumento.objects.all()
     serializer_class = TiposGeneracionDocumentoSerializer
 
 class TipoGeneracionDocumentoRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TipoGeneracionDocumento.objects.all()
     serializer_class = TiposGeneracionDocumentoSerializer
 
 class TipoGeneracionDocumentoUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoGeneracionDocumento.objects.all()
     serializer_class = TiposGeneracionDocumentoSerializer
 
 class TipoGeneracionDocumentoDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoGeneracionDocumento.objects.all()
     serializer_class = TiposGeneracionDocumentoSerializer
 
 # ========= TIPOS ESTABLECIMIENTOS =========
 class TiposEstablecimientosListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TiposEstablecimientos.objects.all()
     serializer_class = TiposEstablecimientosSerializer
 
 class TiposEstablecimientosCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TiposEstablecimientos.objects.all()
     serializer_class = TiposEstablecimientosSerializer
 
 class TiposEstablecimientosRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TiposEstablecimientos.objects.all()
     serializer_class = TiposEstablecimientosSerializer
 
 class TiposEstablecimientosUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TiposEstablecimientos.objects.all()
     serializer_class = TiposEstablecimientosSerializer
 
 class TiposEstablecimientosDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TiposEstablecimientos.objects.all()
     serializer_class = TiposEstablecimientosSerializer
 
 # ========= TIPOS SERVICIO MEDICO =========
 class TiposServicio_MedicoListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TiposServicio_Medico.objects.all()
     serializer_class = TiposServicio_MedicoSerializer
 
 class TiposServicio_MedicoCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TiposServicio_Medico.objects.all()
     serializer_class = TiposServicio_MedicoSerializer
 
 class TiposServicio_MedicoRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TiposServicio_Medico.objects.all()
     serializer_class = TiposServicio_MedicoSerializer
 
 class TiposServicio_MedicoUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TiposServicio_Medico.objects.all()
     serializer_class = TiposServicio_MedicoSerializer
 
 class TiposServicio_MedicoDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TiposServicio_Medico.objects.all()
     serializer_class = TiposServicio_MedicoSerializer
 
 # ========= TIPO_DTE =========
 class Tipo_dteListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = Tipo_dte.objects.all()
     serializer_class = TipoDteSerializer
 
 class Tipo_dteDetailAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = Tipo_dte.objects.all()
     serializer_class = TipoDteSerializer
 
 class Tipo_dteCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = Tipo_dte.objects.all()
     serializer_class = TipoDteSerializer
 
 class Tipo_dteRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = Tipo_dte.objects.all()
     serializer_class = TipoDteSerializer
 
@@ -575,48 +617,59 @@ class Tipo_dteRetrieveAPIView(generics.RetrieveAPIView):
 
 
 class Tipo_dteUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = Tipo_dte.objects.all()
     serializer_class = TipoDteSerializer
 
 class Tipo_dteDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = Tipo_dte.objects.all()
     serializer_class = TipoDteSerializer
 
 # ========= OTROS DOCUMENTOS ASOCIADO =========
 class OtrosDicumentosAsociadoListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = OtrosDicumentosAsociado.objects.all()
     serializer_class = OtrosDicumentosAsociadoSerializer
 
 class OtrosDicumentosAsociadoCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = OtrosDicumentosAsociado.objects.all()
     serializer_class = OtrosDicumentosAsociadoSerializer
 
 class OtrosDicumentosAsociadoRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = OtrosDicumentosAsociado.objects.all()
     serializer_class = OtrosDicumentosAsociadoSerializer
 
 class OtrosDicumentosAsociadoUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = OtrosDicumentosAsociado.objects.all()
     serializer_class = OtrosDicumentosAsociadoSerializer
 
 class OtrosDicumentosAsociadoDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = OtrosDicumentosAsociado.objects.all()
     serializer_class = OtrosDicumentosAsociadoSerializer
 
 # ========= TIPOS DOC ID RECEPTOR =========
 class TiposDocIDReceptorListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TiposDocIDReceptor.objects.all()
     serializer_class = TiposDocIDReceptorSerializer
 
 class TiposDocIDReceptorDetailAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TiposDocIDReceptor.objects.all()
     serializer_class = TiposDocIDReceptorSerializer
 
 class TiposDocIDReceptorCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TiposDocIDReceptor.objects.all()
     serializer_class = TiposDocIDReceptorSerializer
 
 class TiposDocIDReceptorRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TiposDocIDReceptor.objects.all()
     serializer_class = TiposDocIDReceptorSerializer
 
@@ -629,401 +682,493 @@ class TiposDocIDReceptorRetrieveAPIView(generics.RetrieveAPIView):
         return TiposDocIDReceptor.objects.get(codigo=codigo)
 
 class TiposDocIDReceptorUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TiposDocIDReceptor.objects.all()
     serializer_class = TiposDocIDReceptorSerializer
 
 class TiposDocIDReceptorDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TiposDocIDReceptor.objects.all()
     serializer_class = TiposDocIDReceptorSerializer
 
 # ========= PAIS =========
 class PaisListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = Pais.objects.all()
     serializer_class = PaisSerializer
 
 class PaisCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = Pais.objects.all()
     serializer_class = PaisSerializer
 
 class PaisRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = Pais.objects.all()
     serializer_class = PaisSerializer
 
 class PaisUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = Pais.objects.all()
     serializer_class = PaisSerializer
 
 class PaisDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = Pais.objects.all()
     serializer_class = PaisSerializer
 
 # ========= DEPARTAMENTO =========
 class DepartamentoListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = Departamento.objects.all()
     serializer_class = DepartamentoSerializer
 
 class DepartamentoCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = Departamento.objects.all()
     serializer_class = DepartamentoSerializer
 
 class DepartamentoRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = Departamento.objects.all()
     serializer_class = DepartamentoSerializer
 
 class DepartamentoUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = Departamento.objects.all()
     serializer_class = DepartamentoSerializer
 
 class DepartamentoDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = Departamento.objects.all()
     serializer_class = DepartamentoSerializer
 
 # ========= MUNICIPIO =========
 class MunicipioListAPIView(generics.ListAPIView):
-    queryset = Municipio.objects.all()
+    permission_classes = [IsAuthenticated]
+    queryset = Municipio.objects.select_related('departamento')
     serializer_class = MunicipioSerializer
 
 class MunicipioCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = Municipio.objects.all()
     serializer_class = MunicipioSerializer
 
 class MunicipioRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = Municipio.objects.all()
     serializer_class = MunicipioSerializer
 
 class MunicipioUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = Municipio.objects.all()
     serializer_class = MunicipioSerializer
 
 class MunicipioDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = Municipio.objects.all()
     serializer_class = MunicipioSerializer
 
 class MunicipioByDepartamentoAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     serializer_class = MunicipioSerializer
 
     def get_queryset(self):
-        # Obtener el departamento a partir del id que pasamos en la URL
         departamento_id = self.kwargs['departamento_id']
-        # Filtramos los municipios que pertenecen a ese departamento
-        return Municipio.objects.filter(departamento__id=departamento_id)
+        return Municipio.objects.select_related('departamento').filter(departamento__id=departamento_id)
     
 # ========= CONDICION OPERACION =========
 class CondicionOperacionListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = CondicionOperacion.objects.all()
     serializer_class = CondicionOperacionSerializer
 
 class CondicionOperacionDetailAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = CondicionOperacion.objects.all()
     serializer_class = CondicionOperacionSerializer
 
 class CondicionOperacionCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = CondicionOperacion.objects.all()
     serializer_class = CondicionOperacionSerializer
 
 class CondicionOperacionRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = CondicionOperacion.objects.all()
     serializer_class = CondicionOperacionSerializer
 
 class CondicionOperacionUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = CondicionOperacion.objects.all()
     serializer_class = CondicionOperacionSerializer
 
 class CondicionOperacionDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = CondicionOperacion.objects.all()
     serializer_class = CondicionOperacionSerializer
 
 # ========= FORMAS PAGO =========
 class FormasPagoListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = FormasPago.objects.all()
     serializer_class = FormasPagosSerializer
 
 class FormasPagoCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = FormasPago.objects.all()
     serializer_class = FormasPagosSerializer
 
 class FormasPagoRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = FormasPago.objects.all()
     serializer_class = FormasPagosSerializer
 
 class FormasPagoUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = FormasPago.objects.all()
     serializer_class = FormasPagosSerializer
 
 class FormasPagoDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = FormasPago.objects.all()
     serializer_class = FormasPagosSerializer
 
 # ========= PLAZO =========
 class PlazoListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = Plazo.objects.all()
     serializer_class = PlazoSerializer
 
 class PlazoCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = Plazo.objects.all()
     serializer_class = PlazoSerializer
 
 class PlazoRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = Plazo.objects.all()
     serializer_class = PlazoSerializer
 
 class PlazoUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = Plazo.objects.all()
     serializer_class = PlazoSerializer
 
 class PlazoDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = Plazo.objects.all()
     serializer_class = PlazoSerializer
 
 # ========= TIPO DOC CONTINGENCIA =========
 class TipoDocContingenciaListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TipoDocContingencia.objects.all()
     serializer_class = TipoDocContingenciaSerializer
 
 class TipoDocContingenciaCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoDocContingencia.objects.all()
     serializer_class = TipoDocContingenciaSerializer
 
 class TipoDocContingenciaRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TipoDocContingencia.objects.all()
     serializer_class = TipoDocContingenciaSerializer
 
 class TipoDocContingenciaUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoDocContingencia.objects.all()
     serializer_class = TipoDocContingenciaSerializer
 
 class TipoDocContingenciaDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoDocContingencia.objects.all()
     serializer_class = TipoDocContingenciaSerializer
 
 # ========= TIPO INVALIDACION =========
 class TipoInvalidacionListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TipoInvalidacion.objects.all()
     serializer_class = TipoInvalidacionSerializer
 
 class TipoInvalidacionCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoInvalidacion.objects.all()
     serializer_class = TipoInvalidacionSerializer
 
 class TipoInvalidacionRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TipoInvalidacion.objects.all()
     serializer_class = TipoInvalidacionSerializer
 
 class TipoInvalidacionUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoInvalidacion.objects.all()
     serializer_class = TipoInvalidacionSerializer
 
 class TipoInvalidacionDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoInvalidacion.objects.all()
     serializer_class = TipoInvalidacionSerializer
 
 # ========= TIPO DONACION =========
 class TipoDonacionListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TipoDonacion.objects.all()
     serializer_class = TipoDonacionSerializer
 
 class TipoDonacionCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoDonacion.objects.all()
     serializer_class = TipoDonacionSerializer
 
 class TipoDonacionRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TipoDonacion.objects.all()
     serializer_class = TipoDonacionSerializer
 
 class TipoDonacionUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoDonacion.objects.all()
     serializer_class = TipoDonacionSerializer
 
 class TipoDonacionDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoDonacion.objects.all()
     serializer_class = TipoDonacionSerializer
 
 # ========= TIPO PERSONA =========
 class TipoPersonaListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TipoPersona.objects.all()
     serializer_class = TipoPersonaSerializer
 
 class TipoPersonaCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoPersona.objects.all()
     serializer_class = TipoPersonaSerializer
 
 class TipoPersonaRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TipoPersona.objects.all()
     serializer_class = TipoPersonaSerializer
 
 class TipoPersonaUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoPersona.objects.all()
     serializer_class = TipoPersonaSerializer
 
 class TipoPersonaDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoPersona.objects.all()
     serializer_class = TipoPersonaSerializer
 
 # ========= TIPO TRANSPORTE =========
 class TipoTransporteListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TipoTransporte.objects.all()
     serializer_class = TipoTransporteSerializer
 
 class TipoTransporteCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoTransporte.objects.all()
     serializer_class = TipoTransporteSerializer
 
 class TipoTransporteRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TipoTransporte.objects.all()
     serializer_class = TipoTransporteSerializer
 
 class TipoTransporteUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoTransporte.objects.all()
     serializer_class = TipoTransporteSerializer
 
 class TipoTransporteDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoTransporte.objects.all()
     serializer_class = TipoTransporteSerializer
 
 # ========= INCOTERMS =========
 class INCOTERMSListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = INCOTERMS.objects.all()
     serializer_class = INCOTERMS_Serializer
 
 class INCOTERMSCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = INCOTERMS.objects.all()
     serializer_class = INCOTERMS_Serializer
 
 class INCOTERMSRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = INCOTERMS.objects.all()
     serializer_class = INCOTERMS_Serializer
 
 class INCOTERMSUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = INCOTERMS.objects.all()
     serializer_class = INCOTERMS_Serializer
 
 class INCOTERMSDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = INCOTERMS.objects.all()
     serializer_class = INCOTERMS_Serializer
 
 # ========= TIPO DOMICILIO FISCAL =========
 class TipoDomicilioFiscalListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TipoDomicilioFiscal.objects.all()
     serializer_class = TipoDomicilioFiscalSerializer
 
 class TipoDomicilioFiscalCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoDomicilioFiscal.objects.all()
     serializer_class = TipoDomicilioFiscalSerializer
 
 class TipoDomicilioFiscalRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TipoDomicilioFiscal.objects.all()
     serializer_class = TipoDomicilioFiscalSerializer
 
 class TipoDomicilioFiscalUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoDomicilioFiscal.objects.all()
     serializer_class = TipoDomicilioFiscalSerializer
 
 class TipoDomicilioFiscalDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoDomicilioFiscal.objects.all()
     serializer_class = TipoDomicilioFiscalSerializer
 
 # ========= TIPO MONEDA =========
 class TipoMonedaListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TipoMoneda.objects.all()
     serializer_class = TipoMonedaSerializer
 
 class TipoMonedaCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoMoneda.objects.all()
     serializer_class = TipoMonedaSerializer
 
 class TipoMonedaRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = TipoMoneda.objects.all()
     serializer_class = TipoMonedaSerializer
 
 class TipoMonedaUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoMoneda.objects.all()
     serializer_class = TipoMonedaSerializer
 
 class TipoMonedaDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = TipoMoneda.objects.all()
     serializer_class = TipoMonedaSerializer
 
 # ========= DESCUENTO =========
 class DescuentoListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = Descuento.objects.all()
     serializer_class = DescuentoSerializer
 
 class DescuentoCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = Descuento.objects.all()
     serializer_class = DescuentoSerializer
 
 class DescuentoRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = Descuento.objects.all()
     serializer_class = DescuentoSerializer
 
 class DescuentoUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = Descuento.objects.all()
     serializer_class = DescuentoSerializer
 
 class DescuentoDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = Descuento.objects.all()
     serializer_class = DescuentoSerializer
     
 # ========= SECUENCIA =========
 class SecuenciaListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = NumeroControl.objects.all()
     serializer_class = SecuenciaSerializer
 
 class SecuenciaCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = NumeroControl.objects.all()
     serializer_class = SecuenciaSerializer
 
 class SecuenciaRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = NumeroControl.objects.all()
     serializer_class = SecuenciaSerializer
 
 class SecuenciaUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = NumeroControl.objects.all()
     serializer_class = SecuenciaSerializer
 
 class SecuenciaDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = NumeroControl.objects.all()
     serializer_class = SecuenciaSerializer
 
 # ========= Recinto fiscal =========
 class RecintoFiscalListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = RecintoFiscal.objects.all()
     serializer_class = RecintoFiscalSerializer
 
 class RecintoFiscalCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = RecintoFiscal.objects.all()
     serializer_class = RecintoFiscalSerializer
 
 class RecintoFiscalRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = RecintoFiscal.objects.all()
     serializer_class = RecintoFiscalSerializer
 
 class RecintoFiscalUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = RecintoFiscal.objects.all()
     serializer_class = RecintoFiscalSerializer
 
 class RecintoFiscalDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = RecintoFiscal.objects.all()
     serializer_class = RecintoFiscalSerializer
 
 # ========= Regimen =========
 class RegimenListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = RegimenExportacion.objects.all()
     serializer_class = RegimenSerializer
 
 class RegimenCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = RegimenExportacion.objects.all()
     serializer_class = RegimenSerializer
 
 class RegimenRetrieveAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = RegimenExportacion.objects.all()
     serializer_class = RegimenSerializer
 
 class RegimenUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = RegimenExportacion.objects.all()
     serializer_class = RegimenSerializer
 
 class RegimenDestroyAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = RegimenExportacion.objects.all()
     serializer_class = RegimenSerializer
 
@@ -1041,12 +1186,15 @@ class RegimenDestroyAPIView(generics.DestroyAPIView):
 ######################################################
 
 class ObtenerReceptorAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     """
     Devuelve los datos de un receptor en formato JSON.
     """
     def get(self, request, receptor_id):
         try:
-            receptor = Receptor_fe.objects.get(id=receptor_id)
+            receptor = Receptor_fe.objects.select_related(
+                'tipo_documento', 'municipio', 'pais', 'tipo_persona'
+            ).get(id=receptor_id)
             # Si tienes un serializer para Receptor_fe, úsalo:
             serializer = ReceptorSerializer(receptor)
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -1054,11 +1202,14 @@ class ObtenerReceptorAPIView(APIView):
             return Response({"error": "Receptor no encontrado"}, status=status.HTTP_404_NOT_FOUND)
         
 class receptorListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     serializer_class = ReceptorSerializer
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        qs = Receptor_fe.objects.all()
+        qs = Receptor_fe.objects.select_related(
+            'tipo_documento', 'municipio', 'pais', 'tipo_persona'
+        ).prefetch_related('actividades_economicas')
         nombre = self.request.query_params.get('filtro') #filtrar receptores por nombre, nombre comercial y número de documento
         if nombre:
             qs = qs.filter(
@@ -1069,17 +1220,21 @@ class receptorListAPIView(generics.ListAPIView):
         return qs
 
 class receptorDetailAPIView(generics.RetrieveAPIView):
-    queryset = Receptor_fe.objects.all()
+    permission_classes = [IsAuthenticated]
+    queryset = Receptor_fe.objects.select_related('tipo_documento', 'municipio', 'pais', 'tipo_persona')
     serializer_class = ReceptorSerializer
 
 class receptorCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     serializer_class = ReceptorSerializer
-    
+
 class receptorUpdateAPIView(generics.UpdateAPIView):
-    queryset = Receptor_fe.objects.all()
+    permission_classes = [IsAdminOrSupervisor]
+    queryset = Receptor_fe.objects.select_related('tipo_documento', 'municipio', 'pais', 'tipo_persona')
     serializer_class = ReceptorSerializer
 
 class receptorDeleteAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = Receptor_fe.objects.all()
     serializer_class = ReceptorSerializer
 
@@ -1087,14 +1242,21 @@ class receptorDeleteAPIView(generics.DestroyAPIView):
 # EMISOR O EMPRESA
 ######################################################
 class EmisorListAPIView(generics.ListAPIView):
-    queryset = Emisor_fe.objects.all()
+    permission_classes = [IsAuthenticated]
+    queryset = Emisor_fe.objects.select_related(
+        'tipo_documento', 'tipoestablecimiento', 'municipio', 'ambiente', 'representante'
+    ).prefetch_related('actividades_economicas')
     serializer_class = EmisorSerializer
 
 class EmisorUpdateAPIView(generics.UpdateAPIView):
-    queryset = Emisor_fe.objects.all()
+    permission_classes = [IsAdminOrSupervisor]
+    queryset = Emisor_fe.objects.select_related(
+        'tipo_documento', 'tipoestablecimiento', 'municipio', 'ambiente', 'representante'
+    )
     serializer_class = EmisorSerializer
 
 class EmisorCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAdminOrSupervisor]
     queryset = Emisor_fe.objects.all()
     serializer_class = EmisorSerializer     
      
@@ -1103,73 +1265,17 @@ class EmisorCreateAPIView(generics.CreateAPIView):
 ######################################################
     
 class FacturaDetailAPIView(generics.RetrieveAPIView):
-    queryset = FacturaElectronica.objects.all()
+    permission_classes = [IsAuthenticated]
+    queryset = FacturaElectronica.objects.select_related(
+        'tipo_dte', 'dteemisor', 'dtereceptor', 'tipomoneda', 'condicion_operacion'
+    ).prefetch_related('detalles', 'dte_invalidacion')
     serializer_class = FacturaElectronicaSerializer
 
-class FacturaListAPIView(APIView):
-    """
-    Vista API que devuelve un listado de FacturaElectronica con filtros y paginación.
-    Parámetros GET:
-      - recibido_mh: 'True' o 'False'
-      - sello_recepcion: (filtro por coincidencia, icontains)
-      - has_sello_recepcion: 'yes' para facturas con sello, 'no' para aquellas sin sello
-      - tipo_dte: id del tipo de DTE
-      - page: número de página (paginación de 20 registros)
-      
-    Además se incluye la lista de tipos de DTE.
-    """
-    def get(self, request):
-        # Obtener el queryset base
-        queryset = FacturaElectronica.objects.all()
-        
-        # Aplicar filtros según los parámetros GET
-        recibido = request.GET.get('recibido_mh')
-        codigo = request.GET.get('sello_recepcion')
-        has_codigo = request.GET.get('has_sello_recepcion')
-        tipo = request.GET.get('tipo_dte')
-        
-        if recibido in ['True', 'False']:
-            queryset = queryset.filter(recibido_mh=(recibido == 'True'))
-        if codigo:
-            queryset = queryset.filter(sello_recepcion__icontains=codigo)
-        if has_codigo == 'yes':
-            queryset = queryset.exclude(sello_recepcion__isnull=True)
-        elif has_codigo == 'no':
-            queryset = queryset.filter(sello_recepcion__isnull=True)
-        if tipo:
-            queryset = queryset.filter(tipo_dte__id=tipo)
-        
-        # Configurar la paginación: 20 registros por página
-        paginator = paginator(queryset, 20)
-        page_number = request.GET.get('page', 1)
-        page_obj = paginator.get_page(page_number)
-        
-        # Serializar los datos
-        serializer = FacturaElectronicaSerializer(page_obj, many=True)
-        
-        # Serializar los tipos de DTE para el filtro
-        tipos_dte = Tipo_dte.objects.all()
-        tipos_dte_data = [{"id": t.id, "codigo": t.codigo, "descripcion": t.descripcion} for t in tipos_dte]
-        
-        data = {
-            "facturas": serializer.data,
-            "pagination": {
-                "page": page_obj.number,
-                "pages": paginator.num_pages,
-                "total": paginator.count,
-                "has_next": page_obj.has_next(),
-                "has_previous": page_obj.has_previous(),
-            },
-            "tipos_dte": tipos_dte_data
-        }
-        
-        return Response(data, status=status.HTTP_200_OK)
-
 class ProductoListAPIView(APIView):
-    global tipo_documento_dte
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, format=None):
-        print("request listado de productos: ", request)
+        logger.debug("request listado de productos %s", request)
 
         documento_ajuste = request.query_params.get('documento_ajuste', False)
         if documento_ajuste:
@@ -1208,33 +1314,16 @@ class ProductoListAPIView(APIView):
         return Response(productos_dict, status=200)
 
 class GenerarFacturaAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     """
     Vista API para generar facturas.
     En GET se retornan los datos para armar el formulario (en vez de renderizar una plantilla)  
     y en POST se procesa la generación de la factura.
     """
     cod_generacion = str(uuid.uuid4()).upper()
-    global productos_ids_r
-    productos_ids_r = []
-    global cantidades_prod_r
-    cantidades_prod_r = []
-    global documentos_relacionados
-    documentos_relacionados = []
-    global descuentos_r
-    descuentos_r = []
-    global emisor_fe
     
-    # Puedes agregar permisos o autenticación según tus necesidades:
-    # permission_classes = [permissions.IsAuthenticated]
-
     def get(self, request, format=None):
         
-        # Inicializamos las variables globales (aunque es recomendable evitar globals)
-        global productos_ids_r, cantidades_prod_r, documentos_relacionados, descuentos_r
-        productos_ids_r = []
-        cantidades_prod_r = []
-        documentos_relacionados = []
-        descuentos_r = []
         
         tipo_dte = request.query_params.get('tipo_dte', '01')
 
@@ -1243,7 +1332,7 @@ class GenerarFacturaAPIView(APIView):
             nuevo_numero = NumeroControl.preview_numero_control(tipo_dte)
         else:
             nuevo_numero = ""
-        print("Numero de control: ", nuevo_numero)
+        logger.debug("Numero de control %s", nuevo_numero)
         codigo_generacion = str(uuid.uuid4()).upper()#self.cod_generacion
         fecha_generacion = timezone.now().date()
         hora_generacion = timezone.now().strftime('%H:%M:%S')
@@ -1357,10 +1446,10 @@ class GenerarFacturaAPIView(APIView):
             nombre_responsable = data.get("nombre_responsable", None)
             documento_responsable = data.get("documento_responsable", None)
             
-            print(f"parametro num control: {numero_control}, tipo dte: {tipo_dte}")
+            logger.debug(f"parametro num control: {numero_control}, tipo dte: {tipo_dte}")
             if not numero_control:
                 numero_control = NumeroControl.obtener_numero_control(tipo_dte)
-                print("Numero control asignado: ", numero_control)
+                logger.debug("Numero control asignado %s", numero_control)
             if not codigo_generacion:
                 codigo_generacion = str(uuid.uuid4()).upper()
 
@@ -1482,13 +1571,13 @@ class GenerarFacturaAPIView(APIView):
                         neto_unitario = precio_incl.quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
                         precio_inc_neto = neto_unitario
                     precio_neto = (neto_unitario * cantidad).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
-                    print("PRECIO NETO", precio_neto)
+                    logger.debug("PRECIO NETO %s", precio_neto)
                 if tipo_item_obj.codigo == COD_TIPO_ITEM_OTROS:
                     precio_neto = (precio_neto * Decimal(tributo_valor)).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
                     
-                print("PRECIO NETO", precio_neto)
+                logger.debug("PRECIO NETO %s", precio_neto)
                 precio_neto = Decimal(precio_neto) 
-                print("PRECIO NETO", precio_neto)
+                logger.debug("PRECIO NETO %s", precio_neto)
 
                 iva_unitario = (precio_incl - precio_neto).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
                 
@@ -1686,44 +1775,21 @@ class GenerarFacturaAPIView(APIView):
             
             os.makedirs(os.path.dirname(pdf_signed_path), exist_ok=True)
             if os.path.exists(pdf_signed_path):
-                print("PDF ya existe, devolviendo archivo existente: %s", pdf_signed_path)
+                logger.debug("PDF ya existe, devolviendo archivo existente: %s %s", pdf_signed_path)
                 filename=os.path.basename(pdf_signed_path)
             else:
                 #1.Crear HTML
                 html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": factura}, request=request)
 
                 #Guardar archivo pdf
-                print("guardar pdf: ", pdf_signed_path)
+                logger.debug("guardar pdf %s", pdf_signed_path)
                 with open(pdf_signed_path, "wb") as pdf_file:
                     pisa_status = pisa.CreatePDF(BytesIO(html_content.encode('utf-8')), dest=pdf_file)
                     
                 if pisa_status.err:
-                    print(f"Error al crear el PDF en {pdf_signed_path}")
+                    logger.error(f"Error al crear el PDF en {pdf_signed_path}")
                 else:
-                    print(f"PDF guardado exitosamente en {pdf_signed_path}")
-            # else:
-            #     #1.Crear HTML
-            #     html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": factura}, request=request)
-                
-            #     #2.Definir base_url para que {% static %} funcione correctamente, esto asegura que las imágenes estáticas (logos, etc.) se resuelvan bien en el PDF
-            #     try:
-            #         base_url = request.build_absolute_uri('/')
-            #     except Exception as e:
-            #         print("Error obteniendo base_url")
-            #         base_url = None  # WeasyPrint usará paths relativos si es None
-                
-            #     # 3. Preparar lista de CSS
-            #     stylesheets = [CSS(url='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js') ]
-                
-                #4.Guardar archivo PDF con WeasyPrint
-                # try:
-                #     html = HTML(string=html_content, base_url=base_url)
-                #     html.write_pdf(stylesheets=stylesheets, target=pdf_signed_path)
-                #     filename = os.path.basename(pdf_signed_path)
-                #     print("Pdf guardado ")
-                # except Exception as e:
-                #     print("Error generando el PDF con WeasyPrint")
-
+                    logger.debug(f"PDF guardado exitosamente en {pdf_signed_path}")
             return Response({
                     "mensaje": "Factura generada correctamente",
                     "factura_id": factura.id,
@@ -1737,20 +1803,13 @@ class GenerarFacturaAPIView(APIView):
 # GENERACION DE NOTA DE CREDITO Y DEBITO API
 ######################################################
 class GenerarDocumentoAjusteAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     cod_generacion = str(uuid.uuid4()).upper()
     def get(self, request, format=None):
-        print("GET Inicio generar dte")
-        global productos_ids_r
-        productos_ids_r = []
+        logger.debug("GET Inicio generar dte")
         
-        global cantidades_prod_r
-        cantidades_prod_r = []
         
-        global documentos_relacionados 
-        documentos_relacionados = []
         
-        global descuentos_r
-        descuentos_r = []
         
         if request.method == 'GET':
             tipo_dte = request.query_params.get('tipo_dte', '05')
@@ -1800,14 +1859,15 @@ class GenerarDocumentoAjusteAPIView(APIView):
 
     @transaction.atomic
     def post(self, request, format=None):
-        print("POST Inicio generar dte")
+        logger.debug("POST Inicio generar dte")
         tipo_dte = request.query_params.get('tipo_dte', '05')
         nuevo_numero = NumeroControl.preview_numero_control(tipo_dte)
-        global formas_pago
-        documentos_relacionados = []
+        productos_ids_r = []
+        cantidades_prod_r = []
+        descuentos_r = []
         try:
             items_permitidos = 2000
-            docsRelacionados = []#Acumular los documentos relacionados
+            docsRelacionados = []
             data = request.data
             contingencia = False
             
@@ -1815,10 +1875,10 @@ class GenerarDocumentoAjusteAPIView(APIView):
             numero_control = nuevo_numero
             #codigo_generacion = self.cod_generacion
             codigo_generacion = str(uuid.uuid4()).upper()
-            print(f"Numero de control: {numero_control} Codigo generacion: {codigo_generacion}")
+            logger.debug(f"Numero de control: {numero_control} Codigo generacion: {codigo_generacion}")
             
             #Datos del receptor
-            print("-Inicio datos receptor")
+            logger.debug("-Inicio datos receptor")
             receptor_id = data.get('receptor_id', None)
             receptor_fe = Receptor_fe.objects.get(id=receptor_id)
             nit_receptor = receptor_fe.num_documento
@@ -1826,7 +1886,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
             direccion_receptor = receptor_fe.direccion
             telefono_receptor = receptor_fe.telefono
             correo_receptor = receptor_fe.correo
-            print("-Fin datos receptor")
+            logger.debug("-Fin datos receptor")
             
             observaciones = data.get('observaciones', '')
             tipo_dte = data.get("tipo_documento_seleccionado", None) #BC: obtiene la seleccion del tipo de documento desde la pantalla del sistema
@@ -1842,7 +1902,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
             porcentaje_descuento_producto = 0
             if porcentaje_descuento:
                 porcentaje_descuento_producto = porcentaje_descuento.replace(",", ".")
-            print("-Descuento: ", porcentaje_descuento_producto)
+            logger.debug("-Descuento %s", porcentaje_descuento_producto)
                 
             # Configuración adicional
             tipooperacion_id = data.get("condicion_operacion", 1)
@@ -1862,7 +1922,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
             descu_gravado = data.get("descuento_gravado", "0")
             #Total descuento = descuento por item + descuento global gravado
             monto_descuento = data.get("monto_descuento", "0")
-            print(f"descuento global = {descuento_global}, monto descuento = {descu_gravado}")
+            logger.debug(f"descuento global = {descuento_global}, monto descuento = {descu_gravado}")
             
             if saldo_favor is not None and saldo_favor !="":
                 saldo_f = Decimal(saldo_favor)
@@ -1876,7 +1936,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
             # Datos de productos
             productos_ids = data.get('productos_ids', [])
             cantidades = data.get('cantidades', [])
-            print(f"productos.: = {productos_ids}, cantidades.: = {cantidades}")
+            logger.debug(f"productos.: = {productos_ids}, cantidades.: = {cantidades}")
             descuentos_aplicados = data.get("descuento_select", [])
             
             if productos_ids_r is not None and len(productos_ids_r)>0:
@@ -1888,18 +1948,18 @@ class GenerarDocumentoAjusteAPIView(APIView):
                     
                     cantidades.append(c)
             
-            print(f"productos id relacionado: {productos_ids_r}, cantidades: {cantidades}")
+            logger.debug(f"productos id relacionado: {productos_ids_r}, cantidades: {cantidades}")
 
-            print(f"id productos: {productos_ids}, cantidades: {cantidades}")
+            logger.debug(f"id productos: {productos_ids}, cantidades: {cantidades}")
             if descuentos_r is not None and len(descuentos_r)>0:
                 for d in descuentos_r:
                     descuentos_aplicados.append(d)
-            print("descuento aplicado: ", descuentos_aplicados)
+            logger.debug("descuento aplicado %s", descuentos_aplicados)
             # En este caso, se asume que el descuento por producto es 0 (se aplica globalmente)
             
             if numero_control:
                 numero_control = NumeroControl.obtener_numero_control(tipo_dte)
-                print(numero_control)
+                logger.debug(numero_control)
             if not codigo_generacion:
                 codigo_generacion = str(uuid.uuid4()).upper()
 
@@ -1977,7 +2037,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
             tributo_valor = None
 
             # Recorrer productos para crear detalles (realizando el desglose)
-            print("productos.: ", productos_ids)
+            logger.debug("productos. %s", productos_ids)
             for index, prod_id in enumerate(productos_ids):
                 try:
                     producto = Producto.objects.get(id=prod_id)
@@ -1996,8 +2056,8 @@ class GenerarDocumentoAjusteAPIView(APIView):
                     cantidad = 1
                 else:
                     cantidad = int(cantidades[index]) if index < len(cantidades) else 1
-                print("-Cantidad: ", cantidad, "index: ", index)
-                print("descuentos items: ", descuentos_aplicados)
+                logger.debug("-Cantidad %s index %s", cantidad, index)
+                logger.debug("descuentos items %s", descuentos_aplicados)
                 porcentaje_descuento_producto = descuentos_aplicados[index] if index < len(descuentos_aplicados) else 0.00
                 # El precio del producto ya incluye IVA 
                 precio_incl = producto.preunitario
@@ -2032,7 +2092,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
                 iva_unitario = (precio_incl - precio_neto).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
 
                 #Campo descuento(montoDescu)
-                print("-porcentaje api view: ", porcentaje_descuento_producto)
+                logger.debug("-porcentaje api view %s", porcentaje_descuento_producto)
                 if porcentaje_descuento_producto:
                     porcentaje_descuento_item = Descuento.objects.get(porcentaje=porcentaje_descuento_producto)
                 else:
@@ -2042,16 +2102,16 @@ class GenerarDocumentoAjusteAPIView(APIView):
                     descuento_aplicado=True
                 else:
                     descuento_aplicado = False
-                print("-Descuento por item", porcentaje_descuento_item.porcentaje)
+                logger.debug("-Descuento por item %s", porcentaje_descuento_item.porcentaje)
                 
                 # Totales por ítem
                 #Campo Ventas gravadas
-                print(f"Monto descuento: {monto_descuento}")
+                logger.debug(f"Monto descuento: {monto_descuento}")
                 if monto_descuento:
                     monto_descuento = Decimal(monto_descuento).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 else:
                     monto_descuento = Decimal("0.00")
-                print(f"Precio neto = {precio_neto}, descuento grav = {descu_gravado}")
+                logger.debug(f"Precio neto = {precio_neto}, descuento grav = {descu_gravado}")
                 #Descuento a ventas gravadas
                 if descu_gravado is None or descu_gravado == "":
                     descu_gravado = Decimal("0.00")
@@ -2073,7 +2133,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
                     tributo = Tributo.objects.get(codigo=producto.tributo.codigo)
                     precio_neto = (precio_neto * Decimal(tributo.valor_tributo)).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
                     
-                print("-Crear detalle factura")
+                logger.debug("-Crear detalle factura")
                 detalle = DetalleFactura.objects.create(
                     factura=factura,
                     producto=producto,
@@ -2101,7 +2161,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
                 if descuento_global:
                     porc_descuento_global = (total_gravada * Decimal(descuento_global) / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 sub_total_item = (total_gravada - descuento_gravado - porc_descuento_global).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
-                print(f"IVA Item = {total_iva_item}, iva unitario = {iva_unitario}, cantidad = {cantidad}, total neto = {total_neto} ")
+                logger.debug(f"IVA Item = {total_iva_item}, iva unitario = {iva_unitario}, cantidad = {cantidad}, total neto = {total_neto} ")
                 
                 sub_total = sub_total_item
                 
@@ -2125,12 +2185,12 @@ class GenerarDocumentoAjusteAPIView(APIView):
                 detalle.iva_item = (total_iva_item).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)  # Guardamos el total IVA para este detalle
                 detalle.save()
                 
-                print("-Aplicar tributo sujeto iva")
+                logger.debug("-Aplicar tributo sujeto iva")
                 valor_porcentaje = Decimal(porcentaje_descuento_item.porcentaje)
                 
                 if valor_porcentaje.compare(Decimal("0.00")) > 0:
                     total_descuento_gravado += porcentaje_descuento_item.porcentaje
-                print("- Total desc gravado: ", total_descuento_gravado)
+                logger.debug("- Total desc gravado %s", total_descuento_gravado)
                 
             # Calcular retenciones (globales sobre el total neto de cada detalle)
             if retencion_iva and porcentaje_retencion_iva > 0:
@@ -2142,8 +2202,8 @@ class GenerarDocumentoAjusteAPIView(APIView):
                     if str(detalle.producto.id) in productos_retencion_renta:
                         DecimalRetRenta += (detalle.total_sin_descuento * porcentaje_retencion_renta / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
             
-            print("porcentaje rete iva", porcentaje_retencion_iva)
-            print("porcentaje renta", porcentaje_retencion_renta)
+            logger.debug("porcentaje rete iva %s", porcentaje_retencion_iva)
+            logger.debug("porcentaje renta %s", porcentaje_retencion_renta)
             # Redondear totales globales
             total_iva = total_iva.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
             total_pagar = total_pagar.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
@@ -2152,7 +2212,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
             if tipo_doc_relacionar == COD_DOCUMENTO_RELACIONADO_NO_SELEC:
                 tipo_doc_relacionar = None
                 documento_relacionado = None
-            print(f"Tipo de doc a relacionar: {tipo_doc_relacionar} numero de documento: {documento_relacionado}")
+            logger.debug(f"Tipo de doc a relacionar: {tipo_doc_relacionar} numero de documento: {documento_relacionado}")
 
             # Actualizar totales en la factura
             factura.total_no_sujetas = Decimal("0.00")
@@ -2182,8 +2242,8 @@ class GenerarDocumentoAjusteAPIView(APIView):
             cuerpo_documento = []
             for idx, det in enumerate(factura.detalles.all(), start=1):
                         
-                print("-N° items: ", idx)
-                print("-Codigo generacion factura: ", det.factura.codigo_generacion)
+                logger.debug("-N° items %s", idx)
+                logger.debug("-Codigo generacion factura %s", det.factura.codigo_generacion)
                 #Items permitidos 2000
                 if idx > items_permitidos:
                     return Response({"error": "Cantidad máxima de ítems permitidos " }, {items_permitidos})
@@ -2201,7 +2261,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
                             
                             #Si el tributo asociado el prod pertenece a la seccion 2 de la tabla agregar un segundo item
                             if tributo.tipo_tributo.codigo == COD_TRIBUTOS_SECCION_2:
-                                print("-Crear nuevo item")
+                                logger.debug("-Crear nuevo item")
                                 #Nuevo item (requerido cuando el tributo es de la seccion 2)
                                 cuerpo_documento_tributos.append({
                                     "numItem": idx+1,
@@ -2246,7 +2306,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
                                         
                     if cuerpo_documento_tributos is None:
                         cuerpo_documento.append(cuerpo_documento_tributos)
-                print(f"Item {idx}: IVA unitario = {iva_unitario}, Total IVA = {total_iva_item}, IVA almacenado = {det.iva_item}")
+                logger.debug(f"Item {idx}: IVA unitario = {iva_unitario}, Total IVA = {total_iva_item}, IVA almacenado = {det.iva_item}")
         
             docs_permitidos = 50
             #tipo_dte_ob = Tipo_dte.objects.get(codigo=tipo_dte)
@@ -2254,18 +2314,18 @@ class GenerarDocumentoAjusteAPIView(APIView):
             tipo_documento = None
             
             #Si supera el limite de documentos relacionados detener el proceso
-            print("-Inicio recorrer documentos relacionados: ", documentos_relacionados)
+            logger.debug("-Inicio recorrer documentos relacionados %s", documentos_relacionados)
             if documentos_relacionados is not None and documentos_relacionados !=[]:
-                print("-Existen documentos relacionados")
+                logger.debug("-Existen documentos relacionados")
                 for idx, docR in enumerate(documentos_relacionados, start=1):
                     if idx > docs_permitidos:
                         return Response({"error": "Limite de documentos relacionados: " }, {docs_permitidos})
                     
                     #No permitir relacionar documentos de diferentes tipos, es decir, si es NC no se pueden asociar CCF y NR al mismo tiempo
                     
-                print("Documentos relacionados agregados: ", idx)
+                logger.debug("Documentos relacionados agregados %s", idx)
             
-            print("-Tipo doc relacionado: ", tipo_doc_relacionar, "doc a relacionar: ", documento_relacionado)
+            logger.debug("-Tipo doc relacionado %s doc a relacionar %s", tipo_doc_relacionar, documento_relacionado)
             #Buscar documento relacionado
             if tipo_doc_relacionar:
                 if tipo_doc_relacionar == RELACIONAR_DOC_FISICO:
@@ -2276,7 +2336,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
                     #factura_relacionar = FacturaElectronica.objects.get( Q(codigo_generacion=numero_documento) & (Q(tipo_dte.codigo == "03") | Q(tipo_dte.codigo == "07")) )
                     factura_relacionar = FacturaElectronica.objects.get( codigo_generacion=documento_relacionado )
             
-            print("-Inicio json docs relacionados: ", factura_relacionar)
+            logger.debug("-Inicio json docs relacionados %s", factura_relacionar)
             #Si existe el documento generar estructura de documentos relacionados
             if factura_relacionar is not None and factura_relacionar.estado and factura_relacionar.sello_recepcion is not None and factura_relacionar.sello_recepcion !="":
                 tipo_documento = factura_relacionar.tipo_dte.codigo
@@ -2289,7 +2349,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
                     "fechaEmision": str(factura_relacionar.fecha_emision)
                 }
                 documentos_relacionados.append(documento_relacionado_json)
-                print("-Lista documentos relacionados: ", documentos_relacionados)
+                logger.debug("-Lista documentos relacionados %s", documentos_relacionados)
 
             elif factura_relacionar is None:
                 notificar_respuesta = "Error: Documento a relacionar no encontrado."
@@ -2332,7 +2392,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
                             cantidad=det.cantidad,
                             referencia=f"Reingreso NC {factura.numero_control}"
                         )
-                    print("DEVOLUCION DESDE API VIEW")
+                    logger.debug("DEVOLUCION DESDE API VIEW")
                     # 2c) Ajuste de stock atómico
                     Producto.objects.filter(pk=det.producto.pk).update(
                         stock=F('stock') + det.cantidad
@@ -2359,7 +2419,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
                         Producto.objects.filter(pk=det.producto.pk).update(
                             stock=Greatest(F('stock') - det.cantidad, Value(0))
                         )
-            print("factura.numero_control", factura.numero_control)
+            logger.debug("factura.numero_control %s", factura.numero_control)
             # Guardar el JSON en la carpeta "FE/json_facturas"
             json_path = os.path.join(RUTA_JSON_FACTURA.url, f"{factura.numero_control}.json")
             os.makedirs(os.path.dirname(json_path), exist_ok=True)
@@ -2372,21 +2432,21 @@ class GenerarDocumentoAjusteAPIView(APIView):
             
             os.makedirs(os.path.dirname(pdf_signed_path), exist_ok=True)
             if os.path.exists(pdf_signed_path):
-                print("PDF ya existe, devolviendo archivo existente: %s", pdf_signed_path)
+                logger.debug("PDF ya existe, devolviendo archivo existente: %s %s", pdf_signed_path)
                 filename=os.path.basename(pdf_signed_path)
             else:
                 #1.Crear HTML
                 html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": factura}, request=request)
 
                 #Guardar archivo pdf
-                print("guardar pdf: ", pdf_signed_path)
+                logger.debug("guardar pdf %s", pdf_signed_path)
                 with open(pdf_signed_path, "wb") as pdf_file:
                     pisa_status = pisa.CreatePDF(BytesIO(html_content.encode('utf-8')), dest=pdf_file)
                     
                 if pisa_status.err:
-                    print(f"Error al crear el PDF en {pdf_signed_path}")
+                    logger.error(f"Error al crear el PDF en {pdf_signed_path}")
                 else:
-                    print(f"PDF guardado exitosamente en {pdf_signed_path}")
+                    logger.debug(f"PDF guardado exitosamente en {pdf_signed_path}")
 
                 return Response({
                     "mensaje": "Factura generada correctamente",
@@ -2395,7 +2455,7 @@ class GenerarDocumentoAjusteAPIView(APIView):
                     "redirect": reverse('detalle_factura', args=[factura.id])
                 }, status=status.HTTP_201_CREATED)
         except Exception as e:
-            print(f"Error al generar la factura: {e}")
+            logger.error(f"Error al generar la factura: {e}")
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 ######################################################
@@ -2403,24 +2463,17 @@ class GenerarDocumentoAjusteAPIView(APIView):
 ######################################################
 
 class GenerarFacturaSujetoAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     """
     Vista API para generar facturas de sujeto excluyente.
     POST rocesa la generación de la factura.
     """
     cod_generacion = str(uuid.uuid4()).upper()
     def get(self, request, format=None):
-        print("GET Inicio generar dte")
-        global productos_ids_r
-        productos_ids_r = []
+        logger.debug("GET Inicio generar dte")
         
-        global cantidades_prod_r
-        cantidades_prod_r = []
         
-        global documentos_relacionados 
-        documentos_relacionados = []
         
-        global descuentos_r
-        descuentos_r = []
         
         if request.method == 'GET':
             tipo_dte = 14
@@ -2467,13 +2520,6 @@ class GenerarFacturaSujetoAPIView(APIView):
             return Response(context, status=status.HTTP_200_OK)
         
     cod_generacion = str(uuid.uuid4()).upper()
-    global productos_ids_r
-    productos_ids_r = []
-    global cantidades_prod_r
-    cantidades_prod_r = []
-    global descuentos_r
-    descuentos_r = []
-    global emisor_fe
 
     # @transaction.atomic
     def post(self, request, format=None):
@@ -2484,7 +2530,7 @@ class GenerarFacturaSujetoAPIView(APIView):
             data = request.data 
             contingencia = False
             
-            print("Datos recibidos:", request.data)
+            logger.debug("Datos recibidos %s", request.data)
             
             # --- Datos del encabezado del documento ---
             numero_control = data.get('numero_control', '')
@@ -2515,17 +2561,17 @@ class GenerarFacturaSujetoAPIView(APIView):
             nombre_responsable = data.get("nombre_responsable", None)
             documento_responsable = data.get("documento_responsable", None)
             
-            print(f"parametro num control recibido: {numero_control}, tipo dte: {tipo_dte}")
+            logger.debug(f"parametro num control recibido: {numero_control}, tipo dte: {tipo_dte}")
             
             # Generar número de control si no se envía desde el frontend
             if not numero_control:
                 numero_control = NumeroControl.obtener_numero_control(14)
-                print("Numero control asignado: ", numero_control)
+                logger.debug("Numero control asignado %s", numero_control)
                 
             # Generar código de generación si no se proporciona
             if not codigo_generacion:
                 codigo_generacion = str(uuid.uuid4()).upper()
-                print("codigo de generacion: ", codigo_generacion)
+                logger.debug("codigo de generacion %s", codigo_generacion)
                 
             # Obtener datos emisor
             emisor_obj = Emisor_fe.objects.first()
@@ -2533,8 +2579,8 @@ class GenerarFacturaSujetoAPIView(APIView):
                 return Response({"error": "No hay emisores registrados en la base de datos"}, status=status.HTTP_400_BAD_REQUEST)
             emisor = emisor_obj
             
-            print("emisor", emisor)
-            print("emisor Id", emisor.id)
+            logger.debug("emisor %s", emisor)
+            logger.debug("emisor Id %s", emisor.id)
 
             # Obtener datos receptor
             if receptor_id and receptor_id != "nuevo":
@@ -2554,7 +2600,7 @@ class GenerarFacturaSujetoAPIView(APIView):
                     }
                 )
             
-            print("Receptor final:", receptor)
+            logger.debug("Receptor final %s", receptor)
             
             # --- Inicializar objetos relacionados con tipo de documento ---
             ambiente_obj = AMBIENTE
@@ -2582,7 +2628,7 @@ class GenerarFacturaSujetoAPIView(APIView):
                 tipotransmision=tipotransmision_obj
             )
 
-            print("Factura creada, ID:", factura.id)
+            logger.debug("Factura creada, ID %s", factura.id)
             
             # --- Inicializar totales de factura ---
             # DecimalIvaPerci = Decimal("0.00") 
@@ -2592,18 +2638,18 @@ class GenerarFacturaSujetoAPIView(APIView):
             total_operaciones = Decimal("0.00")
             # IVA_RATE = Decimal("0.13") # -- porcenta de IVA 13%
             
-            print("Listado de id de productos:", productos_ids)
+            logger.debug("Listado de id de productos %s", productos_ids)
 
             # --- Procesar productos e ítems de factura ---s
             for index, prod_id in enumerate(productos_ids):
-                print("producto actual:", prod_id)
+                logger.debug("producto actual %s", prod_id)
                 
                 try:
                     producto = ProductoProveedor.objects.get(id=prod_id) # -- Buscar el producto según el id que recibe la API
                 except Producto.DoesNotExist:
                     continue
                 
-                print("Objeto producto", producto)
+                logger.debug("Objeto producto %s", producto)
                 
                 if tipo_item_obj.codigo == COD_TIPO_ITEM_SERVICIOS: 
                     unidad_medida_obj = UNI_MEDIDA_99 # -- si el tipo del item es servicios automaticamente su unidad de medida es "Otra" - codigo 99
@@ -2615,23 +2661,23 @@ class GenerarFacturaSujetoAPIView(APIView):
                     # raise ValueError("El tipo de ítem 'Otros' (código 4) no está permitido en documentos de sujeto excluido.")
                 else:
                     cantidad = int(cantidades[index]) if index < len(cantidades) else 1 # -- obtener la cantidad del producto actual
-                print("tipo objeto", tipo_item_obj)
-                print("Unidad de medida", unidad_medida_obj)
+                logger.debug("tipo objeto %s", tipo_item_obj)
+                logger.debug("Unidad de medida %s", unidad_medida_obj)
                     
                 porcentaje_descuento_producto = descuentos_aplicados[index] if index < len(descuentos_aplicados) else 1 # -- obtener el descuento del producto en la lista de descuentos recibidos
                 factor = (porcentaje_descuento_producto / Decimal("100")).quantize(Decimal("0.000001"), ROUND_HALF_UP)
 
                 descuento_por_item = (producto.preunitario * cantidad * factor).quantize(Decimal("0.01"), ROUND_HALF_UP)
-                print("porcentaje_descuento_producto", porcentaje_descuento_producto )
-                print("factor", factor )
-                print("descuento_por_item", descuento_por_item )
+                logger.debug("porcentaje_descuento_producto %s", porcentaje_descuento_producto)
+                logger.debug("factor %s", factor)
+                logger.debug("descuento_por_item %s", descuento_por_item)
             
                 
                 # Acumular
                 total_descuento   += descuento_por_item
                 total_operaciones += ((producto.preunitario * cantidad) - descuento_por_item).quantize(Decimal("0.01"), ROUND_HALF_UP)
-                print("total_operaciones:", total_operaciones )
-                print("total_descuento:",total_descuento )
+                logger.debug("total_operaciones %s", total_operaciones)
+                logger.debug("total_descuento %s", total_descuento)
                 
 
                 #Crear detalles de factura
@@ -2650,24 +2696,24 @@ class GenerarFacturaSujetoAPIView(APIView):
             # Calcular descuento total                
             global_discount_amount = (total_operaciones * (Decimal(descuento_global) / Decimal("100"))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
             
-            print("descuento  global",global_discount_amount)
+            logger.debug("descuento  global %s", global_discount_amount)
 
             # totalCompra
             total_compra = total_operaciones.quantize(Decimal("0.01"), ROUND_HALF_UP)
-            print("total_compra",total_compra  )
+            logger.debug("total_compra %s", total_compra)
 
             # totalDescu = descuentos por ítem + descuento global
             totalDescu = (
                 total_descuento + global_discount_amount
             ).quantize(Decimal("0.01"), ROUND_HALF_UP)
 
-            print("totalDescu",totalDescu  )
+            logger.debug("totalDescu %s", totalDescu)
 
             # subTotal = totalCompra - descuento global (no restas los ítem porque ya los descontaste en line_total)
             sub_total = (
                 total_compra - global_discount_amount
             ).quantize(Decimal("0.01"), ROUND_HALF_UP)
-            print("sub_total",sub_total  )
+            logger.debug("sub_total %s", sub_total)
 
             # Retenciones sobre ese subTotal
             ret_iv = Decimal("0.00")
@@ -2683,17 +2729,17 @@ class GenerarFacturaSujetoAPIView(APIView):
                 porcentaje_retencion_renta = Decimal("10.00")  # forzar 10%
                 ret_renta = (sub_total * porcentaje_retencion_renta / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
-            print("ret_iv", ret_iv)
-            print("ret_renta", ret_renta)
+            logger.debug("ret_iv %s", ret_iv)
+            logger.debug("ret_renta %s", ret_renta)
 
 
             # totalPagar final
             total_pagar = (sub_total - ret_iv - ret_renta).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
             
-            print("*************** Total a pagar", total_pagar )
-            print("=== Totales finales antes de guardar factura ===")
-            print("Total descuento:", totalDescu)
-            print("Total operaciones:", total_operaciones)
+            logger.debug("*************** Total a pagar %s", total_pagar)
+            logger.debug("=== Totales finales antes de guardar factura ===")
+            logger.debug("Total descuento %s", totalDescu)
+            logger.debug("Total operaciones %s", total_operaciones)
             
             # --- Guardar totales en factura ---
             factura.total_descuento       = total_descuento
@@ -2750,7 +2796,7 @@ class GenerarFacturaSujetoAPIView(APIView):
                 sub_total = sub_total,
                 formas_pago=formas_pago_id,
             )
-            print("FACTURA JSON",factura_json)
+            logger.debug("FACTURA JSON %s", factura_json)
             
             factura.json_original = factura_json
             if formas_pago_id:
@@ -2763,52 +2809,29 @@ class GenerarFacturaSujetoAPIView(APIView):
             with open(json_path, "w", encoding="utf-8") as f:
                 json.dump(factura_json, f, indent=4, ensure_ascii=False)
             
-            print("PDF antes")
+            logger.debug("PDF antes")
             # Verificar si el archivo PDF existe
             pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.url, factura.tipo_dte.codigo, 'pdf', f"{str(factura.codigo_generacion).upper()}.pdf")
-            print("PDF antdespues")
+            logger.debug("PDF antdespues")
             
             os.makedirs(os.path.dirname(pdf_signed_path), exist_ok=True)
             if os.path.exists(pdf_signed_path):
-                print("PDF ya existe, devolviendo archivo existente: %s", pdf_signed_path)
+                logger.debug("PDF ya existe, devolviendo archivo existente: %s %s", pdf_signed_path)
                 filename=os.path.basename(pdf_signed_path)
             else:
                 #1.Crear HTML
                 html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": factura}, request=request)
 
                 #Guardar archivo pdf
-                print("guardar pdf: ", pdf_signed_path)
+                logger.debug("guardar pdf %s", pdf_signed_path)
                 with open(pdf_signed_path, "wb") as pdf_file:
                     pisa_status = pisa.CreatePDF(BytesIO(html_content.encode('utf-8')), dest=pdf_file)
                     
                 if pisa_status.err:
-                    print(f"Error al crear el PDF en {pdf_signed_path}")
+                    logger.error(f"Error al crear el PDF en {pdf_signed_path}")
                 else:
-                    print(f"PDF guardado exitosamente en {pdf_signed_path}")
-            # else:
-            #     #1.Crear HTML
-            #     html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": factura}, request=request)
-                
-            #     #2.Definir base_url para que {% static %} funcione correctamente, esto asegura que las imágenes estáticas (logos, etc.) se resuelvan bien en el PDF
-            #     try:
-            #         base_url = request.build_absolute_uri('/')
-            #     except Exception as e:
-            #         print("Error obteniendo base_url")
-            #         base_url = None  # WeasyPrint usará paths relativos si es None
-                
-            #     # 3. Preparar lista de CSS
-            #     stylesheets = [CSS(url='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js') ]
-                
-                #4.Guardar archivo PDF con WeasyPrint
-                # try:
-                #     html = HTML(string=html_content, base_url=base_url)
-                #     html.write_pdf(stylesheets=stylesheets, target=pdf_signed_path)
-                #     filename = os.path.basename(pdf_signed_path)
-                #     print("Pdf guardado ")
-                # except Exception as e:
-                #     print("Error generando el PDF con WeasyPrint")
-                
-            print(json.dumps(factura_json, indent=2, ensure_ascii=False)) # Mostrar el JSON en consola (opcional)
+                    logger.debug(f"PDF guardado exitosamente en {pdf_signed_path}")
+            logger.debug(json.dumps(factura_json, indent=2, ensure_ascii=False)) # Mostrar el JSON en consola (opcional)
             # transaction.savepoint_rollback(sid)
 
             return Response({
@@ -2827,19 +2850,13 @@ class GenerarFacturaSujetoAPIView(APIView):
 ######################################################
 
 class GenerarFacturaExportacionAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     """
     Vista API para generar facturas de sujeto excluyente.
     POST rocesa la generación de la factura.
     """
 
     cod_generacion = str(uuid.uuid4()).upper()
-    global productos_ids_r
-    productos_ids_r = []
-    global cantidades_prod_r
-    cantidades_prod_r = []
-    global descuentos_r
-    descuentos_r = []
-    global emisor_fe
 
     # @transaction.atomic
     def post(self, request, format=None):
@@ -2849,7 +2866,7 @@ class GenerarFacturaExportacionAPIView(APIView):
             data = request.data 
             contingencia = False
             
-            print("Datos recibidos:", request.data)
+            logger.debug("Datos recibidos %s", request.data)
             
             # --- Datos del encabezado del documento ---
             numero_control = data.get('numero_control', '')
@@ -2861,17 +2878,17 @@ class GenerarFacturaExportacionAPIView(APIView):
             tipo_contingencia_codigo = data.get("tipo_contingencia_codigo", None)
             motivo_contingencia = data.get("motivo_contingencia", None)
                         
-            print(f"parametro num control recibido: {numero_control}, tipo dte: {tipo_dte}")
+            logger.debug(f"parametro num control recibido: {numero_control}, tipo dte: {tipo_dte}")
             
             # Generar número de control si no se envía desde el frontend
             if not numero_control:
                 numero_control = NumeroControl.obtener_numero_control(14)
-                print("Numero control asignado: ", numero_control)
+                logger.debug("Numero control asignado %s", numero_control)
                 
             # Generar código de generación si no se proporciona
             if not codigo_generacion:
                 codigo_generacion = str(uuid.uuid4()).upper()
-                print("codigo de generacion: ", codigo_generacion)
+                logger.debug("codigo de generacion %s", codigo_generacion)
                 
             
             # --- Inicializar objetos relacionados con tipo de documento ---
@@ -2905,13 +2922,13 @@ class GenerarFacturaExportacionAPIView(APIView):
             #     tipotransmision=tipotransmision_obj
             # )
 
-            print("ambiente_obj:", )
-            print("tipo_dte_obj:", tipo_dte_obj)
-            print("tipo_item_obj:", tipo_item_obj)
-            print("tipomodelo_obj:", tipomodelo_obj)
-            print("tipotransmision_obj:", tipotransmision_obj)
-            print("tipoContingencia_obj:", tipoContingencia_obj)
-            print("tipo_moneda_obj:", tipo_moneda_obj)
+            logger.debug("ambiente_obj:")
+            logger.debug("tipo_dte_obj %s", tipo_dte_obj)
+            logger.debug("tipo_item_obj %s", tipo_item_obj)
+            logger.debug("tipomodelo_obj %s", tipomodelo_obj)
+            logger.debug("tipotransmision_obj %s", tipotransmision_obj)
+            logger.debug("tipoContingencia_obj %s", tipoContingencia_obj)
+            logger.debug("tipo_moneda_obj %s", tipo_moneda_obj)
             
             # --- Inicializar totales de factura ---
             # DecimalIvaPerci = Decimal("0.00") 
@@ -2930,6 +2947,7 @@ class GenerarFacturaExportacionAPIView(APIView):
 # FIRMA Y ENVIO DE DOCUMENTOS A MH
 ######################################################
 class FirmarFacturaAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     """
     POST /api/factura/{factura_id}/firmar/
     - Intenta hasta 3 veces firmar el DTE con el servicio externo.
@@ -2948,7 +2966,7 @@ class FirmarFacturaAPIView(APIView):
         intentos_sesion = request.session.get('intentos_reintento', 0)
 
         # Validar certificado
-        print('certificado',CERT_PATH)
+        logger.debug("certificado %s", CERT_PATH)
         if not os.path.exists(CERT_PATH):
             return Response(
                 {"error": "Certificado no encontrado."},
@@ -2970,7 +2988,7 @@ class FirmarFacturaAPIView(APIView):
 
         # Ciclo de intentos de firma
         for intento in range(1, intentos_max + 1):
-            print("INTENTOS EN API VIEW", intento)
+            logger.debug("INTENTOS EN API VIEW %s", intento)
             # Verificar token activo
             token_data = Token_data.objects.filter(activado=True).first()
             if not token_data:
@@ -3064,17 +3082,18 @@ class FirmarFacturaAPIView(APIView):
 
 
 class EnviarFacturaHaciendaAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     """
     POST /api/factura/{factura_id}/enviar/
     Autentica con MH, envía el DTE, registra movimientos de inventario y maneja contingencia.
     """
-    global emisor_fe
     @transaction.atomic
     def post(self, request, factura_id, format=None):
+        emisor_fe = _get_emisor()
         try:
             factura = get_object_or_404(FacturaElectronica, id=factura_id)
             fecha_actual = obtener_fecha_actual()
-            print("factura_id: ", factura_id)
+            logger.debug("factura_id %s", factura_id)
         
             # Paso 1: Autenticación
             nit = str(emisor_fe.nit)
@@ -3098,7 +3117,7 @@ class EnviarFacturaHaciendaAPIView(APIView):
                             if not isinstance(body, dict):
                                 body = {}
                         except ValueError as e:
-                            print(f"Error al parsear JSON: {e}")
+                            logger.error(f"Error al parsear JSON: {e}")
                             body = {}
                         
                         token = body.get("token", "")
@@ -3117,7 +3136,7 @@ class EnviarFacturaHaciendaAPIView(APIView):
                             }
                         )
                         contingencia = False
-                        print("Fin token")
+                        logger.debug("Fin token")
                         error_auth = None  # Éxito, no hay error
                         break
                     else:
@@ -3126,12 +3145,12 @@ class EnviarFacturaHaciendaAPIView(APIView):
                     error_auth = str(e)
                 time.sleep(1)
 
-            print("factura_id1: ", factura_id)
-            print("datos: ", request)
+            logger.debug("factura_id1 %s", factura_id)
+            logger.debug("datos %s", request)
             if error_auth:
-                print("Error autenticacion: ", error_auth)
+                logger.error("Error autenticacion %s", error_auth)
             else:
-                print("Autenticacion exitosa")
+                logger.debug("Autenticacion exitosa")
 
             if contingencia:
                 return Response(
@@ -3157,7 +3176,7 @@ class EnviarFacturaHaciendaAPIView(APIView):
             
             documento = dte_json.get("body", "").strip()
 
-            print("documento: ", documento)
+            logger.debug("documento %s", documento)
 
             if not documento:
                 return Response(
@@ -3172,12 +3191,12 @@ class EnviarFacturaHaciendaAPIView(APIView):
                 "Content-Type": CONTENT_TYPE.valor
             }
             
-            print("factura id: ", factura.id)
-            print("factura: ", factura)
-            print("despues AMBIENTE: ", AMBIENTE.codigo)
-            print("despues version: ", int(factura.json_original["identificacion"]["version"]))
-            print("despues tipoDte: ", str(factura.json_original["identificacion"]["tipoDte"]))
-            print("despues codigo_generacion: ", str(factura.codigo_generacion))
+            logger.debug("factura id %s", factura.id)
+            logger.debug("factura %s", factura)
+            logger.debug("despues AMBIENTE %s", AMBIENTE.codigo)
+            logger.debug("despues version %s", int(factura.json_original["identificacion"]["version"]))
+            logger.debug("despues tipoDte %s", str(factura.json_original["identificacion"]["tipoDte"]))
+            logger.debug("despues codigo_generacion %s", str(factura.codigo_generacion))
 
 
             payload = {
@@ -3189,17 +3208,17 @@ class EnviarFacturaHaciendaAPIView(APIView):
                 "codigoGeneracion": str(factura.codigo_generacion)
             }
 
-            print("payload: ")
-            print("payload: ", payload)
+            logger.debug("payload: ")
+            logger.debug("payload %s", payload)
 
             error_envio = None
             for intento in range(1, 4):
-                print("intentos", intento)
+                logger.debug("intentos %s", intento)
 
                 try:
                     resp = requests.post(envio_url, json=payload, headers=envio_headers, timeout=10)
                     data = resp.json() if resp.text.strip() else {}
-                    print("Response envio mh: data: ", data)
+                    logger.debug("Response envio mh: data %s", data)
                     if resp.status_code == 200 and data.get("selloRecibido"):
                         # Actualizar factura
                         factura.sello_recepcion = data["selloRecibido"]
@@ -3212,7 +3231,7 @@ class EnviarFacturaHaciendaAPIView(APIView):
                         # if factura.recibido_mh == False:
                         #     enviar_correo_individual_view(request, factura_id, None, None)
                         #     factura.envio_correo = True
-                        print()
+                        logger.debug("")
                         factura.save()
                         
                         # Registrar movimiento de inventario
@@ -3235,7 +3254,7 @@ class EnviarFacturaHaciendaAPIView(APIView):
                     else:
                         error_envio = f"Envio failed {resp.status_code}"
                 except requests.RequestException as e:
-                    print("error", e)
+                    logger.error("error %s", e)
 
                     error_envio = str(e)
                 time.sleep(1)
@@ -3256,13 +3275,14 @@ class EnviarFacturaHaciendaAPIView(APIView):
             )
 
         except Exception as e:
-            print("Error inesperado:")
+            logger.error("Error inesperado:")
             return Response(
                 {"error": "Error interno del servidor", "detalle": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
 class FirmarFacturaSujetoExcluidoAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     """
     POST /api/factura/{factura_id}/firmar/
     - Intenta hasta 3 veces firmar el DTE con el servicio externo.
@@ -3281,7 +3301,7 @@ class FirmarFacturaSujetoExcluidoAPIView(APIView):
         intentos_sesion = request.session.get('intentos_reintento', 0)
 
         # Validar certificado
-        print('certificado',CERT_PATH)
+        logger.debug("certificado %s", CERT_PATH)
         if not os.path.exists(CERT_PATH):
             return Response(
                 {"error": "Certificado no encontrado."},
@@ -3395,14 +3415,16 @@ class FirmarFacturaSujetoExcluidoAPIView(APIView):
         )
 
 class EnviarFacturaSujetoExcluidoHaciendaAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     """
     POST /api/factura-sujeto-excluido/{factura_id}/enviar/
     Envía a MH únicamente facturas de sujeto excluido.
     """
     @transaction.atomic
     def post(self, request, factura_id, format=None):
+        emisor_fe = _get_emisor()
         factura = get_object_or_404(FacturaSujetoExcluidoElectronica, pk=factura_id)
-        print("FACTURA", factura)
+        logger.debug("FACTURA %s", factura)
         
         # Paso 1: Autenticación
         nit = str(emisor_fe.nit)
@@ -3423,12 +3445,12 @@ class EnviarFacturaSujetoExcluidoHaciendaAPIView(APIView):
                     try:
                         resp_data = resp.json()
                         body = resp_data.get("body", {})
-                        print("resp_data", resp_data)
+                        logger.debug("resp_data %s", resp_data)
                         
                         if not isinstance(body, dict):
                             body = {}
                     except ValueError as e:
-                        print(f"Error al parsear JSON: {e}")
+                        logger.error(f"Error al parsear JSON: {e}")
                         body = {}
                     
                     token = body.get("token", "")
@@ -3458,9 +3480,9 @@ class EnviarFacturaSujetoExcluidoHaciendaAPIView(APIView):
             time.sleep(1)
 
             if error_auth:
-                print("Error autenticacion: ", error_auth)
+                logger.error("Error autenticacion %s", error_auth)
             else:
-                print("Autenticacion exitosa")
+                logger.debug("Autenticacion exitosa")
 
             if contingencia:
                 return Response(
@@ -3502,8 +3524,8 @@ class EnviarFacturaSujetoExcluidoHaciendaAPIView(APIView):
 
         resp = requests.post(envio_url, json=payload, headers=envio_headers, timeout=10)
         
-        print("Envio response status code:", resp.status_code)
-        print("Envio response text:", resp.text)
+        logger.debug("Envio response status code %s", resp.status_code)
+        logger.debug("Envio response text %s", resp.text)
         
         data = resp.json() if resp.status_code == 200 else {}
         if resp.status_code == 200 and data.get("selloRecibido"):
@@ -3529,6 +3551,7 @@ class EnviarFacturaSujetoExcluidoHaciendaAPIView(APIView):
 
 # EVENTO DE INVALIDACION UNIFICADO
 class InvalidarDteUnificadoAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     """
     Vista API unificada que realiza en un solo paso:
       1. Genera el DTE de invalidación (llama a invalidacion_dte_view)
@@ -3542,7 +3565,7 @@ class InvalidarDteUnificadoAPIView(APIView):
         try:
             # Paso 1: Llamar a la función de invalidación
             response_evento = invalidacion_dte_view(request, factura_id)
-            print("response_evento", response_evento)
+            logger.debug("response_evento %s", response_evento)
             
             if response_evento.status_code != 302:
                 # Si el proceso de invalidación falla, retorna el error
@@ -3581,6 +3604,7 @@ class InvalidarDteUnificadoAPIView(APIView):
 
 # EVENTO DE INVALIDACION SUJETO EXCLUIDO UNIFICADO
 class InvalidarDteSujetoExcluidoUnificadoAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     """
     Vista API unificada que realiza en un solo paso:
       1. Genera el DTE de invalidación (llama a invalidacion_dte_view)
@@ -3594,7 +3618,7 @@ class InvalidarDteSujetoExcluidoUnificadoAPIView(APIView):
         try:
             # Paso 1: Llamar a la función de invalidación
             response_evento = invalidacion_dte_sujeto_excluido_view(request, factura_id)
-            print("response_evento", response_evento)
+            logger.debug("response_evento %s", response_evento)
             
             if response_evento.status_code != 302:
                 # Si el proceso de invalidación falla, retorna el error
@@ -3633,17 +3657,16 @@ class InvalidarDteSujetoExcluidoUnificadoAPIView(APIView):
         
 # OBTRENER FACTURA POR CODIGO DE GENERACION
 class FacturaPorCodigoGeneracionAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     """
     Devuelve la factura por su código de generación, incluyendo receptor y productos.
     """
 
     def get(self, request):
-        global documento_relacionado, productos_ids_r
         documento_relacionado = True
-        productos_ids_r = []
 
         codigo_generacion = request.GET.get("codigo_generacion")
-        print("cod generacion relacionado: ", codigo_generacion)
+        logger.debug("cod generacion relacionado %s", codigo_generacion)
         if not codigo_generacion:
             return Response({"error": "Código de generación no proporcionado"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -3682,7 +3705,6 @@ class FacturaPorCodigoGeneracionAPIView(APIView):
                 "total_incl": str(round(total_incl, 2)),
                 "descuento": str(detalle.descuento.porcentaje) if detalle.descuento else "",
             })
-            productos_ids_r.append(detalle.producto.id)
 
         response_data = {
             "codigo_generacion": str(factura.codigo_generacion),
@@ -3728,11 +3750,14 @@ class FacturaPagination(PageNumberPagination):
 
 # LISTAR FACTURAS
 class FacturaListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     serializer_class = FacturaListSerializer
     pagination_class = FacturaPagination
 
     def get_queryset(self):
-        queryset = FacturaElectronica.objects.all()
+        queryset = FacturaElectronica.objects.select_related(
+            'tipo_dte', 'dteemisor', 'dtereceptor', 'tipomoneda', 'condicion_operacion'
+        ).prefetch_related('dte_invalidacion')
 
         recibido = self.request.GET.get('recibido_mh')
         codigo = self.request.GET.get('sello_recepcion')
@@ -3774,11 +3799,14 @@ class FacturaListAPIView(generics.ListAPIView):
 
 # LISTAR FACTURAS SUJETO EXCLUIDO
 class FacturaSujetoExcluidoListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     serializer_class = FacturaSujetoExcluidoListSerializer
     pagination_class = FacturaPagination
 
     def get_queryset(self):
-        queryset = FacturaSujetoExcluidoElectronica .objects.all()
+        queryset = FacturaSujetoExcluidoElectronica.objects.select_related(
+            'tipo_dte', 'dteemisor', 'dtesujetoexcluido', 'tipomoneda', 'condicion_operacion'
+        ).prefetch_related('dte_invalidacion_sujeto_excluido')
 
         recibido = self.request.GET.get('recibido_mh')
         codigo = self.request.GET.get('sello_recepcion')
@@ -3820,6 +3848,7 @@ class FacturaSujetoExcluidoListAPIView(generics.ListAPIView):
 
 # ENVIAR FACTURA INVALIDACION HACIENDA
 class EnviarFacturaInvalidacionAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     """
     POST /api/factura/{factura_id}/invalidar/
     Autentica con MH, envía la invalidación de la factura,
@@ -3827,6 +3856,7 @@ class EnviarFacturaInvalidacionAPIView(APIView):
     """
     @transaction.atomic
     def post(self, request, factura_id, format=None):
+        emisor_fe = _get_emisor()
         # 1) Autenticación con MH
         nit = emisor_fe.nit
         pwd = emisor_fe.clave_publica
@@ -3962,6 +3992,7 @@ class EnviarFacturaInvalidacionAPIView(APIView):
 
 # INVALIDACION DE VARIOS DTE
 class InvalidarVariasDteAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     """
     POST /api/dte/invalidar-lote/
     Invalidación en lote de múltiples DTEs: crea evento, firma, envía, y reingresa stock.
@@ -4051,6 +4082,7 @@ class ContingenciaPagination(PageNumberPagination):
 
 # LISTAR CONTINGENCIA
 class ContingenciaListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     """
     API para listar eventos de contingencia con lotes y facturas agrupadas,
     aplicando filtros y paginación.
@@ -4180,6 +4212,7 @@ class ContingenciaListAPIView(APIView):
 
 # CONTINGENCIA DTE UNIFICADO
 class ContingenciaDteUnificadoAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     """
     Ejecuta de forma unificada:
       1) Generación de JSON de contingencia,
@@ -4260,11 +4293,13 @@ class ContingenciaDteUnificadoAPIView(APIView):
 
 # CONTINGENCIA DTE
 class ContingenciaDteAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     """
     Genera el JSON de contingencia para un evento, lo guarda en json_original
     y retorna ese JSON como respuesta.
     """
     def get(self, request, format=None):
+        emisor_fe = _get_emisor()
         contingencia_id = request.query_params.get("contingencia_id")
         if not contingencia_id:
             return Response(
@@ -4375,10 +4410,12 @@ class ContingenciaDteAPIView(APIView):
 
 # FIRMAR CONTINGENCIA
 class FirmarContingenciaAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     """
     Firma un evento de contingencia y guarda el resultado.
     """
     def get(self, request, format=None):
+        emisor_fe = _get_emisor()
         contingencia_id = request.query_params.get("contingencia_id")
         if not contingencia_id:
             return Response(
@@ -4505,11 +4542,13 @@ class FirmarContingenciaAPIView(APIView):
 
 # ENVIAR CONTINGENCIA A HACIENDA
 class EnviarContingenciaHaciendaAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     """
     Autentica con MH, envia el DTE firmado y actualiza el EventoContingencia
     """
 
     def get(self, request, format=None):
+        emisor_fe = _get_emisor()
         contingencia_id = request.query_params.get("contingencia_id")
 
         if not contingencia_id:
@@ -4677,6 +4716,7 @@ class EnviarContingenciaHaciendaAPIView(APIView):
 
 # FINALIZAR EL EVENTO DE CONTINGENCIA
 class FinalizarContingenciaAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     """
     Cierra automáticamente los eventos de contingencia activos o rechazados
     que tengan más de 24 horas sin finalizar.
@@ -4737,6 +4777,7 @@ class FinalizarContingenciaAPIView(APIView):
 
 # CREAR LOTE CONTINGENCIA
 class LoteContingenciaDteAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     """
     Crea un LoteContingencia para una FacturaElectronica en un EventoContingencia existente
     (o crea uno nuevo si no hay espacio) del tipo indicado.
@@ -4822,6 +4863,7 @@ class LoteContingenciaDteAPIView(APIView):
 
 # ENVIO DE LOTES EN CONTINGENCIA UNIFICADO
 class EnvioDteUnificadoAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     """
     POST
     1) Firma el DTE
@@ -4831,52 +4873,52 @@ class EnvioDteUnificadoAPIView(APIView):
     """
     def post(self, request, factura_id=None, format=None):
         factura_id = factura_id or request.data.get("factura_id")
-        print(f"[EnvioDteUnificado] Inicio POST, factura_id={factura_id}")
+        logger.debug(f"[EnvioDteUnificado] Inicio POST, factura_id={factura_id}")
 
         if not factura_id:
-            print("[EnvioDteUnificado] ERROR: falta factura_id")
+            logger.error("[EnvioDteUnificado] ERROR: falta factura_id")
             return Response(
                 {"error": "Debe proporcionar 'factura_id'"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         # 1) Firma
-        print("[EnvioDteUnificado] Llamando a FirmarFacturaAPIView")
+        logger.debug("[EnvioDteUnificado] Llamando a FirmarFacturaAPIView")
         firmado_view = FirmarFacturaAPIView()
         resp_firma = firmado_view.post(request, factura_id, format=format)
-        print(f"[EnvioDteUnificado] Respuesta firma: status={resp_firma.status_code}, data={getattr(resp_firma, 'data', None)}")
+        logger.debug(f"[EnvioDteUnificado] Respuesta firma: status={resp_firma.status_code}, data={getattr(resp_firma, 'data', None)}")
 
         if resp_firma.status_code != status.HTTP_200_OK:
-            print(f"[EnvioDteUnificado] Firma fallida, devolviendo código {resp_firma.status_code}")
+            logger.debug(f"[EnvioDteUnificado] Firma fallida, devolviendo código {resp_firma.status_code}")
             return resp_firma
 
         # 2) Envío a Hacienda
-        print("[EnvioDteUnificado] Llamando a EnviarFacturaHaciendaAPIView")
+        logger.debug("[EnvioDteUnificado] Llamando a EnviarFacturaHaciendaAPIView")
         envio_view = EnviarFacturaHaciendaAPIView()
         resp_envio = envio_view.post(request, factura_id, format=format)
-        print(f"[EnvioDteUnificado] Respuesta envío: status={resp_envio.status_code}, data={getattr(resp_envio, 'data', None)}")
+        logger.debug(f"[EnvioDteUnificado] Respuesta envío: status={resp_envio.status_code}, data={getattr(resp_envio, 'data', None)}")
 
         if resp_envio.status_code != status.HTTP_200_OK:
-            print(f"[EnvioDteUnificado] Envío fallido, devolviendo código {resp_envio.status_code}")
+            logger.debug(f"[EnvioDteUnificado] Envío fallido, devolviendo código {resp_envio.status_code}")
             return resp_envio
 
         # 3) Actualizar lote
         try:
-            print("[EnvioDteUnificado] Obteniendo fecha actual en zona America/El_Salvador")
+            logger.debug("[EnvioDteUnificado] Obteniendo fecha actual en zona America/El_Salvador")
             try:
                 fecha_actual = obtener_fecha_actual()
             except Exception as e:
-                print(f"[EnvioDteUnificado] obtener_fecha_actual falló: {e}, usando datetime.now con tz")
+                logger.error(f"[EnvioDteUnificado] obtener_fecha_actual falló: {e}, usando datetime.now con tz")
                 tz = pytz.timezone('America/El_Salvador')
                 fecha_actual = datetime.now(tz)
 
-            print(f"[EnvioDteUnificado] Iniciando transacción para actualizar lote de factura {factura_id}")
+            logger.debug(f"[EnvioDteUnificado] Iniciando transacción para actualizar lote de factura {factura_id}")
             with transaction.atomic():
                 factura = get_object_or_404(FacturaElectronica, id=factura_id)
-                print(f"[EnvioDteUnificado] factura.sello_recepcion={factura.sello_recepcion}")
+                logger.debug(f"[EnvioDteUnificado] factura.sello_recepcion={factura.sello_recepcion}")
                 if factura.sello_recepcion:
                     lote = LoteContingencia.objects.filter(factura_id=factura_id).first()
-                    print(f"[EnvioDteUnificado] Lote encontrado: {lote}")
+                    logger.debug(f"[EnvioDteUnificado] Lote encontrado: {lote}")
                     if lote:
                         lote.finalizado = True
                         lote.recibido_mh = True
@@ -4884,24 +4926,24 @@ class EnvioDteUnificadoAPIView(APIView):
                         lote.hora_modificacion = fecha_actual.time()
                         lote.save()
                         mensaje = "Factura firmada y recibida con éxito"
-                        print("[EnvioDteUnificado] Lote marcado como finalizado y recibido")
+                        logger.debug("[EnvioDteUnificado] Lote marcado como finalizado y recibido")
                     else:
                         mensaje = "Factura firmada, pero no se encontró lote de contingencia"
-                        print("[EnvioDteUnificado] No se encontró lote de contingencia")
+                        logger.debug("[EnvioDteUnificado] No se encontró lote de contingencia")
                 else:
                     mensaje = "Factura firmada, pero sin sello de recepción de MH"
-                    print("[EnvioDteUnificado] Factura sin sello_recepcion")
+                    logger.debug("[EnvioDteUnificado] Factura sin sello_recepcion")
             connection.close()
-            print("[EnvioDteUnificado] Conexión cerrada tras actualizar lote")
+            logger.debug("[EnvioDteUnificado] Conexión cerrada tras actualizar lote")
         except Exception as e:
-            print(f"[EnvioDteUnificado] ERROR actualizando lote: {e}")
+            logger.error(f"[EnvioDteUnificado] ERROR actualizando lote: {e}")
             return Response(
                 {"error": "Error actualizando lote", "detalle": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
         # 4) Devolver resultado combinado
-        print(f"[EnvioDteUnificado] FINAL: {mensaje}")
+        logger.debug(f"[EnvioDteUnificado] FINAL: {mensaje}")
         return Response(
             {"mensaje": mensaje, "detalle_envio": resp_envio.data},
             status=status.HTTP_200_OK
@@ -4909,6 +4951,7 @@ class EnvioDteUnificadoAPIView(APIView):
 
 # FIRMAR Y ENVIAR EN LOTES UNA LISTA DE DTES
 class LotesDteAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     """
     Firma y envía en lote una lista de DTEs (factura_ids) a Hacienda.
     """
@@ -5002,11 +5045,13 @@ class LotesDteAPIView(APIView):
 
 # AUTENTICAR CON MH Y ENVIAR LOS LOTES
 class EnviarLotesHaciendaAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     """
     Autentica con MH y envía un DTE firmado (recepciondte),
     actualiza la FacturaElectronica con el sello recibido.
     """
     def post(self, request, format=None):
+        emisor_fe = _get_emisor()
         factura_id = request.data.get("factura_id")
         if not factura_id:
             return Response(
@@ -5151,6 +5196,7 @@ class EnviarLotesHaciendaAPIView(APIView):
 
 # ASIGNA EL MOTIVO CONTINGENCIA
 class MotivoContingenciaAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     """
     Asigna el motivo de contingencia a un EventoContingencia
     vinculado a una factura y devuelve el objeto actualizado.
@@ -5200,6 +5246,7 @@ class MotivoContingenciaAPIView(APIView):
 ######################################################
 
 class TotalesPorTipoDTE(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         data = (
             FacturaElectronica.objects.values('tipo_dte', 'tipo_dte__codigo' ).annotate(total=Count('id')).filter(recibido_mh=True) 
@@ -5207,6 +5254,7 @@ class TotalesPorTipoDTE(generics.ListAPIView):
         return Response({"totales_por_tipo": list(data)})
  
 class TotalVentasAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         resultado = (
             FacturaElectronica.objects
@@ -5220,6 +5268,7 @@ class TotalVentasAPIView(generics.ListAPIView):
         return Response({"total_ventas": total})
 
 class TopClientes(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         data = (
             FacturaElectronica.objects
@@ -5232,6 +5281,7 @@ class TopClientes(APIView):
         return Response({"clientes": list(data)})
  
 class TopProductosAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         data = (
             DetalleFactura.objects
@@ -5249,6 +5299,7 @@ class TopProductosAPIView(generics.ListAPIView):
 
 #@csrf_exempt
 class EnviarCorreoIndividualAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     def post(self, request, factura_id, format=None):
         #1.Obtener objetos principales
         documento_electronico = get_object_or_404(FacturaElectronica, id=factura_id)
@@ -5259,28 +5310,28 @@ class EnviarCorreoIndividualAPIView(APIView):
         #2.Leer parámetros del body
         archivo_pdf = request.data.get('archivo_pdf')
         archivo_json = request.data.get('archivo_json')
-        print(f"Inicio envio de correos: pdf: {archivo_pdf}, json: {archivo_json}")
+        logger.debug(f"Inicio envio de correos: pdf: {archivo_pdf}, json: {archivo_json}")
         
         #3.Definir ruta esperada del PDF
-        print("ruta pdf: ", RUTA_COMPROBANTES_PDF.url)
+        logger.debug("ruta pdf %s", RUTA_COMPROBANTES_PDF.url)
         pdf_signed_path = os.path.join(RUTA_COMPROBANTES_PDF.url, documento_electronico.tipo_dte.codigo, 'pdf', f"{str(documento_electronico.codigo_generacion).upper()}.pdf")
-        print("pdf path: ", pdf_signed_path)
+        logger.debug("pdf path %s", pdf_signed_path)
         #4.Buscar archivo PDF
         if not os.path.exists(pdf_signed_path):
-            print("Pdf no existe", RUTA_COMPROBANTES_PDF)
+            logger.debug("Pdf no existe %s", RUTA_COMPROBANTES_PDF)
             
             #1.Crear HTML
             html_content = render_to_string('documentos/factura_consumidor/template_factura.html', {"factura": documento_electronico}, request=request)
 
             #Guardar archivo pdf
-            print("guardar pdf: ", pdf_signed_path)
+            logger.debug("guardar pdf %s", pdf_signed_path)
             with open(pdf_signed_path, "wb") as pdf_file:
                 pisa_status = pisa.CreatePDF(BytesIO(html_content.encode('utf-8')), dest=pdf_file)
                 
             if pisa_status.err:
-                print(f"Error al crear el PDF en {pdf_signed_path}")
+                logger.error(f"Error al crear el PDF en {pdf_signed_path}")
             else:
-                print(f"PDF guardado exitosamente en {pdf_signed_path}")
+                logger.debug(f"PDF guardado exitosamente en {pdf_signed_path}")
                 
         #5.Confirmar ruta del PDF
         archivo_pdf = pdf_signed_path
@@ -5290,9 +5341,9 @@ class EnviarCorreoIndividualAPIView(APIView):
         
         #7.Buscar archivo JSON
         if not os.path.exists(archivo_json):
-            print(f"Archivo JSON no encontrado en {archivo_json}")
+            logger.debug(f"Archivo JSON no encontrado en {archivo_json}")
             # messages.error(request, "Archivo JSON no encontrado.")
-        print(f"json: {archivo_json} pdf: {archivo_pdf}")
+        logger.debug(f"json: {archivo_json} pdf: {archivo_pdf}")
         
         if documento_electronico:
             
@@ -5374,5 +5425,12 @@ class EnviarCorreoIndividualAPIView(APIView):
 ###########################################################
 
 class FacturaSujetoExcluidoDetailAPIView(generics.RetrieveAPIView):
-    queryset = FacturaSujetoExcluidoElectronica.objects.all()
+    permission_classes = [IsAuthenticated]
+    queryset = FacturaSujetoExcluidoElectronica.objects.select_related(
+        'tipo_dte', 'dteemisor', 'dtesujetoexcluido', 'tipomoneda', 'condicion_operacion'
+    ).prefetch_related(
+        'detallesSujetoExcluido__producto',
+        'detallesSujetoExcluido__unidad_medida',
+        'dte_invalidacion_sujeto_excluido'
+    )
     serializer_class = FacturaSujetoExcluidoSerializer

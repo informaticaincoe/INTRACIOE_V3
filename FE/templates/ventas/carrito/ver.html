@@ -1,32 +1,85 @@
 {% extends "base.html" %}
+{% block title %}Carrito · FE{% endblock %}
 {% block content %}
-<div class="container py-4">
-  <h4>Carrito (Cliente #{{ receptor_id }})</h4>
+
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'ventas_home' %}">Facturación</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Carrito</li>
+  </ol>
+</nav>
+
+{% if messages %}
+  {% for m in messages %}
+    <div class="alert alert-{{ m.tags }} alert-dismissible py-2" role="alert">
+      {{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Carrito — Cliente #{{ receptor_id }}</h1>
+</div>
+
+<div class="card border-0 shadow-sm mb-3">
   <div class="table-responsive">
-    <table class="table table-sm align-middle">
-      <thead><tr><th>Producto</th><th class="text-end">Precio</th><th class="text-end">Cantidad</th><th class="text-end">Total</th><th></th></tr></thead>
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Producto</th>
+          <th class="text-end">Precio</th>
+          <th class="text-end">Cantidad</th>
+          <th class="text-end">Total</th>
+          <th></th>
+        </tr>
+      </thead>
       <tbody>
         {% for it in items %}
         <tr>
-          <td>{{ it.producto.codigo }} - {{ it.producto.descripcion }}</td>
+          <td class="fw-medium">{{ it.producto.codigo }} — {{ it.producto.descripcion }}</td>
           <td class="text-end">${{ it.precio }}</td>
           <td class="text-end">{{ it.cantidad }}</td>
-          <td class="text-end">${{ it.total }}</td>
-          <td class="text-end"><a class="btn btn-sm btn-outline-danger" href="{% url 'carrito_quitar' receptor_id it.producto.id %}">Quitar</a></td>
+          <td class="text-end fw-semibold">${{ it.total }}</td>
+          <td class="text-end">
+            <a class="btn btn-sm btn-outline-danger" href="{% url 'carrito_quitar' receptor_id it.producto.id %}" aria-label="Quitar {{ it.producto.descripcion }}">
+              <i class="bi bi-x-lg"></i>
+            </a>
+          </td>
         </tr>
         {% empty %}
-        <tr><td colspan="5" class="text-center text-muted">Carrito vacío</td></tr>
+        <tr>
+          <td colspan="5" class="text-center py-5 text-muted">
+            <i class="bi bi-cart-x fs-1 d-block mb-2 opacity-50"></i>
+            Carrito vacío.
+          </td>
+        </tr>
         {% endfor %}
       </tbody>
-      <tfoot>
-        <tr><th colspan="3" class="text-end">TOTAL</th><th class="text-end">${{ total }}</th><th></th></tr>
+      {% if items %}
+      <tfoot class="table-light">
+        <tr>
+          <th colspan="3" class="text-end">TOTAL</th>
+          <th class="text-end">${{ total }}</th>
+          <th></th>
+        </tr>
       </tfoot>
+      {% endif %}
     </table>
   </div>
+</div>
+
+<div class="d-flex gap-2 justify-content-between">
+  <a class="btn btn-outline-danger" href="{% url 'carrito_vaciar' receptor_id %}">
+    <i class="bi bi-trash me-1"></i>Vaciar
+  </a>
   <div class="d-flex gap-2">
-    <a class="btn btn-secondary" href="{% url 'carrito_vaciar' receptor_id %}">Vaciar</a>
-    <a class="btn btn-outline-primary" href="{% url 'carrito_cotizacion' receptor_id %}">Generar cotización</a>
-    <a class="btn btn-primary" href="{% url 'carrito_facturar' receptor_id %}">Convertir en prefactura</a>
+    <a class="btn btn-outline-secondary" href="{% url 'carrito_cotizacion' receptor_id %}">
+      <i class="bi bi-file-earmark-text me-1"></i>Cotización
+    </a>
+    <a class="btn btn-primary" href="{% url 'carrito_facturar' receptor_id %}">
+      <i class="bi bi-check2-circle me-1"></i>Convertir en prefactura
+    </a>
   </div>
 </div>
+
 {% endblock %}

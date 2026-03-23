@@ -1,11 +1,76 @@
-<!-- templates/actividad_economica/update.html -->
 {% extends 'base.html' %}
-
+{% block title %}Editar Actividad Económica · FE{% endblock %}
 {% block content %}
-  <h2>Actualizar Actividad Económica</h2>
-  <form method="post">
-      {% csrf_token %}
-      {{ form.as_p }}
-      <button type="submit" class="btn btn-primary">Actualizar</button>
-  </form>
+
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'ventas_home' %}">Facturación</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'actividad_economica_list' %}">Actividades Económicas</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Editar</li>
+  </ol>
+</nav>
+
+{% if messages %}
+  {% for m in messages %}
+    <div class="alert alert-{{ m.tags }} alert-dismissible py-2" role="alert">
+      {{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-transparent border-bottom py-3">
+        <h1 class="h5 mb-0">
+          <i class="bi bi-diagram-3 me-2 text-primary"></i>Editar actividad económica
+        </h1>
+      </div>
+      <div class="card-body">
+        <form method="post" class="needs-validation" novalidate id="formActividad">
+          {% csrf_token %}
+          {% for field in form %}
+          <div class="mb-3">
+            <label for="{{ field.id_for_label }}" class="form-label">
+              {{ field.label }}{% if field.field.required %} <span class="text-danger">*</span>{% endif %}
+            </label>
+            <input type="text" id="{{ field.id_for_label }}" name="{{ field.html_name }}"
+                   class="form-control{% if field.errors %} is-invalid{% endif %}"
+                   value="{{ field.value|default_if_none:'' }}"
+                   {% if forloop.first %}autofocus{% endif %}
+                   {% if field.field.required %}required{% endif %}>
+            {% for error in field.errors %}
+              <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+          </div>
+          {% endfor %}
+          <div class="d-flex gap-2 justify-content-between mt-4">
+            <a href="{% url 'actividad_economica_list' %}" class="btn btn-secondary">
+              <i class="bi bi-x-lg me-1"></i>Cancelar
+            </a>
+            <button class="btn btn-primary" id="btnGuardar" type="submit">
+              <span class="spinner-border spinner-border-sm d-none me-1" id="spnGuardar" role="status" aria-hidden="true"></span>
+              <i class="bi bi-save me-1" id="iconGuardar"></i>Guardar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('formActividad').addEventListener('submit', function(e) {
+  if (!this.checkValidity()) {
+    e.preventDefault();
+    e.stopPropagation();
+  } else {
+    document.getElementById('spnGuardar').classList.remove('d-none');
+    document.getElementById('iconGuardar').classList.add('d-none');
+    document.getElementById('btnGuardar').disabled = true;
+  }
+  this.classList.add('was-validated');
+});
+</script>
+
 {% endblock %}

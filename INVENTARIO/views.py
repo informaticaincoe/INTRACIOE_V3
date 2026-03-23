@@ -4,7 +4,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.core.paginator import Paginator
 from django.db import transaction
-from .models import DetalleCompra, DetalleDevolucionCompra, Producto, MovimientoInventario, Compra, DevolucionVenta, DevolucionCompra, Categoria, ProductoProveedor, Proveedor, TipoItem, TipoUnidadMedida, UnidadMedida, Impuesto, Almacen
+from .models import DetalleCompra, DetalleDevolucionCompra, Producto, MovimientoInventario, Compra, DevolucionVenta, DevolucionCompra, Categoria, ProductoProveedor, Proveedor, TipoItem, TipoUnidadMedida, UnidadMedida, Impuesto, Almacen, Tributo
 from django.apps import apps
 from django.db.models import Q, F, Sum
 
@@ -16,10 +16,8 @@ def _to_decimal(val: str) -> Decimal:
         return Decimal('0')
 
 def _recalcular_totales_y_guardar(compra: Compra):
-    total = Decimal('0')
-    for d in compra.detalles.all():
-        total += (d.subtotal + d.iva_item)
-    compra.total = total.quantize(Decimal('0.01'))
+    agg = compra.detalles.aggregate(total=Sum(F('subtotal') + F('iva_item')))
+    compra.total = (agg['total'] or Decimal('0')).quantize(Decimal('0.01'))
     compra.save(update_fields=['total'])
 
 def _comprado_por_producto(compra: Compra):
@@ -301,10 +299,8 @@ def municipios_por_departamento(request):
 # VISTAS PARA GESTIÓN DE COMPRAS
 
 def _recalcular_totales_y_guardar(compra: Compra):
-    total = Decimal('0')
-    for d in compra.detalles.all():
-        total += (d.subtotal + d.iva_item)
-    compra.total = total.quantize(Decimal('0.01'))
+    agg = compra.detalles.aggregate(total=Sum(F('subtotal') + F('iva_item')))
+    compra.total = (agg['total'] or Decimal('0')).quantize(Decimal('0.01'))
     compra.save(update_fields=['total'])
     
 # Listar compras
@@ -359,9 +355,16 @@ def crear_compra(request):
         precios  = request.POST.getlist('precio_unitario')
         tipos    = request.POST.getlist('tipo_compra')
 
-        for i in range(len(prod_ids)):
-            pid = prod_ids[i]
+        # Pre-fetch todos los productos en una sola query
+        ids_validos = [int(pid) for pid in prod_ids if pid]
+        productos_map = Producto.objects.in_bulk(ids_validos)
+
+        precio_compra_updates = {}  # {producto: nuevo_precio}
+        for i, pid in enumerate(prod_ids):
             if not pid:
+                continue
+            prod = productos_map.get(int(pid))
+            if not prod:
                 continue
             cantidad = int(cants[i] or 0)
             precio   = _to_decimal(precios[i])
@@ -369,17 +372,21 @@ def crear_compra(request):
             if cantidad <= 0 or precio <= 0:
                 continue
 
-            prod = get_object_or_404(Producto, pk=pid)
-            det = DetalleCompra.objects.create(
+            DetalleCompra.objects.create(
                 compra=compra,
                 producto=prod,
                 cantidad=cantidad,
                 precio_unitario=precio,
                 tipo_compra=tipo,
             )
-            # Mantener último costo
-            Producto.objects.filter(pk=prod.pk).update(precio_compra=precio)
-            # NO tocar stock aquí; el signal de DetalleCompra crea Movimiento "Entrada"
+            precio_compra_updates[prod] = precio
+
+        # Actualizar precio_compra en una sola query
+        if precio_compra_updates:
+            for prod, precio in precio_compra_updates.items():
+                prod.precio_compra = precio
+            Producto.objects.bulk_update(list(precio_compra_updates.keys()), ['precio_compra'])
+        # NO tocar stock aquí; el signal de DetalleCompra crea Movimiento "Entrada"
 
         _recalcular_totales_y_guardar(compra)
         messages.success(request, f'Compra #{compra.id} creada.')
@@ -399,9 +406,9 @@ def detalle_compra(request, pk):
         Compra.objects.select_related('proveedor').prefetch_related('detalles__producto'),
         pk=pk
     )
-    # totales
-    tot_sub = compra.detalles.aggregate(s=Sum('subtotal'))['s'] or Decimal('0')
-    tot_iva = compra.detalles.aggregate(s=Sum('iva_item'))['s'] or Decimal('0')
+    totales = compra.detalles.aggregate(tot_sub=Sum('subtotal'), tot_iva=Sum('iva_item'))
+    tot_sub = totales['tot_sub'] or Decimal('0')
+    tot_iva = totales['tot_iva'] or Decimal('0')
     return render(request, 'compras/detalle.html', {
         'compra': compra,
         'tot_sub': tot_sub,
@@ -437,9 +444,16 @@ def editar_compra(request, pk):
         precios  = request.POST.getlist('precio_unitario')
         tipos    = request.POST.getlist('tipo_compra')
 
-        for i in range(len(prod_ids)):
-            pid = prod_ids[i]
+        # Pre-fetch todos los productos en una sola query
+        ids_validos = [int(pid) for pid in prod_ids if pid]
+        productos_map = Producto.objects.in_bulk(ids_validos)
+
+        precio_compra_updates = {}
+        for i, pid in enumerate(prod_ids):
             if not pid:
+                continue
+            prod = productos_map.get(int(pid))
+            if not prod:
                 continue
             cantidad = int(cants[i] or 0)
             precio   = _to_decimal(precios[i])
@@ -447,7 +461,6 @@ def editar_compra(request, pk):
             if cantidad <= 0 or precio <= 0:
                 continue
 
-            prod = get_object_or_404(Producto, pk=pid)
             DetalleCompra.objects.create(
                 compra=compra,
                 producto=prod,
@@ -455,8 +468,14 @@ def editar_compra(request, pk):
                 precio_unitario=precio,
                 tipo_compra=tipo,
             )
-            Producto.objects.filter(pk=prod.pk).update(precio_compra=precio)
-            # De nuevo: NO tocar stock; el signal hará la Entrada
+            precio_compra_updates[prod] = precio
+
+        # Actualizar precio_compra en una sola query
+        if precio_compra_updates:
+            for prod, precio in precio_compra_updates.items():
+                prod.precio_compra = precio
+            Producto.objects.bulk_update(list(precio_compra_updates.keys()), ['precio_compra'])
+        # NO tocar stock; el signal hará la Entrada
 
         _recalcular_totales_y_guardar(compra)
         messages.success(request, f'Compra #{compra.id} actualizada.')
@@ -487,6 +506,9 @@ def eliminar_compra(request, pk):
 @transaction.atomic
 def marcar_compra_pagado(request, pk):
     compra = get_object_or_404(Compra, pk=pk)
+    if compra.estado != 'Pendiente':
+        messages.error(request, f'Solo se puede marcar como Pagado una compra en estado Pendiente.')
+        return redirect('compras-detalle', pk=pk)
     compra.estado = 'Pagado'
     compra.save(update_fields=['estado'])
     messages.success(request, f'Compra #{compra.id} marcada como Pagado.')
@@ -589,9 +611,16 @@ def listar_devoluciones_venta(request):
 # Crear devolución de venta
 def crear_devolucion_venta(request):
     if request.method == 'POST':
-        num_factura = request.POST.get('num_factura')
-        motivo = request.POST.get('motivo')
+        num_factura = (request.POST.get('num_factura') or '').strip()
+        motivo = (request.POST.get('motivo') or '').strip()
+        if not num_factura:
+            messages.error(request, 'El número de factura es obligatorio.')
+            return render(request, 'devoluciones_venta/formulario.html')
+        if not motivo:
+            messages.error(request, 'El motivo es obligatorio.')
+            return render(request, 'devoluciones_venta/formulario.html')
         DevolucionVenta.objects.create(num_factura=num_factura, motivo=motivo)
+        messages.success(request, 'Devolución de venta registrada.')
         return redirect('devoluciones-venta-lista')
     return render(request, 'devoluciones_venta/formulario.html')
 
@@ -628,6 +657,10 @@ def productos_crear(request):
         stock = int(request.POST.get('stock') or 0)
         stock_minimo = int(request.POST.get('stock_minimo') or 0)
         stock_maximo = int(request.POST.get('stock_maximo') or 0)
+        tipo_item_id = request.POST.get('tipo_item') or None
+        tributo_id = request.POST.get('tributo') or None
+        referencia_interna = request.POST.get('referencia_interna') or None
+        precio_iva = (request.POST.get('precio_iva') == 'on')
         maneja_lotes = (request.POST.get('maneja_lotes') == 'on')
         fecha_vencimiento = request.POST.get('fecha_vencimiento') or None
         imagen = request.FILES.get('imagen')
@@ -637,7 +670,13 @@ def productos_crear(request):
         if not codigo or not descripcion:
             messages.error(request, 'Código y descripción son obligatorios.')
             return redirect('inv-productos-crear')
-        
+        if precio_compra < 0:
+            messages.error(request, 'El precio de compra no puede ser negativo.')
+            return redirect('inv-productos-crear')
+        if stock_maximo and stock_minimo > stock_maximo:
+            messages.error(request, 'El stock mínimo no puede superar al stock máximo.')
+            return redirect('inv-productos-crear')
+
         # calculo de precio unitario si no se proporciona y si hay impuestos = precio de venta + el impuesto seleccionado, si no se proporciona impuesto se toma el 1.13
         if not precio_venta and impuestos:
             impuesto = Impuesto.objects.filter(id__in=impuestos).first()
@@ -654,6 +693,10 @@ def productos_crear(request):
             descripcion=descripcion,
             categoria_id=categoria_id,
             unidad_medida_id=unidad_id,
+            tipo_item_id=tipo_item_id,
+            tributo_id=tributo_id,
+            referencia_interna=referencia_interna,
+            precio_iva=precio_iva,
             preunitario=precio_venta,
             precio_compra=precio_compra,
             precio_venta=precio_venta,
@@ -675,6 +718,8 @@ def productos_crear(request):
     ctx = {
         'categorias': Categoria.objects.all().order_by('nombre'),
         'tipos_um': TipoUnidadMedida.objects.all().order_by('descripcion'),
+        'tipos_item': TipoItem.objects.all().order_by('descripcion'),
+        'tributos': Tributo.objects.select_related('tipo_tributo').all().order_by('descripcion'),
         'impuestos': Impuesto.objects.all().order_by('nombre'),
         'almacenes': Almacen.objects.all().order_by('nombre'),
     }
@@ -692,10 +737,26 @@ def productos_editar(request, pk):
         obj.stock = int(request.POST.get('stock') or obj.stock or 0)
         obj.stock_minimo = int(request.POST.get('stock_minimo') or 0)
         obj.stock_maximo = int(request.POST.get('stock_maximo') or 0)
+        obj.tipo_item_id = request.POST.get('tipo_item') or None
+        obj.tributo_id = request.POST.get('tributo') or None
+        obj.referencia_interna = request.POST.get('referencia_interna') or None
+        obj.precio_iva = (request.POST.get('precio_iva') == 'on')
+        obj.preunitario = _to_decimal(request.POST.get('precio_venta'))  # sync preunitario
         obj.maneja_lotes = (request.POST.get('maneja_lotes') == 'on')
         obj.fecha_vencimiento = request.POST.get('fecha_vencimiento') or None
         if request.FILES.get('imagen'):
             obj.imagen = request.FILES['imagen']
+
+        if obj.precio_compra < 0:
+            messages.error(request, 'El precio de compra no puede ser negativo.')
+            return redirect('inv-productos-editar', pk=pk)
+        if obj.precio_venta <= 0:
+            messages.error(request, 'El precio de venta debe ser mayor a 0.')
+            return redirect('inv-productos-editar', pk=pk)
+        if obj.stock_maximo and obj.stock_minimo > obj.stock_maximo:
+            messages.error(request, 'El stock mínimo no puede superar al stock máximo.')
+            return redirect('inv-productos-editar', pk=pk)
+
         obj.save()
 
         impuestos = request.POST.getlist('impuestos')
@@ -710,6 +771,8 @@ def productos_editar(request, pk):
         'obj': obj,
         'categorias': Categoria.objects.all().order_by('nombre'),
         'tipos_um': TipoUnidadMedida.objects.all().order_by('descripcion'),
+        'tipos_item': TipoItem.objects.all().order_by('descripcion'),
+        'tributos': Tributo.objects.select_related('tipo_tributo').all().order_by('descripcion'),
         'impuestos': Impuesto.objects.all().order_by('nombre'),
         'almacenes': Almacen.objects.all().order_by('nombre'),
     }
@@ -780,8 +843,8 @@ def movimientos_crear(request):
         return redirect('inv-movs-lista')
 
     ctx = {
-        'productos': Producto.objects.all().order_by('descripcion'),
-        'almacenes': Almacen.objects.all().order_by('nombre'),
+        'productos': Producto.objects.only('id', 'codigo', 'descripcion').order_by('descripcion'),
+        'almacenes': Almacen.objects.only('id', 'nombre').order_by('nombre'),
         'tipos': MovimientoInventario.TIPO_MOVIMIENTO,
         'preselect_tipo': request.GET.get('tipo') or '',
     }
@@ -791,14 +854,6 @@ def movimientos_crear(request):
 def movimientos_editar(request, pk):
     mov = get_object_or_404(MovimientoInventario, pk=pk)
     if request.method == 'POST':
-        # revertir efecto anterior
-        if mov.tipo == 'Entrada':
-            Producto.objects.filter(pk=mov.producto_id).update(stock=F('stock') - mov.cantidad)
-        elif mov.tipo == 'Salida':
-            Producto.objects.filter(pk=mov.producto_id).update(stock=F('stock') + mov.cantidad)
-        elif mov.tipo == 'Ajuste':
-            Producto.objects.filter(pk=mov.producto_id).update(stock=F('stock') - mov.cantidad)
-
         producto_id = request.POST.get('producto')
         almacen_id = request.POST.get('almacen')
         tipo = request.POST.get('tipo')
@@ -814,25 +869,19 @@ def movimientos_editar(request, pk):
         mov.tipo = tipo
         mov.cantidad = abs(cantidad) if tipo in ('Entrada', 'Salida') else cantidad
         mov.referencia = referencia
+        # El signal pre_save guarda los valores previos desde la BD y post_save
+        # revierte el delta anterior y aplica el nuevo automáticamente.
         mov.save()
-
-        # aplicar nuevo
-        if tipo == 'Entrada':
-            Producto.objects.filter(pk=producto_id).update(stock=F('stock') + abs(cantidad))
-        elif tipo == 'Salida':
-            Producto.objects.filter(pk=producto_id).update(stock=F('stock') - abs(cantidad))
-        elif tipo == 'Ajuste':
-            Producto.objects.filter(pk=producto_id).update(stock=F('stock') + cantidad)
 
         messages.success(request, 'Movimiento actualizado.')
         return redirect('inv-movs-lista')
 
     ctx = {
         'mov': mov,
-        'productos': Producto.objects.all().order_by('descripcion'),
-        'almacenes': Almacen.objects.all().order_by('nombre'),
-        'tipos': MovimientoInventario.TIPO_MOVIMIENTO,   # <- AQUI
-        'preselect_tipo': '',                            # no aplica en editar
+        'productos': Producto.objects.only('id', 'codigo', 'descripcion').order_by('descripcion'),
+        'almacenes': Almacen.objects.only('id', 'nombre').order_by('nombre'),
+        'tipos': MovimientoInventario.TIPO_MOVIMIENTO,
+        'preselect_tipo': '',
     }
     return render(request, 'inventario/movimientos/form.html', ctx)
 
@@ -840,13 +889,7 @@ def movimientos_editar(request, pk):
 def movimientos_eliminar(request, pk):
     mov = get_object_or_404(MovimientoInventario, pk=pk)
     if request.method == 'POST':
-        # revertir efecto en stock
-        if mov.tipo == 'Entrada':
-            Producto.objects.filter(pk=mov.producto_id).update(stock=F('stock') - mov.cantidad)
-        elif mov.tipo == 'Salida':
-            Producto.objects.filter(pk=mov.producto_id).update(stock=F('stock') + mov.cantidad)
-        elif mov.tipo == 'Ajuste':
-            Producto.objects.filter(pk=mov.producto_id).update(stock=F('stock') - mov.cantidad)
+        # El signal pre_delete revierte el efecto en stock automáticamente.
         mov.delete()
         messages.success(request, 'Movimiento eliminado.')
         return redirect('inv-movs-lista')
@@ -953,18 +996,34 @@ def listar_unidades_medida(request):
 
 def crear_unidad_medida(request):
     if request.method == 'POST':
-        nombre = request.POST.get('nombre')
-        abreviatura = request.POST.get('abreviatura')
+        nombre = (request.POST.get('nombre') or '').strip()
+        abreviatura = (request.POST.get('abreviatura') or '').strip()
+        if not nombre:
+            messages.error(request, 'El nombre es obligatorio.')
+            return render(request, 'unidades_medida/formulario.html')
+        if not abreviatura:
+            messages.error(request, 'La abreviatura es obligatoria.')
+            return render(request, 'unidades_medida/formulario.html')
         UnidadMedida.objects.create(nombre=nombre, abreviatura=abreviatura)
+        messages.success(request, 'Unidad de medida creada.')
         return redirect('unidades-lista')
     return render(request, 'unidades_medida/formulario.html')
 
 def editar_unidad_medida(request, pk):
     unidad = get_object_or_404(UnidadMedida, pk=pk)
     if request.method == 'POST':
-        unidad.nombre = request.POST.get('nombre')
-        unidad.abreviatura = request.POST.get('abreviatura')
+        nombre = (request.POST.get('nombre') or '').strip()
+        abreviatura = (request.POST.get('abreviatura') or '').strip()
+        if not nombre:
+            messages.error(request, 'El nombre es obligatorio.')
+            return render(request, 'unidades_medida/formulario.html', {'unidad': unidad})
+        if not abreviatura:
+            messages.error(request, 'La abreviatura es obligatoria.')
+            return render(request, 'unidades_medida/formulario.html', {'unidad': unidad})
+        unidad.nombre = nombre
+        unidad.abreviatura = abreviatura
         unidad.save()
+        messages.success(request, 'Unidad de medida actualizada.')
         return redirect('unidades-lista')
     return render(request, 'unidades_medida/formulario.html', {'unidad': unidad})
 

@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+{% load static config_tags %}
+
+{% block title %}Configuración de Empresa{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+  <div class="d-flex align-items-center gap-2 mb-4">
+    <i class="bi bi-gear-wide-connected fs-4 text-primary"></i>
+    <h4 class="mb-0">Configuración de Empresa</h4>
+  </div>
+
+  {% if messages %}
+    {% for msg in messages %}
+      <div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible fade show" role="alert">
+        {{ msg }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- Tabs de navegación -->
+  <ul class="nav nav-tabs mb-0" id="configTabs" role="tablist">
+    <li class="nav-item">
+      <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-empresa" type="button">
+        <i class="bi bi-building me-1"></i> Empresa
+      </button>
+    </li>
+    {% for key, grupo in grupos.items %}
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-{{ key }}" type="button">
+        <i class="{{ grupo.icono }} me-1"></i> {{ grupo.titulo }}
+      </button>
+    </li>
+    {% endfor %}
+  </ul>
+
+  <div class="tab-content border border-top-0 rounded-bottom bg-white p-4 shadow-sm">
+
+    <!-- ─── TAB EMPRESA ─────────────────────────────────────────── -->
+    <div class="tab-pane fade show active" id="tab-empresa">
+      {% if not emisor %}
+        <div class="alert alert-warning">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          No hay ningún emisor configurado aún.
+          <a href="{% url 'setup_wizard' %}">Ir al asistente de configuración inicial</a>.
+        </div>
+      {% else %}
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="seccion" value="empresa">
+
+        <div class="row g-3">
+
+          <!-- Identificación fiscal -->
+          <div class="col-12"><h6 class="text-muted border-bottom pb-1"><i class="bi bi-card-text me-1"></i>Identificación Fiscal</h6></div>
+
+          <div class="col-md-4">
+            <label class="form-label">NIT <span class="text-danger">*</span></label>
+            <input type="text" name="nit" class="form-control" value="{{ emisor.nit }}" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">NRC</label>
+            <input type="text" name="nrc" class="form-control" value="{{ emisor.nrc|default:'' }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Tipo Contribuyente</label>
+            <select name="tipoContribuyente" class="form-select">
+              {% for val, label in emisor_tipo_choices %}
+                <option value="{{ val }}" {% if emisor.tipoContribuyente == val %}selected{% endif %}>{{ label }}</option>
+              {% empty %}
+                <option value="Gran Contribuyente" {% if emisor.tipoContribuyente == 'Gran Contribuyente' %}selected{% endif %}>Gran Contribuyente</option>
+                <option value="Mediano Contribuyente" {% if emisor.tipoContribuyente == 'Mediano Contribuyente' %}selected{% endif %}>Mediano Contribuyente</option>
+                <option value="Pequeño Contribuyente" {% if emisor.tipoContribuyente == 'Pequeño Contribuyente' %}selected{% endif %}>Pequeño Contribuyente</option>
+                <option value="Emprendedor" {% if emisor.tipoContribuyente == 'Emprendedor' %}selected{% endif %}>Emprendedor</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Nombres -->
+          <div class="col-12 mt-2"><h6 class="text-muted border-bottom pb-1"><i class="bi bi-shop me-1"></i>Datos del Negocio</h6></div>
+
+          <div class="col-md-6">
+            <label class="form-label">Razón Social <span class="text-danger">*</span></label>
+            <input type="text" name="nombre_razon_social" class="form-control" value="{{ emisor.nombre_razon_social }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Nombre Comercial</label>
+            <input type="text" name="nombre_comercial" class="form-control" value="{{ emisor.nombre_comercial|default:'' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Nombre Establecimiento</label>
+            <input type="text" name="nombre_establecimiento" class="form-control" value="{{ emisor.nombre_establecimiento|default:'' }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Código Establecimiento</label>
+            <input type="text" name="codigo_establecimiento" class="form-control" value="{{ emisor.codigo_establecimiento|default:'' }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Código Punto de Venta</label>
+            <input type="text" name="codigo_punto_venta" class="form-control" value="{{ emisor.codigo_punto_venta|default:'' }}">
+          </div>
+
+          <!-- Contacto -->
+          <div class="col-12 mt-2"><h6 class="text-muted border-bottom pb-1"><i class="bi bi-telephone me-1"></i>Contacto y Ubicación</h6></div>
+
+          <div class="col-md-4">
+            <label class="form-label">Teléfono</label>
+            <input type="text" name="telefono" class="form-control" value="{{ emisor.telefono|default:'' }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Correo Electrónico</label>
+            <input type="email" name="email" class="form-control" value="{{ emisor.email|default:'' }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Municipio</label>
+            <select name="municipio" class="form-select">
+              <option value="">— Seleccionar —</option>
+              {% for m in municipios %}
+                <option value="{{ m.pk }}" {% if emisor.municipio_id == m.pk %}selected{% endif %}>
+                  {{ m.departamento.nombre }} › {{ m.nombre }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-8">
+            <label class="form-label">Dirección Comercial</label>
+            <input type="text" name="direccion_comercial" class="form-control" value="{{ emisor.direccion_comercial }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Ambiente</label>
+            <select name="ambiente" class="form-select">
+              {% for a in ambientes %}
+                <option value="{{ a.pk }}" {% if emisor.ambiente_id == a.pk %}selected{% endif %}>{{ a.descripcion }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Logo y opciones -->
+          <div class="col-12 mt-2"><h6 class="text-muted border-bottom pb-1"><i class="bi bi-image me-1"></i>Logo y Opciones</h6></div>
+
+          <div class="col-md-4">
+            <label class="form-label">Logo de la empresa</label>
+            {% if emisor.logo %}
+              <div class="mb-2">
+                <img src="{{ emisor.logo.url }}" alt="Logo actual" class="img-thumbnail" style="max-height:60px;">
+                <small class="text-muted d-block">Logo actual</small>
+              </div>
+            {% endif %}
+            <input type="file" name="logo" class="form-control" accept="image/*">
+          </div>
+          <div class="col-md-4 d-flex flex-column justify-content-end gap-2 pb-1">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="imprime_termica" id="chkTermica"
+                     {% if emisor.imprime_termica %}checked{% endif %}>
+              <label class="form-check-label" for="chkTermica">Imprimir en térmica (80 mm)</label>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="es_restaurante" id="chkRest"
+                     {% if emisor.es_restaurante %}checked{% endif %}>
+              <label class="form-check-label" for="chkRest">Es restaurante</label>
+            </div>
+          </div>
+
+          <div class="col-12 text-end mt-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-floppy me-1"></i> Guardar datos de empresa
+            </button>
+          </div>
+        </div>
+      </form>
+      {% endif %}
+    </div><!-- /tab-empresa -->
+
+    <!-- ─── TABS DE CONFIGURACIÓN DEL SERVIDOR ──────────────────── -->
+    {% for key, grupo in grupos.items %}
+    <div class="tab-pane fade" id="tab-{{ key }}">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="seccion" value="{{ key }}">
+
+        <p class="text-muted small mb-3">
+          <i class="{{ grupo.icono }} me-1"></i> {{ grupo.titulo }}
+        </p>
+
+        <div class="row g-3">
+          {% for clave, etiqueta, campo_principal, placeholder in grupo.claves %}
+          {% with obj=config|get_item:clave %}
+          <div class="col-12">
+            <div class="card border-0 bg-light">
+              <div class="card-body py-2 px-3">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <span class="badge bg-secondary font-monospace">{{ clave }}</span>
+                  <span class="fw-semibold">{{ etiqueta }}</span>
+                </div>
+                <div class="row g-2">
+                  {% if campo_principal == 'valor' %}
+                  <div class="col-md-6">
+                    <label class="form-label small mb-1">Valor</label>
+                    <input type="text" name="{{ clave }}__valor" class="form-control form-control-sm"
+                           value="{{ obj.valor|default:'' }}" placeholder="{{ placeholder }}">
+                  </div>
+                  {% else %}
+                  <div class="col-md-6">
+                    <label class="form-label small mb-1">URL / Ruta</label>
+                    <input type="text" name="{{ clave }}__url" class="form-control form-control-sm"
+                           value="{{ obj.url|default:'' }}"
+                           placeholder="{{ placeholder }}">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small mb-1">URL Endpoint</label>
+                    <input type="text" name="{{ clave }}__url_endpoint" class="form-control form-control-sm"
+                           value="{{ obj.url_endpoint|default:'' }}">
+                  </div>
+                  {% endif %}
+                  {% if key == 'firmador' %}
+                  <div class="col-md-4">
+                    <label class="form-label small mb-1">Contraseña / Clave privada</label>
+                    <input type="password" name="{{ clave }}__contraseña" class="form-control form-control-sm"
+                           placeholder="{% if obj.contraseña %}••••••••{% else %}Sin asignar{% endif %}">
+                    <small class="text-muted">Déjalo vacío para no cambiarla</small>
+                  </div>
+                  {% endif %}
+                  <div class="col-md-{% if key == 'firmador' %}4{% else %}6{% endif %}">
+                    <label class="form-label small mb-1">Descripción</label>
+                    <input type="text" name="{{ clave }}__descripcion" class="form-control form-control-sm"
+                           value="{{ obj.descripcion|default:'' }}">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endwith %}
+          {% endfor %}
+
+          <div class="col-12 text-end mt-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-floppy me-1"></i> Guardar {{ grupo.titulo }}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div><!-- /tab-{{ key }} -->
+    {% endfor %}
+
+  </div><!-- /tab-content -->
+</div>
+
+<script>
+// Mantener el tab activo tras guardar
+(function () {
+  const params = new URLSearchParams(window.location.search);
+  const tab = params.get('tab');
+  if (tab) {
+    const el = document.querySelector(`[data-bs-target="#tab-${tab}"]`);
+    if (el) new bootstrap.Tab(el).show();
+  }
+})();
+// Al enviar un form, guardar qué tab está activo en la URL
+document.querySelectorAll('.tab-content form').forEach(form => {
+  form.addEventListener('submit', function () {
+    const activeTab = document.querySelector('.nav-tabs .nav-link.active');
+    if (activeTab) {
+      const target = activeTab.getAttribute('data-bs-target').replace('#tab-', '');
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', target);
+      form.action = url.toString();
+    }
+  });
+});
+</script>
+{% endblock %}

@@ -1,53 +1,161 @@
 {% extends "base.html" %}
-{% block title %}Movimientos de inventario{% endblock %}
+{% block title %}Movimientos · Inventario{% endblock %}
 {% block content %}
+
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'inv-home' %}">Inventario</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Movimientos</li>
+  </ol>
+</nav>
+
+{% if messages %}
+  {% for m in messages %}
+    <div class="alert alert-{{ m.tags }} alert-dismissible py-2" role="alert">
+      {{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+  {% endfor %}
+{% endif %}
+
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h1 class="h5 mb-0">Movimientos de inventario</h1>
-  <a href="{% url 'inv-movs-crear' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Nuevo</a>
+  <div>
+    <h1 class="h4 mb-0">Movimientos de inventario</h1>
+    <small class="text-muted">Entradas, salidas y ajustes de stock</small>
+  </div>
+  <a href="{% url 'inv-movs-crear' %}" class="btn btn-primary">
+    <i class="bi bi-plus-lg me-1"></i> Nuevo movimiento
+  </a>
 </div>
 
 <form class="row g-2 align-items-end mb-3" method="get">
   <div class="col-md-6">
-    <label class="form-label">Buscar</label>
-    <input type="text" name="q" class="form-control" value="{{ q }}" placeholder="Producto o referencia">
+    <label class="form-label small fw-semibold" for="inputQ">Buscar</label>
+    <div class="input-group input-group-sm">
+      <span class="input-group-text"><i class="bi bi-search"></i></span>
+      <input type="text" id="inputQ" name="q" class="form-control" value="{{ q }}" placeholder="Producto o referencia…">
+    </div>
   </div>
   <div class="col-md-3">
-    <label class="form-label">Tipo</label>
-    <select name="tipo" class="form-select">
-      <option value="">Todos</option>
+    <label class="form-label small fw-semibold" for="selectTipo">Tipo</label>
+    <select id="selectTipo" name="tipo" class="form-select form-select-sm">
+      <option value="">Todos los tipos</option>
       {% for value,label in tipos %}
         <option value="{{ value }}" {% if f_tipo == value %}selected{% endif %}>{{ label }}</option>
       {% endfor %}
     </select>
   </div>
-  <div class="col-md-3"><button class="btn btn-outline-primary w-100">Filtrar</button></div>
+  <div class="col-md-2">
+    <button class="btn btn-outline-primary btn-sm w-100" type="submit">
+      <i class="bi bi-funnel me-1"></i>Filtrar
+    </button>
+  </div>
+  {% if q or f_tipo %}
+  <div class="col-md-1">
+    <a href="{% url 'inv-movs-lista' %}" class="btn btn-outline-secondary btn-sm w-100" aria-label="Limpiar filtros" title="Limpiar filtros">
+      <i class="bi bi-x-lg"></i>
+    </a>
+  </div>
+  {% endif %}
 </form>
 
-<div class="table-responsive">
-  <table class="table align-middle">
-    <thead>
-      <tr><th>Fecha</th><th>Producto</th><th>Almacén</th><th>Tipo</th><th class="text-end">Cantidad</th><th>Ref.</th><th style="width:160px;"></th></tr>
-    </thead>
-    <tbody>
-    {% for m in movs %}
-      <tr>
-        <td class="text-muted small">{{ m.fecha|date:"d/m/Y H:i" }}</td>
-        <td>{{ m.producto.codigo }} — {{ m.producto.descripcion }}</td>
-        <td class="text-muted">{{ m.almacen.nombre }}</td>
-        <td>
-          <span class="badge {% if m.tipo == 'Entrada' %}text-bg-success{% elif m.tipo == 'Salida' %}text-bg-danger{% else %}text-bg-secondary{% endif %}">{{ m.tipo }}</span>
-        </td>
-        <td class="text-end">{{ m.cantidad }}</td>
-        <td class="text-muted small">{{ m.referencia|default:"—" }}</td>
-        <td class="text-end">
-          <a href="{% url 'inv-movs-editar' m.id %}" class="btn btn-sm btn-light"><i class="bi bi-pencil"></i></a>
-          <a href="{% url 'inv-movs-eliminar' m.id %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></a>
-        </td>
-      </tr>
-    {% empty %}
-      <tr><td colspan="7" class="text-center text-muted">Sin movimientos.</td></tr>
-    {% endfor %}
-    </tbody>
-  </table>
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover table-striped align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Fecha</th>
+          <th>Producto</th>
+          <th>Almacén</th>
+          <th>Tipo</th>
+          <th class="text-end">Cantidad</th>
+          <th>Referencia</th>
+          <th style="width:100px;"></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for m in movs %}
+        <tr>
+          <td class="text-muted small">{{ m.fecha|date:"d/m/Y H:i" }}</td>
+          <td>
+            <span class="fw-medium">{{ m.producto.descripcion }}</span>
+            <br><small class="text-muted"><code>{{ m.producto.codigo }}</code></small>
+          </td>
+          <td class="text-muted small">{{ m.almacen.nombre }}</td>
+          <td>
+            {% if m.tipo == 'Entrada' %}
+              <span class="badge text-bg-success"><i class="bi bi-arrow-down-circle me-1"></i>Entrada</span>
+            {% elif m.tipo == 'Salida' %}
+              <span class="badge text-bg-danger"><i class="bi bi-arrow-up-circle me-1"></i>Salida</span>
+            {% else %}
+              <span class="badge text-bg-warning text-dark"><i class="bi bi-arrow-left-right me-1"></i>{{ m.tipo }}</span>
+            {% endif %}
+          </td>
+          <td class="text-end fw-semibold">{{ m.cantidad }}</td>
+          <td class="text-muted small">{{ m.referencia|default:"—" }}</td>
+          <td class="text-end">
+            <div class="btn-group btn-group-sm">
+              <a href="{% url 'inv-movs-editar' m.id %}" class="btn btn-outline-secondary" aria-label="Editar movimiento" title="Editar">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <button type="button" class="btn btn-outline-danger"
+                      aria-label="Eliminar movimiento" title="Eliminar"
+                      data-bs-toggle="modal" data-bs-target="#modalEliminar"
+                      data-url="{% url 'inv-movs-eliminar' m.id %}"
+                      data-nombre="{{ m.producto.descripcion }} ({{ m.tipo }})">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="7" class="text-center py-5 text-muted">
+            <i class="bi bi-arrow-left-right fs-1 d-block mb-2 opacity-50"></i>
+            No hay movimientos registrados.
+            {% if q or f_tipo %}
+              <div class="mt-2"><a href="{% url 'inv-movs-lista' %}">Limpiar filtros</a></div>
+            {% else %}
+              <div class="mt-2"><a href="{% url 'inv-movs-crear' %}">Registrar el primer movimiento</a></div>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
+
+<!-- Modal confirmar eliminación -->
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-labelledby="modalEliminarLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title text-danger" id="modalEliminarLabel">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirmar eliminación
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-1">¿Eliminar el movimiento <strong id="modalNombre"></strong>?</p>
+        <p class="text-muted small mb-0">Esta acción revertirá el efecto en el stock. No se puede deshacer.</p>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <form id="formEliminar" method="post">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger"><i class="bi bi-trash me-1"></i>Eliminar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('modalEliminar').addEventListener('show.bs.modal', function(e) {
+  const btn = e.relatedTarget;
+  document.getElementById('modalNombre').textContent = btn.dataset.nombre;
+  document.getElementById('formEliminar').action = btn.dataset.url;
+});
+</script>
+
 {% endblock %}

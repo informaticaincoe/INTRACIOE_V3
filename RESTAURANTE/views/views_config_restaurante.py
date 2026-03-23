@@ -1,3 +1,4 @@
+import logging
 
 from django.forms import ValidationError
 from django.shortcuts import render, get_object_or_404, redirect
@@ -7,6 +8,8 @@ from RESTAURANTE.models import Area, AreaCocina, CategoriaMenu, Platillo
 
 from django.core.paginator import Paginator
 from django.db.models import Q
+
+logger = logging.getLogger(__name__)
 ###############################################################################################################
 #                                            CONFIG RESTAURANTE                                               #
 ###############################################################################################################
@@ -70,11 +73,11 @@ def editar_categoria(request, pk):
             
             
 def eliminar_categoria(request, pk):
-    print("delete")
-    print("request.method", request.method)
-    
+    logger.debug("delete")
+    logger.debug("request.method %s", request.method)
+
     if request.method == "POST":
-        print("delete")
+        logger.debug("delete")
         
         categoria = get_object_or_404(CategoriaMenu, pk=pk)
         area_nombre = categoria.nombre
@@ -137,11 +140,11 @@ def editar_area(request, pk):
             
             
 def eliminar_area(request, pk):
-    print("delete")
-    print("request.method", request.method)
-    
+    logger.debug("delete")
+    logger.debug("request.method %s", request.method)
+
     if request.method == "POST":
-        print("delete")
+        logger.debug("delete")
         
         areas = get_object_or_404(Area, pk=pk)
         areas_nombre = areas.nombre
@@ -168,9 +171,9 @@ def listar_areas_cocina(request):
     return render(request, 'area_cocina/list.html', context)
 
 def crear_area_cocina(request):
-    if request.method == 'POST':        
+    if request.method == 'POST':
         nombre = request.POST.get('nombre') or ''
-        print("Nombre area de cocina ", nombre)
+        logger.debug("Nombre area de cocina %s", nombre)
         
         if nombre:
             AreaCocina.objects.create(area_cocina=nombre)
@@ -207,11 +210,11 @@ def editar_area_cocina(request, pk):
             
             
 def eliminar_area_cocina(request, pk):
-    print("delete")
-    print("request.method", request.method)
-    
+    logger.debug("delete")
+    logger.debug("request.method %s", request.method)
+
     if request.method == "POST":
-        print("delete")
+        logger.debug("delete")
         
         area = get_object_or_404(AreaCocina, pk=pk)
         area_cocina = area.area_cocina
@@ -237,7 +240,7 @@ def _is_light(hex_color: str) -> bool:
 
 def listar_menu(request):
     q = (request.GET.get('q') or '').strip()
-    print("Filtros q: ", q)
+    logger.debug("Filtros q: %s", q)
     qs = Platillo.objects.filter(nombre__icontains=q) # Filtrar categorías por nombre
     if q:
         qs = qs.filter(Q(nombre__contains=q) | Q(codigo__contains=q))
@@ -267,15 +270,13 @@ def crear_menu(request):
         imagen = request.FILES.get('imagen')
         area_cocina_id = request.POST.get("area_cocina") or None
         
-        print("categoria ", categoria)
-        
-        
-        print("AREA_COCINA_ID ", area_cocina_id)
+        logger.debug("categoria %s", categoria)
+        logger.debug("AREA_COCINA_ID %s", area_cocina_id)
         area_cocina = None
         if area_cocina_id:
             area_cocina = get_object_or_404(AreaCocina, pk=area_cocina_id)
         
-        print("AERA COCINA PLATILLO ", area_cocina)
+        logger.debug("AERA COCINA PLATILLO %s", area_cocina)
         if nombre and precio_venta:
                 Platillo.objects.create(
                     codigo = codigo,
@@ -371,7 +372,7 @@ def editar_menu(request, pk):
     return render(request, 'menu/formulario.html', context)
             
 def eliminar_menu(request, pk):
-    print("Menu a eliminar ID ", pk)
+    logger.debug("Menu a eliminar ID %s", pk)
     
     if request.method == "POST":
         platillo = get_object_or_404(Platillo, pk=pk)

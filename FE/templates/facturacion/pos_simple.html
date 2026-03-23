@@ -1,9 +1,16 @@
 {% extends "base.html" %}
 {% load static %}
+{% block title %}Facturación rápida · FE{% endblock %}
 {% block content %}
 
-<div class="container py-3">
-  <form method="post" action="" id="form-pos" autocomplete="off">
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'ventas_home' %}">Facturación</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Facturación rápida</li>
+  </ol>
+</nav>
+
+<form method="post" action="" id="form-pos" autocomplete="off">
     {% csrf_token %}
 
     <!-- Encabezado compacto -->
@@ -305,7 +312,6 @@
       </div>
     </div>
   </form>
-</div>
 
 <!-- Script POS simple (sin modales) -->
 <script>

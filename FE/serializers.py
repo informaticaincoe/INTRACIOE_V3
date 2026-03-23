@@ -96,25 +96,7 @@ class FacturaSujetoExcluidoListSerializer(serializers.ModelSerializer):
         ]
 
     def get_estado_invalidacion(self, obj):
-        tipo_codigo = None
-        if obj.tipo_dte:
-            try:
-                tipo_codigo = int(obj.tipo_dte.codigo)
-            except (TypeError, ValueError):
-                tipo_codigo = None
-        print("**************TIPO_CODIGO", tipo_codigo)
-        if tipo_codigo == '14':
-            # notas de crédito/debito de sujeto excluido
-            eventos = obj.dte_invalidacion_sujeto_excluido
-        else:
-            # facturas "normales"
-            eventos = getattr(obj, 'dte_invalidacion_sujeto_excluido', None)
-
-        # Si no existe la relación (o es None), devolvemos "Viva"
-        if not eventos:
-            return "Viva"
-
-        evento = eventos.first()
+        evento = obj.dte_invalidacion_sujeto_excluido.first()
         if evento:
             return "Invalidada" if evento.estado else "En proceso de invalidación"
         return "Viva"

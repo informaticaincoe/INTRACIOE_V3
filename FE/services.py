@@ -67,7 +67,7 @@ def crear_factura_cf_desde_pedido(*, pedido, usuario, receptor=None, formas_pago
             factura=factura,
             producto=prod,
             cantidad=det.cantidad,
-            unidad_medida=get_unidad_default(prod),  # implementa según inventario
+            unidad_medida=prod.unidad_medida,
 
             precio_unitario=det.precio_unitario,
             iva_item=det.iva_monto,

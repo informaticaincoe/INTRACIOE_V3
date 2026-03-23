@@ -1,99 +1,176 @@
 {% extends "base.html" %}
-{% block title %}{% if compra %}Editar compra #{{ compra.id }}{% else %}Nueva compra{% endif %} · INTRACOE{% endblock %}
+{% block title %}{% if compra %}Editar compra #{{ compra.id }}{% else %}Nueva compra{% endif %} · Inventario{% endblock %}
 {% block content %}
 
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'inv-home' %}">Inventario</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'compras-lista' %}">Compras</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{% if compra %}Editar #{{ compra.id }}{% else %}Nueva compra{% endif %}</li>
+  </ol>
+</nav>
+
+{% if messages %}
+  {% for m in messages %}
+    <div class="alert alert-{{ m.tags }} alert-dismissible py-2" role="alert">
+      {{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+  {% endfor %}
+{% endif %}
+
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h1 class="h5 mb-0">{% if compra %}Editar compra #{{ compra.id }}{% else %}Nueva compra{% endif %}</h1>
-  <a href="{% url 'compras-lista' %}" class="btn btn-light"><i class="bi bi-arrow-left"></i> Volver</a>
+  <div>
+    <h1 class="h4 mb-0">{% if compra %}Editar compra #{{ compra.id }}{% else %}Nueva compra{% endif %}</h1>
+    <small class="text-muted">Registra los productos recibidos del proveedor.</small>
+  </div>
 </div>
 
 <form method="post" id="formCompra" class="needs-validation" novalidate>
   {% csrf_token %}
 
-  <div class="row g-3">
-    <div class="col-md-6">
-      <label class="form-label">Proveedor</label>
-      <select name="proveedor" class="form-select" required>
-        <option value="">Seleccione…</option>
-        {% for p in proveedores %}
-          <option value="{{ p.id }}" {% if compra and compra.proveedor_id == p.id %}selected{% endif %}>{{ p.nombre }}</option>
-        {% endfor %}
-      </select>
-      <div class="invalid-feedback">Seleccione proveedor.</div>
+  <!-- Datos generales -->
+  <div class="card mb-3 border-0 shadow-sm">
+    <div class="card-header bg-transparent border-bottom py-2 fw-semibold">
+      <i class="bi bi-file-earmark-text me-2 text-primary"></i>Datos del documento
     </div>
-
-    <div class="col-md-6">
-      <label class="form-label">Almacén</label>
-      <select name="almacen" class="form-select" required>
-        <option value="">Seleccione…</option>
-        {% for a in almacenes %}
-          <option value="{{ a.id }}">{{ a.nombre }}</option>
-        {% endfor %}
-      </select>
-      <div class="invalid-feedback">Seleccione almacén destino.</div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label" for="selectProveedor">Proveedor <span class="text-danger">*</span></label>
+          <select id="selectProveedor" name="proveedor" class="form-select" required>
+            <option value="">— Seleccione —</option>
+            {% for p in proveedores %}
+              <option value="{{ p.id }}" {% if compra and compra.proveedor_id == p.id %}selected{% endif %}>
+                {{ p.nombre }}
+              </option>
+            {% endfor %}
+          </select>
+          <div class="invalid-feedback">Seleccione un proveedor.</div>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="selectTipoDoc">Tipo de documento</label>
+          <select id="selectTipoDoc" name="tipo_documento" class="form-select">
+            <option value="">— Tipo —</option>
+            <option value="CCF" {% if compra and compra.tipo_documento == 'CCF' %}selected{% endif %}>CCF</option>
+            <option value="FAC" {% if compra and compra.tipo_documento == 'FAC' %}selected{% endif %}>Factura</option>
+            <option value="NC"  {% if compra and compra.tipo_documento == 'NC'  %}selected{% endif %}>Nota de crédito</option>
+            <option value="ND"  {% if compra and compra.tipo_documento == 'ND'  %}selected{% endif %}>Nota de débito</option>
+            <option value="OTRO" {% if compra and compra.tipo_documento == 'OTRO' %}selected{% endif %}>Otro</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="inputNumDoc">Número de documento</label>
+          <input type="text" id="inputNumDoc" name="numero_documento" class="form-control"
+                 value="{{ compra.numero_documento|default:'' }}"
+                 placeholder="Ej. 001-001-000001234">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="selectAlmacen">Almacén destino</label>
+          <select id="selectAlmacen" name="almacen" class="form-select">
+            <option value="">— Opcional —</option>
+            {% for a in almacenes %}
+              <option value="{{ a.id }}">{{ a.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
     </div>
   </div>
 
-  <hr>
-
-  <div class="table-responsive">
-    <table class="table align-middle" id="tablaDetalles">
-      <thead>
-        <tr>
-          <th style="width:35%;">Producto</th>
-          <th style="width:12%;">Cantidad</th>
-          <th style="width:18%;">Precio unit.</th>
-          <th style="width:20%;">Tipo compra</th>
-          <th class="text-end" style="width:15%;">Importe</th>
-          <th style="width:5%;"></th>
-        </tr>
-      </thead>
-      <tbody id="tbodyDetalles">
-        {% if compra %}
-          {% for d in compra.detalles.all %}
+  <!-- Líneas de compra -->
+  <div class="card mb-3 border-0 shadow-sm">
+    <div class="card-header bg-transparent border-bottom py-2 d-flex justify-content-between align-items-center">
+      <span class="fw-semibold"><i class="bi bi-list-ul me-2 text-success"></i>Productos comprados</span>
+      <button type="button" class="btn btn-sm btn-outline-primary" id="btnAdd">
+        <i class="bi bi-plus-lg me-1"></i> Agregar producto
+      </button>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table align-middle mb-0" id="tablaDetalles">
+          <thead class="table-light">
             <tr>
-              <td>
-                <select name="producto" class="form-select" required>
-                  <option value="">Seleccione…</option>
-                  {% for pr in productos %}
-                    <option value="{{ pr.id }}" {% if pr.id == d.producto_id %}selected{% endif %}>{{ pr.codigo }} — {{ pr.descripcion }}</option>
-                  {% endfor %}
-                </select>
-              </td>
-              <td><input type="number" name="cantidad" class="form-control text-end" min="1" step="1" value="{{ d.cantidad }}" required></td>
-              <td><input type="number" name="precio_unitario" class="form-control text-end" min="0" step="0.01" value="{{ d.precio_unitario }}"></td>
-              <td>
-                <select name="tipo_compra" class="form-select">
-                  {% for val, txt in tipo_compra_choices %}
-                    <option value="{{ val }}" {% if d.tipo_compra == val %}selected{% endif %}>{{ txt }}</option>
-                  {% endfor %}
-                </select>
-              </td>
-              <td class="text-end fw-semibold importe-cell">${{ d.subtotal|floatformat:2 }}</td>
-              <td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger btnDel"><i class="bi bi-x"></i></button></td>
+              <th style="width:32%;">Producto</th>
+              <th style="width:10%;">Cantidad</th>
+              <th style="width:14%;">P. unitario</th>
+              <th style="width:22%;">Tipo compra</th>
+              <th class="text-end" style="width:12%;">Importe</th>
+              <th style="width:10%;">IVA</th>
+              <th style="width:5%;"></th>
             </tr>
-          {% endfor %}
-        {% endif %}
-      </tbody>
-      <tfoot>
-        <tr>
-          <td colspan="6">
-            <button type="button" class="btn btn-light" id="btnAdd"><i class="bi bi-plus-lg me-1"></i> Agregar ítem</button>
-          </td>
-        </tr>
-      </tfoot>
-    </table>
-  </div>
-
-  <div class="d-flex justify-content-end gap-3">
-    <div class="text-end">
-      <div class="small text-muted">Subtotal + IVA</div>
-      <div class="display-6 h4 mb-0" id="totalPreview">$0.00</div>
+          </thead>
+          <tbody id="tbodyDetalles">
+            {% if compra %}
+              {% for d in compra.detalles.all %}
+                <tr>
+                  <td>
+                    <select name="producto" class="form-select form-select-sm" required>
+                      <option value="">— Seleccione —</option>
+                      {% for pr in productos %}
+                        <option value="{{ pr.id }}" {% if pr.id == d.producto_id %}selected{% endif %}>
+                          {{ pr.codigo }} — {{ pr.descripcion }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                  </td>
+                  <td><input type="number" name="cantidad" class="form-control form-control-sm text-end" min="1" step="1" value="{{ d.cantidad }}" required></td>
+                  <td>
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text">$</span>
+                      <input type="number" name="precio_unitario" class="form-control text-end" min="0" step="0.01" value="{{ d.precio_unitario }}">
+                    </div>
+                  </td>
+                  <td>
+                    <select name="tipo_compra" class="form-select form-select-sm">
+                      {% for val, txt in tipo_compra_choices %}
+                        <option value="{{ val }}" {% if d.tipo_compra == val %}selected{% endif %}>{{ txt }}</option>
+                      {% endfor %}
+                    </select>
+                  </td>
+                  <td class="text-end fw-semibold importe-cell">${{ d.subtotal|floatformat:2 }}</td>
+                  <td class="text-end iva-cell text-muted small">${{ d.iva_item|floatformat:2 }}</td>
+                  <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-outline-danger btnDel" aria-label="Eliminar fila">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              {% endfor %}
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
-  <div class="mt-3 d-flex justify-content-end">
-    <button class="btn btn-primary"><i class="bi bi-save me-1"></i> Guardar</button>
+  <!-- Totales -->
+  <div class="d-flex justify-content-end mb-3">
+    <div class="card border-0 shadow-sm" style="min-width:280px;">
+      <div class="card-body py-3 px-4">
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted small">Subtotal</span>
+          <span class="fw-semibold" id="previewSub">$0.00</span>
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted small">IVA (13%)</span>
+          <span class="fw-semibold text-success" id="previewIva">$0.00</span>
+        </div>
+        <div class="d-flex justify-content-between border-top pt-2 mt-1">
+          <span class="fw-bold">Total</span>
+          <span class="fw-bold fs-5 text-primary" id="previewTotal">$0.00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2 justify-content-between">
+    <a href="{% url 'compras-lista' %}" class="btn btn-secondary">
+      <i class="bi bi-x-lg me-1"></i>Cancelar
+    </a>
+    <button class="btn btn-primary" id="btnGuardar" type="submit">
+      <span class="spinner-border spinner-border-sm d-none me-1" id="spnGuardar" role="status" aria-hidden="true"></span>
+      <i class="bi bi-save me-1" id="iconGuardar"></i>Guardar compra
+    </button>
   </div>
 </form>
 
@@ -102,94 +179,111 @@
   <tbody id="tplFila">
     <tr>
       <td>
-        <select name="producto" class="form-select" required>
-          <option value="">Seleccione…</option>
+        <select name="producto" class="form-select form-select-sm" required>
+          <option value="">— Seleccione —</option>
           {% for pr in productos %}
             <option value="{{ pr.id }}">{{ pr.codigo }} — {{ pr.descripcion }}</option>
           {% endfor %}
         </select>
       </td>
-      <td><input type="number" name="cantidad" class="form-control text-end" min="1" step="1" value="1" required></td>
-      <td><input type="number" name="precio_unitario" class="form-control text-end" min="0" step="0.01" value="0.00"></td>
+      <td><input type="number" name="cantidad" class="form-control form-control-sm text-end" min="1" step="1" value="1" required></td>
       <td>
-        <select name="tipo_compra" class="form-select">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text">$</span>
+          <input type="number" name="precio_unitario" class="form-control text-end" min="0" step="0.01" value="0.00">
+        </div>
+      </td>
+      <td>
+        <select name="tipo_compra" class="form-select form-select-sm">
           {% for val, txt in tipo_compra_choices %}
             <option value="{{ val }}" {% if forloop.first %}selected{% endif %}>{{ txt }}</option>
           {% endfor %}
         </select>
       </td>
       <td class="text-end fw-semibold importe-cell">$0.00</td>
-      <td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger btnDel"><i class="bi bi-x"></i></button></td>
+      <td class="text-end iva-cell text-muted small">$0.00</td>
+      <td class="text-center">
+        <button type="button" class="btn btn-sm btn-outline-danger btnDel" aria-label="Eliminar fila">
+          <i class="bi bi-trash"></i>
+        </button>
+      </td>
     </tr>
   </tbody>
 </table>
 
 <script>
 (function () {
-  const tbody = document.getElementById('tbodyDetalles');
-  const tpl   = document.getElementById('tplFila').querySelector('tr');
-  const addBtn= document.getElementById('btnAdd');
-  const totalPreview = document.getElementById('totalPreview');
+  const tbody        = document.getElementById('tbodyDetalles');
+  const tpl          = document.getElementById('tplFila').querySelector('tr');
+  const addBtn       = document.getElementById('btnAdd');
+  const previewSub   = document.getElementById('previewSub');
+  const previewIva   = document.getElementById('previewIva');
+  const previewTotal = document.getElementById('previewTotal');
 
-  function money(v){ return '$' + Number(v || 0).toFixed(2); }
+  function money(v) { return '$' + Number(v || 0).toFixed(2); }
 
-  function recalcRow(tr){
-    const qty = parseFloat(tr.querySelector('input[name="cantidad"]').value || 0);
-    const pu  = parseFloat(tr.querySelector('input[name="precio_unitario"]').value || 0);
-    const tipo= tr.querySelector('select[name="tipo_compra"]').value || 'GR_INT';
-    const sub = qty * pu;
-    const iva = tipo.startsWith('GR') ? sub * 0.13 : 0;
-    tr.querySelector('.importe-cell').textContent = money(sub + iva);
+  function recalcRow(tr) {
+    const qty  = parseFloat(tr.querySelector('input[name="cantidad"]').value) || 0;
+    const pu   = parseFloat(tr.querySelector('input[name="precio_unitario"]').value) || 0;
+    const tipo = tr.querySelector('select[name="tipo_compra"]').value || 'GR_INT';
+    const sub  = qty * pu;
+    const iva  = tipo.startsWith('GR') ? +(sub * 0.13).toFixed(2) : 0;
+    tr.querySelector('.importe-cell').textContent = money(sub);
+    tr.querySelector('.iva-cell').textContent = iva > 0 ? money(iva) : '—';
+    return { sub, iva };
   }
 
-  function recalcTotal(){
-    let total = 0;
-    tbody.querySelectorAll('tr').forEach(tr=>{
-      const qty = parseFloat(tr.querySelector('input[name="cantidad"]').value || 0);
-      const pu  = parseFloat(tr.querySelector('input[name="precio_unitario"]').value || 0);
-      const tipo= tr.querySelector('select[name="tipo_compra"]').value || 'GR_INT';
-      const sub = qty * pu;
-      const iva = tipo.startsWith('GR') ? sub * 0.13 : 0;
-      total += (sub + iva);
+  function recalcAll() {
+    let totalSub = 0, totalIva = 0;
+    tbody.querySelectorAll('tr').forEach(tr => {
+      const { sub, iva } = recalcRow(tr);
+      totalSub += sub;
+      totalIva += iva;
     });
-    totalPreview.textContent = money(total);
+    previewSub.textContent   = money(totalSub);
+    previewIva.textContent   = money(totalIva);
+    previewTotal.textContent = money(totalSub + totalIva);
   }
 
-  function wire(tr){
-    tr.querySelectorAll('input,select').forEach(el=>{
-      el.addEventListener('input', ()=>{ recalcRow(tr); recalcTotal(); });
-      el.addEventListener('change', ()=>{ recalcRow(tr); recalcTotal(); });
+  function wire(tr) {
+    tr.querySelectorAll('input, select').forEach(el => {
+      el.addEventListener('input',  () => recalcAll());
+      el.addEventListener('change', () => recalcAll());
     });
-    tr.querySelector('.btnDel').addEventListener('click', ()=>{
-      tr.remove(); recalcTotal();
+    tr.querySelector('.btnDel').addEventListener('click', () => {
+      tr.remove();
+      recalcAll();
     });
-    recalcRow(tr);
   }
 
-  addBtn.addEventListener('click', ()=>{
+  addBtn.addEventListener('click', () => {
     const row = tpl.cloneNode(true);
     tbody.appendChild(row);
     wire(row);
-    recalcTotal();
+    recalcAll();
+    row.querySelector('select[name="producto"]').focus();
   });
 
-  // Si no hay filas (nueva compra), añade una por defecto
   if (tbody.querySelectorAll('tr').length === 0) {
     addBtn.click();
   } else {
     tbody.querySelectorAll('tr').forEach(wire);
-    recalcTotal();
+    recalcAll();
   }
 
-  // Validación BS
   const form = document.getElementById('formCompra');
-  form.addEventListener('submit', (e)=>{
+  const btnGuardar = document.getElementById('btnGuardar');
+  form.addEventListener('submit', e => {
     if (!form.checkValidity() || tbody.querySelectorAll('tr').length === 0) {
-      e.preventDefault(); e.stopPropagation();
+      e.preventDefault();
+      e.stopPropagation();
+    } else {
+      document.getElementById('spnGuardar').classList.remove('d-none');
+      document.getElementById('iconGuardar').classList.add('d-none');
+      btnGuardar.disabled = true;
     }
     form.classList.add('was-validated');
   });
 })();
 </script>
-
 {% endblock %}

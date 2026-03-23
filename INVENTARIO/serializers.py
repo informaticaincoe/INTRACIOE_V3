@@ -1,6 +1,5 @@
 from decimal import Decimal
 from rest_framework import serializers
-from FE.models import Descuento
 from .models import Almacen, Categoria, Impuesto, Producto, ProductoProveedor, TipoItem, TipoTributo, TipoUnidadMedida, Tributo, Proveedor, Compra, DetalleCompra, MovimientoInventario, AjusteInventario, DevolucionCompra, DevolucionVenta, DetalleDevolucionCompra, DetalleDevolucionVenta
 
 
@@ -14,12 +13,6 @@ class TipoItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = TipoItem
         fields = '__all__'
-
-class DescuentoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Descuento
-        fields = '__all__'
-
 
 class TiposTributosSerializer(serializers.ModelSerializer):
     class Meta:
@@ -65,7 +58,7 @@ class DetalleCompraSerializer(serializers.Serializer):
     unidad_medida = serializers.PrimaryKeyRelatedField(
         queryset=TipoUnidadMedida.objects.all(), allow_null=True, required=False
     )
-    preunitario = serializers.DecimalField(max_digits=5, decimal_places=2)
+    preunitario = serializers.DecimalField(max_digits=10, decimal_places=2)
     precio_venta = serializers.DecimalField(max_digits=10, decimal_places=2)
 
     cantidad = serializers.IntegerField(min_value=1)

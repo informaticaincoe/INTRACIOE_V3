@@ -476,8 +476,6 @@ def _cliente_form(request, c: Receptor_fe | None = None):
             tipo_doc_id   = request.POST.get('tipo_documento')
             num_documento = _none_if_blank(request.POST.get('num_documento'))
             nrc           = _none_if_blank(request.POST.get('nrc'))
-            act_ids       = request.POST.getlist('actividades_economicas') or request.POST.getlist('actividades')
-
             if not (tipo_doc_id and num_documento and nombre and municipio_id):
                 messages.error(request, "Completa tipo documento, número, nombre y municipio.")
                 return redirect(request.path)
@@ -1144,56 +1142,6 @@ def api_productos(request):
         'has_next': end < total,
         'total': total,
     })
-
-#################################
-# VISTA NUEVA PARA GENERAR FACTURAS
-
-@login_required
-def generar_factura(request):
-
-    print ("Generando factura...", request)
-
-    # variables globales arays
-    productos_ids_r = []
-    productos_cant_r = []
-    documentos_relacionador = []
-    descuentos_r = []
-    precios_r = []
-
-    #contador de intentos en session
-    if 'intentos' not in request.session:
-        request.session['intentos'] = 0
-    
-    # metodo get para cargar la vista
-    if request.method == 'GET':
-        # cargar datos de productos
-        productos = Producto.objects.all().order_by('descripcion')
-        # cargar datos de clientes
-        clientes = Receptor_fe.objects.all().order_by('nombre')
-        # cargar datos de tipos de documento
-        tipos_documento = TiposDocIDReceptor.objects.all().order_by('descripcion')
-        # cargar datos de municipios
-        municipios = Municipio.objects.select_related('departamento').order_by('descripcion')
-        # cargar datos de unidades de medida
-        unidades_medida = TipoUnidadMedida.objects.all().order_by('descripcion')
-        # cargar datos de tributos
-        tributos = Tributo.objects.all().order_by('descripcion')
-        # cargar datos de tipos de documento (DTE)
-        tipos_dte = Tipo_dte.objects.all().order_by('descripcion')
-        # cargar datos de modelos de facturacion
-        modelos_facturacion = Modelofacturacion.objects.all().order_by('descripcion')
-        # cargar datos de tipos de transmision
-        tipos_transmision = TipoTransmision.objects.all().order_by('descripcion')
-
-        tipos_dte = Tipo_dte.obj
-        emisor_obj = None
-        if emisor_obj:
-            new_num_control = NumeroControl.preview_numero_control(emisor_obj)
-
-
-
-    return render(request, 'ventas/generar_factura.html')
-
 
 # REPORTES
 

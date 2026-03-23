@@ -1,4 +1,5 @@
 import datetime
+import logging
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -8,6 +9,8 @@ from django.utils.dateparse import parse_datetime
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from RESTAURANTE.views.views_pedidos import get_mesero_from_user
+
+logger = logging.getLogger(__name__)
 
 """
 MANEJO DE:
@@ -138,7 +141,7 @@ def listar_mesas(request):
     return render(request, "mesas/mesas.html", context)
 
 def crear_mesa(request):
-    print(">>>metodo ", request.method)
+    logger.debug(">>>metodo %s", request.method)
     if request.method == 'POST':
         numero = request.POST.get('numero') or ''
         capacidad = request.POST.get('capacidad') or ''
@@ -170,7 +173,7 @@ def crear_mesa(request):
     return render(request, 'mesas/formulario.html', context)
 
 def editar_mesa(request, pk):
-    print(">>>metodo ", request.method)
+    logger.debug(">>>metodo %s", request.method)
     mesa = get_object_or_404(Mesa, pk=pk)
     
     if request.method == 'POST':
@@ -204,8 +207,8 @@ def editar_mesa(request, pk):
     return render(request, 'mesas/formulario.html', context)
 
 def eliminar_mesa(request, pk):
-    print("pk ", pk)
-    print("method ", request.method)
+    logger.debug("pk %s", pk)
+    logger.debug("method %s", request.method)
     
     if request.method == "POST":
         mesa = get_object_or_404(Mesa, pk=pk)
@@ -220,7 +223,7 @@ def eliminar_mesa(request, pk):
 #                                         Asignaciones de mesa                                                #
 ###############################################################################################################
 def asignar_mesa_a_mesero(request):
-    print("-------------- Metodo API ", request.method)
+    logger.info("-------------- Metodo API %s", request.method)
 
     if request.method == "POST":
         mesa_id = request.POST.get("mesa_id")
@@ -235,11 +238,11 @@ def asignar_mesa_a_mesero(request):
         if not fecha_inicio:
             fecha_inicio = timezone.now()
 
-        print("mesa", mesa_id)
-        print("mesero", mesero_id)
-        print("fecha_inicio", fecha_inicio)
-        print("fecha_fin", fecha_fin)
-        print("es_fija", es_fija)
+        logger.debug("mesa %s", mesa_id)
+        logger.debug("mesero %s", mesero_id)
+        logger.debug("fecha_inicio %s", fecha_inicio)
+        logger.debug("fecha_fin %s", fecha_fin)
+        logger.debug("es_fija %s", es_fija)
 
         # --- Solapamiento: (existing.start < new.end) AND (existing.end > new.start OR existing.end is null)
         q = (Q(es_fija=False) | Q(es_fija__isnull=True))
@@ -274,10 +277,10 @@ def asignar_mesa_a_mesero(request):
     return redirect("mesas-lista")
 
 def editar_asignacion_mesa_a_mesero(request,pk):
-    print("-------------- Metodo API EDITAR ASIGNACIOn", request.method)
-    
+    logger.info("-------------- Metodo API EDITAR ASIGNACIOn %s", request.method)
+
     asignacion = get_object_or_404(AsignacionMesa, pk=pk)
-    print(">>>>>>>>>>> asignacion ", asignacion )
+    logger.debug(">>>>>>>>>>> asignacion %s", asignacion)
     
 
     if request.method == "POST":
@@ -292,11 +295,11 @@ def editar_asignacion_mesa_a_mesero(request,pk):
         if not fecha_inicio:
             fecha_inicio = timezone.now()
 
-        print("mesa", mesa_id)
-        print("mesero", mesero_id)
-        print("fecha_inicio", fecha_inicio)
-        print("fecha_fin", fecha_fin)
-        print("es_fija", es_fija)
+        logger.debug("mesa %s", mesa_id)
+        logger.debug("mesero %s", mesero_id)
+        logger.debug("fecha_inicio %s", fecha_inicio)
+        logger.debug("fecha_fin %s", fecha_fin)
+        logger.debug("es_fija %s", es_fija)
 
         # --- Solapamiento: (existing.start < new.end) AND (existing.end > new.start OR existing.end is null)
         q = (Q(es_fija=False) | Q(es_fija__isnull=True))
@@ -348,8 +351,8 @@ def editar_asignacion_mesa_a_mesero(request,pk):
 
 
 def eliminar_asignacion_mesa_a_mesero(request, pk):
-    print("pk ", pk)
-    print("method ", request.method)
+    logger.debug("pk %s", pk)
+    logger.debug("method %s", request.method)
     
     if request.method == "POST":
         asignacion = get_object_or_404(AsignacionMesa, pk=pk)
@@ -366,7 +369,7 @@ def listar_asignaciones(request):
     else:
         asignaciones = AsignacionMesa.objects.all().order_by("pk")
         
-    print("LISTAR ASIG", asignaciones)
+    logger.debug("LISTAR ASIG %s", asignaciones)
     lista_meseros = Mesero.objects.all()
     lista_mesas = Mesa.objects.all()
     lista_areas = Area.objects.all()

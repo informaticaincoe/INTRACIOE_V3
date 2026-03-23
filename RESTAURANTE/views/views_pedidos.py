@@ -1,5 +1,6 @@
 from datetime import timezone
 from decimal import Decimal
+import logging
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -17,6 +18,8 @@ from RESTAURANTE.views.views_cuentas import _build_item_map, _consume_qty, _get_
 
 from django.core.paginator import Paginator
 import json
+
+logger = logging.getLogger(__name__)
 """
 MANEJO DE:
     - Pedidos
@@ -88,7 +91,7 @@ def guardar_detalles_desde_json(pedido, platillos_json: str, *, modo="append"):
 @login_required
 @transaction.atomic
 def tomar_pedido(request, mesa_id):
-    print("REQUEST", request.method)
+    logger.debug("REQUEST %s", request.method)
     """
     Crea/reutiliza un Pedido ABIERTO para la mesa.
     - Si mesa está PENDIENTE_ORDEN o OCUPADA: ok
@@ -260,7 +263,7 @@ def solicitar_cuenta(request, mesa_id):
 
     detalles = DetallePedido.objects.filter(pedido=pedido)
     
-    print("DETALLES ******* ", detalles)
+    logger.debug("DETALLES ******* %s", detalles)
     
     return render(request, "documentos/template_ticket_cuenta_total.html", {
         "pedido": pedido,
@@ -284,15 +287,15 @@ def pedido_crear_desde_mesa(request):
         messages.error(request, "Denegado: No hay una caja abierta.", extra_tags="error-caja-cerrada")
         return redirect("mesas-lista")
     
-    print("request.method ", request.method)
-    
+    logger.debug("request.method %s", request.method)
+
     if request.method == "POST":
         mesero = get_mesero_from_user(request.user) # obtener el mesero que esta loggeado
         if not mesero:
-            print(request, "No tienes un mesero asociado o estás inactivo.")
+            logger.warning("No tienes un mesero asociado o estás inactivo.")
             return redirect("mesas-lista")
 
-        print("mesero ", mesero)
+        logger.debug("mesero %s", mesero)
         
 
         mesa_id = request.POST.get("mesa_id") 
@@ -300,8 +303,8 @@ def pedido_crear_desde_mesa(request):
         receptor_id = request.POST.get("receptor_id") or None
 
         mesa = get_object_or_404(Mesa.objects.select_for_update(), id=mesa_id)
-        print("mesa ", mesa)
-        print("mesa.estado ", mesa.estado)
+        logger.debug("mesa %s", mesa)
+        logger.debug("mesa.estado %s", mesa.estado)
 
         if mesa.estado not in ("PENDIENTE_ORDEN", "OCUPADA", "ENTREGADO"):
             messages.error(request, f"Estado de mesa no válido: {mesa.estado}")
@@ -314,8 +317,7 @@ def pedido_crear_desde_mesa(request):
             defaults={'estado': 'ABIERTO'}
         )
         
-        print("pedido ", pedido)
-        
+        logger.debug("pedido %s", pedido)
 
         if receptor_id:
             pedido.receptor = get_object_or_404(Receptor_fe, id=receptor_id)
@@ -323,8 +325,8 @@ def pedido_crear_desde_mesa(request):
             pedido.notas = notas
         pedido.save()
 
-        print("POST keys:", list(request.POST.keys()))
-        print("platillos_json:", request.POST.get("platillos_json"))
+        logger.debug("POST keys: %s", list(request.POST.keys()))
+        logger.debug("platillos_json: %s", request.POST.get("platillos_json"))
 
         # ✅ GUARDAR DETALLES
         # En pedido_crear_desde_mesa
@@ -340,22 +342,21 @@ def pedido_crear_desde_mesa(request):
             guardar_detalles_desde_json(pedido, platillos_json, modo="append")
             
         tiene_detalles = pedido.detalles.all().exists()
-        print("TIENE DETALLES ", pedido.detalles)
-        
-        print("TIENE DETALLES ", tiene_detalles)
+        logger.debug("TIENE DETALLES %s", pedido.detalles)
+        logger.debug("TIENE DETALLES %s", tiene_detalles)
         if tiene_detalles:
             # ✅ Cambiar estado de la mesa a OCUPADA
             if mesa.estado != "OCUPADA":
                 mesa.estado = "OCUPADA"
                 mesa.save() # Quitamos update_fields para asegurar el guardado total o verificar signals
 
-            print("Pedido ", pedido)
-            print("Pedido id ", pedido.id)
-            print("tiene_detalles ", tiene_detalles)
+            logger.info("Pedido %s", pedido)
+            logger.info("Pedido id %s", pedido.id)
+            logger.info("tiene_detalles %s", tiene_detalles)
 
             # ✅ ENVIAR A COCINA
             comanda = enviar_pedido_a_cocina(pedido, notas=notas)
-            print("comanda ", comanda)
+            logger.info("comanda %s", comanda)
             
             if comanda:
                 messages.success(request, f"Pedido enviado a cocina (Comanda).")
@@ -996,40 +997,40 @@ def confirmar_division(request, pedido_id):
 def enviar_facturacion_cuenta(request, cuenta_id):
     # if getattr(request.user, "role", None) != "mesero":
     #     return HttpResponseForbidden("Solo meseros.")    
-    print("CUENTA_ID ", cuenta_id)
+    logger.info("CUENTA_ID %s", cuenta_id)
     
     cuenta = get_object_or_404(
         CuentaPedido.objects.select_for_update().select_related("pedido"),
         id=cuenta_id,
     )
     
-    print("CUENTA ", cuenta)
-    
+    logger.debug("CUENTA %s", cuenta)
+
     pedido = cuenta.pedido
 
-    print("pedido ", pedido)
+    logger.debug("pedido %s", pedido)
 
     # if pedido.estado != "CERRADO":
     #     messages.error(request, "El pedido debe estar CERRADO para facturar.")
 
     #     return redirect("mesas-lista")
-    print("pedido 2 ", pedido)
+    logger.debug("pedido 2 %s", pedido)
 
     # si es split confirmado, exigimos CERRADA
     if pedido.division_confirmada and cuenta.estado != "CERRADA":
         messages.error(request, "La cuenta debe estar CERRADA (confirmada) para facturar.")
-        print("pedido.division_confirmada 2 ", pedido.division_confirmada)
+        logger.debug("pedido.division_confirmada 2 %s", pedido.division_confirmada)
         
         return redirect("pedido-checkout", mesa_id=pedido.mesa_id)
 
-    print("pedido.division_confirmada ", pedido.division_confirmada)
+    logger.debug("pedido.division_confirmada %s", pedido.division_confirmada)
 
 
     receptor = Receptor_fe.objects.filter(num_documento="00000000-0").first()
     if not receptor:
         messages.error(request, "No se encontró receptor por defecto (00000000-0).")
         return redirect("pedido-checkout", mesa_id=pedido.mesa_id)
-    print("cuenta.estado ", cuenta.estado)
+    logger.debug("cuenta.estado %s", cuenta.estado)
 
     items = []
     for detalle in cuenta.detalles.select_related("platillo").all():
@@ -1052,7 +1053,7 @@ def enviar_facturacion_cuenta(request, cuenta_id):
         "cuenta_id": cuenta.id,
     }
     request.session.modified = True
-    print("REDIRIGIENDO A FACTURACION... ")
+    logger.info("REDIRIGIENDO A FACTURACION... ")
     return redirect("/fe/generar/?from_cart=1&restaurante=1")
 
 @login_required
@@ -1082,7 +1083,7 @@ def entregar_pedido(request, mesa_id):
 @login_required
 @transaction.atomic
 def cambio_nombre_cuenta(request, cuenta_id):
-    print("PRINRRRRRRRR ", request.method)
+    logger.debug("PRINRRRRRRRR %s", request.method)
     nuevo_nombre = request.POST.get("name") 
     cuenta = get_object_or_404(
         CuentaPedido.objects.select_for_update().select_related("pedido"),

@@ -1,36 +1,131 @@
 {% extends "base.html" %}
-{% block title %}Impuestos{% endblock %}
+{% block title %}Impuestos · Inventario{% endblock %}
 {% block content %}
+
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'inv-home' %}">Inventario</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Impuestos</li>
+  </ol>
+</nav>
+
+{% if messages %}
+  {% for m in messages %}
+    <div class="alert alert-{{ m.tags }} alert-dismissible py-2" role="alert">
+      {{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+  {% endfor %}
+{% endif %}
+
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h1 class="h5 mb-0">Impuestos</h1>
-  <a href="{% url 'inv-impuestos-crear' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Nuevo</a>
+  <div>
+    <h1 class="h4 mb-0">Impuestos</h1>
+    <small class="text-muted">IVA y otros gravámenes aplicables a productos</small>
+  </div>
+  <a href="{% url 'inv-impuestos-crear' %}" class="btn btn-primary">
+    <i class="bi bi-plus-lg me-1"></i> Nuevo impuesto
+  </a>
 </div>
 
 <form class="row g-2 align-items-end mb-3" method="get">
   <div class="col-md-6">
-    <label class="form-label">Buscar</label>
-    <input type="text" name="q" class="form-control" value="{{ q }}" placeholder="Nombre">
+    <label class="form-label small fw-semibold" for="inputQ">Buscar</label>
+    <div class="input-group input-group-sm">
+      <span class="input-group-text"><i class="bi bi-search"></i></span>
+      <input type="text" id="inputQ" name="q" class="form-control" value="{{ q }}" placeholder="Nombre del impuesto…">
+    </div>
   </div>
-  <div class="col-md-2"><button class="btn btn-outline-primary w-100">Filtrar</button></div>
+  <div class="col-md-2">
+    <button class="btn btn-outline-primary btn-sm w-100" type="submit">
+      <i class="bi bi-funnel me-1"></i>Filtrar
+    </button>
+  </div>
+  {% if q %}
+  <div class="col-md-1">
+    <a href="{% url 'inv-impuestos-lista' %}" class="btn btn-outline-secondary btn-sm w-100" aria-label="Limpiar filtros" title="Limpiar filtros">
+      <i class="bi bi-x-lg"></i>
+    </a>
+  </div>
+  {% endif %}
 </form>
 
-<div class="table-responsive">
-  <table class="table align-middle">
-    <thead><tr><th>Nombre</th><th class="text-end">%</th><th style="width:140px;"></th></tr></thead>
-    <tbody>
-    {% for i in impuestos %}
-      <tr>
-        <td>{{ i.nombre }}</td>
-        <td class="text-end">{{ i.porcentaje }}</td>
-        <td class="text-end">
-          <a href="{% url 'inv-impuestos-editar' i.id %}" class="btn btn-sm btn-light"><i class="bi bi-pencil"></i></a>
-          <a href="{% url 'inv-impuestos-eliminar' i.id %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></a>
-        </td>
-      </tr>
-    {% empty %}
-      <tr><td colspan="3" class="text-center text-muted">Sin datos.</td></tr>
-    {% endfor %}
-    </tbody>
-  </table>
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover table-striped align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Nombre</th>
+          <th class="text-end" style="width:120px;">Porcentaje</th>
+          <th style="width:100px;"></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for i in impuestos %}
+        <tr>
+          <td class="fw-medium">{{ i.nombre }}</td>
+          <td class="text-end">
+            <span class="badge text-bg-secondary">{{ i.porcentaje }}%</span>
+          </td>
+          <td class="text-end">
+            <div class="btn-group btn-group-sm">
+              <a href="{% url 'inv-impuestos-editar' i.id %}" class="btn btn-outline-secondary" aria-label="Editar {{ i.nombre }}" title="Editar">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <button type="button" class="btn btn-outline-danger"
+                      aria-label="Eliminar {{ i.nombre }}" title="Eliminar"
+                      data-bs-toggle="modal" data-bs-target="#modalEliminar"
+                      data-url="{% url 'inv-impuestos-eliminar' i.id %}"
+                      data-nombre="{{ i.nombre }}">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="3" class="text-center py-5 text-muted">
+            <i class="bi bi-percent fs-1 d-block mb-2 opacity-50"></i>
+            No hay impuestos definidos.
+            <div class="mt-2"><a href="{% url 'inv-impuestos-crear' %}">Crear el primero</a></div>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
+
+<!-- Modal confirmar eliminación -->
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-labelledby="modalEliminarLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title text-danger" id="modalEliminarLabel">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirmar eliminación
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-1">¿Eliminar el impuesto <strong id="modalNombre"></strong>?</p>
+        <p class="text-muted small mb-0">Esta acción no se puede deshacer.</p>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <form id="formEliminar" method="post">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger"><i class="bi bi-trash me-1"></i>Eliminar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('modalEliminar').addEventListener('show.bs.modal', function(e) {
+  const btn = e.relatedTarget;
+  document.getElementById('modalNombre').textContent = btn.dataset.nombre;
+  document.getElementById('formEliminar').action = btn.dataset.url;
+});
+</script>
+
 {% endblock %}

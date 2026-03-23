@@ -2,8 +2,11 @@ from decimal import ROUND_HALF_UP, Decimal
 from FE.models import FacturaElectronica
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+import logging
 
 from RESTAURANTE.models import Caja
+
+logger = logging.getLogger(__name__)
 
 def to_dec(v):
     if v is None:
@@ -13,7 +16,7 @@ def to_dec(v):
 
 
 def finalizar_venta_exitosa(factura_id):
-    print("FACTURA DENTRO FUNC ", factura_id)
+    logger.info("FACTURA DENTRO FUNC %s", factura_id)
     factura = get_object_or_404(FacturaElectronica, id=factura_id)
 
     # ---------------------------
@@ -30,7 +33,7 @@ def finalizar_venta_exitosa(factura_id):
             codigo = (pago.get("codigo") or "").strip()
             
             monto_pago = to_dec(pago.get("montoPago", pago.get("monto", 0)))
-            print("monto_pago ", monto_pago)
+            logger.debug("monto_pago %s", monto_pago)
             
 
             if codigo == "01":
@@ -61,7 +64,7 @@ def finalizar_venta_exitosa(factura_id):
         cuenta.save(update_fields=["estado", "pagado_el"])
 
     pedido = cuenta.pedido
-    print("PEDIDO ESTADO ", pedido.estado)
+    logger.info("PEDIDO ESTADO %s", pedido.estado)
     # Si todas las cuentas están resueltas, pagar pedido y liberar mesa
     if not pedido.cuentas.exclude(estado__in=["PAGADA", "ANULADO"]).exists():
         if pedido.estado != "PAGADO":

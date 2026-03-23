@@ -1,9 +1,12 @@
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
+import logging
 
 from RESTAURANTE.formsLogin import CocineroLoginForm
 from RESTAURANTE.models import AreaCocina, Cocinero
+
+logger = logging.getLogger(__name__)
 
 
 def login_cocinero(request):
@@ -35,7 +38,7 @@ def listar_cocineros(request):
     if search_query:
         cocineros = cocineros.filter(nombre__icontains=search_query)
 
-    print("LISTA AREAS ", areas_cocina_lista)
+    logger.debug("LISTA AREAS %s", areas_cocina_lista)
     context = {
         "lista_cocineros": cocineros,
         "lista_areas": areas_cocina_lista
@@ -49,7 +52,7 @@ def crear_cocinero(request):
         pin = (request.POST.get("pin") or "").strip()
         area_cocina = (request.POST.get("area_cocina") or "").strip()
         
-        print("************ area_cocina ", area_cocina)
+        logger.debug("area_cocina %s", area_cocina)
         activo = request.POST.get("activo") == "on"
 
         if nombre and pin:

@@ -1,0 +1,23 @@
+[flake8]
+max-line-length = 120
+exclude =
+    migrations,
+    __pycache__,
+    .git,
+    staticfiles,
+    media,
+    static,
+    venv,
+    env,
+    .venv
+per-file-ignores =
+    # Imports no usados en __init__ y archivos de settings son comunes
+    __init__.py: F401
+    settings.py: E501
+ignore =
+    # Whitespace antes de ':' (común en slices)
+    E203,
+    # Line break antes de operador binario
+    W503,
+    # Importaciones no usadas en archivos generados
+    F401

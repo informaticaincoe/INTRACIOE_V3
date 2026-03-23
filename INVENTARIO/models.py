@@ -1,6 +1,7 @@
 from decimal import Decimal
 import os
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 
 class Categoria(models.Model):
@@ -72,7 +73,7 @@ class Tributo(models.Model):
     tipo_tributo = models.ForeignKey(TipoTributo, on_delete=models.SET_NULL, null=True, blank=True)
     codigo = models.CharField(max_length=50)
     descripcion = models.CharField(max_length=100)
-    valor_tributo = models.CharField(max_length=100, null=True)#models.DecimalField(max_digits=10, decimal_places=2, null=True)
+    valor_tributo = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True)
     tipo_valor = models.ForeignKey(TipoValor, on_delete=models.SET_NULL, null=True, blank=True)
     
     def __str__(self):
@@ -83,7 +84,7 @@ class Producto(models.Model):
     descripcion = models.CharField(max_length=255)
     categoria = models.ForeignKey(Categoria, on_delete=models.SET_NULL, null=True, blank=True)
     unidad_medida = models.ForeignKey(TipoUnidadMedida, on_delete=models.SET_NULL, null=True, blank=True)
-    preunitario = models.DecimalField(max_digits=5, decimal_places=2)
+    preunitario = models.DecimalField(max_digits=10, decimal_places=2)
     precio_compra = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     precio_venta = models.DecimalField(max_digits=10, decimal_places=2)
     stock = models.PositiveIntegerField(default=0)
@@ -113,9 +114,21 @@ class Producto(models.Model):
     creado = models.DateTimeField(auto_now_add=True)
     actualizado = models.DateTimeField(auto_now=True)
 
+    def clean(self):
+        errors = {}
+        if self.precio_venta is not None and self.precio_venta <= 0:
+            errors['precio_venta'] = 'El precio de venta debe ser mayor a 0.'
+        if self.precio_compra is not None and self.precio_compra < 0:
+            errors['precio_compra'] = 'El precio de compra no puede ser negativo.'
+        if (self.stock_maximo and self.stock_minimo
+                and self.stock_minimo > self.stock_maximo):
+            errors['stock_minimo'] = 'El stock mínimo no puede superar al stock máximo.'
+        if errors:
+            raise ValidationError(errors)
+
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
-    
+
     def get_imagen_url(self):
         if self.imagen:
             return self.imagen.url
@@ -168,7 +181,7 @@ class ProductoProveedor(models.Model):
     codigo = models.CharField(max_length=50, unique=True)  # SKU único
     descripcion = models.CharField(max_length=255)
     unidad_medida = models.ForeignKey(TipoUnidadMedida, on_delete=models.SET_NULL, null=True, blank=True)
-    preunitario = models.DecimalField(max_digits=5, decimal_places=2)
+    preunitario = models.DecimalField(max_digits=10, decimal_places=2)
     tipo_item = models.ForeignKey(TipoItem, on_delete=models.SET_NULL, null=True, blank=True)
     referencia_interna = models.CharField(max_length=50, null=True, editable=True, default=None)
     fecha_vencimiento = models.DateField(null=True, blank=True)  
@@ -209,6 +222,24 @@ class Compra(models.Model):
     sector = models.CharField(max_length=10, blank=True, null=True)
     tipo_costo_gasto = models.CharField(max_length=10, blank=True, null=True)
 
+    TRANSICIONES_VALIDAS = {
+        'Pendiente': {'Pagado', 'Cancelado'},
+        'Pagado':    {'Devuelto', 'Cancelado'},
+        'Devuelto':  set(),
+        'Cancelado': set(),
+    }
+
+    def clean(self):
+        if not self.pk:
+            return
+        original_estado = Compra.objects.filter(pk=self.pk).values_list('estado', flat=True).first()
+        if original_estado and original_estado != self.estado:
+            permitidos = self.TRANSICIONES_VALIDAS.get(original_estado, set())
+            if self.estado not in permitidos:
+                raise ValidationError({
+                    'estado': f'No se puede cambiar de "{original_estado}" a "{self.estado}".'
+                })
+
     def __str__(self):
         return f"Compra {self.id} - {self.proveedor.nombre}"
 
@@ -238,6 +269,10 @@ class DetalleCompra(models.Model):
     )
     # Nuevo campo IVA calculado para el detalle
     iva_item = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+
+    def clean(self):
+        if self.precio_unitario is not None and self.precio_unitario <= 0:
+            raise ValidationError({'precio_unitario': 'El precio unitario debe ser mayor a 0.'})
 
     def save(self, *args, **kwargs):
         self.subtotal = self.cantidad * self.precio_unitario
@@ -296,6 +331,15 @@ class DevolucionVenta(models.Model):
     )
     usuario = models.CharField(max_length=100, blank=True, null=True)  # Quién procesa la devolución
 
+    ESTADOS_FINALES = {'Aprobada', 'Rechazada'}
+
+    def clean(self):
+        if not self.pk:
+            return
+        estado_actual = DevolucionVenta.objects.filter(pk=self.pk).values_list('estado', flat=True).first()
+        if estado_actual in self.ESTADOS_FINALES and estado_actual != self.estado:
+            raise ValidationError({'estado': 'No se puede modificar el estado de una devolución ya resuelta.'})
+
     def __str__(self):
         return f"Devolución {self.id} - {self.estado}"
 
@@ -339,6 +383,15 @@ class DevolucionCompra(models.Model):
         default='Pendiente'
     )
     usuario = models.CharField(max_length=100, blank=True, null=True)  # Quién procesa la devolución
+
+    ESTADOS_FINALES = {'Aprobada', 'Rechazada'}
+
+    def clean(self):
+        if not self.pk:
+            return
+        estado_actual = DevolucionCompra.objects.filter(pk=self.pk).values_list('estado', flat=True).first()
+        if estado_actual in self.ESTADOS_FINALES and estado_actual != self.estado:
+            raise ValidationError({'estado': 'No se puede modificar el estado de una devolución ya resuelta.'})
 
     def __str__(self):
         return f"Devolución {self.id} - Compra {self.compra.id} - {self.estado}"

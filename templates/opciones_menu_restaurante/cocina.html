@@ -1,50 +1,35 @@
 {% with uid_prefix=uid|default:"cocina" %}
 
-{% if user.role == 'admin' or user.role == 'supervisor' %}
-<button class="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
-        type="button"
-        data-bs-target="#{{ uid_prefix }}-cocineros">
-  <span><i class="bi bi-person me-1 fs-6"></i> Cocineros</span>
+{% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'cocinero' %}
+<button id="{{ uid_prefix }}-btn-home" type="button" class="sb-module-home">
+  <i class="bi bi-house-door-fill"></i> Inicio Cocina
 </button>
 {% endif %}
 
 {% if user.role == 'admin' or user.role == 'supervisor' %}
-<button class="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
-        type="button"
-        data-bs-target="#{{ uid_prefix }}-areas-cocina">
-  <span><i class="bi bi-person me-1 fs-6"></i> Areas cocina</span>
+<button id="{{ uid_prefix }}-btn-cocineros" type="button" class="sb-sub-item">
+  <i class="bi bi-person-fill"></i> Cocineros
+</button>
+<button id="{{ uid_prefix }}-btn-areas" type="button" class="sb-sub-item">
+  <i class="bi bi-map"></i> Áreas de cocina
 </button>
 {% endif %}
 
 {% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'cocinero' %}
-<button class="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
-        type="button"
-        data-bs-target="#{{ uid_prefix }}-comanda">
-  <span><i class="bi bi-file-earmark-plus me-1"></i> Comanda</span>
+<button id="{{ uid_prefix }}-btn-comanda" type="button" class="sb-sub-item">
+  <i class="bi bi-file-earmark-text"></i> Comanda
 </button>
 {% endif %}
 
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const prefix = "{{ uid_prefix|default:'cocina' }}";
-
-    const goto = new Map([
-      [`#${prefix}-cocineros`, "{% url 'cocineros-lista' %}"],
-      [`#${prefix}-areas-cocina`, "{% url 'areas-cocina' %}"],
-      [`#${prefix}-comanda`, "{% url 'comanda-cocina' %}"],
-    ]);
-
-    document
-      .querySelectorAll(`[data-bs-target^="#${prefix}-"]`)
-      .forEach(btn => {
-        btn.addEventListener('click', (ev) => {
-          ev.preventDefault();
-          const target = btn.getAttribute('data-bs-target');
-          const href = goto.get(target);
-          if (href) window.location.href = href;
-        });
-      });
-  });
+document.addEventListener('DOMContentLoaded', function () {
+  const b = "{{ uid_prefix }}";
+  const go = (id, url) => document.getElementById(b + id)?.addEventListener('click', () => { window.location.href = url; });
+  go('-btn-home',      "{% url 'comanda-cocina' %}");
+  go('-btn-cocineros', "{% url 'cocineros-lista' %}");
+  go('-btn-areas',     "{% url 'areas-cocina' %}");
+  go('-btn-comanda',   "{% url 'comanda-cocina' %}");
+});
 </script>
 
 {% endwith %}

@@ -1,58 +1,97 @@
 {% extends "base.html" %}
-
+{% block title %}Detalle de Factura · FE{% endblock %}
 {% block content %}
-<div class="container mt-5">
-    <div class="card shadow p-4">
-        <h2 class="text-center mb-4">Detalle de Factura</h2>
-        
-        <table class="table">
-            <tr><th>Número de Control</th><td>{{ factura.numero_control }}</td></tr>
-            <tr><th>Código de Generación</th><td>{{ factura.codigo_generacion }}</td></tr>
-            <tr><th>Fecha</th><td>{{ factura.fecha_creacion }}</td></tr>
-            <tr><th>Emisor</th><td>{{ factura.dteemisor.nombre_razon_social }}</td></tr>
-            <tr><th>Receptor</th><td>{{ factura.dtereceptor.nombre }}</td></tr>
-            <tr><th>Estado</th><td>{% if factura.firmado %}✅ Firmada{% else %}❌ No Firmada{% endif %}</td></tr>
-        </table>
 
-        {% if not factura.firmado %}
-        <div class="text-center mt-4">
-            <button id="btnFirmar" class="btn btn-primary">Firmar Factura</button>
-        </div>
-        {% else %}
-        <form id="enviarFacturaForm">
-            <button type="button" class="btn btn-success" onclick="enviarFactura({{ factura.id }})">Enviar a Hacienda</button>
-        </form>
-        {% endif %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'ventas_home' %}">Facturación</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'listar_facturas' %}">Documentos</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Detalle</li>
+  </ol>
+</nav>
+
+{% if messages %}
+  {% for m in messages %}
+    <div class="alert alert-{{ m.tags }} alert-dismissible py-2" role="alert">
+      {{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
     </div>
+  {% endfor %}
+{% endif %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Detalle de Factura</h1>
+  {% if not factura.firmado %}
+  <button id="btnFirmar" class="btn btn-primary">
+    <i class="bi bi-pen me-1"></i>Firmar Factura
+  </button>
+  {% else %}
+  <button type="button" class="btn btn-success" id="btnEnviar">
+    <i class="bi bi-send me-1"></i>Enviar a Hacienda
+  </button>
+  {% endif %}
+</div>
+
+<div class="card border-0 shadow-sm">
+  <div class="card-body">
+    <dl class="row mb-0">
+      <dt class="col-sm-3 text-muted">Número de Control</dt>
+      <dd class="col-sm-9 fw-medium">{{ factura.numero_control }}</dd>
+
+      <dt class="col-sm-3 text-muted">Código de Generación</dt>
+      <dd class="col-sm-9"><code class="small">{{ factura.codigo_generacion }}</code></dd>
+
+      <dt class="col-sm-3 text-muted">Fecha</dt>
+      <dd class="col-sm-9">{{ factura.fecha_creacion }}</dd>
+
+      <dt class="col-sm-3 text-muted">Emisor</dt>
+      <dd class="col-sm-9">{{ factura.dteemisor.nombre_razon_social }}</dd>
+
+      <dt class="col-sm-3 text-muted">Receptor</dt>
+      <dd class="col-sm-9">{{ factura.dtereceptor.nombre }}</dd>
+
+      <dt class="col-sm-3 text-muted">Estado</dt>
+      <dd class="col-sm-9">
+        {% if factura.firmado %}
+          <span class="badge text-bg-success"><i class="bi bi-check-circle me-1"></i>Firmada</span>
+        {% else %}
+          <span class="badge text-bg-secondary"><i class="bi bi-hourglass me-1"></i>No firmada</span>
+        {% endif %}
+      </dd>
+    </dl>
+  </div>
 </div>
 
 <script>
-    function enviarFactura(facturaId) {
-        fetch(`/dte/enviar/${facturaId}/`, { method: 'POST' })
+{% if not factura.firmado %}
+document.getElementById('btnFirmar').addEventListener('click', function() {
+    const facturaId = "{{ factura.id }}";
+    fetch(`/dte/firmar/${facturaId}/`, { method: "POST" })
         .then(response => response.json())
         .then(data => {
-            if (data.sello_recepcion) {
-                alert("Factura enviada con éxito. Sello de recepción: " + data.sello_recepcion);
+            if (data.mensaje) {
+                alert("Factura firmada con éxito.");
+                location.reload();
             } else {
-                alert("Error: " + data.error);
+                alert("Error al firmar la factura: " + JSON.stringify(data));
             }
         })
-        .catch(error => console.error("Error:", error));
-    }
-    
-    document.getElementById("btnFirmar").addEventListener("click", function() {
-        const facturaId = "{{ factura.id }}";
-        fetch(`/dte/firmar/${facturaId}/`, { method: "POST" })
-            .then(response => response.json())
-            .then(data => {
-                if (data.mensaje) {
-                    alert("Factura firmada con éxito.");
-                    location.reload();
-                } else {
-                    alert("Error al firmar la factura: " + JSON.stringify(data));
-                }
-            })
-            .catch(error => alert("Error al conectar con el servidor."));
-    });
+        .catch(error => alert("Error al conectar con el servidor."));
+});
+{% else %}
+document.getElementById('btnEnviar').addEventListener('click', function() {
+    const facturaId = "{{ factura.id }}";
+    fetch(`/dte/enviar/${facturaId}/`, { method: 'POST' })
+    .then(response => response.json())
+    .then(data => {
+        if (data.sello_recepcion) {
+            alert("Factura enviada con éxito. Sello de recepción: " + data.sello_recepcion);
+        } else {
+            alert("Error: " + data.error);
+        }
+    })
+    .catch(error => console.error("Error:", error));
+});
+{% endif %}
 </script>
+
 {% endblock %}

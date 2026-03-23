@@ -1,14 +1,35 @@
 {% extends "base.html" %}
-
+{% block title %}Eliminar unidad de medida · Inventario{% endblock %}
 {% block content %}
-<div class="container mt-4">
-    <h2 class="text-danger">Eliminar Unidad de Medida</h2>
-    <p>¿Estás seguro de que deseas eliminar la unidad "<strong>{{ unidad.nombre }}</strong>"?</p>
 
-    <form method="post">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-danger">Eliminar</button>
-        <a href="{% url 'unidades-lista' %}" class="btn btn-secondary">Cancelar</a>
-    </form>
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'inv-home' %}">Inventario</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'unidades-lista' %}">Unidades de medida</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Eliminar</li>
+  </ol>
+</nav>
+
+<div class="row justify-content-center mt-4">
+  <div class="col-md-5">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body text-center py-5">
+        <i class="bi bi-exclamation-triangle-fill text-danger d-block mb-3" style="font-size:3rem;"></i>
+        <h1 class="h5 mb-2">Eliminar unidad de medida</h1>
+        <p class="mb-1">¿Eliminar la unidad <strong>{{ unidad.nombre }}</strong> ({{ unidad.abreviatura }})?</p>
+        <p class="text-muted small mb-4">Esta acción no se puede deshacer.</p>
+        <form method="post" class="d-flex gap-2 justify-content-center">
+          {% csrf_token %}
+          <a href="{% url 'unidades-lista' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Cancelar
+          </a>
+          <button class="btn btn-danger">
+            <i class="bi bi-trash me-1"></i>Eliminar definitivamente
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
 </div>
+
 {% endblock %}

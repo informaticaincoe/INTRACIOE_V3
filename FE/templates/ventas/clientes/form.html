@@ -1,175 +1,303 @@
 {% extends "base.html" %}
+{% load static %}
+{% block title %}{% if c %}Editar cliente{% else %}Nuevo cliente{% endif %} · FE{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""/>
+<style>
+  #map { height: 310px; border-radius: .5rem; border: 1px solid #dee2e6; }
+  .persona-card {
+    flex: 1; padding: .65rem 1rem; border: 2px solid #dee2e6; border-radius: .5rem;
+    cursor: pointer; transition: border-color .15s, background .15s;
+    display: flex; align-items: center; gap: .6rem; font-weight: 500; font-size: .9rem;
+  }
+  .persona-card.selected { border-color: #0d6efd; background: #eff6ff; color: #0d47a1; }
+  .persona-card i { font-size: 1.25rem; flex-shrink: 0; }
+  .actividades-list {
+    max-height: 160px; overflow-y: auto; border: 1px solid #dee2e6;
+    border-radius: .375rem; padding: .4rem .5rem;
+  }
+  .actividad-item { padding: .2rem .35rem; border-radius: .25rem; }
+  .actividad-item:hover { background: #f8f9fa; }
+  .step-card { border: 0 !important; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container py-4">
-  <h4 class="mb-3">{% if c %}Editar cliente{% else %}Nuevo cliente{% endif %}</h4>
 
-  <form method="post" class="row g-3 mt-2" autocomplete="off">
-    {% csrf_token %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'ventas_home' %}">Facturación</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'clientes_list' %}">Clientes</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{% if c %}Editar{% else %}Nuevo{% endif %}</li>
+  </ol>
+</nav>
 
-    <!-- Tipo de persona -->
-    <div class="col-md-3">
-      <label class="form-label">Tipo de persona</label>
-      <select name="tipo_persona" id="tipo_persona" class="form-select" required>
-        <option value="">Seleccione…</option>
-        {% for tp in tipos_persona %}
-          <option value="{{ tp.id }}"
-                  data-codigo="{{ tp.codigo|default_if_none:'' }}"
-                  {% if c and c.tipo_persona_id == tp.id %}selected{% endif %}>
-            {{ tp.descripcion }}
-          </option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <!-- Tipo documento (visible solo para jurídica; natural usa DUI por defecto) -->
-    <div class="col-md-3" data-juridica id="wrap_tipo_doc">
-      <label class="form-label">Tipo documento</label>
-      <select name="tipo_documento" id="tipo_documento" class="form-select">
-        <option value="">Seleccione…</option>
-        {% for t in tipos_doc %}
-          <option value="{{ t.id }}"
-                  data-codigo="{{ t.codigo|default_if_none:'' }}"
-                  {% if c and c.tipo_documento_id == t.id %}selected{% endif %}>
-            {{ t.descripcion }}
-          </option>
-        {% endfor %}
-      </select>
-      <div class="form-text" id="help_tipo_doc" style="display:none;">Para persona natural se usa DUI automáticamente.</div>
-    </div>
-
-    <!-- N° documento (DUI u otro) -->
-    <div class="col-md-3" data-natural data-juridica>
-      <label class="form-label">N° documento</label>
-      <input name="num_documento" id="num_documento" class="form-control"
-             value="{{ c.num_documento|default_if_none:'' }}" placeholder="########-#">
-      <div class="form-text" id="help_dui">Natural: DUI con formato 12345678-9</div>
-    </div>
-
-    <!-- NRC (solo jurídica) -->
-    <div class="col-md-3" data-juridica>
-      <label class="form-label">NRC</label>
-      <input name="nrc" id="nrc" class="form-control" value="{{ c.nrc|default_if_none:'' }}">
-    </div>
-
-    <!-- Nombre -->
-    <div class="col-md-6" data-natural data-juridica>
-      <label class="form-label">Nombre</label>
-      <input name="nombre" id="nombre" class="form-control" value="{{ c.nombre|default_if_none:'' }}">
-    </div>
-
-    <!-- Nombre comercial -->
-    <div class="col-md-6" data-natural data-juridica>
-      <label class="form-label">Nombre comercial</label>
-      <input name="nombreComercial" id="nombreComercial" class="form-control"
-             value="{% if c and c.nombreComercial %}{{ c.nombreComercial }}{% elif c and c.nombre %}{{ c.nombre }}{% else %}{% endif %}">
-    </div>
-
-    <!-- Dirección -->
-    <div class="col-md-6" data-natural data-juridica>
-      <label class="form-label">Dirección</label>
-      <input name="direccion" id="direccion" class="form-control"
-             value="{{ c.direccion|default_if_none:'' }}" placeholder="N/A si no aplica">
-    </div>
-
-    <!-- Municipio -->
-    <div class="col-md-3" data-natural data-juridica>
-      <label class="form-label">Municipio</label>
-      <select name="municipio" id="municipio" class="form-select">
-        <option value="">Seleccione…</option>
-        {% for m in municipios %}
-          <option value="{{ m.id }}" {% if c and c.municipio_id == m.id %}selected{% endif %}>
-            {{ m.departamento.descripcion }} - {{ m.descripcion }}
-          </option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <!-- País (solo jurídica) -->
-    <div class="col-md-3" data-juridica>
-      <label class="form-label">País</label>
-      <select name="pais" id="pais" class="form-select">
-        <option value="">Seleccione…</option>
-        {% for p in paises %}
-          <option value="{{ p.id }}" {% if c and c.pais_id == p.id %}selected{% endif %}>
-            {{ p.descripcion }}
-          </option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <!-- Teléfono -->
-    <div class="col-md-3" data-natural data-juridica>
-      <label class="form-label">Teléfono</label>
-      <input name="telefono" id="telefono" class="form-control" value="{{ c.telefono|default_if_none:'' }}">
-    </div>
-
-    <!-- Correo (solo jurídica visible; natural usará default si viene vacío) -->
-    <div class="col-md-3" data-juridica>
-      <label class="form-label">Correo</label>
-      <input name="correo" id="correo" type="email" class="form-control"
-             value="{{ c.correo|default_if_none:'' }}" placeholder="ventasdetalleincoe@gmail.com">
-    </div>
-
-    <!-- Actividades Económicas (jurídica) -->
-    <div class="col-12" data-juridica>
-      <label class="form-label">Actividades económicas</label>
-      <select name="actividades_economicas" class="form-select" multiple size="6">
-        {% for a in actividades %}
-          <option value="{{ a.id }}"
-            {% if c and a in c.actividades_economicas.all %}selected{% endif %}>
-            {{ a.codigo }} — {{ a.descripcion }}
-          </option>
-        {% endfor %}
-      </select>
-    </div>
-
-    {# === GEO: lat/lng + botón + mapa === #}
-    <div class="col-md-6" data-natural data-juridica>
-      <label class="form-label">Latitud</label>
-      <input type="number" step="0.000001" inputmode="decimal" lang="en"
-             class="form-control" name="lat" id="id_lat"
-             value="{{ c.lat|default_if_none:'' }}">
-    </div>
-
-    <div class="col-md-6" data-natural data-juridica>
-      <label class="form-label">Longitud</label>
-      <input type="number" step="0.000001" inputmode="decimal" lang="en"
-             class="form-control" name="lng" id="id_lng"
-             value="{{ c.lng|default_if_none:'' }}">
-    </div>
-
-    <div class="col-12" data-natural data-juridica>
-      <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-geo">
-        Usar mi ubicación
-      </button>
-      <small class="text-muted ms-2">o haz clic en el mapa</small>
-
-      <!-- Leaflet CSS/JS -->
-      <link rel="stylesheet"
-            href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-            integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-            crossorigin=""/>
-      <div id="map" style="height: 330px; border:1px solid #ccc; margin-top:8px;"></div>
-      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-              integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-              crossorigin=""></script>
-    </div>
-
-    <div class="col-12 d-flex gap-2">
-      <button class="btn btn-primary">Guardar</button>
-      <a href="{% url 'clientes_list' %}" class="btn btn-light">Cancelar</a>
-    </div>
-  </form>
+<div class="d-flex align-items-center gap-2 mb-3">
+  <h1 class="h4 mb-0">{% if c %}Editar cliente{% else %}Nuevo cliente{% endif %}</h1>
+  {% if c %}
+    <span class="badge bg-secondary">{{ c.num_documento }}</span>
+  {% endif %}
 </div>
 
+<form method="post" autocomplete="off" id="form-cliente">
+  {% csrf_token %}
+
+  <div class="row g-3">
+
+    <!-- ===== Columna izquierda: datos del cliente ===== -->
+    <div class="col-lg-7">
+
+      <!-- Tipo de persona -->
+      <div class="card shadow-sm step-card mb-3">
+        <div class="card-body">
+          <h6 class="mb-3 d-flex align-items-center gap-2">
+            <span class="step-num">1</span>Tipo de persona
+          </h6>
+
+          {# Select oculto — el JS lo usa internamente #}
+          <select name="tipo_persona" id="tipo_persona" class="d-none" required>
+            <option value="">Seleccione…</option>
+            {% for tp in tipos_persona %}
+              <option value="{{ tp.id }}"
+                      data-codigo="{{ tp.codigo|default_if_none:'' }}"
+                      {% if c and c.tipo_persona_id == tp.id %}selected{% endif %}>
+                {{ tp.descripcion }}
+              </option>
+            {% endfor %}
+          </select>
+
+          {# Tarjetas visuales que actualizan el select #}
+          <div class="d-flex gap-2" id="persona-cards">
+            {% for tp in tipos_persona %}
+              <div class="persona-card {% if c and c.tipo_persona_id == tp.id %}selected{% elif forloop.first and not c %}selected{% endif %}"
+                   data-value="{{ tp.id }}"
+                   data-codigo="{{ tp.codigo|default_if_none:'' }}">
+                {% if tp.codigo == '1' or forloop.first %}
+                  <i class="bi bi-person-fill"></i>
+                {% else %}
+                  <i class="bi bi-building"></i>
+                {% endif %}
+                {{ tp.descripcion }}
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Identificación -->
+      <div class="card shadow-sm step-card mb-3">
+        <div class="card-body">
+          <h6 class="mb-3 d-flex align-items-center gap-2">
+            <span class="step-num">2</span>Identificación
+          </h6>
+          <div class="row g-2">
+
+            <div class="col-md-6" data-juridica id="wrap_tipo_doc">
+              <label class="form-label small mb-1">Tipo documento</label>
+              <select name="tipo_documento" id="tipo_documento" class="form-select">
+                <option value="">Seleccione…</option>
+                {% for t in tipos_doc %}
+                  <option value="{{ t.id }}"
+                          data-codigo="{{ t.codigo|default_if_none:'' }}"
+                          {% if c and c.tipo_documento_id == t.id %}selected{% endif %}>
+                    {{ t.descripcion }}
+                  </option>
+                {% endfor %}
+              </select>
+              <div class="form-text" id="help_tipo_doc" style="display:none;">Natural: DUI automático.</div>
+            </div>
+
+            <div class="col-md-6" data-natural data-juridica>
+              <label class="form-label small mb-1">N° documento</label>
+              <input name="num_documento" id="num_documento" class="form-control"
+                     value="{{ c.num_documento|default_if_none:'' }}" placeholder="########-#">
+              <div class="form-text" id="help_dui">Natural: DUI formato 12345678-9</div>
+            </div>
+
+            <div class="col-md-6" data-juridica>
+              <label class="form-label small mb-1">NRC</label>
+              <input name="nrc" id="nrc" class="form-control" value="{{ c.nrc|default_if_none:'' }}" placeholder="NRC">
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Datos generales -->
+      <div class="card shadow-sm step-card mb-3">
+        <div class="card-body">
+          <h6 class="mb-3 d-flex align-items-center gap-2">
+            <span class="step-num">3</span>Datos generales
+          </h6>
+          <div class="row g-2">
+
+            <div class="col-12" data-natural data-juridica>
+              <label class="form-label small mb-1">Nombre</label>
+              <input name="nombre" id="nombre" class="form-control"
+                     value="{{ c.nombre|default_if_none:'' }}" placeholder="Nombre completo o razón social">
+            </div>
+
+            <div class="col-md-6" data-natural data-juridica>
+              <label class="form-label small mb-1">Nombre comercial</label>
+              <input name="nombreComercial" id="nombreComercial" class="form-control"
+                     value="{% if c and c.nombreComercial %}{{ c.nombreComercial }}{% elif c and c.nombre %}{{ c.nombre }}{% endif %}"
+                     placeholder="Nombre comercial (opcional)">
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Contacto y ubicación -->
+      <div class="card shadow-sm step-card mb-3">
+        <div class="card-body">
+          <h6 class="mb-3 d-flex align-items-center gap-2">
+            <span class="step-num">4</span>Contacto y dirección
+          </h6>
+          <div class="row g-2">
+
+            <div class="col-md-6" data-natural data-juridica>
+              <label class="form-label small mb-1">Teléfono</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                <input name="telefono" id="telefono" class="form-control"
+                       value="{{ c.telefono|default_if_none:'' }}" placeholder="0000-0000">
+              </div>
+            </div>
+
+            <div class="col-md-6" data-natural data-juridica>
+              <label class="form-label small mb-1">Correo</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                <input name="correo" id="correo" type="email" class="form-control"
+                       value="{{ c.correo|default_if_none:'' }}" placeholder="correo@ejemplo.com">
+              </div>
+            </div>
+
+            <div class="col-12" data-natural data-juridica>
+              <label class="form-label small mb-1">Dirección</label>
+              <input name="direccion" id="direccion" class="form-control"
+                     value="{{ c.direccion|default_if_none:'' }}" placeholder="N/A si no aplica">
+            </div>
+
+            <div class="col-md-6" data-natural data-juridica>
+              <label class="form-label small mb-1">Municipio</label>
+              <select name="municipio" id="municipio" class="form-select">
+                <option value="">Seleccione…</option>
+                {% for m in municipios %}
+                  <option value="{{ m.id }}" {% if c and c.municipio_id == m.id %}selected{% endif %}>
+                    {{ m.departamento.descripcion }} — {{ m.descripcion }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-6" data-juridica>
+              <label class="form-label small mb-1">País</label>
+              <select name="pais" id="pais" class="form-select">
+                <option value="">Seleccione…</option>
+                {% for p in paises %}
+                  <option value="{{ p.id }}" {% if c and c.pais_id == p.id %}selected{% endif %}>
+                    {{ p.descripcion }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Actividades económicas (solo jurídica) -->
+      <div class="card shadow-sm step-card mb-3" data-juridica>
+        <div class="card-body">
+          <h6 class="mb-1 d-flex align-items-center gap-2">
+            <span class="step-num bg-secondary">5</span>Actividades económicas
+            <small class="text-muted fw-normal">(opcional)</small>
+          </h6>
+          <div class="form-text mb-2">Selecciona una o varias.</div>
+          <div class="actividades-list">
+            {% for a in actividades %}
+              <label class="actividad-item d-flex align-items-center gap-2 mb-1">
+                <input type="checkbox" class="form-check-input m-0"
+                       name="actividades_economicas" value="{{ a.id }}"
+                       {% if c and a in c.actividades_economicas.all %}checked{% endif %}>
+                <span class="small">{{ a.codigo }} — {{ a.descripcion }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Botones -->
+      <div class="d-flex justify-content-between gap-2 pb-4">
+        <a href="{% url 'clientes_list' %}" class="btn btn-secondary">
+          <i class="bi bi-arrow-left me-1"></i>Cancelar
+        </a>
+        <button type="submit" class="btn btn-success fw-semibold px-4">
+          <i class="bi bi-save me-1"></i>Guardar cliente
+        </button>
+      </div>
+
+    </div><!-- /col-lg-7 -->
+
+
+    <!-- ===== Columna derecha: mapa ===== -->
+    <div class="col-lg-5">
+      <div class="card shadow-sm" style="position:sticky;top:76px;">
+        <div class="card-body">
+          <h6 class="mb-2 d-flex align-items-center gap-2">
+            <i class="bi bi-geo-alt-fill text-danger"></i>Ubicación
+            <small class="text-muted fw-normal ms-1">(opcional)</small>
+          </h6>
+          <p class="small text-muted mb-2">Haz clic en el mapa o arrastra el marcador.</p>
+
+          <div id="map" class="mb-3"></div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label small mb-1">Latitud</label>
+              <input type="number" step="0.000001" inputmode="decimal" lang="en"
+                     class="form-control form-control-sm" name="lat" id="id_lat"
+                     value="{{ c.lat|default_if_none:'' }}" placeholder="13.692940">
+            </div>
+            <div class="col-6">
+              <label class="form-label small mb-1">Longitud</label>
+              <input type="number" step="0.000001" inputmode="decimal" lang="en"
+                     class="form-control form-control-sm" name="lng" id="id_lng"
+                     value="{{ c.lng|default_if_none:'' }}" placeholder="-89.218190">
+            </div>
+          </div>
+
+          <button type="button" class="btn btn-outline-secondary btn-sm w-100" id="btn-geo">
+            <i class="bi bi-crosshair me-1"></i>Usar mi ubicación
+          </button>
+
+          {% if c and c.geocode_source %}
+            <div class="mt-2 small text-muted text-center">
+              <i class="bi bi-check-circle text-success me-1"></i>
+              Geocodificado vía {{ c.geocode_source }}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div><!-- /col-lg-5 -->
+
+  </div><!-- /row -->
+</form>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
 <script>
 (function(){
-  //borrar espacios en correo automaticamente cuando se deseleccione el input de correo
-  const correo = document.getElementById("correo")
-  correo.addEventListener('focusout', ()=>{
-    correo.value = correo.value.replace(/\s/g,'')
-  })
-
+  // ── Correo: limpiar espacios ──────────────────────────────────
+  const correo = document.getElementById("correo");
+  if (correo) correo.addEventListener('focusout', () => { correo.value = correo.value.replace(/\s/g,''); });
 
   const $ = (s,root=document)=>root.querySelector(s);
   const $$= (s,root=document)=>Array.from(root.querySelectorAll(s));
@@ -185,9 +313,9 @@
   function getTipoPersonaCode(){
     const opt = selTipoPersona?.options[selTipoPersona.selectedIndex];
     const byData = (opt?.dataset?.codigo || '').trim();
-    if (byData) return byData;                // si tu modelo expone 'codigo'
+    if (byData) return byData;
     const val = (opt?.value||'').trim();
-    if (val === '1' || val === '2') return val; // fallback si tus IDs coinciden con código
+    if (val === '1' || val === '2') return val;
     const txt = (opt?.text||'').toUpperCase();
     if (txt.includes('NAT')) return '1';
     if (txt.includes('JUR')) return '2';
@@ -196,14 +324,12 @@
 
   function forceDUI(){
     if (!selTipoDoc) return;
-    // En tus logs: catálogo tiene "13 - DUI"
     const optDui = Array.from(selTipoDoc.options).find(o => {
       const cod = (o.dataset.codigo||'').trim();
       const txt = (o.text||'').toUpperCase();
       return cod === '13' || txt.includes('DUI');
     });
     if (optDui) selTipoDoc.value = optDui.value;
-
     if (numDoc){
       numDoc.setAttribute('pattern','[0-9]{8}-[0-9]');
       numDoc.setAttribute('title','Formato: ########-#');
@@ -214,71 +340,69 @@
   }
 
   function onTipoPersonaChange(){
-    const code = getTipoPersonaCode();
+    const code  = getTipoPersonaCode();
     const isNat = (code==='1');
     const isJur = (code==='2');
 
-    // mostrar/ocultar grupos
     showGroup('[data-juridica]', isJur);
-    showGroup('[data-natural]',  true);  // campos comunes marcados para ambos
+    showGroup('[data-natural]',  true);
 
     if (isNat){
-      // Requisitos Natural
       setReqMany(['num_documento','nombre','telefono'], true);
       setReqMany(['tipo_documento','nrc','correo','pais'], false);
-      // Municipio y dirección suelen ser útiles para geocodificar, hazlos opcionales si no deseas forzarlos:
-      // setReq('municipio', true); setReq('direccion', true);
       forceDUI();
     } else if (isJur){
-      // Requisitos Jurídica
       setReqMany(['tipo_documento','num_documento','nombre','municipio'], true);
       setReqMany(['telefono'], false);
-      if (numDoc){
-        numDoc.removeAttribute('pattern');
-        numDoc.removeAttribute('title');
-      }
+      if (numDoc){ numDoc.removeAttribute('pattern'); numDoc.removeAttribute('title'); }
       const help = document.getElementById('help_tipo_doc');
       if (help) help.style.display = 'none';
-
     }
+
+    // Actualizar tarjetas visuales
+    $$('#persona-cards .persona-card').forEach(card => {
+      card.classList.toggle('selected', card.dataset.value === selTipoPersona.value);
+    });
   }
 
-  // Estado inicial: si viene vacío, intenta seleccionar "Natural"
+  // ── Tarjetas de tipo persona ──────────────────────────────────
+  $$('#persona-cards .persona-card').forEach(card => {
+    card.addEventListener('click', () => {
+      if (selTipoPersona) selTipoPersona.value = card.dataset.value;
+      onTipoPersonaChange();
+    });
+  });
+
+  // Estado inicial
   if (selTipoPersona && !selTipoPersona.value){
     const optNat = Array.from(selTipoPersona.options)
       .find(o => (o.dataset.codigo||'')==='1' || (o.text||'').toUpperCase().includes('NAT'));
     if (optNat) selTipoPersona.value = optNat.value;
   }
-
   selTipoPersona?.addEventListener('change', onTipoPersonaChange);
   onTipoPersonaChange();
 
-  // ========= Mapa / Geolocalización =========
+  // ── Mapa / Geolocalización ────────────────────────────────────
   (function initMap(){
     const $lat = document.getElementById('id_lat');
     const $lng = document.getElementById('id_lng');
-
     const initLat = parseFloat($lat?.value) || 13.69294;
     const initLng = parseFloat($lng?.value) || -89.21819;
     const zoom    = ($lat?.value && $lng?.value) ? 15 : 12;
-
-    // Si no existe el contenedor (p.ej. layout distinto), salir sin error
-    const mapEl = document.getElementById('map');
+    const mapEl   = document.getElementById('map');
     if (!mapEl || !window.L) return;
 
     const map = L.map('map').setView([initLat, initLng], zoom);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution:'&copy; OpenStreetMap'
+      attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(map);
 
     let marker = null;
-
     function setMarker(lat, lng) {
       if (!isFinite(lat) || !isFinite(lng)) return;
-      if (marker) {
-        marker.setLatLng([lat, lng]);
-      } else {
-        marker = L.marker([lat, lng], {draggable: true}).addTo(map);
+      if (marker){ marker.setLatLng([lat, lng]); }
+      else {
+        marker = L.marker([lat, lng], {draggable:true}).addTo(map);
         marker.on('dragend', function(){
           const ll = marker.getLatLng();
           if ($lat) $lat.value = ll.lat.toFixed(6);
@@ -291,33 +415,24 @@
     }
 
     if ($lat?.value && $lng?.value) setMarker(initLat, initLng);
+    map.on('click', e => setMarker(e.latlng.lat, e.latlng.lng));
 
-    map.on('click', function(e) {
-      setMarker(e.latlng.lat, e.latlng.lng);
+    document.getElementById('btn-geo')?.addEventListener('click', function(){
+      if (!navigator.geolocation) return alert('Geolocalización no soportada.');
+      navigator.geolocation.getCurrentPosition(
+        pos => setMarker(pos.coords.latitude, pos.coords.longitude),
+        err => alert('No se pudo obtener tu ubicación (' + err.message + ').'),
+        {enableHighAccuracy:true, timeout:8000}
+      );
     });
 
-    const btn = document.getElementById('btn-geo');
-    btn?.addEventListener('click', function(){
-      if (!navigator.geolocation) {
-        return alert('Geolocalización no soportada.');
-      }
-      navigator.geolocation.getCurrentPosition(function(pos){
-        setMarker(pos.coords.latitude, pos.coords.longitude);
-      }, function(err){
-        alert('No se pudo obtener tu ubicación (' + err.message + ').');
-      }, {enableHighAccuracy:true, timeout:8000});
-    });
-
-    // Si el usuario escribe lat/lng manualmente, mueve el marker
     ['input','change'].forEach(evt => {
-      $lat?.addEventListener(evt, ()=> {
-        const lat = parseFloat($lat.value);
-        const lng = parseFloat($lng.value);
+      $lat?.addEventListener(evt, () => {
+        const lat = parseFloat($lat.value), lng = parseFloat($lng.value);
         if (isFinite(lat) && isFinite(lng)) setMarker(lat, lng);
       });
-      $lng?.addEventListener(evt, ()=> {
-        const lat = parseFloat($lat.value);
-        const lng = parseFloat($lng.value);
+      $lng?.addEventListener(evt, () => {
+        const lat = parseFloat($lat.value), lng = parseFloat($lng.value);
         if (isFinite(lat) && isFinite(lng)) setMarker(lat, lng);
       });
     });

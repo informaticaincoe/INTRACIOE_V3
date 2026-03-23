@@ -1,4 +1,10 @@
 <form id="form_documentos_a_consolidar">
+    {% if hay_mas %}
+    <div class="alert alert-warning py-1 px-2 mb-2 small">
+        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+        Mostrando {{ limite_modal }} de {{ total_sin_limite }} documentos. Aplica más filtros para reducir los resultados.
+    </div>
+    {% endif %}
     <div class="table-responsive">
         {% if tipo_dte == "03" %}
             <div class="d-flex mt-1 mb-4 gap-2">

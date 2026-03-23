@@ -14,9 +14,8 @@ from .views import (
     invalidacion_dte_view,
     obtener_numero_control_ajax,
     obtener_receptor,
-    generar_documento_ajuste_view, 
+    generar_documento_ajuste_view,
     obtener_listado_productos_view,
-    #generar_factura_exportacion_view
 )
 
 #renombrar el archivo
@@ -32,12 +31,10 @@ urlpatterns = [
 
     #urls para procesamiento de facturas
     path('generar/', generar_factura_view, name='generar_factura'),
-    #path('generar_exportacion/', generar_factura_exportacion_view, name='generar_factura_exportacion'),
     
     # URLS DTE AJUSTE
     path('generar_ajuste/', generar_documento_ajuste_view, name='generar_ajuste_factura'),
 
-    #path('detalle/<int:factura_id>/', views.detalle_factura_view, name='detalle_factura'),
     path('listar_facturas/', views.factura_list, name='listar_facturas'),
 
     path('facturas_mes/', views.select_tipo_facturas_mes_home, name='select_tipo_facturas_mes_home'),
@@ -57,10 +54,8 @@ urlpatterns = [
     path('invalidar-dte/<int:factura_id>/', views.invalidar_dte_unificado_view, name='invalidar_dte_unificado'),
     path('invalidar-varias-dte/', views.invalidar_varias_dte_view, name='invalidar_varias_dte'),
 
-    path('exportar-facturas/', views.export_facturas_excel, name='exportar_facturas_excel'),
+    path('exportar-facturas/', views.export_facturas_excel, name='export_facturas_excel_legacy'),
 
-    #path('factura/pdf/<int:factura_id>/', views.generar_factura_pdf, name='generar_factura_pdf'),
-    #path('factura/pdf/<int:factura_id>/', views.generar_factura_pdf_2, name='generar_factura_pdf_2'),
     path("factura_pdf/<int:factura_id>/", detalle_factura, name="detalle_factura"),
     path("fe/factura/<int:factura_id>/termica/", factura_termica, name="factura_termica"),
 
@@ -92,8 +87,6 @@ urlpatterns = [
     path('contingencia-dte/', views.contingencia_dte_unificado_view, name='contingencia_dte_unificado'),
     path('enviar-contingencias-dte/', views.contingencias_dte_view, name='contingencias_dte'),
     path('finalizar-contingencias/', views.finalizar_contigencia_view, name='finalizar_contigencia'),
-    #path('procesar-reintento-envio-dte/', views.procesar_respuesta_view, name='procesar_respuesta'),
-    
     #Lotes
     path('lote-contingencia-dte/<int:contingencia_id>/', views.lote_contingencia_dte_view, name='lote_contingencia_dte'),
     path('enviar-lote-unificado/', views.envio_dte_unificado_view, name='envio_dte_unificado'),

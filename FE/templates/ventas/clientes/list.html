@@ -1,143 +1,229 @@
 {% extends "base.html" %}
+{% block title %}Clientes · FE{% endblock %}
+
+{% block extra_css %}
+<style>
+  .stat-strip {
+    display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;
+  }
+  .stat-chip {
+    display: flex; align-items: center; gap: .45rem;
+    background: #fff; border: 1px solid #e2e8f0; border-radius: .5rem;
+    padding: .35rem .75rem; font-size: .82rem; color: #475569;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  }
+  .stat-chip .stat-val {
+    font-weight: 700; font-size: .95rem; color: #1e40af;
+  }
+  .client-table td { vertical-align: middle; }
+  .badge-natural  { background: #dbeafe; color: #1d4ed8; }
+  .badge-juridica { background: #f0fdf4; color: #15803d; }
+  .badge-persona  { font-size: .72rem; font-weight: 600; padding: .2em .55em; border-radius: .3rem; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container py-4">
-  <div class="d-flex justify-content-end mb-3 align-items-center">
-    <div class="me-auto"><h4 class="mb-0">Clientes</h4></div>
 
-    <div class="me-2">
-      <a href="{% url 'clientes_crear' %}" class="btn btn-primary" title="Nuevo cliente">
-        <i class="bi bi-person-plus"></i>
-      </a>
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'ventas_home' %}">Facturación</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Clientes</li>
+  </ol>
+</nav>
+
+{% if messages %}
+  {% for m in messages %}
+    <div class="alert alert-{{ m.tags }} alert-dismissible py-2" role="alert">
+      {{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
     </div>
+  {% endfor %}
+{% endif %}
 
-    <button type="button" id="btnUbicacion" class="btn btn-outline-success">
-      <i class="bi bi-geo-alt"></i> Cerca de mí
-    </button>
+<!-- Encabezado + estadística -->
+<div class="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-2">
+  <div>
+    <h1 class="h4 mb-1">Clientes</h1>
+    <div class="stat-strip">
+      <div class="stat-chip">
+        <i class="bi bi-people text-primary"></i>
+        <span class="stat-val">{{ clientes.paginator.count }}</span>
+        total{% if q %} encontrado{{ clientes.paginator.count|pluralize:"s" }}{% endif %}
+      </div>
+      {% if lat and lng %}
+      <div class="stat-chip">
+        <i class="bi bi-geo-alt text-success"></i>
+        Ordenados por cercanía
+      </div>
+      {% endif %}
+    </div>
   </div>
+  <div class="d-flex gap-2 align-items-center">
+    <button type="button" id="btnUbicacion" class="btn btn-sm btn-outline-success">
+      <i class="bi bi-geo-alt me-1"></i>Cerca de mí
+    </button>
+    <a href="{% url 'clientes_crear' %}" class="btn btn-sm btn-primary">
+      <i class="bi bi-person-plus me-1"></i>Nuevo cliente
+    </a>
+  </div>
+</div>
 
-  <form class="row g-2 mb-3">
-    <div class="col-md-4">
-      <input name="q" class="form-control" placeholder="Buscar por nombre, documento, teléfono o correo" value="{{ q }}">
+<!-- Búsqueda -->
+<form class="row g-2 mb-3" method="get">
+  <div class="col-md-5">
+    <div class="input-group input-group-sm">
+      <span class="input-group-text"><i class="bi bi-search"></i></span>
+      <input name="q" class="form-control" placeholder="Nombre, documento, teléfono o correo…" value="{{ q }}">
+      {% if q %}
+        <a href="?" class="btn btn-outline-secondary" title="Limpiar búsqueda"><i class="bi bi-x"></i></a>
+      {% endif %}
     </div>
-    <div class="col-auto">
-      <button class="btn btn-outline-secondary"><i class="bi bi-search"></i></button>
-    </div>
-  </form>
+  </div>
+  <div class="col-auto">
+    <button class="btn btn-outline-secondary btn-sm" type="submit">Buscar</button>
+  </div>
+</form>
 
+<!-- Tabla -->
+<div class="card border-0 shadow-sm">
   <div class="table-responsive">
-    <table class="table table-sm table-hover align-middle">
+    <table class="table table-hover align-middle mb-0 client-table">
       <thead class="table-light">
         <tr>
           <th>Nombre</th>
           <th>Documento</th>
-          <th>Teléfono</th>
-          <th>Correo</th>
+          <th class="d-none d-sm-table-cell">Teléfono</th>
+          <th class="d-none d-md-table-cell">Correo</th>
           {% if lat and lng %}<th>Distancia</th>{% endif %}
-          <th class="text-end">Acciones</th>
+          <th style="width:120px;"></th>
         </tr>
       </thead>
       <tbody>
         {% for c in clientes %}
         <tr>
-          <td>{{ c.nombre }}</td>
-          <td>{{ c.num_documento }}</td>
-          <td>{{ c.telefono }}</td>
-          <td>{{ c.correo }}</td>
+          <td>
+            <span class="fw-medium">{{ c.nombre }}</span>
+            {% if c.tipo_persona == 'N' %}
+              <span class="badge-persona badge-natural ms-1">Natural</span>
+            {% elif c.tipo_persona == 'J' %}
+              <span class="badge-persona badge-juridica ms-1">Jurídica</span>
+            {% endif %}
+          </td>
+          <td class="text-muted small">{{ c.num_documento }}</td>
+          <td class="d-none d-sm-table-cell text-muted small">{{ c.telefono|default:"—" }}</td>
+          <td class="d-none d-md-table-cell text-muted small">{{ c.correo|default:"—" }}</td>
           {% if lat and lng %}
-            <td>{% if c.distancia_km %}{{ c.distancia_km }} km{% else %}<span class="text-muted small">-</span>{% endif %}</td>
+            <td>
+              {% if c.distancia_km %}
+                <span class="badge bg-light text-success border border-success-subtle">
+                  <i class="bi bi-geo-alt me-1"></i>{{ c.distancia_km }} km
+                </span>
+              {% else %}
+                <span class="text-muted small">—</span>
+              {% endif %}
+            </td>
           {% endif %}
           <td class="text-end">
-            {% if c.lat and c.lng %}
-              <a class="btn btn-sm btn-success" target="_blank"
-                 href="https://www.google.com/maps/dir/?api=1&destination={{ c.lat|stringformat:'f' }},{{ c.lng|stringformat:'f' }}"
-                 title="Ver en mapa"><i class="bi bi-geo-alt"></i></a>
-            {% elif c.direccion %}
-              {% with q=c.direccion|default_if_none:''|add:', '|add:c.municipio.descripcion|default_if_none:''|add:', El Salvador'|urlencode %}
-                <a class="btn btn-sm btn-success" target="_blank" href="https://www.google.com/maps/dir/?api=1&destination={{ q }}" title="Ver en mapa">
-                  <i class="bi bi-geo-alt"></i>
-                </a>
-              {% endwith %}
-            {% else %}
-              <span class="text-muted small me-2">Sin ubicación</span>
-            {% endif %}
-
-            <a href="{% url 'clientes_editar' c.id %}" class="btn btn-sm btn-outline-primary" title="Editar">
-              <i class="bi bi-pencil"></i>
-            </a>
-
-            <!-- Eliminar: abre modal (POST) -->
-            <button type="button"
-                    class="btn btn-sm btn-outline-danger btn-eliminar"
-                    data-id="{{ c.id }}"
-                    data-nombre="{{ c.nombre }}"
-                    title="Eliminar">
-              <i class="bi bi-trash"></i>
-            </button>
+            <div class="btn-group btn-group-sm">
+              {% if c.lat and c.lng %}
+                <a class="btn btn-outline-success" target="_blank"
+                   href="https://www.google.com/maps/dir/?api=1&destination={{ c.lat|stringformat:'f' }},{{ c.lng|stringformat:'f' }}"
+                   title="Ver en mapa"><i class="bi bi-geo-alt"></i></a>
+              {% elif c.direccion %}
+                {% with q=c.direccion|default_if_none:''|add:', '|add:c.municipio.descripcion|default_if_none:''|add:', El Salvador'|urlencode %}
+                  <a class="btn btn-outline-success" target="_blank"
+                     href="https://www.google.com/maps/dir/?api=1&destination={{ q }}"
+                     title="Ver en mapa"><i class="bi bi-geo-alt"></i></a>
+                {% endwith %}
+              {% endif %}
+              <a href="{% url 'clientes_editar' c.id %}" class="btn btn-outline-secondary" title="Editar">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <button type="button"
+                      class="btn btn-outline-danger btn-eliminar"
+                      data-id="{{ c.id }}"
+                      data-nombre="{{ c.nombre }}"
+                      title="Eliminar">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="6" class="text-center text-muted">Sin resultados</td></tr>
+        <tr>
+          <td colspan="{% if lat and lng %}6{% else %}5{% endif %}" class="text-center py-5 text-muted">
+            <i class="bi bi-people fs-1 d-block mb-2 opacity-50"></i>
+            {% if q %}
+              No se encontraron clientes para <strong>{{ q }}</strong>.
+              <div class="mt-2"><a href="?">Ver todos los clientes</a></div>
+            {% else %}
+              Todavía no hay clientes registrados.
+              <div class="mt-2"><a href="{% url 'clientes_crear' %}">Crear el primero</a></div>
+            {% endif %}
+          </td>
+        </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
-
-  <nav aria-label="Paginación">
-    <ul class="pagination justify-content-center">
-      {% if clientes.has_previous %}
-        <li class="page-item">
-          <a class="page-link" href="?page={{ clientes.previous_page_number }}&q={{ q }}{% if lat %}&lat={{ lat }}&lng={{ lng }}{% endif %}">&laquo;</a>
-        </li>
-      {% endif %}
-      {% for num in clientes.paginator.page_range %}
-        <li class="page-item {% if clientes.number == num %}active{% endif %}">
-          <a class="page-link" href="?page={{ num }}&q={{ q }}{% if lat %}&lat={{ lat }}&lng={{ lng }}{% endif %}">{{ num }}</a>
-        </li>
-      {% endfor %}
-      {% if clientes.has_next %}
-        <li class="page-item">
-          <a class="page-link" href="?page={{ clientes.next_page_number }}&q={{ q }}{% if lat %}&lat={{ lat }}&lng={{ lng }}{% endif %}">&raquo;</a>
-        </li>
-      {% endif %}
-    </ul>
-  </nav>
 </div>
 
-<!-- Modal Confirmación (POST) -->
+<!-- Paginación -->
+{% if clientes.paginator.num_pages > 1 %}
+<nav aria-label="Paginación" class="mt-3">
+  <ul class="pagination pagination-sm justify-content-center mb-0">
+    {% if clientes.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ clientes.previous_page_number }}&q={{ q }}{% if lat %}&lat={{ lat }}&lng={{ lng }}{% endif %}" aria-label="Anterior">‹</a>
+      </li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link">‹</span></li>
+    {% endif %}
+    <li class="page-item disabled">
+      <span class="page-link">Página {{ clientes.number }} de {{ clientes.paginator.num_pages }}</span>
+    </li>
+    {% if clientes.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ clientes.next_page_number }}&q={{ q }}{% if lat %}&lat={{ lat }}&lng={{ lng }}{% endif %}" aria-label="Siguiente">›</a>
+      </li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link">›</span></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+
+<!-- Modal Confirmar Eliminar -->
 <div class="modal fade" id="modalEliminar" tabindex="-1" aria-labelledby="modalEliminarLabel" aria-hidden="true">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <div class="modal-header bg-danger text-white">
-        <h5 class="modal-title" id="modalEliminarLabel"><i class="bi bi-exclamation-triangle"></i> Confirmar eliminación</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title text-danger" id="modalEliminarLabel">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirmar eliminación
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
       <div class="modal-body">
-        ¿Seguro que deseas eliminar al cliente <strong id="clienteNombre"></strong>?
+        <p class="mb-1">¿Eliminar al cliente <strong id="clienteNombre"></strong>?</p>
+        <p class="text-muted small mb-0">Esta acción no se puede deshacer.</p>
       </div>
-      <form id="formEliminar" method="post" action="#">
-        {% csrf_token %}
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="bi bi-x-circle"></i></button>
-          <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i></button>
-        </div>
-      </form>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <form id="formEliminar" method="post" action="#">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger"><i class="bi bi-trash me-1"></i>Eliminar</button>
+        </form>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const modal = new bootstrap.Modal(document.getElementById("modalEliminar"));
-  const clienteNombre = document.getElementById("clienteNombre");
-  const formEliminar = document.getElementById("formEliminar");
-
   document.querySelectorAll(".btn-eliminar").forEach(btn => {
     btn.addEventListener("click", () => {
-      const id = btn.dataset.id;
-      const nombre = btn.dataset.nombre;
-      clienteNombre.textContent = nombre;
-      formEliminar.action = "{% url 'clientes_eliminar' 0 %}".replace("0", id);
-      modal.show();
+      document.getElementById("clienteNombre").textContent = btn.dataset.nombre;
+      document.getElementById("formEliminar").action = "{% url 'clientes_eliminar' 0 %}".replace("0", btn.dataset.id);
+      new bootstrap.Modal(document.getElementById("modalEliminar")).show();
     });
   });
 
@@ -154,4 +240,5 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 </script>
+
 {% endblock %}

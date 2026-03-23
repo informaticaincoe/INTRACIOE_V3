@@ -1,8 +1,18 @@
 {% extends "base.html" %}
 {% load static %}
+{% block title %}Carrito · FE{% endblock %}
 {% block content %}
-<div class="container py-3">
-  <h4 class="mb-3">Carrito de compras</h4>
+
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'ventas_home' %}">Facturación</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Carrito</li>
+  </ol>
+</nav>
+
+<h1 class="h4 mb-3">Carrito de compras</h1>
+
+<div>
 
   <div class="row g-3">
     <div class="col-lg-4">
@@ -93,6 +103,7 @@
       </div>
     </div>
   </div>
+</div>
 </div>
 
 <script>

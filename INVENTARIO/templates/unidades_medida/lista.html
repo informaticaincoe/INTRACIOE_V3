@@ -1,36 +1,107 @@
 {% extends "base.html" %}
-
+{% block title %}Unidades de medida · Inventario{% endblock %}
 {% block content %}
-<div class="container mt-4">
-    <h2 class="mb-3">Lista de Unidades de Medida</h2>
-    <a href="{% url 'crear-unidad' %}" class="btn btn-primary mb-3">Nueva Unidad de Medida</a>
 
-    <table class="table table-bordered table-striped">
-        <thead class="table-dark">
-            <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Abreviatura</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for unidad in unidades %}
-            <tr>
-                <td>{{ unidad.id }}</td>
-                <td>{{ unidad.nombre }}</td>
-                <td>{{ unidad.abreviatura }}</td>
-                <td>
-                    <a href="{% url 'editar-unidad' unidad.id %}" class="btn btn-warning btn-sm">Editar</a>
-                    <a href="{% url 'eliminar-unidad' unidad.id %}" class="btn btn-danger btn-sm">Eliminar</a>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="4" class="text-center">No hay unidades registradas.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'inv-home' %}">Inventario</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Unidades de medida</li>
+  </ol>
+</nav>
+
+{% if messages %}
+  {% for m in messages %}
+    <div class="alert alert-{{ m.tags }} alert-dismissible py-2" role="alert">
+      {{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h4 mb-0">Unidades de medida</h1>
+    <small class="text-muted">Unidades utilizadas en productos y movimientos</small>
+  </div>
+  <a href="{% url 'crear-unidad' %}" class="btn btn-primary">
+    <i class="bi bi-plus-lg me-1"></i> Nueva unidad
+  </a>
 </div>
+
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover table-striped align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Nombre</th>
+          <th>Abreviatura</th>
+          <th style="width:100px;"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for unidad in unidades %}
+        <tr>
+          <td class="fw-medium">{{ unidad.nombre }}</td>
+          <td><span class="badge text-bg-light text-dark border">{{ unidad.abreviatura }}</span></td>
+          <td class="text-end">
+            <div class="btn-group btn-group-sm">
+              <a href="{% url 'editar-unidad' unidad.id %}" class="btn btn-outline-secondary" aria-label="Editar {{ unidad.nombre }}" title="Editar">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <button type="button" class="btn btn-outline-danger"
+                      aria-label="Eliminar {{ unidad.nombre }}" title="Eliminar"
+                      data-bs-toggle="modal" data-bs-target="#modalEliminar"
+                      data-url="{% url 'eliminar-unidad' unidad.id %}"
+                      data-nombre="{{ unidad.nombre }}">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="3" class="text-center py-5 text-muted">
+            <i class="bi bi-rulers fs-1 d-block mb-2 opacity-50"></i>
+            No hay unidades de medida registradas.
+            <div class="mt-2"><a href="{% url 'crear-unidad' %}">Crear la primera</a></div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal confirmar eliminación -->
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-labelledby="modalEliminarLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title text-danger" id="modalEliminarLabel">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirmar eliminación
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-1">¿Eliminar la unidad <strong id="modalNombre"></strong>?</p>
+        <p class="text-muted small mb-0">Esta acción no se puede deshacer.</p>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <form id="formEliminar" method="post">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger"><i class="bi bi-trash me-1"></i>Eliminar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('modalEliminar').addEventListener('show.bs.modal', function(e) {
+  const btn = e.relatedTarget;
+  document.getElementById('modalNombre').textContent = btn.dataset.nombre;
+  document.getElementById('formEliminar').action = btn.dataset.url;
+});
+</script>
+
 {% endblock %}

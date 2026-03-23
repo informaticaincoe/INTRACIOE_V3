@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponseForbidden, JsonResponse
@@ -6,9 +8,11 @@ from django.db import transaction
 from RESTAURANTE.models import Comanda
 from RESTAURANTE.realtime import broadcast_pedido_listo
 
+logger = logging.getLogger(__name__)
+
 @login_required
 def comanda_cocina(request):
-    print("REQUEST ROLE ", request.user.role)
+    logger.debug("REQUEST ROLE %s", request.user.role)
     if request.user.role not in ("cocinero", "admin", "supervisor"):
         return HttpResponseForbidden("No autorizado.")
         
@@ -75,7 +79,7 @@ def comanda_listo(request, id):
 
     mesero_user_id = pedido.mesero.usuario_id
 
-    print("mesero_user_id: ", mesero_user_id)
+    logger.info("mesero_user_id: %s", mesero_user_id)
     transaction.on_commit(lambda: broadcast_pedido_listo(
         mesero_user_id=mesero_user_id,
         mesa_id=mesa.id,

@@ -1,12 +1,15 @@
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
+import logging
+
+logger = logging.getLogger(__name__)
 
 def broadcast_comanda_created(comanda):
     channel_layer = get_channel_layer()
 
     area = comanda.area_cocina
     group_name = f"cocina_area_{area.id}"
-    print("GROUP_NAME ", group_name)
+    logger.debug("GROUP_NAME %s", group_name)
     
     payload = {
         "id": comanda.id,
@@ -29,7 +32,7 @@ def broadcast_comanda_created(comanda):
             for it in comanda.items.all()
         ],
     }
-    print("PAYLOAD COMANDA ", payload)
+    logger.debug("PAYLOAD COMANDA %s", payload)
 
     async_to_sync(channel_layer.group_send)(
         group_name,
@@ -58,5 +61,5 @@ def broadcast_pedido_listo(*, mesero_user_id: int, mesa_id: int, mesa_numero: in
             {"type": "pedido_listo", "data": data},
         )
     except Exception:
-        print("No se pudo enviar notificación al mesero (Redis/ChannelLayer no disponible).")
+        logger.warning("No se pudo enviar notificación al mesero (Redis/ChannelLayer no disponible).")
         
