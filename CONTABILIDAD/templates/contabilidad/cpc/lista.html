@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}Cuentas por Cobrar · Contabilidad{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item">Contabilidad</li>
+    <li class="breadcrumb-item active">Cuentas por Cobrar</li>
+  </ol>
+</nav>
+
+{% if messages %}
+  {% for m in messages %}
+    <div class="alert alert-{{ m.tags }} alert-dismissible py-2" role="alert">
+      {{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h4 mb-0">Cuentas por Cobrar</h1>
+    <small class="text-muted">Facturas de crédito pendientes de cobro</small>
+  </div>
+  <a href="{% url 'cont-cpc-crear' %}" class="btn btn-primary">
+    <i class="bi bi-plus-lg me-1"></i> Nueva CxC
+  </a>
+</div>
+
+<!-- Filtros -->
+<form class="row g-2 align-items-end mb-3" method="get">
+  <div class="col-md-4">
+    <label class="form-label small fw-semibold">Buscar cliente o factura</label>
+    <div class="input-group input-group-sm">
+      <span class="input-group-text"><i class="bi bi-search"></i></span>
+      <input type="text" name="q" class="form-control" value="{{ q }}" placeholder="Nombre o N° control…">
+    </div>
+  </div>
+  <div class="col-md-2">
+    <label class="form-label small fw-semibold">Estado</label>
+    <select name="estado" class="form-select form-select-sm">
+      <option value="">Todos</option>
+      {% for val, lbl in estados %}
+        <option value="{{ val }}" {% if f_estado == val %}selected{% endif %}>{{ lbl }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2">
+    <label class="form-label small fw-semibold">Solo vencidas</label>
+    <select name="vencidas" class="form-select form-select-sm">
+      <option value="">Todas</option>
+      <option value="1" {% if f_vencidas == '1' %}selected{% endif %}>Solo vencidas</option>
+    </select>
+  </div>
+  <div class="col-md-2">
+    <button class="btn btn-outline-primary btn-sm w-100" type="submit">
+      <i class="bi bi-funnel me-1"></i>Filtrar
+    </button>
+  </div>
+  {% if q or f_estado or f_vencidas %}
+  <div class="col-md-2">
+    <a href="{% url 'cont-cpc-lista' %}" class="btn btn-outline-secondary btn-sm w-100">
+      <i class="bi bi-x-lg me-1"></i>Limpiar
+    </a>
+  </div>
+  {% endif %}
+</form>
+
+<!-- Tabla -->
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover table-striped align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>#</th>
+          <th>Cliente</th>
+          <th>Factura</th>
+          <th>Emisión</th>
+          <th>Vencimiento</th>
+          <th class="text-end">Monto</th>
+          <th class="text-end">Pagado</th>
+          <th class="text-end">Saldo</th>
+          <th class="text-center">Estado</th>
+          <th style="width:80px;"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in cuentas %}
+        <tr {% if c.esta_vencida %}class="table-warning"{% endif %}>
+          <td class="text-muted small">{{ c.pk }}</td>
+          <td class="fw-medium">{{ c.receptor.nombre }}</td>
+          <td><code class="small text-primary">{{ c.factura.numero_control|default:"—" }}</code></td>
+          <td class="small text-muted">{{ c.fecha_emision }}</td>
+          <td class="small {% if c.esta_vencida %}text-danger fw-semibold{% else %}text-muted{% endif %}">
+            {{ c.fecha_vencimiento }}
+            {% if c.esta_vencida %}<i class="bi bi-exclamation-triangle-fill ms-1"></i>{% endif %}
+          </td>
+          <td class="text-end">${{ c.monto_original|floatformat:2 }}</td>
+          <td class="text-end text-success">${{ c.monto_pagado|floatformat:2 }}</td>
+          <td class="text-end fw-semibold {% if c.saldo_pendiente > 0 %}text-danger{% else %}text-success{% endif %}">
+            ${{ c.saldo_pendiente|floatformat:2 }}
+          </td>
+          <td class="text-center">
+            {% if c.estado == 'PAGADO' %}<span class="badge text-bg-success">Pagado</span>
+            {% elif c.estado == 'PARCIAL' %}<span class="badge text-bg-info">Parcial</span>
+            {% elif c.estado == 'VENCIDO' %}<span class="badge text-bg-danger">Vencido</span>
+            {% elif c.estado == 'ANULADO' %}<span class="badge text-bg-secondary">Anulado</span>
+            {% else %}<span class="badge text-bg-warning text-dark">Pendiente</span>{% endif %}
+          </td>
+          <td class="text-end">
+            <a href="{% url 'cont-cpc-detalle' c.pk %}" class="btn btn-sm btn-outline-primary" title="Ver detalle">
+              <i class="bi bi-eye"></i>
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="10" class="text-center py-5 text-muted">
+            <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
+            No hay cuentas por cobrar registradas.
+            {% if q or f_estado or f_vencidas %}
+              <div class="mt-2"><a href="{% url 'cont-cpc-lista' %}">Limpiar filtros</a></div>
+            {% else %}
+              <div class="mt-2"><a href="{% url 'cont-cpc-crear' %}">Registrar la primera</a></div>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if cuentas.paginator.num_pages > 1 %}
+<nav class="mt-3">
+  <ul class="pagination pagination-sm justify-content-center mb-0">
+    <li class="page-item {% if not cuentas.has_previous %}disabled{% endif %}">
+      {% if cuentas.has_previous %}<a class="page-link" href="?page={{ cuentas.previous_page_number }}{% if q %}&q={{ q }}{% endif %}"><i class="bi bi-chevron-left"></i></a>
+      {% else %}<span class="page-link"><i class="bi bi-chevron-left"></i></span>{% endif %}
+    </li>
+    {% for i in cuentas.paginator.page_range %}
+      {% if cuentas.number == i %}<li class="page-item active"><span class="page-link">{{ i }}</span></li>
+      {% elif i > cuentas.number|add:'-3' and i < cuentas.number|add:'3' %}<li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>{% endif %}
+    {% endfor %}
+    <li class="page-item {% if not cuentas.has_next %}disabled{% endif %}">
+      {% if cuentas.has_next %}<a class="page-link" href="?page={{ cuentas.next_page_number }}{% if q %}&q={{ q }}{% endif %}"><i class="bi bi-chevron-right"></i></a>
+      {% else %}<span class="page-link"><i class="bi bi-chevron-right"></i></span>{% endif %}
+    </li>
+  </ul>
+  <p class="text-center text-muted small mt-1">Página {{ cuentas.number }} de {{ cuentas.paginator.num_pages }} · {{ cuentas.paginator.count }} registros</p>
+</nav>
+{% endif %}
+{% endblock %}

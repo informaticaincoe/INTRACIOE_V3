@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+{% block title %}CxP #{{ cpp.pk }} · Contabilidad{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item">Contabilidad</li>
+    <li class="breadcrumb-item"><a href="{% url 'cont-cpp-lista' %}">Cuentas por Pagar</a></li>
+    <li class="breadcrumb-item active">CxP #{{ cpp.pk }}</li>
+  </ol>
+</nav>
+
+{% if messages %}
+  {% for m in messages %}
+    <div class="alert alert-{{ m.tags }} alert-dismissible py-2" role="alert">
+      {{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <div>
+    <h1 class="h4 mb-0">Cuenta por Pagar #{{ cpp.pk }}</h1>
+    <small class="text-muted">{{ cpp.proveedor.nombre }}</small>
+  </div>
+  <div class="d-flex gap-2">
+    {% if cpp.estado != 'PAGADO' and cpp.estado != 'ANULADO' %}
+      <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalPago">
+        <i class="bi bi-cash-coin me-1"></i>Registrar pago
+      </button>
+      <form method="post" action="{% url 'cont-cpp-anular' cpp.pk %}" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-danger btn-sm"
+                onclick="return confirm('¿Anular esta cuenta por pagar?')">
+          <i class="bi bi-x-circle me-1"></i>Anular
+        </button>
+      </form>
+    {% endif %}
+    <a href="{% url 'cont-cpp-lista' %}" class="btn btn-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>Volver
+    </a>
+  </div>
+</div>
+
+<!-- Estado -->
+<div class="mb-3">
+  {% if cpp.estado == 'PAGADO' %}<span class="badge text-bg-success fs-6"><i class="bi bi-check-circle-fill me-1"></i>Pagado</span>
+  {% elif cpp.estado == 'PARCIAL' %}<span class="badge text-bg-info fs-6"><i class="bi bi-clock-history me-1"></i>Pago parcial</span>
+  {% elif cpp.estado == 'VENCIDO' %}<span class="badge text-bg-danger fs-6"><i class="bi bi-exclamation-triangle-fill me-1"></i>Vencido</span>
+  {% elif cpp.estado == 'ANULADO' %}<span class="badge text-bg-secondary fs-6"><i class="bi bi-slash-circle me-1"></i>Anulado</span>
+  {% else %}<span class="badge text-bg-warning text-dark fs-6"><i class="bi bi-hourglass-split me-1"></i>Pendiente</span>{% endif %}
+</div>
+
+<div class="row g-3 mb-3">
+  <!-- Datos del proveedor y compra -->
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header py-2 fw-semibold bg-transparent border-bottom">
+        <i class="bi bi-truck me-2 text-primary"></i>Datos del proveedor y compra
+      </div>
+      <div class="card-body">
+        <dl class="row mb-0 small">
+          <dt class="col-sm-5 text-muted">Proveedor</dt>
+          <dd class="col-sm-7 fw-medium">{{ cpp.proveedor.nombre }}</dd>
+
+          <dt class="col-sm-5 text-muted">Documento</dt>
+          <dd class="col-sm-7">{{ cpp.proveedor.num_documento|default:"—" }}</dd>
+
+          <dt class="col-sm-5 text-muted">Teléfono</dt>
+          <dd class="col-sm-7">{{ cpp.proveedor.telefono|default:"—" }}</dd>
+
+          <dt class="col-sm-5 text-muted">Email</dt>
+          <dd class="col-sm-7">{{ cpp.proveedor.email|default:"—" }}</dd>
+
+          <dt class="col-sm-5 text-muted">N° Compra</dt>
+          <dd class="col-sm-7"><code class="text-primary">{{ cpp.compra.numero_documento|default:"—" }}</code></dd>
+
+          <dt class="col-sm-5 text-muted">Tipo documento</dt>
+          <dd class="col-sm-7">{{ cpp.compra.tipo_documento|default:"—" }}</dd>
+
+          <dt class="col-sm-5 text-muted">Fecha emisión</dt>
+          <dd class="col-sm-7">{{ cpp.fecha_emision }}</dd>
+
+          <dt class="col-sm-5 text-muted">Fecha vencimiento</dt>
+          <dd class="col-sm-7 {% if cpp.esta_vencida %}text-danger fw-semibold{% endif %}">
+            {{ cpp.fecha_vencimiento }}
+            {% if cpp.esta_vencida %}<i class="bi bi-exclamation-triangle-fill ms-1"></i>{% endif %}
+          </dd>
+
+          {% if cpp.notas %}
+          <dt class="col-sm-5 text-muted">Notas</dt>
+          <dd class="col-sm-7">{{ cpp.notas }}</dd>
+          {% endif %}
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resumen de saldos -->
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header py-2 fw-semibold bg-transparent border-bottom">
+        <i class="bi bi-currency-dollar me-2 text-primary"></i>Resumen de saldos
+      </div>
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+          <span class="text-muted small">Monto original</span>
+          <span class="fw-semibold">${{ cpp.monto_original|floatformat:2 }}</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+          <span class="text-muted small">Total pagado</span>
+          <span class="fw-semibold text-success">${{ cpp.monto_pagado|floatformat:2 }}</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center py-2">
+          <span class="fw-semibold">Saldo pendiente</span>
+          <span class="fs-5 fw-bold {% if cpp.saldo_pendiente > 0 %}text-danger{% else %}text-success{% endif %}">
+            ${{ cpp.saldo_pendiente|floatformat:2 }}
+          </span>
+        </div>
+        {% if cpp.monto_original > 0 %}
+        <div class="mt-3">
+          <div class="d-flex justify-content-between small text-muted mb-1">
+            <span>Avance de pago</span>
+            <span>{{ cpp.monto_pagado|floatformat:0 }} / {{ cpp.monto_original|floatformat:0 }}</span>
+          </div>
+          <div class="progress" style="height:8px;">
+            {% widthratio cpp.monto_pagado cpp.monto_original 100 as pct %}
+            <div class="progress-bar bg-success" style="width:{{ pct }}%"></div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Historial de pagos -->
+<div class="card border-0 shadow-sm">
+  <div class="card-header py-2 fw-semibold bg-transparent border-bottom">
+    <i class="bi bi-clock-history me-2 text-primary"></i>Historial de pagos
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Fecha</th>
+          <th class="text-end">Monto</th>
+          <th>Forma de pago</th>
+          <th>Referencia</th>
+          <th>Asiento</th>
+          <th>Cta. Débito</th>
+          <th>Cta. Crédito</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in pagos %}
+        <tr>
+          <td class="small">{{ p.fecha }}</td>
+          <td class="text-end fw-semibold text-danger">${{ p.monto|floatformat:2 }}</td>
+          <td class="small">{{ p.get_forma_pago_display }}</td>
+          <td class="small text-muted">{{ p.referencia|default:"—" }}</td>
+          <td class="small">
+            {% if p.asiento %}
+              <a href="{% url 'cont-asientos-ver' p.asiento.pk %}" class="text-decoration-none">
+                <i class="bi bi-journal-check me-1"></i>#{{ p.asiento.numero }}
+              </a>
+            {% else %}
+              <span class="text-muted">Sin asiento</span>
+            {% endif %}
+          </td>
+          <td class="small text-muted">{{ p.cuenta_debito.codigo|default:"—" }}</td>
+          <td class="small text-muted">{{ p.cuenta_credito.codigo|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center py-4 text-muted">
+            <i class="bi bi-inbox d-block fs-3 mb-1 opacity-50"></i>
+            No hay pagos registrados aún.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal: Registrar pago -->
+{% if cpp.estado != 'PAGADO' and cpp.estado != 'ANULADO' %}
+<div class="modal fade" id="modalPago" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title"><i class="bi bi-cash-coin me-2 text-success"></i>Registrar pago a proveedor</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="{% url 'cont-cpp-pago' cpp.pk %}" id="formPago">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="alert alert-info py-2 small">
+            <i class="bi bi-info-circle me-1"></i>
+            Saldo pendiente: <strong>${{ cpp.saldo_pendiente|floatformat:2 }}</strong>
+          </div>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label" for="inputFechaPago">Fecha <span class="text-danger">*</span></label>
+              <input type="date" id="inputFechaPago" name="fecha" class="form-control" required
+                     value="{% now 'Y-m-d' %}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" for="inputMonto">Monto <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text">$</span>
+                <input type="number" id="inputMonto" name="monto" class="form-control text-end"
+                       step="0.01" min="0.01" max="{{ cpp.saldo_pendiente }}"
+                       value="{{ cpp.saldo_pendiente|floatformat:2 }}" required>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" for="selectFormaPago">Forma de pago</label>
+              <select id="selectFormaPago" name="forma_pago" class="form-select">
+                <option value="EFECTIVO">Efectivo</option>
+                <option value="TRANSFERENCIA">Transferencia bancaria</option>
+                <option value="CHEQUE">Cheque</option>
+                <option value="TARJETA">Tarjeta</option>
+                <option value="OTRO">Otro</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="inputRef">Referencia / N° cheque o transf.</label>
+              <input type="text" id="inputRef" name="referencia" class="form-control" maxlength="100">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="inputNotasPago">Notas</label>
+              <input type="text" id="inputNotasPago" name="notas" class="form-control" maxlength="300">
+            </div>
+
+            <div class="col-12">
+              <hr class="my-1">
+              <p class="fw-semibold small mb-2 text-primary">
+                <i class="bi bi-journal-bookmark me-1"></i>Cuentas para asiento automático (opcional)
+              </p>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label small" for="selectDebitoCPP">
+                Cuenta Débito <span class="text-muted">(ej. Cuentas por Pagar)</span>
+              </label>
+              <select id="selectDebitoCPP" name="cuenta_debito" class="form-select form-select-sm">
+                <option value="">— Sin asiento —</option>
+                {% for c in cuentas_detalle %}
+                  <option value="{{ c.pk }}">{{ c.codigo }} – {{ c.nombre }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small" for="selectCreditoCPP">
+                Cuenta Crédito <span class="text-muted">(ej. Caja, Banco)</span>
+              </label>
+              <select id="selectCreditoCPP" name="cuenta_credito" class="form-select form-select-sm">
+                <option value="">— Sin asiento —</option>
+                {% for c in cuentas_detalle %}
+                  <option value="{{ c.pk }}">{{ c.codigo }} – {{ c.nombre }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-circle me-1"></i>Confirmar pago
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

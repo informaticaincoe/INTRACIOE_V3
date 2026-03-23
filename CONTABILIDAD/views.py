@@ -26,7 +26,13 @@ import csv
 from django.views import View
 from FE.models import FacturaElectronica
 from INVENTARIO.models import Compra
-from .models import CuentaContable, AsientoContable, LineaAsiento
+from .models import (
+    CuentaContable, AsientoContable, LineaAsiento,
+    CuentaPorCobrar, PagoCobro,
+    CuentaPorPagar, PagoPagar,
+)
+from FE.models import Receptor_fe
+from INVENTARIO.models import Proveedor
 
 logger = logging.getLogger(__name__)
 
@@ -998,3 +1004,298 @@ def _guardar_asiento(request, asiento=None):
             haber=l['haber'],
         )
     return None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CUENTAS POR COBRAR
+# ─────────────────────────────────────────────────────────────────────────────
+
+@login_required
+def cpc_lista(request):
+    q       = request.GET.get('q', '').strip()
+    estado  = request.GET.get('estado', '').strip()
+    vencidas = request.GET.get('vencidas', '').strip()
+
+    qs = CuentaPorCobrar.objects.select_related('receptor', 'factura').all()
+    if q:
+        qs = qs.filter(Q(receptor__nombre__icontains=q) | Q(factura__numero_control__icontains=q))
+    if estado:
+        qs = qs.filter(estado=estado)
+    if vencidas == '1':
+        from datetime import date
+        qs = qs.filter(fecha_vencimiento__lt=date.today(), estado__in=['PENDIENTE', 'PARCIAL'])
+
+    paginator = Paginator(qs, 20)
+    cuentas   = paginator.get_page(request.GET.get('page'))
+
+    return render(request, 'contabilidad/cpc/lista.html', {
+        'cuentas':  cuentas,
+        'q':        q,
+        'f_estado': estado,
+        'f_vencidas': vencidas,
+        'estados':  CuentaPorCobrar.ESTADO_CHOICES,
+    })
+
+
+@login_required
+def cpc_crear(request):
+    """Selecciona una FacturaElectronica y registra como Cuenta por Cobrar."""
+    # Facturas que aún no tienen CxC
+    facturas = FacturaElectronica.objects.exclude(
+        cuentas_cobrar__isnull=False
+    ).select_related('dtereceptor').order_by('-fecha_emision')[:200]
+
+    if request.method == 'POST':
+        factura_id       = request.POST.get('factura')
+        fecha_vencimiento = request.POST.get('fecha_vencimiento')
+        notas            = request.POST.get('notas', '').strip()
+
+        try:
+            factura = FacturaElectronica.objects.get(pk=factura_id)
+        except FacturaElectronica.DoesNotExist:
+            messages.error(request, 'Factura no encontrada.')
+            return redirect('cont-cpc-crear')
+
+        if CuentaPorCobrar.objects.filter(factura=factura).exists():
+            messages.error(request, 'Esta factura ya tiene una cuenta por cobrar registrada.')
+            return redirect('cont-cpc-lista')
+
+        cpc = CuentaPorCobrar.objects.create(
+            factura=factura,
+            receptor=factura.dtereceptor,
+            fecha_emision=factura.fecha_emision,
+            fecha_vencimiento=fecha_vencimiento,
+            monto_original=factura.total_pagar,
+            notas=notas,
+            creado_por=request.user,
+        )
+        messages.success(request, f'Cuenta por Cobrar #{cpc.pk} creada correctamente.')
+        return redirect('cont-cpc-detalle', pk=cpc.pk)
+
+    return render(request, 'contabilidad/cpc/crear.html', {'facturas': facturas})
+
+
+@login_required
+def cpc_detalle(request, pk):
+    cpc   = get_object_or_404(CuentaPorCobrar, pk=pk)
+    pagos = cpc.pagos.select_related('asiento', 'cuenta_debito', 'cuenta_credito').all()
+    cuentas_detalle = CuentaContable.objects.filter(nivel='DETALLE', activa=True).order_by('codigo')
+    return render(request, 'contabilidad/cpc/detalle.html', {
+        'cpc':             cpc,
+        'pagos':           pagos,
+        'cuentas_detalle': cuentas_detalle,
+    })
+
+
+@login_required
+def cpc_registrar_pago(request, pk):
+    cpc = get_object_or_404(CuentaPorCobrar, pk=pk)
+
+    if cpc.estado == 'PAGADO':
+        messages.error(request, 'Esta cuenta ya está completamente pagada.')
+        return redirect('cont-cpc-detalle', pk=pk)
+    if cpc.estado == 'ANULADO':
+        messages.error(request, 'No se puede registrar pago en una cuenta anulada.')
+        return redirect('cont-cpc-detalle', pk=pk)
+
+    if request.method == 'POST':
+        try:
+            monto = Decimal(request.POST.get('monto', '0'))
+        except Exception:
+            messages.error(request, 'Monto inválido.')
+            return redirect('cont-cpc-detalle', pk=pk)
+
+        if monto <= 0:
+            messages.error(request, 'El monto debe ser mayor a cero.')
+            return redirect('cont-cpc-detalle', pk=pk)
+        if monto > cpc.saldo_pendiente:
+            messages.error(request, f'El monto excede el saldo pendiente (${cpc.saldo_pendiente}).')
+            return redirect('cont-cpc-detalle', pk=pk)
+
+        cuenta_debito_id  = request.POST.get('cuenta_debito')
+        cuenta_credito_id = request.POST.get('cuenta_credito')
+
+        pago = PagoCobro(
+            cuenta_cobrar=cpc,
+            fecha=request.POST.get('fecha'),
+            monto=monto,
+            forma_pago=request.POST.get('forma_pago', 'EFECTIVO'),
+            referencia=request.POST.get('referencia', '').strip(),
+            notas=request.POST.get('notas', '').strip(),
+            creado_por=request.user,
+        )
+        if cuenta_debito_id:
+            pago.cuenta_debito_id = cuenta_debito_id
+        if cuenta_credito_id:
+            pago.cuenta_credito_id = cuenta_credito_id
+        pago.save()
+
+        if pago.cuenta_debito and pago.cuenta_credito:
+            pago.generar_asiento()
+            messages.success(request, f'Pago de ${monto} registrado con asiento contable generado.')
+        else:
+            messages.success(request, f'Pago de ${monto} registrado. Sin asiento (no se seleccionaron cuentas).')
+
+        cpc.actualizar_estado()
+
+    return redirect('cont-cpc-detalle', pk=pk)
+
+
+@login_required
+def cpc_anular(request, pk):
+    cpc = get_object_or_404(CuentaPorCobrar, pk=pk)
+    if request.method == 'POST':
+        if cpc.estado == 'PAGADO':
+            messages.error(request, 'No se puede anular una cuenta completamente pagada.')
+        else:
+            cpc.estado = 'ANULADO'
+            cpc.save(update_fields=['estado'])
+            messages.success(request, f'Cuenta por Cobrar #{cpc.pk} anulada.')
+    return redirect('cont-cpc-lista')
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CUENTAS POR PAGAR
+# ─────────────────────────────────────────────────────────────────────────────
+
+@login_required
+def cpp_lista(request):
+    q       = request.GET.get('q', '').strip()
+    estado  = request.GET.get('estado', '').strip()
+    vencidas = request.GET.get('vencidas', '').strip()
+
+    qs = CuentaPorPagar.objects.select_related('proveedor', 'compra').all()
+    if q:
+        qs = qs.filter(Q(proveedor__nombre__icontains=q) | Q(compra__numero_documento__icontains=q))
+    if estado:
+        qs = qs.filter(estado=estado)
+    if vencidas == '1':
+        from datetime import date
+        qs = qs.filter(fecha_vencimiento__lt=date.today(), estado__in=['PENDIENTE', 'PARCIAL'])
+
+    paginator = Paginator(qs, 20)
+    cuentas   = paginator.get_page(request.GET.get('page'))
+
+    return render(request, 'contabilidad/cpp/lista.html', {
+        'cuentas':    cuentas,
+        'q':          q,
+        'f_estado':   estado,
+        'f_vencidas': vencidas,
+        'estados':    CuentaPorPagar.ESTADO_CHOICES,
+    })
+
+
+@login_required
+def cpp_crear(request):
+    """Selecciona una Compra y registra como Cuenta por Pagar."""
+    compras = Compra.objects.exclude(
+        cuentas_pagar__isnull=False
+    ).select_related('proveedor').order_by('-fecha')[:200]
+
+    if request.method == 'POST':
+        compra_id        = request.POST.get('compra')
+        fecha_vencimiento = request.POST.get('fecha_vencimiento')
+        notas            = request.POST.get('notas', '').strip()
+
+        try:
+            compra = Compra.objects.get(pk=compra_id)
+        except Compra.DoesNotExist:
+            messages.error(request, 'Compra no encontrada.')
+            return redirect('cont-cpp-crear')
+
+        if CuentaPorPagar.objects.filter(compra=compra).exists():
+            messages.error(request, 'Esta compra ya tiene una cuenta por pagar registrada.')
+            return redirect('cont-cpp-lista')
+
+        cpp = CuentaPorPagar.objects.create(
+            compra=compra,
+            proveedor=compra.proveedor,
+            fecha_emision=compra.fecha.date() if hasattr(compra.fecha, 'date') else compra.fecha,
+            fecha_vencimiento=fecha_vencimiento,
+            monto_original=compra.total,
+            notas=notas,
+            creado_por=request.user,
+        )
+        messages.success(request, f'Cuenta por Pagar #{cpp.pk} creada correctamente.')
+        return redirect('cont-cpp-detalle', pk=cpp.pk)
+
+    return render(request, 'contabilidad/cpp/crear.html', {'compras': compras})
+
+
+@login_required
+def cpp_detalle(request, pk):
+    cpp   = get_object_or_404(CuentaPorPagar, pk=pk)
+    pagos = cpp.pagos.select_related('asiento', 'cuenta_debito', 'cuenta_credito').all()
+    cuentas_detalle = CuentaContable.objects.filter(nivel='DETALLE', activa=True).order_by('codigo')
+    return render(request, 'contabilidad/cpp/detalle.html', {
+        'cpp':             cpp,
+        'pagos':           pagos,
+        'cuentas_detalle': cuentas_detalle,
+    })
+
+
+@login_required
+def cpp_registrar_pago(request, pk):
+    cpp = get_object_or_404(CuentaPorPagar, pk=pk)
+
+    if cpp.estado == 'PAGADO':
+        messages.error(request, 'Esta cuenta ya está completamente pagada.')
+        return redirect('cont-cpp-detalle', pk=pk)
+    if cpp.estado == 'ANULADO':
+        messages.error(request, 'No se puede registrar pago en una cuenta anulada.')
+        return redirect('cont-cpp-detalle', pk=pk)
+
+    if request.method == 'POST':
+        try:
+            monto = Decimal(request.POST.get('monto', '0'))
+        except Exception:
+            messages.error(request, 'Monto inválido.')
+            return redirect('cont-cpp-detalle', pk=pk)
+
+        if monto <= 0:
+            messages.error(request, 'El monto debe ser mayor a cero.')
+            return redirect('cont-cpp-detalle', pk=pk)
+        if monto > cpp.saldo_pendiente:
+            messages.error(request, f'El monto excede el saldo pendiente (${cpp.saldo_pendiente}).')
+            return redirect('cont-cpp-detalle', pk=pk)
+
+        cuenta_debito_id  = request.POST.get('cuenta_debito')
+        cuenta_credito_id = request.POST.get('cuenta_credito')
+
+        pago = PagoPagar(
+            cuenta_pagar=cpp,
+            fecha=request.POST.get('fecha'),
+            monto=monto,
+            forma_pago=request.POST.get('forma_pago', 'EFECTIVO'),
+            referencia=request.POST.get('referencia', '').strip(),
+            notas=request.POST.get('notas', '').strip(),
+            creado_por=request.user,
+        )
+        if cuenta_debito_id:
+            pago.cuenta_debito_id = cuenta_debito_id
+        if cuenta_credito_id:
+            pago.cuenta_credito_id = cuenta_credito_id
+        pago.save()
+
+        if pago.cuenta_debito and pago.cuenta_credito:
+            pago.generar_asiento()
+            messages.success(request, f'Pago de ${monto} registrado con asiento contable generado.')
+        else:
+            messages.success(request, f'Pago de ${monto} registrado. Sin asiento (no se seleccionaron cuentas).')
+
+        cpp.actualizar_estado()
+
+    return redirect('cont-cpp-detalle', pk=pk)
+
+
+@login_required
+def cpp_anular(request, pk):
+    cpp = get_object_or_404(CuentaPorPagar, pk=pk)
+    if request.method == 'POST':
+        if cpp.estado == 'PAGADO':
+            messages.error(request, 'No se puede anular una cuenta completamente pagada.')
+        else:
+            cpp.estado = 'ANULADO'
+            cpp.save(update_fields=['estado'])
+            messages.success(request, f'Cuenta por Pagar #{cpp.pk} anulada.')
+    return redirect('cont-cpp-lista')
