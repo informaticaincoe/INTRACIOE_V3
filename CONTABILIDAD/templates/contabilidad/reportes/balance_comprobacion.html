@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Balance de Comprobación · Contabilidad{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item">Contabilidad</li>
+    <li class="breadcrumb-item">Reportes</li>
+    <li class="breadcrumb-item active">Balance de Comprobación</li>
+  </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h4 mb-0">Balance de Comprobación</h1>
+    <small class="text-muted">Totales de debe, haber y saldos por cuenta</small>
+  </div>
+  {% if filas %}
+  <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+    <i class="bi bi-printer me-1"></i>Imprimir
+  </button>
+  {% endif %}
+</div>
+
+<!-- Filtros -->
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body">
+    <form class="row g-3 align-items-end" method="get">
+      <div class="col-md-4">
+        <label class="form-label fw-semibold small">Desde</label>
+        <input type="date" name="fecha_desde" class="form-control form-control-sm" value="{{ fecha_desde }}">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label fw-semibold small">Hasta</label>
+        <input type="date" name="fecha_hasta" class="form-control form-control-sm" value="{{ fecha_hasta }}">
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-primary btn-sm w-100" type="submit">
+          <i class="bi bi-search me-1"></i>Consultar
+        </button>
+      </div>
+      {% if fecha_desde or fecha_hasta %}
+      <div class="col-md-2">
+        <a href="{% url 'cont-balance-comprobacion' %}" class="btn btn-outline-secondary btn-sm w-100">
+          <i class="bi bi-x-lg me-1"></i>Limpiar
+        </a>
+      </div>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+{% if filas %}
+<!-- Verificación de cuadre -->
+{% if gran_debe == gran_haber %}
+<div class="alert alert-success py-2 small mb-3">
+  <i class="bi bi-check-circle-fill me-2"></i>
+  <strong>El balance cuadra.</strong> Total Debe = Total Haber = ${{ gran_debe|floatformat:2 }}
+</div>
+{% else %}
+<div class="alert alert-danger py-2 small mb-3">
+  <i class="bi bi-exclamation-triangle-fill me-2"></i>
+  <strong>El balance no cuadra.</strong> Diferencia: ${{ gran_debe|floatformat:2 }} ≠ ${{ gran_haber|floatformat:2 }}
+</div>
+{% endif %}
+
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Código</th>
+          <th>Cuenta</th>
+          <th>Tipo</th>
+          <th class="text-end">Total Debe</th>
+          <th class="text-end">Total Haber</th>
+          <th class="text-end">Saldo Deudor</th>
+          <th class="text-end">Saldo Acreedor</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in filas %}
+        <tr>
+          <td>
+            <a href="{% url 'cont-libro-mayor' %}?cuenta={{ f.id }}{% if fecha_desde %}&fecha_desde={{ fecha_desde }}{% endif %}{% if fecha_hasta %}&fecha_hasta={{ fecha_hasta }}{% endif %}"
+               class="text-decoration-none">
+              <code class="text-primary">{{ f.codigo }}</code>
+            </a>
+          </td>
+          <td class="small fw-medium">{{ f.nombre }}</td>
+          <td>
+            {% if f.tipo == 'ACTIVO' %}<span class="badge text-bg-success bg-opacity-75 small">Activo</span>
+            {% elif f.tipo == 'PASIVO' %}<span class="badge text-bg-danger bg-opacity-75 small">Pasivo</span>
+            {% elif f.tipo == 'CAPITAL' %}<span class="badge text-bg-primary bg-opacity-75 small">Capital</span>
+            {% elif f.tipo == 'INGRESO' %}<span class="badge text-bg-info bg-opacity-75 small">Ingreso</span>
+            {% elif f.tipo == 'GASTO' %}<span class="badge text-bg-warning bg-opacity-75 small">Gasto</span>
+            {% endif %}
+          </td>
+          <td class="text-end small">${{ f.debe|floatformat:2 }}</td>
+          <td class="text-end small">${{ f.haber|floatformat:2 }}</td>
+          <td class="text-end small {% if f.saldo_d > 0 %}fw-semibold text-primary{% else %}text-muted{% endif %}">
+            {% if f.saldo_d > 0 %} ${{ f.saldo_d|floatformat:2 }}{% else %}—{% endif %}
+          </td>
+          <td class="text-end small {% if f.saldo_a > 0 %}fw-semibold text-danger{% else %}text-muted{% endif %}">
+            {% if f.saldo_a > 0 %}${{ f.saldo_a|floatformat:2 }}{% else %}—{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot class="table-light fw-bold border-top border-2">
+        <tr>
+          <td colspan="3" class="text-end pe-3">Totales:</td>
+          <td class="text-end">${{ gran_debe|floatformat:2 }}</td>
+          <td class="text-end">${{ gran_haber|floatformat:2 }}</td>
+          <td class="text-end text-primary">${{ gran_saldo_d|floatformat:2 }}</td>
+          <td class="text-end text-danger">${{ gran_saldo_a|floatformat:2 }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+
+{% else %}
+<div class="text-center py-5 text-muted">
+  <i class="bi bi-table fs-1 d-block mb-2 opacity-50"></i>
+  No hay asientos confirmados para el período seleccionado.
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  @media print {
+    .sb-wrapper, nav, form, button { display: none !important; }
+    .card { border: 1px solid #dee2e6 !important; box-shadow: none !important; }
+  }
+</style>
+{% endblock %}

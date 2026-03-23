@@ -16,6 +16,18 @@
   <i class="bi bi-arrow-up-circle"></i> Cuentas por Pagar
 </button>
 
+<button id="{{ uid_prefix }}-btn-lm" type="button" class="sb-sub-item">
+  <i class="bi bi-list-columns-reverse"></i> Libro Mayor
+</button>
+
+<button id="{{ uid_prefix }}-btn-bc" type="button" class="sb-sub-item">
+  <i class="bi bi-table"></i> Balance de Comprobación
+</button>
+
+<button id="{{ uid_prefix }}-btn-bg" type="button" class="sb-sub-item">
+  <i class="bi bi-bar-chart-steps"></i> Balance General
+</button>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   const b = "{{ uid_prefix }}";
@@ -24,6 +36,9 @@ document.addEventListener('DOMContentLoaded', function () {
   go('-btn-asientos', "{% url 'cont-asientos-lista' %}");
   go('-btn-cxc',      "{% url 'cont-cpc-lista' %}");
   go('-btn-cxp',      "{% url 'cont-cpp-lista' %}");
+  go('-btn-lm',       "{% url 'cont-libro-mayor' %}");
+  go('-btn-bc',       "{% url 'cont-balance-comprobacion' %}");
+  go('-btn-bg',       "{% url 'cont-balance-general' %}");
 });
 </script>
 

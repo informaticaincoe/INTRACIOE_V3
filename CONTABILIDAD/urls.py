@@ -42,4 +42,9 @@ urlpatterns = [
     path('cxp/<int:pk>/',                     views.cpp_detalle,          name='cont-cpp-detalle'),
     path('cxp/<int:pk>/pago/',                views.cpp_registrar_pago,   name='cont-cpp-pago'),
     path('cxp/<int:pk>/anular/',              views.cpp_anular,           name='cont-cpp-anular'),
+
+    # ── Reportes Contables ──
+    path('reportes/libro-mayor/',          views.libro_mayor,          name='cont-libro-mayor'),
+    path('reportes/balance-comprobacion/', views.balance_comprobacion, name='cont-balance-comprobacion'),
+    path('reportes/balance-general/',      views.balance_general,      name='cont-balance-general'),
 ]

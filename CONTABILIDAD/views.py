@@ -1299,3 +1299,223 @@ def cpp_anular(request, pk):
             cpp.save(update_fields=['estado'])
             messages.success(request, f'Cuenta por Pagar #{cpp.pk} anulada.')
     return redirect('cont-cpp-lista')
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LIBRO MAYOR
+# ─────────────────────────────────────────────────────────────────────────────
+
+@login_required
+def libro_mayor(request):
+    from django.db.models import Sum, Q
+    from datetime import date
+
+    cuenta_id  = request.GET.get('cuenta', '').strip()
+    fecha_desde = request.GET.get('fecha_desde', '').strip()
+    fecha_hasta = request.GET.get('fecha_hasta', '').strip()
+
+    cuentas_detalle = CuentaContable.objects.filter(nivel='DETALLE', activa=True).order_by('codigo')
+    cuenta_sel      = None
+    movimientos     = []
+    saldo_inicial   = Decimal('0')
+    total_debe      = Decimal('0')
+    total_haber     = Decimal('0')
+    saldo_final     = Decimal('0')
+
+    if cuenta_id:
+        cuenta_sel = get_object_or_404(CuentaContable, pk=cuenta_id)
+
+        # Líneas de asientos confirmados para esta cuenta
+        lineas_qs = LineaAsiento.objects.filter(
+            cuenta=cuenta_sel,
+            asiento__estado='CONFIRMADO',
+        ).select_related('asiento').order_by('asiento__fecha', 'asiento__numero')
+
+        # Saldo inicial: movimientos ANTES de fecha_desde
+        if fecha_desde:
+            lineas_antes = lineas_qs.filter(asiento__fecha__lt=fecha_desde)
+            d_antes = lineas_antes.aggregate(t=Sum('debe'))['t']  or Decimal('0')
+            h_antes = lineas_antes.aggregate(t=Sum('haber'))['t'] or Decimal('0')
+            if cuenta_sel.naturaleza == 'DEUDORA':
+                saldo_inicial = d_antes - h_antes
+            else:
+                saldo_inicial = h_antes - d_antes
+            lineas_qs = lineas_qs.filter(asiento__fecha__gte=fecha_desde)
+
+        if fecha_hasta:
+            lineas_qs = lineas_qs.filter(asiento__fecha__lte=fecha_hasta)
+
+        saldo_acum = saldo_inicial
+        for linea in lineas_qs:
+            if cuenta_sel.naturaleza == 'DEUDORA':
+                saldo_acum += linea.debe - linea.haber
+            else:
+                saldo_acum += linea.haber - linea.debe
+            movimientos.append({
+                'fecha':    linea.asiento.fecha,
+                'numero':   linea.asiento.numero,
+                'asiento_pk': linea.asiento.pk,
+                'concepto': linea.asiento.concepto,
+                'detalle':  linea.descripcion,
+                'debe':     linea.debe,
+                'haber':    linea.haber,
+                'saldo':    saldo_acum,
+            })
+            total_debe  += linea.debe
+            total_haber += linea.haber
+
+        saldo_final = saldo_inicial + (total_debe - total_haber if cuenta_sel.naturaleza == 'DEUDORA'
+                                       else total_haber - total_debe)
+
+    return render(request, 'contabilidad/reportes/libro_mayor.html', {
+        'cuentas_detalle': cuentas_detalle,
+        'cuenta_sel':      cuenta_sel,
+        'movimientos':     movimientos,
+        'saldo_inicial':   saldo_inicial,
+        'total_debe':      total_debe,
+        'total_haber':     total_haber,
+        'saldo_final':     saldo_final,
+        'fecha_desde':     fecha_desde,
+        'fecha_hasta':     fecha_hasta,
+    })
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# BALANCE DE COMPROBACIÓN
+# ─────────────────────────────────────────────────────────────────────────────
+
+@login_required
+def balance_comprobacion(request):
+    from django.db.models import Sum
+
+    fecha_desde = request.GET.get('fecha_desde', '').strip()
+    fecha_hasta = request.GET.get('fecha_hasta', '').strip()
+
+    lineas_qs = LineaAsiento.objects.filter(asiento__estado='CONFIRMADO')
+    if fecha_desde:
+        lineas_qs = lineas_qs.filter(asiento__fecha__gte=fecha_desde)
+    if fecha_hasta:
+        lineas_qs = lineas_qs.filter(asiento__fecha__lte=fecha_hasta)
+
+    # Agrupar por cuenta
+    totales = (
+        lineas_qs
+        .values('cuenta__id', 'cuenta__codigo', 'cuenta__nombre',
+                'cuenta__tipo', 'cuenta__naturaleza')
+        .annotate(total_debe=Sum('debe'), total_haber=Sum('haber'))
+        .order_by('cuenta__codigo')
+    )
+
+    filas = []
+    gran_debe = gran_haber = gran_saldo_d = gran_saldo_a = Decimal('0')
+
+    for t in totales:
+        debe  = t['total_debe']  or Decimal('0')
+        haber = t['total_haber'] or Decimal('0')
+        if t['cuenta__naturaleza'] == 'DEUDORA':
+            saldo_d = max(debe - haber, Decimal('0'))
+            saldo_a = max(haber - debe, Decimal('0'))
+        else:
+            saldo_a = max(haber - debe, Decimal('0'))
+            saldo_d = max(debe - haber, Decimal('0'))
+
+        filas.append({
+            'id':        t['cuenta__id'],
+            'codigo':    t['cuenta__codigo'],
+            'nombre':    t['cuenta__nombre'],
+            'tipo':      t['cuenta__tipo'],
+            'naturaleza': t['cuenta__naturaleza'],
+            'debe':      debe,
+            'haber':     haber,
+            'saldo_d':   saldo_d,
+            'saldo_a':   saldo_a,
+        })
+        gran_debe    += debe
+        gran_haber   += haber
+        gran_saldo_d += saldo_d
+        gran_saldo_a += saldo_a
+
+    return render(request, 'contabilidad/reportes/balance_comprobacion.html', {
+        'filas':       filas,
+        'gran_debe':   gran_debe,
+        'gran_haber':  gran_haber,
+        'gran_saldo_d': gran_saldo_d,
+        'gran_saldo_a': gran_saldo_a,
+        'fecha_desde': fecha_desde,
+        'fecha_hasta': fecha_hasta,
+    })
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# BALANCE GENERAL
+# ─────────────────────────────────────────────────────────────────────────────
+
+@login_required
+def balance_general(request):
+    from django.db.models import Sum
+
+    fecha_hasta = request.GET.get('fecha_hasta', '').strip()
+
+    lineas_qs = LineaAsiento.objects.filter(asiento__estado='CONFIRMADO')
+    if fecha_hasta:
+        lineas_qs = lineas_qs.filter(asiento__fecha__lte=fecha_hasta)
+
+    totales = (
+        lineas_qs
+        .values('cuenta__id', 'cuenta__codigo', 'cuenta__nombre',
+                'cuenta__tipo', 'cuenta__naturaleza')
+        .annotate(total_debe=Sum('debe'), total_haber=Sum('haber'))
+        .order_by('cuenta__codigo')
+    )
+
+    activos   = []
+    pasivos   = []
+    capital   = []
+    ingresos  = []
+    gastos    = []
+
+    for t in totales:
+        debe  = t['total_debe']  or Decimal('0')
+        haber = t['total_haber'] or Decimal('0')
+        if t['cuenta__naturaleza'] == 'DEUDORA':
+            saldo = debe - haber
+        else:
+            saldo = haber - debe
+
+        fila = {
+            'id':     t['cuenta__id'],
+            'codigo': t['cuenta__codigo'],
+            'nombre': t['cuenta__nombre'],
+            'saldo':  saldo,
+        }
+        tipo = t['cuenta__tipo']
+        if   tipo == 'ACTIVO':   activos.append(fila)
+        elif tipo == 'PASIVO':   pasivos.append(fila)
+        elif tipo == 'CAPITAL':  capital.append(fila)
+        elif tipo == 'INGRESO':  ingresos.append(fila)
+        elif tipo == 'GASTO':    gastos.append(fila)
+
+    total_activos  = sum(f['saldo'] for f in activos)
+    total_pasivos  = sum(f['saldo'] for f in pasivos)
+    total_capital  = sum(f['saldo'] for f in capital)
+    total_ingresos = sum(f['saldo'] for f in ingresos)
+    total_gastos   = sum(f['saldo'] for f in gastos)
+    utilidad       = total_ingresos - total_gastos
+    total_pasivos_capital = total_pasivos + total_capital + utilidad
+
+    return render(request, 'contabilidad/reportes/balance_general.html', {
+        'activos':               activos,
+        'pasivos':               pasivos,
+        'capital':               capital,
+        'ingresos':              ingresos,
+        'gastos':                gastos,
+        'total_activos':         total_activos,
+        'total_pasivos':         total_pasivos,
+        'total_capital':         total_capital,
+        'total_ingresos':        total_ingresos,
+        'total_gastos':          total_gastos,
+        'utilidad':              utilidad,
+        'total_pasivos_capital': total_pasivos_capital,
+        'cuadra':                abs(total_activos - total_pasivos_capital) < Decimal('0.01'),
+        'fecha_hasta':           fecha_hasta,
+    })

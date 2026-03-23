@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% block title %}Libro Mayor · Contabilidad{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item">Contabilidad</li>
+    <li class="breadcrumb-item">Reportes</li>
+    <li class="breadcrumb-item active">Libro Mayor</li>
+  </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h4 mb-0">Libro Mayor</h1>
+    <small class="text-muted">Movimientos por cuenta contable</small>
+  </div>
+  {% if movimientos %}
+  <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+    <i class="bi bi-printer me-1"></i>Imprimir
+  </button>
+  {% endif %}
+</div>
+
+<!-- Filtros -->
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body">
+    <form class="row g-3 align-items-end" method="get">
+      <div class="col-md-4">
+        <label class="form-label fw-semibold small">Cuenta <span class="text-danger">*</span></label>
+        <select name="cuenta" class="form-select form-select-sm" required>
+          <option value="">— Seleccione una cuenta —</option>
+          {% for c in cuentas_detalle %}
+            <option value="{{ c.pk }}" {% if cuenta_sel and cuenta_sel.pk == c.pk %}selected{% endif %}>
+              {{ c.codigo }} – {{ c.nombre }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-semibold small">Desde</label>
+        <input type="date" name="fecha_desde" class="form-control form-control-sm" value="{{ fecha_desde }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-semibold small">Hasta</label>
+        <input type="date" name="fecha_hasta" class="form-control form-control-sm" value="{{ fecha_hasta }}">
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-primary btn-sm w-100" type="submit">
+          <i class="bi bi-search me-1"></i>Consultar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if cuenta_sel %}
+<!-- Encabezado de la cuenta -->
+<div class="card border-0 shadow-sm mb-3">
+  <div class="card-body py-3">
+    <div class="row align-items-center">
+      <div class="col-md-6">
+        <span class="fw-bold fs-5 text-primary">{{ cuenta_sel.codigo }}</span>
+        <span class="fw-semibold fs-5 ms-2">{{ cuenta_sel.nombre }}</span>
+        <div class="mt-1">
+          <span class="badge text-bg-light border me-1">{{ cuenta_sel.get_tipo_display }}</span>
+          <span class="badge text-bg-light border">{{ cuenta_sel.get_naturaleza_display }}</span>
+          {% if fecha_desde or fecha_hasta %}
+          <span class="badge text-bg-info ms-1">
+            {% if fecha_desde %}Desde {{ fecha_desde }}{% endif %}
+            {% if fecha_hasta %} Hasta {{ fecha_hasta }}{% endif %}
+          </span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="row g-2 text-center">
+          <div class="col-4">
+            <div class="text-muted small">Saldo inicial</div>
+            <div class="fw-semibold">${{ saldo_inicial|floatformat:2 }}</div>
+          </div>
+          <div class="col-4">
+            <div class="text-muted small">Movimientos</div>
+            <div class="fw-semibold text-primary">{{ movimientos|length }}</div>
+          </div>
+          <div class="col-4">
+            <div class="text-muted small">Saldo final</div>
+            <div class="fw-bold fs-5 {% if saldo_final >= 0 %}text-success{% else %}text-danger{% endif %}">
+              ${{ saldo_final|floatformat:2 }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabla de movimientos -->
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Fecha</th>
+          <th style="width:70px;">N° Asiento</th>
+          <th>Concepto</th>
+          <th>Detalle</th>
+          <th class="text-end">Debe</th>
+          <th class="text-end">Haber</th>
+          <th class="text-end">Saldo</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Saldo inicial -->
+        <tr class="table-secondary fw-semibold">
+          <td colspan="4" class="text-end pe-3 small text-muted">Saldo inicial</td>
+          <td class="text-end">—</td>
+          <td class="text-end">—</td>
+          <td class="text-end">${{ saldo_inicial|floatformat:2 }}</td>
+        </tr>
+
+        {% for m in movimientos %}
+        <tr>
+          <td class="small text-muted">{{ m.fecha }}</td>
+          <td class="text-center">
+            <a href="{% url 'cont-asientos-ver' m.asiento_pk %}" class="small text-decoration-none">
+              #{{ m.numero }}
+            </a>
+          </td>
+          <td class="small">{{ m.concepto|truncatechars:50 }}</td>
+          <td class="small text-muted">{{ m.detalle|default:"—" }}</td>
+          <td class="text-end small">{% if m.debe > 0 %}<span class="text-primary">${{ m.debe|floatformat:2 }}</span>{% else %}—{% endif %}</td>
+          <td class="text-end small">{% if m.haber > 0 %}<span class="text-danger">${{ m.haber|floatformat:2 }}</span>{% else %}—{% endif %}</td>
+          <td class="text-end fw-semibold small {% if m.saldo >= 0 %}text-success{% else %}text-danger{% endif %}">
+            ${{ m.saldo|floatformat:2 }}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center py-4 text-muted">
+            <i class="bi bi-inbox d-block fs-3 mb-1 opacity-50"></i>
+            No hay movimientos en el período seleccionado.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      {% if movimientos %}
+      <tfoot class="table-light fw-bold">
+        <tr>
+          <td colspan="4" class="text-end pe-3">Totales del período:</td>
+          <td class="text-end text-primary">${{ total_debe|floatformat:2 }}</td>
+          <td class="text-end text-danger">${{ total_haber|floatformat:2 }}</td>
+          <td class="text-end {% if saldo_final >= 0 %}text-success{% else %}text-danger{% endif %}">
+            ${{ saldo_final|floatformat:2 }}
+          </td>
+        </tr>
+      </tfoot>
+      {% endif %}
+    </table>
+  </div>
+</div>
+
+{% else %}
+<div class="text-center py-5 text-muted">
+  <i class="bi bi-journal-text fs-1 d-block mb-2 opacity-50"></i>
+  Selecciona una cuenta para ver sus movimientos.
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  @media print {
+    .sb-wrapper, nav, form, button { display: none !important; }
+    .card { border: 1px solid #dee2e6 !important; box-shadow: none !important; }
+  }
+</style>
+{% endblock %}
