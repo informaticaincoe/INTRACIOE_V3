@@ -1,5 +1,9 @@
 {% with uid_prefix=uid|default:"cont" %}
 
+<button id="{{ uid_prefix }}-btn-home" type="button" class="sb-module-home">
+  <i class="bi bi-calculator-fill"></i> Inicio Contabilidad
+</button>
+
 <button id="{{ uid_prefix }}-btn-cuentas" type="button" class="sb-sub-item">
   <i class="bi bi-journal-text"></i> Plan de Cuentas
 </button>
@@ -28,10 +32,15 @@
   <i class="bi bi-bar-chart-steps"></i> Balance General
 </button>
 
+<button id="{{ uid_prefix }}-btn-er" type="button" class="sb-sub-item">
+  <i class="bi bi-graph-up-arrow"></i> Estado de Resultados
+</button>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   const b = "{{ uid_prefix }}";
   const go = (id, url) => document.getElementById(b + id)?.addEventListener('click', () => { window.location.href = url; });
+  go('-btn-home',     "{% url 'cont-cuentas-lista' %}");
   go('-btn-cuentas',  "{% url 'cont-cuentas-lista' %}");
   go('-btn-asientos', "{% url 'cont-asientos-lista' %}");
   go('-btn-cxc',      "{% url 'cont-cpc-lista' %}");
@@ -39,6 +48,7 @@ document.addEventListener('DOMContentLoaded', function () {
   go('-btn-lm',       "{% url 'cont-libro-mayor' %}");
   go('-btn-bc',       "{% url 'cont-balance-comprobacion' %}");
   go('-btn-bg',       "{% url 'cont-balance-general' %}");
+  go('-btn-er',       "{% url 'cont-estado-resultados' %}");
 });
 </script>
 

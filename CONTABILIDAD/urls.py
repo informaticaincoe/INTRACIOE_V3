@@ -47,4 +47,5 @@ urlpatterns = [
     path('reportes/libro-mayor/',          views.libro_mayor,          name='cont-libro-mayor'),
     path('reportes/balance-comprobacion/', views.balance_comprobacion, name='cont-balance-comprobacion'),
     path('reportes/balance-general/',      views.balance_general,      name='cont-balance-general'),
+    path('reportes/estado-resultados/',    views.estado_resultados,    name='cont-estado-resultados'),
 ]

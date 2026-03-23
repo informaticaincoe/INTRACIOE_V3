@@ -1040,10 +1040,12 @@ def cpc_lista(request):
 @login_required
 def cpc_crear(request):
     """Selecciona una FacturaElectronica y registra como Cuenta por Cobrar."""
-    # Facturas que aún no tienen CxC
-    facturas = FacturaElectronica.objects.exclude(
+    # Facturas a crédito que aún no tienen CxC registrada
+    facturas = FacturaElectronica.objects.filter(
+        condicion_operacion__codigo='2'
+    ).exclude(
         cuentas_cobrar__isnull=False
-    ).select_related('dtereceptor').order_by('-fecha_emision')[:200]
+    ).select_related('dtereceptor', 'tipo_dte', 'condicion_operacion').order_by('-fecha_emision')[:200]
 
     if request.method == 'POST':
         factura_id       = request.POST.get('factura')
@@ -1188,7 +1190,10 @@ def cpp_lista(request):
 @login_required
 def cpp_crear(request):
     """Selecciona una Compra y registra como Cuenta por Pagar."""
-    compras = Compra.objects.exclude(
+    # Compras pendientes de pago que aún no tienen CxP registrada
+    compras = Compra.objects.filter(
+        estado='Pendiente'
+    ).exclude(
         cuentas_pagar__isnull=False
     ).select_related('proveedor').order_by('-fecha')[:200]
 
@@ -1518,4 +1523,75 @@ def balance_general(request):
         'total_pasivos_capital': total_pasivos_capital,
         'cuadra':                abs(total_activos - total_pasivos_capital) < Decimal('0.01'),
         'fecha_hasta':           fecha_hasta,
+    })
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ESTADO DE RESULTADOS
+# ─────────────────────────────────────────────────────────────────────────────
+
+@login_required
+def estado_resultados(request):
+    from django.db.models import Sum
+
+    fecha_desde = request.GET.get('fecha_desde', '').strip()
+    fecha_hasta = request.GET.get('fecha_hasta', '').strip()
+
+    lineas_qs = LineaAsiento.objects.filter(
+        asiento__estado='CONFIRMADO',
+        cuenta__tipo__in=['INGRESO', 'GASTO'],
+    )
+    if fecha_desde:
+        lineas_qs = lineas_qs.filter(asiento__fecha__gte=fecha_desde)
+    if fecha_hasta:
+        lineas_qs = lineas_qs.filter(asiento__fecha__lte=fecha_hasta)
+
+    totales = (
+        lineas_qs
+        .values('cuenta__id', 'cuenta__codigo', 'cuenta__nombre',
+                'cuenta__tipo', 'cuenta__naturaleza', 'cuenta__cuenta_padre__nombre')
+        .annotate(total_debe=Sum('debe'), total_haber=Sum('haber'))
+        .order_by('cuenta__tipo', 'cuenta__codigo')
+    )
+
+    ingresos = []
+    gastos   = []
+
+    for t in totales:
+        debe  = t['total_debe']  or Decimal('0')
+        haber = t['total_haber'] or Decimal('0')
+        # Ingresos son acreedoras: saldo = haber - debe
+        # Gastos son deudoras: saldo = debe - haber
+        if t['cuenta__tipo'] == 'INGRESO':
+            saldo = haber - debe
+            ingresos.append({
+                'id':     t['cuenta__id'],
+                'codigo': t['cuenta__codigo'],
+                'nombre': t['cuenta__nombre'],
+                'padre':  t['cuenta__cuenta_padre__nombre'],
+                'saldo':  saldo,
+            })
+        else:
+            saldo = debe - haber
+            gastos.append({
+                'id':     t['cuenta__id'],
+                'codigo': t['cuenta__codigo'],
+                'nombre': t['cuenta__nombre'],
+                'padre':  t['cuenta__cuenta_padre__nombre'],
+                'saldo':  saldo,
+            })
+
+    total_ingresos = sum(f['saldo'] for f in ingresos)
+    total_gastos   = sum(f['saldo'] for f in gastos)
+    utilidad_bruta = total_ingresos - total_gastos
+
+    return render(request, 'contabilidad/reportes/estado_resultados.html', {
+        'ingresos':       ingresos,
+        'gastos':         gastos,
+        'total_ingresos': total_ingresos,
+        'total_gastos':   total_gastos,
+        'utilidad_bruta': utilidad_bruta,
+        'es_utilidad':    utilidad_bruta >= 0,
+        'fecha_desde':    fecha_desde,
+        'fecha_hasta':    fecha_hasta,
     })

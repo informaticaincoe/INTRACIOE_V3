@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% block title %}Estado de Resultados · Contabilidad{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item">Contabilidad</li>
+    <li class="breadcrumb-item">Reportes</li>
+    <li class="breadcrumb-item active">Estado de Resultados</li>
+  </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h4 mb-0">Estado de Resultados</h1>
+    <small class="text-muted">
+      Ingresos − Gastos
+      {% if fecha_desde or fecha_hasta %}
+        ·
+        {% if fecha_desde %}Del {{ fecha_desde }}{% endif %}
+        {% if fecha_hasta %}al {{ fecha_hasta }}{% endif %}
+      {% endif %}
+    </small>
+  </div>
+  {% if ingresos or gastos %}
+  <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+    <i class="bi bi-printer me-1"></i>Imprimir
+  </button>
+  {% endif %}
+</div>
+
+<!-- Filtros -->
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body">
+    <form class="row g-3 align-items-end" method="get">
+      <div class="col-md-4">
+        <label class="form-label fw-semibold small">Desde</label>
+        <input type="date" name="fecha_desde" class="form-control form-control-sm" value="{{ fecha_desde }}">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label fw-semibold small">Hasta</label>
+        <input type="date" name="fecha_hasta" class="form-control form-control-sm" value="{{ fecha_hasta }}">
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-primary btn-sm w-100" type="submit">
+          <i class="bi bi-search me-1"></i>Consultar
+        </button>
+      </div>
+      {% if fecha_desde or fecha_hasta %}
+      <div class="col-md-2">
+        <a href="{% url 'cont-estado-resultados' %}" class="btn btn-outline-secondary btn-sm w-100">
+          <i class="bi bi-x-lg me-1"></i>Limpiar
+        </a>
+      </div>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+{% if ingresos or gastos %}
+
+<div class="row g-4">
+
+  <!-- ── INGRESOS ── -->
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-success bg-opacity-10 border-0 py-2">
+        <h6 class="mb-0 fw-bold text-success">
+          <i class="bi bi-graph-up-arrow me-2"></i>INGRESOS
+        </h6>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm align-middle mb-0">
+          <tbody>
+            {% for f in ingresos %}
+            <tr>
+              <td class="ps-3">
+                <a href="{% url 'cont-libro-mayor' %}?cuenta={{ f.id }}{% if fecha_desde %}&fecha_desde={{ fecha_desde }}{% endif %}{% if fecha_hasta %}&fecha_hasta={{ fecha_hasta }}{% endif %}"
+                   class="text-decoration-none text-dark small">
+                  <code class="text-muted me-2 small">{{ f.codigo }}</code>{{ f.nombre }}
+                </a>
+                {% if f.padre %}<div class="ps-4 text-muted" style="font-size:0.75rem;">{{ f.padre }}</div>{% endif %}
+              </td>
+              <td class="text-end pe-3 fw-semibold small text-success">
+                ${{ f.saldo|floatformat:2 }}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="2" class="text-center text-muted py-4 small">
+                Sin cuentas de ingreso con movimientos.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot class="border-top border-2">
+            <tr class="fw-bold table-success">
+              <td class="ps-3">Total Ingresos</td>
+              <td class="text-end pe-3 fs-6 text-success">${{ total_ingresos|floatformat:2 }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── GASTOS ── -->
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-danger bg-opacity-10 border-0 py-2">
+        <h6 class="mb-0 fw-bold text-danger">
+          <i class="bi bi-graph-down-arrow me-2"></i>GASTOS
+        </h6>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm align-middle mb-0">
+          <tbody>
+            {% for f in gastos %}
+            <tr>
+              <td class="ps-3">
+                <a href="{% url 'cont-libro-mayor' %}?cuenta={{ f.id }}{% if fecha_desde %}&fecha_desde={{ fecha_desde }}{% endif %}{% if fecha_hasta %}&fecha_hasta={{ fecha_hasta }}{% endif %}"
+                   class="text-decoration-none text-dark small">
+                  <code class="text-muted me-2 small">{{ f.codigo }}</code>{{ f.nombre }}
+                </a>
+                {% if f.padre %}<div class="ps-4 text-muted" style="font-size:0.75rem;">{{ f.padre }}</div>{% endif %}
+              </td>
+              <td class="text-end pe-3 fw-semibold small text-danger">
+                ${{ f.saldo|floatformat:2 }}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="2" class="text-center text-muted py-4 small">
+                Sin cuentas de gasto con movimientos.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot class="border-top border-2">
+            <tr class="fw-bold table-danger">
+              <td class="ps-3">Total Gastos</td>
+              <td class="text-end pe-3 fs-6 text-danger">${{ total_gastos|floatformat:2 }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── RESULTADO FINAL ── -->
+<div class="row mt-4">
+  <div class="col-md-6 offset-md-3">
+    <div class="card border-0 shadow {% if es_utilidad %}bg-success{% else %}bg-danger{% endif %} bg-opacity-10">
+      <div class="card-body">
+        <table class="table table-sm align-middle mb-0">
+          <tbody>
+            <tr>
+              <td class="fw-semibold">Total Ingresos</td>
+              <td class="text-end fw-semibold text-success">${{ total_ingresos|floatformat:2 }}</td>
+            </tr>
+            <tr>
+              <td class="fw-semibold">Total Gastos</td>
+              <td class="text-end fw-semibold text-danger">(${{ total_gastos|floatformat:2 }})</td>
+            </tr>
+          </tbody>
+          <tfoot class="border-top border-2">
+            <tr class="fw-bold">
+              <td class="fs-5">
+                {% if es_utilidad %}
+                  <i class="bi bi-emoji-smile-fill text-success me-2"></i>Utilidad del período
+                {% else %}
+                  <i class="bi bi-emoji-frown-fill text-danger me-2"></i>Pérdida del período
+                {% endif %}
+              </td>
+              <td class="text-end fs-4 fw-bold {% if es_utilidad %}text-success{% else %}text-danger{% endif %}">
+                ${{ utilidad_bruta|floatformat:2 }}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% else %}
+<div class="text-center py-5 text-muted">
+  <i class="bi bi-bar-chart fs-1 d-block mb-2 opacity-50"></i>
+  No hay asientos confirmados de ingresos o gastos para el período seleccionado.
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  @media print {
+    .sb-wrapper, nav, form, button { display: none !important; }
+    .card { border: 1px solid #dee2e6 !important; box-shadow: none !important; }
+    .row { display: flex !important; }
+    .col-md-6 { width: 50% !important; }
+  }
+</style>
+{% endblock %}
