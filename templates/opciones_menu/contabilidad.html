@@ -1,0 +1,20 @@
+{% with uid_prefix=uid|default:"cont" %}
+
+<button id="{{ uid_prefix }}-btn-cuentas" type="button" class="sb-sub-item">
+  <i class="bi bi-journal-text"></i> Plan de Cuentas
+</button>
+
+<button id="{{ uid_prefix }}-btn-asientos" type="button" class="sb-sub-item">
+  <i class="bi bi-journal-bookmark"></i> Asientos Contables
+</button>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const b = "{{ uid_prefix }}";
+  const go = (id, url) => document.getElementById(b + id)?.addEventListener('click', () => { window.location.href = url; });
+  go('-btn-cuentas',  "{% url 'cont-cuentas-lista' %}");
+  go('-btn-asientos', "{% url 'cont-asientos-lista' %}");
+});
+</script>
+
+{% endwith %}

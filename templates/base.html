@@ -453,6 +453,25 @@
             </div>
 
           </div><!-- /accordion Gestión -->
+
+          <!-- ── Contabilidad ── -->
+          {% if user.is_staff %}
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dsk-cont">
+                <i class="bi bi-calculator"></i> Contabilidad
+              </button>
+            </h2>
+            <div id="dsk-cont" class="accordion-collapse collapse" data-bs-parent="#accDesk">
+              <div class="accordion-body">
+                <div class="list-group list-group-flush">
+                  {% include 'opciones_menu/contabilidad.html' with uid='dskCont' %}
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+
         {% endif %}
 
         <!-- ── Sección Restaurante ── -->
@@ -660,6 +679,23 @@
             </div>
 
           {% endif %}
+
+          <!-- ── Contabilidad móvil ── -->
+          {% if user.is_staff %}
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mob-cont">
+                <i class="bi bi-calculator me-2"></i>Contabilidad
+              </button>
+            </h2>
+            <div id="mob-cont" class="accordion-collapse collapse" data-bs-parent="#accMob">
+              <div class="list-group list-group-flush ps-2">
+                {% include 'opciones_menu/contabilidad.html' with uid='mobCont' %}
+              </div>
+            </div>
+          </div>
+          {% endif %}
+
         </div><!-- /accMob -->
 
         {% if emisor.es_restaurante and user.is_authenticated %}
