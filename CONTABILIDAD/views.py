@@ -4,11 +4,12 @@ import io
 import os
 import logging
 from django.db.models import Q
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404, redirect
 from django.core.paginator import Paginator
 from django.db import connections
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.http import HttpResponse
@@ -25,6 +26,7 @@ import csv
 from django.views import View
 from FE.models import FacturaElectronica
 from INVENTARIO.models import Compra
+from .models import CuentaContable, AsientoContable, LineaAsiento
 
 logger = logging.getLogger(__name__)
 
@@ -715,3 +717,284 @@ class AnexoComprasCSV(View):
             ])
 
         return resp
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PLAN DE CUENTAS
+# ─────────────────────────────────────────────────────────────────────────────
+
+@login_required
+def cuentas_lista(request):
+    q    = request.GET.get('q', '').strip()
+    tipo = request.GET.get('tipo', '').strip()
+
+    qs = CuentaContable.objects.select_related('cuenta_padre').all()
+    if q:
+        qs = qs.filter(Q(codigo__icontains=q) | Q(nombre__icontains=q))
+    if tipo:
+        qs = qs.filter(tipo=tipo)
+
+    paginator = Paginator(qs, 25)
+    page      = request.GET.get('page')
+    cuentas   = paginator.get_page(page)
+
+    return render(request, 'contabilidad/cuentas/lista.html', {
+        'cuentas': cuentas,
+        'q':       q,
+        'f_tipo':  tipo,
+        'tipos':   CuentaContable.TIPO_CHOICES,
+    })
+
+
+@login_required
+def cuentas_crear(request):
+    if request.method == 'POST':
+        try:
+            cuenta = _cuenta_desde_post(request.POST)
+            cuenta.save()
+            messages.success(request, f'Cuenta {cuenta.codigo} creada correctamente.')
+            return redirect('cont-cuentas-lista')
+        except Exception as e:
+            messages.error(request, str(e))
+
+    return render(request, 'contabilidad/cuentas/form.html', {
+        'titulo':      'Nueva cuenta',
+        'tipos':       CuentaContable.TIPO_CHOICES,
+        'naturalezas': CuentaContable.NATURALEZA_CHOICES,
+        'niveles':     CuentaContable.NIVEL_CHOICES,
+        'padres':      CuentaContable.objects.filter(nivel='PADRE', activa=True).order_by('codigo'),
+    })
+
+
+@login_required
+def cuentas_editar(request, pk):
+    cuenta = get_object_or_404(CuentaContable, pk=pk)
+
+    if request.method == 'POST':
+        try:
+            _cuenta_desde_post(request.POST, cuenta)
+            cuenta.save()
+            messages.success(request, f'Cuenta {cuenta.codigo} actualizada.')
+            return redirect('cont-cuentas-lista')
+        except Exception as e:
+            messages.error(request, str(e))
+
+    return render(request, 'contabilidad/cuentas/form.html', {
+        'titulo':      'Editar cuenta',
+        'cuenta':      cuenta,
+        'tipos':       CuentaContable.TIPO_CHOICES,
+        'naturalezas': CuentaContable.NATURALEZA_CHOICES,
+        'niveles':     CuentaContable.NIVEL_CHOICES,
+        'padres':      CuentaContable.objects.filter(nivel='PADRE', activa=True).exclude(pk=pk).order_by('codigo'),
+    })
+
+
+@login_required
+def cuentas_eliminar(request, pk):
+    cuenta = get_object_or_404(CuentaContable, pk=pk)
+    if request.method == 'POST':
+        if cuenta.lineas.exists():
+            messages.error(request, 'No se puede eliminar: la cuenta tiene movimientos registrados.')
+        elif cuenta.subcuentas.exists():
+            messages.error(request, 'No se puede eliminar: la cuenta tiene subcuentas.')
+        else:
+            nombre = str(cuenta)
+            cuenta.delete()
+            messages.success(request, f'Cuenta {nombre} eliminada.')
+    return redirect('cont-cuentas-lista')
+
+
+def _cuenta_desde_post(post, cuenta=None):
+    if cuenta is None:
+        cuenta = CuentaContable()
+    cuenta.codigo      = post.get('codigo', '').strip()
+    cuenta.nombre      = post.get('nombre', '').strip()
+    cuenta.tipo        = post.get('tipo', '')
+    cuenta.naturaleza  = post.get('naturaleza', '')
+    cuenta.nivel       = post.get('nivel', 'DETALLE')
+    cuenta.descripcion = post.get('descripcion', '').strip()
+    cuenta.activa      = post.get('activa') == 'on'
+    padre_id           = post.get('cuenta_padre') or None
+    cuenta.cuenta_padre_id = padre_id
+
+    if not cuenta.codigo:
+        raise ValueError('El código es obligatorio.')
+    if not cuenta.nombre:
+        raise ValueError('El nombre es obligatorio.')
+    return cuenta
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ASIENTOS CONTABLES
+# ─────────────────────────────────────────────────────────────────────────────
+
+@login_required
+def asientos_lista(request):
+    q       = request.GET.get('q', '').strip()
+    periodo = request.GET.get('periodo', '').strip()
+    estado  = request.GET.get('estado', '').strip()
+
+    qs = AsientoContable.objects.all()
+    if q:
+        qs = qs.filter(Q(concepto__icontains=q) | Q(numero__icontains=q))
+    if periodo:
+        qs = qs.filter(periodo=periodo)
+    if estado:
+        qs = qs.filter(estado=estado)
+
+    paginator = Paginator(qs, 20)
+    page      = request.GET.get('page')
+    asientos  = paginator.get_page(page)
+
+    return render(request, 'contabilidad/asientos/lista.html', {
+        'asientos':  asientos,
+        'q':         q,
+        'f_periodo': periodo,
+        'f_estado':  estado,
+        'estados':   AsientoContable.ESTADO_CHOICES,
+    })
+
+
+@login_required
+def asientos_crear(request):
+    cuentas_detalle = CuentaContable.objects.filter(nivel='DETALLE', activa=True).order_by('codigo')
+
+    if request.method == 'POST':
+        error = _guardar_asiento(request, asiento=None)
+        if error is None:
+            messages.success(request, 'Asiento creado correctamente.')
+            return redirect('cont-asientos-lista')
+        messages.error(request, error)
+
+    return render(request, 'contabilidad/asientos/form.html', {
+        'titulo':          'Nuevo asiento',
+        'cuentas_detalle': cuentas_detalle,
+        'estados':         AsientoContable.ESTADO_CHOICES,
+    })
+
+
+@login_required
+def asientos_ver(request, pk):
+    asiento = get_object_or_404(AsientoContable, pk=pk)
+    lineas  = asiento.lineas.select_related('cuenta').all()
+    return render(request, 'contabilidad/asientos/detalle.html', {
+        'asiento': asiento,
+        'lineas':  lineas,
+    })
+
+
+@login_required
+def asientos_editar(request, pk):
+    asiento         = get_object_or_404(AsientoContable, pk=pk)
+    cuentas_detalle = CuentaContable.objects.filter(nivel='DETALLE', activa=True).order_by('codigo')
+
+    if asiento.estado == 'CONFIRMADO':
+        messages.error(request, 'No se puede editar un asiento confirmado.')
+        return redirect('cont-asientos-ver', pk=pk)
+
+    if request.method == 'POST':
+        error = _guardar_asiento(request, asiento=asiento)
+        if error is None:
+            messages.success(request, 'Asiento actualizado.')
+            return redirect('cont-asientos-ver', pk=pk)
+        messages.error(request, error)
+
+    lineas_existentes = list(asiento.lineas.select_related('cuenta').all())
+    return render(request, 'contabilidad/asientos/form.html', {
+        'titulo':            'Editar asiento',
+        'asiento':           asiento,
+        'lineas_existentes': lineas_existentes,
+        'cuentas_detalle':   cuentas_detalle,
+        'estados':           AsientoContable.ESTADO_CHOICES,
+    })
+
+
+@login_required
+def asientos_confirmar(request, pk):
+    asiento = get_object_or_404(AsientoContable, pk=pk)
+    if request.method == 'POST':
+        if not asiento.lineas.exists():
+            messages.error(request, 'El asiento no tiene líneas.')
+        elif not asiento.esta_cuadrado:
+            messages.error(request, f'El asiento no cuadra: Debe={asiento.total_debe} / Haber={asiento.total_haber}.')
+        else:
+            asiento.estado = 'CONFIRMADO'
+            asiento.save()
+            messages.success(request, f'Asiento #{asiento.numero} confirmado.')
+    return redirect('cont-asientos-ver', pk=pk)
+
+
+@login_required
+def asientos_eliminar(request, pk):
+    asiento = get_object_or_404(AsientoContable, pk=pk)
+    if request.method == 'POST':
+        if asiento.estado == 'CONFIRMADO':
+            messages.error(request, 'No se puede eliminar un asiento confirmado.')
+            return redirect('cont-asientos-ver', pk=pk)
+        num = asiento.numero
+        asiento.delete()
+        messages.success(request, f'Asiento #{num} eliminado.')
+    return redirect('cont-asientos-lista')
+
+
+def _guardar_asiento(request, asiento=None):
+    """Guarda un asiento y sus líneas. Retorna None si ok, string de error si falla."""
+    post     = request.POST
+    fecha    = post.get('fecha', '').strip()
+    concepto = post.get('concepto', '').strip()
+    estado   = post.get('estado', 'BORRADOR')
+
+    if not fecha or not concepto:
+        return 'Fecha y concepto son obligatorios.'
+
+    cuentas_ids = post.getlist('linea_cuenta')
+    descrips    = post.getlist('linea_descripcion')
+    debes       = post.getlist('linea_debe')
+    haberes     = post.getlist('linea_haber')
+
+    lineas_data = []
+    for i, cid in enumerate(cuentas_ids):
+        if not cid:
+            continue
+        try:
+            cuenta = CuentaContable.objects.get(pk=cid)
+        except CuentaContable.DoesNotExist:
+            return f'Cuenta con id {cid} no existe.'
+        try:
+            debe  = Decimal(debes[i]  or '0')
+            haber = Decimal(haberes[i] or '0')
+        except Exception:
+            return 'Valores de debe/haber inválidos.'
+        lineas_data.append({
+            'cuenta':      cuenta,
+            'descripcion': descrips[i] if i < len(descrips) else '',
+            'debe':        debe,
+            'haber':       haber,
+        })
+
+    if not lineas_data:
+        return 'El asiento debe tener al menos una línea.'
+
+    total_debe  = sum(l['debe']  for l in lineas_data)
+    total_haber = sum(l['haber'] for l in lineas_data)
+
+    if estado == 'CONFIRMADO' and total_debe != total_haber:
+        return f'El asiento no cuadra: Debe={total_debe} / Haber={total_haber}.'
+
+    if asiento is None:
+        asiento = AsientoContable(creado_por=request.user)
+    asiento.fecha    = fecha
+    asiento.concepto = concepto
+    asiento.estado   = estado
+    asiento.save()
+
+    asiento.lineas.all().delete()
+    for l in lineas_data:
+        LineaAsiento.objects.create(
+            asiento=asiento,
+            cuenta=l['cuenta'],
+            descripcion=l['descripcion'],
+            debe=l['debe'],
+            haber=l['haber'],
+        )
+    return None
