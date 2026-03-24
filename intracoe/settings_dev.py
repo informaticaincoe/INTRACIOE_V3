@@ -13,8 +13,6 @@ DATABASES = {
     }
 }
 
-# Desactivar SQL Server (no disponible localmente)
-# 'brilo_sqlserver' omitido intencionalmente
 
 DEBUG = True
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']

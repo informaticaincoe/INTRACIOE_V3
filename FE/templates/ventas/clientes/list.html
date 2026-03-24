@@ -61,6 +61,9 @@
     <button type="button" id="btnUbicacion" class="btn btn-sm btn-outline-success">
       <i class="bi bi-geo-alt me-1"></i>Cerca de mí
     </button>
+    <a href="{% url 'clientes_export_excel' %}{% if q %}?q={{ q }}{% endif %}" class="btn btn-sm btn-outline-success">
+      <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel
+    </a>
     <a href="{% url 'clientes_crear' %}" class="btn btn-sm btn-primary">
       <i class="bi bi-person-plus me-1"></i>Nuevo cliente
     </a>

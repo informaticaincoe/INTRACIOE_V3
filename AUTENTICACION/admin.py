@@ -11,6 +11,8 @@ from .models import (
     UsuarioEmisor,
     PasswordResetCode,
     ConfiguracionServidor,
+    Plan,
+    Suscripcion,
     User,
 )
 # Ajusta el import al nombre real de tu app que contiene Emisor_fe
@@ -87,6 +89,26 @@ class ConfiguracionServidorAdmin(admin.ModelAdmin):
     list_display  = ("clave", "valor", "url", "url_endpoint", "fecha_creacion")
     #search_fields = ("clave", "valor", "url", "url_endpoint", "descripcion")
     list_filter   = ("fecha_creacion",)
+
+@admin.register(Plan)
+class PlanAdmin(admin.ModelAdmin):
+    list_display = (
+        "nombre", "tiene_facturacion", "tiene_ventas", "tiene_compras",
+        "tiene_inventario", "tiene_contabilidad", "tiene_rrhh", "tiene_restaurante",
+    )
+    search_fields = ("nombre",)
+
+
+@admin.register(Suscripcion)
+class SuscripcionAdmin(admin.ModelAdmin):
+    list_display  = ("emisor", "plan", "fecha_inicio", "fecha_fin", "activo", "esta_vigente")
+    list_filter   = ("activo", "plan")
+    search_fields = ("emisor__nombre_razon_social", "emisor__nit")
+
+    @admin.display(boolean=True, description="Vigente")
+    def esta_vigente(self, obj):
+        return obj.esta_vigente()
+
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):

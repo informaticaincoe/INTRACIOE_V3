@@ -126,6 +126,74 @@ class EmailProfile(models.Model):
     def __str__(self):
         return f"{self.nombre} [{self.scope}]{' *' if self.is_active else ''}"
 
+class Plan(models.Model):
+    """Plan comercial que determina qué módulos tiene disponibles un emisor."""
+    nombre = models.CharField(max_length=100, unique=True)
+    descripcion = models.TextField(blank=True)
+    tiene_facturacion  = models.BooleanField(default=True,  verbose_name="Facturación Electrónica")
+    tiene_ventas       = models.BooleanField(default=True,  verbose_name="Ventas")
+    tiene_compras      = models.BooleanField(default=False, verbose_name="Compras")
+    tiene_inventario   = models.BooleanField(default=False, verbose_name="Inventario")
+    tiene_contabilidad = models.BooleanField(default=False, verbose_name="Contabilidad")
+    tiene_rrhh         = models.BooleanField(default=False, verbose_name="RRHH / Nómina")
+    tiene_restaurante  = models.BooleanField(default=False, verbose_name="Restaurante / POS")
+
+    class Meta:
+        verbose_name = "Plan"
+        verbose_name_plural = "Planes"
+
+    def __str__(self):
+        return self.nombre
+
+
+class Suscripcion(models.Model):
+    """Vincula un Emisor a un Plan con fechas de vigencia."""
+    emisor      = models.OneToOneField("FE.Emisor_fe", on_delete=models.CASCADE, related_name="suscripcion")
+    plan        = models.ForeignKey(Plan, on_delete=models.PROTECT, related_name="suscripciones")
+    fecha_inicio = models.DateField()
+    fecha_fin    = models.DateField(null=True, blank=True, help_text="Dejar vacío = sin vencimiento")
+    activo       = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "Suscripción"
+        verbose_name_plural = "Suscripciones"
+
+    def esta_vigente(self):
+        """Activa si no ha expirado O está dentro del periodo de gracia (24h)."""
+        from datetime import timedelta
+        from django.utils import timezone
+        if not self.activo:
+            return False
+        if self.fecha_fin:
+            hoy = timezone.now().date()
+            limite_gracia = self.fecha_fin + timedelta(days=1)
+            if hoy > limite_gracia:
+                return False
+        return True
+
+    def en_periodo_gracia(self):
+        """True si la fecha_fin ya pasó pero aún está dentro de las 24h de gracia."""
+        from datetime import timedelta
+        from django.utils import timezone
+        if not self.activo or not self.fecha_fin:
+            return False
+        hoy = timezone.now().date()
+        return self.fecha_fin < hoy <= self.fecha_fin + timedelta(days=1)
+
+    @property
+    def gracia_fin(self):
+        """Fecha+hora exacta en que termina el periodo de gracia (medianoche del día siguiente)."""
+        from datetime import timedelta, datetime, time
+        from django.utils import timezone
+        if self.fecha_fin:
+            fin = datetime.combine(self.fecha_fin + timedelta(days=1), time.max)
+            return timezone.make_aware(fin) if timezone.is_naive(fin) else fin
+        return None
+
+    def __str__(self):
+        return f"{self.emisor} → {self.plan}"
+
+
 # Crear automáticamente el perfil al crear el usuario
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def crear_perfil_usuario(sender, instance, created, **kwargs):

@@ -6,11 +6,12 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import get_user_model
 from django.http import JsonResponse
 
+from django.utils import timezone
 from FE.models import (
     Departamento, Emisor_fe, Ambiente, Municipio, ActividadEconomica,
     TiposEstablecimientos, TiposDocIDReceptor, Pais
 )
-from .models import ConfiguracionServidor, UsuarioEmisor
+from .models import ConfiguracionServidor, UsuarioEmisor, Plan, Suscripcion
 
 User = get_user_model()
 
@@ -185,6 +186,8 @@ def setup_wizard(request):
                 nombre_comercial=request.POST.get("nombre_comercial"),
                 nombre_establecimiento=request.POST.get("nombre_establecimiento"),
                 tipo_documento_id=request.POST["tipo_documento"],
+                color_topbar=request.POST.get("color_topbar", "#0d47a1"),
+                color_sidebar=request.POST.get("color_sidebar", "#ffffff"),
             )
 
             # ManyToMany actividades
@@ -197,7 +200,7 @@ def setup_wizard(request):
                 UsuarioEmisor.objects.create(user=admin, emisor=emisor, es_predeterminado=True)
 
             messages.success(request, "Empresa creada y vinculada ✅")
-            return redirect("/setup/?step=servidor")
+            return redirect("/setup/?step=plan")
 
         context = {
             "departamentos": Departamento.objects.all(),
@@ -210,7 +213,43 @@ def setup_wizard(request):
         }
         return render(request, "setup/empresa.html", context)
 
-    # Paso 3: Configuración del servidor
+    # Paso 3: Plan y suscripción
+    elif step == "plan":
+        if request.method == "POST":
+            nombre_plan = (request.POST.get("nombre_plan") or "").strip()
+            if not nombre_plan:
+                messages.error(request, "El nombre del plan es obligatorio.")
+                return redirect("/setup/?step=plan")
+
+            plan = Plan.objects.create(
+                nombre=nombre_plan,
+                descripcion=request.POST.get("descripcion_plan", ""),
+                tiene_facturacion="tiene_facturacion" in request.POST,
+                tiene_ventas="tiene_ventas" in request.POST,
+                tiene_compras="tiene_compras" in request.POST,
+                tiene_inventario="tiene_inventario" in request.POST,
+                tiene_contabilidad="tiene_contabilidad" in request.POST,
+                tiene_rrhh="tiene_rrhh" in request.POST,
+                tiene_restaurante="tiene_restaurante" in request.POST,
+            )
+
+            emisor = Emisor_fe.objects.first()
+            if emisor:
+                fecha_fin_str = request.POST.get("fecha_fin", "").strip()
+                Suscripcion.objects.create(
+                    emisor=emisor,
+                    plan=plan,
+                    fecha_inicio=timezone.now().date(),
+                    fecha_fin=fecha_fin_str if fecha_fin_str else None,
+                    activo=True,
+                )
+
+            messages.success(request, "Plan y suscripción configurados ✅")
+            return redirect("/setup/?step=servidor")
+
+        return render(request, "setup/plan.html")
+
+    # Paso 4: Configuración del servidor
     elif step == "servidor":
         claves_fijas = [
             "email_host_fe",

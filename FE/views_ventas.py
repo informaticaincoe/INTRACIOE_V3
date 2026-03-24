@@ -606,6 +606,82 @@ def clientes_list(request):
 
 
 @login_required
+def clientes_export_excel(request):
+    q = request.GET.get('q', '').strip()
+
+    clientes = Receptor_fe.objects.select_related(
+        'tipo_documento', 'municipio', 'municipio__departamento', 'pais', 'tipo_persona'
+    ).prefetch_related('actividades_economicas').order_by('nombre')
+
+    if q:
+        clientes = clientes.filter(
+            Q(nombre__icontains=q) |
+            Q(num_documento__icontains=q) |
+            Q(telefono__icontains=q) |
+            Q(correo__icontains=q)
+        )
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Clientes"
+
+    headers = [
+        "Nombre", "Nombre Comercial", "Tipo Documento", "Número Documento",
+        "NRC", "Tipo Persona", "Teléfono", "Correo",
+        "Dirección", "Municipio", "Departamento", "País",
+        "Actividades Económicas", "Fecha Registro",
+    ]
+    ws.append(headers)
+
+    # Estilo encabezado
+    from openpyxl.styles import Font, PatternFill, Alignment
+    header_fill = PatternFill("solid", fgColor="1E40AF")
+    header_font = Font(bold=True, color="FFFFFF")
+    for col_idx, _ in enumerate(headers, start=1):
+        cell = ws.cell(row=1, column=col_idx)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center")
+
+    for c in clientes:
+        actividades = ", ".join(
+            a.descripcion for a in c.actividades_economicas.all()
+        ) if c.actividades_economicas.exists() else ""
+        ws.append([
+            c.nombre,
+            c.nombreComercial or "",
+            str(c.tipo_documento) if c.tipo_documento else "",
+            c.num_documento or "",
+            c.nrc or "",
+            str(c.tipo_persona) if c.tipo_persona else "",
+            c.telefono or "",
+            c.correo or "",
+            c.direccion or "",
+            c.municipio.descripcion if c.municipio else "",
+            c.municipio.departamento.descripcion if c.municipio and c.municipio.departamento else "",
+            str(c.pais) if c.pais else "",
+            actividades,
+            c.created_at.strftime("%Y-%m-%d") if c.created_at else "",
+        ])
+
+    # Ajustar ancho de columnas
+    for col_idx in range(1, len(headers) + 1):
+        col_letter = get_column_letter(col_idx)
+        max_len = max(
+            (len(str(ws.cell(row=r, column=col_idx).value or "")) for r in range(1, ws.max_row + 1)),
+            default=10,
+        )
+        ws.column_dimensions[col_letter].width = min(max_len + 4, 50)
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = 'attachment; filename="clientes.xlsx"'
+    wb.save(response)
+    return response
+
+
+@login_required
 @require_http_methods(["GET","POST"])
 def clientes_crear(request):
     return _cliente_form(request)

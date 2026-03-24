@@ -110,6 +110,7 @@ urlpatterns += [
     path('ventas/clientes/nuevo/', views_ventas.clientes_crear, name='clientes_crear'),
     path('ventas/clientes/<int:pk>/editar/', views_ventas.clientes_editar, name='clientes_editar'),
     path('ventas/clientes/<int:pk>/eliminar/', views_ventas.clientes_eliminar, name='clientes_eliminar'),
+    path('ventas/clientes/exportar/', views_ventas.clientes_export_excel, name='clientes_export_excel'),
 
     # Catálogo de productos (de INVENTARIO.Producto)
     path('ventas/catalogo/', views_ventas.catalogo_productos, name='catalogo_productos'),

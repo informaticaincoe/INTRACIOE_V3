@@ -282,8 +282,15 @@ class Emisor_fe(models.Model):
         default=False,
         verbose_name="Es restaurante"
     )
-    
-    
+    color_topbar = models.CharField(
+        max_length=7, default="#0d47a1",
+        verbose_name="Color barra superior (hex)"
+    )
+    color_sidebar = models.CharField(
+        max_length=7, default="#ffffff",
+        verbose_name="Color barra lateral (hex)"
+    )
+
     def __str__(self):
         return f"{self.nombre_razon_social} ({self.nit})"
 

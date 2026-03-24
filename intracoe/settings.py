@@ -113,11 +113,14 @@ REST_FRAMEWORK = {
     # 'PAGE_SIZE': 10,
 }
 
-# Caducidad de la cookie de sesión: 5 minutos
-#SESSION_COOKIE_AGE = 300  
+# Caducidad de la cookie de sesión: 8 horas
+SESSION_COOKIE_AGE = 28800
 
-# Renueva la cookie en cada petición
+# Renueva la cookie en cada petición (reinicia el contador con cada request)
 SESSION_SAVE_EVERY_REQUEST = True
+
+# La sesión NO expira al cerrar el navegador
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 # Application definition
 
@@ -214,19 +217,6 @@ DATABASES = {
         'PORT': '5432',           # Puerto predeterminado de PostgreSQL
     },
 
-    'brilo_sqlserver': {
-        'ENGINE': 'sql_server.pyodbc',
-        'NAME': 'olComun',
-        'USER': 'olimporeader',
-        'PASSWORD': 'olimporeader',
-        'HOST': '200.31.164.67',
-        'PORT': '2034',  # Usar puerto estándar si es posible
-        'OPTIONS': {
-            'driver': 'ODBC Driver 17 for SQL Server',
-            'extra_params': 'TrustServerCertificate=yes;',
-            'connection_timeout': 250,
-        },
-    }
 }
 
 AUTHENTICATION_BACKENDS = [
