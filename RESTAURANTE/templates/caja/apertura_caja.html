@@ -1,87 +1,110 @@
 {% extends "base.html" %}
 {% load l10n %}
-{% block title %}Apertura de caja{% endblock %}
+{% block title %}Apertura de caja · INTRACOE{% endblock %}
 
 {% block content %}
-<div class="container mt-3">
-  <h5 class="h5 mb-3 text-gray-800">Apertura de caja</h5>
+<div class="container-fluid mt-3">
 
-  <form method="post" class="border border-secondary border-opacity-10 px-3 py-4 rounded">
-    {% csrf_token %}
-
-    <div class="mb-3">
-      <label for="monto_inicial" class="form-label">Efectivo de apertura (total)</label>
-      <input id="monto_inicial" name="monto_inicial" type="number" step="0.01" min="0" class="form-control" disabled required>
+  <div class="d-flex align-items-center gap-2 mb-4">
+    <div class="rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center"
+         style="width:2.8rem;height:2.8rem">
+      <i class="bi bi-cash-coin text-success fs-5"></i>
     </div>
-
-    <div class="table-responsive">
-      <table class="table table-sm align-middle">
-        <thead>
-          <tr>
-            <th>Denominación</th>
-            <th style="width: 180px;">Cantidad</th>
-            <th class="text-end">Subtotal</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for den in denominaciones %}
-          <tr data-valor="{{ den.valor|unlocalize }}">
-            <td>{{ den.nombre }} ({{ den.valor }})</td>
-            <td>
-              <input type="number" min="0" step="1" class="form-control form-control-sm qty" name="den_{{ den.id }}" value="0" />
-            </td>
-            <td class="text-end subtotal">$0.00</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-        <tfoot>
-          <tr>
-            <th colspan="2" class="text-end">Total desglose</th>
-            <th class="text-end" id="total_desglose">$0.00</th>
-          </tr>
-        </tfoot>
-      </table>
+    <div>
+      <h5 class="mb-0 fw-semibold">Apertura de caja</h5>
+      <small class="text-muted">Registra el efectivo inicial del turno</small>
     </div>
+  </div>
 
-    <div class="d-flex justify-content-end gap-2">
-      <a href="{% url 'caja' %}" class="btn btn-secondary">Cancelar</a>
-      <button type="submit" class="btn btn-primary">Abrir caja</button>
+  <div class="row justify-content-start">
+    <div class="col-12 col-lg-7">
+      <form method="post">
+        {% csrf_token %}
+
+        <div class="card shadow-sm border-0 mb-3">
+          <div class="card-header bg-transparent border-bottom py-3">
+            <span class="fw-semibold"><i class="bi bi-wallet2 me-2 text-success"></i>Desglose de efectivo</span>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th class="ps-4">Denominación</th>
+                    <th style="width:160px">Cantidad</th>
+                    <th class="text-end pe-4">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for den in denominaciones %}
+                  <tr data-valor="{{ den.valor|unlocalize }}">
+                    <td class="ps-4">
+                      <span class="fw-medium">{{ den.nombre }}</span>
+                      <small class="text-muted ms-2">${{ den.valor }}</small>
+                    </td>
+                    <td>
+                      <input type="number" min="0" step="1"
+                             class="form-control form-control-sm qty text-center"
+                             name="den_{{ den.id }}" value="0">
+                    </td>
+                    <td class="text-end pe-4 subtotal text-muted">$0.00</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+                <tfoot>
+                  <tr class="table-light fw-semibold">
+                    <td colspan="2" class="ps-4 text-end">Total en efectivo</td>
+                    <td class="text-end pe-4 text-success fs-5" id="total_desglose">$0.00</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-body p-4">
+            <label for="monto_inicial" class="form-label fw-medium">Total de apertura (calculado)</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light">$</span>
+              <input id="monto_inicial" name="monto_inicial" type="number"
+                     step="0.01" min="0" class="form-control fw-semibold fs-5 text-success"
+                     disabled required readonly>
+            </div>
+            <div class="form-text">Se sincroniza automáticamente con el desglose.</div>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 justify-content-end">
+          <a href="{% url 'caja' %}" class="btn btn-outline-secondary">Cancelar</a>
+          <button type="submit" class="btn btn-success px-4">
+            <i class="bi bi-lock me-1"></i>Abrir caja
+          </button>
+        </div>
+      </form>
     </div>
-  </form>
+  </div>
+
 </div>
 
 <script>
-  document.addEventListener("DOMContentLoaded", function() {
-    const totalDesgloseElement = document.getElementById("total_desglose");
-    const montoInicialInput = document.getElementById("monto_inicial");
+document.addEventListener("DOMContentLoaded", function () {
+  const totalEl   = document.getElementById("total_desglose");
+  const montoEl   = document.getElementById("monto_inicial");
 
-    document.addEventListener("input", function(e) {
-        // Solo actuar si el cambio fue en un input de cantidad (qty)
-        if (!e.target.classList.contains("qty")) return;
-
-        let total = 0;
-        
-        // Recorrer cada fila para calcular subtotales y el gran total
-        document.querySelectorAll("tr[data-valor]").forEach(tr => {
-            // Reemplazamos coma por punto por si acaso la localización falla
-            const valorStr = tr.getAttribute("data-valor").replace(',', '.');
-            const valor = parseFloat(valorStr) || 0;
-            const qty = parseInt(tr.querySelector(".qty").value) || 0;
-            
-            const sub = valor * qty;
-            total += sub;
-            
-            // Actualizar el texto del subtotal en la fila
-            tr.querySelector(".subtotal").textContent = "$" + sub.toFixed(2);
-        });
-
-        // 1. Actualizar el texto del total en el pie de tabla
-        totalDesgloseElement.textContent = "$" + total.toFixed(2);
-
-        // 2. Sincronizar automáticamente con el campo de Monto Inicial
-        // Usamos toFixed(2) para que el input reconozca el formato de moneda correctamente
-        montoInicialInput.value = total.toFixed(2);
+  document.addEventListener("input", function (e) {
+    if (!e.target.classList.contains("qty")) return;
+    let total = 0;
+    document.querySelectorAll("tr[data-valor]").forEach(tr => {
+      const valor = parseFloat(tr.dataset.valor.replace(',', '.')) || 0;
+      const qty   = parseInt(tr.querySelector(".qty").value) || 0;
+      const sub   = valor * qty;
+      total += sub;
+      tr.querySelector(".subtotal").textContent = "$" + sub.toFixed(2);
     });
+    totalEl.textContent = "$" + total.toFixed(2);
+    montoEl.value = total.toFixed(2);
+  });
 });
 </script>
 {% endblock %}

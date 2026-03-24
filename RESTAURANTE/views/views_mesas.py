@@ -1,5 +1,6 @@
 import datetime
 import logging
+from decimal import Decimal
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -85,7 +86,7 @@ def listar_mesas(request):
         Q(fecha_inicio__lte=ahora, fecha_fin__isnull=True) |
         Q(es_fija=True)
     )
-    mesas = mesas.annotate(tiene_mesero=Exists(asignacion_global)).order_by("numero")
+    mesas = mesas.annotate(tiene_mesero=Exists(asignacion_global)).order_by("area__nombre", "numero")
 
     # 3. Definir acciones por mesa segun rol
     for m in mesas:
@@ -133,11 +134,12 @@ def listar_mesas(request):
     # 4. Contexto final
     context = {
         "lista_mesas": mesas,
+        "areas": Area.objects.all().order_by("nombre"),
         "modo": rol,
         "platillos": Platillo.objects.all() if rol == "mesero" else None,
         "lista_meseros": Mesero.objects.filter(activo=True) if rol in ("admin", "supervisor", "cajero") else None,
     }
-    
+
     return render(request, "mesas/mesas.html", context)
 
 def crear_mesa(request):
@@ -148,14 +150,17 @@ def crear_mesa(request):
         area_id = request.POST.get('area_id') or ''
         es_vip = request.POST.get('es_vip') == "on"
         estado = request.POST.get('estado')
-        
+        propina_raw = request.POST.get('propina_porcentaje') or ''
+        propina_porcentaje = Decimal(propina_raw) if propina_raw else None
+
         if numero and estado:
                 Mesa.objects.create(
-                    numero = numero,
-                    capacidad = capacidad,
+                    numero=numero,
+                    capacidad=capacidad,
                     area_id=area_id,
-                    es_vip = es_vip,
-                    estado = estado,
+                    es_vip=es_vip,
+                    estado=estado,
+                    propina_porcentaje=propina_porcentaje,
                 )
                 messages.success(request, f'Mesa creado con éxito.')
         else:
@@ -182,13 +187,16 @@ def editar_mesa(request, pk):
         area_id = request.POST.get('area_id') or ''
         es_vip = request.POST.get('es_vip') == "on"
         estado = request.POST.get('estado')
-        
+        propina_raw = request.POST.get('propina_porcentaje') or ''
+        propina_porcentaje = Decimal(propina_raw) if propina_raw else None
+
         if numero and estado:
             mesa.numero = numero
             mesa.capacidad = capacidad
             mesa.area_id = area_id
             mesa.es_vip = es_vip
             mesa.estado = estado
+            mesa.propina_porcentaje = propina_porcentaje
             mesa.save()
             messages.success(request, f'Mesa creado con éxito.')
         else:

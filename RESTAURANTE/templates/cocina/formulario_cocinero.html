@@ -1,72 +1,97 @@
 {% extends "base.html" %}
-{% block title %}{% if cocinero %}Editar información del cocinero{% else %}Agregar cocinero{% endif %} · INTRACOE{% endblock %}
+{% block title %}{% if cocinero %}Editar cocinero{% else %}Agregar cocinero{% endif %} · INTRACOE{% endblock %}
+
 {% block content %}
 {% load l10n %}
+<div class="container-fluid mt-3">
 
-<div class="mx-md-5 py-3">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-
-  <div class="d-flex align-items-center mb-3">
-    <a href="{% url 'cocineros-lista' %}">
-      <span class="material-symbols-outlined">arrow_back_ios</span>
+  <div class="d-flex align-items-center gap-2 mb-4">
+    <a href="{% url 'cocineros-lista' %}" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i>
     </a>
-    <h1 class="h5 mb-0">
-      {% if cocinero %}Editar información del cocinero {{ cocinero.nombre }}{% else %}Agregar cocinero{% endif %}
-    </h1>
+    <div>
+      <h5 class="mb-0 fw-semibold">
+        {% if cocinero %}Editar cocinero{% else %}Agregar cocinero{% endif %}
+      </h5>
+      <small class="text-muted">
+        {% if cocinero %}{{ cocinero.nombre }}{% else %}Complete los datos del nuevo cocinero{% endif %}
+      </small>
+    </div>
   </div>
 
-  <form method="post" id="formCocinero" class="needs-validation" novalidate>
-    {% csrf_token %}
-    <div class="row g-3 d-flex align-items-stretch">
-      <div class="col-md-6 d-flex flex-column gap-3">
-
-        <div>
-          <label class="form-label">Nombre</label>
-          <input type="text" name="nombre" class="form-control" value="{{ cocinero.nombre|default:'' }}" required>
-          <div class="invalid-feedback">Obligatorio.</div>
+  <div class="row justify-content-start">
+    <div class="col-12 col-md-6 col-lg-5">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-transparent border-bottom py-3">
+          <span class="fw-semibold">
+            <i class="bi bi-fire me-2 text-warning"></i>Datos del cocinero
+          </span>
         </div>
+        <div class="card-body p-4">
+          <form method="post" id="formCocinero" class="needs-validation" novalidate>
+            {% csrf_token %}
+            <div class="d-flex flex-column gap-3">
 
-        <div>
-          <label class="form-label mb-2">PIN</label>
-          <input type="text" name="pin" class="form-control" value="{{ cocinero.pin|default:'' }}" required>
-          <div class="invalid-feedback">Obligatorio.</div>
+              <div>
+                <label class="form-label fw-medium" for="nombre">Nombre</label>
+                <input type="text" id="nombre" name="nombre" class="form-control"
+                       value="{{ cocinero.nombre|default:'' }}" placeholder="Nombre completo" required>
+                <div class="invalid-feedback">Este campo es obligatorio.</div>
+              </div>
+
+              <div>
+                <label class="form-label fw-medium" for="pin">PIN de acceso</label>
+                <input type="text" id="pin" name="pin" class="form-control"
+                       value="{{ cocinero.pin|default:'' }}" placeholder="Ej: 5678" required>
+                <div class="form-text">El cocinero usará este PIN en la pantalla de cocina.</div>
+                <div class="invalid-feedback">Este campo es obligatorio.</div>
+              </div>
+
+              <div>
+                <label class="form-label fw-medium" for="area_cocina">Área de cocina</label>
+                <select id="area_cocina" name="area_cocina" class="form-select" required>
+                  <option value="">Seleccione un área…</option>
+                  {% for area in lista_areas %}
+                  <option value="{{ area.id }}"
+                    {% if cocinero and cocinero.area_cocina_id == area.id %}selected{% endif %}>
+                    {{ area.area_cocina }}
+                  </option>
+                  {% endfor %}
+                </select>
+                <div class="invalid-feedback">Seleccione un área de cocina.</div>
+              </div>
+
+              <div class="d-flex align-items-center justify-content-between p-3 rounded-2 bg-light">
+                <div>
+                  <p class="mb-0 fw-medium">Estado activo</p>
+                  <small class="text-muted">El cocinero podrá iniciar sesión</small>
+                </div>
+                <div class="form-check form-switch mb-0">
+                  <input class="form-check-input" type="checkbox" name="activo" value="on"
+                         id="activo" {% if cocinero.activo or not cocinero %}checked{% endif %}>
+                </div>
+              </div>
+
+            </div>
+
+            <div class="d-flex gap-2 mt-4">
+              <a href="{% url 'cocineros-lista' %}" class="btn btn-outline-secondary">Cancelar</a>
+              <button type="submit" class="btn btn-primary" id="save_form">
+                <i class="bi bi-check-lg me-1"></i>Guardar
+              </button>
+            </div>
+          </form>
         </div>
-
-        {% comment %} <div>
-          <label class="" for="area_cocina">Area de cocina</label>
-          <input type="text" name="area_cocina" class="form-control" value="{{ cocinero.area_cocina|default:'' }}" required>
-          
-          <div class="invalid-feedback">Obligatorio.</div>
-        </div> {% endcomment %}
-        <div>
-          <label>Área</label>
-            <select name="area_cocina" id="area_cocina" class="form-select" required>
-                <option value="">Seleccione…</option>
-                {% for area in lista_areas %}
-                    <option value="{{ area.id }}"
-                        {% if cocinero and cocinero.area_cocina_id == area.id %}selected{% endif %}>
-                        {{ area.area_cocina }}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div class="form-check form-switch">
-          <input class="form-check-input" type="checkbox" name="activo" value="on" id="activo" {% if cocinero.activo %}checked{% endif %}>
-          <label class="form-check-label" for="activo">Activo</label>
-        </div>
-
       </div>
     </div>
+  </div>
 
-    <button class="btn btn-primary mt-3" id="save_form">Guardar</button>
-  </form>
 </div>
 
 <script>
 (function () {
   const form = document.getElementById('formCocinero');
-  form.addEventListener('submit', (e)=>{
+  form.addEventListener('submit', (e) => {
     if (!form.checkValidity()) {
       e.preventDefault();
       e.stopPropagation();
@@ -75,5 +100,4 @@
   });
 })();
 </script>
-
 {% endblock %}

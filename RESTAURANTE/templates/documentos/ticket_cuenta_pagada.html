@@ -1,0 +1,106 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Ticket · Mesa {{ pedido.mesa.numero }}</title>
+  <style>
+    body { font-family: monospace; font-size: 12px; width: 80mm; margin: 0 auto; color: #000; padding: 10px; }
+    .center { text-align: center; }
+    .right  { text-align: right; }
+    .bold   { font-weight: bold; }
+    .line   { border-top: 1px dashed #000; margin: 5px 0; }
+    .double-line { border-top: 2px solid #000; margin: 5px 0; }
+    table { width: 100%; border-collapse: collapse; }
+    .items td { padding: 2px 0; vertical-align: top; }
+    .totales td { padding: 2px 0; }
+    .logo { max-width: 60px; margin-bottom: 5px; }
+    .back-btn { display: block; margin: 10px auto; padding: 6px 16px; background: #198754;
+                color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
+    @media print {
+      @page { size: 80mm auto; margin: 0; }
+      .noprint { display: none !important; }
+    }
+  </style>
+</head>
+<body onload="window.print()">
+
+  <div class="center noprint" style="margin-bottom:8px">
+    <button class="back-btn" onclick="window.close(); window.location='{% url 'cuentas-abiertas' %}'">
+      ✓ Volver al cobro
+    </button>
+  </div>
+
+  <div class="center">
+    <img src="{% static 'img/logo_empresa.png' %}" class="logo" alt="Logo">
+    <div class="bold" style="font-size:14px">{{ emisor.nombre_comercial|default:emisor.nombre_razon_social }}</div>
+    {% if emisor.direccion_comercial %}<div>{{ emisor.direccion_comercial|truncatechars:60 }}</div>{% endif %}
+    {% if emisor.telefono %}<div>TEL: {{ emisor.telefono }}</div>{% endif %}
+    <div class="bold" style="font-size:16px;margin-top:8px">*** TICKET ***</div>
+  </div>
+
+  <div class="line"></div>
+
+  <table>
+    <tr><td><strong>Mesa: {{ pedido.mesa.numero }}</strong></td></tr>
+    {% if cuenta.nombre != "Cuenta" %}<tr><td>Cuenta: {{ cuenta.nombre }}</td></tr>{% endif %}
+    <tr><td>Fecha: {% now "d/m/Y H:i" %}</td></tr>
+  </table>
+
+  <div class="line"></div>
+
+  <table class="items">
+    <thead>
+      <tr>
+        <th align="left" width="10%">Cant</th>
+        <th align="left" width="55%">Descripción</th>
+        <th align="right" width="15%">P/U</th>
+        <th align="right" width="20%">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in detalle_items %}
+      <tr>
+        <td>{{ item.cantidad }}</td>
+        <td>{{ item.platillo.nombre }}</td>
+        <td align="right">${{ item.precio_unitario|floatformat:2 }}</td>
+        <td align="right">${{ item.total_linea|floatformat:2 }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="double-line"></div>
+
+  <table class="totales">
+    <tr>
+      <td>Subtotal:</td>
+      <td class="right">${{ cuenta.subtotal|floatformat:2 }}</td>
+    </tr>
+    <tr>
+      <td>IVA (13%):</td>
+      <td class="right">${{ cuenta.iva_total|floatformat:2 }}</td>
+    </tr>
+    {% if propina_monto %}
+    <tr>
+      <td>Propina sugerida:</td>
+      <td class="right">${{ propina_monto|floatformat:2 }}</td>
+    </tr>
+    {% endif %}
+    <tr class="bold" style="font-size:14px">
+      <td>TOTAL PAGADO:</td>
+      <td class="right">${{ cuenta.total|floatformat:2 }}</td>
+    </tr>
+  </table>
+
+  <div class="line"></div>
+
+  <div class="center" style="margin-top:10px">
+    <div>ESTO NO ES UNA FACTURA VÁLIDA</div>
+    <div>PARA EFECTOS FISCALES</div>
+    <br>
+    <div class="bold">¡GRACIAS POR SU VISITA!</div>
+  </div>
+
+</body>
+</html>

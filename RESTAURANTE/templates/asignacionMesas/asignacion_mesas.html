@@ -1,135 +1,104 @@
-{% extends 'base.html' %} 
-{% block title %} Asginación Mesas {% endblock %} 
-{% block content %}
+{% extends 'base.html' %}
+{% block title %}Asignación de Mesas · INTRACOE{% endblock %}
 
-<style>
-  .mesa-status-circle{
-    width: 3.2rem;
-    aspect-ratio: 1 / 1;
-    border-radius: 50%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-  }
-  .mesa-status-circle i{ line-height: 1; font-size: 1.6rem; }
-</style>
+{% block content %}
 <div class="container-fluid mt-3">
+
   <div class="d-flex justify-content-between align-items-center mb-4">
-    <h5 class="h5 mb-0 text-gray-800">Asignación mesas</h5>
     <div>
-      <a
-        href="#"
-        data-bs-toggle="modal"
-        data-bs-target="#asignarMeseroModal"
-        class="btn btn-primary"
-      >
-        <i class="bi bi-plus-circle me-2"></i>Asignar
-      </a>
+      <h5 class="mb-0 fw-semibold"><i class="bi bi-person-check me-2 text-primary"></i>Asignación de mesas</h5>
+      <small class="text-muted">Asigna meseros a cada mesa del restaurante</small>
     </div>
+    <a href="#" data-bs-toggle="modal" data-bs-target="#asignarMeseroModal" class="btn btn-primary">
+      <i class="bi bi-plus-lg me-1"></i>Nueva asignación
+    </a>
   </div>
 
   <div class="mb-4">
-    <form
-      method="GET"
-      action="{% url 'asignaciones-lista' %}"
-      class="row g-3 align-items-center"
-    >
-      <div class="col-md-8 position-relative">
-        <input
-          type="text"
-          class="form-control"
-          id="id_search_name"
-          name="search_name"
-          placeholder="Buscar por nombre..."
-          value="{{ request.GET.search_name|default:'' }}"
-        />
-        <i
-          class="bi bi-x-lg position-absolute top-50 translate-middle-y end-0 me-3 clear-icon"
-          data-target="id_search_name"
-          style="display: none"
-        ></i>
+    <form method="GET" action="{% url 'asignaciones-lista' %}" class="row g-2 align-items-center">
+      <div class="col-sm-8 col-md-5 position-relative">
+        <i class="bi bi-search position-absolute top-50 translate-middle-y ms-3 text-muted" style="z-index:1"></i>
+        <input type="text" class="form-control ps-5" id="id_search_name" name="search_name"
+               placeholder="Buscar asignación..." value="{{ request.GET.search_name|default:'' }}">
+        <i class="bi bi-x-lg position-absolute top-50 translate-middle-y end-0 me-3 text-muted clear-icon"
+           data-target="id_search_name" style="cursor:pointer;display:none"></i>
       </div>
     </form>
   </div>
 
-  <div class="container">
-    <div class="row g-5">
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-0">
       <div class="table-responsive">
-        <table class="table">
-          <thead>
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
             <tr>
-              <th scope="col">Mesa</th>
-              <th scope="col">Mesero</th>
-              <th scope="col">Fecha de inicio</th>
-              <th scope="col">Fecha fin</th>
-              <th scope="col">Estado</th>
-              <th scope="col">Acciones</th>
+              <th class="ps-4">Mesa</th>
+              <th>Mesero</th>
+              <th>Inicio</th>
+              <th>Fin</th>
+              <th>Fija</th>
+              <th>Estado</th>
+              <th class="text-end pe-4">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {% for asignacion in asignaciones_lista %}
             <tr>
-              <td>{{ asignacion.mesa.numero }}</td>
+              <td class="ps-4">
+                <span class="fw-medium">Mesa {{ asignacion.mesa.numero }}</span>
+              </td>
               <td>{{ asignacion.mesero.nombre }}</td>
-              <td>{{ asignacion.fecha_inicio }}</td>
-              <td>{{ asignacion.fecha_fin|default:'-'}}</td>
-              {% if asignacion.activa %}
-              <td class="d-flex">
-                <div
-                  class="d-flex align-items-center gap-2 bg-success bg-opacity-25 border-success rounded-pill px-3"
-                >
-                  <div
-                    class="bg-success rounded-circle"
-                    style="height: 0.5rem; width: 0.5rem"
-                  ></div>
-                  Activo
-                </div>
-              </td>
-              {% else %}
-              <td class="d-flex align-items-center gap-2">
-                <div
-                  class="d-flex align-items-center gap-2 bg-danger bg-opacity-25 border-danger rounded-pill px-3"
-                >
-                  <div
-                    class="bg-danger rounded-circle"
-                    style="height: 0.5rem; width: 0.5rem"
-                  ></div>
-                  Inactivo
-                </div>
-              </td>
-              {% endif %}
+              <td><small class="text-muted">{{ asignacion.fecha_inicio|date:"d/m/Y H:i" }}</small></td>
+              <td><small class="text-muted">{{ asignacion.fecha_fin|date:"d/m/Y H:i"|default:"—" }}</small></td>
               <td>
-                <a
-                  href="#"
-                  data-bs-toggle="modal"
-                  data-bs-target="#asignarMeseroModal"
-                  data-update-url="{% url 'editar-asignacion-mesa-a-mesero' asignacion.id %}"
-                  data-mesa-id="{{ asignacion.mesa_id }}"
-                  data-mesa-numero="{{ asignacion.mesa.numero }}"
-                  data-mesero-id="{{ asignacion.mesero_id }}"
-                  data-es-fija="{{ asignacion.es_fija|yesno:'true,false' }}"
-                  data-activa="{{ asignacion.activa|yesno:'true,false' }}"
-                  data-fecha-inicio="{{ asignacion.fecha_inicio|date:'Y-m-d\TH:i' }}"
-                  data-fecha-fin="{% if asignacion.fecha_fin %}{{ asignacion.fecha_fin|date:'Y-m-d\TH:i' }}{% endif %}"
-                >
+                {% if asignacion.es_fija %}
+                  <span class="badge rounded-pill bg-info-subtle text-info border border-info-subtle">Fija</span>
+                {% else %}
+                  <span class="badge rounded-pill bg-secondary-subtle text-secondary border border-secondary-subtle">Turno</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if asignacion.activa %}
+                  <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle">
+                    <i class="bi bi-circle-fill me-1" style="font-size:.5rem"></i>Activa
+                  </span>
+                {% else %}
+                  <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle">
+                    <i class="bi bi-circle-fill me-1" style="font-size:.5rem"></i>Inactiva
+                  </span>
+                {% endif %}
+              </td>
+              <td class="text-end pe-4">
+                <a href="#"
+                   class="btn btn-sm btn-outline-secondary me-1"
+                   data-bs-toggle="modal"
+                   data-bs-target="#asignarMeseroModal"
+                   data-update-url="{% url 'editar-asignacion-mesa-a-mesero' asignacion.id %}"
+                   data-mesa-id="{{ asignacion.mesa_id }}"
+                   data-mesa-numero="{{ asignacion.mesa.numero }}"
+                   data-mesero-id="{{ asignacion.mesero_id }}"
+                   data-es-fija="{{ asignacion.es_fija|yesno:'true,false' }}"
+                   data-activa="{{ asignacion.activa|yesno:'true,false' }}"
+                   data-fecha-inicio="{{ asignacion.fecha_inicio|date:'Y-m-d\TH:i' }}"
+                   data-fecha-fin="{% if asignacion.fecha_fin %}{{ asignacion.fecha_fin|date:'Y-m-d\TH:i' }}{% endif %}">
                   <i class="bi bi-pencil"></i>
                 </a>
-
-                <button
-                  type="button"
-                  class="bg-transparent border-0 text-danger"
-                  data-id="{{ asignacion.id }}"
-                  data-mesa="{{ asignacion.mesa.numero }}"
-                  data-mesero="{{ asignacion.mesero.nombre }}"
-                  data-bs-toggle="modal"
-                  data-bs-target="#eliminarMesaModal"
-                >
-                  <i
-                    class="bi bi-trash"
-                    data-bs-toggle="tooltip"
-                    title="Eliminar"
-                  ></i>
+                <button type="button"
+                        class="btn btn-sm btn-outline-danger"
+                        data-bs-toggle="modal"
+                        data-bs-target="#eliminarAsignacionModal"
+                        data-id="{{ asignacion.id }}"
+                        data-mesa="{{ asignacion.mesa.numero }}"
+                        data-mesero="{{ asignacion.mesero.nombre }}">
+                  <i class="bi bi-trash"></i>
                 </button>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" class="text-center text-muted py-5">
+                <i class="bi bi-person-check fs-1 d-block mb-2 opacity-25"></i>
+                <p class="mb-0">No hay asignaciones registradas.</p>
               </td>
             </tr>
             {% endfor %}
@@ -139,129 +108,94 @@
     </div>
   </div>
 
-  <!-- Modal (solo una vez, fuera del for) -->
-  <div
-    class="modal fade"
-    id="eliminarMesaModal"
-    tabindex="-1"
-    aria-hidden="true"
-  >
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header bg-primary text-white">
-          <h5 class="modal-title">Eliminar mesa</h5>
-          <button
-            type="button"
-            class="btn-close btn-close-white"
-            data-bs-dismiss="modal"
-            aria-label="Close"
-          ></button>
-        </div>
+</div>
 
-        <form
-          method="post"
-          id="eliminarAsignacionForm"
-        >
-          {% csrf_token %}
-          <div class="modal-body">
-            <p>
-              ¿Seguro que quieres eliminar la asignacion de la mesa "<strong id="numeroMesa"></strong>" a "<strong id="nombreMesero"></strong>"?</p>
-            <small class="text-muted">Esta acción no se puede deshacer.</small>
-          </div>
+{# Modal crear/editar asignación #}
+{% include "asignacionMesas/asignar_modal.html" %}
 
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-bs-dismiss="modal"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              class="btn btn-danger"
-            >
-              Eliminar
-            </button>
-          </div>
-        </form>
+{# Modal eliminar #}
+<div class="modal fade" id="eliminarAsignacionModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>Eliminar asignación</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
+      <form method="post" id="eliminarAsignacionForm">
+        {% csrf_token %}
+        <div class="modal-body">
+          <p class="mb-0">¿Seguro que desea eliminar la asignación de la mesa
+            "<strong id="numeroMesa"></strong>" al mesero "<strong id="nombreMesero"></strong>"?
+            Esta acción no se puede deshacer.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-danger"><i class="bi bi-trash me-1"></i>Eliminar</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
-{% include "asignacionMesas/asignar_modal.html" %} {% block extra_js %}
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const modalEl = document.getElementById("asignarMeseroModal");
-    if (!modalEl) return;
 
-    // sincronisar select de mesas con el input hidden 
-    // Sincronizar select de mesas con el ID oculto y el número visible
-    const mesaSelect = document.getElementById("asignar_mesa_select");
-    const mesaIdInput = document.getElementById("asignar_mesa_id");
-    const mesaNumeroText = document.getElementById("asignar_mesa_numero"); // Elemento de texto
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  // Clear input
+  const inputField = document.getElementById("id_search_name");
+  const clearIcon  = document.querySelector('.clear-icon[data-target="id_search_name"]');
+  if (inputField && clearIcon) {
+    const toggle = () => clearIcon.style.display = inputField.value.length > 0 ? "block" : "none";
+    toggle();
+    inputField.addEventListener("input", toggle);
+    clearIcon.addEventListener("click", () => { inputField.value = ""; toggle(); inputField.focus(); });
+  }
+
+  // Modal asignar mesero
+  const modalAsignar = document.getElementById("asignarMeseroModal");
+  if (modalAsignar) {
+    const mesaSelect       = document.getElementById("asignar_mesa_select");
+    const mesaIdInput      = document.getElementById("asignar_mesa_id");
+    const mesaNumeroText   = document.getElementById("asignar_mesa_numero");
     const mesaCapacidadText = document.getElementById("asignar_mesa_capacidad");
 
     if (mesaSelect && mesaIdInput) {
-      mesaSelect.addEventListener("change", function() {
-        // CORRECCIÓN: Declaramos selectedOption correctamente
-        const selectedOption = this.options[this.selectedIndex];
-        
-        // 1. Actualizamos el ID oculto
+      mesaSelect.addEventListener("change", function () {
+        const opt = this.options[this.selectedIndex];
         mesaIdInput.value = this.value;
-
-        // 2. Actualizamos el número de mesa visualmente
-        if (mesaNumeroText) {
-            mesaNumeroText.textContent = this.value ? selectedOption.text : "—";
-        }
-
-        // 3. Actualizamos la capacidad visualmente
-        if (mesaCapacidadText) {
-            // Leemos el atributo que agregamos en el HTML
-            const capacidad = selectedOption.getAttribute("data-capacidad") || "0";
-            mesaCapacidadText.textContent = this.value ? capacidad : "0";
-        }
+        if (mesaNumeroText)   mesaNumeroText.textContent   = this.value ? opt.text : "—";
+        if (mesaCapacidadText) mesaCapacidadText.textContent = this.value ? (opt.getAttribute("data-capacidad") || "0") : "0";
       });
     }
 
-    modalEl.addEventListener("show.bs.modal", function (event) {
+    modalAsignar.addEventListener("show.bs.modal", function (event) {
       const btn = event.relatedTarget;
       if (!btn) return;
-
-      const form = document.getElementById("asignarMeseroForm");
-      const createUrl = form.dataset.createUrl;
+      const form      = document.getElementById("asignarMeseroForm");
       const updateUrl = btn.getAttribute("data-update-url");
-      const isEdit = !!updateUrl;
+      const isEdit    = !!updateUrl;
 
-      // mesa
-      const mesaIdInput = document.getElementById("asignar_mesa_id");
-      const mesaNumero = document.getElementById("asignar_mesa_numero");
-      const mesaWrap = document.getElementById("mesa_select_wrap");
-      const mesaSelect = document.getElementById("asignar_mesa_select");
-
-      const mesaId = btn.getAttribute("data-mesa-id") || "";
+      const mesaId  = btn.getAttribute("data-mesa-id") || "";
       const mesaNum = btn.getAttribute("data-mesa-numero") || "—";
+      const mesaWrap = document.getElementById("mesa_select_wrap");
 
-      mesaIdInput.value = mesaId;
-      mesaNumero.textContent = mesaNum;
+      if (mesaIdInput) mesaIdInput.value = mesaId;
+      if (mesaNumeroText) mesaNumeroText.textContent = mesaNum;
 
       if (!mesaId) {
-        mesaWrap.classList.remove("d-none");
-        mesaIdInput.value = ""; // Limpiar para obligar a seleccionar
+        if (mesaWrap) mesaWrap.classList.remove("d-none");
         if (mesaSelect) mesaSelect.value = "";
       } else {
-        mesaWrap.classList.add("d-none");
-        mesaIdInput.value = mesaId; // Ya tenemos el ID del botón
+        if (mesaWrap) mesaWrap.classList.add("d-none");
         if (mesaSelect) mesaSelect.value = mesaId;
       }
 
-      form.action = isEdit ? updateUrl : createUrl;
+      form.action = isEdit ? updateUrl : form.dataset.createUrl;
 
-      // campos
-      const sel = document.getElementById("asignar_mesero_id");
-      const ini = document.getElementById("asignar_fecha_inicio");
-      const fin = document.getElementById("asignar_fecha_fin");
-      const chkFija = document.getElementById("asignar_es_fija");
+      const sel      = document.getElementById("asignar_mesero_id");
+      const ini      = document.getElementById("asignar_fecha_inicio");
+      const fin      = document.getElementById("asignar_fecha_fin");
+      const chkFija  = document.getElementById("asignar_es_fija");
       const chkActiva = document.getElementById("activa");
 
       if (!isEdit) {
@@ -275,40 +209,25 @@
         if (sel) sel.value = btn.getAttribute("data-mesero-id") || "";
         if (ini) ini.value = btn.getAttribute("data-fecha-inicio") || "";
         if (fin) fin.value = btn.getAttribute("data-fecha-fin") || "";
-        
-        if (chkFija) {
-          chkFija.checked = btn.getAttribute("data-es-fija") === "true";
-        }
-        if (chkActiva) {
-          chkActiva.checked = btn.getAttribute("data-activa") === "true";
-        }
+        if (chkFija)  chkFija.checked  = btn.getAttribute("data-es-fija") === "true";
+        if (chkActiva) chkActiva.checked = btn.getAttribute("data-activa") === "true";
       }
     });
+  }
 
-    // --- Modal eliminar mesa ---
-    const eliminarMesaModal = document.getElementById("eliminarMesaModal");
-    if (eliminarMesaModal) {
-      eliminarMesaModal.addEventListener("show.bs.modal", function (event) {
-        const button = event.relatedTarget;
-        if (!button) return;
-        
-        const asignacionId = button.getAttribute("data-id");
-        const mesa = button.getAttribute("data-mesa");
-        const mesero = button.getAttribute("data-mesero");
-
-        const nombreMesero = document.querySelector("#nombreMesero");
-        const numeroMesa = document.querySelector("#numeroMesa");
-        const formEliminar = document.getElementById("eliminarAsignacionForm");
-
-        if (numeroMesa) numeroMesa.textContent = mesa || "";
-        if (nombreMesero) nombreMesero.textContent = mesero || "";
-
-        if (formEliminar && asignacionId) {
-          formEliminar.action = "{% url 'eliminar-asignacion-mesa-a-mesero' 0 %}".replace("/0/", "/" + asignacionId + "/");
-        }
-      });
-    }
-  });
+  // Modal eliminar asignación
+  const modalEliminar = document.getElementById("eliminarAsignacionModal");
+  if (modalEliminar) {
+    modalEliminar.addEventListener("show.bs.modal", function (event) {
+      const btn = event.relatedTarget;
+      if (!btn) return;
+      document.getElementById("numeroMesa").textContent   = btn.getAttribute("data-mesa")   || "";
+      document.getElementById("nombreMesero").textContent = btn.getAttribute("data-mesero") || "";
+      document.getElementById("eliminarAsignacionForm").action =
+        "{% url 'eliminar-asignacion-mesa-a-mesero' 0 %}".replace("/0/", "/" + btn.getAttribute("data-id") + "/");
+    });
+  }
+});
 </script>
-{% endblock extra_js %} 
+{% endblock extra_js %}
 {% endblock content %}

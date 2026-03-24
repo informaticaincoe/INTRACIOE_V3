@@ -114,22 +114,36 @@
           </div>
           {% endfor %}
         </div>
-        <div class="card-footer" id="footer-cuenta-{{cuenta.id}}">
+        <div class="card-footer d-flex gap-2 align-items-center" id="footer-cuenta-{{cuenta.id}}">
           {% if cuenta.estado == "ABIERTA" %}
             <a href="#"
                onclick="cerrarCuenta(event, {{ cuenta.id }})"
-               class="btn btn-secondary">
-              <i class="bi bi-lock"></i> Cerrar cuenta
+               class="btn btn-secondary btn-sm">
+              <i class="bi bi-lock me-1"></i>Confirmar cuenta
             </a>
           {% elif cuenta.estado == "CERRADA" %}
-            <a href="{% url 'cuenta-facturar' cuenta.id %}" 
-              class="btn btn-success btn-sm btn-facturar"> 
-              <i class="bi bi-receipt"></i> Facturar 
-            </a>
+            <form method="POST" action="{% url 'cuenta_pagar' cuenta.id %}" class="d-flex gap-2 align-items-center w-100">
+              {% csrf_token %}
+              <input type="radio" class="btn-check" name="forma_pago" id="ef_split_{{ cuenta.id }}" value="01" checked>
+              <label class="btn btn-sm btn-outline-success" for="ef_split_{{ cuenta.id }}">
+                <i class="bi bi-cash me-1"></i>Efectivo
+              </label>
+              <input type="radio" class="btn-check" name="forma_pago" id="tj_split_{{ cuenta.id }}" value="03">
+              <label class="btn btn-sm btn-outline-primary" for="tj_split_{{ cuenta.id }}">
+                <i class="bi bi-credit-card me-1"></i>Tarjeta
+              </label>
+              <button type="submit" class="btn btn-success btn-sm ms-auto">
+                <i class="bi bi-check2 me-1"></i>Cobrar ${{ cuenta.total }}
+              </button>
+            </form>
           {% elif cuenta.estado == "PAGADA" %}
-            <span class="badge bg-info px-2 py-1">
-              <i class="bi bi-check-circle me-1"></i> Pagada
+            <span class="badge bg-success px-3 py-2">
+              <i class="bi bi-check-circle me-1"></i>Pagada
             </span>
+            <a href="{% url 'imprimir-ticket-cuenta' cuenta.id %}" target="_blank"
+               class="btn btn-sm btn-outline-secondary ms-auto">
+              <i class="bi bi-printer me-1"></i>Ticket
+            </a>
           {% endif %}
         </div>
       </div>
@@ -409,14 +423,26 @@ async function cerrarCuenta(e, cuentaId) {
             // 1. Localizamos el footer de esa cuenta
             const footer = document.getElementById(`footer-cuenta-${cuentaId}`);
             
-            // 2. Definimos la URL de facturación (puedes pasarla desde el servidor o construirla)
-            const urlFacturar = "{% url 'cuenta-facturar' 0 %}".replace("0", cuentaId);
+            // Construir URL del pagar
+            const urlPagar = "{% url 'cuenta_pagar' 0 %}".replace("/0/", `/${cuentaId}/`);
+            const csrfToken = getCookie("csrftoken");
 
-            // 3. Cambiamos el contenido del footer dinámicamente
+            // Reemplazar footer con form de cobro
             footer.innerHTML = `
-                <a href="${urlFacturar}" class="btn btn-success btn-sm animate__animated animate__fadeIn">
-                    <i class="bi bi-receipt"></i> Facturar
-                </a>
+              <form method="POST" action="${urlPagar}" class="d-flex gap-2 align-items-center w-100">
+                <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                <input type="radio" class="btn-check" name="forma_pago" id="ef_split_${cuentaId}" value="01" checked>
+                <label class="btn btn-sm btn-outline-success" for="ef_split_${cuentaId}">
+                  <i class="bi bi-cash me-1"></i>Efectivo
+                </label>
+                <input type="radio" class="btn-check" name="forma_pago" id="tj_split_${cuentaId}" value="03">
+                <label class="btn btn-sm btn-outline-primary" for="tj_split_${cuentaId}">
+                  <i class="bi bi-credit-card me-1"></i>Tarjeta
+                </label>
+                <button type="submit" class="btn btn-success btn-sm ms-auto">
+                  <i class="bi bi-check2 me-1"></i>Cobrar
+                </button>
+              </form>
             `;
 
             // 4. (Opcional) Actualizar un indicador de estado en la cabecera si lo tienes

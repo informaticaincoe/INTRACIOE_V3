@@ -38,7 +38,7 @@ def crear_usuario_cajero(sender, instance, created, **kwargs):
         Cajero.objects.filter(id=instance.id).update(usuario=user)
         
 @receiver(post_save, sender=Cocinero)
-def crear_usuario_cajero(sender, instance, created, **kwargs):
+def crear_usuario_cocinero(sender, instance, created, **kwargs):
     if created and not instance.usuario:
         user = User.objects.create_user(
             username=instance.pin,
@@ -49,4 +49,4 @@ def crear_usuario_cajero(sender, instance, created, **kwargs):
             user.role = "cocinero"
             user.save()
 
-        Cajero.objects.filter(id=instance.id).update(usuario=user)
+        Cocinero.objects.filter(id=instance.id).update(usuario=user)

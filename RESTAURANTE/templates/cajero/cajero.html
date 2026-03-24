@@ -1,134 +1,138 @@
 {% extends "base.html" %}
-
-{% block title %}cajero{% endblock %}
+{% block title %}Cajeros · INTRACOE{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-3">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h5 class="h5 mb-0 text-gray-800">
-            Lista de cajero
-        </h5>
-        <div>
-            <a href="{% url 'crear-cajero' %}" type="button" class="btn btn-primary">
-                <i class="bi bi-plus-circle me-2" id="clear-search-button"></i>Agregar cajero
-            </a>
-        </div>
-    </div>
 
-    <div class="mb-4">
-        <div>
-            <form method="GET" action="{% url 'cajero-lista' %}" class="row g-3 align-items-center">
-                <div class="col-md-8 position-relative">
-                    <input type="text" class="form-control" id="id_search_name" name="search_name" placeholder="Buscar por nombre..." value="{{ request.GET.search_name|default:'' }}">
-                    <i class="bi bi-x-lg position-absolute top-50 translate-middle-y end-0 me-3 clear-icon" data-target="id_search_name"></i>
-                </div>
-            </form>
-        </div>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h5 class="mb-0 fw-semibold">
+        <i class="bi bi-cash-register me-2 text-primary"></i>Cajeros
+      </h5>
+      <small class="text-muted">Gestión del personal de caja</small>
     </div>
-    
-    <div class="container text-start">
-        <div class="row g-3" >
-            {% for cajero in lista_cajero %}
-                    <div class="col-12 col-md-4 col-lg-6">
-                        <div class="card-body border rounded-2">
-                            <div class="d-flex g-3 align-items-center">                                
-                                    {%if cajero.activo%}
-                                        <div style="background-color: green; width: 0.5rem; height: 0.5rem; border-radius: 50%;" class="me-2">
-                                        </div>
-                                        <p class="m-0 p-0 text-success">activo</p>
-                                    {%else%}
-                                        <div style="background-color: red; width: 0.5rem; height: 0.5rem; border-radius: 50%;" class="me-2">
-                                        </div>
-                                        <p class="m-0 p-0 text-danger">Inactivo</p>
-                                    {%endif%}
-                            </div>
-                            <h5 class="card-title mb-0 mt-0">{{cajero.nombre}}</h5>
-                            <p class=" mb-0 mt-0 opacity-50">{{cajero.codigo}}</p>
-                            <a href="{% url 'editar-cajero' cajero.id %}" class="btn btn-link text-success" data-bs-toggle="tooltip" title="Editar">Editar</a>
-                            <button class="btn btn-link text-danger" data-id="{{ cajero.id }}" data-nombre="{{cajero.nombre}}" data-bs-toggle="modal" data-bs-target="#eliminarcajeroModal" data-mode="delete">Eliminar</button>
-                        </div>
-                    </div>
-                {% empty %}
-                    <p class="opacity-50">No se ha encontrado ningun cajero</p>
-                
-            {% endfor %}
+    <a href="{% url 'crear-cajero' %}" class="btn btn-primary">
+      <i class="bi bi-plus-lg me-1"></i>Agregar cajero
+    </a>
+  </div>
+
+  <div class="mb-4">
+    <form method="GET" action="{% url 'cajero-lista' %}" class="row g-2 align-items-center">
+      <div class="col-sm-8 col-md-5 position-relative">
+        <i class="bi bi-search position-absolute top-50 translate-middle-y ms-3 text-muted" style="z-index:1"></i>
+        <input type="text" class="form-control ps-5" id="id_search_name" name="search_name"
+               placeholder="Buscar por nombre..." value="{{ request.GET.search_name|default:'' }}">
+        <i class="bi bi-x-lg position-absolute top-50 translate-middle-y end-0 me-3 text-muted clear-icon"
+           data-target="id_search_name" style="cursor:pointer;display:none"></i>
+      </div>
+    </form>
+  </div>
+
+  <div class="row g-3">
+    {% for cajero in lista_cajero %}
+    <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+      <div class="card h-100 shadow-sm border-0">
+        <div class="card-body d-flex flex-column p-3">
+
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0"
+                 style="width:2.8rem;height:2.8rem">
+              <i class="bi bi-person-fill fs-5 text-primary"></i>
+            </div>
+            <div class="overflow-hidden">
+              <p class="fw-semibold mb-0 text-truncate">{{ cajero.nombre }}</p>
+              <small class="text-muted">PIN: {{ cajero.pin }}</small>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            {% if cajero.activo %}
+              <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle">
+                <i class="bi bi-circle-fill me-1" style="font-size:.45rem;vertical-align:middle"></i>Activo
+              </span>
+            {% else %}
+              <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle">
+                <i class="bi bi-circle-fill me-1" style="font-size:.45rem;vertical-align:middle"></i>Inactivo
+              </span>
+            {% endif %}
+          </div>
+
         </div>
+
+        <div class="card-footer bg-transparent border-top-0 d-flex gap-2 px-3 pb-3">
+          <a href="{% url 'editar-cajero' cajero.id %}" class="btn btn-sm btn-outline-secondary flex-fill">
+            <i class="bi bi-pencil me-1"></i>Editar
+          </a>
+          <button class="btn btn-sm btn-outline-danger flex-fill"
+                  data-id="{{ cajero.id }}" data-nombre="{{ cajero.nombre }}"
+                  data-bs-toggle="modal" data-bs-target="#eliminarcajeroModal">
+            <i class="bi bi-trash me-1"></i>Eliminar
+          </button>
+        </div>
+      </div>
     </div>
+    {% empty %}
+    <div class="col-12">
+      <div class="text-center py-5 text-muted">
+        <i class="bi bi-person-x fs-1 d-block mb-2 opacity-25"></i>
+        <p class="mb-0">No se encontraron cajeros{% if request.GET.search_name %} para "{{ request.GET.search_name }}"{% endif %}.</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
 </div>
 
-<div class="modal fade" id="eliminarcajeroModal" tabindex="-1" aria-labelledby="eliminarcajeroModal" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5>Eliminar cajero</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form method="post" id="eliminarcajeroForm">
-                {% csrf_token %}
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <p>¿Seguro que quiere eliminar el registro de ? "<strong id="nombre_cajero_eliminar"></strong>"</p>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary" id="btnEliminarcajero">Eliminar cajero</button>
-                </div>
-            </form>
+<div class="modal fade" id="eliminarcajeroModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>Eliminar cajero</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" id="eliminarcajeroForm">
+        {% csrf_token %}
+        <div class="modal-body">
+          <p class="mb-0">¿Seguro que desea eliminar a <strong id="nombre_cajero_eliminar"></strong>? Esta acción no se puede deshacer.</p>
         </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-danger">
+            <i class="bi bi-trash me-1"></i>Eliminar
+          </button>
+        </div>
+      </form>
     </div>
+  </div>
 </div>
 
 {% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // --- Lógica del Botón de Limpieza ---
-        const inputField = document.getElementById('id_search_name');
-        const clearIcon = document.querySelector('.clear-icon[data-target="id_search_name"]');
+document.addEventListener('DOMContentLoaded', function () {
+  const inputField = document.getElementById('id_search_name');
+  const clearIcon  = document.querySelector('.clear-icon[data-target="id_search_name"]');
 
-        if (inputField && clearIcon) {
-            // Función para mostrar/ocultar el ícono
-            const toggleClearIcon = () => {
-                if (inputField.value.length > 0) {
-                    clearIcon.style.display = 'block';
-                } else {
-                    clearIcon.style.display = 'none';
-                }
-            };
-
-            // Inicializar al cargar la página (por si hay un valor preexistente de GET)
-            toggleClearIcon();
-
-            // Cada vez que se escribe en el input
-            inputField.addEventListener('input', toggleClearIcon);
-
-            // 2. Limpiar el input al hacer clic en el ícono
-            clearIcon.addEventListener('click', () => {
-                inputField.value = '';        // Borra el contenido
-                toggleClearIcon();            // Oculta el ícono
-                inputField.focus();           // Enfoca el input
-                
-                // inputField.closest('form').submit();
-            });
-        }
-
-        var eliminarcajeroModal = document.getElementById('eliminarcajeroModal');
-        eliminarcajeroModal.addEventListener('show.bs.modal', function (event) {
-            var button = event.relatedTarget; // Botón que activó el modal
-            var cajeroForm = document.getElementById('eliminarcajeroForm');
-            var nombrecajeroEliminar = document.getElementById('nombre_cajero_eliminar');
-        
-            var cajeroId = button.getAttribute('data-id');
-            var cajeroNombre = button.getAttribute('data-nombre');
-            
-            nombrecajeroEliminar.textContent = cajeroNombre;
-
-            cajeroForm.action = "{% url 'eliminar-cajero' 0 %}".replace('/0/', '/' + cajeroId + '/'); // URL para editar
-
-        });
+  if (inputField && clearIcon) {
+    const toggleClearIcon = () => {
+      clearIcon.style.display = inputField.value.length > 0 ? 'block' : 'none';
+    };
+    toggleClearIcon();
+    inputField.addEventListener('input', toggleClearIcon);
+    clearIcon.addEventListener('click', () => {
+      inputField.value = '';
+      toggleClearIcon();
+      inputField.focus();
     });
+  }
+
+  document.getElementById('eliminarcajeroModal').addEventListener('show.bs.modal', function (e) {
+    const btn = e.relatedTarget;
+    document.getElementById('nombre_cajero_eliminar').textContent = btn.dataset.nombre;
+    document.getElementById('eliminarcajeroForm').action =
+      "{% url 'eliminar-cajero' 0 %}".replace('/0/', '/' + btn.dataset.id + '/');
+  });
+});
 </script>
 {% endblock %}
 
 {% endblock %}
-

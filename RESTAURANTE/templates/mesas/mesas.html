@@ -1,338 +1,219 @@
-{% extends 'base.html' %} 
-{% block title %} Mesas {% endblock %} 
+{% extends 'base.html' %}
+{% block title %}Mesas · INTRACOE{% endblock %}
+
 {% block content %}
 <style>
-  /* layout general */
-.mesa-box { 
-  cursor: pointer; 
-  --sinmesero-color: #606060;
-  --sinmesero-color-fondo: #6060601C;
-  --libre-color: #bdbdbd;
-  --libre-color-fondo: ##BDBDBD0a;
-  --pendiente-orden-color: #FF9800;
-  --pendiente-orden-color-fondo: #FF98000a;
-  --ocupada-color: #E53935;
-  --ocupada-color-fondo: #E539350a;
-  --entregado-color: #0D9488;
-  --entregado-color-fondo: #0D94880a;
-  --pendiente-pago-color: #453ed1;
-  --pendiente-pago-color-fondo: #453ed10a;
-  --pagado-color: #4CAF50;
-  --pagado-color-fondo: #4CAF500a;
-}
-.mesa-card{
-  width: 100%;
-  height: 8.5rem;
-  border-radius: 5px;
-  background: #fff;
-  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
-  position: relative;
-}
-
-/* dropdown icon */
-.mesa-actions{
-  position:absolute; top:.4rem; right:.4rem;
-  opacity:.7;
-}
-
-.mesa-card:hover .mesa-actions{ opacity: 1; }
-
-/* Colores según el estado */
-  {% comment %} Estilos para mesa libre {% endcomment %}
-  .is-sinmesero-card { 
-    border-color: var(--sinmesero-color) !important; 
-    border-style: dashed !important;
-    background-color: var(--sinmesero-color-fondo) !important;
-  }
-
-  .badget-is-sinmesero {
-    border: 1px var(--sinmesero-color) solid !important; 
-    color: var(--sinmesero-color) !important;
-  }
-
-  .is-sinmesero-icon { 
-    background-color: var(--sinmesero-color) !important; 
-  }
-
-  {% comment %} Estilos para mesa libre {% endcomment %}
-  .is-libre-card { 
-    border-color: var(--libre-color) !important; 
-    background-color: var(--libre-color-fondo) !important;
-  }
-
-  .badget-is-libre {
-    border: 1px var(--libre-color) solid !important; 
-    color: var(--libre-color) !important;
-  }
-
-  .is-libre-icon { 
-    background-color: var(--libre-color) !important; 
-  }
-
-  {% comment %} Estilos para mesa orden pendiente {% endcomment %}
-  .is-pendiente-orden-card { 
-    border-color: var(--pendiente-orden-color) !important; 
-    background-color: var(--pendiente-orden-color-fondo) !important;
-  }
-
-  .badget-is-pendiente-orden{
-    border: 1px var(--pendiente-orden-color) solid !important; 
-    color: var(--pendiente-orden-color) !important;
-  }
-
-  .is-pendiente-orden-icon { 
-    background-color: var(--pendiente-orden-color) !important; 
-  }
-
-  {% comment %} Estilos para mesa ocupada {% endcomment %}
-  .is-ocupada-orden-card { 
-    border-color: var(--ocupada-color) !important; 
-    background-color: var(--ocupada-color-fondo) !important;
-  }
-
-  .badget-is-ocupada {
-    border: 1px var(--ocupada-color) solid !important; 
-    color: var(--ocupada-color) !important;
-  }
-
-  .is-ocupada-icon { 
-    background-color: var(--ocupada-color) !important; 
-  }
-
-  {% comment %} Estilos para mesa entregada {% endcomment %}
-  .is-entregado-orden-card { 
-    border-color: var(--entregado-color) !important; 
-    background-color: var(--entregado-color-fondo) !important;
-  }
-
-  .badget-is-entregado {
-    border: 1px var(--entregado-color) solid !important; 
-    color: var(--entregado-color) !important;
-  }
-
-  .is-entregado-icon { 
-    background-color: var(--entregado-color) !important; 
-  }
-
-  {% comment %} Estilos para mesa pendiente de pago {% endcomment %}
-  .is-pendiente-pago-orden-card { 
-    border-color: var(--pendiente-pago-color) !important; 
-    background-color: var(--pendiente-pago-color-fondo) !important;
-  }
-
-  .badget-is-pendiente-pago {
-    border: 1px var(--pendiente-pago-color) solid !important; 
-    color: var(--pendiente-pago-color) !important;
-  }
-
-  .is-pendiente-pago-icon { 
-    background-color: var(--pendiente-pago-color) !important; 
-  }
-
-  {% comment %} Estilos para mesa pagada {% endcomment %}
-  .is-pagado-orden-card { 
-    border-color: var(--pagado-color) !important; 
-    background-color: var(--pagado-color-fondo) !important;
-  }
-
-  .badget-is-pagado {
-    border: 1px var(--pagado-color) solid !important; 
-    color: var(--pagado-color) !important;
-  }
-
-  .is-pagado-icon { 
-    background-color: var(--pagado-color) !important; 
-  }
-
-
-/* círculo estado */
-.mesa-status-circle{
-  width: 3.2rem;
-  aspect-ratio: 1 / 1;
-  border-radius: 50%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-.mesa-status-circle i{ line-height: 1; font-size: 1.6rem; }
-
-
-/* etiqueta estado */
-.mesa-pill{
-  font-size:.85rem;
-  border-radius: 999px;
-  padding: .25rem .75rem;
-  border: 1px solid transparent;
-}
-
-/* header inferior con número */
-.mesa-num{
-  font-weight: 600;
-  font-size: 1rem;
-  color: rgba(0,0,0,.75);
-}
-
-/* VIP tag */
-.vip-tag{
-  position:absolute;
-  top:.55rem;
-  left:.55rem;
-  background:#ffc107;
-  color:#212529;
-  font-weight:700;
-  font-size:.75rem;
-  border-radius:999px;
-  padding:.2rem .55rem;
-  z-index: 2;
-  box-shadow: 0 2px 8px rgba(0,0,0,.10);
-}
-
+.mesa-box{cursor:pointer;--sinmesero-color:#606060;--sinmesero-color-fondo:#6060601C;--libre-color:#bdbdbd;--libre-color-fondo:#BDBDBD0a;--pendiente-orden-color:#FF9800;--pendiente-orden-color-fondo:#FF98000a;--ocupada-color:#E53935;--ocupada-color-fondo:#E539350a;--entregado-color:#0D9488;--entregado-color-fondo:#0D94880a;--pendiente-pago-color:#453ed1;--pendiente-pago-color-fondo:#453ed10a;--pagado-color:#4CAF50;--pagado-color-fondo:#4CAF500a}
+.mesa-card{width:100%;height:8.5rem;border-radius:5px;background:#fff;transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease;position:relative}
+.mesa-actions{position:absolute;top:.4rem;right:.4rem;opacity:.7}
+.mesa-card:hover .mesa-actions{opacity:1}
+.is-sinmesero-card{border-color:var(--sinmesero-color)!important;border-style:dashed!important;background-color:var(--sinmesero-color-fondo)!important}
+.badget-is-sinmesero{border:1px var(--sinmesero-color) solid!important;color:var(--sinmesero-color)!important}
+.is-sinmesero-icon{background-color:var(--sinmesero-color)!important}
+.is-libre-card{border-color:var(--libre-color)!important;background-color:var(--libre-color-fondo)!important}
+.badget-is-libre{border:1px var(--libre-color) solid!important;color:var(--libre-color)!important}
+.is-libre-icon{background-color:var(--libre-color)!important}
+.is-pendiente-orden-card{border-color:var(--pendiente-orden-color)!important;background-color:var(--pendiente-orden-color-fondo)!important}
+.badget-is-pendiente-orden{border:1px var(--pendiente-orden-color) solid!important;color:var(--pendiente-orden-color)!important}
+.is-pendiente-orden-icon{background-color:var(--pendiente-orden-color)!important}
+.is-ocupada-orden-card{border-color:var(--ocupada-color)!important;background-color:var(--ocupada-color-fondo)!important}
+.badget-is-ocupada{border:1px var(--ocupada-color) solid!important;color:var(--ocupada-color)!important}
+.is-ocupada-icon{background-color:var(--ocupada-color)!important}
+.is-entregado-orden-card{border-color:var(--entregado-color)!important;background-color:var(--entregado-color-fondo)!important}
+.badget-is-entregado{border:1px var(--entregado-color) solid!important;color:var(--entregado-color)!important}
+.is-entregado-icon{background-color:var(--entregado-color)!important}
+.is-pendiente-pago-orden-card{border-color:var(--pendiente-pago-color)!important;background-color:var(--pendiente-pago-color-fondo)!important}
+.badget-is-pendiente-pago{border:1px var(--pendiente-pago-color) solid!important;color:var(--pendiente-pago-color)!important}
+.is-pendiente-pago-icon{background-color:var(--pendiente-pago-color)!important}
+.is-pagado-orden-card{border-color:var(--pagado-color)!important;background-color:var(--pagado-color-fondo)!important}
+.badget-is-pagado{border:1px var(--pagado-color) solid!important;color:var(--pagado-color)!important}
+.is-pagado-icon{background-color:var(--pagado-color)!important}
+.mesa-status-circle{width:3.2rem;aspect-ratio:1/1;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.mesa-status-circle i{line-height:1;font-size:1.6rem}
+.mesa-pill{font-size:.85rem;border-radius:999px;padding:.25rem .75rem;border:1px solid transparent}
+.mesa-num{font-weight:600;font-size:1rem;color:rgba(0,0,0,.75)}
+.vip-tag{position:absolute;top:.55rem;left:.55rem;background:#ffc107;color:#212529;font-weight:700;font-size:.75rem;border-radius:999px;padding:.2rem .55rem;z-index:2;box-shadow:0 2px 8px rgba(0,0,0,.10)}
 </style>
 
 <div class="container-fluid mt-3">
+
   <div class="d-flex justify-content-between align-items-center mb-4">
-    <h5 class="h5 mb-0 text-gray-800">Mesas</h5>
-    {% if not user.role == "mesero" %}
     <div>
-      <a
-        href="{% url 'crear-mesa' %}"
-        class="btn btn-primary"
-      >
-        <i class="bi bi-plus-circle me-2"></i>Agregar mesa
-      {% endif %}
-      </a>
+      <h5 class="mb-0 fw-semibold"><i class="bi bi-table me-2 text-primary"></i>Mesas</h5>
+      <small class="text-muted">Vista del piso del restaurante</small>
     </div>
+    {% if not user.role == "mesero" %}
+    <a href="{% url 'crear-mesa' %}" class="btn btn-primary">
+      <i class="bi bi-plus-lg me-1"></i>Nueva mesa
+    </a>
+    {% endif %}
   </div>
 
+  {# Buscador #}
   <div class="mb-4">
-    <form
-      method="GET"
-      action="{% url 'mesas-lista' %}"
-      class="row g-3 align-items-center"
-    >
-      <div class="col-md-8 position-relative">
-        <input
-          type="text"
-          class="form-control"
-          id="id_search_name"
-          name="search_name"
-          placeholder="Buscar por nombre..."
-          value="{{ request.GET.search_name|default:'' }}"
-        />
-        <i
-          class="bi bi-x-lg position-absolute top-50 translate-middle-y end-0 me-3 clear-icon"
-          data-target="id_search_name"
-          style="display: none"
-        ></i>
+    <form method="GET" action="{% url 'mesas-lista' %}" class="row g-2 align-items-center">
+      <div class="col-sm-8 col-md-5 position-relative">
+        <i class="bi bi-search position-absolute top-50 translate-middle-y ms-3 text-muted" style="z-index:1"></i>
+        <input type="text" class="form-control ps-5" id="id_search_name" name="search_name"
+               placeholder="Buscar mesa..." value="{{ request.GET.search_name|default:'' }}">
+        <i class="bi bi-x-lg position-absolute top-50 translate-middle-y end-0 me-3 text-muted clear-icon"
+           data-target="id_search_name" style="cursor:pointer;display:none"></i>
       </div>
     </form>
   </div>
 
-  <div class="container">
-    <div class="row g-5">
-      {% for mesa in lista_mesas %}
-        {% include "mesas/_mesa_card.html" with mesa=mesa acciones=mesa.acciones %}
-      {% empty %}
-        <div class="col-12">
-          <p class="opacity-50 mb-0">No se ha encontrado ninguna mesa</p>
-        </div>
-      {% endfor %}
-    </div>
+  {# Leyenda de estados #}
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <span class="badge rounded-pill px-3 py-2" style="background:#6060601C;color:#606060;border:1px dashed #606060">Sin mesero</span>
+    <span class="badge rounded-pill px-3 py-2" style="background:#BDBDBD0a;color:#bdbdbd;border:1px solid #bdbdbd">Libre</span>
+    <span class="badge rounded-pill px-3 py-2" style="background:#FF98000a;color:#FF9800;border:1px solid #FF9800">Pendiente orden</span>
+    <span class="badge rounded-pill px-3 py-2" style="background:#E539350a;color:#E53935;border:1px solid #E53935">Ocupada</span>
+    <span class="badge rounded-pill px-3 py-2" style="background:#0D94880a;color:#0D9488;border:1px solid #0D9488">Entregada</span>
+    <span class="badge rounded-pill px-3 py-2" style="background:#453ed10a;color:#453ed1;border:1px solid #453ed1">Pendiente pago</span>
+    <span class="badge rounded-pill px-3 py-2" style="background:#4CAF500a;color:#4CAF50;border:1px solid #4CAF50">Pagada</span>
   </div>
 
-  <div class="container mt-3">
-    {% if messages %}
-        {% for message in messages %}
-          {% if "error-caja-cerrada" in message.tags%}
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            {% endif %}
+  {# Tabs por área (niveles) #}
+  {% if areas %}
+  <ul class="nav nav-tabs mb-4" id="areasTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="tab-todas" data-bs-toggle="tab" data-bs-target="#panel-todas"
+              type="button" role="tab">
+        <i class="bi bi-grid me-1"></i>Todas
+      </button>
+    </li>
+    {% for area in areas %}
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-area-{{ area.pk }}" data-bs-toggle="tab"
+              data-bs-target="#panel-area-{{ area.pk }}" type="button" role="tab">
+        <i class="bi bi-geo-alt me-1"></i>{{ area.nombre }}
+      </button>
+    </li>
+    {% endfor %}
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-sin-area" data-bs-toggle="tab"
+              data-bs-target="#panel-sin-area" type="button" role="tab">
+        Sin área
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content" id="areasTabContent">
+
+    {# Panel: Todas #}
+    <div class="tab-pane fade show active" id="panel-todas" role="tabpanel">
+      <div class="row g-4">
+        {% for mesa in lista_mesas %}
+          {% include "mesas/_mesa_card.html" with mesa=mesa acciones=mesa.acciones %}
+        {% empty %}
+          <div class="col-12 text-center py-5 text-muted">
+            <i class="bi bi-table fs-1 d-block mb-2 opacity-25"></i>
+            <p class="mb-0">No se encontraron mesas.</p>
+          </div>
         {% endfor %}
-    {% endif %}
-</div>
-
-  <!-- Modal (solo una vez, fuera del for) -->
-  <div
-    class="modal fade"
-    id="eliminarMesaModal"
-    tabindex="-1"
-    aria-hidden="true"
-  >
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header bg-primary text-white">
-          <h5 class="modal-title">Eliminar mesa</h5>
-          <button
-            type="button"
-            class="btn-close btn-close-white"
-            data-bs-dismiss="modal"
-            aria-label="Close"
-          ></button>
-        </div>
-
-        <form
-          method="post"
-          id="eliminarMesaForm"
-        >
-          {% csrf_token %}
-          <div class="modal-body">
-            <p>
-              ¿Seguro que quieres eliminar la mesa "<strong
-                id="nombre_mesa_eliminar"
-              ></strong
-              >"?
-            </p>
-            <small class="text-muted">Esta acción no se puede deshacer.</small>
-          </div>
-
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-bs-dismiss="modal"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              class="btn btn-danger"
-            >
-              Eliminar
-            </button>
-          </div>
-        </form>
       </div>
     </div>
+
+    {# Panel por área #}
+    {% for area in areas %}
+    <div class="tab-pane fade" id="panel-area-{{ area.pk }}" role="tabpanel">
+      <div class="row g-4">
+        {% for mesa in lista_mesas %}{% if mesa.area_id == area.pk %}
+          {% include "mesas/_mesa_card.html" with mesa=mesa acciones=mesa.acciones %}
+        {% endif %}{% endfor %}
+        {# Empty state para esta área #}
+        {% with count=lista_mesas|length %}{% endwith %}
+      </div>
+    </div>
+    {% endfor %}
+
+    {# Panel sin área asignada #}
+    <div class="tab-pane fade" id="panel-sin-area" role="tabpanel">
+      <div class="row g-4">
+        {% for mesa in lista_mesas %}{% if not mesa.area_id %}
+          {% include "mesas/_mesa_card.html" with mesa=mesa acciones=mesa.acciones %}
+        {% endif %}{% endfor %}
+      </div>
+    </div>
+
   </div>
+
+  {% else %}
+  {# Sin áreas definidas: mostrar todas directamente #}
+  <div class="row g-4">
+    {% for mesa in lista_mesas %}
+      {% include "mesas/_mesa_card.html" with mesa=mesa acciones=mesa.acciones %}
+    {% empty %}
+      <div class="col-12 text-center py-5 text-muted">
+        <i class="bi bi-table fs-1 d-block mb-2 opacity-25"></i>
+        <p class="mb-0">No se encontraron mesas. <a href="{% url 'crear-mesa' %}">Crear una</a></p>
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {# Mensajes de error #}
+  {% for message in messages %}
+    {% if "error-caja-cerrada" in message.tags %}
+    <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+  {% endfor %}
+
 </div>
+
+{# Modales externos #}
 {% include "pedidos/_toma_pedido.html" %}
 {% include "asignacionMesas/asignar_modal.html" %}
 {% include "pedidos/_ver_pedido.html" %}
+
+{# Modal eliminar mesa #}
+<div class="modal fade" id="eliminarMesaModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>Eliminar mesa</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" id="eliminarMesaForm">
+        {% csrf_token %}
+        <div class="modal-body">
+          <p class="mb-0">¿Seguro que desea eliminar la mesa "<strong id="nombre_mesa_eliminar"></strong>"? Esta acción no se puede deshacer.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-danger"><i class="bi bi-trash me-1"></i>Eliminar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 {% block extra_js %}
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const modalEl = document.getElementById("asignarMeseroModal");
-    if (!modalEl) return;
-  
-    modalEl.addEventListener("show.bs.modal", function (event) {
+document.addEventListener("DOMContentLoaded", function () {
+
+  // Búsqueda con clear
+  const inputField = document.getElementById("id_search_name");
+  const clearIcon  = document.querySelector('.clear-icon[data-target="id_search_name"]');
+  if (inputField && clearIcon) {
+    const toggle = () => clearIcon.style.display = inputField.value.length > 0 ? "block" : "none";
+    toggle();
+    inputField.addEventListener("input", toggle);
+    clearIcon.addEventListener("click", () => { inputField.value = ""; toggle(); inputField.focus(); });
+  }
+
+  // Modal asignar mesero
+  const modalAsignar = document.getElementById("asignarMeseroModal");
+  if (modalAsignar) {
+    modalAsignar.addEventListener("show.bs.modal", function (event) {
       const btn = event.relatedTarget;
       if (!btn) return;
-  
-      const mesaId = btn.getAttribute("data-mesa-id");
-      const mesaNumero = btn.getAttribute("data-mesa-numero");
-      const mesaCapacidad = btn.getAttribute("data-mesa-capacidad");
-
-
-      console.log("Mesa numero", mesaNumero)
-  
-      document.getElementById("asignar_mesa_id").value = mesaId || "";
-      document.getElementById("asignar_mesa_numero").textContent = mesaNumero || "—";
-      document.getElementById("asignar_mesa_capacidad").textContent = mesaCapacidad || "—";
-
-  
-      // limpiar selección / campos
+      document.getElementById("asignar_mesa_id").value          = btn.getAttribute("data-mesa-id") || "";
+      document.getElementById("asignar_mesa_numero").textContent = btn.getAttribute("data-mesa-numero") || "—";
+      document.getElementById("asignar_mesa_capacidad").textContent = btn.getAttribute("data-mesa-capacidad") || "—";
       const sel = document.getElementById("asignar_mesero_id");
       const chk = document.getElementById("asignar_es_fija");
       const fin = document.getElementById("asignar_fecha_fin");
@@ -340,96 +221,58 @@
       if (chk) chk.checked = false;
       if (fin) fin.value = "";
     });
+  }
 
-    // --- Lógica del botón de limpieza del input ---
-    const inputField = document.getElementById("id_search_name");
-    const clearIcon = document.querySelector(
-      '.clear-icon[data-target="id_search_name"]'
-    );
+  // Modal eliminar mesa
+  const modalEliminar = document.getElementById("eliminarMesaModal");
+  if (modalEliminar) {
+    modalEliminar.addEventListener("show.bs.modal", function (event) {
+      const btn = event.relatedTarget;
+      if (!btn) return;
+      document.getElementById("nombre_mesa_eliminar").textContent = btn.getAttribute("data-nombre") || "";
+      document.getElementById("eliminarMesaForm").action =
+        "{% url 'eliminar-mesa' 0 %}".replace("/0/", "/" + btn.getAttribute("data-id") + "/");
+    });
+  }
 
-    if (inputField && clearIcon) {
-      const toggleClearIcon = () => {
-        clearIcon.style.display =
-          inputField.value.length > 0 ? "block" : "none";
-      };
+  // Persistir última pestaña activa
+  const tabs = document.querySelectorAll('#areasTabs button[data-bs-toggle="tab"]');
+  const savedTab = localStorage.getItem("mesas_active_tab");
+  if (savedTab) {
+    const el = document.querySelector(`#areasTabs button[data-bs-target="${savedTab}"]`);
+    if (el) bootstrap.Tab.getOrCreateInstance(el).show();
+  }
+  tabs.forEach(tab => tab.addEventListener("shown.bs.tab", e => {
+    localStorage.setItem("mesas_active_tab", e.target.getAttribute("data-bs-target"));
+  }));
+});
 
-      toggleClearIcon();
-      inputField.addEventListener("input", toggleClearIcon);
+// WebSocket notificaciones
+(function () {
+  const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+  const socket = new WebSocket(`${protocol}://${window.location.host}/ws/mesero/notifs/`);
+  socket.onopen  = () => console.log("✅ WS mesero conectado");
+  socket.onclose = (e) => console.warn("⚠️ WS mesero cerrado", e.code);
+  socket.onerror = (e) => console.error("❌ WS mesero error", e);
 
-      clearIcon.addEventListener("click", () => {
-        inputField.value = "";
-        toggleClearIcon();
-        inputField.focus();
-        // Si quieres auto-buscar al limpiar:
-        // inputField.closest('form').submit();
-      });
+  function showToast(msg) {
+    const div = document.createElement("div");
+    div.textContent = msg;
+    Object.assign(div.style, {position:"fixed",right:"16px",bottom:"16px",padding:"10px 12px",
+      background:"#198754",color:"white",borderRadius:"10px",zIndex:99999});
+    document.body.appendChild(div);
+    setTimeout(() => div.remove(), 3000);
+  }
+
+  socket.onmessage = (event) => {
+    const payload = JSON.parse(event.data);
+    if (payload.type === "pedido_listo") {
+      showToast(payload.data.mensaje);
+      const card = document.querySelector(`.mesa-card[data-mesa-id="${payload.data.mesa_id}"]`);
+      if (card) { const icon = card.querySelector(".pedido-listo-icon"); if (icon) icon.classList.remove("d-none"); }
     }
-
-    // --- Modal eliminar mesa ---
-    const eliminarMesaModal = document.getElementById("eliminarMesaModal");
-    if (eliminarMesaModal) {
-      eliminarMesaModal.addEventListener("show.bs.modal", function (event) {
-        const button = event.relatedTarget;
-        if (!button) return;
-
-        const mesasId = button.getAttribute("data-id");
-        const mesasNombre = button.getAttribute("data-nombre");
-
-        const nombreEl = document.getElementById("nombre_mesa_eliminar");
-        const form = document.getElementById("eliminarMesaForm");
-
-        if (nombreEl) nombreEl.textContent = mesasNombre || "";
-        if (form && mesasId) {
-          form.action = "{% url 'eliminar-mesa' 0 %}".replace(
-            "/0/",
-            "/" + mesasId + "/"
-          );
-        }
-      });
-    }
-  });
-
-  (function () {
-    const protocol = (window.location.protocol === "https:") ? "wss" : "ws";
-    const wsUrl = `${protocol}://${window.location.host}/ws/mesero/notifs/`;
-    const socket = new WebSocket(wsUrl);
-  
-    socket.onopen = () => console.log("✅ WS mesero conectado");
-    socket.onclose = (e) => console.warn("⚠️ WS mesero cerrado", e.code, e.reason);
-    socket.onerror = (e) => console.error("❌ WS mesero error", e);
-  
-    function showToast(msg) {
-      // simple (puedes cambiar a Bootstrap Toast si ya lo usas)
-      const div = document.createElement("div");
-      div.textContent = msg;
-      div.style.position = "fixed";
-      div.style.right = "16px";
-      div.style.bottom = "16px";
-      div.style.padding = "10px 12px";
-      div.style.background = "#198754";
-      div.style.color = "white";
-      div.style.borderRadius = "10px";
-      div.style.zIndex = 99999;
-      document.body.appendChild(div);
-      setTimeout(() => div.remove(), 3000);
-    }
-  
-    socket.onmessage = (event) => {
-      const payload = JSON.parse(event.data);
-  
-      if (payload.type === "pedido_listo") {
-        const data = payload.data;
-        showToast(data.mensaje);
-  
-        // Mostrar icono en la tarjeta de la mesa
-        const card = document.querySelector(`.mesa-card[data-mesa-id="${data.mesa_id}"]`);
-        if (card) {
-          const icon = card.querySelector(".pedido-listo-icon");
-          if (icon) icon.classList.remove("d-none");
-        }
-      }
-    };
-  })();
+  };
+})();
 </script>
 {% endblock extra_js %}
-{% endblock content %} 
+{% endblock content %}

@@ -1,71 +1,73 @@
-<div class="modal fade" id="tomarOrdenModal" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-xl ">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title d-flex">
-          <i class="bi bi-clipboard-check me-2"></i>
-          <span class="mb-0">Tomar orden mesa</span>
-          <p id="to_mesa_numero" class="ms-2 mb-0" readonly></p>
-        </h5>
-        <button type="button" class="btn-close mt-0 mb-0" data-bs-dismiss="modal"></button>
+<div class="modal fade" id="tomarOrdenModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content border-0 shadow">
+
+      <div class="modal-header border-bottom py-3 px-4">
+        <div class="d-flex align-items-center gap-3">
+          <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center"
+               style="width:2.4rem;height:2.4rem">
+            <i class="bi bi-clipboard2-plus text-primary"></i>
+          </div>
+          <div>
+            <h5 class="modal-title fw-semibold mb-0">
+              Tomar orden · Mesa <span id="to_mesa_numero"></span>
+            </h5>
+            <small class="text-muted" id="to_pedido_hint">Selecciona los platillos para agregar a la orden</small>
+          </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
 
       <form id="tomarOrdenForm" method="post" action="{% url 'pedido_crear_desde_mesa' %}">
         {% csrf_token %}
+        <input type="hidden" name="mesa_id" id="to_mesa_id">
 
-        <div class="modal-body">
-          <input type="hidden" name="mesa_id" id="to_mesa_id">
-
-          <!-- ✅ Aquí se inyecta el menú paginado -->
+        <div class="modal-body p-4" style="max-height:75vh; overflow-y:auto;">
           <div id="tomarOrdenBody">
-            <div class="text-muted small">Cargando menú...</div>
+            <div class="d-flex align-items-center justify-content-center py-5 text-muted gap-2">
+              <div class="spinner-border spinner-border-sm opacity-50"></div>
+              <span>Cargando menú…</span>
+            </div>
           </div>
-
         </div>
-        
 
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-primary">
-            <i class="bi bi-check2-circle me-1"></i> Enviar a cocina
+        <div class="modal-footer border-top px-4 py-3 gap-2">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary px-4" disabled id="btn-enviar-orden">
+            <i class="bi bi-send me-2"></i>Enviar a cocina
           </button>
         </div>
       </form>
+
     </div>
   </div>
 </div>
+
 <script src="https://unpkg.com/htmx.org@1.9.12"></script>
 <script>
   document.addEventListener("shown.bs.modal", (ev) => {
-    const modal = ev.target;
-    if (!modal || modal.id !== "tomarOrdenModal") return;
+    if (ev.target.id !== "tomarOrdenModal") return;
 
-    console.log("🚀 Modal Abierto: Reseteando selección global");
-    window.__tomarOrdenSelected = []; 
+    // Resetear selección al abrir el modal
+    window.__tomarOrdenSelected = [];
 
     const trigger = ev.relatedTarget;
     if (!trigger) return;
 
-    const mesaId = trigger.getAttribute("data-mesa-id");
+    const mesaId     = trigger.getAttribute("data-mesa-id");
     const mesaNumero = trigger.getAttribute("data-mesa-numero");
-    // Si estás usando agregar item, asegúrate de capturar el pedido_id aquí si es necesario
-    // const pedidoId = trigger.getAttribute("data-pedido-id");
 
-    console.log(`📍 Mesa Seleccionada: ${mesaId} (#${mesaNumero})`);
-
-    document.getElementById("to_mesa_id").value = mesaId || "";
+    document.getElementById("to_mesa_id").value    = mesaId     || "";
     document.getElementById("to_mesa_numero").textContent = mesaNumero || "";
 
     const url = "{% url 'tomar_pedido' 0 %}".replace("/0/", `/${mesaId}/`);
-    console.log(`📡 Llamando a HTMX: ${url}`);
-    htmx.ajax("GET", url, "#tomarOrdenBody");
+    htmx.ajax("GET", url, { target: "#tomarOrdenBody", swap: "innerHTML" });
   });
 
-  // Opcional: Log antes de enviar el formulario
-  document.getElementById("tomarOrdenForm").onsubmit = function(e) {
-    const data = document.getElementById("platillos_json").value;
-    console.log("📦 ENVIANDO FORMULARIO POST...");
-    console.log("Contenido de platillos_json:", data);
-    // Si data es "[]" aquí, el problema es que el input no se está llenando
-  };
+  // Deshabilitar scroll del modal cuando se hace scroll en el body del modal
+  document.getElementById("tomarOrdenModal").addEventListener("wheel", (e) => {
+    e.stopPropagation();
+  });
 </script>

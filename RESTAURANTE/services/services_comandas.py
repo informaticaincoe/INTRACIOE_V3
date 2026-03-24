@@ -99,32 +99,27 @@ def marcar_pedido_entregado_por_mesa(mesa, *, usuario):
     if not pedido:
         return (False, "No hay pedido ABIERTO para esta mesa.")
 
-    # no permitir ENTREGADO si hay items en cocina
+    # no permitir ENTREGADO si hay items que aún no están listos
     hay_pendientes = ComandaItem.objects.filter(
-        comanda__pedido=pedido
-    ).exclude(
-        estado__in=["LISTO", "ENTREGADO", "CANCELADO"]
+        comanda__pedido=pedido,
+        listo_el__isnull=True,
     ).exists()
 
     if hay_pendientes:
         return (False, "Aún hay items en cocina. No puedes marcar la mesa como ENTREGADO.")
 
-    # ✅ marcar items LISTO -> ENTREGADO
+    # ✅ marcar items listos (listo_el set, entregado_el NULL) -> ENTREGADO
     now = timezone.now()
     ComandaItem.objects.filter(
         comanda__pedido=pedido,
-        estado="LISTO",
-    ).update(
-        estado="ENTREGADO",
-        entregado_el=now,
-        entregado_por=usuario,
-    )
+        listo_el__isnull=False,
+        entregado_el__isnull=True,
+    ).update(entregado_el=now)
 
-    # ✅ cerrar comandas que ya no tengan items pendientes
+    # ✅ cerrar comandas que ya no tengan items pendientes de entregar
     comandas = Comanda.objects.select_for_update().filter(pedido=pedido).exclude(estado__in=["ANULADA"])
     for c in comandas:
-        # si todos (no cancelados) están ENTREGADO -> CERRADA
-        pendientes = c.items.exclude(estado__in=["ENTREGADO", "CANCELADO"]).exists()
+        pendientes = c.items.filter(entregado_el__isnull=True).exists()
         if not pendientes and c.estado != "CERRADA":
             c.estado = "CERRADA"
             if not c.cerrada_el:

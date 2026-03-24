@@ -1,152 +1,226 @@
 {% extends "base.html" %}
+{% block title %}Cobrar · Mesa {{ mesa.numero }} · INTRACOE{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row mb-4">
-        <div class="col-12 d-flex justify-content-between align-items-center">
-            <div>
-                <h1 class="h3 mb-0 text-black fs-4 d-flex justify-center items-align-center">
-                    <i class="bi bi-cash-stack text-success me-2"></i>Finalizar Pedido - Mesa {{ mesa.numero }}
-                </h1>
-            </div>
-            <div class="text-end">
-                <span class="badge bg-secondary">Pedido #{{ pedido.id }}</span>
-                <div class="text-muted small">{{ pedido.creado_el|date:"d/m/Y H:i" }}</div>
-            </div>
-        </div>
+<div class="container-fluid mt-3">
+
+  {# Header #}
+  <div class="d-flex align-items-center gap-2 mb-4">
+    <a href="{% url 'cuentas-abiertas' %}" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <div class="rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center"
+         style="width:2.8rem;height:2.8rem">
+      <i class="bi bi-cash-coin text-success fs-5"></i>
     </div>
+    <div>
+      <h5 class="mb-0 fw-semibold">Cobrar · Mesa {{ mesa.numero }}</h5>
+      <small class="text-muted">Pedido #{{ pedido.id }} · {{ pedido.creado_el|date:"d/m/Y H:i" }}</small>
+    </div>
+    <div class="ms-auto">
+      <a href="{% url 'pre-ticket' mesa.id %}" target="_blank" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-printer me-1"></i>Pre-cuenta
+      </a>
+    </div>
+  </div>
 
-    <div class="row g-4">
-        <div class="col-lg-5">
-            <div class="card shadow" style="color: #000; border: 1px solid #3333332e;">
-                <div class="card-header bg-transparent py-3" style="border-bottom: 1px solid #33333371;">
-                    <h5 class="mb-0 text-black"><i class="bi bi-list-ul me-2"></i>Resumen de Productos</h5>
-                </div>
-                <div class="container mt-3">
-                    {% if messages %}
-                        {% for message in messages %}
-                            {% if "error-caja-cerrada" in message.tags%}
-                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                            {% endif %}
-                        {% endfor %}
-                    {% endif %}
-                </div>
-                
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0" style="color: #000;">
-                            <thead class="text-muted">
-                                <tr>
-                                    <th class="ps-4">Producto</th>
-                                    <th class="text-center">Cant.</th>
-                                    <th class="text-end pe-4">Subtotal</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for producto in productos_consolidados %}
-                                <tr style="border: 1px solid #3333332e;">
-                                    <td class="ps-4">
-                                        {{ producto.id }}
-                                        {{ producto.nombre }}
-                                    </td>
-                                    <td class="text-center">{{ producto.cantidad }}</td>
-                                    <td class="text-end pe-4">${{ producto.total_linea }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                            <tfoot style="background-color: #1a1a1a;">
-                                <tr>
-                                    <td colspan="2" class="text-end text-muted ps-4">Subtotal:</td>
-                                    <td class="text-end pe-4">${{ pedido.subtotal }}</td>
-                                </tr>
-                                <tr>
-                                    <td colspan="2" class="text-end text-muted ps-4">IVA (13%):</td>
-                                    <td class="text-end pe-4">${{ pedido.iva_total }}</td>
-                                </tr>
-                            
-                                {%if pedido.notas%}
-                                <tr class="">
-                                    <td class="text-start pe-4 border-bottom-0 fst-italic ps-4 pt-4" style="background-color: #eff1f4;" colspan="3">Notas:</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-start pe-4 border-top-0 fst-italic ps-4 pb-4" style="background-color: #eff1f4;" colspan="3">{{ pedido.notas }}</td>
-                                </tr>
-                                {% endif %}
-                                <tr class="fs-4 fw-bold text-success border-top border-secondary">
-                                    <td colspan="2" class="text-end ps-4">TOTAL:</td>
-                                    <td class="text-end pe-4">${{ pedido.total }}</td>
-                                </tr>
-                        </table>
-                    </div>
-                </div>
-            </div>
+  {# Alerts #}
+  {% for message in messages %}
+    {% if "error-caja-cerrada" in message.tags or "error" in message.tags %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+  {% endfor %}
+
+  <div class="row g-4">
+
+    {# Columna izquierda: productos #}
+    <div class="col-lg-6">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-header bg-transparent border-bottom py-3">
+          <span class="fw-semibold"><i class="bi bi-list-ul me-2 text-muted"></i>Resumen del pedido</span>
         </div>
-
-        <div class="col-lg-5">
-            <h4 class="mb-3 text-black"></h4>
-                
-                <div class="card mb-3 action-card border-secondary shadow-sm" 
-                    onclick="location.href='{% url 'enviar-facturacion' pedido.id %}';"
-                    style="cursor:pointer;">
-                    <div class="card-body d-flex align-items-center p-4">
-                        <div class="rounded-circle bg-primary bg-opacity-10 d-flex justify-content-center align-items-center me-4" 
-                             style="width: 5rem; height: 5rem; flex-shrink: 0;">
-                            <i class="bi bi-person-fill fs-1 text-primary"></i>
-                        </div>
-                        <div>
-                            <h5 class="text-black mb-1">Una sola cuenta</h5>
-                            <p class="text-muted small mb-0">Se cobrará el total de ${{ pedido.total }} en un solo ticket.</p>
-                        </div>
-                        <i class="bi bi-chevron-right ms-auto text-muted"></i>
-                    </div>
-                </div>
-            
-                <div class="card mb-4 action-card border-secondary shadow-sm" 
-                    onclick="location.href='{% url 'pedido-split' pedido.id %}';" 
-                    style="cursor:pointer; transition: 0.3s;">
-                    <div class="card-body d-flex align-items-center p-4">
-                        <div class="rounded-circle bg-warning bg-opacity-10 d-flex justify-content-center align-items-center me-4" 
-                             style="width: 5rem; height: 5rem; flex-shrink: 0;">
-                            <i class="bi bi-people-fill fs-1 text-warning"></i>
-                        </div>
-                        <div>
-                            <h5 class="text-black mb-1">Cuentas separadas</h5>
-                            <p class="text-muted small mb-0">Dividir productos por persona o grupos específicos.</p>
-                        </div>
-                        <i class="bi bi-chevron-right ms-auto text-muted"></i>
-                    </div>
-                </div>
-
-            <div class="alert border-secondary " style="background-color: #ffffff;">
-                <h6 class="alert-heading"><i class="bi bi-info-circle me-2 text-info"></i>Estado de Cuentas</h6>
-                <hr class="border-secondary">
-                {% for c in cuentas %}
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="">{{ c.nombre }}</span>
-                        <span class="badge {% if c.estado == 'ABIERTA' %}bg-warning text-dark{% else %}bg-success{% endif %}">
-                            {{ c.estado }}
-                        </span>
-                        <span class="fw-bold text-black">${{ c.total }}</span>
-                    </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="ps-4">Producto</th>
+                  <th class="text-center" style="width:60px">Cant.</th>
+                  <th class="text-end pe-4">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for producto in productos_consolidados %}
+                <tr>
+                  <td class="ps-4">
+                    <div class="fw-medium">{{ producto.nombre }}</div>
+                    {% for nota in producto.notas %}
+                      <small class="text-muted"><i class="bi bi-chat-left-text me-1"></i>{{ nota }}</small>
+                    {% endfor %}
+                  </td>
+                  <td class="text-center">{{ producto.cantidad }}</td>
+                  <td class="text-end pe-4">${{ producto.total_linea|floatformat:2 }}</td>
+                </tr>
                 {% empty %}
-                    <p class="small text-muted mb-0">No hay cuentas generadas aún.</p>
+                <tr>
+                  <td colspan="3" class="text-center text-muted py-4">Sin productos</td>
+                </tr>
                 {% endfor %}
-            </div>
-            
+              </tbody>
+              <tfoot class="table-light">
+                <tr>
+                  <td colspan="2" class="text-end text-muted ps-4 py-2">Subtotal</td>
+                  <td class="text-end pe-4 py-2">${{ pedido.subtotal|floatformat:2 }}</td>
+                </tr>
+                <tr>
+                  <td colspan="2" class="text-end text-muted ps-4 py-2">IVA (13%)</td>
+                  <td class="text-end pe-4 py-2">${{ pedido.iva_total|floatformat:2 }}</td>
+                </tr>
+                <tr class="fw-bold">
+                  <td colspan="2" class="text-end ps-4 py-2 fs-6">TOTAL</td>
+                  <td class="text-end pe-4 py-2 fs-5 text-success">${{ pedido.total|floatformat:2 }}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         </div>
+      </div>
     </div>
-</div>
 
-<style>
-    /* Efecto Hover para las opciones de pago */
-    .action-card:hover {
-        transform: translateY(-3px);
-    }
-    .breadcrumb-item + .breadcrumb-item::before {
-        color: #666;
-    }
-</style>
+    {# Columna derecha: cobro #}
+    <div class="col-lg-6">
+
+      {# ── CASO A: Sin cuentas separadas → cobro directo ── #}
+      {% if not cuentas or cuentas.count == 0 %}
+      <div class="card shadow-sm border-0 mb-3">
+        <div class="card-header bg-transparent border-bottom py-3">
+          <span class="fw-semibold"><i class="bi bi-cash me-2 text-success"></i>Cobrar cuenta única</span>
+        </div>
+        <div class="card-body p-4">
+
+          <div class="text-center mb-4">
+            <div class="text-muted small mb-1">Total a cobrar</div>
+            <div class="display-6 fw-bold text-success">${{ pedido.total|floatformat:2 }}</div>
+          </div>
+
+          {# Forma de pago compartida (efectivo / tarjeta) #}
+          <div class="mb-4">
+            <label class="form-label fw-medium mb-2">Forma de pago</label>
+            <div class="d-flex gap-2" id="forma-pago-selector">
+              <input type="radio" class="btn-check" name="_fp" id="fp_efectivo" value="01" checked>
+              <label class="btn btn-outline-success flex-fill py-3" for="fp_efectivo">
+                <i class="bi bi-cash-stack d-block fs-4 mb-1"></i>Efectivo
+              </label>
+              <input type="radio" class="btn-check" name="_fp" id="fp_tarjeta" value="03">
+              <label class="btn btn-outline-primary flex-fill py-3" for="fp_tarjeta">
+                <i class="bi bi-credit-card d-block fs-4 mb-1"></i>Tarjeta
+              </label>
+            </div>
+          </div>
+
+          {# Total visible #}
+          <div class="text-center mb-4">
+            <div class="text-muted small mb-1">Total a cobrar</div>
+            <div class="display-6 fw-bold text-success">${{ pedido.total|floatformat:2 }}</div>
+          </div>
+
+          {# Botón cobro simple (ticket sin factura) #}
+          <form id="form-cobrar-total" method="POST" action="{% url 'cobrar-total' mesa.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="forma_pago" id="hidden_fp_cobrar" value="01">
+            <button type="submit" class="btn btn-success btn-lg w-100 mb-2">
+              <i class="bi bi-check2-circle me-2"></i>Cobrar · Generar ticket
+            </button>
+          </form>
+
+          {# Botón factura electrónica #}
+          <a href="{% url 'enviar-facturacion' pedido.id %}"
+             class="btn btn-outline-primary w-100">
+            <i class="bi bi-file-earmark-text me-2"></i>Emitir Factura Electrónica (DTE)
+          </a>
+
+          <hr class="my-3">
+
+          <a href="{% url 'pedido-split' pedido.id %}" class="btn btn-outline-secondary w-100">
+            <i class="bi bi-people me-2"></i>Dividir la cuenta por persona
+          </a>
+
+        </div>
+      </div>
+
+      {# ── CASO B: Ya hay cuentas (split realizado) ── #}
+      {% else %}
+      <div class="card shadow-sm border-0 mb-3">
+        <div class="card-header bg-transparent border-bottom py-3 d-flex justify-content-between align-items-center">
+          <span class="fw-semibold"><i class="bi bi-people me-2 text-primary"></i>Cuentas separadas</span>
+          <a href="{% url 'pedido-split' pedido.id %}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-pencil me-1"></i>Gestionar
+          </a>
+        </div>
+        <div class="card-body p-0">
+          {% for cuenta in cuentas %}
+          <div class="px-4 py-3 {% if not forloop.last %}border-bottom{% endif %}">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <div class="fw-semibold">{{ cuenta.nombre }}</div>
+                <small class="text-muted">{{ cuenta.detalles.count }} ítem{{ cuenta.detalles.count|pluralize }}</small>
+              </div>
+              {% if cuenta.estado == "PAGADA" %}
+              <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle">
+                <i class="bi bi-check-circle me-1"></i>Pagada
+              </span>
+              {% elif cuenta.estado == "CERRADA" %}
+              <span class="badge rounded-pill bg-info-subtle text-info border border-info-subtle">Lista</span>
+              {% else %}
+              <span class="badge rounded-pill bg-warning-subtle text-warning border border-warning-subtle">Abierta</span>
+              {% endif %}
+            </div>
+
+            {% if cuenta.estado != "PAGADA" %}
+            <form method="POST" action="{% url 'cuenta_pagar' cuenta.id %}">
+              {% csrf_token %}
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <div class="d-flex gap-2 flex-fill">
+                  <input type="radio" class="btn-check" name="forma_pago" id="ef_{{ cuenta.id }}" value="01" checked>
+                  <label class="btn btn-sm btn-outline-success flex-fill" for="ef_{{ cuenta.id }}">
+                    <i class="bi bi-cash me-1"></i>Efectivo
+                  </label>
+                  <input type="radio" class="btn-check" name="forma_pago" id="tj_{{ cuenta.id }}" value="03">
+                  <label class="btn btn-sm btn-outline-primary flex-fill" for="tj_{{ cuenta.id }}">
+                    <i class="bi bi-credit-card me-1"></i>Tarjeta
+                  </label>
+                </div>
+                <div class="fw-bold text-success">${{ cuenta.total|floatformat:2 }}</div>
+              </div>
+              <button type="submit" class="btn btn-success btn-sm w-100">
+                <i class="bi bi-check2 me-1"></i>Cobrar {{ cuenta.nombre }} · ${{ cuenta.total|floatformat:2 }}
+              </button>
+            </form>
+            {% else %}
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="text-muted small">Pagada {{ cuenta.pagado_el|date:"H:i" }}</div>
+              <div class="fw-bold">${{ cuenta.total|floatformat:2 }}</div>
+              <a href="{% url 'imprimir-ticket-cuenta' cuenta.id %}" target="_blank"
+                 class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-printer me-1"></i>Ticket
+              </a>
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        <div class="card-footer bg-transparent border-top d-flex justify-content-between align-items-center py-3 px-4">
+          <span class="fw-semibold text-muted">Total pedido</span>
+          <span class="fw-bold fs-5 text-success">${{ pedido.total|floatformat:2 }}</span>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+</div>
 {% endblock %}

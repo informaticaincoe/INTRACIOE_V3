@@ -1,27 +1,80 @@
 {% extends "base.html" %}
+{% block title %}{% if usuario %}Editar usuario{% else %}Crear usuario{% endif %} · INTRACOE{% endblock %}
+
 {% block content %}
-<div class="container py-4">
-  <h4>{% if usuario %}Editar{% else %}Crear{% endif %} Usuario</h4>
-  <form method="post">
-    {% csrf_token %}
-    <div class="mb-3">
-      <label>Usuario</label>
-      <input type="text" name="username" value="{{ usuario.username|default:'' }}" class="form-control" required>
+<div class="container-fluid mt-3">
+
+  <div class="d-flex align-items-center gap-2 mb-4">
+    <a href="{% url 'usuarios_list' %}" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+      <h5 class="mb-0 fw-semibold">{% if usuario %}Editar usuario{% else %}Crear usuario{% endif %}</h5>
+      <small class="text-muted">{% if usuario %}{{ usuario.username }}{% else %}Nuevo acceso al sistema{% endif %}</small>
     </div>
-    <div class="mb-3">
-      <label>Contraseña</label>
-      <input type="password" name="password" class="form-control" {% if not usuario %}required{% endif %}>
+  </div>
+
+  <div class="row justify-content-start">
+    <div class="col-12 col-md-6 col-lg-5">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-transparent border-bottom py-3">
+          <span class="fw-semibold"><i class="bi bi-person-gear me-2 text-primary"></i>Datos del usuario</span>
+        </div>
+        <div class="card-body p-4">
+          <form method="post" class="needs-validation" novalidate>
+            {% csrf_token %}
+            <div class="d-flex flex-column gap-3">
+
+              <div>
+                <label class="form-label fw-medium" for="username">Nombre de usuario</label>
+                <input type="text" id="username" name="username"
+                       value="{{ usuario.username|default:'' }}" class="form-control"
+                       placeholder="Ej: jperez" required>
+                <div class="invalid-feedback">Este campo es obligatorio.</div>
+              </div>
+
+              <div>
+                <label class="form-label fw-medium" for="password">
+                  Contraseña {% if usuario %}<small class="text-muted fw-normal">(dejar en blanco para mantener)</small>{% endif %}
+                </label>
+                <input type="password" id="password" name="password" class="form-control"
+                       placeholder="{% if usuario %}Nueva contraseña (opcional){% else %}Contraseña{% endif %}"
+                       {% if not usuario %}required{% endif %}>
+                <div class="invalid-feedback">Este campo es obligatorio.</div>
+              </div>
+
+              <div>
+                <label class="form-label fw-medium" for="role">Rol</label>
+                <select id="role" name="role" class="form-select">
+                  {% for value, label in roles %}
+                  <option value="{{ value }}" {% if usuario.role == value %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+            </div>
+
+            <div class="d-flex gap-2 mt-4">
+              <a href="{% url 'usuarios_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg me-1"></i>Guardar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
-    <div class="mb-3">
-      <label>Rol</label>
-      <select name="role" class="form-select">
-        {% for value, label in roles %}
-          <option value="{{ value }}" {% if usuario.role == value %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <button class="btn btn-success">Guardar</button>
-    <a href="{% url 'usuarios_list' %}" class="btn btn-secondary">Cancelar</a>
-  </form>
+  </div>
+
 </div>
+
+<script>
+(function () {
+  const form = document.querySelector('.needs-validation');
+  form.addEventListener('submit', (e) => {
+    if (!form.checkValidity()) { e.preventDefault(); e.stopPropagation(); }
+    form.classList.add('was-validated');
+  });
+})();
+</script>
 {% endblock %}

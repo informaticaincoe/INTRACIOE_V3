@@ -1,137 +1,170 @@
 {% extends "base.html" %}
-{% block title %}Comanda · Cocina{% endblock %}
+{% block title %}Comandas · Cocina · INTRACOE{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-3">
 
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h5 class="mb-0">Comandas en cocina</h5>
-    <a class="btn btn-outline-secondary btn-sm" href="{% url 'comanda-cocina' %}">Refrescar</a>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center gap-2">
+      <div class="rounded-circle bg-warning bg-opacity-10 d-flex align-items-center justify-content-center"
+           style="width:2.8rem;height:2.8rem">
+        <i class="bi bi-fire text-warning fs-5"></i>
+      </div>
+      <div>
+        <h5 class="mb-0 fw-semibold">Comandas en cocina</h5>
+        <small class="text-muted">
+          {% if comandas %}{{ comandas|length }} comanda{{ comandas|length|pluralize }}
+          pendiente{{ comandas|length|pluralize }}{% else %}Sin comandas activas{% endif %}
+        </small>
+      </div>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'comanda-cocina' %}">
+      <i class="bi bi-arrow-clockwise me-1"></i>Refrescar
+    </a>
   </div>
 
   {% if comandas %}
-    <div class="row g-3">
-      {% for c in comandas %}
-        <div class="col-12 col-md-6 col-xl-4">
-          <div class="card shadow-sm">
+  <div class="row g-3">
+    {% for c in comandas %}
+    <div class="col-12 col-md-6 col-xl-4">
+      <div class="card shadow-sm border-0 h-100">
 
-            <div class="card-header d-flex justify-content-between align-items-center">
-              <div>
-                  <div class="fw-bold">Mesa #{{ c.pedido.mesa.numero }} · Comanda #{{ c.numero }}</div>
-                  <span class="badge {% if c.estado == 'ENVIADA' %} bg-primary {% elif c.estado == 'EN_PREPARACION' %} bg-warning text-dark {% elif c.estado == 'LISTA' %} bg-success {% endif %}">
-                      {{ c.get_estado_display }}
-                  </span>
-              </div>
-          
-              <div>
-                  {% if user.role == "cocinero" %}
-                    {% if c.estado == 'ENVIADA' %}
-                        <button class="btn btn-sm btn-primary btn-accion" 
-                                data-id="{{ c.id }}" 
-                                data-url="{% url 'comanda-item-preparacion' id=c.id %}">
-                            Iniciar pedido
-                        </button>
-                    {% elif c.estado == 'EN_PREPARACION' %}
-                        <button class="btn btn-sm btn-success btn-accion" 
-                                data-id="{{ c.id }}" 
-                                data-url="{% url 'comanda-item-listo' id=c.id %}">
-                            Finalizar
-                        </button>
-                    {% endif %}
-                  {% endif %}
-              </div>
-          </div>
-
-            <div class="card-body p-0">
-              <ul class="list-group list-group-flush">
-                {% for it in c.items.all %}
-                  {% if it.estado != "ENTREGADO" and it.estado != "CANCELADO" %}
-                  <li class="list-group-item d-flex justify-content-between align-items-start">
-                    <div class="me-2">
-                      <div class="fw-semibold">{{ it.cantidad }} × {{ it.nombre }}</div>
-                      {% if it.notas %}
-                        <div class="text-muted small">Nota: {{ it.notas }}</div>
-                      {% endif %}
-                      <div class="text-muted small">Estado: {{ it.get_estado_display }}</div>
-                    </div>
-                  </li>
-                  {% endif %}
-                {% empty %}
-                  <li class="list-group-item text-muted">Sin items</li>
-                {% endfor %}
-              </ul>
+        <div class="card-header border-bottom py-3
+          {% if c.estado == 'ENVIADA' %}bg-primary bg-opacity-10
+          {% elif c.estado == 'EN_PREPARACION' %}bg-warning bg-opacity-10
+          {% elif c.estado == 'LISTA' %}bg-success bg-opacity-10
+          {% endif %}">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="fw-semibold">Mesa {{ c.pedido.mesa.numero }} · Comanda #{{ c.numero }}</div>
+              <span class="badge rounded-pill mt-1
+                {% if c.estado == 'ENVIADA' %}bg-primary-subtle text-primary border border-primary-subtle
+                {% elif c.estado == 'EN_PREPARACION' %}bg-warning-subtle text-warning border border-warning-subtle
+                {% elif c.estado == 'LISTA' %}bg-success-subtle text-success border border-success-subtle
+                {% endif %}">
+                {{ c.get_estado_display }}
+              </span>
             </div>
-
+            {% if user.role == "cocinero" %}
+            <div>
+              {% if c.estado == 'ENVIADA' %}
+              <button class="btn btn-sm btn-primary btn-accion"
+                      data-id="{{ c.id }}"
+                      data-url="{% url 'comanda-item-preparacion' id=c.id %}">
+                <i class="bi bi-play-fill me-1"></i>Iniciar
+              </button>
+              {% elif c.estado == 'EN_PREPARACION' %}
+              <button class="btn btn-sm btn-success btn-accion"
+                      data-id="{{ c.id }}"
+                      data-url="{% url 'comanda-item-listo' id=c.id %}">
+                <i class="bi bi-check2 me-1"></i>Listo
+              </button>
+              {% endif %}
+            </div>
+            {% endif %}
           </div>
         </div>
-      {% endfor %}
+
+        <div class="card-body p-0">
+          <ul class="list-group list-group-flush">
+            {% for it in c.items.all %}
+              {% if it.entregado_el == None %}
+              <li class="list-group-item py-3">
+                <div class="d-flex align-items-start gap-3">
+                  <div class="rounded-circle bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0"
+                       style="width:2rem;height:2rem;min-width:2rem">
+                    <span class="fw-bold text-secondary" style="font-size:.8rem">{{ it.cantidad }}</span>
+                  </div>
+                  <div>
+                    <div class="fw-semibold">{{ it.nombre }}</div>
+                    {% if it.notas %}
+                    <div class="text-muted small"><i class="bi bi-chat-left-text me-1"></i>{{ it.notas }}</div>
+                    {% endif %}
+                    <div class="mt-1">
+                      {% if it.listo_el %}
+                        <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle" style="font-size:.7rem">Listo</span>
+                      {% elif it.iniciado_el %}
+                        <span class="badge rounded-pill bg-warning-subtle text-warning border border-warning-subtle" style="font-size:.7rem">En preparación</span>
+                      {% else %}
+                        <span class="badge rounded-pill bg-secondary-subtle text-secondary border border-secondary-subtle" style="font-size:.7rem">Pendiente</span>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </li>
+              {% endif %}
+            {% empty %}
+            <li class="list-group-item text-center text-muted py-4">
+              <i class="bi bi-check-circle-fill text-success d-block mb-1 fs-5"></i>
+              Todos los ítems entregados
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+
+      </div>
     </div>
+    {% endfor %}
+  </div>
+
   {% else %}
-    <div class="alert alert-info">No hay comandas pendientes.</div>
+  <div class="text-center py-5 text-muted">
+    <i class="bi bi-check2-all fs-1 d-block mb-3 opacity-25"></i>
+    <h6 class="fw-semibold">Sin comandas pendientes</h6>
+    <p class="mb-0 small">Todas las órdenes han sido procesadas.</p>
+  </div>
   {% endif %}
+
 </div>
 
+{% block extra_js %}
 <script>
-  document.addEventListener("DOMContentLoaded", function() {
-      // Seleccionamos todos los botones con la clase btn-accion
-      const botones = document.querySelectorAll(".btn-accion");
-  
-      botones.forEach(btn => {
-          btn.addEventListener("click", function() {
-              const urlDestino = this.dataset.url; // Obtenemos la URL del atributo data-url
-              
-              // Feedback visual: deshabilitar para evitar doble click
-              btn.disabled = true;
-              const textoOriginal = btn.innerHTML;
-              btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>...';
-  
-              fetch(urlDestino, {
-                  method: "POST",
-                  headers: {
-                      "X-Requested-With": "XMLHttpRequest",
-                      "X-CSRFToken": "{{ csrf_token }}"
-                  }
-              })
-              .then(res => {
-                  if (!res.ok) throw new Error('Error en el servidor');
-                  return res.json();
-              })
-              .then(data => {
-                  if (data.ok) {
-                      // Refrescamos la página para mostrar los nuevos estados y colores
-                      location.reload();
-                  } else {
-                      alert("No se pudo actualizar: " + (data.error || "error desconocido"));
-                      btn.disabled = false;
-                      btn.innerHTML = textoOriginal;
-                  }
-              })
-              .catch(err => {
-                  console.error("Error:", err);
-                  alert("Error de conexión en comanda.html");
-                  btn.disabled = false;
-                  btn.innerHTML = textoOriginal;
-              });
-          });
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll(".btn-accion").forEach(btn => {
+    btn.addEventListener("click", function () {
+      const url = this.dataset.url;
+      btn.disabled = true;
+      const original = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+      fetch(url, {
+        method: "POST",
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+          "X-CSRFToken": "{{ csrf_token }}"
+        }
+      })
+      .then(res => { if (!res.ok) throw new Error("Error servidor"); return res.json(); })
+      .then(data => {
+        if (data.ok) { location.reload(); }
+        else {
+          alert("No se pudo actualizar: " + (data.error || "error desconocido"));
+          btn.disabled = false;
+          btn.innerHTML = original;
+        }
+      })
+      .catch(err => {
+        console.error("Error:", err);
+        alert("Error de conexión");
+        btn.disabled = false;
+        btn.innerHTML = original;
       });
+    });
   });
-  (function () {
-    const protocol = (window.location.protocol === "https:") ? "wss" : "ws";
-    const wsUrl = `${protocol}://${window.location.host}/ws/cocina/comandas/`;
-    const socket = new WebSocket(wsUrl);
-  
-    socket.onopen = () => console.log("✅ WS conectado", wsUrl);
-    socket.onerror = (e) => console.error("❌ WS error", e);
-    socket.onclose = (e) => console.warn("⚠️ WS cerrado", e.code, e.reason);
-  
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log(data)
-      console.log(data.type)
-      if (data.type === "comanda_created") {
-        location.reload();
-      }
-    };
-  })();
+});
+
+// WebSocket cocina
+(function () {
+  const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+  const socket = new WebSocket(`${protocol}://${window.location.host}/ws/cocina/comandas/`);
+  socket.onopen  = () => console.log("✅ WS cocina conectado");
+  socket.onerror = (e) => console.error("❌ WS error", e);
+  socket.onclose = (e) => console.warn("⚠️ WS cerrado", e.code);
+  socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    if (data.type === "comanda_created") location.reload();
+  };
+})();
 </script>
+{% endblock %}
 {% endblock %}

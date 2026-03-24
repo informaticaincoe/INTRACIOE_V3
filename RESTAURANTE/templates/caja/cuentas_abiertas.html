@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Cuentas por cobrar · INTRACOE{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center gap-2">
+      <a href="{% url 'caja-dashboard' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <div class="rounded-circle bg-warning bg-opacity-10 d-flex align-items-center justify-content-center"
+           style="width:2.8rem;height:2.8rem">
+        <i class="bi bi-cash-coin text-warning fs-5"></i>
+      </div>
+      <div>
+        <h5 class="mb-0 fw-semibold">Cuentas por cobrar</h5>
+        <small class="text-muted">Caja #{{ caja.id }} · {{ grupos|length }} mesa{{ grupos|length|pluralize }} con cuentas pendientes</small>
+      </div>
+    </div>
+    <div class="text-end">
+      <div class="text-muted small">Total pendiente</div>
+      <div class="fs-5 fw-bold text-warning">${{ total_pendiente|floatformat:2 }}</div>
+    </div>
+  </div>
+
+  {% if grupos %}
+  <div class="row g-3">
+    {% for grupo in grupos %}
+    <div class="col-12 col-md-6 col-xl-4">
+      <div class="card shadow-sm border-0 h-100">
+
+        {# Encabezado mesa #}
+        <div class="card-header bg-transparent border-bottom py-3 d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-2">
+            <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center"
+                 style="width:2.2rem;height:2.2rem;min-width:2.2rem">
+              <i class="bi bi-table text-primary" style="font-size:.9rem"></i>
+            </div>
+            <div>
+              <div class="fw-semibold">Mesa {{ grupo.mesa.numero }}</div>
+              {% if grupo.mesa.area %}
+              <small class="text-muted">{{ grupo.mesa.area.nombre }}</small>
+              {% endif %}
+            </div>
+          </div>
+          <div class="text-end">
+            <div class="text-muted" style="font-size:.75rem">Total mesa</div>
+            <div class="fw-bold text-success">
+              ${% with total=0 %}
+                {% for c in grupo.cuentas %}{{ c.total|floatformat:2 }}{% if not forloop.last %} + {% endif %}{% endfor %}
+              {% endwith %}
+            </div>
+          </div>
+        </div>
+
+        {# Cuentas de esta mesa #}
+        <div class="card-body p-0">
+          {% for cuenta in grupo.cuentas %}
+          <div class="px-4 py-3 {% if not forloop.last %}border-bottom{% endif %}">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <div class="fw-medium">{{ cuenta.nombre }}</div>
+                <small class="text-muted">
+                  {{ cuenta.detalles.count }} ítem{{ cuenta.detalles.count|pluralize }} ·
+                  Abierta {{ cuenta.creado_el|date:"H:i" }}
+                </small>
+              </div>
+              {% if cuenta.estado == "ABIERTA" %}
+              <span class="badge rounded-pill bg-warning-subtle text-warning border border-warning-subtle">Abierta</span>
+              {% elif cuenta.estado == "CERRADA" %}
+              <span class="badge rounded-pill bg-info-subtle text-info border border-info-subtle">Lista para cobrar</span>
+              {% endif %}
+            </div>
+
+            {# Detalles colapsables #}
+            <div class="mb-2">
+              <a class="text-decoration-none text-muted small d-flex align-items-center gap-1"
+                 data-bs-toggle="collapse" href="#detalle-{{ cuenta.id }}" role="button">
+                <i class="bi bi-chevron-right" id="chevron-{{ cuenta.id }}" style="transition:transform .2s;font-size:.7rem"></i>
+                Ver ítems
+              </a>
+              <div class="collapse mt-2" id="detalle-{{ cuenta.id }}">
+                {% for detalle in cuenta.detalles.all %}
+                <div class="d-flex justify-content-between text-muted small py-1 border-bottom border-light">
+                  <span>{{ detalle.cantidad }}× {{ detalle.platillo.nombre }}</span>
+                  <span>${{ detalle.total_linea|floatformat:2 }}</span>
+                </div>
+                {% empty %}
+                <div class="text-muted small">Sin ítems</div>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="fw-semibold text-success">${{ cuenta.total|floatformat:2 }}</div>
+              <a href="{% url 'cuenta_pagar' cuenta.id %}" class="btn btn-sm btn-success px-3">
+                <i class="bi bi-cash me-1"></i>Cobrar
+              </a>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        {# Footer: ir al checkout completo de la mesa #}
+        <div class="card-footer bg-transparent pt-0 px-3 pb-3">
+          <a href="{% url 'pedido-checkout' grupo.mesa.id %}" class="btn btn-outline-primary btn-sm w-100">
+            <i class="bi bi-receipt me-1"></i>Ver checkout completo de la mesa
+          </a>
+        </div>
+
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="text-center py-5 text-muted">
+    <i class="bi bi-check2-circle fs-1 d-block mb-3 opacity-25"></i>
+    <h6 class="fw-semibold">Sin cuentas pendientes</h6>
+    <p class="mb-3 small">No hay mesas con cuentas abiertas en este momento.</p>
+    <a href="{% url 'mesas-lista' %}" class="btn btn-outline-primary btn-sm">
+      <i class="bi bi-table me-1"></i>Ver mesas
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function (el) {
+    const targetId = el.getAttribute("href").replace("#", "");
+    const chevronId = "chevron-" + targetId.replace("detalle-", "");
+    const chevron = document.getElementById(chevronId);
+    const target  = document.getElementById(targetId);
+    if (!target || !chevron) return;
+    target.addEventListener("show.bs.collapse", () => chevron.style.transform = "rotate(90deg)");
+    target.addEventListener("hide.bs.collapse", () => chevron.style.transform = "rotate(0deg)");
+  });
+});
+</script>
+{% endblock %}
+{% endblock %}

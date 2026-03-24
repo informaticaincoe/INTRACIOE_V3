@@ -15,7 +15,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 #####################################################################################################
-#                                 CONFIGURAICÓN RESTAURANTE                                         #
+#                                 CONFIGURACIÓN RESTAURANTE                                         #
 #####################################################################################################
 
 class Area(models.Model):
@@ -61,6 +61,13 @@ class Mesa(models.Model):
     area = models.ForeignKey("RESTAURANTE.Area",on_delete=models.SET_NULL,null=True, blank=True,related_name="area",
     )
     es_vip = models.BooleanField(default=False, verbose_name="Mesa VIP (Prioridad)")
+    propina_porcentaje = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="% Propina sugerida (deja vacío para usar el global)",
+    )
     estado = models.CharField(
         max_length=20,
         choices=ESTADO_MESA_CHOICES,
@@ -108,24 +115,26 @@ class Platillo(models.Model):
 
         # Si no tiene producto, créalo
         if self.producto_id is None:
+            from INVENTARIO.models import Tributo
+            tributo_default = Tributo.objects.first()
+            if tributo_default is None:
+                raise ValueError(
+                    "No hay ningún Tributo configurado en INVENTARIO. "
+                    "Crea al menos uno antes de guardar un Platillo."
+                )
             prod = Producto.objects.create(
                 codigo=self.codigo,
                 descripcion=self.nombre,
                 precio_venta=self.precio_venta,
-                preunitario=self.precio_venta,  # si aplica en tu lógica
-                ### FRANCISCO
-                tipo_item_id = 1,
-                unidad_medida_id = 8,
+                preunitario=self.precio_venta,
                 referencia_interna=self.codigo,
-                ###
                 precio_compra=0,
-                stock=0 if self.es_preparado else 0,  # puedes dejar 0 y manejar compras
+                stock=0,
                 stock_minimo=0,
                 stock_maximo=0,
-                # setea defaults requeridos en tu modelo:
-                tributo_id=1,
+                tributo=tributo_default,
                 precio_iva=False,
-                imagen=self.imagen
+                imagen=self.imagen,
             )
             self.producto = prod
             super().save(update_fields=["producto"])
@@ -195,7 +204,7 @@ class AreaCocina(models.Model):
     area_cocina = models.CharField(max_length=50, unique=True, verbose_name="Nombre del area de cocina")
 
     class Meta:
-        verbose_name = "Area de codina"
+        verbose_name = "Area de cocina"
         verbose_name_plural = "Areas de cocina"
         
     def __str__(self):
@@ -339,8 +348,7 @@ class Pedido(models.Model):
         pedido.save(update_fields=["estado", "pagado_el"])
         logger.debug(">>>> PEDIDO PAGADO MODEL estado: %s", pedido.estado)
 
-        # tu mesa: si quieres LIBRE, usa LIBRE. Si tienes PAGADO, úsalo.
-        pedido.mesa.estado = "PAGADO"  # o "PAGADO" si así lo manejas
+        pedido.mesa.estado = "LIBRE"
         pedido.mesa.save(update_fields=["estado"])
 
         return True

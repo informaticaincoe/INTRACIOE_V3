@@ -70,6 +70,9 @@ urlpatterns = [
     # Pagos de cuenta
     path('mesa/<int:mesa_id>/solicitar-cuenta/', views_pedidos.solicitar_cuenta, name='solicitar_cuenta'),
     path("mesa/<int:mesa_id>/checkout/", views_pedidos.pedido_checkout, name="pedido-checkout"),
+    path("mesa/<int:mesa_id>/cobrar-total/", views_pedidos.cobrar_total, name="cobrar-total"),
+    path("mesa/<int:mesa_id>/pre-ticket/", views_pedidos.imprimir_pre_ticket, name="pre-ticket"),
+    path("cuenta/<int:cuenta_id>/ticket/", views_pedidos.imprimir_ticket_cuenta, name="imprimir-ticket-cuenta"),
     path("pedido/<int:pedido_id>/split/", views_pedidos.pedido_split, name="pedido-split"),
     path("pedido/<int:pedido_id>/pagar/", views_pedidos.enviar_facturacion, name="enviar-facturacion"),
     path("detalle/mover/", views_pedidos.mover_detalle, name="mover_detalle"), # para cuentas separads
@@ -84,6 +87,7 @@ urlpatterns = [
     # Caja
     path("caja/", views_caja_y_cajeros.apertura_caja, name="caja"),
     path("caja/dashboard/", views_caja_y_cajeros.caja_dashboard, name="caja-dashboard"),
+    path("caja/cuentas/", views_caja_y_cajeros.cuentas_abiertas, name="cuentas-abiertas"),
     path("caja/movimiento/", views_caja_y_cajeros.caja_registrar_movimiento, name="caja-movimiento"),
     path('caja/cierre/', views_caja_y_cajeros.cierre_caja, name='cierre-caja'),
 

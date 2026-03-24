@@ -20,6 +20,25 @@ from django.core.paginator import Paginator
 import json
 
 logger = logging.getLogger(__name__)
+
+
+def _calcular_propina(base: Decimal, mesa, emisor) -> Decimal:
+    """
+    Devuelve el monto de propina sugerida para `base`.
+    Prioridad: mesa.propina_porcentaje → emisor.config_tip.porcentaje → 0
+    """
+    porcentaje = None
+    if mesa and mesa.propina_porcentaje is not None:
+        porcentaje = mesa.propina_porcentaje
+    elif emisor and getattr(emisor, "es_restaurante", False):
+        config = getattr(emisor, "config_tip", None)
+        if config:
+            porcentaje = config.porcentaje
+    if porcentaje is None:
+        return Decimal("0.00")
+    return (base * porcentaje / Decimal("100")).quantize(Decimal("0.01"))
+
+
 """
 MANEJO DE:
     - Pedidos
@@ -161,68 +180,6 @@ def tomar_pedido(request, mesa_id):
     return render(request, "pedidos/_toma_pedido.html", context)
 
 
-# @login_required
-# @require_POST
-# @transaction.atomic
-# def pedido_agregar_item(request, pedido_id):
-#     # 1. Validaciones de seguridad (Caja, Rol, Estado)
-#     if not Caja.objects.filter(estado="ABIERTA").exists():
-#         return JsonResponse({"ok": False, "error": "Caja cerrada"}, status=400)
-
-#     pedido = get_object_or_404(Pedido.objects.select_for_update(), id=pedido_id)
-    
-#     if pedido.estado != "ABIERTO":
-#         return JsonResponse({"ok": False, "error": "El pedido no está ABIERTO."}, status=400)
-
-#     # 2. Reutiliza tu lógica de guardado JSON
-#     platillos_json = request.POST.get("platillos_json", "[]")
-    
-#     # para que NO borre lo que ya estaba en el pedido.
-#     guardar_detalles_desde_json(pedido, platillos_json, modo="append") 
-
-#     # 3. Notificar a cocina SOLO lo nuevo
-#     enviar_pedido_a_cocina(pedido)
-
-#     # 4. Actualizar totales
-#     pedido.recalcular_totales(save=True)
-#     if request.headers.get("HX-Request"):
-#             return render(request, "pedidos/menu_seleccion_pedido.html", context)
-#     return JsonResponse({
-#         "ok": True,
-#         "total": str(pedido.total),
-#         "mensaje": "Platillos agregados correctamente"
-#     })
-
-# # NO SE ESTA USANDO
-# @login_required
-# @require_POST
-# @transaction.atomic
-# def pedido_quitar_item(request, pedido_id, detalle_id):
-#     if getattr(request.user, "role", None) != "mesero":
-#         return HttpResponseForbidden("Solo meseros.")
-
-#     mesero = get_mesero_from_user(request.user)
-#     pedido = get_object_or_404(Pedido.objects.select_for_update(), id=pedido_id)
-#     if pedido.mesero_id != mesero.id:
-#         return HttpResponseForbidden("No puedes editar este pedido.")
-
-#     det = get_object_or_404(DetallePedido, id=detalle_id, pedido=pedido)
-#     det.delete()
-
-#     pedido.recalcular_totales(save=True)
-
-#     # si ya no hay items, regresamos a PENDIENTE_ORDEN
-#     if not pedido.detalles.exists():
-#         if pedido.mesa.estado != "PENDIENTE_ORDEN":
-#             pedido.mesa.estado = "PENDIENTE_ORDEN"
-#             pedido.mesa.save(update_fields=["estado"])
-
-#     return JsonResponse({
-#         "ok": True,
-#         "subtotal": str(pedido.subtotal),
-#         "iva_total": str(pedido.iva_total),
-#         "total": str(pedido.total),
-#     })
 
 @login_required
 @transaction.atomic
@@ -248,21 +205,12 @@ def solicitar_cuenta(request, mesa_id):
     mesa.save()
     
     emisor = _get_emisor_for_user(request.user, estricto=False)
-    
-    # --- Lógica de Propina ---
-    propina_monto = Decimal("0.00")
-    total_con_propina = pedido.total # total es un DecimalField del Pedido
-    
-    if emisor.es_restaurante:
-        # Accedemos a la configuración que creamos (related_name='config_tip')
-        config = getattr(emisor, 'config_tip', None)
-        if config:
-            porcentaje = config.porcentaje / Decimal("100")
-            propina_monto = pedido.total * porcentaje
-            total_con_propina = pedido.total + propina_monto
+
+    propina_monto = _calcular_propina(pedido.total, mesa, emisor)
+    total_con_propina = pedido.total + propina_monto
 
     detalles = DetallePedido.objects.filter(pedido=pedido)
-    
+
     logger.debug("DETALLES ******* %s", detalles)
     
     return render(request, "documentos/template_ticket_cuenta_total.html", {
@@ -580,32 +528,48 @@ def cuenta_pagar(request, cuenta_id):
     )
     pedido = cuenta.pedido
 
-    if pedido.estado != "CERRADO":
-        messages.error(request, "El pedido debe estar CERRADO para cobrar.")
-        return redirect("mesas-lista")
-
-    if cuenta.estado not in ("ABIERTA", "CERRADA"):
+    if pedido.estado not in ("ABIERTO", "CERRADO"):
         messages.error(request, "Esta cuenta no está disponible para cobro.")
         return redirect("pedido-checkout", pedido.mesa_id)
 
-    # Aquí renderizas form de pago y al POST:
-    if request.method == "POST":
-        # TODO: aquí registras caja, formas de pago, etc.
-        cuenta.estado = "PAGADA"
-        cuenta.pagado_el = timezone.now()
-        cuenta.save(update_fields=["estado", "pagado_el"])
-
-        # Si todas las cuentas están pagadas → pedido PAGADO y mesa libre
-        if not pedido.cuentas.exclude(estado="PAGADA").exists():
-            pedido.estado = "PAGADO"
-            pedido.pagado_el = timezone.now()
-            pedido.save(update_fields=["estado", "pagado_el"])
-            pedido._sync_estado_mesa()  # libera mesa
-
-        messages.success(request, f"{cuenta.nombre} pagada.")
+    if cuenta.estado not in ("ABIERTA", "CERRADA"):
+        messages.error(request, "Esta cuenta ya fue pagada o anulada.")
         return redirect("pedido-checkout", pedido.mesa_id)
 
-    return render(request, "pedidos/pagar_cuenta.html", {"cuenta": cuenta, "pedido": pedido})
+    if request.method == "POST":
+        forma_pago = request.POST.get("forma_pago", "01")  # "01"=efectivo, "03"=tarjeta
+
+        # Cerrar pedido si aún está abierto
+        if pedido.estado == "ABIERTO":
+            pedido.cerrar()
+
+        cuenta.estado = "PAGADA"
+        from django.utils import timezone as dj_tz
+        cuenta.pagado_el = dj_tz.now()
+        cuenta.save(update_fields=["estado", "pagado_el"])
+
+        # Registrar en Caja
+        caja_actual = Caja.objects.filter(estado="ABIERTA").first()
+        if caja_actual:
+            monto = Decimal(str(cuenta.total or 0))
+            caja_actual.total_ventas  = Decimal(str(caja_actual.total_ventas  or 0)) + monto
+            if forma_pago == "03":
+                caja_actual.total_tarjeta  = Decimal(str(caja_actual.total_tarjeta  or 0)) + monto
+            else:
+                caja_actual.total_efectivo = Decimal(str(caja_actual.total_efectivo or 0)) + monto
+            caja_actual.save(update_fields=["total_ventas", "total_efectivo", "total_tarjeta"])
+
+        pedido.marcar_pagado_si_corresponde()
+
+        return redirect("imprimir-ticket-cuenta", cuenta_id=cuenta.id)
+
+    return render(request, "pedidos/checkout.html", {
+        "mesa": pedido.mesa,
+        "pedido": pedido,
+        "cuentas": pedido.cuentas.all(),
+        "productos_consolidados": _consolidar_productos(pedido),
+        "cuenta_activa": cuenta,
+    })
 
 # Seleccionar pago en una sola cuenta o cuentas separadas y añadir cuenta predeterminada (una sola cuenta)
 @login_required
@@ -649,31 +613,137 @@ def pedido_checkout(request, mesa_id):
     # 5. Obtener cuentas (puede no haber ninguna)
     cuentas = pedido.cuentas.all().order_by("creado_el")
 
-    # Consolidación de productos para la vista ---
-    detalles_consolidados = {}
-    for detalle in pedido.detalles.all():
-        p_id = detalle.platillo.id
-        if p_id not in detalles_consolidados:
-            detalles_consolidados[p_id] = {
-                'id': p_id,
-                'nombre': detalle.platillo.nombre,
-                'cantidad': detalle.cantidad,
-                'total_linea': detalle.total_linea,
-                'notas': [detalle.notas] if detalle.notas else []
-            }
-        else:
-            detalles_consolidados[p_id]['cantidad'] += detalle.cantidad
-            detalles_consolidados[p_id]['total_linea'] += detalle.total_linea
-            if detalle.notas and detalle.notas not in detalles_consolidados[p_id]['notas']:
-                detalles_consolidados[p_id]['notas'].append(detalle.notas)
-
     # 6. Renderizar vista de decisión
     return render(request, "pedidos/checkout.html", {
         "mesa": mesa,
         "pedido": pedido,
-        "cuentas": cuentas,  # puede estar vacío y está bien
-        "productos_consolidados": detalles_consolidados.values()
+        "cuentas": cuentas,
+        "productos_consolidados": list(_consolidar_productos(pedido)),
     })
+
+def _consolidar_productos(pedido):
+    """Helper: consolida detalles del pedido por platillo."""
+    result = {}
+    for detalle in pedido.detalles.all():
+        p_id = detalle.platillo_id
+        if p_id not in result:
+            result[p_id] = {
+                "id": p_id,
+                "nombre": detalle.platillo.nombre,
+                "cantidad": detalle.cantidad,
+                "total_linea": detalle.total_linea,
+                "notas": [detalle.notas] if detalle.notas else [],
+            }
+        else:
+            result[p_id]["cantidad"] += detalle.cantidad
+            result[p_id]["total_linea"] += detalle.total_linea
+            if detalle.notas and detalle.notas not in result[p_id]["notas"]:
+                result[p_id]["notas"].append(detalle.notas)
+    return result.values()
+
+
+@login_required
+@require_POST
+@transaction.atomic
+def cobrar_total(request, mesa_id):
+    """Cobra el pedido completo en una sola cuenta (sin facturación electrónica)."""
+    from django.utils import timezone as dj_tz
+
+    mesa = get_object_or_404(Mesa, id=mesa_id)
+    pedido = (
+        Pedido.objects.select_for_update()
+        .filter(mesa=mesa, estado__in=["ABIERTO", "CERRADO"])
+        .order_by("-creado_el")
+        .first()
+    )
+    if not pedido:
+        messages.error(request, "No hay pedido activo en esta mesa.")
+        return redirect("mesas-lista")
+
+    forma_pago = request.POST.get("forma_pago", "01")  # "01"=efectivo, "03"=tarjeta
+
+    # Obtener o crear cuenta única
+    cuenta = pedido.cuentas.filter(estado__in=["ABIERTA", "CERRADA"]).first()
+    if not cuenta:
+        cuenta = CuentaPedido.objects.create(pedido=pedido, nombre="Cuenta")
+
+    # Asignar todos los detalles sin cuenta a esta
+    pedido.detalles.filter(cuenta__isnull=True).update(cuenta=cuenta)
+    cuenta.recalcular_totales(save=True)
+    pedido.recalcular_totales(save=True)
+
+    # Cerrar pedido si aún está abierto
+    if pedido.estado == "ABIERTO":
+        pedido.cerrar()
+
+    # Marcar cuenta como pagada
+    cuenta.estado = "PAGADA"
+    cuenta.pagado_el = dj_tz.now()
+    cuenta.save(update_fields=["estado", "pagado_el"])
+
+    # Registrar en caja
+    caja_actual = Caja.objects.filter(estado="ABIERTA").first()
+    if caja_actual:
+        monto = Decimal(str(cuenta.total or 0))
+        caja_actual.total_ventas  = Decimal(str(caja_actual.total_ventas  or 0)) + monto
+        if forma_pago == "03":
+            caja_actual.total_tarjeta  = Decimal(str(caja_actual.total_tarjeta  or 0)) + monto
+        else:
+            caja_actual.total_efectivo = Decimal(str(caja_actual.total_efectivo or 0)) + monto
+        caja_actual.save(update_fields=["total_ventas", "total_efectivo", "total_tarjeta"])
+
+    pedido.marcar_pagado_si_corresponde()
+
+    return redirect("imprimir-ticket-cuenta", cuenta_id=cuenta.id)
+
+
+@login_required
+def imprimir_pre_ticket(request, mesa_id):
+    """Imprime pre-cuenta sin cambiar el estado del pedido."""
+    mesa = get_object_or_404(Mesa, id=mesa_id)
+    pedido = (
+        Pedido.objects.filter(mesa=mesa, estado__in=["ABIERTO", "CERRADO"])
+        .order_by("-creado_el")
+        .first()
+    )
+    if not pedido:
+        return redirect("mesas-lista")
+
+    emisor = _get_emisor_for_user(request.user, estricto=False)
+    propina_monto = _calcular_propina(pedido.total, mesa, emisor)
+    total_con_propina = pedido.total + propina_monto
+
+    return render(request, "documentos/template_ticket_cuenta_total.html", {
+        "pedido": pedido,
+        "detalle_items": pedido.detalles.select_related("platillo").all(),
+        "emisor": emisor,
+        "propina_monto": propina_monto,
+        "total_con_propina": total_con_propina,
+    })
+
+
+@login_required
+def imprimir_ticket_cuenta(request, cuenta_id):
+    """Imprime ticket de una cuenta específica (post-pago)."""
+    cuenta = get_object_or_404(
+        CuentaPedido.objects.select_related("pedido__mesa"),
+        id=cuenta_id,
+    )
+    pedido = cuenta.pedido
+    mesa = pedido.mesa
+    emisor = _get_emisor_for_user(request.user, estricto=False)
+    propina_monto = _calcular_propina(cuenta.total, mesa, emisor)
+    total_con_propina = cuenta.total + propina_monto
+
+    return render(request, "documentos/ticket_cuenta_pagada.html", {
+        "pedido": pedido,
+        "cuenta": cuenta,
+        "detalle_items": cuenta.detalles.select_related("platillo").all(),
+        "emisor": emisor,
+        "propina_monto": propina_monto,
+        "total_con_propina": total_con_propina,
+    })
+
 
 # Agregar mas cuentas en la division de cuentas
 @login_required
@@ -697,81 +767,6 @@ def crear_cuenta_extra(request, pedido_id):
 
 
 
-# @login_required
-# @require_POST
-# @transaction.atomic
-# def detalle_mover_a_cuenta(request):
-#     # if getattr(request.user, "role", None) != "mesero":
-#     #     return JsonResponse({"ok": False, "error": "Solo meseros."}, status=403)
-
-#     mesero = get_mesero_from_user(request.user)
-
-#     try:
-#         detalle_id = int(request.POST["detalle_id"])
-#         cuenta_destino_id = request.POST.get("cuenta_destino_id")  # "POOL" o id
-#         qty = int(request.POST.get("qty") or 1)
-#     except Exception as e:
-#         return JsonResponse({"ok": False, "error": str(e)}, status=400)
-
-#     if qty == 0:
-#         return JsonResponse({"ok": False, "error": "qty no puede ser 0."}, status=400)
-#     qty = abs(qty)
-
-#     detalle_hint = get_object_or_404(DetallePedido, id=detalle_id)
-
-#     # destino
-#     if cuenta_destino_id in (None, "POOL", ""):
-#         cuenta_destino = None
-#     else:
-#         cuenta_destino = get_object_or_404(CuentaPedido, id=int(cuenta_destino_id), pedido=detalle_hint.pedido)
-
-#     pedido = detalle_hint.pedido
-#     platillo = detalle_hint.platillo
-
-#     # defaults de precio/iva/notas (tomados del detalle “hint”)
-#     src_defaults = {
-#         "precio_unitario": detalle_hint.precio_unitario,
-#         "descuento_pct": detalle_hint.descuento_pct,
-#         "aplica_iva": detalle_hint.aplica_iva,
-#         "notas": detalle_hint.notas,
-#     }
-
-#     # >>> Fuente REAL = la cuenta del detalle_hint (no solo esa fila), para evitar duplicados
-#     cuenta_origen = detalle_hint.cuenta  # None => POOL, o una cuenta
-#     qs_origen = DetallePedido.objects.filter(pedido=pedido, platillo=platillo, cuenta=cuenta_origen)
-
-#     total_origen = qs_origen.aggregate(s=Sum("cantidad"))["s"] or 0
-#     if qty > total_origen:
-#         return JsonResponse({"ok": False, "error": "Cantidad mayor a la disponible en el origen."}, status=400)
-
-#     # consumir del origen (sin borrar por PROTECT)
-#     _consume_qty(qs_origen, qty)
-
-#     # sumar al destino (consolidado)
-#     dest, created = _get_or_create_dest(pedido, platillo, cuenta_destino, src_defaults, qty=qty)
-#     if not created:
-#         dest.cantidad += qty
-#         dest.save(update_fields=["cantidad"])
-
-#     # recalcular pedido (global)
-#     pedido.recalcular_totales(save=True)
-
-#     # recalcular cuenta origen (si existía)
-#     if cuenta_origen:
-#         cuenta_origen.recalcular_totales(save=True)
-
-#     # recalcular cuenta destino (si existe)
-#     if cuenta_destino:
-#         cuenta_destino.recalcular_totales(save=True)
-
-#     # mapa agregado (SUMADO)
-#     item_map = _build_item_map(pedido, platillo)
-
-#     # asegurar la llave del destino exista aunque quede 0
-#     if cuenta_destino is not None:
-#         item_map.setdefault(str(cuenta_destino.id), {"qty": 0, "detalle_id": None})
-
-#     return JsonResponse({"ok": True, "map": item_map})
 
 
 @require_POST

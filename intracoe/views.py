@@ -310,7 +310,7 @@ def staff_pin_login(request):
             elif user.role == 'mesero':
                 return redirect('mesas-lista')
             elif user.role == 'cajero':
-                return redirect('index')
+                return redirect('caja-dashboard')
             return redirect('index')
         else:
             print("DEBUG: Autenticación fallida")

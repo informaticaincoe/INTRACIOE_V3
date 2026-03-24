@@ -75,5 +75,5 @@ def finalizar_venta_exitosa(factura_id):
         mesa = pedido.mesa
         
         if mesa.estado != "LIBRE":
-            mesa.estado = "PAGADO"
+            mesa.estado = "LIBRE"
             mesa.save(update_fields=["estado"])

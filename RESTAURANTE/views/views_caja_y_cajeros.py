@@ -14,6 +14,7 @@ from RESTAURANTE.models import (
     Caja,
     CajaDetalleArqueo,
     Cajero,
+    CuentaPedido,
     MovimientosCaja,
     Pedido,
 )
@@ -83,6 +84,10 @@ def caja_dashboard(request):
         .order_by("-fecha")[:30]
     )
 
+    cuentas_pendientes_count = CuentaPedido.objects.filter(
+        estado__in=["ABIERTA", "CERRADA"]
+    ).count()
+
     context = {
         "caja": caja,
         "tot_ingresos": (tot_ingresos or Decimal("0.00")).quantize(Decimal("0.01")),
@@ -90,6 +95,7 @@ def caja_dashboard(request):
         "esperado": esperado,
         "detalle_apertura": detalle_apertura,
         "movimientos": movimientos,
+        "cuentas_pendientes_count": cuentas_pendientes_count,
     }
     return render(request, "caja/dashboard_caja.html", context)
 
@@ -313,6 +319,42 @@ def cierre_caja(request):
         'ingresos_lista': MovimientosCaja.objects.filter(caja=caja, tipo_movimiento="INGRESO")
     }
     return render(request, 'caja/cierre_caja.html', context)
+
+def cuentas_abiertas(request):
+    """Lista de cuentas pendientes de cobro para el cajero."""
+    perfil = _get_perfil(request)
+    caja = _get_caja_abierta(perfil)
+    if not caja:
+        return redirect("caja")
+
+    cuentas = (
+        CuentaPedido.objects
+        .filter(estado__in=["ABIERTA", "CERRADA"])
+        .select_related("pedido__mesa__area")
+        .prefetch_related("detalles")
+        .order_by("pedido__mesa__numero", "creado_el")
+    )
+
+    # Agrupar por pedido/mesa para la vista
+    pedidos_dict = {}
+    for cuenta in cuentas:
+        pedido = cuenta.pedido
+        if pedido.id not in pedidos_dict:
+            pedidos_dict[pedido.id] = {
+                "pedido": pedido,
+                "mesa": pedido.mesa,
+                "cuentas": [],
+            }
+        pedidos_dict[pedido.id]["cuentas"].append(cuenta)
+
+    context = {
+        "caja": caja,
+        "grupos": list(pedidos_dict.values()),
+        "total_pendiente": sum(
+            sum(c.total for c in g["cuentas"]) for g in pedidos_dict.values()
+        ),
+    }
+    return render(request, "caja/cuentas_abiertas.html", context)
 
 ##########################################################################################################
 #                                        Billetes y monedas views                                        #
