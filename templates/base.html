@@ -418,14 +418,14 @@
       <div class="sidebar-scroll">
 
         <!-- Dashboard -->
-        {% if plan and (user.role == 'admin' or user.role == 'supervisor') %}
+        {% if plan %}{% if user.role == 'admin' or user.role == 'supervisor' %}
           <a href="{% url 'index' %}" class="sb-link mb-1">
             <i class="bi bi-speedometer2"></i> Dashboard
           </a>
-        {% endif %}
+        {% endif %}{% endif %}
 
         <!-- ── Sección principal ── -->
-        {% if plan and (user.role == 'admin' or user.role == 'supervisor') %}
+        {% if plan %}{% if user.role == 'admin' or user.role == 'supervisor' %}
           <div class="sb-label">Gestión</div>
           <div class="accordion accordion-flush sb-acc" id="accDesk">
 
@@ -517,7 +517,7 @@
           </div>
           {% endif %}
 
-        {% endif %}
+        {% endif %}{% endif %}{# /if plan + role (Gestión desktop) #}
 
         <!-- ── Sección Restaurante ── -->
         {% if plan and emisor.es_restaurante and user.is_authenticated %}
@@ -663,9 +663,9 @@
       <!-- Scroll area -->
       <div class="flex-grow-1 overflow-y-auto p-3">
 
-        {% if plan and (user.role == 'admin' or user.role == 'supervisor') %}
+        {% if plan %}{% if user.role == 'admin' or user.role == 'supervisor' %}
           <a href="{% url 'index' %}" class="mob-sb-link"><i class="bi bi-speedometer2"></i> Dashboard</a>
-        {% endif %}
+        {% endif %}{% endif %}
 
         {% if plan %}
         <div class="sb-label mt-1">Gestión</div>
