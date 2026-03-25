@@ -3,6 +3,10 @@ set -e
 
 APP_PORT="${APP_PORT:-8000}"
 
+# Archivos estáticos (admin, CSS, JS)
+echo ">>> Recopilando archivos estáticos..."
+python3 manage.py collectstatic --noinput 2>/dev/null || true
+
 # Si existe db_config.json, aplicar migraciones y cargar catálogos
 if [ -f /app/db_config.json ]; then
     echo ">>> Base de datos configurada — aplicando migraciones..."
