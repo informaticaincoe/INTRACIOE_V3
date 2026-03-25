@@ -1,9 +1,14 @@
 # ─────────────────────────────────────────────────────────────
 # INTRACOE V3 — Docker Compose
 #
-# Cada cliente en su propio contenedor con puerto único:
-#   APP_PORT=8001 docker-compose -p cliente1 up -d
-#   APP_PORT=8002 docker-compose -p cliente2 up -d
+# Configurar en .env:
+#   APP_PORT=8001
+#   PG_DB=intracoe_cliente1
+#   PG_USER=intracoe
+#   PG_PASSWORD=ClaveSegura123
+#
+# Levantar:
+#   docker compose -p cliente1 up -d --build
 # ─────────────────────────────────────────────────────────────
 
 services:
@@ -43,11 +48,15 @@ services:
       - "${APP_PORT:-8000}:${APP_PORT:-8000}"
     environment:
       - APP_PORT=${APP_PORT:-8000}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=${PG_DB:-intracoe}
+      - DB_USER=${PG_USER:-intracoe}
+      - DB_PASSWORD=${PG_PASSWORD:-intracoe2025}
       - FIRMADOR_URL=http://firmador:8113
     volumes:
       - app_media:/app/media
       - app_logs:/app/logs
-      - app_config:/app/config
       - certs:/app/FE/cert
     depends_on:
       db:
@@ -59,5 +68,4 @@ volumes:
   pgdata:
   app_media:
   app_logs:
-  app_config:
   certs:

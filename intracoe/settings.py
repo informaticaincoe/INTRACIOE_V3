@@ -199,42 +199,61 @@ WSGI_APPLICATION = 'intracoe.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-# ── Base de datos: lee de db_config.json si existe, sino usa SQLite ──
+# ── Base de datos ──
+# Prioridad: 1) Variables de entorno  2) db_config.json  3) SQLite bootstrap
 import json as _json
 from pathlib import Path as _Path
 
-# Buscar en /app/config/ (Docker volumen) o en la raíz del proyecto
-_db_config_path = _Path('/app/config/db_config.json')
-if not _db_config_path.exists():
-    _db_config_path = BASE_DIR / 'db_config.json'
+_db_host = os.environ.get('DB_HOST', '')
+_db_name = os.environ.get('DB_NAME', os.environ.get('PG_DB', ''))
+_db_user = os.environ.get('DB_USER', os.environ.get('PG_USER', ''))
+_db_pass = os.environ.get('DB_PASSWORD', os.environ.get('PG_PASSWORD', ''))
+_db_port = os.environ.get('DB_PORT', '5432')
 
-_db_conf = None
-if _db_config_path.exists():
-    try:
-        with open(_db_config_path) as _f:
-            _db_conf = _json.load(_f)
-    except (ValueError, _json.JSONDecodeError):
-        _db_conf = None
-
-if _db_conf and isinstance(_db_conf, dict) and _db_conf.get('host'):
+if _db_host and _db_name:
+    # Opción 1: Variables de entorno (Docker)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': _db_conf.get('name', 'intracoe'),
-            'USER': _db_conf.get('user', 'postgres'),
-            'PASSWORD': _db_conf.get('password', ''),
-            'HOST': _db_conf.get('host', 'localhost'),
-            'PORT': _db_conf.get('port', '5432'),
+            'NAME': _db_name,
+            'USER': _db_user,
+            'PASSWORD': _db_pass,
+            'HOST': _db_host,
+            'PORT': _db_port,
         },
     }
 else:
-    # SQLite de bootstrap — permite arrancar el wizard sin PostgreSQL
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db_bootstrap.sqlite3',
-        },
-    }
+    # Opción 2: db_config.json (desarrollo local / wizard)
+    _db_conf = None
+    for _p in [_Path('/app/config/db_config.json'), BASE_DIR / 'db_config.json']:
+        if _p.exists():
+            try:
+                _db_conf = _json.loads(_p.read_text())
+                if isinstance(_db_conf, dict) and _db_conf.get('host'):
+                    break
+                _db_conf = None
+            except (ValueError, _json.JSONDecodeError):
+                _db_conf = None
+
+    if _db_conf:
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': _db_conf.get('name', 'intracoe'),
+                'USER': _db_conf.get('user', 'postgres'),
+                'PASSWORD': _db_conf.get('password', ''),
+                'HOST': _db_conf.get('host', 'localhost'),
+                'PORT': _db_conf.get('port', '5432'),
+            },
+        }
+    else:
+        # Opción 3: SQLite bootstrap (wizard sin BD configurada)
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db_bootstrap.sqlite3',
+            },
+        }
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend', 
