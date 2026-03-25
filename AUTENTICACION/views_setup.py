@@ -302,7 +302,6 @@ def setup_wizard(request):
             action = request.POST.get("action", "")
 
             if action == "cargar":
-                from django.core.management import call_command
                 from io import StringIO
                 out = StringIO()
                 try:
