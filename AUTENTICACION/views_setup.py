@@ -291,12 +291,73 @@ def setup_wizard(request):
             user.groups.add(grupo)
 
             messages.success(request, "Usuario administrador creado ✅")
-            return redirect("/setup/?step=empresa")
+            return redirect("/setup/?step=catalogos")
 
         grupos = Group.objects.all()
         return render(request, "setup/usuario.html", {"grupos": grupos})
 
-    # Paso 2: Crear empresa
+    # Paso 2: Cargar catálogos de Hacienda
+    elif step == "catalogos":
+        if request.method == "POST":
+            action = request.POST.get("action", "")
+
+            if action == "cargar":
+                from django.core.management import call_command
+                from io import StringIO
+                out = StringIO()
+                try:
+                    call_command('cargar_catalogos', stdout=out)
+                    return JsonResponse({"ok": True, "msg": out.getvalue().strip()})
+                except Exception as e:
+                    return JsonResponse({"ok": False, "error": str(e)})
+
+            if action == "status":
+                from FE.models import (
+                    Pais, Departamento, Municipio, ActividadEconomica,
+                    Ambiente, Tipo_dte, TiposDocIDReceptor, CondicionOperacion,
+                    FormasPago, Plazo, TipoContingencia, TipoInvalidacion,
+                    RecintoFiscal, TipoPersona, TipoTransporte,
+                    TipoDomicilioFiscal, TiposEstablecimientos,
+                    Modelofacturacion, TipoTransmision, TipoGeneracionDocumento,
+                    TipoRetencionIVAMH, TipoDocContingencia, TipoDonacion,
+                    OtrosDicumentosAsociado, TiposServicio_Medico,
+                )
+                from INVENTARIO.models import TipoItem, TipoUnidadMedida, TipoTributo, Tributo
+                catalogs = [
+                    {"name": "Ambientes", "count": Ambiente.objects.count(), "icon": "cloud"},
+                    {"name": "Tipos de DTE", "count": Tipo_dte.objects.count(), "icon": "file-earmark-text"},
+                    {"name": "Modelo Facturación", "count": Modelofacturacion.objects.count(), "icon": "receipt"},
+                    {"name": "Tipo Transmisión", "count": TipoTransmision.objects.count(), "icon": "send"},
+                    {"name": "Tipo Contingencia", "count": TipoContingencia.objects.count(), "icon": "exclamation-triangle"},
+                    {"name": "Retención IVA", "count": TipoRetencionIVAMH.objects.count(), "icon": "percent"},
+                    {"name": "Generación Documento", "count": TipoGeneracionDocumento.objects.count(), "icon": "file-plus"},
+                    {"name": "Tipo Establecimiento", "count": TiposEstablecimientos.objects.count(), "icon": "building"},
+                    {"name": "Servicio Médico", "count": TiposServicio_Medico.objects.count(), "icon": "heart-pulse"},
+                    {"name": "Tipo de Ítem", "count": TipoItem.objects.count(), "icon": "box"},
+                    {"name": "Departamentos", "count": Departamento.objects.count(), "icon": "map"},
+                    {"name": "Municipios", "count": Municipio.objects.count(), "icon": "geo-alt"},
+                    {"name": "Unidades de Medida", "count": TipoUnidadMedida.objects.count(), "icon": "rulers"},
+                    {"name": "Tributos", "count": Tributo.objects.count(), "icon": "cash-stack"},
+                    {"name": "Condición Operación", "count": CondicionOperacion.objects.count(), "icon": "toggles"},
+                    {"name": "Formas de Pago", "count": FormasPago.objects.count(), "icon": "credit-card"},
+                    {"name": "Plazos", "count": Plazo.objects.count(), "icon": "calendar"},
+                    {"name": "Países", "count": Pais.objects.count(), "icon": "globe"},
+                    {"name": "Doc. Asociados", "count": OtrosDicumentosAsociado.objects.count(), "icon": "paperclip"},
+                    {"name": "Tipo Doc. Receptor", "count": TiposDocIDReceptor.objects.count(), "icon": "person-vcard"},
+                    {"name": "Doc. Contingencia", "count": TipoDocContingencia.objects.count(), "icon": "file-earmark-break"},
+                    {"name": "Tipo Invalidación", "count": TipoInvalidacion.objects.count(), "icon": "x-circle"},
+                    {"name": "Tipo Donación", "count": TipoDonacion.objects.count(), "icon": "gift"},
+                    {"name": "Recinto Fiscal", "count": RecintoFiscal.objects.count(), "icon": "bank"},
+                    {"name": "Tipo Persona", "count": TipoPersona.objects.count(), "icon": "people"},
+                    {"name": "Tipo Transporte", "count": TipoTransporte.objects.count(), "icon": "truck"},
+                    {"name": "Domicilio Fiscal", "count": TipoDomicilioFiscal.objects.count(), "icon": "house"},
+                    {"name": "Actividades Económicas", "count": ActividadEconomica.objects.count(), "icon": "briefcase"},
+                ]
+                return JsonResponse({"ok": True, "catalogs": catalogs})
+
+        return render(request, "setup/catalogos.html")
+
+    # Paso 3: Crear empresa
     elif step == "empresa":
         if request.method == "POST":
             campos_requeridos = {
