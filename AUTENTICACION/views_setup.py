@@ -109,10 +109,13 @@ def setup_wizard(request):
         from pathlib import Path
         from django.conf import settings
 
-        db_config_path = Path(settings.BASE_DIR) / 'db_config.json'
+        # Buscar config en volumen Docker o en la raíz
+        docker_config = Path('/app/config/db_config.json')
+        local_config = Path(settings.BASE_DIR) / 'db_config.json'
+        db_config_path = docker_config if docker_config.parent.exists() else local_config
 
         # Si ya existe la config, saltar al paso 1
-        if db_config_path.exists():
+        if docker_config.exists() or local_config.exists():
             return redirect("/setup/?step=usuario")
 
         if request.method == "POST":

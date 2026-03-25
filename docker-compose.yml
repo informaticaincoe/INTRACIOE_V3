@@ -47,6 +47,7 @@ services:
     volumes:
       - app_media:/app/media
       - app_logs:/app/logs
+      - app_config:/app/config
       - certs:/app/FE/cert
     depends_on:
       db:
@@ -58,4 +59,5 @@ volumes:
   pgdata:
   app_media:
   app_logs:
+  app_config:
   certs:

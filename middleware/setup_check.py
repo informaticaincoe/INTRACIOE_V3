@@ -13,14 +13,20 @@ class SetupRedirectMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
+    def _db_config_exists(self):
+        """Busca db_config.json en el volumen Docker o en la raíz del proyecto."""
+        return (
+            Path('/app/config/db_config.json').exists()
+            or (Path(settings.BASE_DIR) / 'db_config.json').exists()
+        )
+
     def __call__(self, request):
         # Siempre permitir acceso a /setup/ y archivos estáticos
         if request.path.startswith("/setup/") or request.path.startswith("/static/"):
             return self.get_response(request)
 
         # Paso 0: verificar que exista la configuración de BD
-        db_config_path = Path(settings.BASE_DIR) / 'db_config.json'
-        if not db_config_path.exists():
+        if not self._db_config_exists():
             return redirect("/setup/?step=database")
 
         # Paso 1+: verificar que exista al menos un superusuario

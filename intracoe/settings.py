@@ -198,7 +198,12 @@ WSGI_APPLICATION = 'intracoe.wsgi.application'
 
 # ── Base de datos: lee de db_config.json si existe, sino usa SQLite ──
 import json as _json
-_db_config_path = BASE_DIR / 'db_config.json'
+from pathlib import Path as _Path
+
+# Buscar en /app/config/ (Docker volumen) o en la raíz del proyecto
+_db_config_path = _Path('/app/config/db_config.json')
+if not _db_config_path.exists():
+    _db_config_path = BASE_DIR / 'db_config.json'
 
 if _db_config_path.exists():
     with open(_db_config_path) as _f:
@@ -267,7 +272,7 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [BASE_DIR / "static"]
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 
 # Default primary key field type
