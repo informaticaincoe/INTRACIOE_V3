@@ -1,6 +1,6 @@
 """
 Management command para cargar todos los catálogos oficiales del
-Ministerio de Hacienda de El Salvador.
+Ministerio de Hacienda de El Salvador — Versión 1.1 (08/2024).
 
 Uso:  python manage.py cargar_catalogos
 Es idempotente — no duplica registros si ya existen.
@@ -18,7 +18,7 @@ def _bulk(Model, rows, code_field="codigo"):
 
 
 class Command(BaseCommand):
-    help = "Carga los catálogos oficiales del Ministerio de Hacienda de El Salvador"
+    help = "Carga catálogos oficiales MH El Salvador v1.1 (08/2024)"
 
     def handle(self, *args, **options):
         from FE.models import (
@@ -38,315 +38,190 @@ class Command(BaseCommand):
 
         total = 0
 
-        # ── Ambientes ──
+        # ═══════════════════════════════════════════════════════════
+        # CAT-001 Ambiente de destino
+        # ═══════════════════════════════════════════════════════════
         total += _bulk(Ambiente, [
-            {"codigo": "00", "descripcion": "Pruebas"},
-            {"codigo": "01", "descripcion": "Producción"},
+            {"codigo": "00", "descripcion": "Modo prueba"},
+            {"codigo": "01", "descripcion": "Modo producción"},
         ])
 
-        # ── Modelo de Facturación ──
+        # ═══════════════════════════════════════════════════════════
+        # CAT-002 Tipo de Documento
+        # ═══════════════════════════════════════════════════════════
+        total += _bulk(Tipo_dte, [
+            {"codigo": "01", "descripcion": "Factura", "version": 1},
+            {"codigo": "03", "descripcion": "Comprobante de crédito fiscal", "version": 3},
+            {"codigo": "04", "descripcion": "Nota de remisión", "version": 1},
+            {"codigo": "05", "descripcion": "Nota de crédito", "version": 3},
+            {"codigo": "06", "descripcion": "Nota de débito", "version": 3},
+            {"codigo": "07", "descripcion": "Comprobante de retención", "version": 1},
+            {"codigo": "08", "descripcion": "Comprobante de liquidación", "version": 1},
+            {"codigo": "09", "descripcion": "Documento contable de liquidación", "version": 1},
+            {"codigo": "11", "descripcion": "Facturas de exportación", "version": 1},
+            {"codigo": "14", "descripcion": "Factura de sujeto excluido", "version": 1},
+            {"codigo": "15", "descripcion": "Comprobante de donación", "version": 1},
+        ])
+
+        # ═══════════════════════════════════════════════════════════
+        # CAT-003 Modelo de Facturación
+        # ═══════════════════════════════════════════════════════════
         total += _bulk(Modelofacturacion, [
             {"codigo": "1", "descripcion": "Modelo Facturación previo"},
             {"codigo": "2", "descripcion": "Modelo Facturación diferido"},
         ])
 
-        # ── Tipo Transmisión ──
+        # ═══════════════════════════════════════════════════════════
+        # CAT-004 Tipo de Transmisión
+        # ═══════════════════════════════════════════════════════════
         total += _bulk(TipoTransmision, [
-            {"codigo": "1", "descripcion": "Normal"},
-            {"codigo": "2", "descripcion": "Contingencia"},
+            {"codigo": "1", "descripcion": "Transmisión normal"},
+            {"codigo": "2", "descripcion": "Transmisión por contingencia"},
         ])
 
-        # ── Tipo Generación Documento ──
-        total += _bulk(TipoGeneracionDocumento, [
-            {"codigo": "1", "descripcion": "Normal"},
-            {"codigo": "2", "descripcion": "Por contingencia"},
-        ])
-
-        # ── Tipo Contingencia ──
+        # ═══════════════════════════════════════════════════════════
+        # CAT-005 Tipo de Contingencia
+        # ═══════════════════════════════════════════════════════════
         total += _bulk(TipoContingencia, [
             {"codigo": "1", "descripcion": "No disponibilidad de sistema del MH"},
             {"codigo": "2", "descripcion": "No disponibilidad de sistema del emisor"},
-            {"codigo": "3", "descripcion": "No disponibilidad de internet del emisor"},
-            {"codigo": "4", "descripcion": "No disponibilidad de internet por caso fortuito"},
-            {"codigo": "5", "descripcion": "Otro (detallar motivo)"},
+            {"codigo": "3", "descripcion": "Falla en el suministro de servicio de Internet del Emisor"},
+            {"codigo": "4", "descripcion": "Falla en el suministro de servicio de energía eléctrica del emisor que impida la transmisión de los DTE"},
+            {"codigo": "5", "descripcion": "Otro (deberá digitar un máximo de 500 caracteres explicando el motivo)"},
         ])
 
-        # ── Tipos de DTE ──
-        total += _bulk(Tipo_dte, [
-            {"codigo": "01", "descripcion": "Factura", "version": 1},
-            {"codigo": "03", "descripcion": "Comprobante de Crédito Fiscal", "version": 3},
-            {"codigo": "04", "descripcion": "Nota de Remisión", "version": 1},
-            {"codigo": "05", "descripcion": "Nota de Crédito", "version": 3},
-            {"codigo": "06", "descripcion": "Nota de Débito", "version": 3},
-            {"codigo": "07", "descripcion": "Comprobante de Retención", "version": 1},
-            {"codigo": "08", "descripcion": "Comprobante de Liquidación", "version": 1},
-            {"codigo": "09", "descripcion": "Documento Contable de Liquidación", "version": 1},
-            {"codigo": "11", "descripcion": "Factura de Exportación", "version": 1},
-            {"codigo": "14", "descripcion": "Factura de Sujeto Excluido", "version": 1},
-            {"codigo": "15", "descripcion": "Comprobante de Donación", "version": 1},
+        # ═══════════════════════════════════════════════════════════
+        # CAT-006 Retención IVA MH
+        # ═══════════════════════════════════════════════════════════
+        total += _bulk(TipoRetencionIVAMH, [
+            {"codigo": "22", "descripcion": "Retención IVA 1%"},
+            {"codigo": "C4", "descripcion": "Retención IVA 13%"},
+            {"codigo": "C9", "descripcion": "Otras retenciones IVA casos especiales"},
         ])
 
-        # ── Tipo Documento ID Receptor ──
-        total += _bulk(TiposDocIDReceptor, [
-            {"codigo": "13", "descripcion": "DUI"},
-            {"codigo": "36", "descripcion": "NIT"},
-            {"codigo": "37", "descripcion": "Otro"},
-            {"codigo": "02", "descripcion": "Carnet de Residente"},
-            {"codigo": "03", "descripcion": "Pasaporte"},
+        # ═══════════════════════════════════════════════════════════
+        # CAT-007 Tipo de Generación del Documento
+        # ═══════════════════════════════════════════════════════════
+        total += _bulk(TipoGeneracionDocumento, [
+            {"codigo": "1", "descripcion": "Físico"},
+            {"codigo": "2", "descripcion": "Electrónico"},
         ])
 
-        # ── Tipo Establecimiento ──
+        # ═══════════════════════════════════════════════════════════
+        # CAT-009 Tipo de establecimiento
+        # ═══════════════════════════════════════════════════════════
         total += _bulk(TiposEstablecimientos, [
-            {"codigo": "01", "descripcion": "Sucursal / Agencia"},
+            {"codigo": "01", "descripcion": "Sucursal"},
             {"codigo": "02", "descripcion": "Casa Matriz"},
             {"codigo": "04", "descripcion": "Bodega"},
-            {"codigo": "07", "descripcion": "Punto de Venta"},
-            {"codigo": "20", "descripcion": "Otro"},
+            {"codigo": "07", "descripcion": "Patio"},
         ])
 
-        # ── Condición de Operación ──
-        total += _bulk(CondicionOperacion, [
-            {"codigo": "1", "descripcion": "Contado"},
-            {"codigo": "2", "descripcion": "A crédito"},
-            {"codigo": "3", "descripcion": "Otro"},
-        ])
-
-        # ── Formas de Pago ──
-        total += _bulk(FormasPago, [
-            {"codigo": "01", "descripcion": "Billetes y monedas"},
-            {"codigo": "02", "descripcion": "Tarjeta Débito"},
-            {"codigo": "03", "descripcion": "Tarjeta Crédito"},
-            {"codigo": "04", "descripcion": "Cheque"},
-            {"codigo": "05", "descripcion": "Transferencia – Depósito Bancario"},
-            {"codigo": "06", "descripcion": "Vales"},
-            {"codigo": "07", "descripcion": "Letras de cambio"},
-            {"codigo": "08", "descripcion": "Tarjeta Prepago / regalo"},
-            {"codigo": "09", "descripcion": "Dinero electrónico"},
-            {"codigo": "10", "descripcion": "Bitcoin"},
-            {"codigo": "11", "descripcion": "Monedero electrónico"},
-            {"codigo": "12", "descripcion": "Vale digital"},
-            {"codigo": "13", "descripcion": "Pago con servicio de intermediación (PPI)"},
-            {"codigo": "14", "descripcion": "Otros"},
-            {"codigo": "99", "descripcion": "Otros"},
-        ])
-
-        # ── Plazos ──
-        total += _bulk(Plazo, [
-            {"codigo": "01", "descripcion": "Día/s"},
-            {"codigo": "02", "descripcion": "Mes/es"},
-            {"codigo": "03", "descripcion": "Año/s"},
-        ])
-
-        # ── Tipo Documento Contingencia ──
-        total += _bulk(TipoDocContingencia, [
-            {"codigo": "1", "descripcion": "Factura"},
-            {"codigo": "2", "descripcion": "Comprobante de Crédito Fiscal"},
-            {"codigo": "3", "descripcion": "Nota de Remisión"},
-            {"codigo": "4", "descripcion": "Nota de Crédito"},
-            {"codigo": "5", "descripcion": "Nota de Débito"},
-            {"codigo": "6", "descripcion": "Comprobante de Retención"},
-            {"codigo": "7", "descripcion": "Comprobante de Liquidación"},
-            {"codigo": "8", "descripcion": "Documento Contable de Liquidación"},
-            {"codigo": "9", "descripcion": "Factura de Exportación"},
-            {"codigo": "10", "descripcion": "Factura de Sujeto Excluido"},
-            {"codigo": "11", "descripcion": "Comprobante de Donación"},
-        ])
-
-        # ── Tipo Invalidación ──
-        total += _bulk(TipoInvalidacion, [
-            {"codigo": "1", "descripcion": "Error en la información del documento"},
-            {"codigo": "2", "descripcion": "Rescindir de la operación realizada"},
-            {"codigo": "3", "descripcion": "Otro motivo"},
-        ])
-
-        # ── Tipo Donación ──
-        total += _bulk(TipoDonacion, [
-            {"codigo": "1", "descripcion": "Bien"},
-            {"codigo": "2", "descripcion": "Servicio"},
-            {"codigo": "3", "descripcion": "Ambos"},
-        ])
-
-        # ── Tipo Persona ──
-        total += _bulk(TipoPersona, [
-            {"codigo": "1", "descripcion": "Persona Natural"},
-            {"codigo": "2", "descripcion": "Persona Jurídica"},
-        ])
-
-        # ── Tipo Retención IVA MH ──
-        total += _bulk(TipoRetencionIVAMH, [
-            {"codigo": "22", "descripcion": "Retención 1%"},
-            {"codigo": "C4", "descripcion": "Retención 13%"},
-            {"codigo": "C9", "descripcion": "Retención total"},
-        ])
-
-        # ── Otros Documentos Asociados ──
-        total += _bulk(OtrosDicumentosAsociado, [
-            {"codigo": "1", "descripcion": "Documento emitido por el mismo contribuyente"},
-            {"codigo": "2", "descripcion": "Documento emitido por otro contribuyente"},
-            {"codigo": "3", "descripcion": "Resolución del MH"},
-        ])
-
-        # ── Tipo Transporte ──
-        total += _bulk(TipoTransporte, [
-            {"codigo": "01", "descripcion": "Terrestre"},
-            {"codigo": "02", "descripcion": "Marítimo"},
-            {"codigo": "03", "descripcion": "Aéreo"},
-        ])
-
-        # ── INCOTERMS ──
-        total += _bulk(INCOTERMS, [
-            {"codigo": "01", "descripcion": "Costo, seguro y flete - CIF"},
-            {"codigo": "02", "descripcion": "Costo y flete - CFR"},
-            {"codigo": "03", "descripcion": "Entrega en puerto de destino con derechos pagados - DDP"},
-            {"codigo": "04", "descripcion": "Entrega en lugar convenido - DAP"},
-            {"codigo": "05", "descripcion": "Entrega en puerto de destino sin derechos pagados - DAT"},
-            {"codigo": "06", "descripcion": "En fábrica - EXW"},
-            {"codigo": "07", "descripcion": "Franco al costado del buque - FAS"},
-            {"codigo": "08", "descripcion": "Franco a bordo - FOB"},
-            {"codigo": "09", "descripcion": "Franco transportista - FCA"},
-            {"codigo": "10", "descripcion": "Transporte y seguro pagados hasta - CIP"},
-            {"codigo": "11", "descripcion": "Transporte pagado hasta - CPT"},
-            {"codigo": "12", "descripcion": "Entrega en lugar descargado - DPU"},
-        ])
-
-        # ── Tipo Domicilio Fiscal ──
-        total += _bulk(TipoDomicilioFiscal, [
-            {"codigo": "01", "descripcion": "Local propio"},
-            {"codigo": "02", "descripcion": "Local arrendado"},
-        ])
-
-        # ── Tipo Moneda ──
-        total += _bulk(TipoMoneda, [
-            {"codigo": "USD", "descripcion": "Dólar estadounidense"},
-            {"codigo": "CAD", "descripcion": "Dólar canadiense"},
-            {"codigo": "EUR", "descripcion": "Euro"},
-            {"codigo": "GBP", "descripcion": "Libra esterlina"},
-            {"codigo": "GTQ", "descripcion": "Quetzal guatemalteco"},
-            {"codigo": "HNL", "descripcion": "Lempira hondureño"},
-            {"codigo": "NIO", "descripcion": "Córdoba nicaragüense"},
-            {"codigo": "CRC", "descripcion": "Colón costarricense"},
-            {"codigo": "MXN", "descripcion": "Peso mexicano"},
-        ])
-
-        # ── Recinto Fiscal ──
-        total += _bulk(RecintoFiscal, [
-            {"codigo": "01", "descripcion": "Aeropuerto Internacional El Salvador"},
-            {"codigo": "02", "descripcion": "Puerto de Acajutla"},
-            {"codigo": "03", "descripcion": "Puerto de La Unión"},
-            {"codigo": "04", "descripcion": "Aduana terrestre San Bartolo"},
-            {"codigo": "05", "descripcion": "Aduana terrestre Santa Ana"},
-            {"codigo": "06", "descripcion": "Aduana terrestre El Poy"},
-            {"codigo": "07", "descripcion": "Aduana terrestre El Amatillo"},
-            {"codigo": "08", "descripcion": "Aduana terrestre Anguiatú"},
-            {"codigo": "09", "descripcion": "Aduana terrestre Las Chinamas"},
-            {"codigo": "10", "descripcion": "Aduana terrestre La Hachadura"},
-            {"codigo": "11", "descripcion": "Aduana terrestre San Cristóbal"},
-        ])
-
-        # ── Régimen Exportación ──
-        total += _bulk(RegimenExportacion, [
-            {"codigo": "01", "descripcion": "Exportación Definitiva"},
-            {"codigo": "02", "descripcion": "Exportación Temporal"},
-            {"codigo": "03", "descripcion": "Reexportación"},
-        ])
-
-        # ── Tipos Servicio Médico ──
+        # ═══════════════════════════════════════════════════════════
+        # CAT-010 Código tipo de Servicio (Médico)
+        # ═══════════════════════════════════════════════════════════
         total += _bulk(TiposServicio_Medico, [
-            {"codigo": "1", "descripcion": "Consulta médica"},
-            {"codigo": "2", "descripcion": "Consulta dental"},
-            {"codigo": "3", "descripcion": "Hospitalización"},
-            {"codigo": "4", "descripcion": "Cirugía"},
-            {"codigo": "5", "descripcion": "Laboratorio clínico"},
-            {"codigo": "6", "descripcion": "Imágenes diagnósticas"},
-            {"codigo": "7", "descripcion": "Otros"},
+            {"codigo": "1", "descripcion": "Cirugía"},
+            {"codigo": "2", "descripcion": "Operación"},
+            {"codigo": "3", "descripcion": "Tratamiento médico"},
+            {"codigo": "4", "descripcion": "Cirugía instituto salvadoreño de Bienestar Magisterial"},
+            {"codigo": "5", "descripcion": "Operación Instituto Salvadoreño de Bienestar Magisterial"},
+            {"codigo": "6", "descripcion": "Tratamiento médico Instituto Salvadoreño de Bienestar Magisterial"},
         ])
 
-        # ══════════════════════════════════════════════════════════
-        # PAÍSES (El Salvador + Centroamérica + principales)
-        # ══════════════════════════════════════════════════════════
-        total += _bulk(Pais, [
-            {"codigo": "9300", "descripcion": "El Salvador"},
-            {"codigo": "9100", "descripcion": "Guatemala"},
-            {"codigo": "9200", "descripcion": "Honduras"},
-            {"codigo": "9400", "descripcion": "Nicaragua"},
-            {"codigo": "9500", "descripcion": "Costa Rica"},
-            {"codigo": "9600", "descripcion": "Panamá"},
-            {"codigo": "9700", "descripcion": "Belice"},
-            {"codigo": "4100", "descripcion": "Estados Unidos de América"},
-            {"codigo": "4200", "descripcion": "México"},
-            {"codigo": "1100", "descripcion": "España"},
+        # ═══════════════════════════════════════════════════════════
+        # CAT-011 Tipo de Item
+        # ═══════════════════════════════════════════════════════════
+        total += _bulk(TipoItem, [
+            {"codigo": "1", "descripcion": "Bienes"},
+            {"codigo": "2", "descripcion": "Servicios"},
+            {"codigo": "3", "descripcion": "Ambos (Bienes y Servicios, incluye los dos inherente a los Productos o servicios)"},
+            {"codigo": "4", "descripcion": "Otros tributos por ítem"},
         ])
 
-        # ── Departamentos de El Salvador ──
-        sv = Pais.objects.filter(codigo="9300").first()
-        if sv:
-            deptos_data = [
-                ("01", "Ahuachapán"), ("02", "Santa Ana"), ("03", "Sonsonate"),
-                ("04", "Chalatenango"), ("05", "La Libertad"), ("06", "San Salvador"),
-                ("07", "Cuscatlán"), ("08", "La Paz"), ("09", "Cabañas"),
-                ("10", "San Vicente"), ("11", "Usulután"), ("12", "San Miguel"),
-                ("13", "Morazán"), ("14", "La Unión"),
-            ]
-            existing_deptos = set(Departamento.objects.values_list("codigo", flat=True))
-            deptos_to_create = [
-                Departamento(codigo=c, descripcion=d, pais=sv)
-                for c, d in deptos_data if c not in existing_deptos
-            ]
-            if deptos_to_create:
-                Departamento.objects.bulk_create(deptos_to_create, ignore_conflicts=True)
-                total += len(deptos_to_create)
+        # ═══════════════════════════════════════════════════════════
+        # CAT-012 Departamento
+        # ═══════════════════════════════════════════════════════════
+        # Primero crear El Salvador como país
+        if not Pais.objects.filter(codigo="SV").exists():
+            Pais.objects.create(codigo="SV", descripcion="El Salvador")
+            total += 1
+        sv = Pais.objects.filter(codigo="SV").first()
+        # Fallback al código viejo si existe
+        if not sv:
+            sv = Pais.objects.filter(descripcion__icontains="salvador").first()
 
-        # ── Municipios de El Salvador (44 nuevos — Decreto 762, mayo 2024) ──
+        deptos_data = [
+            ("00", "Otro (Para extranjeros)"),
+            ("01", "Ahuachapán"), ("02", "Santa Ana"), ("03", "Sonsonate"),
+            ("04", "Chalatenango"), ("05", "La Libertad"), ("06", "San Salvador"),
+            ("07", "Cuscatlán"), ("08", "La Paz"), ("09", "Cabañas"),
+            ("10", "San Vicente"), ("11", "Usulután"), ("12", "San Miguel"),
+            ("13", "Morazán"), ("14", "La Unión"),
+        ]
+        existing_deptos = set(Departamento.objects.values_list("codigo", flat=True))
+        deptos_to_create = [
+            Departamento(codigo=c, descripcion=d, pais=sv)
+            for c, d in deptos_data if c not in existing_deptos
+        ]
+        if deptos_to_create:
+            Departamento.objects.bulk_create(deptos_to_create, ignore_conflicts=True)
+            total += len(deptos_to_create)
+
+        # ═══════════════════════════════════════════════════════════
+        # CAT-013 Municipio (44 nuevos — Decreto 762, v1.1)
+        # ═══════════════════════════════════════════════════════════
         municipios_sv = {
+            "00": [("00", "Otro (Para extranjeros)")],
             "01": [  # Ahuachapán
-                ("01", "Ahuachapán Norte"), ("02", "Ahuachapán Centro"), ("03", "Ahuachapán Sur"),
+                ("13", "AHUACHAPAN NORTE"), ("14", "AHUACHAPAN CENTRO"), ("15", "AHUACHAPAN SUR"),
             ],
             "02": [  # Santa Ana
-                ("01", "Santa Ana Norte"), ("02", "Santa Ana Centro"),
-                ("03", "Santa Ana Este"), ("04", "Santa Ana Oeste"),
+                ("14", "SANTA ANA NORTE"), ("15", "SANTA ANA CENTRO"),
+                ("16", "SANTA ANA ESTE"), ("17", "SANTA ANA OESTE"),
             ],
             "03": [  # Sonsonate
-                ("01", "Sonsonate Norte"), ("02", "Sonsonate Centro"),
-                ("03", "Sonsonate Este"), ("04", "Sonsonate Oeste"),
+                ("17", "SONSONATE NORTE"), ("18", "SONSONATE CENTRO"),
+                ("19", "SONSONATE ESTE"), ("20", "SONSONATE OESTE"),
             ],
             "04": [  # Chalatenango
-                ("01", "Chalatenango Norte"), ("02", "Chalatenango Centro"),
-                ("03", "Chalatenango Sur"),
+                ("34", "CHALATENANGO NORTE"), ("35", "CHALATENANGO CENTRO"),
+                ("36", "CHALATENANGO SUR"),
             ],
             "05": [  # La Libertad
-                ("01", "La Libertad Norte"), ("02", "La Libertad Centro"),
-                ("03", "La Libertad Oeste"), ("04", "La Libertad Este"),
-                ("05", "La Libertad Costa"), ("06", "La Libertad Sur"),
+                ("23", "LA LIBERTAD NORTE"), ("24", "LA LIBERTAD CENTRO"),
+                ("25", "LA LIBERTAD OESTE"), ("26", "LA LIBERTAD ESTE"),
+                ("27", "LA LIBERTAD COSTA"), ("28", "LA LIBERTAD SUR"),
             ],
             "06": [  # San Salvador
-                ("01", "San Salvador Norte"), ("02", "San Salvador Oeste"),
-                ("03", "San Salvador Centro"), ("04", "San Salvador Este"),
-                ("05", "San Salvador Sur"),
+                ("20", "SAN SALVADOR NORTE"), ("21", "SAN SALVADOR OESTE"),
+                ("22", "SAN SALVADOR ESTE"), ("23", "SAN SALVADOR CENTRO"),
+                ("24", "SAN SALVADOR SUR"),
             ],
             "07": [  # Cuscatlán
-                ("01", "Cuscatlán Norte"), ("02", "Cuscatlán Sur"),
+                ("17", "CUSCATLAN NORTE"), ("18", "CUSCATLAN SUR"),
             ],
             "08": [  # La Paz
-                ("01", "La Paz Oeste"), ("02", "La Paz Centro"), ("03", "La Paz Este"),
+                ("23", "LA PAZ OESTE"), ("24", "LA PAZ CENTRO"), ("25", "LA PAZ ESTE"),
             ],
             "09": [  # Cabañas
-                ("01", "Cabañas Este"), ("02", "Cabañas Oeste"),
+                ("10", "CABAÑAS OESTE"), ("11", "CABAÑAS ESTE"),
             ],
             "10": [  # San Vicente
-                ("01", "San Vicente Norte"), ("02", "San Vicente Sur"),
+                ("14", "SAN VICENTE NORTE"), ("15", "SAN VICENTE SUR"),
             ],
             "11": [  # Usulután
-                ("01", "Usulután Norte"), ("02", "Usulután Este"), ("03", "Usulután Oeste"),
+                ("24", "USULUTAN NORTE"), ("25", "USULUTAN ESTE"), ("26", "USULUTAN OESTE"),
             ],
             "12": [  # San Miguel
-                ("01", "San Miguel Norte"), ("02", "San Miguel Centro"),
-                ("03", "San Miguel Oeste"),
+                ("21", "SAN MIGUEL NORTE"), ("22", "SAN MIGUEL CENTRO"),
+                ("23", "SAN MIGUEL OESTE"),
             ],
             "13": [  # Morazán
-                ("01", "Morazán Norte"), ("02", "Morazán Sur"),
+                ("27", "MORAZAN NORTE"), ("28", "MORAZAN SUR"),
             ],
             "14": [  # La Unión
-                ("01", "La Unión Norte"), ("02", "La Unión Sur"),
+                ("19", "LA UNION NORTE"), ("20", "LA UNION SUR"),
             ],
         }
 
@@ -365,98 +240,49 @@ class Command(BaseCommand):
                 Municipio.objects.bulk_create(to_create, ignore_conflicts=True)
                 total += len(to_create)
 
-        # ══════════════════════════════════════════════════════════
-        # ACTIVIDADES ECONÓMICAS (principales)
-        # ══════════════════════════════════════════════════════════
-        actividades = [
-            ("01111", "Cultivo de cereales"), ("01112", "Cultivo de legumbres"),
-            ("10100", "Elaboración y conservación de carne"),
-            ("10710", "Elaboración de productos de panadería"),
-            ("41001", "Construcción de edificios"), ("41002", "Construcción de obras de ingeniería civil"),
-            ("45100", "Venta de vehículos automotores"),
-            ("46100", "Venta al por mayor a cambio de una retribución"),
-            ("46310", "Venta al por mayor de alimentos"),
-            ("46900", "Venta al por mayor no especializada"),
-            ("47110", "Venta al por menor en almacenes no especializados"),
-            ("47190", "Otras actividades de venta al por menor en almacenes no especializados"),
-            ("47210", "Venta al por menor de alimentos en almacenes especializados"),
-            ("47300", "Venta al por menor de combustibles para vehículos"),
-            ("47410", "Venta al por menor de computadoras y equipo periférico"),
-            ("47520", "Venta al por menor de materiales de construcción"),
-            ("47610", "Venta al por menor de libros y periódicos"),
-            ("47710", "Venta al por menor de prendas de vestir"),
-            ("47810", "Venta al por menor de alimentos en puestos de venta"),
-            ("49100", "Transporte interurbano de pasajeros por ferrocarril"),
-            ("49320", "Transporte de pasajeros por taxi"),
-            ("55101", "Hoteles y moteles"),
-            ("56101", "Restaurantes"),
-            ("56102", "Cafeterías"),
-            ("56290", "Otras actividades de servicio de comidas"),
-            ("58110", "Edición de libros"),
-            ("61100", "Telecomunicaciones alámbricas"),
-            ("62010", "Programación informática"),
-            ("62020", "Consultoría de tecnología de información"),
-            ("63110", "Procesamiento de datos"),
-            ("64110", "Banca central"),
-            ("64190", "Otros tipos de intermediación monetaria"),
-            ("66110", "Administración de mercados financieros"),
-            ("68100", "Actividades inmobiliarias realizadas con bienes propios"),
-            ("69100", "Actividades jurídicas"),
-            ("69200", "Actividades de contabilidad y auditoría"),
-            ("70100", "Actividades de oficinas principales"),
-            ("70200", "Actividades de consultoría de gestión"),
-            ("71100", "Actividades de arquitectura e ingeniería"),
-            ("73110", "Agencias de publicidad"),
-            ("74100", "Actividades especializadas de diseño"),
-            ("75000", "Actividades veterinarias"),
-            ("80100", "Actividades de seguridad privada"),
-            ("85100", "Enseñanza preescolar y primaria"),
-            ("85200", "Enseñanza secundaria"),
-            ("85300", "Enseñanza superior"),
-            ("86100", "Actividades de hospitales"),
-            ("86200", "Actividades de médicos y odontólogos"),
-            ("86900", "Otras actividades de atención de la salud humana"),
-            ("88100", "Actividades de asistencia social sin alojamiento"),
-            ("90000", "Actividades creativas, artísticas y de entretenimiento"),
-            ("93110", "Gestión de instalaciones deportivas"),
-            ("95110", "Reparación de computadoras y equipo periférico"),
-            ("96010", "Lavado y limpieza de prendas de tela y de piel"),
-            ("96020", "Peluquería y otros tratamientos de belleza"),
-            ("96090", "Otras actividades de servicios personales n.c.p."),
-        ]
-        total += _bulk(ActividadEconomica, [
-            {"codigo": c, "descripcion": d} for c, d in actividades
-        ])
-
-        # ══════════════════════════════════════════════════════════
-        # INVENTARIO — catálogos
-        # ══════════════════════════════════════════════════════════
-        total += _bulk(TipoItem, [
-            {"codigo": "1", "descripcion": "Bienes"},
-            {"codigo": "2", "descripcion": "Servicios"},
-            {"codigo": "3", "descripcion": "Ambos (Bienes y Servicios)"},
-            {"codigo": "4", "descripcion": "Otros tributos por ítem"},
-        ])
-
+        # ═══════════════════════════════════════════════════════════
+        # CAT-014 Unidad de Medida (v1.1 — Sistema Métrico)
+        # ═══════════════════════════════════════════════════════════
         total += _bulk(TipoUnidadMedida, [
-            {"codigo": "1", "descripcion": "Unidad"},
-            {"codigo": "2", "descripcion": "Metro"},
-            {"codigo": "3", "descripcion": "Kilogramo"},
-            {"codigo": "4", "descripcion": "Litro"},
-            {"codigo": "5", "descripcion": "Libra"},
-            {"codigo": "6", "descripcion": "Yarda"},
-            {"codigo": "8", "descripcion": "Onza"},
-            {"codigo": "9", "descripcion": "Caja"},
-            {"codigo": "10", "descripcion": "Millar"},
-            {"codigo": "11", "descripcion": "Pares"},
-            {"codigo": "12", "descripcion": "Docena"},
-            {"codigo": "13", "descripcion": "Quintal"},
-            {"codigo": "17", "descripcion": "Galón"},
-            {"codigo": "18", "descripcion": "Botella"},
-            {"codigo": "19", "descripcion": "Paquete"},
-            {"codigo": "24", "descripcion": "Bolsa"},
-            {"codigo": "36", "descripcion": "Mes"},
-            {"codigo": "59", "descripcion": "Otro"},
+            {"codigo": "1",  "descripcion": "metro"},
+            {"codigo": "2",  "descripcion": "Yarda"},
+            {"codigo": "6",  "descripcion": "milímetro"},
+            {"codigo": "9",  "descripcion": "kilómetro cuadrado"},
+            {"codigo": "10", "descripcion": "Hectárea"},
+            {"codigo": "13", "descripcion": "metro cuadrado"},
+            {"codigo": "15", "descripcion": "Vara cuadrada"},
+            {"codigo": "18", "descripcion": "metro cúbico"},
+            {"codigo": "20", "descripcion": "Barril"},
+            {"codigo": "22", "descripcion": "Galón"},
+            {"codigo": "23", "descripcion": "Litro"},
+            {"codigo": "24", "descripcion": "Botella"},
+            {"codigo": "26", "descripcion": "Millar"},
+            {"codigo": "30", "descripcion": "Tonelada"},
+            {"codigo": "32", "descripcion": "Quintal"},
+            {"codigo": "33", "descripcion": "Arroba"},
+            {"codigo": "34", "descripcion": "Kilogramo"},
+            {"codigo": "36", "descripcion": "Libra"},
+            {"codigo": "37", "descripcion": "Onza troy"},
+            {"codigo": "38", "descripcion": "Onza"},
+            {"codigo": "39", "descripcion": "Gramo"},
+            {"codigo": "40", "descripcion": "Miligramo"},
+            {"codigo": "42", "descripcion": "Megawatt"},
+            {"codigo": "43", "descripcion": "Kilowatt"},
+            {"codigo": "44", "descripcion": "Watt"},
+            {"codigo": "45", "descripcion": "Megavoltio-amperio"},
+            {"codigo": "46", "descripcion": "Kilovoltio-amperio"},
+            {"codigo": "47", "descripcion": "Voltio-amperio"},
+            {"codigo": "49", "descripcion": "Gigawatt-hora"},
+            {"codigo": "50", "descripcion": "Megawatt-hora"},
+            {"codigo": "51", "descripcion": "Kilowatt-hora"},
+            {"codigo": "52", "descripcion": "Watt-hora"},
+            {"codigo": "53", "descripcion": "Kilovoltio"},
+            {"codigo": "54", "descripcion": "Voltio"},
+            {"codigo": "55", "descripcion": "Millar"},
+            {"codigo": "56", "descripcion": "Medio millar"},
+            {"codigo": "57", "descripcion": "Ciento"},
+            {"codigo": "58", "descripcion": "Docena"},
+            {"codigo": "59", "descripcion": "Unidad"},
             {"codigo": "99", "descripcion": "Otra"},
         ])
 
@@ -467,7 +293,9 @@ class Command(BaseCommand):
                 ("Unidad", "Ud"), ("Metro", "m"), ("Kilogramo", "kg"),
                 ("Litro", "L"), ("Libra", "lb"), ("Caja", "Cj"),
                 ("Docena", "Doc"), ("Galón", "gal"), ("Paquete", "Paq"),
-                ("Servicio", "Srv"), ("Hora", "hr"),
+                ("Servicio", "Srv"), ("Hora", "hr"), ("Quintal", "qq"),
+                ("Tonelada", "ton"), ("Gramo", "g"), ("Mililitro", "ml"),
+                ("Onza", "oz"), ("Botella", "bot"),
             ]
             if n not in existing_um
         ]
@@ -475,6 +303,258 @@ class Command(BaseCommand):
             UnidadMedida.objects.bulk_create(um_to_create, ignore_conflicts=True)
             total += len(um_to_create)
 
+        # ═══════════════════════════════════════════════════════════
+        # CAT-016 Condición de la Operación
+        # ═══════════════════════════════════════════════════════════
+        total += _bulk(CondicionOperacion, [
+            {"codigo": "1", "descripcion": "Contado"},
+            {"codigo": "2", "descripcion": "A crédito"},
+            {"codigo": "3", "descripcion": "Otro"},
+        ])
+
+        # ═══════════════════════════════════════════════════════════
+        # CAT-017 Forma de Pago (v1.1)
+        # ═══════════════════════════════════════════════════════════
+        total += _bulk(FormasPago, [
+            {"codigo": "01", "descripcion": "Billetes y monedas"},
+            {"codigo": "02", "descripcion": "Tarjeta Débito"},
+            {"codigo": "03", "descripcion": "Tarjeta Crédito"},
+            {"codigo": "04", "descripcion": "Cheque"},
+            {"codigo": "05", "descripcion": "Transferencia-Depósito Bancario"},
+            {"codigo": "06", "descripcion": "Dinero electrónico"},
+            {"codigo": "08", "descripcion": "Dinero electrónico"},
+            {"codigo": "09", "descripcion": "Monedero electrónico"},
+            {"codigo": "11", "descripcion": "Bitcoin"},
+            {"codigo": "12", "descripcion": "Otras Criptomonedas"},
+            {"codigo": "13", "descripcion": "Cuentas por pagar del receptor"},
+            {"codigo": "14", "descripcion": "Giro bancario"},
+            {"codigo": "99", "descripcion": "Otros (se debe indicar el medio de pago)"},
+        ])
+
+        # ═══════════════════════════════════════════════════════════
+        # CAT-018 Plazo
+        # ═══════════════════════════════════════════════════════════
+        total += _bulk(Plazo, [
+            {"codigo": "01", "descripcion": "Días"},
+            {"codigo": "02", "descripcion": "Meses"},
+            {"codigo": "03", "descripcion": "Años"},
+        ])
+
+        # ═══════════════════════════════════════════════════════════
+        # CAT-020 País (códigos ISO 2 letras — v1.1)
+        # ═══════════════════════════════════════════════════════════
+        paises = [
+            ("AF","Afganistán"),("AX","Aland"),("AL","Albania"),("DE","Alemania"),
+            ("AD","Andorra"),("AO","Angola"),("AI","Anguila"),("AQ","Antártica"),
+            ("AG","Antigua y Barbuda"),("AW","Aruba"),("SA","Arabia Saudita"),
+            ("DZ","Argelia"),("AR","Argentina"),("AM","Armenia"),("AU","Australia"),
+            ("AT","Austria"),("AZ","Azerbaiyán"),("BS","Bahamas"),("BH","Bahrein"),
+            ("BD","Bangladesh"),("BB","Barbados"),("BE","Bélgica"),("BZ","Belice"),
+            ("BJ","Benín"),("BM","Bermudas"),("BY","Bielorrusia"),("BO","Bolivia"),
+            ("BQ","Bonaire, Sint Eustatius and Saba"),("BA","Bosnia-Herzegovina"),
+            ("BW","Botswana"),("BR","Brasil"),("BN","Brunei"),("BG","Bulgaria"),
+            ("BF","Burkina Faso"),("BI","Burundi"),("BT","Bután"),("CV","Cabo Verde"),
+            ("KY","Caimán, Islas"),("KH","Camboya"),("CM","Camerún"),("CA","Canadá"),
+            ("CF","Centroafricana, República"),("TD","Chad"),("CL","Chile"),
+            ("CN","China"),("CY","Chipre"),("VA","Ciudad del Vaticano"),
+            ("CO","Colombia"),("KM","Comoras"),("CG","Congo"),("CI","Costa de Marfil"),
+            ("CR","Costa Rica"),("HR","Croacia"),("CU","Cuba"),("CW","Curazao"),
+            ("DK","Dinamarca"),("DM","Dominica"),("DJ","Djibouti"),("EC","Ecuador"),
+            ("EG","Egipto"),("SV","El Salvador"),("AE","Emiratos Árabes Unidos"),
+            ("ER","Eritrea"),("SK","Eslovaquia"),("SI","Eslovenia"),("ES","España"),
+            ("US","Estados Unidos"),("EE","Estonia"),("ET","Etiopía"),("FJ","Fiji"),
+            ("PH","Filipinas"),("FI","Finlandia"),("FR","Francia"),("GA","Gabón"),
+            ("GM","Gambia"),("GE","Georgia"),("GH","Ghana"),("GI","Gibraltar"),
+            ("GD","Granada"),("GR","Grecia"),("GL","Groenlandia"),("GP","Guadalupe"),
+            ("GU","Guam"),("GT","Guatemala"),("GF","Guayana Francesa"),
+            ("GG","Guernsey"),("GN","Guinea"),("GQ","Guinea Ecuatorial"),
+            ("GW","Guinea-Bissau"),("GY","Guyana"),("HT","Haití"),("HN","Honduras"),
+            ("HK","Hong Kong"),("HU","Hungría"),("IN","India"),("ID","Indonesia"),
+            ("IQ","Irak"),("IE","Irlanda"),("BV","Isla Bouvet"),("IM","Isla de Man"),
+            ("NF","Isla Norfolk"),("IS","Islandia"),("CX","Islas Navidad"),
+            ("CC","Islas Cocos"),("CK","Islas Cook"),("FO","Islas Faroe"),
+            ("GS","Islas Georgias d. S. -Sandwich d. S."),("HM","Islas Heard y McDonald"),
+            ("FK","Islas Malvinas (Falkland)"),("MP","Islas Marianas del Norte"),
+            ("MH","Islas Marshall"),("PN","Islas Pitcairn"),("TC","Islas Turcas y Caicos"),
+            ("UM","Islas Ultramarinas de E.E.U.U"),("VI","Islas Vírgenes"),
+            ("IL","Israel"),("IT","Italia"),("JM","Jamaica"),("JP","Japón"),
+            ("JE","Jersey"),("JO","Jordania"),("KZ","Kazajistán"),("KE","Kenia"),
+            ("KG","Kirguistán"),("KI","Kiribati"),("KW","Kuwait"),
+            ("LA","Laos, República Democrática"),("LS","Lesotho"),("LV","Letonia"),
+            ("LB","Líbano"),("LR","Liberia"),("LY","Libia"),("LI","Liechtenstein"),
+            ("LT","Lituania"),("LU","Luxemburgo"),("MO","Macao"),("MK","Macedonia"),
+            ("MG","Madagascar"),("MY","Malasia"),("MW","Malawi"),("MV","Maldivas"),
+            ("ML","Malí"),("MT","Malta"),("MA","Marruecos"),("MQ","Martinica e.a."),
+            ("MU","Mauricio"),("MR","Mauritania"),("YT","Mayotte"),("MX","México"),
+            ("FM","Micronesia"),("MD","Moldavia, República de"),("MC","Mónaco"),
+            ("MN","Mongolia"),("ME","Montenegro"),("MS","Montserrat"),
+            ("MZ","Mozambique"),("MM","Myanmar"),("NA","Namibia"),("NR","Nauru"),
+            ("NP","Nepal"),("NI","Nicaragua"),("NE","Niger"),("NG","Nigeria"),
+            ("NU","Niue"),("NO","Noruega"),("NC","Nueva Caledonia"),
+            ("NZ","Nueva Zelanda"),("OM","Omán"),("NL","Países Bajos"),
+            ("PK","Pakistán"),("PW","Palaos"),("PS","Palestina"),("PA","Panamá"),
+            ("PG","Papúa, Nueva Guinea"),("PY","Paraguay"),("PE","Perú"),
+            ("PF","Polinesia Francesa"),("PL","Polonia"),("PT","Portugal"),
+            ("PR","Puerto Rico"),("QA","Qatar"),("GB","Reino Unido"),
+            ("KP","Rep. Democrática popular de Corea"),("CZ","República Checa"),
+            ("KR","República de Corea"),("CD","República Democrática del Congo"),
+            ("DO","República Dominicana"),("IR","República Islámica de Irán"),
+            ("RE","Reunión"),("RW","Ruanda"),("RO","Rumanía"),("RU","Rusia"),
+            ("EH","Sahara Occidental"),("BL","Saint Barthélemy"),
+            ("MF","Saint Martin (French part)"),("SB","Salomón, Islas"),
+            ("WS","Samoa"),("AS","Samoa Americana"),("KN","San Cristóbal y Nieves"),
+            ("SM","San Marino"),("PM","San Pedro y Miquelón"),
+            ("VC","San Vicente y las Granadinas"),("SH","Santa Elena"),
+            ("LC","Santa Lucía"),("ST","Santo Tomé y Príncipe"),("SN","Senegal"),
+            ("RS","Serbia"),("SC","Seychelles"),("SL","Sierra Leona"),
+            ("SG","Singapur"),("SX","Sint Maarten (Dutch part)"),("SY","Siria"),
+            ("SO","Somalia"),("SS","South Sudán"),("LK","Sri Lanka"),
+            ("ZA","Sudáfrica"),("SD","Sudán"),("SE","Suecia"),("CH","Suiza"),
+            ("SR","Surinam"),("SJ","Svalbard y Jan Mayen"),("SZ","Swazilandia"),
+            ("TH","Tailandia"),("TW","Taiwan, Provincia de China"),
+            ("TZ","Tanzania, República Unida de"),("TJ","Tayikistán"),
+            ("IO","Territorio Británico Océano Índico"),
+            ("TF","Territorios Australes Franceses"),("TL","Timor Oriental"),
+            ("TG","Togo"),("TK","Tokelau"),("TO","Tonga"),
+            ("TT","Trinidad y Tobago"),("TN","Túnez"),("TM","Turkmenistán"),
+            ("TR","Turquía"),("TV","Tuvalu"),("UA","Ucrania"),("UG","Uganda"),
+            ("UY","Uruguay"),("UZ","Uzbekistán"),("VU","Vanuatu"),
+            ("VE","Venezuela"),("VN","Vietnam"),("VG","Islas Vírgenes Británicas"),
+            ("WF","Wallis y Fortuna, Islas"),("YE","Yemen"),("ZM","Zambia"),
+            ("ZW","Zimbabue"),
+        ]
+        total += _bulk(Pais, [{"codigo": c, "descripcion": d} for c, d in paises])
+
+        # ═══════════════════════════════════════════════════════════
+        # CAT-021 Otros Documentos Asociados
+        # ═══════════════════════════════════════════════════════════
+        total += _bulk(OtrosDicumentosAsociado, [
+            {"codigo": "1", "descripcion": "Emisor"},
+            {"codigo": "2", "descripcion": "Receptor"},
+            {"codigo": "3", "descripcion": "Médico (solo aplica para contribuyentes obligados a la presentación de F-958)"},
+            {"codigo": "4", "descripcion": "Transporte (solo aplica para Factura de exportación)"},
+        ])
+
+        # ═══════════════════════════════════════════════════════════
+        # CAT-022 Tipo de documento de identificación del Receptor
+        # ═══════════════════════════════════════════════════════════
+        total += _bulk(TiposDocIDReceptor, [
+            {"codigo": "36", "descripcion": "NIT"},
+            {"codigo": "13", "descripcion": "DUI"},
+            {"codigo": "37", "descripcion": "Otro"},
+            {"codigo": "03", "descripcion": "Pasaporte"},
+            {"codigo": "02", "descripcion": "Carnet de Residente"},
+        ])
+
+        # ═══════════════════════════════════════════════════════════
+        # CAT-023 Tipo de Documento en Contingencia
+        # ═══════════════════════════════════════════════════════════
+        total += _bulk(TipoDocContingencia, [
+            {"codigo": "01", "descripcion": "Factura Electrónico"},
+            {"codigo": "03", "descripcion": "Comprobante de Crédito Fiscal Electrónico"},
+            {"codigo": "04", "descripcion": "Nota de Remisión Electrónica"},
+            {"codigo": "05", "descripcion": "Nota de Crédito Electrónica"},
+            {"codigo": "06", "descripcion": "Nota de Débito Electrónica"},
+            {"codigo": "11", "descripcion": "Factura de Exportación Electrónica"},
+            {"codigo": "14", "descripcion": "Factura de Sujeto Excluido Electrónica"},
+        ])
+
+        # ═══════════════════════════════════════════════════════════
+        # CAT-024 Tipo de Invalidación
+        # ═══════════════════════════════════════════════════════════
+        total += _bulk(TipoInvalidacion, [
+            {"codigo": "1", "descripcion": "Error en la Información del Documento Tributario Electrónico a invalidar"},
+            {"codigo": "2", "descripcion": "Rescindir de la operación realizada"},
+            {"codigo": "3", "descripcion": "Otro"},
+        ])
+
+        # ═══════════════════════════════════════════════════════════
+        # CAT-026 Tipo de Donación
+        # ═══════════════════════════════════════════════════════════
+        total += _bulk(TipoDonacion, [
+            {"codigo": "1", "descripcion": "Efectivo"},
+            {"codigo": "2", "descripcion": "Bien"},
+            {"codigo": "3", "descripcion": "Servicio"},
+        ])
+
+        # ═══════════════════════════════════════════════════════════
+        # CAT-027 Recinto fiscal (v1.1 — ampliado)
+        # ═══════════════════════════════════════════════════════════
+        total += _bulk(RecintoFiscal, [
+            {"codigo": "01", "descripcion": "Terrestre San Bartolo"},
+            {"codigo": "02", "descripcion": "Marítima de Acajutla"},
+            {"codigo": "03", "descripcion": "Aérea De Comalapa"},
+            {"codigo": "04", "descripcion": "Terrestre Las Chinamas"},
+            {"codigo": "05", "descripcion": "Terrestre La Hachadura"},
+            {"codigo": "06", "descripcion": "Terrestre Santa Ana"},
+            {"codigo": "07", "descripcion": "Terrestre San Cristóbal"},
+            {"codigo": "08", "descripcion": "Terrestre Anguiatú"},
+            {"codigo": "09", "descripcion": "Terrestre El Amatillo"},
+            {"codigo": "10", "descripcion": "Marítima La Unión"},
+            {"codigo": "11", "descripcion": "Terrestre El Poy"},
+            {"codigo": "12", "descripcion": "Terrestre Metallo"},
+            {"codigo": "15", "descripcion": "Fardos Postales"},
+            {"codigo": "16", "descripcion": "Z.F. San Marcos"},
+            {"codigo": "17", "descripcion": "Z.F. El Pedregal"},
+            {"codigo": "18", "descripcion": "Z.F. San Bartolo"},
+            {"codigo": "20", "descripcion": "Z.F. Exportsalva"},
+            {"codigo": "21", "descripcion": "Z.F. American Park"},
+            {"codigo": "23", "descripcion": "Z.F. Internacional"},
+            {"codigo": "24", "descripcion": "Z.F. Diez"},
+            {"codigo": "26", "descripcion": "Z.F. Miramar"},
+            {"codigo": "27", "descripcion": "Z.F. Santo Tomás"},
+            {"codigo": "28", "descripcion": "Z.F. Santa Tecla"},
+            {"codigo": "29", "descripcion": "Z.F. Santa Ana"},
+            {"codigo": "30", "descripcion": "Z.F. La Concordia"},
+            {"codigo": "31", "descripcion": "Aérea Ilopango"},
+            {"codigo": "32", "descripcion": "Z.F. Pipil"},
+            {"codigo": "33", "descripcion": "Puerto Barillas"},
+            {"codigo": "34", "descripcion": "Z.F. Calvo Conservas"},
+            {"codigo": "35", "descripcion": "Feria Internacional"},
+            {"codigo": "36", "descripcion": "Aduana El Papalón"},
+            {"codigo": "37", "descripcion": "Z.F. Sam-Li"},
+            {"codigo": "38", "descripcion": "Z.F. San José"},
+            {"codigo": "39", "descripcion": "Z.F. Las Mercedes"},
+            {"codigo": "71", "descripcion": "Aldesa"},
+            {"codigo": "72", "descripcion": "Agdosa Merliot"},
+            {"codigo": "73", "descripcion": "Bodesa"},
+            {"codigo": "76", "descripcion": "Delegación DHL"},
+            {"codigo": "77", "descripcion": "Transauto"},
+            {"codigo": "80", "descripcion": "Nejapa"},
+            {"codigo": "81", "descripcion": "Almaconsa"},
+            {"codigo": "83", "descripcion": "Agdosa Apopa"},
+            {"codigo": "85", "descripcion": "Gutiérrez Courier Y Cargo"},
+            {"codigo": "99", "descripcion": "San Bartolo Envío Hn/Gt"},
+        ])
+
+        # ═══════════════════════════════════════════════════════════
+        # CAT-029 Tipo de persona
+        # ═══════════════════════════════════════════════════════════
+        total += _bulk(TipoPersona, [
+            {"codigo": "1", "descripcion": "Persona Natural"},
+            {"codigo": "2", "descripcion": "Persona Jurídica"},
+        ])
+
+        # ═══════════════════════════════════════════════════════════
+        # CAT-030 Transporte
+        # ═══════════════════════════════════════════════════════════
+        total += _bulk(TipoTransporte, [
+            {"codigo": "01", "descripcion": "Terrestre"},
+            {"codigo": "02", "descripcion": "Marítimo"},
+            {"codigo": "03", "descripcion": "Aéreo"},
+        ])
+
+        # ═══════════════════════════════════════════════════════════
+        # CAT-032 Domicilio Fiscal
+        # ═══════════════════════════════════════════════════════════
+        total += _bulk(TipoDomicilioFiscal, [
+            {"codigo": "01", "descripcion": "Local propio"},
+            {"codigo": "02", "descripcion": "Local arrendado"},
+        ])
+
+        # ═══════════════════════════════════════════════════════════
+        # CAT-015 Tributos (principales)
+        # ═══════════════════════════════════════════════════════════
         total += _bulk(TipoTributo, [
             {"codigo": "1", "descripcion": "Impuesto"},
             {"codigo": "2", "descripcion": "Tasa"},
@@ -486,7 +566,7 @@ class Command(BaseCommand):
             {"descripcion": "Valor fijo"},
         ], code_field="descripcion")
 
-        # Tributo IVA (el principal)
+        # Tributo IVA 13%
         tipo_imp = TipoTributo.objects.filter(codigo="1").first()
         tipo_pct = TipoValor.objects.filter(descripcion="Porcentaje").first()
         if tipo_imp and tipo_pct:
@@ -498,6 +578,144 @@ class Command(BaseCommand):
                 )
                 total += 1
 
+        # ═══════════════════════════════════════════════════════════
+        # CAT-019 Actividades Económicas (todas del PDF)
+        # ═══════════════════════════════════════════════════════════
+        actividades = [
+            ("01111","Cultivo de cereales excepto arroz y para forrajes"),
+            ("01112","Cultivo de legumbres"),
+            ("01113","Cultivo de semillas oleaginosas"),
+            ("01114","Cultivo de plantas para la preparación de semillas"),
+            ("01119","Cultivo de otros cereales excepto arroz y forrajeros n.c.p."),
+            ("01120","Cultivo de arroz"),
+            ("01131","Cultivo de raíces y tubérculos"),
+            ("01132","Cultivo de brotes, bulbos, vegetales tubérculos y cultivos similares"),
+            ("01133","Cultivo hortícola de fruto"),
+            ("01134","Cultivo de hortalizas de hoja y otras hortalizas ncp"),
+            ("01140","Cultivo de caña de azúcar"),
+            ("01150","Cultivo de tabaco"),
+            ("01161","Cultivo de algodón"),
+            ("01162","Cultivo de fibras vegetales excepto algodón"),
+            ("01191","Cultivo de plantas no perennes para la producción de semillas y flores"),
+            ("01192","Cultivo de cereales y pastos para la alimentación animal"),
+            ("01199","Producción de cultivos no estacionales ncp"),
+            ("01220","Cultivo de frutas tropicales"),
+            ("01230","Cultivo de cítricos"),
+            ("01240","Cultivo de frutas de pepita y hueso"),
+            ("01251","Cultivo de frutas ncp"),
+            ("01252","Cultivo de otros frutos y nueces de árboles y arbustos"),
+            ("01260","Cultivo de frutos oleaginosos"),
+            ("01271","Cultivo de café"),
+            ("01272","Cultivo de plantas para la elaboración de bebidas excepto café"),
+            ("01281","Cultivo de especias y aromáticas"),
+            ("01282","Cultivo de plantas para la obtención de productos medicinales y farmacéuticos"),
+            ("01291","Cultivo de árboles de hule (caucho) para la obtención de látex"),
+            ("01292","Cultivo de plantas para la obtención de productos químicos y colorantes"),
+            ("01299","Producción de cultivos perennes ncp"),
+            ("01300","Propagación de plantas"),
+            ("01301","Cultivo de plantas y flores ornamentales"),
+            ("01410","Cría y engorde de ganado bovino"),
+            ("01420","Cría de caballos y otros equinos"),
+            ("01440","Cría de ovejas y cabras"),
+            ("01450","Cría de cerdos"),
+            ("01460","Cría de aves de corral y producción de huevos"),
+            ("01491","Cría de abejas apicultura para la obtención de miel y otros productos apícolas"),
+            ("01492","Cría de conejos"),
+            ("01493","Cría de iguanas y garrobos"),
+            ("01494","Cría de mariposas y otros insectos"),
+            ("01499","Cría y obtención de productos animales n.c.p."),
+            ("01500","Cultivo de productos agrícolas en combinación con la cría de animales"),
+            ("01611","Servicios de maquinaria agrícola"),
+            ("01612","Control de plagas"),
+            ("01613","Servicios de riego"),
+            ("01614","Servicios de contratación de mano de obra para la agricultura"),
+            ("01619","Servicios agrícolas ncp"),
+            ("01621","Actividades para mejorar la reproducción, el crecimiento y rendimiento de los animales y sus productos"),
+            ("01622","Servicios de mano de obra pecuaria"),
+            ("01629","Servicios pecuarios ncp"),
+            ("01631","Labores post cosecha de preparación de los productos agrícolas para su comercialización o para la industria"),
+            ("01632","Servicio de beneficio de café"),
+            ("01633","Servicio de beneficiado de plantas textiles"),
+            ("01640","Tratamiento de semillas para la propagación"),
+            ("01700","Caza ordinaria y mediante trampas, repoblación de animales de caza y servicios conexos"),
+            ("02100","Silvicultura y otras actividades forestales"),
+            ("02200","Extracción de madera"),
+            ("02300","Recolección de productos diferentes a la madera"),
+            ("02400","Servicios de apoyo a la silvicultura"),
+            ("03110","Pesca marítima de altura y costera"),
+            ("03120","Pesca de agua dulce"),
+            ("03210","Acuicultura marítima"),
+            ("03220","Acuicultura de agua dulce"),
+            ("03300","Servicios de apoyo a la pesca y acuicultura"),
+            ("05100","Extracción de hulla"),
+            ("05200","Extracción y aglomeración de lignito"),
+            ("06100","Extracción de petróleo crudo"),
+            ("06200","Extracción de gas natural"),
+            ("10101","Servicio de rastros y mataderos de bovinos y porcinos"),
+            ("10102","Matanza y procesamiento de bovinos y porcinos"),
+            ("10103","Matanza y procesamientos de aves de corral"),
+            ("10104","Elaboración y conservación de embutidos y tripas naturales"),
+            ("10105","Servicios de conservación y empaque de carne"),
+            ("10106","Elaboración y conservación de grasas y aceites animales"),
+            ("10107","Servicios de molienda de carne"),
+            ("10108","Elaboración de productos de carne ncp"),
+            ("10201","Procesamiento y conservación de pescado, crustáceos y moluscos"),
+            ("10209","Fabricación de productos de pescado ncp"),
+            ("10301","Elaboración de jugos de frutas y hortalizas"),
+            ("10302","Elaboración y envase de jaleas, mermeladas y frutas deshidratadas"),
+            ("10309","Elaboración de productos de frutas y hortalizas n.c.p."),
+            ("10401","Fabricación de aceites y grasas vegetales y animales comestibles"),
+            ("10402","Fabricación de aceites y grasas vegetales y animales no comestibles"),
+            ("10409","Servicio de maquilado de aceites"),
+            ("10501","Fabricación de productos lácteos excepto sorbetes y quesos sustitutos"),
+            ("10502","Fabricación de sorbetes y helados"),
+            ("10503","Fabricación de quesos"),
+            ("10611","Molienda de cereales"),
+            ("10612","Elaboración de cereales para el desayuno y similares"),
+            ("10613","Servicios de beneficiado de productos agrícolas ncp"),
+            ("10621","Fabricación de almidón"),
+            ("10628","Servicio de molienda de maíz húmedo molino para nixtamal"),
+            ("10711","Elaboración de tortillas"),
+            ("10712","Fabricación de pan, galletas y barquillos"),
+            ("10713","Fabricación de repostería"),
+            ("10721","Ingenios azucareros"),
+            ("10722","Molienda de caña de azúcar para la elaboración de dulces"),
+            ("10723","Elaboración de jarabes de azúcar y otros similares"),
+            ("10724","Maquilado de azúcar de caña"),
+            ("10730","Fabricación de cacao, chocolates y productos de confitería"),
+            ("10740","Elaboración de macarrones, fideos, y productos farináceos similares"),
+            ("10750","Elaboración de comidas y platos preparados para la reventa en establecimientos"),
+            ("10791","Elaboración de productos de café"),
+            ("10792","Elaboración de especias, sazonadores y condimentos"),
+            ("10793","Elaboración de sopas, cremas y consomé"),
+            ("10794","Fabricación de bocadillos tostados y/o fritos"),
+            ("10799","Elaboración de productos alimenticios ncp"),
+            ("10800","Elaboración de alimentos preparados para animales"),
+            ("11012","Fabricación de aguardiente y licores"),
+            ("11020","Elaboración de vinos"),
+            ("11030","Fabricación de cerveza"),
+            ("11041","Fabricación de aguas gaseosas"),
+            ("11042","Fabricación y envasado de agua"),
+            ("11043","Fabricación de refrescos"),
+            ("11048","Maquilado de aguas gaseosas"),
+            ("11049","Elaboración de bebidas no alcohólicas"),
+            ("12000","Elaboración de productos de tabaco"),
+            ("47110","Venta al por menor en almacenes no especializados"),
+            ("47710","Venta al por menor de prendas de vestir"),
+            ("56101","Restaurantes"),
+            ("56102","Cafeterías"),
+            ("62010","Programación informática"),
+            ("62020","Consultoría de tecnología de información"),
+            ("69200","Actividades de contabilidad y auditoría"),
+            ("86100","Actividades de hospitales"),
+            ("86200","Actividades de médicos y odontólogos"),
+            ("96010","Lavado y limpieza de prendas de tela y de piel"),
+            ("96020","Peluquería y otros tratamientos de belleza"),
+        ]
+        total += _bulk(ActividadEconomica, [
+            {"codigo": c, "descripcion": d} for c, d in actividades
+        ])
+
         self.stdout.write(self.style.SUCCESS(
-            f"Catálogos cargados: {total} registros nuevos insertados."
+            f"✅ Catálogos MH v1.1 cargados: {total} registros nuevos insertados."
         ))
