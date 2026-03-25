@@ -1,0 +1,35 @@
+# ─────────────────────────────────────────────────────────────
+# Herramientas de administración (global, una sola instancia)
+#
+# Levantar:
+#   docker compose -f docker-compose.admin.yml up -d
+#
+# Acceder:
+#   Portainer:  http://IP:9000
+#   pgAdmin:    http://IP:5050
+# ─────────────────────────────────────────────────────────────
+
+services:
+  portainer:
+    image: portainer/portainer-ce:latest
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: unless-stopped
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@intracoe.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin2025}
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+volumes:
+  portainer_data:
+  pgadmin_data:
