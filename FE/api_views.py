@@ -66,12 +66,12 @@ from django.core.exceptions import ObjectDoesNotExist
 
 try:
     FIRMADOR_URL = ConfiguracionServidor.objects.filter(clave="firmador").first()
-except (OperationalError, ObjectDoesNotExist):
+except Exception:
     FIRMADOR_URL = None
 
 try:
     DJANGO_SERVER_URL = ConfiguracionServidor.objects.filter(clave="server_url").first()
-except (OperationalError, ObjectDoesNotExist):
+except Exception:
     DJANGO_SERVER_URL = None
 
 SCHEMA_PATH_fe_fc_v1 = "FE/json_schemas/fe-fc-v1.json"
@@ -79,19 +79,19 @@ SCHEMA_PATH_fe_fc_v1 = "FE/json_schemas/fe-fc-v1.json"
 try:
     CERT_PATH = ConfiguracionServidor.objects.filter(clave="certificado").first()
     CERT_PATH = CERT_PATH.url_endpoint if CERT_PATH else None
-except (OperationalError, ObjectDoesNotExist, AttributeError):
+except Exception:
     CERT_PATH = None
 
 try:
     hacienda_test_obj = ConfiguracionServidor.objects.filter(clave="hacienda_url_test").first()
     HACIENDA_URL_TEST = hacienda_test_obj.url_endpoint if hacienda_test_obj else None
-except (OperationalError, ObjectDoesNotExist, AttributeError):
+except Exception:
     HACIENDA_URL_TEST = None
 
 try:
     hacienda_prod_obj = ConfiguracionServidor.objects.filter(clave="hacienda_url_prod").first()
     HACIENDA_URL_PROD = hacienda_prod_obj.url_endpoint if hacienda_prod_obj else None
-except (OperationalError, ObjectDoesNotExist, AttributeError):
+except Exception:
     HACIENDA_URL_PROD = None
 
 COD_CONSUMIDOR_FINAL = "01"
@@ -100,12 +100,12 @@ COD_CREDITO_FISCAL = "03"
 try:
     version_obj = ConfiguracionServidor.objects.filter(clave="version_evento_invalidacion").first()
     VERSION_EVENTO_INVALIDACION = version_obj.valor if version_obj else None
-except (OperationalError, ObjectDoesNotExist, AttributeError):
+except Exception:
     VERSION_EVENTO_INVALIDACION = None
 
 try:
     AMBIENTE = Ambiente.objects.get(codigo="01")
-except (OperationalError, ObjectDoesNotExist):
+except Exception:
     AMBIENTE = None
 
 COD_FACTURA_EXPORTACION = "11"
@@ -128,7 +128,7 @@ DTE_APLICA_CONTINGENCIA = ["01", "03", "04", "05", "06", "11", "14"]
 def safe_conf(clave):
     try:
         return ConfiguracionServidor.objects.filter(clave=clave).first()
-    except (OperationalError, ObjectDoesNotExist):
+    except Exception:
         return None
 
 RUTA_COMPROBANTES_PDF = safe_conf("ruta_comprobantes_dte")
@@ -147,12 +147,12 @@ EMAIL_HOST_FE = safe_conf("email_host_fe")
 
 try:
     MONEDA_USD = TipoMoneda.objects.get(codigo="USD")
-except (OperationalError, ObjectDoesNotExist):
+except Exception:
     MONEDA_USD = None
 
 try:
     UNI_MEDIDA_99 = TipoUnidadMedida.objects.get(codigo="99")
-except (OperationalError, ObjectDoesNotExist):
+except Exception:
     UNI_MEDIDA_99 = None
 
 

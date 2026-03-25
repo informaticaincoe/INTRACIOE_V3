@@ -86,7 +86,7 @@ def obtener_firmador_url():
 try:
     CERT_PATH = ConfiguracionServidor.objects.filter(clave="certificado").first()
     CERT_PATH = CERT_PATH.url_endpoint if CERT_PATH else None
-except (OperationalError, ObjectDoesNotExist, AttributeError):
+except Exception:
     CERT_PATH = None
 
     
@@ -120,12 +120,12 @@ COD_CREDITO_FISCAL = "03"
 
 try:
     VERSION_EVENTO_INVALIDACION = ConfiguracionServidor.objects.filter(clave="version_evento_invalidacion").first().valor
-except (AttributeError, OperationalError, ObjectDoesNotExist):
+except Exception:
     VERSION_EVENTO_INVALIDACION = None
 
 try:
     AMBIENTE = Ambiente.objects.get(codigo="01")
-except (OperationalError, ObjectDoesNotExist):
+except Exception:
     AMBIENTE = None
 
 COD_FACTURA_EXPORTACION = "11"
@@ -148,82 +148,82 @@ TIPO_TRANSMISION_CONTINGENCIA = 2
 
 try:
     RUTA_COMPROBANTES_PDF = ConfiguracionServidor.objects.filter(clave="ruta_comprobantes_dte").first()
-except (OperationalError, ObjectDoesNotExist):
+except Exception:
     RUTA_COMPROBANTES_PDF = None
 
 try:
     RUTA_COMPROBANTES_JSON = ConfiguracionServidor.objects.filter(clave="ruta_comprobante_json").first()
-except (OperationalError, ObjectDoesNotExist):
+except Exception:
     RUTA_COMPROBANTES_JSON = None
 
 try:
     RUTA_JSON_FACTURA = ConfiguracionServidor.objects.filter(clave="json_factura").first()
-except (OperationalError, ObjectDoesNotExist):
+except Exception:
     RUTA_JSON_FACTURA = None
 
 try:
     URL_AUTH = ConfiguracionServidor.objects.filter(clave="url_autenticacion").first()
-except (OperationalError, ObjectDoesNotExist):
+except Exception:
     URL_AUTH = None
 
 try:
     HEADERS = ConfiguracionServidor.objects.filter(clave="headers").first()
-except (OperationalError, ObjectDoesNotExist):
+except Exception:
     HEADERS = None
 
 try:
     CONTENT_TYPE = ConfiguracionServidor.objects.filter(clave="content_type").first()
-except (OperationalError, ObjectDoesNotExist):
+except Exception:
     CONTENT_TYPE = None
 
 try:
     INVALIDAR_DTE_URL = ConfiguracionServidor.objects.filter(clave="url_invalidar_dte").first()
-except (OperationalError, ObjectDoesNotExist):
+except Exception:
     INVALIDAR_DTE_URL = None
 
 try:
     VERSION_EVENTO_CONTINGENCIA = ConfiguracionServidor.objects.filter(clave="version_evento_contingencia").first()
-except (OperationalError, ObjectDoesNotExist):
+except Exception:
     VERSION_EVENTO_CONTINGENCIA = None
 
 try:
     FACTURAS_FIRMADAS_URL = ConfiguracionServidor.objects.filter(clave="json_facturas_firmadas").first()
-except (OperationalError, ObjectDoesNotExist):
+except Exception:
     FACTURAS_FIRMADAS_URL = None
 
 try:
     HACIENDA_CONTINGENCIA_URL = ConfiguracionServidor.objects.filter(clave="hacienda_contingencia_url").first()
-except (OperationalError, ObjectDoesNotExist):
+except Exception:
     HACIENDA_CONTINGENCIA_URL = None
 
 try:
     USER_AGENT = ConfiguracionServidor.objects.filter(clave="user_agent").first()
-except (OperationalError, ObjectDoesNotExist):
+except Exception:
     USER_AGENT = None
 
 try:
     SCHEMA_JSON = ConfiguracionServidor.objects.filter(clave="schema_json").first()
-except (OperationalError, ObjectDoesNotExist):
+except Exception:
     SCHEMA_JSON = None
 
 try:
     CONSULTAR_DTE = ConfiguracionServidor.objects.filter(clave="consulta_dte").first()
-except (OperationalError, ObjectDoesNotExist):
+except Exception:
     CONSULTAR_DTE = None
 
 try:
     EMAIL_HOST_FE = ConfiguracionServidor.objects.filter(clave="email_host_fe").first()
-except (OperationalError, ObjectDoesNotExist):
+except Exception:
     EMAIL_HOST_FE = None
 
 try:
     MONEDA_USD = TipoMoneda.objects.get(codigo="USD")
-except (OperationalError, ObjectDoesNotExist):
+except Exception:
     MONEDA_USD = None
 
 try:
     UNI_MEDIDA_99 = TipoUnidadMedida.objects.get(codigo="99")
-except (OperationalError, ObjectDoesNotExist):
+except Exception:
     UNI_MEDIDA_99 = None
 
 formas_pago = []
