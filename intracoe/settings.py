@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure--t^=e+nnmjaah90onb$_&@5(kv1-_c!sjr^y1vov!(v0!5wa$a'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS=['*']               
 
@@ -158,6 +158,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'middleware.demo_protection.DemoProtectionMiddleware',
 ]
 
 ROOT_URLCONF = 'intracoe.urls'
@@ -194,30 +195,31 @@ WSGI_APPLICATION = 'intracoe.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-# The line `'default111': {` is defining a database configuration named `default111`. This
-# configuration specifies settings for a SQLite database in the Django project. SQLite is a
-# lightweight, file-based database that is often used for development purposes or small-scale
-# applications.
-# The line `'default111': {` is defining a database configuration named `default111`. This
-# configuration specifies settings for a SQLite database in this case. SQLite is a lightweight,
-# serverless, self-contained database engine that is often used for development and testing purposes
-# in Django projects.
-    'default1': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    },
+# ── Base de datos: lee de db_config.json si existe, sino usa SQLite ──
+import json as _json
+_db_config_path = BASE_DIR / 'db_config.json'
 
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'intracoe_prod',
-        'USER': 'intracoe',
-        'PASSWORD': 'intracoe',
-        'HOST': '192.168.2.49',  # Dirección IP del servidor PostgreSQL
-        'PORT': '5432',           # Puerto predeterminado de PostgreSQL
-    },
-
-}
+if _db_config_path.exists():
+    with open(_db_config_path) as _f:
+        _db_conf = _json.load(_f)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': _db_conf.get('name', 'intracoe'),
+            'USER': _db_conf.get('user', 'postgres'),
+            'PASSWORD': _db_conf.get('password', ''),
+            'HOST': _db_conf.get('host', 'localhost'),
+            'PORT': _db_conf.get('port', '5432'),
+        },
+    }
+else:
+    # SQLite de bootstrap — permite arrancar el wizard sin PostgreSQL
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db_bootstrap.sqlite3',
+        },
+    }
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend', 

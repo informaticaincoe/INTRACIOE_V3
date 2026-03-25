@@ -1,0 +1,17 @@
+.git
+.gitignore
+.claude/
+__pycache__
+*.pyc
+*.pyo
+venv/
+env/
+.env
+db_bootstrap.sqlite3
+db.sqlite3
+*.sqlite3
+node_modules/
+.DS_Store
+logs/
+media/
+svfe-api-firmador/

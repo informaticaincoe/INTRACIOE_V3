@@ -1,3 +1,7 @@
+# Configuración local (contiene credenciales)
+db_config.json
+db_bootstrap.sqlite3
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

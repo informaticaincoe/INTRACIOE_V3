@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Reportes de Anexos{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'cont-cuentas-lista' %}">Contabilidad</a></li>
+    <li class="breadcrumb-item active">Reportes de Anexos</li>
+  </ol>
+</nav>
+
+<h1 class="h4 mb-3">Reportes de Anexos</h1>
+<p class="text-muted mb-4">Descargue los anexos en formato CSV para presentar a Hacienda.</p>
+
+<div class="row g-3">
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body text-center">
+        <i class="bi bi-file-earmark-spreadsheet fs-1 text-primary d-block mb-2"></i>
+        <h6>Anexo Consumidor Final</h6>
+        <p class="small text-muted">Facturas tipo 01 emitidas a consumidores finales.</p>
+        <a href="{% url 'anexo-consumidor-final' %}" class="btn btn-sm btn-outline-primary">
+          <i class="bi bi-download me-1"></i>Descargar CSV
+        </a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body text-center">
+        <i class="bi bi-file-earmark-spreadsheet fs-1 text-success d-block mb-2"></i>
+        <h6>Anexo Contribuyentes</h6>
+        <p class="small text-muted">Comprobantes de Crédito Fiscal emitidos a contribuyentes.</p>
+        <a href="{% url 'anexo-contribuyentes' %}" class="btn btn-sm btn-outline-success">
+          <i class="bi bi-download me-1"></i>Descargar CSV
+        </a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body text-center">
+        <i class="bi bi-file-earmark-spreadsheet fs-1 text-warning d-block mb-2"></i>
+        <h6>Anexo de Compras</h6>
+        <p class="small text-muted">Registro de compras del periodo para declaración.</p>
+        <a href="{% url 'anexo-compras' %}" class="btn btn-sm btn-outline-warning">
+          <i class="bi bi-download me-1"></i>Descargar CSV
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

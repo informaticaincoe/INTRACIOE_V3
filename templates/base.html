@@ -497,25 +497,24 @@
             </div>
             {% endif %}
 
-          </div><!-- /accordion Gestión -->
-
-          <!-- ── Contabilidad ── -->
-          {% if user.is_staff and plan and plan.tiene_contabilidad %}
-          <div class="accordion-item">
-            <h2 class="accordion-header">
-              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dsk-cont">
-                <i class="bi bi-calculator"></i> Contabilidad
-              </button>
-            </h2>
-            <div id="dsk-cont" class="accordion-collapse collapse" data-bs-parent="#accDesk">
-              <div class="accordion-body">
-                <div class="list-group list-group-flush">
-                  {% include 'opciones_menu/contabilidad.html' with uid='dskCont' %}
+            {% if user.is_staff and plan and plan.tiene_contabilidad %}
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dsk-cont">
+                  <i class="bi bi-calculator"></i> Contabilidad
+                </button>
+              </h2>
+              <div id="dsk-cont" class="accordion-collapse collapse" data-bs-parent="#accDesk">
+                <div class="accordion-body">
+                  <div class="list-group list-group-flush">
+                    {% include 'opciones_menu/contabilidad.html' with uid='dskCont' %}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          {% endif %}
+            {% endif %}
+
+          </div><!-- /accordion Gestión -->
 
         {% endif %}{% endif %}{# /if plan + role (Gestión desktop) #}
 
@@ -641,6 +640,13 @@
         © <span id="yr"></span> &nbsp;·&nbsp;
         Desarrollado por <strong>Ing. Francisco Antonio Flores Villalta</strong>
         &nbsp;·&nbsp; INTRACOE v3
+        {% if modo_demo %}
+        &nbsp;·&nbsp;
+        <span style="background:#f59e0b;color:#fff;padding:2px 10px;border-radius:1rem;font-weight:700;font-size:.7rem;letter-spacing:.5px;animation:pulse-demo 2s infinite;">
+          MODO DEMO
+        </span>
+        <style>@keyframes pulse-demo{0%,100%{opacity:1;}50%{opacity:.6;}}</style>
+        {% endif %}
       </footer>
     </main>
 

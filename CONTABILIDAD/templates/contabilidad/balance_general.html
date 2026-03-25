@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Balance General{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'cont-cuentas-lista' %}">Contabilidad</a></li>
+    <li class="breadcrumb-item active">Balance General</li>
+  </ol>
+</nav>
+
+<h1 class="h4 mb-3">Balance General</h1>
+
+<form method="get" class="row g-2 mb-4 align-items-end">
+  <div class="col-md-2">
+    <label class="form-label small">Desde</label>
+    <input type="date" name="desde" class="form-control form-control-sm" value="{{ desde }}">
+  </div>
+  <div class="col-md-2">
+    <label class="form-label small">Hasta</label>
+    <input type="date" name="hasta" class="form-control form-control-sm" value="{{ hasta }}">
+  </div>
+  <div class="col-auto">
+    <button class="btn btn-sm btn-primary">Filtrar</button>
+    <a href="?" class="btn btn-sm btn-outline-secondary">Limpiar</a>
+  </div>
+</form>
+
+<div class="row">
+  <!-- ACTIVOS -->
+  <div class="col-lg-6 mb-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-primary text-white py-2"><strong>Activos</strong></div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <tbody>
+            {% for c in activos %}
+            <tr>
+              <td class="small">{{ c.codigo }} — {{ c.nombre }}</td>
+              <td class="text-end small">${{ c.saldo_calc|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="2" class="text-muted text-center py-3">Sin cuentas</td></tr>
+            {% endfor %}
+          </tbody>
+          <tfoot class="table-light fw-bold">
+            <tr>
+              <td>Total Activos</td>
+              <td class="text-end">${{ total_activos|floatformat:2 }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASIVOS + CAPITAL -->
+  <div class="col-lg-6 mb-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-danger text-white py-2"><strong>Pasivos</strong></div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <tbody>
+            {% for c in pasivos %}
+            <tr>
+              <td class="small">{{ c.codigo }} — {{ c.nombre }}</td>
+              <td class="text-end small">${{ c.saldo_calc|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="2" class="text-muted text-center py-3">Sin cuentas</td></tr>
+            {% endfor %}
+          </tbody>
+          <tfoot class="table-light fw-bold">
+            <tr>
+              <td>Total Pasivos</td>
+              <td class="text-end">${{ total_pasivos|floatformat:2 }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="card-header bg-success text-white py-2"><strong>Capital</strong></div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <tbody>
+            {% for c in capital %}
+            <tr>
+              <td class="small">{{ c.codigo }} — {{ c.nombre }}</td>
+              <td class="text-end small">${{ c.saldo_calc|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="2" class="text-muted text-center py-3">Sin cuentas</td></tr>
+            {% endfor %}
+            <tr class="table-light">
+              <td class="small fw-semibold">Resultado del periodo</td>
+              <td class="text-end small fw-semibold">${{ resultado|floatformat:2 }}</td>
+            </tr>
+          </tbody>
+          <tfoot class="table-light fw-bold">
+            <tr>
+              <td>Total Pasivo + Capital</td>
+              <td class="text-end">${{ total_pasivos|floatformat:2|add:total_capital|floatformat:2 }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

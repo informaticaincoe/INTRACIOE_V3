@@ -34,4 +34,5 @@ def emisor_context(request):
         "plan": plan,
         "suscripcion_gracia": suscripcion_gracia,
         "suscripcion_gracia_fin": suscripcion_gracia_fin,
+        "modo_demo": emisor.modo_demo if emisor else False,
     }

@@ -290,6 +290,11 @@ class Emisor_fe(models.Model):
         max_length=7, default="#ffffff",
         verbose_name="Color barra lateral (hex)"
     )
+    modo_demo = models.BooleanField(
+        default=False,
+        verbose_name="Modo demostración",
+        help_text="No envía a Hacienda, protege datos demo y muestra indicador visual."
+    )
 
     def __str__(self):
         return f"{self.nombre_razon_social} ({self.nit})"

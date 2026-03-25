@@ -10,7 +10,7 @@
 </nav>
 
 <div class="d-flex align-items-center mb-3">
-  <h1 class="h4 mb-0">Reporte Contabilidad · INCOE</h1>
+  <h1 class="h4 mb-0">Reporte Contabilidad · {{ emisor.nombre_comercial|default:emisor.nombre_razon_social|default:"Empresa" }}</h1>
   <div class="ms-auto">
     <a class="btn btn-outline-success btn-sm" href="?{{ qs_no_page }}&export=excel">
       <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel

@@ -1,0 +1,275 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Configuración Inicial · INTRACOE</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" rel="stylesheet">
+  <style>
+    body { background: #f0f4ff; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .setup-card { max-width: 620px; width: 100%; border: 0; border-radius: 1rem; box-shadow: 0 8px 32px rgba(0,0,0,.1); }
+    .setup-header { background: linear-gradient(135deg, #0d47a1, #1565c0); color: #fff; border-radius: 1rem 1rem 0 0; padding: 2rem; text-align: center; }
+    .setup-header h1 { font-size: 1.5rem; font-weight: 700; margin: 0; }
+    .setup-header p { opacity: .85; margin: .5rem 0 0; font-size: .9rem; }
+    .setup-header .icon { font-size: 2.5rem; margin-bottom: .5rem; display: block; }
+    .step-badges { display: flex; justify-content: center; gap: .5rem; margin-top: 1rem; }
+    .step-badge {
+      width: 32px; height: 32px; border-radius: 50%; font-size: .75rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,.2); color: rgba(255,255,255,.6);
+    }
+    .step-badge.active { background: #fff; color: #0d47a1; }
+    .form-body { padding: 2rem; }
+    .status-box {
+      display: none; padding: .75rem 1rem; border-radius: .5rem;
+      font-size: .85rem; margin-bottom: 1rem;
+    }
+    .status-box.success { display: block; background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .status-box.error { display: block; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .status-box.info { display: block; background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+    .btn-test { border: 1px solid #0d47a1; color: #0d47a1; background: #fff; }
+    .btn-test:hover { background: #eff6ff; }
+    .spinner-sm { width: 16px; height: 16px; border-width: 2px; }
+
+    /* Servidores detectados */
+    .scan-section { margin-bottom: 1.25rem; }
+    .server-list { display: flex; flex-direction: column; gap: .4rem; margin-top: .5rem; }
+    .server-item {
+      display: flex; align-items: center; gap: .75rem;
+      padding: .6rem .85rem; border-radius: .5rem;
+      border: 1px solid #e2e8f0; background: #fff;
+      cursor: pointer; transition: all .15s; font-size: .85rem;
+    }
+    .server-item:hover { border-color: #2563eb; background: #eff6ff; }
+    .server-item.selected { border-color: #2563eb; background: #dbeafe; }
+    .server-item .srv-icon {
+      width: 36px; height: 36px; border-radius: .5rem;
+      background: #f1f5f9; color: #475569;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+    }
+    .server-item.selected .srv-icon { background: #2563eb; color: #fff; }
+    .server-item .srv-info { flex: 1; }
+    .server-item .srv-host { font-weight: 600; color: #1e293b; }
+    .server-item .srv-port { font-size: .75rem; color: #64748b; }
+  </style>
+</head>
+<body>
+
+<div class="card setup-card">
+  <div class="setup-header">
+    <span class="icon"><i class="bi bi-database-gear"></i></span>
+    <h1>Intra<span style="color:#ff7a00;">coe</span> — Configuración Inicial</h1>
+    <p>Configure la conexión a su base de datos PostgreSQL</p>
+    <div class="step-badges">
+      <div class="step-badge active">1</div>
+      <div class="step-badge">2</div>
+      <div class="step-badge">3</div>
+      <div class="step-badge">4</div>
+      <div class="step-badge">5</div>
+    </div>
+  </div>
+
+  <div class="form-body">
+
+    <!-- Escaneo de red -->
+    <div class="scan-section">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <h6 class="mb-0 fw-bold"><i class="bi bi-router me-2"></i>Servidores detectados en la red</h6>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btnScan" onclick="scanNetwork()">
+          <i class="bi bi-search me-1"></i>Escanear
+        </button>
+      </div>
+      <div id="serverList" class="server-list">
+        <div class="text-muted small text-center py-2">
+          <i class="bi bi-info-circle me-1"></i>Presione "Escanear" para buscar servidores PostgreSQL en la red
+        </div>
+      </div>
+    </div>
+
+    <hr class="my-3">
+
+    <h6 class="mb-3 fw-bold"><i class="bi bi-server me-2"></i>Datos del servidor PostgreSQL</h6>
+
+    <div id="statusBox" class="status-box"></div>
+
+    <div class="row g-3">
+      <div class="col-8">
+        <label class="form-label small fw-semibold">Host / IP del servidor *</label>
+        <input type="text" class="form-control" id="dbHost" placeholder="192.168.1.100 o localhost" value="db">
+      </div>
+      <div class="col-4">
+        <label class="form-label small fw-semibold">Puerto</label>
+        <input type="text" class="form-control" id="dbPort" placeholder="5432" value="5432">
+      </div>
+      <div class="col-6">
+        <label class="form-label small fw-semibold">Usuario *</label>
+        <input type="text" class="form-control" id="dbUser" placeholder="postgres" value="intracoe">
+      </div>
+      <div class="col-6">
+        <label class="form-label small fw-semibold">Contraseña</label>
+        <input type="password" class="form-control" id="dbPassword" placeholder="••••••••">
+      </div>
+      <div class="col-12">
+        <label class="form-label small fw-semibold">Nombre de la base de datos *</label>
+        <input type="text" class="form-control" id="dbName" placeholder="intracoe_prod" value="intracoe">
+        <div class="form-text">Si no existe, se creará automáticamente.</div>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-4">
+      <button type="button" class="btn btn-test flex-fill" id="btnTest" onclick="testConnection()">
+        <i class="bi bi-plug me-1"></i> Probar conexión
+      </button>
+      <button type="button" class="btn btn-primary flex-fill" id="btnCreate" onclick="createDB()" disabled>
+        <i class="bi bi-database-add me-1"></i> Crear y configurar
+      </button>
+    </div>
+
+    <div id="restartMsg" style="display:none;" class="text-center mt-4">
+      <div class="alert alert-success py-3">
+        <i class="bi bi-check-circle fs-4 d-block mb-2"></i>
+        <strong>Base de datos configurada correctamente.</strong>
+        <p class="mb-2 small">El servidor se reiniciará automáticamente. Si no, reinícielo manualmente:</p>
+        <code class="d-inline-block bg-dark text-white px-3 py-1 rounded">docker-compose restart app</code>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const csrf = '{% csrf_token %}'.match(/value="([^"]+)"/)?.[1] || '';
+
+function getFields(){
+  return {
+    db_host: document.getElementById('dbHost').value.trim(),
+    db_port: document.getElementById('dbPort').value.trim() || '5432',
+    db_user: document.getElementById('dbUser').value.trim(),
+    db_password: document.getElementById('dbPassword').value,
+    db_name: document.getElementById('dbName').value.trim(),
+  };
+}
+
+function showStatus(type, msg){
+  const box = document.getElementById('statusBox');
+  box.className = 'status-box ' + type;
+  box.innerHTML = msg;
+}
+
+function setLoading(btn, loading){
+  if(loading){
+    btn.disabled = true;
+    btn._html = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-border spinner-sm me-1"></span> Procesando...';
+  } else {
+    btn.disabled = false;
+    btn.innerHTML = btn._html;
+  }
+}
+
+// ── Escaneo de red ──
+async function scanNetwork(){
+  const btn = document.getElementById('btnScan');
+  const list = document.getElementById('serverList');
+  setLoading(btn, true);
+  list.innerHTML = '<div class="text-center py-3"><span class="spinner-border spinner-border-sm me-2"></span>Escaneando la red...</div>';
+
+  try {
+    const body = new URLSearchParams({action:'scan', csrfmiddlewaretoken: csrf});
+    const res = await fetch('/setup/?step=database', {method:'POST', body});
+    const data = await res.json();
+
+    if(data.ok && data.servers.length > 0){
+      list.innerHTML = '';
+      data.servers.forEach(srv => {
+        const div = document.createElement('div');
+        div.className = 'server-item';
+        div.innerHTML = `
+          <div class="srv-icon"><i class="bi bi-hdd-network"></i></div>
+          <div class="srv-info">
+            <div class="srv-host">${srv.host}</div>
+            <div class="srv-port">Puerto ${srv.port} · PostgreSQL</div>
+          </div>
+          <i class="bi bi-chevron-right text-muted"></i>
+        `;
+        div.addEventListener('click', () => {
+          document.getElementById('dbHost').value = srv.host;
+          document.getElementById('dbPort').value = srv.port;
+          document.querySelectorAll('.server-item').forEach(el => el.classList.remove('selected'));
+          div.classList.add('selected');
+          showStatus('info', '<i class="bi bi-check me-1"></i>Servidor seleccionado: ' + srv.host);
+        });
+        list.appendChild(div);
+      });
+    } else {
+      list.innerHTML = '<div class="text-muted small text-center py-2"><i class="bi bi-exclamation-circle me-1"></i>No se encontraron servidores PostgreSQL en la red</div>';
+    }
+  } catch(e){
+    list.innerHTML = '<div class="text-danger small text-center py-2">Error al escanear: ' + e.message + '</div>';
+  }
+  setLoading(btn, false);
+}
+
+// ── Probar conexión ──
+async function testConnection(){
+  const btn = document.getElementById('btnTest');
+  setLoading(btn, true);
+  const fields = getFields();
+  fields.action = 'test';
+
+  try {
+    const body = new URLSearchParams(fields);
+    body.append('csrfmiddlewaretoken', csrf);
+    const res = await fetch('/setup/?step=database', {method:'POST', body});
+    const data = await res.json();
+    if(data.ok){
+      showStatus('success', '<i class="bi bi-check-circle me-1"></i>' + data.msg);
+      document.getElementById('btnCreate').disabled = false;
+    } else {
+      showStatus('error', '<i class="bi bi-x-circle me-1"></i>' + data.error);
+      document.getElementById('btnCreate').disabled = true;
+    }
+  } catch(e){
+    showStatus('error', '<i class="bi bi-x-circle me-1"></i>Error de red: ' + e.message);
+  }
+  setLoading(btn, false);
+}
+
+// ── Crear BD ──
+async function createDB(){
+  const btn = document.getElementById('btnCreate');
+  setLoading(btn, true);
+  const fields = getFields();
+  fields.action = 'create';
+
+  try {
+    const body = new URLSearchParams(fields);
+    body.append('csrfmiddlewaretoken', csrf);
+    const res = await fetch('/setup/?step=database', {method:'POST', body});
+    const data = await res.json();
+    if(data.ok){
+      showStatus('success', '<i class="bi bi-check-circle me-1"></i>' + data.msg);
+      if(data.restart){
+        document.getElementById('restartMsg').style.display = 'block';
+        document.getElementById('btnTest').disabled = true;
+        btn.disabled = true;
+        // Intentar recargar después de unos segundos (el entrypoint reinicia)
+        setTimeout(() => { window.location.href = '/setup/?step=usuario'; }, 3000);
+      }
+    } else {
+      showStatus('error', '<i class="bi bi-x-circle me-1"></i>' + data.error);
+    }
+  } catch(e){
+    showStatus('error', '<i class="bi bi-x-circle me-1"></i>Error de red: ' + e.message);
+  }
+  setLoading(btn, false);
+}
+
+// Escanear automáticamente al cargar
+document.addEventListener('DOMContentLoaded', () => { scanNetwork(); });
+</script>
+
+</body>
+</html>

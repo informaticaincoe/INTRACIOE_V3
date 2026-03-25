@@ -157,10 +157,10 @@
   </div>
   <br>
   <small>WhatsApp: +503 7069 5594</small>
-  <small>Facebook: INCOE</small>
-  <small>Instagram: @INCOE</small>
-  <small>Tel: +503 2345 3900</small>
-  <small>Web: incoe.net</small>
+  <small>Facebook: {{ emisor.nombre_comercial|default:emisor.nombre_razon_social }}</small>
+  <small>Instagram: @{{ emisor.nombre_comercial|default:emisor.nombre_razon_social }}</small>
+  <small>Tel: {{ emisor.telefono|default:"" }}</small>
+  <small>Web: {{ emisor.email|default:"" }}</small>
 </div>
 
 

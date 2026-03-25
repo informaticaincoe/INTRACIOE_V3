@@ -420,7 +420,7 @@ def obtener_factura_por_codigo(request):
                 for detalle in factura.detalles.all():
                     logger.debug("-Recorrer detalles de la factura- cantidad: %s", detalle.cantidad)
                     # Se asume que el precio_unitario incluye IVA y se calcula el precio neto e IVA unitario
-                    neto_unitario = detalle.precio_unitario #/ Decimal('1.13')
+                    neto_unitario = (detalle.precio_unitario / Decimal('1.13')).quantize(Decimal('0.01'))
                     iva_unitario = detalle.precio_unitario - neto_unitario
                     total_neto = neto_unitario * detalle.cantidad
                     total_iva = iva_unitario * detalle.cantidad
@@ -2480,7 +2480,30 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False, consoli
                     "User-Agent": USER_AGENT.valor,
                     "Content-Type": CONTENT_TYPE.valor
                 }
-                
+
+                # ── MODO DEMO: no enviar a Hacienda ──
+                emisor_obj = Emisor_fe.objects.first()
+                if emisor_obj and emisor_obj.modo_demo:
+                    logger.info("MODO DEMO: Simulando respuesta de Hacienda")
+                    factura.sello_recepcion = "MODO DEMO"
+                    factura.recibido_mh = True
+                    factura.estado = True
+                    factura.contingencia = False
+                    factura.envio_correo = False
+                    json_original = factura.json_original
+                    json_original["jsonRespuestaMh"] = {
+                        "estado": "PROCESADO",
+                        "selloRecibido": "MODO DEMO",
+                        "observaciones": ["Documento procesado en modo demostración"],
+                    }
+                    factura.json_original = json_original
+                    factura.save()
+                    return JsonResponse({
+                        "status": "ok",
+                        "mensaje": "MODO DEMO — Documento procesado localmente (no enviado a Hacienda)",
+                        "sello": "MODO DEMO",
+                    })
+
                 logger.info("Inicio envio response: ")
                 envio_response = requests.post(
                     HACIENDA_URL_PROD,
@@ -2492,7 +2515,7 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False, consoli
                 logger.debug("Envio response headers: %s", envio_response.headers)
                 logger.debug("Envio response text: %s", envio_response.text)
                 sello_recibido = None
-                
+
                 try:
                     response_data = envio_response.json() if envio_response.text.strip() else {}
                     sello_recibido = response_data.get("selloRecibido", None)

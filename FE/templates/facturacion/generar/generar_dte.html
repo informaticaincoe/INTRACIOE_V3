@@ -807,11 +807,11 @@
           const data = await res.json();
           this.items = (data.results||[]).map(p=>{
             const precio = parseFloat(p.precio||'0')||0;
-            const neto = p.con_iva ? (precio/1.13) : precio;
+            const neto = p.con_iva ? +(precio/1.13).toFixed(2) : precio;
             const stockValue = parseFloat(p.stock);
             const stockFinal = Number.isFinite(stockValue) ? stockValue : 0;
 
-            return { id:p.id, codigo:p.codigo, nombre:p.nombre||p.descripcion, precio:neto, stock:stockFinal };
+            return { id:p.id, codigo:p.codigo, nombre:p.nombre||p.descripcion, precio:neto, stock:stockFinal, con_iva:!!p.con_iva };
           });
           this.activeIndex = this.items.length ? 0 : -1;
           this.render(); this.show();
@@ -875,7 +875,7 @@
       onChoose: (prod)=>{
         priceInput.value = (+prod.precio).toFixed(2);
         priceInput.dataset.sticky = '1';
-        ivaChk.checked = !prod.con_iva;
+        ivaChk.checked = true;
         setTimeout(()=>{ addItemFromProduct(prod); }, 10);
       }
     });

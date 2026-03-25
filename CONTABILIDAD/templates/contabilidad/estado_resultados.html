@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Estado de Resultados{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'cont-cuentas-lista' %}">Contabilidad</a></li>
+    <li class="breadcrumb-item active">Estado de Resultados</li>
+  </ol>
+</nav>
+
+<h1 class="h4 mb-3">Estado de Resultados</h1>
+
+<form method="get" class="row g-2 mb-4 align-items-end">
+  <div class="col-md-2">
+    <label class="form-label small">Desde</label>
+    <input type="date" name="desde" class="form-control form-control-sm" value="{{ desde }}">
+  </div>
+  <div class="col-md-2">
+    <label class="form-label small">Hasta</label>
+    <input type="date" name="hasta" class="form-control form-control-sm" value="{{ hasta }}">
+  </div>
+  <div class="col-auto">
+    <button class="btn btn-sm btn-primary">Filtrar</button>
+    <a href="?" class="btn btn-sm btn-outline-secondary">Limpiar</a>
+  </div>
+</form>
+
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-sm mb-0">
+      <!-- INGRESOS -->
+      <thead class="table-success">
+        <tr><th colspan="2">Ingresos</th></tr>
+      </thead>
+      <tbody>
+        {% for c in ingresos %}
+        <tr>
+          <td class="small">{{ c.codigo }} — {{ c.nombre }}</td>
+          <td class="text-end small">${{ c.saldo_calc|floatformat:2 }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="2" class="text-muted text-center py-3">Sin ingresos registrados</td></tr>
+        {% endfor %}
+      </tbody>
+      <tfoot class="table-light fw-bold">
+        <tr>
+          <td>Total Ingresos</td>
+          <td class="text-end">${{ total_ingresos|floatformat:2 }}</td>
+        </tr>
+      </tfoot>
+
+      <!-- GASTOS -->
+      <thead class="table-danger">
+        <tr><th colspan="2">Gastos</th></tr>
+      </thead>
+      <tbody>
+        {% for c in gastos %}
+        <tr>
+          <td class="small">{{ c.codigo }} — {{ c.nombre }}</td>
+          <td class="text-end small">${{ c.saldo_calc|floatformat:2 }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="2" class="text-muted text-center py-3">Sin gastos registrados</td></tr>
+        {% endfor %}
+      </tbody>
+      <tfoot class="table-light fw-bold">
+        <tr>
+          <td>Total Gastos</td>
+          <td class="text-end">${{ total_gastos|floatformat:2 }}</td>
+        </tr>
+      </tfoot>
+
+      <!-- RESULTADO -->
+      <tfoot>
+        <tr class="{% if utilidad >= 0 %}table-success{% else %}table-danger{% endif %} fw-bold fs-6">
+          <td>{% if utilidad >= 0 %}Utilidad Neta{% else %}Pérdida Neta{% endif %}</td>
+          <td class="text-end">${{ utilidad|floatformat:2 }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,125 +1,266 @@
 <style>
-  .chart-estados-wrapper {
-    position: relative;
-    height: 80%; /* ajusta 180, 220, etc. según te guste */
-    width: 80%;
+  /* ── Dashboard ─────────────────────────────────────────── */
+  .dash-header { margin-bottom: 1.25rem; }
+  .dash-header h2 { font-size: 1.35rem; font-weight: 700; color: #1e293b; margin: 0; }
+  .dash-header p  { font-size: .85rem; color: #64748b; margin: .25rem 0 0; }
+
+  /* Filter bar */
+  .dash-filters {
+    display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+  }
+  .dash-filters .btn-periodo {
+    padding: .3rem .7rem; font-size: .78rem; font-weight: 600;
+    border-radius: 1rem; border: 1px solid #e2e8f0;
+    background: #fff; color: #64748b; cursor: pointer;
+    transition: all .15s;
+  }
+  .dash-filters .btn-periodo:hover { border-color: #94a3b8; color: #334155; }
+  .dash-filters .btn-periodo.active {
+    background: var(--topbar-bg, #2563eb); color: #fff; border-color: transparent;
+  }
+  .dash-filters .filter-sep {
+    width: 1px; height: 24px; background: #e2e8f0; margin: 0 .25rem;
+  }
+  .dash-filters .form-control-sm { font-size: .78rem; padding: .3rem .5rem; border-radius: .5rem; }
+
+  /* KPI cards */
+  .kpi-card {
+    border: 0; border-radius: .75rem;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+    transition: transform .15s, box-shadow .15s;
+    overflow: hidden;
+  }
+  .kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,.1);
+  }
+  .kpi-card .card-body {
+    display: flex; align-items: center; gap: 1rem;
+    padding: 1.1rem 1.25rem;
+  }
+  .kpi-icon {
+    width: 48px; height: 48px; border-radius: .625rem;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.25rem; flex-shrink: 0;
+  }
+  .kpi-icon.ventas   { background: #dbeafe; color: #2563eb; }
+  .kpi-icon.facturas { background: #dcfce7; color: #16a34a; }
+  .kpi-icon.clientes { background: #fef3c7; color: #d97706; }
+  .kpi-icon.inventario { background: #f3e8ff; color: #7c3aed; }
+  .kpi-info .kpi-label { font-size: .75rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: .4px; }
+  .kpi-info .kpi-value { font-size: 1.5rem; font-weight: 700; color: #1e293b; line-height: 1.2; }
+
+  /* Chart cards */
+  .chart-card {
+    border: 0; border-radius: .75rem;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  }
+  .chart-card .card-body { padding: 1.25rem; }
+  .chart-card .chart-title {
+    font-size: .875rem; font-weight: 700; color: #334155;
     margin: 0;
-    padding: 0;
   }
-  
-  .chart-estados-wrapper canvas {
-    width: 100% !important;
-    height: 100% !important;
+  .chart-card .chart-subtitle {
+    font-size: .7rem; color: #94a3b8; margin: 0;
   }
+  .chart-estados-wrapper {
+    position: relative; height: 220px; width: 220px; margin: 0 auto;
+  }
+  .chart-estados-wrapper canvas { width: 100% !important; height: 100% !important; }
+
+  /* Status pills */
+  .status-row { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .75rem; }
+  .status-pill {
+    display: flex; align-items: center; gap: .35rem;
+    font-size: .75rem; font-weight: 600;
+    padding: .25rem .6rem; border-radius: 1rem;
+  }
+  .status-pill .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .pill-ok   { background: #f0fdf4; color: #15803d; }
+  .pill-ok .dot { background: #22c55e; }
+  .pill-warn { background: #fefce8; color: #a16207; }
+  .pill-warn .dot { background: #eab308; }
+  .pill-bad  { background: #fef2f2; color: #b91c1c; }
+  .pill-bad .dot { background: #ef4444; }
 </style>
 
+<!-- Header -->
+<div class="dash-header">
+  <h2>Dashboard</h2>
+  <p>Resumen de actividad de {{ emisor.nombre_comercial|default:emisor.nombre_razon_social|default:"tu empresa" }}</p>
+</div>
+
+<!-- Filtros -->
+<div class="dash-filters" id="dashFilters">
+  <button type="button" class="btn-periodo{% if periodo_key == '7d' %} active{% endif %}" data-periodo="7d">7 días</button>
+  <button type="button" class="btn-periodo{% if periodo_key == '30d' %} active{% endif %}" data-periodo="30d">30 días</button>
+  <button type="button" class="btn-periodo{% if periodo_key == '3m' %} active{% endif %}" data-periodo="3m">3 meses</button>
+  <button type="button" class="btn-periodo{% if periodo_key == '6m' %} active{% endif %}" data-periodo="6m">6 meses</button>
+  <button type="button" class="btn-periodo{% if periodo_key == '12m' %} active{% endif %}" data-periodo="12m">12 meses</button>
+  <button type="button" class="btn-periodo{% if periodo_key == 'anio' %} active{% endif %}" data-periodo="anio">Este año</button>
+  <div class="filter-sep d-none d-sm-block"></div>
+  <input type="date" class="form-control form-control-sm" id="filtroDesde" value="{{ filtro_desde }}" style="width:130px;" title="Desde">
+  <input type="date" class="form-control form-control-sm" id="filtroHasta" value="{{ filtro_hasta }}" style="width:130px;" title="Hasta">
+  <button type="button" class="btn-periodo" id="btnFiltroCustom" title="Aplicar rango">
+    <i class="bi bi-funnel"></i> Filtrar
+  </button>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  document.querySelectorAll('#dashFilters .btn-periodo[data-periodo]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      window.location.href = '/?periodo=' + this.dataset.periodo;
+    });
+  });
+  document.getElementById('btnFiltroCustom').addEventListener('click', function(){
+    var desde = document.getElementById('filtroDesde').value;
+    var hasta = document.getElementById('filtroHasta').value;
+    if(desde && hasta){
+      window.location.href = '/?desde=' + desde + '&hasta=' + hasta;
+    }
+  });
+});
+</script>
+
 <!-- KPI Cards -->
-<div class="row g-3 mb-3">
-  <div class="col-12 col-md-3">
-    <div class="card kpi">
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="card kpi-card">
       <div class="card-body">
-        <div class="text-muted small">Total ventas (6m)</div>
-        <div class="fs-3 fw-semibold">${{ total_ventas|floatformat:2 }}</div>
+        <div class="kpi-icon ventas"><i class="bi bi-cash-stack"></i></div>
+        <div class="kpi-info">
+          <div class="kpi-label">Ventas (6m)</div>
+          <div class="kpi-value">${{ total_ventas|floatformat:2 }}</div>
+        </div>
       </div>
     </div>
   </div>
-  <div class="col-12 col-md-3">
-    <div class="card kpi">
+  <div class="col-6 col-lg-3">
+    <div class="card kpi-card">
       <div class="card-body">
-        <div class="text-muted small">Facturas emitidas</div>
-        <div class="fs-3 fw-semibold">{{ total_facturas }}</div>
+        <div class="kpi-icon facturas"><i class="bi bi-receipt"></i></div>
+        <div class="kpi-info">
+          <div class="kpi-label">Facturas</div>
+          <div class="kpi-value">{{ total_facturas }}</div>
+        </div>
       </div>
     </div>
   </div>
-  <div class="col-12 col-md-3">
-    <div class="card kpi">
+  <div class="col-6 col-lg-3">
+    <div class="card kpi-card">
       <div class="card-body">
-        <div class="text-muted small">Clientes</div>
-        <div class="fs-3 fw-semibold">{{ total_clientes }}</div>
+        <div class="kpi-icon clientes"><i class="bi bi-people"></i></div>
+        <div class="kpi-info">
+          <div class="kpi-label">Clientes</div>
+          <div class="kpi-value">{{ total_clientes }}</div>
+        </div>
       </div>
     </div>
   </div>
-  <div class="col-12 col-md-3">
-    <div class="card kpi">
+  <div class="col-6 col-lg-3">
+    <div class="card kpi-card">
       <div class="card-body">
-        <div class="text-muted small">Valor inventario</div>
-        <div class="fs-3 fw-semibold">${{ inventario_valor_total|floatformat:2 }}</div>
+        <div class="kpi-icon inventario"><i class="bi bi-box-seam"></i></div>
+        <div class="kpi-info">
+          <div class="kpi-label">Inventario</div>
+          <div class="kpi-value">${{ inventario_valor_total|floatformat:2 }}</div>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Gráficas -->
-<div class="row g-3">
-  <div class="col-12 col-lg-6">
-    <div class="card">
+<!-- Charts Row 1: Ventas + Estado -->
+<div class="row g-3 mb-3">
+  <div class="col-12 col-lg-8">
+    <div class="card chart-card">
       <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <h6 class="m-0">Ventas por mes</h6>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h6 class="chart-title">Ventas por mes</h6>
+            <p class="chart-subtitle">Ingresos de los últimos 6 meses</p>
+          </div>
         </div>
-        <canvas id="chartVentas"></canvas>
+        <canvas id="chartVentas" height="85"></canvas>
       </div>
     </div>
   </div>
-  <div class="col-12 col-lg-6">
-    <div class="card">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <h6 class="m-0">Compras por mes</h6>
+  <div class="col-12 col-lg-4">
+    <div class="card chart-card h-100">
+      <div class="card-body d-flex flex-column">
+        <div class="mb-2">
+          <h6 class="chart-title">Estado de facturas</h6>
+          <p class="chart-subtitle">Distribución actual</p>
         </div>
-        <canvas id="chartCompras"></canvas>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-12 col-lg-6">
-    <div class="card">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <h6 class="m-0">Clientes nuevos por mes</h6>
-        </div>
-        <canvas id="chartClientes"></canvas>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-12 col-lg-6">
-    <div class="card">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <h6 class="m-0">Inventario por categoría (Top)</h6>
-        </div>
-        <canvas id="chartInventario"></canvas>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-12 col-lg-6">
-    <div class="card">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <h6 class="m-0">Facturación por estado</h6>
-        </div>
-        <div class="chart-estados-wrapper">
+        <div class="chart-estados-wrapper mx-auto my-auto">
           <canvas id="chartEstados"></canvas>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-12 col-lg-6">
-    <div class="card">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <h6 class="m-0">Top 5 productos</h6>
+        <div class="status-row justify-content-center">
+          <span class="status-pill pill-ok"><span class="dot"></span>Aprobadas</span>
+          <span class="status-pill pill-warn"><span class="dot"></span>Pendientes</span>
+          <span class="status-pill pill-bad"><span class="dot"></span>Rechazadas</span>
         </div>
-        <canvas id="chartTopProd"></canvas>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Datos seguros como JSON -->
+<!-- Charts Row 2: Compras + Clientes -->
+<div class="row g-3 mb-3">
+  <div class="col-12 col-lg-6">
+    <div class="card chart-card">
+      <div class="card-body">
+        <div class="mb-3">
+          <h6 class="chart-title">Compras por mes</h6>
+          <p class="chart-subtitle">Egresos registrados</p>
+        </div>
+        <canvas id="chartCompras" height="90"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-6">
+    <div class="card chart-card">
+      <div class="card-body">
+        <div class="mb-3">
+          <h6 class="chart-title">Clientes nuevos por mes</h6>
+          <p class="chart-subtitle">Crecimiento de la cartera</p>
+        </div>
+        <canvas id="chartClientes" height="90"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row 3: Top Productos + Inventario -->
+<div class="row g-3 mb-3">
+  <div class="col-12 col-lg-6">
+    <div class="card chart-card">
+      <div class="card-body">
+        <div class="mb-3">
+          <h6 class="chart-title">Top 5 productos más vendidos</h6>
+          <p class="chart-subtitle">Por cantidad vendida</p>
+        </div>
+        <canvas id="chartTopProd" height="100"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-6">
+    <div class="card chart-card">
+      <div class="card-body">
+        <div class="mb-3">
+          <h6 class="chart-title">Inventario por categoría</h6>
+          <p class="chart-subtitle">Distribución de stock</p>
+        </div>
+        <canvas id="chartInventario" height="100"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JSON data -->
 {{ ventas_mes_labels|json_script:'ventas_mes_labels' }}
 {{ ventas_mes_data|json_script:'ventas_mes_data' }}
 {{ compras_mes_labels|json_script:'compras_mes_labels' }}
@@ -136,107 +277,150 @@
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  ;(function () {
-    const J = (id) => JSON.parse(document.getElementById(id).textContent)
-  
-    const moneyTicks = (value) => {
-      try {
-        return '$' + Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 })
-      } catch (_) {
-        return '$' + value
+;(function(){
+  const J = id => JSON.parse(document.getElementById(id).textContent);
+  const money = v => { try { return '$'+Number(v).toLocaleString(undefined,{maximumFractionDigits:2}); } catch(_){ return '$'+v; } };
+
+  Chart.defaults.font.family = "'Inter','Segoe UI',system-ui,sans-serif";
+  Chart.defaults.font.size = 12;
+  Chart.defaults.plugins.legend.display = false;
+  Chart.defaults.plugins.tooltip.backgroundColor = '#1e293b';
+  Chart.defaults.plugins.tooltip.cornerRadius = 8;
+  Chart.defaults.plugins.tooltip.padding = 10;
+  Chart.defaults.animation.duration = 700;
+
+  // ── Ventas (area chart) ──
+  const ctxV = document.getElementById('chartVentas').getContext('2d');
+  const gradV = ctxV.createLinearGradient(0,0,0,300);
+  gradV.addColorStop(0,'rgba(37,99,235,.18)');
+  gradV.addColorStop(1,'rgba(37,99,235,.01)');
+
+  new Chart(ctxV, {
+    type:'line',
+    data:{
+      labels: J('ventas_mes_labels'),
+      datasets:[{
+        label:'Ventas', data: J('ventas_mes_data'),
+        borderColor:'#2563eb', borderWidth:2.5,
+        backgroundColor: gradV, fill:true,
+        tension:.35, pointRadius:4, pointBackgroundColor:'#2563eb',
+        pointHoverRadius:6, pointHoverBackgroundColor:'#fff', pointHoverBorderWidth:3
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:true,
+      scales:{
+        x:{ grid:{display:false}, ticks:{color:'#94a3b8'} },
+        y:{ grid:{color:'#f1f5f9'}, ticks:{callback:money, color:'#94a3b8'}, beginAtZero:true }
+      },
+      plugins:{
+        tooltip:{ callbacks:{ label: ctx => money(ctx.parsed.y) } }
       }
     }
-  
-    // Ventas
-    new Chart(document.getElementById('chartVentas'), {
-      type: 'line',
-      data: {
-        labels: J('ventas_mes_labels'),
-        datasets: [{ label: 'Ventas', data: J('ventas_mes_data'), backgroundColor: "#0d48a1" }]
-      },
-      options: { responsive: true, scales: { y: { ticks: { callback: moneyTicks } } } }
-    })
-  
-    // Compras
-    new Chart(document.getElementById('chartCompras'), {
-      type: 'bar',
-      data: {
-        labels: J('compras_mes_labels'),
-        datasets: [{ label: 'Compras', data: J('compras_mes_data'), backgroundColor: "#0d48a1aa" }]
-      },
-      options: { responsive: true, scales: { y: { ticks: { callback: moneyTicks } } } }
-    })
-  
-    // Clientes
-    new Chart(document.getElementById('chartClientes'), {
-      type: 'bar',
-      data: {
-        labels: J('clientes_mes_labels'),
-        datasets: [{ label: 'Clientes nuevos', data: J('clientes_mes_data'), backgroundColor: "#0d48a1aa" }]
-      },
-      options: { responsive: true }
-    })
-  
-    // Inventario por categoría
-    const labels_categoria = J('inv_labels')
-    const values_categoria = J('inv_data') 
-    const colors_categoria = ['#0d48a1aa', '#9eb7e5aa', '#FEAF53aa', '#EF798Aaa', '#439A86aa']
-  
-    const datasets_categoria = labels_categoria.map((cat, i) => ({
-      label: cat, // lo que se verá en la leyenda
-      data: [values_categoria[i]], // un valor por categoría
-      backgroundColor: colors_categoria[i % colors_categoria.length]
-    }))
-  
-    new Chart(document.getElementById('chartInventario'), {
-      type: 'bar',
-      data: {
-        labels: ['Categorías'], // un solo grupo en el eje X
-        datasets: datasets_categoria, // uno por categoría
-      },
-      options: {
-        responsive: true,
-        scales: {
-          x: { beginAtZero: true },
-          y: { beginAtZero: true }
-        }
-      }
-    })
-
-  // Facturación por estado
-  new Chart(document.getElementById('chartEstados'), {
-    type: 'doughnut',
-    data: {
-      labels: J('fact_estado_labels'),
-      datasets: [{ data: J('fact_estado_data'), backgroundColor:['#0d48a1c0', '#0d48a17b', '#6d8bb942'] }]
-    },
-    options: { responsive: true }
   });
-  
-    // Top productos
-    const labels_top_productos = J('top_prod_labels')
-    const values_top_productos = J('top_prod_data')
-    const colors_top_productos = ['#0d48a1aa', '#9eb7e5aa', '#FEAF53aa', '#EF798Aaa', '#439A86aa']
-  
-    const datasets_top_productos = labels_top_productos.map((prod, i) => ({
-      label: prod,
-      data: [values_top_productos[i]], // un valor por dataset
-      backgroundColor: colors_top_productos[i]
-    }))
-  
-    new Chart(document.getElementById('chartTopProd'), {
-      type: 'bar',
-      data: {
-        labels: ['Productos'], // un solo grupo en el eje X
-        datasets: datasets_top_productos // uno por producto
-      },
-      options: {
-        responsive: true,
-        scales: {
-          x: { stacked: false },
-          y: { beginAtZero: true }
-        }
+
+  // ── Estado facturas (doughnut) ──
+  new Chart(document.getElementById('chartEstados'), {
+    type:'doughnut',
+    data:{
+      labels: J('fact_estado_labels'),
+      datasets:[{
+        data: J('fact_estado_data'),
+        backgroundColor:['#22c55e','#ef4444','#eab308'],
+        borderWidth:0, hoverOffset:6
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:true, cutout:'72%',
+      plugins:{
+        legend:{display:false},
+        tooltip:{ callbacks:{ label: ctx => ` ${ctx.label}: ${ctx.parsed}` } }
       }
-    })
-  })()
+    }
+  });
+
+  // ── Compras ──
+  const ctxC = document.getElementById('chartCompras').getContext('2d');
+  const gradC = ctxC.createLinearGradient(0,0,0,250);
+  gradC.addColorStop(0,'rgba(239,68,68,.75)');
+  gradC.addColorStop(1,'rgba(239,68,68,.15)');
+
+  new Chart(ctxC, {
+    type:'bar',
+    data:{
+      labels: J('compras_mes_labels'),
+      datasets:[{ label:'Compras', data: J('compras_mes_data'), backgroundColor:gradC, borderRadius:6, borderSkipped:false }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:true,
+      scales:{
+        x:{ grid:{display:false}, ticks:{color:'#94a3b8'} },
+        y:{ grid:{color:'#f1f5f9'}, ticks:{callback:money, color:'#94a3b8'}, beginAtZero:true }
+      },
+      plugins:{ tooltip:{ callbacks:{ label: ctx => money(ctx.parsed.y) } } }
+    }
+  });
+
+  // ── Clientes nuevos ──
+  const ctxCl = document.getElementById('chartClientes').getContext('2d');
+  const gradCl = ctxCl.createLinearGradient(0,0,0,250);
+  gradCl.addColorStop(0,'rgba(217,119,6,.75)');
+  gradCl.addColorStop(1,'rgba(217,119,6,.15)');
+
+  new Chart(ctxCl, {
+    type:'bar',
+    data:{
+      labels: J('clientes_mes_labels'),
+      datasets:[{ label:'Clientes nuevos', data: J('clientes_mes_data'), backgroundColor:gradCl, borderRadius:6, borderSkipped:false }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:true,
+      scales:{
+        x:{ grid:{display:false}, ticks:{color:'#94a3b8'} },
+        y:{ grid:{color:'#f1f5f9'}, ticks:{color:'#94a3b8', stepSize:1}, beginAtZero:true }
+      }
+    }
+  });
+
+  // ── Top 5 productos (horizontal) ──
+  new Chart(document.getElementById('chartTopProd'), {
+    type:'bar',
+    data:{
+      labels: J('top_prod_labels'),
+      datasets:[{
+        label:'Vendidos', data: J('top_prod_data'),
+        backgroundColor:['#2563eb','#7c3aed','#0891b2','#059669','#d97706'],
+        borderRadius:6, borderSkipped:false
+      }]
+    },
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:true,
+      scales:{
+        x:{ grid:{color:'#f1f5f9'}, ticks:{color:'#94a3b8'}, beginAtZero:true },
+        y:{ grid:{display:false}, ticks:{color:'#334155', font:{weight:600}} }
+      }
+    }
+  });
+
+  // ── Inventario por categoría (horizontal) ──
+  new Chart(document.getElementById('chartInventario'), {
+    type:'bar',
+    data:{
+      labels: J('inv_labels'),
+      datasets:[{
+        label:'Stock', data: J('inv_data'),
+        backgroundColor:['#7c3aed','#2563eb','#0891b2','#059669','#d97706','#e11d48'],
+        borderRadius:6, borderSkipped:false
+      }]
+    },
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:true,
+      scales:{
+        x:{ grid:{color:'#f1f5f9'}, ticks:{color:'#94a3b8'}, beginAtZero:true },
+        y:{ grid:{display:false}, ticks:{color:'#334155', font:{weight:600}} }
+      }
+    }
+  });
+
+})();
 </script>

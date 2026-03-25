@@ -1,20 +1,51 @@
 version: "3.9"
 
-services:
-  backend:
-    build: ./backend
-    volumes:
-      - ./backend:/app
-      - ./backend/db.sqlite3:/app/db.sqlite3
-    ports:
-      - "8787:8000"
-    environment:
-      - DEBUG=1
+# ─────────────────────────────────────────────────────────────
+# INTRACOE V3 — Docker Compose
+#
+# Variables de entorno (pasar al levantar o en .env):
+#   APP_PORT      Puerto de la app (default: 8000)
+#   PG_DB         Nombre de la BD (default: intracoe)
+#   PG_USER       Usuario PostgreSQL (default: intracoe)
+#   PG_PASSWORD   Contraseña PostgreSQL (default: intracoe2025)
+#
+# Cada cliente en su propio contenedor con puerto único:
+#   APP_PORT=8001 docker-compose -p cliente1 up -d
+#   APP_PORT=8002 docker-compose -p cliente2 up -d
+#   APP_PORT=8003 docker-compose -p cliente3 up -d
+# ─────────────────────────────────────────────────────────────
 
-  frontend:
-    build: ./intracoe-frontend
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${PG_DB:-intracoe}
+      POSTGRES_USER: ${PG_USER:-intracoe}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-intracoe2025}
     volumes:
-      - ./intracoe-frontend:/app
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-intracoe}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
     ports:
-      - "5173:5173"
-    command: ["npm", "run", "dev", "--", "--host"]
+      - "${APP_PORT:-8000}:${APP_PORT:-8000}"
+    environment:
+      - APP_PORT=${APP_PORT:-8000}
+    volumes:
+      - app_media:/app/media
+      - app_logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  app_media:
+  app_logs:

@@ -1,97 +1,135 @@
-{% extends "base.html" %}
-{% block content %}
-<div class="container py-5">
-  <div class="card shadow-sm">
-    <div class="card-body">
-      <h4 class="card-title mb-4">Configuración inicial – Paso 3: Configuración del Servidor</h4>
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Paso 5: Servidor · INTRACOE</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" rel="stylesheet">
+  <style>
+    body{background:#f0f4ff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;}
+    .setup-card{max-width:800px;width:100%;border:0;border-radius:1rem;box-shadow:0 8px 32px rgba(0,0,0,.1);overflow:hidden;}
+    .setup-header{background:linear-gradient(135deg,#0d47a1,#1565c0);color:#fff;padding:1.75rem 2rem;text-align:center;}
+    .setup-header h1{font-size:1.4rem;font-weight:700;margin:0;}
+    .setup-header p{opacity:.85;margin:.4rem 0 0;font-size:.85rem;}
+    .setup-header .icon{font-size:2.25rem;margin-bottom:.4rem;display:block;}
+    .step-badges{display:flex;justify-content:center;gap:.4rem;margin-top:.75rem;}
+    .step-badge{width:30px;height:30px;border-radius:50%;font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.2);color:rgba(255,255,255,.55);}
+    .step-badge.done{background:rgba(255,255,255,.35);color:#fff;}
+    .step-badge.active{background:#fff;color:#0d47a1;}
+    .form-body{padding:1.5rem 2rem 2rem;max-height:75vh;overflow-y:auto;}
+    .form-label{font-size:.8rem;font-weight:600;color:#475569;}
+    .alert{font-size:.85rem;}
 
-      <form method="post">
-        {% csrf_token %}
-
-        <div class="table-responsive">
-          <table class="table table-bordered align-middle">
-            <thead class="table-light">
-              <tr>
-                <th style="width: 15%;">Clave</th>
-                <th style="width: 20%;">Valor</th>
-                <th style="width: 20%;">URL</th>
-                <th style="width: 20%;">URL Endpoint</th>
-                <th style="width: 15%;">Contraseña</th>
-                <th style="width: 20%;">Descripción</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for clave in claves_fijas %}
-              <tr>
-                <td>
-                  <input type="hidden" name="clave_{{ forloop.counter }}" value="{{ clave }}">
-                  <span class="fw-bold text-muted"
-                        data-bs-toggle="tooltip"
-                        data-bs-placement="top"
-                        title="
-                        {% if clave == 'email_host_fe' %}Correo desde donde se enviarán las facturas electrónicas.
-                        {% elif clave == 'consulta_dte' %}URL pública de Hacienda para consulta de DTE.
-                        {% elif clave == 'schema_json' %}Ruta local al esquema JSON de facturación.
-                        {% elif clave == 'user_agent' %}Identificador de la aplicación que consume la API.
-                        {% elif clave == 'hacienda_contingencia_url' %}URL para reportar contingencias de facturación.
-                        {% elif clave == 'json_facturas_firmadas' %}Ruta local donde se guardan los JSON firmados.
-                        {% elif clave == 'version_evento_contingencia' %}Versión del evento de contingencia según Hacienda.
-                        {% elif clave == 'url_invalidar_dte' %}URL de Hacienda para invalidar un DTE.
-                        {% elif clave == 'content_type' %}Formato del contenido de la API (normalmente application/json).
-                        {% elif clave == 'headers' %}Cabeceras personalizadas para la comunicación con Hacienda.
-                        {% elif clave == 'url_autenticacion' %}URL para autenticación contra la API de Hacienda.
-                        {% elif clave == 'version_evento_invalidacion' %}Versión del evento de invalidación según Hacienda.
-                        {% elif clave == 'hacienda_url_prod' %}URL de producción de la API de Hacienda.
-                        {% elif clave == 'hacienda_url_test' %}URL de pruebas de la API de Hacienda.
-                        {% elif clave == 'certificado' %}Ruta al certificado digital (.crt) usado para firmar.
-                        {% elif clave == 'server_url' %}URL del servidor local (ejemplo: http://127.0.0.1:8000).
-                        {% elif clave == 'firmador' %}URL del servicio firmador que aplica la firma digital.
-                        {% elif clave == 'json_factura' %}Ruta local donde se guardan los JSON de facturas.
-                        {% elif clave == 'ruta_comprobante_json' %}Ruta local de comprobantes en JSON.
-                        {% elif clave == 'ruta_comprobantes_dte' %}Ruta local de comprobantes electrónicos DTE.
-                        {% endif %}
-                        ">
-                    {{ clave }}
-                  </span>
-                </td>
-
-                <td><input type="text" class="form-control" name="valor_{{ forloop.counter }}"
-                           placeholder="{% if clave == 'email_host_fe' %}facturacion@empresa.com{% elif clave == 'user_agent' %}MiAppDjango/1.0{% endif %}"></td>
-
-                <td><input type="text" class="form-control" name="url_{{ forloop.counter }}"
-                           placeholder="{% if clave == 'schema_json' %}FE/json_schemas/fe-fc-v1.json{% elif clave == 'certificado' %}FE/cert/mi_certificado.crt{% endif %}"></td>
-
-                <td><input type="text" class="form-control" name="url_endpoint_{{ forloop.counter }}"
-                           placeholder="{% if clave == 'consulta_dte' %}https://admin.factura.gob.sv/consultaPublica{% elif clave == 'hacienda_url_test' %}https://apitest.dtes.mh.gob.sv/fesv/recepciondte{% endif %}"></td>
-
-                <td><input type="password" class="form-control" name="contraseña_{{ forloop.counter }}"
-                           placeholder="{% if clave == 'firmador' %}ClavePrivada123{% endif %}"></td>
-
-                <td><input type="text" class="form-control" name="descripcion_{{ forloop.counter }}"
-                           placeholder="Descripción breve de {{ clave }}"></td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-
-        <div class="text-end">
-          <button type="submit" class="btn btn-primary">
-            <i class="bi bi-save"></i> Guardar configuración
-          </button>
-        </div>
-      </form>
+    .config-group{
+      border:1px solid #e2e8f0;border-radius:.75rem;padding:1rem;margin-bottom:.75rem;
+      background:#fff;transition:border-color .15s;
+    }
+    .config-group:hover{border-color:#93c5fd;}
+    .config-key{
+      font-size:.78rem;font-weight:700;color:#0d47a1;
+      text-transform:uppercase;letter-spacing:.3px;margin-bottom:.5rem;
+      display:flex;align-items:center;gap:.4rem;
+    }
+    .config-key i{font-size:.9rem;}
+    .config-hint{font-size:.72rem;color:#94a3b8;font-weight:400;text-transform:none;letter-spacing:0;}
+    .form-control{font-size:.82rem;}
+    .skip-link{font-size:.82rem;}
+  </style>
+</head>
+<body>
+<div class="card setup-card">
+  <div class="setup-header">
+    <span class="icon"><i class="bi bi-gear-wide-connected"></i></span>
+    <h1>Intra<span style="color:#ff7a00;">coe</span> — Configuración del Servidor</h1>
+    <p>Paso 5 de 5 · URLs de Hacienda, firmador y certificados</p>
+    <div class="step-badges">
+      <div class="step-badge done"><i class="bi bi-check"></i></div>
+      <div class="step-badge done"><i class="bi bi-check"></i></div>
+      <div class="step-badge done"><i class="bi bi-check"></i></div>
+      <div class="step-badge done"><i class="bi bi-check"></i></div>
+      <div class="step-badge active">5</div>
     </div>
   </div>
-</div>
 
-<script>
-  // Inicializar tooltips de Bootstrap
-  document.addEventListener("DOMContentLoaded", function(){
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-      return new bootstrap.Tooltip(tooltipTriggerEl)
-    })
-  });
-</script>
-{% endblock %}
+  <div class="form-body">
+    {% if messages %}
+      {% for m in messages %}
+        <div class="alert alert-{{ m.tags }} alert-dismissible py-2">
+          {{ m }}<button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <div class="alert alert-info py-2 d-flex align-items-center gap-2">
+      <i class="bi bi-info-circle"></i>
+      <span>Puede completar esta configuración después desde <strong>Configurar empresa</strong>. Solo llene lo que tenga disponible.</span>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+
+      {% for clave in claves_fijas %}
+      <div class="config-group">
+        <div class="config-key">
+          {% if 'url' in clave or 'hacienda' in clave %}
+            <i class="bi bi-globe text-primary"></i>
+          {% elif 'email' in clave %}
+            <i class="bi bi-envelope text-success"></i>
+          {% elif 'certificado' in clave or 'clave' in clave or 'firmador' in clave %}
+            <i class="bi bi-shield-lock text-danger"></i>
+          {% elif 'json' in clave or 'ruta' in clave or 'schema' in clave %}
+            <i class="bi bi-folder text-warning"></i>
+          {% else %}
+            <i class="bi bi-gear text-secondary"></i>
+          {% endif %}
+          {{ clave }}
+          <span class="config-hint ms-2">
+            {% if clave == 'email_host_fe' %}Correo para envío de facturas
+            {% elif clave == 'consulta_dte' %}URL pública de Hacienda
+            {% elif clave == 'schema_json' %}Ruta al esquema JSON
+            {% elif clave == 'user_agent' %}Identificador de la app
+            {% elif clave == 'hacienda_contingencia_url' %}URL para contingencias
+            {% elif clave == 'json_facturas_firmadas' %}Ruta JSON firmados
+            {% elif clave == 'version_evento_contingencia' %}Versión evento contingencia
+            {% elif clave == 'url_invalidar_dte' %}URL para invalidar DTE
+            {% elif clave == 'content_type' %}Tipo de contenido API
+            {% elif clave == 'headers' %}Cabeceras HTTP
+            {% elif clave == 'url_autenticacion' %}URL auth Hacienda
+            {% elif clave == 'version_evento_invalidacion' %}Versión evento invalidación
+            {% elif clave == 'hacienda_url_prod' %}URL producción Hacienda
+            {% elif clave == 'hacienda_url_test' %}URL pruebas Hacienda
+            {% elif clave == 'certificado' %}Ruta certificado digital
+            {% elif clave == 'server_url' %}URL del servidor local
+            {% elif clave == 'firmador' %}URL del servicio firmador
+            {% elif clave == 'json_factura' %}Ruta JSONs de facturas
+            {% elif clave == 'ruta_comprobante_json' %}Ruta comprobantes JSON
+            {% elif clave == 'ruta_comprobantes_dte' %}Ruta comprobantes DTE
+            {% endif %}
+          </span>
+        </div>
+        <input type="hidden" name="clave_{{ forloop.counter }}" value="{{ clave }}">
+        <div class="row g-2">
+          <div class="col-md-4">
+            <input type="text" class="form-control" name="valor_{{ forloop.counter }}" placeholder="Valor">
+          </div>
+          <div class="col-md-4">
+            <input type="text" class="form-control" name="url_endpoint_{{ forloop.counter }}" placeholder="URL / Endpoint">
+          </div>
+          <div class="col-md-4">
+            <input type="{% if 'clave' in clave or 'certificado' in clave or 'firmador' in clave %}password{% else %}text{% endif %}" class="form-control" name="contraseña_{{ forloop.counter }}" placeholder="{% if 'clave' in clave or 'certificado' in clave %}Contraseña{% else %}Descripción{% endif %}">
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+
+      <button type="submit" class="btn btn-primary w-100 mt-3">
+        <i class="bi bi-check-circle me-1"></i> Finalizar configuración
+      </button>
+    </form>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

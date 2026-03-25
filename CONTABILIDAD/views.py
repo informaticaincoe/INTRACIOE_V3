@@ -25,6 +25,7 @@ import csv
 from django.views import View
 from FE.models import FacturaElectronica
 from INVENTARIO.models import Compra
+from django.db.models import Sum, F, Value, DecimalField
 from .models import (
     CuentaContable, AsientoContable, LineaAsiento,
     CuentaPorCobrar, PagoCobro,
@@ -927,3 +928,163 @@ def cpp_anular(request, pk):
             cpp.save(update_fields=['estado'])
             messages.success(request, f'Cuenta por Pagar #{cpp.pk} anulada.')
     return redirect('cont-cpp-lista')
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# REPORTES CONTABLES
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _filtrar_periodo(request):
+    """Extrae fecha_desde / fecha_hasta del GET y devuelve (desde, hasta)."""
+    desde = request.GET.get('desde', '')
+    hasta = request.GET.get('hasta', '')
+    return desde, hasta
+
+
+def _saldos_cuentas(desde, hasta):
+    """Devuelve queryset de CuentaContable con debe_total, haber_total y saldo."""
+    filtro = Q(lineas__asiento__estado='CONFIRMADO')
+    if desde:
+        filtro &= Q(lineas__asiento__fecha__gte=desde)
+    if hasta:
+        filtro &= Q(lineas__asiento__fecha__lte=hasta)
+
+    cuentas = CuentaContable.objects.filter(filtro).annotate(
+        debe_total=Sum('lineas__debe', default=0),
+        haber_total=Sum('lineas__haber', default=0),
+    ).order_by('codigo')
+
+    for c in cuentas:
+        if c.naturaleza == 'DEUDORA':
+            c.saldo_calc = c.debe_total - c.haber_total
+        else:
+            c.saldo_calc = c.haber_total - c.debe_total
+    return cuentas
+
+
+@login_required
+def libro_mayor(request):
+    desde, hasta = _filtrar_periodo(request)
+    cuenta_id = request.GET.get('cuenta', '')
+
+    cuentas_all = CuentaContable.objects.filter(nivel='DETALLE').order_by('codigo')
+    lineas = LineaAsiento.objects.filter(
+        asiento__estado='CONFIRMADO'
+    ).select_related('cuenta', 'asiento').order_by('asiento__fecha', 'asiento__numero')
+
+    if cuenta_id:
+        lineas = lineas.filter(cuenta_id=cuenta_id)
+    if desde:
+        lineas = lineas.filter(asiento__fecha__gte=desde)
+    if hasta:
+        lineas = lineas.filter(asiento__fecha__lte=hasta)
+
+    # Agrupar por cuenta
+    cuentas_dict = {}
+    for l in lineas:
+        cid = l.cuenta_id
+        if cid not in cuentas_dict:
+            cuentas_dict[cid] = {
+                'cuenta': l.cuenta,
+                'lineas': [],
+                'total_debe': Decimal(0),
+                'total_haber': Decimal(0),
+            }
+        cuentas_dict[cid]['lineas'].append(l)
+        cuentas_dict[cid]['total_debe'] += l.debe
+        cuentas_dict[cid]['total_haber'] += l.haber
+
+    for v in cuentas_dict.values():
+        c = v['cuenta']
+        if c.naturaleza == 'DEUDORA':
+            v['saldo'] = v['total_debe'] - v['total_haber']
+        else:
+            v['saldo'] = v['total_haber'] - v['total_debe']
+
+    return render(request, 'contabilidad/libro_mayor.html', {
+        'cuentas_data': sorted(cuentas_dict.values(), key=lambda x: x['cuenta'].codigo),
+        'cuentas_all': cuentas_all,
+        'cuenta_sel': cuenta_id,
+        'desde': desde,
+        'hasta': hasta,
+    })
+
+
+@login_required
+def balance_comprobacion(request):
+    desde, hasta = _filtrar_periodo(request)
+    cuentas = _saldos_cuentas(desde, hasta)
+
+    total_debe = sum(c.debe_total for c in cuentas)
+    total_haber = sum(c.haber_total for c in cuentas)
+    total_saldo_deudor = sum(c.saldo_calc for c in cuentas if c.saldo_calc > 0)
+    total_saldo_acreedor = sum(abs(c.saldo_calc) for c in cuentas if c.saldo_calc < 0)
+
+    return render(request, 'contabilidad/balance_comprobacion.html', {
+        'cuentas': cuentas,
+        'total_debe': total_debe,
+        'total_haber': total_haber,
+        'total_saldo_deudor': total_saldo_deudor,
+        'total_saldo_acreedor': total_saldo_acreedor,
+        'desde': desde,
+        'hasta': hasta,
+    })
+
+
+@login_required
+def balance_general(request):
+    desde, hasta = _filtrar_periodo(request)
+    cuentas = _saldos_cuentas(desde, hasta)
+
+    activos = [c for c in cuentas if c.tipo == 'ACTIVO']
+    pasivos = [c for c in cuentas if c.tipo == 'PASIVO']
+    capital = [c for c in cuentas if c.tipo == 'CAPITAL']
+
+    total_activos = sum(c.saldo_calc for c in activos)
+    total_pasivos = sum(c.saldo_calc for c in pasivos)
+    total_capital = sum(c.saldo_calc for c in capital)
+
+    # Resultado del periodo (ingresos - gastos)
+    ingresos = [c for c in cuentas if c.tipo == 'INGRESO']
+    gastos = [c for c in cuentas if c.tipo == 'GASTO']
+    resultado = sum(c.saldo_calc for c in ingresos) - sum(c.saldo_calc for c in gastos)
+
+    return render(request, 'contabilidad/balance_general.html', {
+        'activos': activos,
+        'pasivos': pasivos,
+        'capital': capital,
+        'total_activos': total_activos,
+        'total_pasivos': total_pasivos,
+        'total_capital': total_capital,
+        'resultado': resultado,
+        'desde': desde,
+        'hasta': hasta,
+    })
+
+
+@login_required
+def estado_resultados(request):
+    desde, hasta = _filtrar_periodo(request)
+    cuentas = _saldos_cuentas(desde, hasta)
+
+    ingresos = [c for c in cuentas if c.tipo == 'INGRESO']
+    gastos = [c for c in cuentas if c.tipo == 'GASTO']
+
+    total_ingresos = sum(c.saldo_calc for c in ingresos)
+    total_gastos = sum(c.saldo_calc for c in gastos)
+    utilidad = total_ingresos - total_gastos
+
+    return render(request, 'contabilidad/estado_resultados.html', {
+        'ingresos': ingresos,
+        'gastos': gastos,
+        'total_ingresos': total_ingresos,
+        'total_gastos': total_gastos,
+        'utilidad': utilidad,
+        'desde': desde,
+        'hasta': hasta,
+    })
+
+
+@login_required
+def reportes_anexos(request):
+    return render(request, 'contabilidad/reportes_anexos.html')

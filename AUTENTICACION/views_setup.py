@@ -101,7 +101,146 @@ def crear_actividad(request):
     return JsonResponse({"error": "Método no permitido"}, status=405)
 
 def setup_wizard(request):
-    step = request.GET.get("step", "usuario")
+    step = request.GET.get("step", "database")
+
+    # ── Paso 0: Configurar base de datos ──
+    if step == "database":
+        import json
+        from pathlib import Path
+        from django.conf import settings
+
+        db_config_path = Path(settings.BASE_DIR) / 'db_config.json'
+
+        # Si ya existe la config, saltar al paso 1
+        if db_config_path.exists():
+            return redirect("/setup/?step=usuario")
+
+        if request.method == "POST":
+            action = request.POST.get("action", "")
+
+            # Acción: escanear red buscando servidores PostgreSQL
+            if action == "scan":
+                import socket
+                import subprocess
+                found = []
+
+                # 1. Siempre incluir localhost / contenedor db
+                for h in ["localhost", "127.0.0.1", "db"]:
+                    try:
+                        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        s.settimeout(1)
+                        if s.connect_ex((h, 5432)) == 0:
+                            found.append({"host": h, "port": 5432})
+                        s.close()
+                    except Exception:
+                        pass
+
+                # 2. Escanear la subred local (puertos 5432)
+                try:
+                    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    s.connect(("8.8.8.8", 80))
+                    local_ip = s.getsockname()[0]
+                    s.close()
+                    subnet = ".".join(local_ip.split(".")[:3])
+
+                    # Escaneo rápido con nmap si está disponible
+                    try:
+                        result = subprocess.run(
+                            ["nmap", "-p", "5432", "--open", "-T4", "--max-retries", "1",
+                             f"{subnet}.0/24", "-oG", "-"],
+                            capture_output=True, text=True, timeout=15
+                        )
+                        for line in result.stdout.splitlines():
+                            if "5432/open" in line:
+                                parts = line.split()
+                                if len(parts) >= 2:
+                                    ip = parts[1]
+                                    if not any(f["host"] == ip for f in found):
+                                        found.append({"host": ip, "port": 5432})
+                    except (FileNotFoundError, subprocess.TimeoutExpired):
+                        # Sin nmap: escaneo manual de las IPs más comunes
+                        for i in range(1, 255):
+                            ip = f"{subnet}.{i}"
+                            try:
+                                sk = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                                sk.settimeout(0.3)
+                                if sk.connect_ex((ip, 5432)) == 0:
+                                    if not any(f["host"] == ip for f in found):
+                                        found.append({"host": ip, "port": 5432})
+                                sk.close()
+                            except Exception:
+                                pass
+                except Exception:
+                    pass
+
+                return JsonResponse({"ok": True, "servers": found})
+
+            host = (request.POST.get("db_host") or "").strip()
+            port = (request.POST.get("db_port") or "5432").strip()
+            user = (request.POST.get("db_user") or "").strip()
+            password = request.POST.get("db_password") or ""
+            db_name = (request.POST.get("db_name") or "").strip()
+
+            if not all([host, user, db_name]):
+                return JsonResponse({"ok": False, "error": "Todos los campos son obligatorios."})
+
+            import psycopg2
+
+            # Acción: probar conexión
+            if action == "test":
+                try:
+                    conn = psycopg2.connect(
+                        host=host, port=port, user=user, password=password,
+                        dbname="postgres", connect_timeout=5
+                    )
+                    conn.close()
+                    return JsonResponse({"ok": True, "msg": "Conexión exitosa al servidor PostgreSQL."})
+                except Exception as e:
+                    return JsonResponse({"ok": False, "error": f"No se pudo conectar: {e}"})
+
+            # Acción: crear BD y aplicar migraciones
+            if action == "create":
+                try:
+                    # Conectar a postgres para crear la BD
+                    conn = psycopg2.connect(
+                        host=host, port=port, user=user, password=password,
+                        dbname="postgres", connect_timeout=5
+                    )
+                    conn.autocommit = True
+                    cur = conn.cursor()
+
+                    # Verificar si la BD ya existe
+                    cur.execute("SELECT 1 FROM pg_database WHERE datname = %s", [db_name])
+                    if not cur.fetchone():
+                        cur.execute(f'CREATE DATABASE "{db_name}"')
+                        db_created = True
+                    else:
+                        db_created = False
+
+                    cur.close()
+                    conn.close()
+
+                    # Escribir db_config.json
+                    config = {
+                        "host": host,
+                        "port": port,
+                        "user": user,
+                        "password": password,
+                        "name": db_name,
+                    }
+                    with open(db_config_path, 'w') as f:
+                        json.dump(config, f, indent=2)
+
+                    msg = f"Base de datos '{db_name}' "
+                    msg += "creada exitosamente." if db_created else "ya existía."
+                    msg += " Configuración guardada. Reinicie el servidor para continuar."
+
+                    return JsonResponse({"ok": True, "msg": msg, "restart": True})
+
+                except Exception as e:
+                    return JsonResponse({"ok": False, "error": f"Error: {e}"})
+
+        return render(request, "setup/database.html")
 
     # 🚀 Migraciones automáticas si no existen tablas
     try:
