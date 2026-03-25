@@ -9,8 +9,15 @@ from django.http import JsonResponse
 from django.utils import timezone
 from FE.models import (
     Departamento, Emisor_fe, Ambiente, Municipio, ActividadEconomica,
-    TiposEstablecimientos, TiposDocIDReceptor, Pais
+    TiposEstablecimientos, TiposDocIDReceptor, Pais,
+    Tipo_dte, CondicionOperacion, FormasPago, Plazo, TipoContingencia,
+    TipoInvalidacion, RecintoFiscal, TipoPersona, TipoTransporte,
+    TipoDomicilioFiscal, Modelofacturacion, TipoTransmision,
+    TipoGeneracionDocumento, TipoRetencionIVAMH, TipoDocContingencia,
+    TipoDonacion, OtrosDicumentosAsociado, TiposServicio_Medico,
+    TipoMoneda,
 )
+from INVENTARIO.models import TipoItem, TipoUnidadMedida, TipoTributo, Tributo
 from .models import ConfiguracionServidor, UsuarioEmisor, Plan, Suscripcion
 
 User = get_user_model()
@@ -311,17 +318,6 @@ def setup_wizard(request):
                     return JsonResponse({"ok": False, "error": str(e)})
 
             if action == "status":
-                from FE.models import (
-                    Pais, Departamento, Municipio, ActividadEconomica,
-                    Ambiente, Tipo_dte, TiposDocIDReceptor, CondicionOperacion,
-                    FormasPago, Plazo, TipoContingencia, TipoInvalidacion,
-                    RecintoFiscal, TipoPersona, TipoTransporte,
-                    TipoDomicilioFiscal, TiposEstablecimientos,
-                    Modelofacturacion, TipoTransmision, TipoGeneracionDocumento,
-                    TipoRetencionIVAMH, TipoDocContingencia, TipoDonacion,
-                    OtrosDicumentosAsociado, TiposServicio_Medico,
-                )
-                from INVENTARIO.models import TipoItem, TipoUnidadMedida, TipoTributo, Tributo
                 catalogs = [
                     {"name": "Ambientes", "count": Ambiente.objects.count(), "icon": "cloud"},
                     {"name": "Tipos de DTE", "count": Tipo_dte.objects.count(), "icon": "file-earmark-text"},

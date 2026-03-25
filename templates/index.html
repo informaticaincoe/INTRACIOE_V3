@@ -90,7 +90,7 @@
 <!-- Header -->
 <div class="dash-header">
   <h2>Dashboard</h2>
-  <p>Resumen de actividad de {{ emisor.nombre_comercial|default:emisor.nombre_razon_social|default:"tu empresa" }}</p>
+  <p>Resumen de actividad de {% if emisor %}{{ emisor.nombre_comercial|default:emisor.nombre_razon_social }}{% else %}tu empresa{% endif %}</p>
 </div>
 
 <!-- Filtros -->
