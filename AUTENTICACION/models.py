@@ -16,7 +16,13 @@ class User(AbstractUser):
         ('cajero', 'Cajero')
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='cliente')
-    
+
+    def save(self, *args, **kwargs):
+        # Staff y superusuarios siempre son admin
+        if self.is_staff or self.is_superuser:
+            self.role = 'admin'
+        super().save(*args, **kwargs)
+
     @property
     def is_admin(self):
         return self.role == 'admin'
