@@ -19,7 +19,7 @@ class UnidadMedida(models.Model):
     
 class TipoUnidadMedida(models.Model):
     codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=500)
     
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
@@ -52,19 +52,19 @@ class Almacen(models.Model):
     
 class TipoItem(models.Model):
     codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=100)
+    descripcion = models.CharField(max_length=500)
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
 
 class TipoTributo(models.Model):
     codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=100)
+    descripcion = models.CharField(max_length=500)
     
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
 
 class TipoValor(models.Model):
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=500)
     
     def __str__(self):
         return f"{self.descripcion}"

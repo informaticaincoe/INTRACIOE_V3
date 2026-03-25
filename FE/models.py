@@ -21,19 +21,19 @@ class ActividadEconomica(models.Model):
 
 class Ambiente(models.Model):
     codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=500)
     def __str__(self):
         return self.descripcion
 
 class Modelofacturacion(models.Model):
     codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=500)
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
 
 class TipoTransmision(models.Model):
     codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=500)
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
 
@@ -47,31 +47,31 @@ class TipoContingencia(models.Model):
 
 class TipoRetencionIVAMH(models.Model):
     codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=500)
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
 
 class TipoGeneracionDocumento(models.Model):
     codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=500)
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
 
 class TiposEstablecimientos(models.Model):
     codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=500)
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
 
 class TiposServicio_Medico(models.Model):
     codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=500)
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
 
 class Tipo_dte(models.Model):
     codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=500)
     version = models.IntegerField(null=True, verbose_name=None)
     def __str__(self):
         return f"{self.codigo} - {self.descripcion} - {self.version}"
@@ -96,82 +96,82 @@ class Pais(models.Model):
 
 class Departamento(models.Model):
     codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=500)
     pais = models.ForeignKey(Pais, on_delete=models.CASCADE, null=True)
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
 
 class Municipio(models.Model):
     codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=500)
     departamento = models.ForeignKey(Departamento, on_delete=models.CASCADE)
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
     
 class CondicionOperacion(models.Model):
     codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=500)
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
     
 class FormasPago(models.Model):
     codigo = models.CharField( max_length=50)
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=500)
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
 
 class Plazo(models.Model):
     codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=500)
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
 
 class TipoDocContingencia(models.Model):
     codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=500)
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
     
 class TipoInvalidacion(models.Model):
     codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=500)
     def __str__(self):
         #return f"{self.codigo} - {self.descripcion}"
         return f"{self.codigo}"
 
 class TipoDonacion(models.Model):
     codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=500)
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
     
 class TipoPersona(models.Model):
     codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=500)
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
     
 class TipoTransporte(models.Model):
     codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=500)
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
     
 class INCOTERMS(models.Model):
     codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=500)
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
     
 class TipoDomicilioFiscal(models.Model):
     codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=500)
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
     
 class TipoMoneda(models.Model):
     codigo = models.CharField(max_length=50)
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=500)
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"
     
@@ -190,7 +190,7 @@ class RegimenExportacion(models.Model):
 #modelo para descuentos por productos
 class Descuento(models.Model):
     porcentaje = models.DecimalField(max_digits=5, decimal_places=2)
-    descripcion = models.CharField(max_length=50)
+    descripcion = models.CharField(max_length=500)
     fecha_inicio = models.DateField()
     fecha_fin = models.DateField()
     estdo = models.BooleanField(default=True)
