@@ -33,6 +33,16 @@
     .btn-test:hover { background: #eff6ff; }
     .spinner-sm { width: 16px; height: 16px; border-width: 2px; }
 
+    /* Lista de bases de datos */
+    .db-chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+    .db-chip {
+      padding: .3rem .7rem; border-radius: 1rem; font-size: .78rem; font-weight: 600;
+      border: 1px solid #e2e8f0; background: #fff; color: #334155;
+      cursor: pointer; transition: all .15s;
+    }
+    .db-chip:hover { border-color: #2563eb; background: #eff6ff; color: #2563eb; }
+    .db-chip.selected { border-color: #2563eb; background: #2563eb; color: #fff; }
+
     /* Servidores detectados */
     .scan-section { margin-bottom: 1.25rem; }
     .server-list { display: flex; flex-direction: column; gap: .4rem; margin-top: .5rem; }
@@ -115,8 +125,14 @@
       </div>
       <div class="col-12">
         <label class="form-label small fw-semibold">Nombre de la base de datos *</label>
-        <input type="text" class="form-control" id="dbName" placeholder="intracoe_prod" value="intracoe">
-        <div class="form-text">Si no existe, se creará automáticamente.</div>
+        <div class="input-group">
+          <input type="text" class="form-control" id="dbName" placeholder="intracoe_prod" value="intracoe">
+          <button type="button" class="btn btn-outline-primary" id="btnListDbs" onclick="listDatabases()" title="Buscar bases de datos existentes">
+            <i class="bi bi-search"></i>
+          </button>
+        </div>
+        <div class="form-text">Si no existe, se creará automáticamente. Use el botón para ver las existentes.</div>
+        <div id="dbList" style="display:none;" class="mt-2"></div>
       </div>
     </div>
 
@@ -211,6 +227,47 @@ async function scanNetwork(){
     list.innerHTML = '<div class="text-danger small text-center py-2">Error al escanear: ' + e.message + '</div>';
   }
   setLoading(btn, false);
+}
+
+// ── Listar bases de datos ──
+async function listDatabases(){
+  const btn = document.getElementById('btnListDbs');
+  const dbList = document.getElementById('dbList');
+  setLoading(btn, true);
+  dbList.style.display = '';
+  dbList.innerHTML = '<span class="spinner-border spinner-sm me-1"></span> Buscando...';
+
+  try {
+    const fields = getFields();
+    fields.action = 'list_dbs';
+    const body = new URLSearchParams(fields);
+    body.append('csrfmiddlewaretoken', csrf);
+    const res = await fetch('/setup/?step=database', {method:'POST', body});
+    const data = await res.json();
+
+    if(data.ok && data.databases.length > 0){
+      dbList.innerHTML = '<div class="db-chips">' +
+        data.databases.map(db =>
+          `<span class="db-chip" onclick="selectDb(this,'${db}')">${db}</span>`
+        ).join('') + '</div>';
+      showStatus('info', `<i class="bi bi-database me-1"></i>${data.databases.length} base(s) de datos encontrada(s). Seleccione una o escriba un nombre nuevo.`);
+    } else if(data.ok){
+      dbList.innerHTML = '<div class="text-muted small">No hay bases de datos. Se creará una nueva.</div>';
+    } else {
+      dbList.innerHTML = '<div class="text-danger small">' + data.error + '</div>';
+    }
+  } catch(e){
+    dbList.innerHTML = '<div class="text-danger small">Error: ' + e.message + '</div>';
+  }
+  setLoading(btn, false);
+}
+
+function selectDb(el, name){
+  document.querySelectorAll('.db-chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('dbName').value = name;
+  showStatus('success', '<i class="bi bi-check-circle me-1"></i>Base de datos seleccionada: <strong>' + name + '</strong>');
+  document.getElementById('btnCreate').disabled = false;
 }
 
 // ── Probar conexión ──

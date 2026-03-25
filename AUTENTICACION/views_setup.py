@@ -121,9 +121,16 @@ def setup_wizard(request):
         local_config = Path(settings.BASE_DIR) / 'db_config.json'
         db_config_path = docker_config if docker_config.parent.exists() else local_config
 
-        # Si ya existe la config, saltar al paso 1
-        if docker_config.exists() or local_config.exists():
-            return redirect("/setup/?step=usuario")
+        # Si ya existe config VÁLIDA, saltar al paso 1
+        import json
+        for p in [docker_config, local_config]:
+            if p.exists():
+                try:
+                    data = json.loads(p.read_text())
+                    if isinstance(data, dict) and data.get('host'):
+                        return redirect("/setup/?step=usuario")
+                except (ValueError, json.JSONDecodeError):
+                    pass
 
         if request.method == "POST":
             action = request.POST.get("action", "")
@@ -184,6 +191,36 @@ def setup_wizard(request):
                     pass
 
                 return JsonResponse({"ok": True, "servers": found})
+
+            # Acción: listar bases de datos existentes en el servidor
+            if action == "list_dbs":
+                host = (request.POST.get("db_host") or "").strip()
+                port = (request.POST.get("db_port") or "5432").strip()
+                user = (request.POST.get("db_user") or "").strip()
+                password = request.POST.get("db_password") or ""
+
+                if not all([host, user]):
+                    return JsonResponse({"ok": False, "error": "Host y usuario son obligatorios."})
+
+                import psycopg2
+                try:
+                    conn = psycopg2.connect(
+                        host=host, port=port, user=user, password=password,
+                        dbname="postgres", connect_timeout=5
+                    )
+                    cur = conn.cursor()
+                    cur.execute("""
+                        SELECT datname FROM pg_database
+                        WHERE datistemplate = false
+                        AND datname NOT IN ('postgres')
+                        ORDER BY datname
+                    """)
+                    dbs = [row[0] for row in cur.fetchall()]
+                    cur.close()
+                    conn.close()
+                    return JsonResponse({"ok": True, "databases": dbs})
+                except Exception as e:
+                    return JsonResponse({"ok": False, "error": f"No se pudo conectar: {e}"})
 
             host = (request.POST.get("db_host") or "").strip()
             port = (request.POST.get("db_port") or "5432").strip()
