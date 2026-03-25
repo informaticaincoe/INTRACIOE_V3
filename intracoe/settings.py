@@ -208,9 +208,15 @@ _db_config_path = _Path('/app/config/db_config.json')
 if not _db_config_path.exists():
     _db_config_path = BASE_DIR / 'db_config.json'
 
+_db_conf = None
 if _db_config_path.exists():
-    with open(_db_config_path) as _f:
-        _db_conf = _json.load(_f)
+    try:
+        with open(_db_config_path) as _f:
+            _db_conf = _json.load(_f)
+    except (ValueError, _json.JSONDecodeError):
+        _db_conf = None
+
+if _db_conf and isinstance(_db_conf, dict) and _db_conf.get('host'):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
