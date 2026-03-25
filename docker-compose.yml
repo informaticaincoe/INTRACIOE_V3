@@ -3,16 +3,9 @@ version: "3.9"
 # ─────────────────────────────────────────────────────────────
 # INTRACOE V3 — Docker Compose
 #
-# Variables de entorno (pasar al levantar o en .env):
-#   APP_PORT      Puerto de la app (default: 8000)
-#   PG_DB         Nombre de la BD (default: intracoe)
-#   PG_USER       Usuario PostgreSQL (default: intracoe)
-#   PG_PASSWORD   Contraseña PostgreSQL (default: intracoe2025)
-#
 # Cada cliente en su propio contenedor con puerto único:
 #   APP_PORT=8001 docker-compose -p cliente1 up -d
 #   APP_PORT=8002 docker-compose -p cliente2 up -d
-#   APP_PORT=8003 docker-compose -p cliente3 up -d
 # ─────────────────────────────────────────────────────────────
 
 services:
@@ -31,6 +24,20 @@ services:
       timeout: 3s
       retries: 10
 
+  firmador:
+    image: svfe/svfe-api-firmador:v20230109
+    restart: unless-stopped
+    ports:
+      - "${FIRMADOR_PORT:-8113}:8113"
+    volumes:
+      - certs:/uploads
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8113/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 40s
+
   app:
     build: .
     restart: unless-stopped
@@ -38,14 +45,19 @@ services:
       - "${APP_PORT:-8000}:${APP_PORT:-8000}"
     environment:
       - APP_PORT=${APP_PORT:-8000}
+      - FIRMADOR_URL=http://firmador:8113
     volumes:
       - app_media:/app/media
       - app_logs:/app/logs
+      - certs:/app/FE/cert
     depends_on:
       db:
+        condition: service_healthy
+      firmador:
         condition: service_healthy
 
 volumes:
   pgdata:
   app_media:
   app_logs:
+  certs:

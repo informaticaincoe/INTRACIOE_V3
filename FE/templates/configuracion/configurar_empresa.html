@@ -185,6 +185,19 @@
                   <label class="form-label">Clave pública / Password Hacienda</label>
                   {{ emisor_form.clave_publica }}
                 </div>
+                <div class="col-12 mt-3">
+                  <label class="form-label fw-semibold">Certificado digital (.crt)</label>
+                  <input type="file" name="certificado_crt" class="form-control" accept=".crt,.pem,.p12,.cer">
+                  {% if emisor.nit %}
+                    <div class="form-text">
+                      <i class="bi bi-shield-check text-success me-1"></i>
+                      Certificado actual: <code>FE/cert/{{ emisor.nit }}.crt</code>
+                      — Subir uno nuevo para reemplazarlo.
+                    </div>
+                  {% else %}
+                    <div class="form-text">Archivo .crt emitido por el Ministerio de Hacienda.</div>
+                  {% endif %}
+                </div>
               </div>
               <div class="form-check form-switch mt-4">
                 {{ emisor_form.imprime_termica }}

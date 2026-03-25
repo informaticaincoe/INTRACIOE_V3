@@ -165,16 +165,24 @@
       <div class="section-title"><i class="bi bi-lock text-secondary"></i> Seguridad y certificados</div>
       <div class="row g-3">
         <div class="col-md-6">
-          <label class="form-label">Clave privada</label>
-          <input type="text" name="clave_privada" class="form-control">
+          <label class="form-label">Clave privada (Password Hacienda)</label>
+          <input type="password" name="clave_privada" class="form-control" placeholder="Password del certificado">
         </div>
         <div class="col-md-6">
           <label class="form-label">Clave pública</label>
           <input type="text" name="clave_publica" class="form-control">
         </div>
+        <div class="col-12">
+          <label class="form-label">Certificado digital (.crt) *</label>
+          <input type="file" name="certificado_crt" class="form-control" accept=".crt,.pem,.p12,.cer" id="inputCert">
+          <div class="form-text">
+            <i class="bi bi-info-circle me-1"></i>
+            Archivo .crt emitido por el Ministerio de Hacienda. Se usará para firmar los DTE.
+          </div>
+        </div>
         <div class="col-md-6">
           <label class="form-label">Logo</label>
-          <input type="file" name="logo" class="form-control form-control-sm">
+          <input type="file" name="logo" class="form-control form-control-sm" accept="image/*">
         </div>
         <div class="col-md-6 d-flex align-items-end">
           <div class="form-check form-switch">

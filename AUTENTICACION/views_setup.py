@@ -338,6 +338,36 @@ def setup_wizard(request):
             if admin:
                 UsuarioEmisor.objects.create(user=admin, emisor=emisor, es_predeterminado=True)
 
+            # Guardar certificado .crt si se subió
+            import os
+            from django.conf import settings as django_settings
+            cert_file = request.FILES.get("certificado_crt")
+            if cert_file:
+                cert_dir = os.path.join(django_settings.BASE_DIR, "FE", "cert")
+                os.makedirs(cert_dir, exist_ok=True)
+                # Nombre basado en el NIT
+                cert_name = f"{emisor.nit.replace('-', '')}.crt"
+                cert_path = os.path.join(cert_dir, cert_name)
+                with open(cert_path, 'wb') as f:
+                    for chunk in cert_file.chunks():
+                        f.write(chunk)
+                # Guardar la ruta en ConfiguracionServidor
+                ConfiguracionServidor.objects.update_or_create(
+                    clave="certificado",
+                    defaults={
+                        "url_endpoint": f"FE/cert/{cert_name}",
+                        "descripcion": f"Certificado digital de {emisor.nombre_razon_social}",
+                    }
+                )
+                # Copiar al directorio del firmador
+                firmador_dir = os.path.join(django_settings.BASE_DIR, "svfe-api-firmador", "uploads")
+                os.makedirs(firmador_dir, exist_ok=True)
+                firmador_cert = os.path.join(firmador_dir, cert_name)
+                with open(firmador_cert, 'wb') as f:
+                    cert_file.seek(0)
+                    for chunk in cert_file.chunks():
+                        f.write(chunk)
+
             messages.success(request, "Empresa creada y vinculada ✅")
             return redirect("/setup/?step=plan")
 

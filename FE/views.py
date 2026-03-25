@@ -6418,6 +6418,24 @@ def configurar_empresa_view(request):
                     defaults={'porcentaje': tip_val}
                 )
 
+            # Guardar certificado .crt si se subió
+            cert_file = request.FILES.get("certificado_crt")
+            if cert_file:
+                cert_dir = os.path.join(settings.BASE_DIR, "FE", "cert")
+                os.makedirs(cert_dir, exist_ok=True)
+                cert_name = f"{emisor_obj.nit.replace('-', '')}.crt"
+                cert_path = os.path.join(cert_dir, cert_name)
+                with open(cert_path, 'wb') as f:
+                    for chunk in cert_file.chunks():
+                        f.write(chunk)
+                ConfiguracionServidor.objects.update_or_create(
+                    clave="certificado",
+                    defaults={
+                        "url_endpoint": f"FE/cert/{cert_name}",
+                        "descripcion": f"Certificado digital de {emisor_obj.nombre_razon_social}",
+                    }
+                )
+
             messages.success(request, 'Configuración de la empresa guardada correctamente.')
             return redirect(f"{reverse('configurar_empresa')}?tab=empresa")
         else:
