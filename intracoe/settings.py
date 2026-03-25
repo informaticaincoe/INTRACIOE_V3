@@ -26,14 +26,17 @@ SECRET_KEY = 'django-insecure--t^=e+nnmjaah90onb$_&@5(kv1-_c!sjr^y1vov!(v0!5wa$a
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS=['*']               
+ALLOWED_HOSTS=['*']
 
-# CORS_ALLOWED_ORIGINS = [
-#     'http://localhost:5173',  # Asegúrate de que esta URL esté incluida
-#     'http://localhost:5174',  # Asegúrate de que esta URL esté incluida
-# ]
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.contaspro.cloud',
+    'https://*.pluginsv.com',
+    'http://localhost:*',
+    'http://127.0.0.1:*',
+]
 
 CORS_ALLOW_ALL_ORIGINS = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 CORS_ALLOW_CREDENTIALS = True
 
