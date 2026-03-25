@@ -352,7 +352,7 @@
       setReqMany(['tipo_documento','nrc','correo','pais'], false);
       forceDUI();
     } else if (isJur){
-      setReqMany(['tipo_documento','num_documento','nombre','municipio'], true);
+      setReqMany(['tipo_documento','num_documento','nombre'], true);
       setReqMany(['telefono'], false);
       if (numDoc){ numDoc.removeAttribute('pattern'); numDoc.removeAttribute('title'); }
       const help = document.getElementById('help_tipo_doc');
@@ -425,6 +425,15 @@
         {enableHighAccuracy:true, timeout:8000}
       );
     });
+
+    // Auto-llenar ubicación al cargar si no hay coordenadas guardadas
+    if (!$lat?.value && !$lng?.value && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => setMarker(pos.coords.latitude, pos.coords.longitude),
+        () => {},
+        {enableHighAccuracy:true, timeout:5000}
+      );
+    }
 
     ['input','change'].forEach(evt => {
       $lat?.addEventListener(evt, () => {
