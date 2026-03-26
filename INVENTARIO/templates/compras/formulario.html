@@ -179,11 +179,8 @@
   <tbody id="tplFila">
     <tr>
       <td>
-        <select name="producto" class="form-select form-select-sm" required>
-          <option value="">— Seleccione —</option>
-          {% for pr in productos %}
-            <option value="{{ pr.id }}">{{ pr.codigo }} — {{ pr.descripcion }}</option>
-          {% endfor %}
+        <select name="producto" class="form-select form-select-sm sel-producto" required>
+          <option value="">— Seleccione proveedor primero —</option>
         </select>
       </td>
       <td><input type="number" name="cantidad" class="form-control form-control-sm text-end" min="1" step="1" value="1" required></td>
@@ -219,8 +216,53 @@
   const previewSub   = document.getElementById('previewSub');
   const previewIva   = document.getElementById('previewIva');
   const previewTotal = document.getElementById('previewTotal');
+  const selProveedor = document.getElementById('selectProveedor');
+
+  let productosProveedor = []; // Cache de productos del proveedor actual
 
   function money(v) { return '$' + Number(v || 0).toFixed(2); }
+
+  // ── Cargar productos del proveedor seleccionado ──
+  async function cargarProductosProveedor(proveedorId) {
+    if (!proveedorId) {
+      productosProveedor = [];
+      actualizarSelectsProducto();
+      return;
+    }
+    try {
+      const res = await fetch(`/inventario/api/proveedor/${proveedorId}/productos/`);
+      const data = await res.json();
+      productosProveedor = data.results || data || [];
+      actualizarSelectsProducto();
+    } catch (e) {
+      productosProveedor = [];
+      actualizarSelectsProducto();
+    }
+  }
+
+  function actualizarSelectsProducto() {
+    document.querySelectorAll('.sel-producto').forEach(sel => {
+      const valorActual = sel.value;
+      sel.innerHTML = '<option value="">— Seleccione producto —</option>';
+      productosProveedor.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = 'PP_' + p.id; // Prefijo PP_ para identificar ProductoProveedor
+        opt.textContent = `${p.codigo} — ${p.descripcion}`;
+        opt.dataset.precio = p.preunitario || '0';
+        sel.appendChild(opt);
+      });
+      // Restaurar selección si existía
+      if (valorActual) sel.value = valorActual;
+    });
+  }
+
+  // Al cambiar proveedor, recargar productos
+  selProveedor.addEventListener('change', () => {
+    cargarProductosProveedor(selProveedor.value);
+    // Limpiar filas existentes
+    tbody.innerHTML = '';
+    addBtn.click();
+  });
 
   function recalcRow(tr) {
     const qty  = parseFloat(tr.querySelector('input[name="cantidad"]').value) || 0;
@@ -250,6 +292,18 @@
       el.addEventListener('input',  () => recalcAll());
       el.addEventListener('change', () => recalcAll());
     });
+    // Al seleccionar producto, auto-llenar precio
+    const selProd = tr.querySelector('.sel-producto');
+    if (selProd) {
+      selProd.addEventListener('change', () => {
+        const opt = selProd.options[selProd.selectedIndex];
+        const precio = opt?.dataset?.precio;
+        if (precio && parseFloat(precio) > 0) {
+          tr.querySelector('input[name="precio_unitario"]').value = parseFloat(precio).toFixed(2);
+          recalcAll();
+        }
+      });
+    }
     tr.querySelector('.btnDel').addEventListener('click', () => {
       tr.remove();
       recalcAll();
@@ -259,16 +313,32 @@
   addBtn.addEventListener('click', () => {
     const row = tpl.cloneNode(true);
     tbody.appendChild(row);
+    // Actualizar el select de producto con los datos cargados
+    const sel = row.querySelector('.sel-producto');
+    if (sel && productosProveedor.length > 0) {
+      sel.innerHTML = '<option value="">— Seleccione producto —</option>';
+      productosProveedor.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = 'PP_' + p.id;
+        opt.textContent = `${p.codigo} — ${p.descripcion}`;
+        opt.dataset.precio = p.preunitario || '0';
+        sel.appendChild(opt);
+      });
+    }
     wire(row);
     recalcAll();
-    row.querySelector('select[name="producto"]').focus();
+    sel?.focus();
   });
 
-  if (tbody.querySelectorAll('tr').length === 0) {
-    addBtn.click();
+  // Inicializar
+  if (selProveedor.value) {
+    cargarProductosProveedor(selProveedor.value).then(() => {
+      if (tbody.querySelectorAll('tr').length === 0) addBtn.click();
+      else { tbody.querySelectorAll('tr').forEach(wire); recalcAll(); }
+    });
   } else {
-    tbody.querySelectorAll('tr').forEach(wire);
-    recalcAll();
+    if (tbody.querySelectorAll('tr').length === 0) addBtn.click();
+    else { tbody.querySelectorAll('tr').forEach(wire); recalcAll(); }
   }
 
   const form = document.getElementById('formCompra');

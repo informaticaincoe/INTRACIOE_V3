@@ -355,22 +355,38 @@ def crear_compra(request):
         precios  = request.POST.getlist('precio_unitario')
         tipos    = request.POST.getlist('tipo_compra')
 
-        # Pre-fetch todos los productos en una sola query
-        ids_validos = [int(pid) for pid in prod_ids if pid]
-        productos_map = Producto.objects.in_bulk(ids_validos)
-
-        precio_compra_updates = {}  # {producto: nuevo_precio}
+        precio_compra_updates = {}
         for i, pid in enumerate(prod_ids):
             if not pid:
-                continue
-            prod = productos_map.get(int(pid))
-            if not prod:
                 continue
             cantidad = int(cants[i] or 0)
             precio   = _to_decimal(precios[i])
             tipo     = (tipos[i] or 'GR_INT')
             if cantidad <= 0 or precio <= 0:
                 continue
+
+            # Si viene con prefijo PP_ es ProductoProveedor → buscar o crear Producto
+            if str(pid).startswith('PP_'):
+                pp_id = int(pid.replace('PP_', ''))
+                try:
+                    pp = ProductoProveedor.objects.get(pk=pp_id)
+                except ProductoProveedor.DoesNotExist:
+                    continue
+                # Buscar Producto existente por código o crear uno nuevo
+                prod, created = Producto.objects.get_or_create(
+                    codigo=pp.codigo,
+                    defaults={
+                        'descripcion': pp.descripcion,
+                        'precio_compra': precio,
+                        'precio_venta': precio,
+                        'stock': 0,
+                        'unidad_medida': UnidadMedida.objects.first(),
+                    }
+                )
+            else:
+                prod = Producto.objects.filter(pk=int(pid)).first()
+                if not prod:
+                    continue
 
             DetalleCompra.objects.create(
                 compra=compra,
