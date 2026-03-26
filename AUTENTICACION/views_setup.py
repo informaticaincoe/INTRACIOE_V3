@@ -514,44 +514,77 @@ def setup_wizard(request):
 
         return render(request, "setup/plan.html")
 
-    # Paso 4: Configuración del servidor
+    # Paso 4: Configuración del servidor (auto-configuración)
     elif step == "servidor":
-        claves_fijas = [
-            "email_host_fe",
-            "consulta_dte",
-            "schema_json",
-            "user_agent",
-            "hacienda_contingencia_url",
-            "json_facturas_firmadas",
-            "version_evento_contingencia",
-            "url_invalidar_dte",
-            "content_type",
-            "headers",
-            "url_autenticacion",
-            "version_evento_invalidacion",
-            "hacienda_url_prod",
-            "hacienda_url_test",
-            "certificado",
-            "server_url",
-            "firmador",
-            "json_factura",
-            "ruta_comprobante_json",
-            "ruta_comprobantes_dte",
-        ]
+        import os as _os
+
+        # Detectar URLs del firmador y servidor
+        firmador_url = _os.environ.get('FIRMADOR_URL', 'http://firmador:8113')
+        server_url = f"http://localhost:{_os.environ.get('APP_PORT', '8000')}"
+
+        # Obtener el certificado y correo del emisor
+        emisor = Emisor_fe.objects.first()
+        cert_path = ""
+        email_empresa = ""
+        if emisor:
+            email_empresa = emisor.email or ""
+            nit_limpio = (emisor.nit or "").replace("-", "")
+            # Buscar .crt en FE/cert/
+            import glob
+            certs = glob.glob(f"FE/cert/{nit_limpio}*.crt") or glob.glob("FE/cert/*.crt")
+            cert_path = certs[0] if certs else "FE/cert/"
+
+        # Valores por defecto estándar de Hacienda
+        defaults = {
+            "email_host_fe":              {"valor": email_empresa, "descripcion": "Correo para envío de facturas electrónicas"},
+            "consulta_dte":               {"url_endpoint": "https://admin.factura.gob.sv/consultaPublica", "descripcion": "URL pública de consulta DTE"},
+            "schema_json":                {"url": "FE/json_schemas/fe-fc-v1.json", "descripcion": "Esquema JSON de facturación"},
+            "user_agent":                 {"valor": "INTRACOE/3.0", "descripcion": "Identificador de la aplicación"},
+            "hacienda_contingencia_url":  {"url_endpoint": "https://api.dtes.mh.gob.sv/fesv/contingencia", "descripcion": "URL contingencia Hacienda"},
+            "json_facturas_firmadas":     {"url": "FE/json_firmados/", "descripcion": "Ruta local JSON firmados"},
+            "version_evento_contingencia":{"valor": "3", "descripcion": "Versión evento contingencia"},
+            "url_invalidar_dte":          {"url_endpoint": "https://api.dtes.mh.gob.sv/fesv/anulardte", "descripcion": "URL invalidar DTE Hacienda"},
+            "content_type":               {"valor": "application/json", "descripcion": "Tipo de contenido API"},
+            "headers":                    {"valor": "application/json", "descripcion": "Cabeceras HTTP"},
+            "url_autenticacion":          {"url_endpoint": "https://apiauth.dtes.mh.gob.sv/apiauth/auth", "descripcion": "URL autenticación Hacienda"},
+            "version_evento_invalidacion":{"valor": "2", "descripcion": "Versión evento invalidación"},
+            "hacienda_url_prod":          {"url_endpoint": "https://api.dtes.mh.gob.sv/fesv/recepciondte", "descripcion": "URL producción Hacienda"},
+            "hacienda_url_test":          {"url_endpoint": "https://apitest.dtes.mh.gob.sv/fesv/recepciondte", "descripcion": "URL pruebas Hacienda"},
+            "certificado":               {"url_endpoint": cert_path, "descripcion": "Ruta certificado digital"},
+            "server_url":                 {"url": server_url, "descripcion": "URL del servidor local"},
+            "firmador":                   {"url_endpoint": f"{firmador_url}/firmardocumento/", "descripcion": "URL del servicio firmador"},
+            "json_factura":               {"url": "FE/json_facturas/", "descripcion": "Ruta JSON facturas"},
+            "ruta_comprobante_json":      {"url": "FE/comprobantes_json/", "descripcion": "Ruta comprobantes JSON"},
+            "ruta_comprobantes_dte":      {"url": "FE/comprobantes_dte/", "descripcion": "Ruta comprobantes DTE"},
+        }
 
         if request.method == "POST":
-            for i, clave in enumerate(claves_fijas, start=1):
-                ConfiguracionServidor.objects.create(
-                    clave=clave,
-                    valor=request.POST.get(f"valor_{i}", ""),
-                    url=request.POST.get(f"url_{i}", ""),
-                    url_endpoint=request.POST.get(f"url_endpoint_{i}", ""),
-                    contraseña=request.POST.get(f"contraseña_{i}", ""),
-                    descripcion=request.POST.get(f"descripcion_{i}", ""),
-                )
-            messages.success(request, "Servidor configurado ✅ Setup completo 🎉")
-            return redirect("/")  
+            email_custom = request.POST.get("email_host_fe", "").strip()
 
-        return render(request, "setup/servidor.html", {"claves_fijas": claves_fijas})
+            for clave, vals in defaults.items():
+                obj_data = {
+                    "clave": clave,
+                    "valor": vals.get("valor", ""),
+                    "url": vals.get("url", ""),
+                    "url_endpoint": vals.get("url_endpoint", ""),
+                    "descripcion": vals.get("descripcion", ""),
+                }
+                # Si es el correo, usar el que el usuario puso
+                if clave == "email_host_fe" and email_custom:
+                    obj_data["valor"] = email_custom
+
+                ConfiguracionServidor.objects.update_or_create(
+                    clave=clave, defaults=obj_data
+                )
+
+            messages.success(request, "Servidor configurado automáticamente ✅ Setup completo 🎉")
+            return redirect("/")
+
+        return render(request, "setup/servidor.html", {
+            "email_empresa": email_empresa,
+            "firmador_url": f"{firmador_url}/firmardocumento/",
+            "cert_path": cert_path,
+            "defaults": defaults,
+        })
 
     return render(request, "setup/usuario.html")
