@@ -1632,14 +1632,18 @@ def generar_json(
         }
 
         # -------- Receptor --------
+        rec_muni = getattr(receptor, 'municipio', None)
+        rec_depto = getattr(rec_muni, 'departamento', None) if rec_muni else None
+        rec_act = receptor.actividades_economicas.first() if receptor.actividades_economicas.exists() else None
+
         json_receptor = {
             "nombre": str(receptor.nombre),
-            "codActividad": str(receptor.actividades_economicas.first().codigo) if receptor.actividades_economicas.exists() else "",
-            "descActividad": str(receptor.actividades_economicas.first().descripcion) if receptor.actividades_economicas.exists() else "",
+            "codActividad": str(rec_act.codigo) if rec_act else None,
+            "descActividad": str(rec_act.descripcion) if rec_act else None,
             "direccion": {
-                "departamento": str(receptor.municipio.departamento.codigo),
-                "municipio": str(receptor.municipio.codigo),
-                "complemento": receptor.direccion or "",
+                "departamento": str(rec_depto.codigo) if rec_depto else "06",
+                "municipio": str(rec_muni.codigo) if rec_muni else "23",
+                "complemento": receptor.direccion or "San Salvador",
             },
             "telefono": receptor.telefono or "",
             "correo": receptor.correo or "",
