@@ -22,9 +22,17 @@
     <h1 class="h4 mb-0">Plan de Cuentas</h1>
     <small class="text-muted">Catálogo de cuentas contables</small>
   </div>
-  <a href="{% url 'cont-cuentas-crear' %}" class="btn btn-primary">
-    <i class="bi bi-plus-lg me-1"></i> Nueva cuenta
-  </a>
+  <div class="d-flex gap-2">
+    <a href="{% url 'cont-cuentas-plantilla' %}" class="btn btn-outline-success btn-sm">
+      <i class="bi bi-file-earmark-excel me-1"></i> Descargar plantilla
+    </a>
+    <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalImportar">
+      <i class="bi bi-upload me-1"></i> Importar Excel
+    </button>
+    <a href="{% url 'cont-cuentas-crear' %}" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-lg me-1"></i> Nueva cuenta
+    </a>
+  </div>
 </div>
 
 <!-- Filtros -->
@@ -192,4 +200,35 @@ document.getElementById('modalEliminar').addEventListener('show.bs.modal', funct
   document.getElementById('formEliminar').action = btn.dataset.url;
 });
 </script>
+
+<!-- Modal Importar -->
+<div class="modal fade" id="modalImportar" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="post" action="{% url 'cont-cuentas-importar' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title"><i class="bi bi-file-earmark-excel text-success me-2"></i>Importar Plan de Cuentas</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted small mb-3">
+            Seleccione un archivo Excel (.xlsx) con el formato de la plantilla.
+            Las cuentas que ya existan (mismo código) se omitirán.
+          </p>
+          <input type="file" name="archivo_excel" class="form-control" accept=".xlsx,.xls" required>
+          <div class="mt-3">
+            <a href="{% url 'cont-cuentas-plantilla' %}" class="small text-decoration-none">
+              <i class="bi bi-download me-1"></i>Descargar plantilla con cuentas base
+            </a>
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-1"></i>Importar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 {% endblock %}

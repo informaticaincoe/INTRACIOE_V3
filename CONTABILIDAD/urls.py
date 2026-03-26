@@ -16,6 +16,8 @@ path('reportes/anexo-consumidor-final/', views.AnexoConsumidorFinalCSV.as_view()
     path('cuentas/nueva/',               views.cuentas_crear,    name='cont-cuentas-crear'),
     path('cuentas/<int:pk>/editar/',     views.cuentas_editar,   name='cont-cuentas-editar'),
     path('cuentas/<int:pk>/eliminar/',   views.cuentas_eliminar, name='cont-cuentas-eliminar'),
+    path('cuentas/plantilla/',           views.cuentas_plantilla, name='cont-cuentas-plantilla'),
+    path('cuentas/importar/',            views.cuentas_importar,  name='cont-cuentas-importar'),
 
     # ── Asientos Contables ──
     path('asientos/',                      views.asientos_lista,     name='cont-asientos-lista'),

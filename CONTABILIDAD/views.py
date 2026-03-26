@@ -425,6 +425,253 @@ def cuentas_editar(request, pk):
 
 
 @login_required
+def cuentas_plantilla(request):
+    """Descarga plantilla Excel con plan de cuentas base de El Salvador."""
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from openpyxl.utils import get_column_letter
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Plan de Cuentas"
+
+    headers = ["Código", "Nombre", "Tipo", "Naturaleza", "Nivel", "Código Padre"]
+    header_fill = PatternFill("solid", fgColor="0D47A1")
+    header_font = Font(bold=True, color="FFFFFF")
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center")
+
+    # Plan de cuentas base para El Salvador
+    cuentas = [
+        # ACTIVOS
+        ("1",      "ACTIVO",                              "ACTIVO",  "DEUDORA",   "PADRE", ""),
+        ("11",     "ACTIVO CORRIENTE",                    "ACTIVO",  "DEUDORA",   "PADRE", "1"),
+        ("1101",   "Caja General",                        "ACTIVO",  "DEUDORA",   "DETALLE", "11"),
+        ("1102",   "Bancos",                              "ACTIVO",  "DEUDORA",   "DETALLE", "11"),
+        ("110201", "Banco Agrícola",                      "ACTIVO",  "DEUDORA",   "DETALLE", "1102"),
+        ("110202", "Banco Cuscatlán",                     "ACTIVO",  "DEUDORA",   "DETALLE", "1102"),
+        ("1103",   "Cuentas por Cobrar Comerciales",      "ACTIVO",  "DEUDORA",   "DETALLE", "11"),
+        ("1104",   "Inventario de Mercaderías",           "ACTIVO",  "DEUDORA",   "DETALLE", "11"),
+        ("1105",   "IVA Crédito Fiscal",                  "ACTIVO",  "DEUDORA",   "DETALLE", "11"),
+        ("1106",   "Pagos Anticipados",                   "ACTIVO",  "DEUDORA",   "DETALLE", "11"),
+        ("1107",   "Deudores Varios",                     "ACTIVO",  "DEUDORA",   "DETALLE", "11"),
+        ("12",     "ACTIVO NO CORRIENTE",                 "ACTIVO",  "DEUDORA",   "PADRE", "1"),
+        ("1201",   "Propiedad, Planta y Equipo",          "ACTIVO",  "DEUDORA",   "PADRE", "12"),
+        ("120101", "Terrenos",                            "ACTIVO",  "DEUDORA",   "DETALLE", "1201"),
+        ("120102", "Edificios",                           "ACTIVO",  "DEUDORA",   "DETALLE", "1201"),
+        ("120103", "Mobiliario y Equipo de Oficina",      "ACTIVO",  "DEUDORA",   "DETALLE", "1201"),
+        ("120104", "Equipo de Transporte",                "ACTIVO",  "DEUDORA",   "DETALLE", "1201"),
+        ("120105", "Equipo de Cómputo",                   "ACTIVO",  "DEUDORA",   "DETALLE", "1201"),
+        ("1202",   "Depreciación Acumulada",              "ACTIVO",  "ACREEDORA", "PADRE", "12"),
+        ("120201", "Deprec. Edificios",                   "ACTIVO",  "ACREEDORA", "DETALLE", "1202"),
+        ("120202", "Deprec. Mobiliario y Equipo",         "ACTIVO",  "ACREEDORA", "DETALLE", "1202"),
+        ("120203", "Deprec. Equipo de Transporte",        "ACTIVO",  "ACREEDORA", "DETALLE", "1202"),
+        ("120204", "Deprec. Equipo de Cómputo",           "ACTIVO",  "ACREEDORA", "DETALLE", "1202"),
+        # PASIVOS
+        ("2",      "PASIVO",                              "PASIVO",  "ACREEDORA", "PADRE", ""),
+        ("21",     "PASIVO CORRIENTE",                    "PASIVO",  "ACREEDORA", "PADRE", "2"),
+        ("2101",   "Cuentas por Pagar Comerciales",       "PASIVO",  "ACREEDORA", "DETALLE", "21"),
+        ("2102",   "Documentos por Pagar",                "PASIVO",  "ACREEDORA", "DETALLE", "21"),
+        ("2103",   "Préstamos Bancarios a Corto Plazo",   "PASIVO",  "ACREEDORA", "DETALLE", "21"),
+        ("2104",   "IVA Débito Fiscal",                   "PASIVO",  "ACREEDORA", "DETALLE", "21"),
+        ("2105",   "Retenciones por Pagar",               "PASIVO",  "ACREEDORA", "DETALLE", "21"),
+        ("2106",   "Acreedores Varios",                   "PASIVO",  "ACREEDORA", "DETALLE", "21"),
+        ("2107",   "Impuestos por Pagar",                 "PASIVO",  "ACREEDORA", "DETALLE", "21"),
+        ("2108",   "Sueldos y Salarios por Pagar",        "PASIVO",  "ACREEDORA", "DETALLE", "21"),
+        ("22",     "PASIVO NO CORRIENTE",                 "PASIVO",  "ACREEDORA", "PADRE", "2"),
+        ("2201",   "Préstamos Bancarios a Largo Plazo",   "PASIVO",  "ACREEDORA", "DETALLE", "22"),
+        ("2202",   "Hipotecas por Pagar",                 "PASIVO",  "ACREEDORA", "DETALLE", "22"),
+        # CAPITAL
+        ("3",      "PATRIMONIO",                          "CAPITAL", "ACREEDORA", "PADRE", ""),
+        ("31",     "CAPITAL CONTABLE",                    "CAPITAL", "ACREEDORA", "PADRE", "3"),
+        ("3101",   "Capital Social",                      "CAPITAL", "ACREEDORA", "DETALLE", "31"),
+        ("3102",   "Reserva Legal",                       "CAPITAL", "ACREEDORA", "DETALLE", "31"),
+        ("3103",   "Utilidades Acumuladas",               "CAPITAL", "ACREEDORA", "DETALLE", "31"),
+        ("3104",   "Utilidad del Ejercicio",              "CAPITAL", "ACREEDORA", "DETALLE", "31"),
+        ("3105",   "Pérdida del Ejercicio",               "CAPITAL", "DEUDORA",   "DETALLE", "31"),
+        # INGRESOS
+        ("4",      "INGRESOS",                            "INGRESO", "ACREEDORA", "PADRE", ""),
+        ("41",     "INGRESOS DE OPERACIÓN",               "INGRESO", "ACREEDORA", "PADRE", "4"),
+        ("4101",   "Ventas",                              "INGRESO", "ACREEDORA", "DETALLE", "41"),
+        ("4102",   "Devoluciones y Rebajas sobre Ventas", "INGRESO", "DEUDORA",   "DETALLE", "41"),
+        ("4103",   "Descuentos sobre Ventas",             "INGRESO", "DEUDORA",   "DETALLE", "41"),
+        ("42",     "OTROS INGRESOS",                      "INGRESO", "ACREEDORA", "PADRE", "4"),
+        ("4201",   "Ingresos Financieros",                "INGRESO", "ACREEDORA", "DETALLE", "42"),
+        ("4202",   "Otros Ingresos no Operacionales",     "INGRESO", "ACREEDORA", "DETALLE", "42"),
+        # GASTOS / COSTOS
+        ("5",      "COSTOS Y GASTOS",                     "GASTO",   "DEUDORA",   "PADRE", ""),
+        ("51",     "COSTO DE VENTAS",                     "GASTO",   "DEUDORA",   "PADRE", "5"),
+        ("5101",   "Costo de Ventas",                     "GASTO",   "DEUDORA",   "DETALLE", "51"),
+        ("5102",   "Compras",                             "GASTO",   "DEUDORA",   "DETALLE", "51"),
+        ("5103",   "Devoluciones y Rebajas sobre Compras","GASTO",   "ACREEDORA", "DETALLE", "51"),
+        ("52",     "GASTOS DE OPERACIÓN",                 "GASTO",   "DEUDORA",   "PADRE", "5"),
+        ("5201",   "Gastos de Venta",                     "GASTO",   "DEUDORA",   "PADRE", "52"),
+        ("520101", "Sueldos y Salarios (Ventas)",         "GASTO",   "DEUDORA",   "DETALLE", "5201"),
+        ("520102", "Comisiones sobre Ventas",             "GASTO",   "DEUDORA",   "DETALLE", "5201"),
+        ("520103", "Publicidad y Propaganda",             "GASTO",   "DEUDORA",   "DETALLE", "5201"),
+        ("520104", "Transporte y Fletes",                 "GASTO",   "DEUDORA",   "DETALLE", "5201"),
+        ("520105", "Depreciación (Ventas)",               "GASTO",   "DEUDORA",   "DETALLE", "5201"),
+        ("5202",   "Gastos de Administración",            "GASTO",   "DEUDORA",   "PADRE", "52"),
+        ("520201", "Sueldos y Salarios (Admin)",          "GASTO",   "DEUDORA",   "DETALLE", "5202"),
+        ("520202", "Alquileres",                          "GASTO",   "DEUDORA",   "DETALLE", "5202"),
+        ("520203", "Servicios Básicos",                   "GASTO",   "DEUDORA",   "DETALLE", "5202"),
+        ("520204", "Papelería y Útiles",                  "GASTO",   "DEUDORA",   "DETALLE", "5202"),
+        ("520205", "Honorarios Profesionales",            "GASTO",   "DEUDORA",   "DETALLE", "5202"),
+        ("520206", "Seguros",                             "GASTO",   "DEUDORA",   "DETALLE", "5202"),
+        ("520207", "Mantenimiento y Reparaciones",        "GASTO",   "DEUDORA",   "DETALLE", "5202"),
+        ("520208", "Depreciación (Admin)",                "GASTO",   "DEUDORA",   "DETALLE", "5202"),
+        ("520209", "Gastos Diversos",                     "GASTO",   "DEUDORA",   "DETALLE", "5202"),
+        ("53",     "GASTOS FINANCIEROS",                  "GASTO",   "DEUDORA",   "PADRE", "5"),
+        ("5301",   "Intereses Bancarios",                 "GASTO",   "DEUDORA",   "DETALLE", "53"),
+        ("5302",   "Comisiones Bancarias",                "GASTO",   "DEUDORA",   "DETALLE", "53"),
+        ("5303",   "Diferencial Cambiario",               "GASTO",   "DEUDORA",   "DETALLE", "53"),
+    ]
+
+    for row_idx, (cod, nom, tipo, nat, nivel, padre) in enumerate(cuentas, 2):
+        ws.cell(row=row_idx, column=1, value=cod)
+        ws.cell(row=row_idx, column=2, value=nom)
+        ws.cell(row=row_idx, column=3, value=tipo)
+        ws.cell(row=row_idx, column=4, value=nat)
+        ws.cell(row=row_idx, column=5, value=nivel)
+        ws.cell(row=row_idx, column=6, value=padre)
+
+    # Ajustar anchos
+    widths = [14, 45, 12, 14, 12, 14]
+    for i, w in enumerate(widths, 1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+
+    # Hoja de instrucciones
+    wi = wb.create_sheet("Instrucciones")
+    instrucciones = [
+        "INSTRUCCIONES PARA IMPORTAR PLAN DE CUENTAS",
+        "",
+        "1. Edite la hoja 'Plan de Cuentas' con sus cuentas contables.",
+        "2. Mantenga los encabezados exactamente como están (fila 1).",
+        "3. Columnas:",
+        "   - Código: Código único de la cuenta (ej: 1101, 110201)",
+        "   - Nombre: Nombre descriptivo de la cuenta",
+        "   - Tipo: ACTIVO, PASIVO, CAPITAL, INGRESO o GASTO",
+        "   - Naturaleza: DEUDORA o ACREEDORA",
+        "   - Nivel: PADRE (agrupadora) o DETALLE (recibe movimientos)",
+        "   - Código Padre: Código de la cuenta padre (vacío si es raíz)",
+        "",
+        "4. Las cuentas PADRE no reciben movimientos, solo agrupan.",
+        "5. Primero se crean las cuentas padre, luego las de detalle.",
+        "6. Al importar, las cuentas existentes (mismo código) se omiten.",
+        "",
+        "Valores válidos para Tipo: ACTIVO, PASIVO, CAPITAL, INGRESO, GASTO",
+        "Valores válidos para Naturaleza: DEUDORA, ACREEDORA",
+        "Valores válidos para Nivel: PADRE, DETALLE",
+    ]
+    for i, txt in enumerate(instrucciones, 1):
+        cell = wi.cell(row=i, column=1, value=txt)
+        if i == 1:
+            cell.font = Font(bold=True, size=14)
+
+    wi.column_dimensions['A'].width = 70
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = 'attachment; filename="plantilla_plan_cuentas.xlsx"'
+    wb.save(response)
+    return response
+
+
+@login_required
+def cuentas_importar(request):
+    """Importar plan de cuentas desde Excel."""
+    if request.method != 'POST':
+        return redirect('cont-cuentas-lista')
+
+    archivo = request.FILES.get('archivo_excel')
+    if not archivo:
+        messages.error(request, 'Seleccione un archivo Excel.')
+        return redirect('cont-cuentas-lista')
+
+    import openpyxl
+    try:
+        wb = openpyxl.load_workbook(archivo, read_only=True)
+        ws = wb.active
+
+        tipos_validos = {v for v, _ in CuentaContable.TIPO_CHOICES}
+        nat_validos = {v for v, _ in CuentaContable.NATURALEZA_CHOICES}
+        nivel_validos = {v for v, _ in CuentaContable.NIVEL_CHOICES}
+
+        filas = list(ws.iter_rows(min_row=2, values_only=True))
+        wb.close()
+
+        # Primer paso: crear todas las cuentas sin padre
+        creadas = 0
+        omitidas = 0
+        errores = []
+        codigos_existentes = set(CuentaContable.objects.values_list('codigo', flat=True))
+
+        # Ordenar por longitud de código (padres primero)
+        filas_ordenadas = sorted(filas, key=lambda r: len(str(r[0] or '')))
+
+        for fila in filas_ordenadas:
+            if not fila or not fila[0]:
+                continue
+
+            codigo = str(fila[0]).strip()
+            nombre = str(fila[1] or '').strip()
+            tipo = str(fila[2] or '').strip().upper()
+            naturaleza = str(fila[3] or '').strip().upper()
+            nivel = str(fila[4] or '').strip().upper()
+            codigo_padre = str(fila[5] or '').strip() if len(fila) > 5 else ''
+
+            if not codigo or not nombre:
+                continue
+
+            if codigo in codigos_existentes:
+                omitidas += 1
+                continue
+
+            if tipo not in tipos_validos:
+                errores.append(f'Fila {codigo}: tipo "{tipo}" inválido')
+                continue
+            if naturaleza not in nat_validos:
+                errores.append(f'Fila {codigo}: naturaleza "{naturaleza}" inválida')
+                continue
+            if nivel not in nivel_validos:
+                errores.append(f'Fila {codigo}: nivel "{nivel}" inválido')
+                continue
+
+            padre = None
+            if codigo_padre:
+                padre = CuentaContable.objects.filter(codigo=codigo_padre).first()
+
+            CuentaContable.objects.create(
+                codigo=codigo,
+                nombre=nombre,
+                tipo=tipo,
+                naturaleza=naturaleza,
+                nivel=nivel,
+                cuenta_padre=padre,
+            )
+            codigos_existentes.add(codigo)
+            creadas += 1
+
+        msg = f'{creadas} cuentas importadas'
+        if omitidas:
+            msg += f', {omitidas} omitidas (ya existían)'
+        if errores:
+            msg += f', {len(errores)} errores'
+            for e in errores[:5]:
+                messages.warning(request, e)
+        messages.success(request, msg)
+
+    except Exception as e:
+        messages.error(request, f'Error al procesar el archivo: {e}')
+
+    return redirect('cont-cuentas-lista')
+
+
+@login_required
 def cuentas_eliminar(request, pk):
     cuenta = get_object_or_404(CuentaContable, pk=pk)
     if request.method == 'POST':
