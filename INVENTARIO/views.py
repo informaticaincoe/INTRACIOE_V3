@@ -373,14 +373,19 @@ def crear_compra(request):
                 except ProductoProveedor.DoesNotExist:
                     continue
                 # Buscar Producto existente por código o crear uno nuevo
+                # Buscar tributo IVA por defecto
+                tributo_default = Tributo.objects.filter(codigo="20").first() or Tributo.objects.first()
                 prod, created = Producto.objects.get_or_create(
                     codigo=pp.codigo,
                     defaults={
                         'descripcion': pp.descripcion,
+                        'preunitario': pp.preunitario or precio,
                         'precio_compra': precio,
                         'precio_venta': precio,
                         'stock': 0,
                         'unidad_medida': pp.unidad_medida or TipoUnidadMedida.objects.filter(codigo="59").first(),
+                        'tipo_item': pp.tipo_item or TipoItem.objects.filter(codigo="1").first(),
+                        'tributo': tributo_default,
                     }
                 )
             else:
