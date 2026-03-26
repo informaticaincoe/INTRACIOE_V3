@@ -7,6 +7,79 @@ from datetime import date
 User = get_user_model()
 
 
+class ConfiguracionContable(models.Model):
+    """Cuentas contables por defecto para la generación automática de asientos."""
+    # Ventas
+    cuenta_ingresos_ventas = models.ForeignKey(
+        'CuentaContable', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='+', verbose_name='Ingresos por ventas',
+        help_text='Ej: 4101 - Ventas'
+    )
+    cuenta_cxc = models.ForeignKey(
+        'CuentaContable', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='+', verbose_name='Cuentas por cobrar',
+        help_text='Ej: 1103 - Cuentas por Cobrar Comerciales'
+    )
+    cuenta_iva_debito_fiscal = models.ForeignKey(
+        'CuentaContable', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='+', verbose_name='IVA Débito Fiscal',
+        help_text='Ej: 2104 - IVA Débito Fiscal (IVA cobrado en ventas)'
+    )
+    # Compras
+    cuenta_compras = models.ForeignKey(
+        'CuentaContable', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='+', verbose_name='Compras / Costo',
+        help_text='Ej: 5101 - Compras o Costo de Ventas'
+    )
+    cuenta_cxp = models.ForeignKey(
+        'CuentaContable', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='+', verbose_name='Cuentas por pagar',
+        help_text='Ej: 2101 - Cuentas por Pagar Comerciales'
+    )
+    cuenta_iva_credito_fiscal = models.ForeignKey(
+        'CuentaContable', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='+', verbose_name='IVA Crédito Fiscal',
+        help_text='Ej: 1105 - IVA Crédito Fiscal (IVA pagado en compras)'
+    )
+    # Efectivo
+    cuenta_caja = models.ForeignKey(
+        'CuentaContable', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='+', verbose_name='Caja / Efectivo',
+        help_text='Ej: 1101 - Caja General'
+    )
+    cuenta_banco = models.ForeignKey(
+        'CuentaContable', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='+', verbose_name='Banco',
+        help_text='Ej: 1102 - Bancos'
+    )
+    # Inventario
+    cuenta_inventario = models.ForeignKey(
+        'CuentaContable', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='+', verbose_name='Inventario',
+        help_text='Ej: 1104 - Inventario de Mercaderías'
+    )
+    # Config
+    dias_vencimiento_cxc = models.PositiveIntegerField(default=30, verbose_name='Días vencimiento CxC')
+    dias_vencimiento_cxp = models.PositiveIntegerField(default=30, verbose_name='Días vencimiento CxP')
+    auto_confirmar_asientos = models.BooleanField(default=True, verbose_name='Confirmar asientos automáticamente')
+
+    class Meta:
+        verbose_name = 'Configuración Contable'
+        verbose_name_plural = 'Configuración Contable'
+
+    def __str__(self):
+        return 'Configuración Contable'
+
+    def save(self, *args, **kwargs):
+        self.pk = 1  # Singleton
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
 class CuentaContable(models.Model):
     TIPO_CHOICES = [
         ('ACTIVO',   'Activo'),

@@ -410,6 +410,14 @@ def crear_compra(request):
         # NO tocar stock aquí; el signal de DetalleCompra crea Movimiento "Entrada"
 
         _recalcular_totales_y_guardar(compra)
+
+        # Generar contabilidad automática (CxP + Asiento)
+        try:
+            from CONTABILIDAD.contabilidad_auto import generar_contabilidad_compra
+            generar_contabilidad_compra(compra, usuario=request.user)
+        except Exception as e:
+            logger.warning(f"No se pudo generar contabilidad para compra #{compra.id}: {e}")
+
         messages.success(request, f'Compra #{compra.id} creada.')
         return redirect('compras-detalle', pk=compra.pk)
 

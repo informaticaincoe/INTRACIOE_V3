@@ -2498,6 +2498,12 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False, consoli
                     }
                     factura.json_original = json_original
                     factura.save()
+                    # Contabilidad automática (CxC + Asiento)
+                    try:
+                        from CONTABILIDAD.contabilidad_auto import generar_contabilidad_venta
+                        generar_contabilidad_venta(factura, usuario=request.user)
+                    except Exception as e:
+                        logger.warning(f"Contabilidad auto venta: {e}")
                     return JsonResponse({
                         "status": "ok",
                         "mensaje": "MODO DEMO — Documento procesado localmente (no enviado a Hacienda)",
@@ -2543,6 +2549,12 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False, consoli
                     factura.contingencia = False
                     factura.envio_correo = False
                     factura.save()
+                    # Contabilidad automática (CxC + Asiento)
+                    try:
+                        from CONTABILIDAD.contabilidad_auto import generar_contabilidad_venta
+                        generar_contabilidad_venta(factura, usuario=request.user)
+                    except Exception as e:
+                        logger.warning(f"Contabilidad auto venta: {e}")
                     contingencia = False
                     motivo_otro = False
                     mostrar_modal = False
