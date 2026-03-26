@@ -230,7 +230,10 @@
       return;
     }
     try {
-      const res = await fetch(`/inventario/api/proveedor/${proveedorId}/productos/`);
+      const res = await fetch(`/inventario/api/proveedor/${proveedorId}/productos/`, {
+        credentials: 'same-origin',
+        headers: {'X-Requested-With': 'XMLHttpRequest'}
+      });
       const data = await res.json();
       productosProveedor = data.results || data || [];
       actualizarSelectsProducto();
