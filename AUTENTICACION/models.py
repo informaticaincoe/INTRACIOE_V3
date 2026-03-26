@@ -57,8 +57,7 @@ class PasswordResetCode(models.Model):
         return f"{self.user.email} – {self.code}"
     
 class ConfiguracionServidor(models.Model):
-    ## NEW
-    clave = models.CharField(max_length=100, null=True, blank=True)
+    clave = models.CharField(max_length=100, null=True, blank=True, unique=True)
     valor = models.CharField(max_length=200, blank=True, null=True)
     url = models.CharField(max_length=200, blank=True, null=True)
     url_endpoint = models.CharField(max_length=200, blank=True, null=True)
