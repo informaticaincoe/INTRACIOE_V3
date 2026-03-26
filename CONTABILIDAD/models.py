@@ -84,6 +84,9 @@ class AsientoContable(models.Model):
             ultimo = AsientoContable.objects.order_by('-numero').first()
             self.numero = (ultimo.numero + 1) if ultimo else 1
         if not self.periodo and self.fecha:
+            from datetime import date
+            if isinstance(self.fecha, str):
+                self.fecha = date.fromisoformat(self.fecha)
             self.periodo = self.fecha.strftime('%Y-%m')
         super().save(*args, **kwargs)
 
