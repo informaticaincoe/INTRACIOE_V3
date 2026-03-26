@@ -1590,18 +1590,27 @@ def generar_json(
         montoExtension = Decimal("25000")
 
         # -------- Identificación --------
+        logger.debug("JSON Ident: tipo_dte=%s version=%s ambiente=%s", tipo_dte_obj, tipo_dte_obj.version if tipo_dte_obj else None, ambiente_obj)
+        logger.debug("JSON Ident: tipomodelo=%s tipotransmision=%s tipomoneda=%s", factura.tipomodelo, factura.tipotransmision, getattr(factura, 'tipomoneda', None))
+        logger.debug("JSON Ident: fecha=%s hora=%s", factura.fecha_emision, factura.hora_emision)
+
+        if not factura.tipomodelo:
+            logger.error("JSON Ident: SIN TIPO MODELO — campo obligatorio")
+        if not factura.tipotransmision:
+            logger.error("JSON Ident: SIN TIPO TRANSMISION — campo obligatorio")
+
         json_identificacion = {
-            "version": int(tipo_dte_obj.version),
-            "ambiente": str(ambiente_obj.codigo),
-            "tipoDte": str(tipo_dte_obj.codigo),
+            "version": int(tipo_dte_obj.version) if tipo_dte_obj and tipo_dte_obj.version else 1,
+            "ambiente": str(ambiente_obj.codigo) if ambiente_obj else "00",
+            "tipoDte": str(tipo_dte_obj.codigo) if tipo_dte_obj else "01",
             "numeroControl": str(factura.numero_control),
             "codigoGeneracion": str(factura.codigo_generacion),
-            "tipoModelo": int(factura.tipomodelo.codigo),
-            "tipoOperacion": int(factura.tipotransmision.codigo),
+            "tipoModelo": int(factura.tipomodelo.codigo) if factura.tipomodelo else 1,
+            "tipoOperacion": int(factura.tipotransmision.codigo) if factura.tipotransmision else 1,
             "tipoContingencia": None if not contingencia else int(contingencia.codigo),
             "motivoContin": None,
             "fecEmi": str(factura.fecha_emision),
-            "horEmi": factura.hora_emision.strftime("%H:%M:%S"),
+            "horEmi": factura.hora_emision.strftime("%H:%M:%S") if factura.hora_emision else "00:00:00",
             "tipoMoneda": str(factura.tipomoneda.codigo) if getattr(factura, "tipomoneda", None) else "USD",
         }
 
