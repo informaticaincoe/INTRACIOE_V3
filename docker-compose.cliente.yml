@@ -1,16 +1,12 @@
 # ─────────────────────────────────────────────────────────────
 # INTRACOE V3 — App por cliente
 #
-# Usa la infraestructura compartida (db + firmador) del
-# docker-compose.yml principal.
+# Requiere infraestructura corriendo:
+#   docker compose up -d db firmador
 #
-# Levantar un cliente:
+# Levantar cliente:
 #   APP_PORT=8001 DB_NAME=intracoe_cliente1 \
 #     docker compose -f docker-compose.cliente.yml -p cliente1 up -d --build
-#
-# Otro cliente:
-#   APP_PORT=8002 DB_NAME=intracoe_cliente2 \
-#     docker compose -f docker-compose.cliente.yml -p cliente2 up -d --build
 # ─────────────────────────────────────────────────────────────
 
 services:
@@ -21,19 +17,25 @@ services:
       - "${APP_PORT:-8000}:${APP_PORT:-8000}"
     environment:
       - APP_PORT=${APP_PORT:-8000}
-      - DB_HOST=db
+      - DB_HOST=intracioe_v3-db-1
       - DB_PORT=5432
       - DB_NAME=${DB_NAME:-intracoe}
       - DB_USER=${PG_USER:-intracoe}
       - DB_PASSWORD=${PG_PASSWORD:-intracoe2025}
-      - FIRMADOR_URL=http://firmador:8113
+      - FIRMADOR_URL=http://intracioe_v3-firmador-1:8113
     volumes:
-      - ${DB_NAME:-intracoe}_media:/app/media
-      - ${DB_NAME:-intracoe}_logs:/app/logs
-      - intracoe_v3_certs:/app/FE/cert
+      - media:/app/media
+      - logs:/app/logs
+      - intracioe_v3_certs:/app/FE/cert
     networks:
-      - intracoe_v3_default
+      - intracioe_v3_default
+
+volumes:
+  media:
+  logs:
+  intracioe_v3_certs:
+    external: true
 
 networks:
-  intracoe_v3_default:
+  intracioe_v3_default:
     external: true
