@@ -1610,17 +1610,32 @@ def generar_json(
         json_otros_documentos = None
 
         # -------- Emisor --------
+        emi_muni = getattr(emisor, 'municipio', None)
+        emi_depto = getattr(emi_muni, 'departamento', None) if emi_muni else None
+        emi_act = emisor.actividades_economicas.first() if emisor.actividades_economicas.exists() else None
+
+        logger.debug("JSON Emisor: nit=%s nrc=%s nombre=%s", emisor.nit, emisor.nrc, emisor.nombre_razon_social)
+        logger.debug("JSON Emisor: municipio=%s depto=%s", emi_muni, emi_depto)
+        logger.debug("JSON Emisor: actividad=%s tipoest=%s", emi_act, emisor.tipoestablecimiento)
+        logger.debug("JSON Emisor: telefono=%s email=%s", emisor.telefono, emisor.email)
+        if not emi_muni:
+            logger.error("JSON Emisor: SIN MUNICIPIO — el JSON fallará")
+        if not emi_depto:
+            logger.error("JSON Emisor: SIN DEPARTAMENTO — el JSON fallará")
+        if not emi_act:
+            logger.error("JSON Emisor: SIN ACTIVIDAD ECONÓMICA — el JSON fallará")
+
         json_emisor = {
             "nit": str(emisor.nit),
             "nrc": str(emisor.nrc),
             "nombre": str(emisor.nombre_razon_social),
-            "codActividad": str(emisor.actividades_economicas.first().codigo) if emisor.actividades_economicas.exists() else "",
-            "descActividad": str(emisor.actividades_economicas.first().descripcion) if emisor.actividades_economicas.exists() else "",
-            "nombreComercial": str(emisor.nombre_comercial),
+            "codActividad": str(emi_act.codigo) if emi_act else "",
+            "descActividad": str(emi_act.descripcion) if emi_act else "",
+            "nombreComercial": str(emisor.nombre_comercial or ""),
             "tipoEstablecimiento": str(emisor.tipoestablecimiento.codigo) if emisor.tipoestablecimiento else "",
             "direccion": {
-                "departamento": str(emisor.municipio.departamento.codigo),
-                "municipio": str(emisor.municipio.codigo),
+                "departamento": str(emi_depto.codigo) if emi_depto else "06",
+                "municipio": str(emi_muni.codigo) if emi_muni else "23",
                 "complemento": emisor.direccion_comercial,
             },
             "telefono": str(emisor.telefono),
@@ -1635,6 +1650,18 @@ def generar_json(
         rec_muni = getattr(receptor, 'municipio', None)
         rec_depto = getattr(rec_muni, 'departamento', None) if rec_muni else None
         rec_act = receptor.actividades_economicas.first() if receptor.actividades_economicas.exists() else None
+
+        logger.debug("JSON Receptor: id=%s nombre=%s", receptor.id, receptor.nombre)
+        logger.debug("JSON Receptor: tipo_doc=%s num_doc=%s", receptor.tipo_documento, receptor.num_documento)
+        logger.debug("JSON Receptor: municipio=%s depto=%s", rec_muni, rec_depto)
+        logger.debug("JSON Receptor: pais=%s actividad=%s", receptor.pais, rec_act)
+        logger.debug("JSON Receptor: telefono=%s correo=%s direccion=%s", receptor.telefono, receptor.correo, receptor.direccion)
+        if not rec_muni:
+            logger.warning("JSON Receptor: SIN MUNICIPIO — usando default 06/23 (San Salvador)")
+        if not rec_depto:
+            logger.warning("JSON Receptor: SIN DEPARTAMENTO — usando default 06 (San Salvador)")
+        if not rec_act:
+            logger.warning("JSON Receptor: SIN ACTIVIDAD ECONÓMICA")
 
         json_receptor = {
             "nombre": str(receptor.nombre),
