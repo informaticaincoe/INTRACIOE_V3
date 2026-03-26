@@ -2176,39 +2176,33 @@ def firmar_factura_view(request, factura_id, interno=False):
         return redirect(
             f"{reverse('detalle_factura', args=[factura_id])}?mostrar_modal=0&firma=1&envio_mh=0&firmado=1"
         )
-    # ── MODO DEMO: simular firma sin token ni firmador ──
+    # ── MODO DEMO: firmar con el firmador real pero sin necesitar token ──
     emisor_demo = Emisor_fe.objects.first()
-    if emisor_demo and emisor_demo.modo_demo:
-        logger.info("MODO DEMO: Simulando firma de factura %s", factura_id)
-        import uuid
-        factura.json_firmado = {
-            "status": "OK",
-            "body": f"DEMO-{uuid.uuid4().hex[:32]}",
-        }
-        factura.firmado = True
-        factura.save()
-        request.session['intentos_reintento'] = 0
-        if interno:
-            return None
-        return redirect(
-            f"{reverse('detalle_factura', args=[factura_id])}?mostrar_modal=0&firma=1&envio_mh=0&firmado=1"
-        )
+    is_demo = emisor_demo and emisor_demo.modo_demo
+    if is_demo:
+        logger.info("MODO DEMO: Firmando factura %s con firmador real (sin token)")
 
     # Intentos automáticos
     while intento <= intentos_max and not factura.firmado and intentos_modal <=2:
         logger.info("Inicio Intento %s de %s", intento, intentos_max)
-        token_data = Token_data.objects.filter(activado=True).first()
-        logger.debug("token_data:   %s", token_data)
 
-        if not token_data:
-            logger.warning("NO HAY TOKEN:   %s", token_data)
+        if not is_demo:
+            token_data = Token_data.objects.filter(activado=True).first()
+            logger.debug("token_data:   %s", token_data)
+            if not token_data:
+                logger.warning("NO HAY TOKEN:   %s", token_data)
+                return JsonResponse({"error": "No hay token activo."}, status=401)
+        else:
+            token_data = None
+            logger.debug("MODO DEMO: Token no requerido")
 
-            return JsonResponse({"error": "No hay token activo."}, status=401)
-
-        if not os.path.exists(CERT_PATH):
+        cert_ok = CERT_PATH and os.path.exists(CERT_PATH)
+        logger.debug("FIRMA: CERT_PATH=%s existe=%s", CERT_PATH, cert_ok)
+        if not cert_ok and not is_demo:
             logger.error("Certificado no encontrado en: %s", CERT_PATH)
-            
             return JsonResponse({"error": "Certificado no encontrado."}, status=400)
+        elif not cert_ok and is_demo:
+            logger.warning("MODO DEMO: Certificado no encontrado, continuando sin certificado")
 
         try:
             if isinstance(factura.json_original, dict):
@@ -3037,16 +3031,28 @@ def obtener_token_view(request):
 
 def _obtener_token_hacienda():
     """Autentica y retorna (token, token_type). Lanza excepción con texto claro si falla."""
+    from AUTENTICACION.models import ConfiguracionServidor
+
     emisor = Emisor_fe.objects.first()
     if not emisor:
         raise Exception("No hay emisor configurado.")
 
+    # Obtener URL de autenticación
+    url_auth_conf = ConfiguracionServidor.objects.filter(clave="url_autenticacion").first()
+    if not url_auth_conf or not url_auth_conf.url_endpoint:
+        raise Exception("URL de autenticación de Hacienda no configurada.")
+
+    logger.info("AUTH Hacienda: URL=%s NIT=%s", url_auth_conf.url_endpoint, emisor.nit)
+
     auth_headers = {
-        "Content-Type": HEADERS.url_endpoint,
-        "User-Agent": HEADERS.valor
+        "Content-Type": "application/x-www-form-urlencoded",
+        "User-Agent": "INTRACOE/3.0"
     }
     auth_data = {"user": str(emisor.nit), "pwd": str(emisor.clave_publica)}
-    resp = requests.post(URL_AUTH.url_endpoint, data=auth_data, headers=auth_headers)
+
+    logger.debug("AUTH Hacienda: enviando user=%s pwd=%s", emisor.nit, "***")
+    resp = requests.post(url_auth_conf.url_endpoint, data=auth_data, headers=auth_headers)
+    logger.info("AUTH Hacienda: status=%s", resp.status_code)
 
     try:
         data = resp.json()
