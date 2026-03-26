@@ -2176,6 +2176,24 @@ def firmar_factura_view(request, factura_id, interno=False):
         return redirect(
             f"{reverse('detalle_factura', args=[factura_id])}?mostrar_modal=0&firma=1&envio_mh=0&firmado=1"
         )
+    # ── MODO DEMO: simular firma sin token ni firmador ──
+    emisor_demo = Emisor_fe.objects.first()
+    if emisor_demo and emisor_demo.modo_demo:
+        logger.info("MODO DEMO: Simulando firma de factura %s", factura_id)
+        import uuid
+        factura.json_firmado = {
+            "status": "OK",
+            "body": f"DEMO-{uuid.uuid4().hex[:32]}",
+        }
+        factura.firmado = True
+        factura.save()
+        request.session['intentos_reintento'] = 0
+        if interno:
+            return None
+        return redirect(
+            f"{reverse('detalle_factura', args=[factura_id])}?mostrar_modal=0&firma=1&envio_mh=0&firmado=1"
+        )
+
     # Intentos automáticos
     while intento <= intentos_max and not factura.firmado and intentos_modal <=2:
         logger.info("Inicio Intento %s de %s", intento, intentos_max)
@@ -2184,7 +2202,7 @@ def firmar_factura_view(request, factura_id, interno=False):
 
         if not token_data:
             logger.warning("NO HAY TOKEN:   %s", token_data)
-            
+
             return JsonResponse({"error": "No hay token activo."}, status=401)
 
         if not os.path.exists(CERT_PATH):
