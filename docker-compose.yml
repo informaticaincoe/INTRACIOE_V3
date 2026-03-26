@@ -1,24 +1,27 @@
 # ─────────────────────────────────────────────────────────────
-# INTRACOE V3 — Docker Compose
+# INTRACOE V3 — Infraestructura + App
 #
-# Configurar en .env:
-#   APP_PORT=8001
-#   PG_DB=intracoe_cliente1
-#   PG_USER=intracoe
-#   PG_PASSWORD=ClaveSegura123
+# Paso 1: Levantar infraestructura (una sola vez):
+#   docker compose up -d db firmador
 #
-# Levantar:
-#   docker compose -p cliente1 up -d --build
+# Paso 2: Levantar clientes (uno por cada):
+#   docker compose run -d --name cliente1 -p 8001:8001 \
+#     -e APP_PORT=8001 -e DB_NAME=intracoe_cliente1 app
+#
+#   docker compose run -d --name cliente2 -p 8002:8002 \
+#     -e APP_PORT=8002 -e DB_NAME=intracoe_cliente2 app
 # ─────────────────────────────────────────────────────────────
 
 services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
+    ports:
+      - "5432:5432"
     environment:
-      POSTGRES_DB: ${PG_DB:-intracoe}
       POSTGRES_USER: ${PG_USER:-intracoe}
       POSTGRES_PASSWORD: ${PG_PASSWORD:-intracoe2025}
+      POSTGRES_DB: postgres
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -31,7 +34,7 @@ services:
     image: svfe/svfe-api-firmador:v20230109
     restart: unless-stopped
     ports:
-      - "${FIRMADOR_PORT:-8113}:8113"
+      - "8113:8113"
     volumes:
       - certs:/uploads
     healthcheck:
@@ -50,13 +53,11 @@ services:
       - APP_PORT=${APP_PORT:-8000}
       - DB_HOST=db
       - DB_PORT=5432
-      - DB_NAME=${PG_DB:-intracoe}
+      - DB_NAME=${DB_NAME:-intracoe}
       - DB_USER=${PG_USER:-intracoe}
       - DB_PASSWORD=${PG_PASSWORD:-intracoe2025}
       - FIRMADOR_URL=http://firmador:8113
     volumes:
-      - app_media:/app/media
-      - app_logs:/app/logs
       - certs:/app/FE/cert
     depends_on:
       db:
@@ -66,6 +67,4 @@ services:
 
 volumes:
   pgdata:
-  app_media:
-  app_logs:
   certs:
