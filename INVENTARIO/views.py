@@ -380,7 +380,7 @@ def crear_compra(request):
                         'precio_compra': precio,
                         'precio_venta': precio,
                         'stock': 0,
-                        'unidad_medida': UnidadMedida.objects.first(),
+                        'unidad_medida': pp.unidad_medida or TipoUnidadMedida.objects.filter(codigo="59").first(),
                     }
                 )
             else:
