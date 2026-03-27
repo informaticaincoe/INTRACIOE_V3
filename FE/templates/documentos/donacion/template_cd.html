@@ -1,0 +1,57 @@
+{% extends "documentos/_dte_base.html" %}
+{% load qr_tags %}
+{% block doc_title %}Comprobante de Donación{% endblock %}
+{% block version %}Ver.1{% endblock %}
+{% block tipo_dte %}Comprobante de Donación{% endblock %}
+
+{% block receptor_fields %}
+<div class="campo full"><label>Tipo de doc. de Identificación:</label><span class="val">{{ factura.dtereceptor.tipo_documento.descripcion|default:"—" }}</span></div>
+<div class="campo full"><label>N° de doc. de Identificación:</label><span class="val">{{ factura.dtereceptor.num_documento|default:"—" }}</span></div>
+<div class="campo full"><label>Nombre o razón social:</label><span class="val">{{ factura.dtereceptor.nombre }}</span></div>
+<div class="campo full"><label>Dirección:</label><span class="val">{{ factura.dtereceptor.direccion|default:"—" }}</span></div>
+<div class="campo"><label>N° de Teléfono:</label><span class="val">{{ factura.dtereceptor.telefono|default:"—" }}</span></div>
+<div class="campo full"><label>Correo electrónico:</label><span class="val">{{ factura.dtereceptor.correo|default:"—" }}</span></div>
+{% endblock %}
+
+{% block secciones_extra %}
+{% if factura.json_original.otrosDocumentos %}
+<div class="dte-section">
+  <div class="dte-section-header">Otros Documentos Asociados</div>
+  {% for doc in factura.json_original.otrosDocumentos %}
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px 10px;">
+    <div class="campo full"><label>Documento Asociado:</label><span class="val">{{ doc.codDocAsociado|default:"—" }}</span></div>
+    <div class="campo full"><label>Identificación:</label><span class="val">{{ doc.detalleDocumento|default:"—" }}</span></div>
+    <div class="campo full"><label>Descripción:</label><span class="val">{{ doc.descDocumento|default:"—" }}</span></div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block tabla_headers %}
+<th style="width:30px">N°</th>
+<th style="width:60px">Cantidad</th>
+<th>Descripción</th>
+<th style="width:75px">Unidad de Medida</th>
+<th style="width:75px">Depreciación</th>
+<th style="width:75px">Valor Unitario</th>
+<th style="width:75px">Valor Donado</th>
+{% endblock %}
+
+{% block tabla_row %}
+<td>{{ forloop.counter }}</td>
+<td>{{ item.cantidad }}</td>
+<td style="text-align:left;">{{ item.descripcion }}</td>
+<td>{{ item.uniMedida }}</td>
+<td class="td-num">${{ item.depreciacion|default:0|floatformat:2 }}</td>
+<td class="td-num">${{ item.precioUni|default:item.valorUni|default:0|floatformat:2 }}</td>
+<td class="td-num">${{ item.valor|default:item.ventaGravada|default:0|floatformat:2 }}</td>
+{% endblock %}
+
+{% block tabla_footer %}
+<tr><td colspan="6" style="text-align:right;padding:3px 6px;">Total de la Donación:</td><td class="td-num">${{ factura.json_original.resumen.totalDonacion|default:factura.json_original.resumen.totalPagar|default:0|floatformat:2 }}</td></tr>
+{% endblock %}
+
+{% block resumen %}
+<div class="resumen-row total"><label>Total de la Donación:</label><span class="val">${{ factura.json_original.resumen.totalDonacion|default:factura.json_original.resumen.totalPagar|default:0|floatformat:2 }}</span></div>
+{% endblock %}

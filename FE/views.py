@@ -2902,7 +2902,9 @@ def detalle_factura(request, factura_id):
         '07': "documentos/retencion/template_cr.html",
         '08': "documentos/liquidacion/template_cl.html",
         '09': "documentos/dcl/template_dcl.html",
+        '11': "documentos/exportacion/template_fex.html",
         '14': "documentos/sujeto_excluido/template_fse.html",
+        '15': "documentos/donacion/template_cd.html",
     }
     if usa_termica:
         template_name = "documentos/factura_consumidor/template_factura_termica.html"

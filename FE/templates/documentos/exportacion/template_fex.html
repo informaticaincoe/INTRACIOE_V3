@@ -1,0 +1,89 @@
+{% extends "documentos/_dte_base.html" %}
+{% load qr_tags %}
+{% block doc_title %}Factura de Exportación{% endblock %}
+{% block version %}Ver.1{% endblock %}
+{% block tipo_dte %}Factura de Exportación{% endblock %}
+
+{% block receptor_fields %}
+<div class="campo full"><label>Nombre o razón social:</label><span class="val">{{ factura.dtereceptor.nombre }}</span></div>
+<div class="campo full"><label>N° de doc. de Identificación:</label><span class="val">{{ factura.dtereceptor.num_documento|default:"—" }}</span></div>
+{% if factura.json_original.receptor.codActividad %}<div class="campo full"><label>Actividad económica:</label><span class="val">{{ factura.json_original.receptor.descActividad|default:"—" }}</span></div>{% endif %}
+<div class="campo full"><label>País destino:</label><span class="val">{{ factura.dtereceptor.pais.descripcion|default:factura.json_original.receptor.nombrePais|default:"—" }}</span></div>
+<div class="campo full"><label>Dirección:</label><span class="val">{{ factura.dtereceptor.direccion|default:"—" }}</span></div>
+{% if factura.dtereceptor.nombreComercial %}<div class="campo full"><label>Nombre Comercial:</label><span class="val">{{ factura.dtereceptor.nombreComercial }}</span></div>{% endif %}
+{% endblock %}
+
+{% block secciones_extra %}
+{# Datos de exportación del emisor #}
+{% if factura.json_original.emisor.recintoFiscal or factura.json_original.emisor.regimen %}
+<div class="dte-section">
+  <div class="dte-section-header">Datos de Exportación</div>
+  <div class="two-col">
+    {% if factura.json_original.emisor.recintoFiscal %}<div class="campo full"><label>Recinto fiscal:</label><span class="val">{{ factura.json_original.emisor.descRecintoFiscal|default:factura.json_original.emisor.recintoFiscal }}</span></div>{% endif %}
+    {% if factura.json_original.emisor.regimen %}<div class="campo full"><label>Régimen de exportación:</label><span class="val">{{ factura.json_original.emisor.descRegimen|default:factura.json_original.emisor.regimen }}</span></div>{% endif %}
+  </div>
+</div>
+{% endif %}
+
+{# Documentos asociados / transporte #}
+{% if factura.json_original.otrosDocumentos %}
+<div class="dte-section">
+  <div class="dte-section-header">Documentos Asociados</div>
+  {% for doc in factura.json_original.otrosDocumentos %}
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px 10px;{% if not forloop.last %}border-bottom:1px dashed var(--gris-borde);padding-bottom:4px;margin-bottom:4px;{% endif %}">
+    <div class="campo full"><label>Identificación:</label><span class="val">{{ doc.codDocAsociado|default:"—" }}</span></div>
+    <div class="campo full"><label>Descripción:</label><span class="val">{{ doc.descDocumento|default:"—" }}</span></div>
+    {% if doc.conductor %}<div class="campo full"><label>Conductor:</label><span class="val">{{ doc.conductor.nombre|default:"—" }}</span></div>{% endif %}
+    {% if doc.conductor.numId %}<div class="campo full"><label>N° Identificación:</label><span class="val">{{ doc.conductor.numId }}</span></div>{% endif %}
+    {% if doc.transporte %}<div class="campo full"><label>Modo transporte:</label><span class="val">{{ doc.transporte.modoTransp|default:"—" }}</span></div>{% endif %}
+    {% if doc.transporte.numIdTransp %}<div class="campo full"><label>N° ID transporte:</label><span class="val">{{ doc.transporte.numIdTransp }}</span></div>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if factura.json_original.ventaTercero %}
+<div class="dte-section">
+  <div class="dte-section-header">Venta a Cuenta de Terceros</div>
+  <div class="two-col">
+    <div class="campo"><label>NIT:</label><span class="val">{{ factura.json_original.ventaTercero.nit|default:"—" }}</span></div>
+    <div class="campo full"><label>Nombre:</label><span class="val">{{ factura.json_original.ventaTercero.nombre|default:"—" }}</span></div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block tabla_headers %}
+<th style="width:30px">N°</th>
+<th style="width:50px">Cant.</th>
+<th style="width:50px">Unidad</th>
+<th>Descripción</th>
+<th style="width:75px">P. Unitario</th>
+<th style="width:75px">Descuento</th>
+<th style="width:75px">Otros No Afectos</th>
+<th style="width:70px">Ventas Afectas</th>
+{% endblock %}
+
+{% block tabla_row %}
+<td>{{ forloop.counter }}</td>
+<td>{{ item.cantidad }}</td>
+<td>{{ item.uniMedida }}</td>
+<td style="text-align:left;">{{ item.descripcion }}</td>
+<td class="td-num">${{ item.precioUni|floatformat:2 }}</td>
+<td class="td-num">${{ item.montoDescu|default:0|floatformat:2 }}</td>
+<td class="td-num">${{ item.noGravado|default:0|floatformat:2 }}</td>
+<td class="td-num">${{ item.ventaGravada|default:item.ventaAfecta|default:0|floatformat:2 }}</td>
+{% endblock %}
+
+{% block tabla_footer %}
+<tr><td colspan="7" style="text-align:right;padding:3px 6px;">Total de Operaciones Afectas:</td><td class="td-num">${{ factura.json_original.resumen.totalGravada|default:0|floatformat:2 }}</td></tr>
+{% if factura.json_original.resumen.descuGravada %}<tr><td colspan="7" style="text-align:right;padding:3px 6px;">Desc. operaciones afectas:</td><td class="td-num">-${{ factura.json_original.resumen.descuGravada|floatformat:2 }}</td></tr>{% endif %}
+{% if factura.json_original.resumen.seguro %}<tr><td colspan="7" style="text-align:right;padding:3px 6px;">Seguro:</td><td class="td-num">${{ factura.json_original.resumen.seguro|floatformat:2 }}</td></tr>{% endif %}
+{% if factura.json_original.resumen.flete %}<tr><td colspan="7" style="text-align:right;padding:3px 6px;">Flete:</td><td class="td-num">${{ factura.json_original.resumen.flete|floatformat:2 }}</td></tr>{% endif %}
+<tr><td colspan="7" style="text-align:right;padding:3px 6px;">Monto Total de la Operación:</td><td class="td-num">${{ factura.json_original.resumen.montoTotalOperacion|floatformat:2 }}</td></tr>
+{% if factura.json_original.resumen.totalNoGravado %}<tr><td colspan="7" style="text-align:right;padding:3px 6px;">Total Otros Montos No Afectos:</td><td class="td-num">${{ factura.json_original.resumen.totalNoGravado|floatformat:2 }}</td></tr>{% endif %}
+{% endblock %}
+
+{% block resumen %}
+<div class="resumen-row total"><label>Total General:</label><span class="val">${{ factura.json_original.resumen.totalPagar|default:factura.json_original.resumen.montoTotalOperacion|floatformat:2 }}</span></div>
+{% endblock %}
