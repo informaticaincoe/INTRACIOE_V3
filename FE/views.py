@@ -2587,9 +2587,17 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False, consoli
                         "sello": "MODO DEMO",
                     })
 
-                logger.info("Inicio envio response: ")
+                _hacienda_url = HACIENDA_URL_PROD
+                if not _hacienda_url:
+                    from AUTENTICACION.models import ConfiguracionServidor as _CS5
+                    _h_conf = _CS5.objects.filter(clave="hacienda_url_prod").first()
+                    _hacienda_url = _h_conf.url_endpoint if _h_conf else None
+                if not _hacienda_url:
+                    return JsonResponse({"error": "URL de Hacienda producción no configurada."}, status=400)
+
+                logger.info("Inicio envio response a: %s", _hacienda_url)
                 envio_response = requests.post(
-                    HACIENDA_URL_PROD,
+                    _hacienda_url,
                     json=envio_json,
                     headers=envio_headers
                 )
