@@ -1115,7 +1115,7 @@ def generar_factura_view(request):
             logger.info("DTE: Factura actualizada totales OK")
 
             # ==== VARIABLES PARA generar_json ====
-            ambiente_obj = AMBIENTE
+            ambiente_obj = AMBIENTE or emisor_obj.ambiente or Ambiente.objects.filter(codigo="01").first()
             emisor = emisor_obj
 
             try:
@@ -2336,13 +2336,19 @@ def firmar_factura_view(request, factura_id, interno=False):
         mostrar_modal = intentos_modal < 3
         logger.debug("Intentos: %s, sesion: %s, Mostrar modal: %s, motivo: %s", intentos_modal, request.session['intentos_reintento'], mostrar_modal, motivo_otro)
     
-    # Firma exitosa
+    # Firma exitosa — guardar JSON firmado en disco
     logger.debug("Response data: %s", response_data)
     if response and response.status_code == 200 and response_data.get("status") == "OK":
-        json_signed_path = f"{FACTURAS_FIRMADAS_URL.url}{factura.codigo_generacion}.json"
-        os.makedirs(os.path.dirname(json_signed_path), exist_ok=True)
-        with open(json_signed_path, "w", encoding="utf-8") as json_file:
-            json.dump(response_data, json_file, indent=4, ensure_ascii=False)
+        try:
+            from AUTENTICACION.models import ConfiguracionServidor as _CS4
+            _firmados_conf = _CS4.objects.filter(clave="json_facturas_firmadas").first()
+            _firmados_path = getattr(_firmados_conf, "url", None) or "FE/json_firmados/"
+            json_signed_path = f"{_firmados_path}{factura.codigo_generacion}.json"
+            os.makedirs(os.path.dirname(json_signed_path), exist_ok=True)
+            with open(json_signed_path, "w", encoding="utf-8") as json_file:
+                json.dump(response_data, json_file, indent=4, ensure_ascii=False)
+        except Exception as e:
+            logger.warning("No se pudo guardar JSON firmado en disco: %s", e)
     logger.info("-Fin firma DTE: %s", factura_id)
     
     if interno:
