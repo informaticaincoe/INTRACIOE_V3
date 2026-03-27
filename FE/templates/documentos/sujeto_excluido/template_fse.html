@@ -1,0 +1,41 @@
+{% extends "documentos/_dte_base.html" %}
+{% block doc_title %}Factura Sujeto Excluido{% endblock %}
+{% block version %}Ver.1{% endblock %}
+{% block tipo_dte %}Factura Sujeto Excluido{% endblock %}
+
+{% block receptor_fields %}
+<div class="campo full"><label>Nombre o razón social:</label><span class="val">{{ factura.dtereceptor.nombre }}</span></div>
+<div class="campo full"><label>Tipo de doc. de Identificación:</label><span class="val">{{ factura.dtereceptor.tipo_documento.descripcion|default:"—" }}</span></div>
+<div class="campo full"><label>N° de doc. de Identificación:</label><span class="val">{{ factura.dtereceptor.num_documento|default:"—" }}</span></div>
+<div class="campo"><label>N° de teléfono:</label><span class="val">{{ factura.dtereceptor.telefono|default:"—" }}</span></div>
+<div class="campo full"><label>Dirección:</label><span class="val">{{ factura.dtereceptor.direccion|default:"—" }}</span></div>
+{% endblock %}
+
+{% block tabla_headers %}
+<th style="width:30px">N°</th>
+<th style="width:55px">Cantidad</th>
+<th style="width:55px">Unidad</th>
+<th>Descripción</th>
+<th style="width:80px">Precio Unitario</th>
+<th style="width:80px">Descuento</th>
+<th style="width:75px">Compras</th>
+{% endblock %}
+
+{% block tabla_row %}
+<td>{{ forloop.counter }}</td>
+<td>{{ item.cantidad }}</td>
+<td>{{ item.uniMedida }}</td>
+<td style="text-align:left;">{{ item.descripcion }}</td>
+<td class="td-num">${{ item.precioUni|floatformat:2 }}</td>
+<td class="td-num">${{ item.montoDescu|default:0|floatformat:2 }}</td>
+<td class="td-num">${{ item.compra|default:item.ventaGravada|floatformat:2 }}</td>
+{% endblock %}
+
+{% block tabla_footer %}
+<tr><td colspan="6" style="text-align:right;padding:3px 6px;">Sumatoria de compras:</td><td class="td-num">${{ factura.json_original.resumen.totalCompra|default:factura.json_original.resumen.totalGravada|floatformat:2 }}</td></tr>
+{% endblock %}
+
+{% block resumen %}
+<div class="resumen-row"><label>Sub-Total:</label><span class="val">${{ factura.json_original.resumen.subTotal|floatformat:2 }}</span></div>
+<div class="resumen-row total"><label>Total a Pagar:</label><span class="val">${{ factura.json_original.resumen.totalPagar|default:factura.json_original.resumen.totalCompra|floatformat:2 }}</span></div>
+{% endblock %}

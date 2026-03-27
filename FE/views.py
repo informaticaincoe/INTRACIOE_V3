@@ -2890,9 +2890,15 @@ def detalle_factura(request, factura_id):
         mostrar_modal, firma, envio_mh, intentos_modal, motivo_otro, usa_termica
     )
 
-    # Elegimos template según configuración
+    # Elegimos template según tipo de DTE y configuración
+    tipo_dte_codigo = str(getattr(factura.tipo_dte, 'codigo', '01')) if factura.tipo_dte else '01'
+
     if usa_termica:
         template_name = "documentos/factura_consumidor/template_factura_termica.html"
+    elif tipo_dte_codigo == '03':
+        template_name = "documentos/ccf/template_ccf.html"
+    elif tipo_dte_codigo == '14':
+        template_name = "documentos/sujeto_excluido/template_fse.html"
     else:
         template_name = "documentos/factura_consumidor/template_factura.html"
 

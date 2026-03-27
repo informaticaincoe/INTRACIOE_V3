@@ -1,0 +1,262 @@
+{% load qr_tags %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block doc_title %}DTE{% endblock %} — {{ factura.numero_control }}</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" rel="stylesheet">
+<style>
+:root{--azul:#003876;--azul-medio:#1a5fa8;--azul-claro:#e8f0fa;--gris-borde:#c8d0dc;--gris-fondo:#f4f6f9;--gris-texto:#4a5568;--negro:#1a202c;--blanco:#fff;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#eef2f7;color:var(--negro);font-size:12px;}
+.toolbar{display:flex;justify-content:center;gap:.5rem;padding:.75rem;}
+.toolbar .btn{padding:.35rem .75rem;border-radius:.35rem;font-size:.78rem;font-weight:600;border:1px solid #ccc;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:.3rem;}
+.toolbar .btn-print{background:var(--azul);color:#fff;border-color:var(--azul);}
+.toolbar .btn-back{background:#fff;color:#555;}
+.toolbar .badge{font-size:.7rem;padding:.2rem .5rem;border-radius:1rem;font-weight:700;}
+.toolbar .bg-success{background:#16a34a;color:#fff;}
+.toolbar .bg-warning{background:#f59e0b;color:#fff;}
+.toolbar .bg-secondary{background:#94a3b8;color:#fff;}
+.toolbar .badge-demo{background:#fef3c7;color:#92400e;border:1px solid #fde68a;}
+
+.doc-wrapper{max-width:210mm;margin:0 auto;padding:8px;}
+.dte{background:var(--blanco);border:1px solid var(--gris-borde);border-radius:6px;overflow:hidden;box-shadow:0 2px 12px rgba(0,56,118,.08);}
+
+/* Header */
+.dte-header{border-bottom:2px solid var(--azul);padding:10px 16px 8px;text-align:center;position:relative;}
+.dte-header .ver-label{position:absolute;top:6px;right:12px;font-size:9px;color:var(--gris-texto);font-family:monospace;}
+.dte-header .mh-row{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:3px;}
+.dte-header .escudo{width:28px;height:28px;background:var(--azul);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;}
+.dte-header .mh-name{font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--azul);}
+.dte-header h2{font-size:10px;font-weight:400;color:var(--gris-texto);letter-spacing:.1em;text-transform:uppercase;margin-bottom:1px;}
+.dte-header h3{font-size:14px;font-weight:700;color:var(--azul);letter-spacing:.05em;text-transform:uppercase;}
+
+/* Identificación */
+.dte-ident{display:grid;grid-template-columns:1fr auto 1fr;border-bottom:1px solid var(--gris-borde);background:var(--gris-fondo);}
+.dte-ident .id-left,.dte-ident .id-right{padding:6px 12px;}
+.dte-ident .id-center{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 14px;border-left:1px solid var(--gris-borde);border-right:1px solid var(--gris-borde);}
+.dte-ident .id-center img{width:64px;height:64px;}
+.sello-label{font-size:7px;letter-spacing:.1em;text-transform:uppercase;color:var(--gris-texto);text-align:center;margin-bottom:2px;font-weight:600;}
+
+/* Campos */
+.campo{display:flex;align-items:baseline;gap:3px;margin-bottom:2px;line-height:1.35;}
+.campo label{font-size:9px;color:var(--gris-texto);font-weight:500;white-space:nowrap;flex-shrink:0;}
+.campo .val{font-size:10px;color:var(--negro);border-bottom:1px solid var(--gris-borde);flex:1;min-width:40px;padding-bottom:1px;}
+.campo.full .val{min-width:80px;}
+
+/* Secciones */
+.dte-section{padding:6px 12px;border-bottom:1px solid var(--gris-borde);}
+.dte-section-header{font-size:9px;font-weight:700;color:var(--azul);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;padding-bottom:2px;border-bottom:1px dashed var(--gris-borde);}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:0 12px;}
+.two-col-bordered{display:grid;grid-template-columns:1fr 1fr;}
+.two-col-bordered .col-left{padding-right:10px;border-right:1px solid var(--gris-borde);}
+.two-col-bordered .col-right{padding-left:10px;}
+.col-header{font-size:10px;font-weight:700;color:var(--azul);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;padding-bottom:2px;border-bottom:1px solid var(--azul);}
+
+/* Tabla */
+.dte-table{width:100%;border-collapse:collapse;font-size:10px;}
+.dte-table th{background:var(--azul);color:#fff;padding:4px 6px;font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;text-align:center;border:1px solid var(--azul-medio);}
+.dte-table td{padding:3px 6px;border:1px solid var(--gris-borde);text-align:center;min-height:16px;}
+.dte-table td.text-end,.dte-table .td-num{text-align:right;}
+.dte-table tfoot td{font-size:9px;background:var(--gris-fondo);border:1px solid var(--gris-borde);}
+
+/* Resumen */
+.resumen-grid{padding:6px 12px;border-bottom:1px solid var(--gris-borde);}
+.resumen-row{display:flex;justify-content:space-between;padding:2px 0;font-size:10px;}
+.resumen-row label{color:var(--gris-texto);font-weight:500;}
+.resumen-row .val{font-weight:600;color:var(--negro);min-width:80px;text-align:right;}
+.resumen-row.total{border-top:2px solid var(--azul);padding-top:4px;margin-top:3px;font-size:12px;}
+.resumen-row.total label,.resumen-row.total .val{font-weight:700;color:var(--azul);}
+.resumen-row.tributo{background:var(--azul-claro);padding:3px 6px;border-radius:3px;margin-bottom:3px;}
+
+/* Letras */
+.letras-row{padding:6px 12px;border-bottom:1px solid var(--gris-borde);background:var(--azul-claro);}
+
+/* Extensión */
+.dte-extension{display:grid;grid-template-columns:1fr 1fr;padding:6px 12px;border-bottom:1px solid var(--gris-borde);gap:0 12px;}
+
+/* Footer */
+.dte-footer{text-align:center;padding:4px;font-size:8px;color:var(--gris-texto);background:var(--gris-fondo);}
+
+@media print{
+  @page{size:A4;margin:6mm;}
+  body{background:#fff;}
+  .toolbar{display:none !important;}
+  .doc-wrapper{padding:0;}
+  .dte{box-shadow:none;border-radius:0;}
+  .dte-table th{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <button class="btn btn-print" onclick="window.print()"><i class="bi bi-printer"></i>Imprimir</button>
+  <a href="{% url 'listar_facturas' %}" class="btn btn-back"><i class="bi bi-arrow-left"></i>Volver</a>
+  {% if factura.sello_recepcion and factura.sello_recepcion != 'MODO DEMO' %}
+    <span class="badge bg-success"><i class="bi bi-check-circle"></i> Aprobada MH</span>
+  {% elif factura.sello_recepcion == 'MODO DEMO' %}
+    <span class="badge badge-demo">MODO DEMO</span>
+  {% elif factura.firmado %}
+    <span class="badge bg-warning">Firmada</span>
+  {% else %}
+    <span class="badge bg-secondary">Borrador</span>
+  {% endif %}
+</div>
+
+<div class="doc-wrapper">
+<div class="dte">
+
+  <!-- Header MH -->
+  <div class="dte-header">
+    <span class="ver-label">{% block version %}Ver.1{% endblock %}</span>
+    <div class="mh-row">
+      <div class="escudo">⚖</div>
+      <span class="mh-name">Ministerio de Hacienda</span>
+    </div>
+    <h2>Documento Tributario Electrónico</h2>
+    <h3>{% block tipo_dte %}Factura{% endblock %}</h3>
+  </div>
+
+  <!-- Identificación -->
+  <div class="dte-ident">
+    <div class="id-left">
+      <div class="sello-label">Sello de Recepción</div>
+      <div class="campo"><label>Código de Generación:</label><span class="val">{{ factura.codigo_generacion|upper }}</span></div>
+      <div class="campo"><label>Número de Control:</label><span class="val">{{ factura.numero_control }}</span></div>
+      <div class="campo"><label>Sello de Recepción:</label><span class="val">{{ factura.sello_recepcion|default:"—" }}</span></div>
+    </div>
+    <div class="id-center">
+      {% if factura.sello_recepcion and factura.sello_recepcion != 'MODO DEMO' %}
+        <img src="{% qr_src factura.sello_recepcion 90 1 'M' %}" alt="QR">
+      {% else %}
+        <img src="{% qr_src factura.codigo_generacion|upper 90 1 'M' %}" alt="QR">
+      {% endif %}
+    </div>
+    <div class="id-right">
+      <div class="campo"><label>Modelo de Facturación:</label><span class="val">{{ factura.tipomodelo.descripcion|default:"Previo" }}</span></div>
+      <div class="campo"><label>Tipo de Transmisión:</label><span class="val">{{ factura.tipotransmision.descripcion|default:"Normal" }}</span></div>
+      <div class="campo"><label>Fecha y Hora de Generación:</label><span class="val">{{ factura.fecha_emision|date:"d/m/Y" }} {{ factura.hora_emision|time:"H:i:s" }}</span></div>
+    </div>
+  </div>
+
+  <!-- Emisor / Receptor -->
+  <div class="dte-section">
+    <div class="two-col-bordered">
+      <div class="col-left">
+        <div class="col-header">Emisor</div>
+        <div class="campo full"><label>Nombre o razón social:</label><span class="val">{{ factura.dteemisor.nombre_razon_social }}</span></div>
+        <div class="campo"><label>NIT:</label><span class="val">{{ factura.dteemisor.nit }}</span></div>
+        {% if factura.dteemisor.nrc %}<div class="campo"><label>NRC:</label><span class="val">{{ factura.dteemisor.nrc }}</span></div>{% endif %}
+        <div class="campo full"><label>Actividad económica:</label><span class="val">{% for a in factura.dteemisor.actividades_economicas.all %}{{ a.descripcion }}{% if not forloop.last %}, {% endif %}{% endfor %}</span></div>
+        <div class="campo full"><label>Dirección:</label><span class="val">{{ factura.dteemisor.direccion_comercial }}</span></div>
+        <div class="campo"><label>Teléfono:</label><span class="val">{{ factura.dteemisor.telefono|default:"—" }}</span></div>
+        <div class="campo full"><label>Correo electrónico:</label><span class="val">{{ factura.dteemisor.email|default:"—" }}</span></div>
+        {% if factura.dteemisor.nombre_comercial %}<div class="campo full"><label>Nombre comercial:</label><span class="val">{{ factura.dteemisor.nombre_comercial }}</span></div>{% endif %}
+        {% if factura.dteemisor.tipoestablecimiento %}<div class="campo full"><label>Tipo de establecimiento:</label><span class="val">{{ factura.dteemisor.tipoestablecimiento.descripcion }}</span></div>{% endif %}
+      </div>
+      <div class="col-right">
+        <div class="col-header">Receptor</div>
+        {% block receptor_fields %}
+        <div class="campo full"><label>Nombre o razón social:</label><span class="val">{{ factura.dtereceptor.nombre }}</span></div>
+        <div class="campo full"><label>Tipo de doc.:</label><span class="val">{{ factura.dtereceptor.tipo_documento.descripcion|default:"—" }}</span></div>
+        <div class="campo full"><label>N° de doc.:</label><span class="val">{{ factura.dtereceptor.num_documento|default:"—" }}</span></div>
+        <div class="campo full"><label>Correo electrónico:</label><span class="val">{{ factura.dtereceptor.correo|default:"—" }}</span></div>
+        {% endblock %}
+      </div>
+    </div>
+  </div>
+
+  {% block secciones_extra %}{% endblock %}
+
+  <!-- Cuerpo del documento -->
+  <div class="dte-section" style="padding:0;">
+    <table class="dte-table">
+      <thead>
+        <tr>
+          {% block tabla_headers %}
+          <th style="width:25px">N°</th>
+          <th style="width:45px">Cant.</th>
+          <th style="width:45px">Unidad</th>
+          <th>Descripción</th>
+          <th style="width:65px">P. Unitario</th>
+          <th style="width:65px">Otros No Afectos</th>
+          <th style="width:65px">Descuento</th>
+          <th style="width:60px">No Sujetas</th>
+          <th style="width:55px">Exentas</th>
+          <th style="width:60px">Gravadas</th>
+          {% endblock %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in factura.json_original.cuerpoDocumento %}
+        <tr>
+          {% block tabla_row %}
+          <td>{{ forloop.counter }}</td>
+          <td>{{ item.cantidad }}</td>
+          <td>{{ item.uniMedida }}</td>
+          <td style="text-align:left;">{{ item.descripcion }}</td>
+          <td class="td-num">${{ item.precioUni|floatformat:2 }}</td>
+          <td class="td-num">${{ item.noGravado|default:0|floatformat:2 }}</td>
+          <td class="td-num">${{ item.montoDescu|default:0|floatformat:2 }}</td>
+          <td class="td-num">${{ item.ventaNoSuj|default:0|floatformat:2 }}</td>
+          <td class="td-num">${{ item.ventaExenta|default:0|floatformat:2 }}</td>
+          <td class="td-num">${{ item.ventaGravada|floatformat:2 }}</td>
+          {% endblock %}
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        {% block tabla_footer %}
+        <tr><td colspan="7" style="text-align:right;padding:3px 6px;">Suma de Ventas:</td><td class="td-num">${{ factura.json_original.resumen.totalNoSuj|default:0|floatformat:2 }}</td><td class="td-num">${{ factura.json_original.resumen.totalExenta|default:0|floatformat:2 }}</td><td class="td-num">${{ factura.json_original.resumen.totalGravada|floatformat:2 }}</td></tr>
+        {% endblock %}
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- Resumen -->
+  <div class="resumen-grid">
+    {% block resumen %}
+    <div class="resumen-row"><label>Sub-Total:</label><span class="val">${{ factura.json_original.resumen.subTotal|floatformat:2 }}</span></div>
+    <div class="resumen-row"><label>Monto Total de la Operación:</label><span class="val">${{ factura.json_original.resumen.montoTotalOperacion|floatformat:2 }}</span></div>
+    <div class="resumen-row total"><label>Total a Pagar:</label><span class="val">${{ factura.json_original.resumen.totalPagar|floatformat:2 }}</span></div>
+    {% endblock %}
+  </div>
+
+  <!-- Letras -->
+  <div class="letras-row">
+    <div class="campo full"><label>Valor en Letras:</label><span class="val">{{ factura.json_original.resumen.totalLetras }}</span></div>
+    <div class="campo full"><label>Condición de la Operación:</label><span class="val">{% if factura.json_original.resumen.condicionOperacion == 1 %}Contado{% elif factura.json_original.resumen.condicionOperacion == 2 %}A crédito{% else %}Otro{% endif %}</span></div>
+  </div>
+
+  <!-- Observaciones -->
+  {% if factura.json_original.extension.observaciones %}
+  <div class="dte-section" style="border-bottom:none;"><div class="campo full"><label>Observaciones:</label><span class="val">{{ factura.json_original.extension.observaciones }}</span></div></div>
+  {% endif %}
+
+  <!-- Extensión -->
+  {% if factura.json_original.extension %}
+  <div class="dte-extension">
+    <div>
+      <div class="campo full"><label>Responsable Emisor:</label><span class="val">{{ factura.json_original.extension.nombEntrega|default:"—" }}</span></div>
+      <div class="campo full"><label>Responsable Receptor:</label><span class="val">{{ factura.json_original.extension.nombRecibe|default:"—" }}</span></div>
+    </div>
+    <div>
+      <div class="campo"><label>N° Documento:</label><span class="val">{{ factura.json_original.extension.docuEntrega|default:"—" }}</span></div>
+      <div class="campo"><label>N° Documento:</label><span class="val">{{ factura.json_original.extension.docuRecibe|default:"—" }}</span></div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="dte-footer">
+    {{ factura.dteemisor.nombre_razon_social }} · INTRACOE v3 · Página 1 de 1
+  </div>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

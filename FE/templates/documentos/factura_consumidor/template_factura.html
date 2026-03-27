@@ -1,326 +1,44 @@
-{% load static %}
-{% load qr_tags %}
-{% load i18n %}
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>DTE {{ factura.numero_control }}</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" rel="stylesheet">
-  <style>
-    :root { --accent: #0d47a1; }
-    body { background: #f4f6fb; font-family: 'Segoe UI', system-ui, sans-serif; font-size: 12px; }
-    .factura-page {
-      max-width: 210mm; margin: 1rem auto; background: #fff;
-      box-shadow: 0 2px 12px rgba(0,0,0,.08); border-radius: .5rem;
-      padding: 1.5rem 2rem;
-    }
-    /* Header */
-    .dte-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; padding-bottom: .75rem; border-bottom: 2px solid var(--accent); }
-    .dte-header .empresa { flex: 1; }
-    .dte-header .empresa h2 { font-size: 1.1rem; font-weight: 700; color: var(--accent); margin: 0; }
-    .dte-header .empresa p { margin: .1rem 0; color: #475569; font-size: .78rem; }
-    .dte-header .dte-info { text-align: right; min-width: 280px; }
-    .dte-header .dte-tipo { font-size: 1rem; font-weight: 700; color: var(--accent); text-transform: uppercase; margin-bottom: .25rem; }
-    .dte-header .dte-meta { font-size: .72rem; color: #64748b; }
-    .dte-header .dte-meta strong { color: #334155; }
+{% extends "documentos/_dte_base.html" %}
+{% block doc_title %}Factura Electrónica{% endblock %}
+{% block version %}Ver.1{% endblock %}
+{% block tipo_dte %}Factura{% endblock %}
 
-    /* Secciones */
-    .section-title { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--accent); margin-bottom: .35rem; padding-bottom: .2rem; border-bottom: 1px solid #e2e8f0; }
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .15rem .75rem; font-size: .78rem; margin-bottom: .75rem; }
-    .info-grid .label { color: #94a3b8; font-weight: 600; }
-    .info-grid .value { color: #1e293b; }
+{% block receptor_fields %}
+<div class="campo full"><label>Nombre o razón social:</label><span class="val">{{ factura.dtereceptor.nombre }}</span></div>
+<div class="campo full"><label>Tipo de doc. de Identificación:</label><span class="val">{{ factura.dtereceptor.tipo_documento.descripcion|default:"—" }}</span></div>
+<div class="campo full"><label>N° de doc. de Identificación:</label><span class="val">{{ factura.dtereceptor.num_documento|default:"—" }}</span></div>
+<div class="campo full"><label>Correo Electrónico:</label><span class="val">{{ factura.dtereceptor.correo|default:"—" }}</span></div>
+{% if factura.dtereceptor.nombreComercial %}<div class="campo full"><label>Nombre Comercial:</label><span class="val">{{ factura.dtereceptor.nombreComercial }}</span></div>{% endif %}
+{% endblock %}
 
-    /* Tabla productos */
-    .prod-table { width: 100%; border-collapse: collapse; font-size: .78rem; margin-bottom: .75rem; }
-    .prod-table th { background: var(--accent); color: #fff; padding: .4rem .5rem; font-weight: 600; font-size: .7rem; text-transform: uppercase; letter-spacing: .3px; }
-    .prod-table td { padding: .35rem .5rem; border-bottom: 1px solid #f1f5f9; }
-    .prod-table tr:nth-child(even) { background: #f8fafc; }
-    .prod-table .text-end { text-align: right; }
-
-    /* Resumen */
-    .resumen-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: .5rem; padding: .75rem 1rem; }
-    .resumen-row { display: flex; justify-content: space-between; padding: .15rem 0; font-size: .8rem; }
-    .resumen-row.total { border-top: 2px solid var(--accent); padding-top: .4rem; margin-top: .25rem; font-size: .95rem; font-weight: 700; color: var(--accent); }
-    .letras-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: .35rem; padding: .4rem .75rem; font-size: .75rem; color: #1e40af; font-weight: 600; margin-bottom: .75rem; }
-
-    /* QR */
-    .qr-section { display: flex; gap: .5rem; align-items: center; justify-content: center; margin-top: .75rem; padding-top: .5rem; border-top: 1px solid #e2e8f0; }
-    .qr-section img { width: 70px; height: 70px; }
-    .qr-section .qr-label { font-size: .6rem; color: #94a3b8; text-align: center; }
-
-    /* Footer */
-    .dte-footer { text-align: center; font-size: .65rem; color: #94a3b8; margin-top: .75rem; padding-top: .5rem; border-top: 1px solid #e2e8f0; }
-
-    /* Contingencia badge */
-    .badge-contingencia { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; padding: .2rem .5rem; border-radius: .25rem; font-size: .7rem; font-weight: 600; }
-    .badge-demo { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; padding: .2rem .5rem; border-radius: .25rem; font-size: .7rem; font-weight: 600; }
-
-    /* Toolbar (no print) */
-    .toolbar { display: flex; justify-content: center; gap: .5rem; padding: .75rem; }
-
-    /* Print */
-    @media print {
-      @page { size: A4; margin: 8mm; }
-      body { background: #fff; }
-      .factura-page { box-shadow: none; margin: 0; padding: 0; border-radius: 0; }
-      .d-print-none { display: none !important; }
-      .prod-table th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    }
-  </style>
-</head>
-<body>
-
-<!-- Toolbar -->
-<div class="toolbar d-print-none">
-  <button class="btn btn-primary btn-sm" onclick="window.print()">
-    <i class="bi bi-printer me-1"></i>Imprimir
-  </button>
-  <a href="{% url 'listar_facturas' %}" class="btn btn-outline-secondary btn-sm">
-    <i class="bi bi-arrow-left me-1"></i>Volver al listado
-  </a>
-  {% if factura.sello_recepcion and factura.sello_recepcion != 'MODO DEMO' %}
-    <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Aprobada por MH</span>
-  {% elif factura.sello_recepcion == 'MODO DEMO' %}
-    <span class="badge-demo"><i class="bi bi-info-circle me-1"></i>MODO DEMO</span>
-  {% elif factura.firmado %}
-    <span class="badge bg-warning text-dark"><i class="bi bi-pen me-1"></i>Firmada (pendiente MH)</span>
-  {% else %}
-    <span class="badge bg-secondary"><i class="bi bi-clock me-1"></i>Borrador</span>
-  {% endif %}
-</div>
-
-<div class="factura-page">
-
-  <!-- ═══ HEADER ═══ -->
-  <div class="dte-header">
-    <div class="empresa">
-      <h2>{{ factura.dteemisor.nombre_comercial|default:factura.dteemisor.nombre_razon_social }}</h2>
-      <p><strong>NIT:</strong> {{ factura.dteemisor.nit }} &nbsp;|&nbsp; <strong>NRC:</strong> {{ factura.dteemisor.nrc }}</p>
-      <p>{{ factura.dteemisor.direccion_comercial }}</p>
-      <p>Tel: {{ factura.dteemisor.telefono }} &nbsp;|&nbsp; {{ factura.dteemisor.email }}</p>
-    </div>
-    <div class="dte-info">
-      <div class="dte-tipo">
-        {% if factura.tipo_dte %}{{ factura.tipo_dte.descripcion }}{% else %}Factura{% endif %}
-      </div>
-      <div class="dte-meta">
-        <strong>N° Control:</strong> {{ factura.numero_control }}<br>
-        <strong>Código Gen.:</strong> {{ factura.codigo_generacion|upper }}<br>
-        <strong>Fecha:</strong> {{ factura.fecha_emision|date:"d/m/Y" }} {{ factura.hora_emision|time:"H:i" }}<br>
-        {% if factura.sello_recepcion %}
-          <strong>Sello MH:</strong> {{ factura.sello_recepcion|truncatechars:30 }}<br>
-        {% endif %}
-        {% if factura.contingencia %}
-          <span class="badge-contingencia">CONTINGENCIA</span>
-        {% endif %}
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══ RECEPTOR ═══ -->
-  <div class="section-title">Datos del Receptor</div>
-  <div class="info-grid">
-    <div><span class="label">Nombre:</span> <span class="value">{{ factura.dtereceptor.nombre }}</span></div>
-    <div><span class="label">Documento:</span> <span class="value">{{ factura.dtereceptor.num_documento }}</span></div>
-    <div><span class="label">Dirección:</span> <span class="value">{{ factura.dtereceptor.direccion|default:"—" }}</span></div>
-    <div><span class="label">Teléfono:</span> <span class="value">{{ factura.dtereceptor.telefono|default:"—" }}</span></div>
-    <div><span class="label">Correo:</span> <span class="value">{{ factura.dtereceptor.correo|default:"—" }}</span></div>
-    {% if factura.dtereceptor.nrc %}
-    <div><span class="label">NRC:</span> <span class="value">{{ factura.dtereceptor.nrc }}</span></div>
-    {% endif %}
-  </div>
-
-  <!-- ═══ DETALLE DE PRODUCTOS ═══ -->
-  <div class="section-title">Detalle</div>
-  <table class="prod-table">
-    <thead>
-      <tr>
-        <th style="width:5%;">N°</th>
-        <th style="width:8%;">Cant.</th>
-        <th style="width:10%;">Código</th>
-        <th>Descripción</th>
-        <th class="text-end" style="width:12%;">P. Unit.</th>
-        <th class="text-end" style="width:10%;">Desc.</th>
-        <th class="text-end" style="width:12%;">Gravada</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for item in factura.json_original.cuerpoDocumento %}
-      <tr>
-        <td>{{ forloop.counter }}</td>
-        <td>{{ item.cantidad }}</td>
-        <td>{{ item.codigo }}</td>
-        <td>{{ item.descripcion }}</td>
-        <td class="text-end">${{ item.precioUni|floatformat:2 }}</td>
-        <td class="text-end">${{ item.montoDescu|default:0|floatformat:2 }}</td>
-        <td class="text-end">${{ item.ventaGravada|floatformat:2 }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
-  <!-- ═══ TOTAL EN LETRAS ═══ -->
-  <div class="letras-box">
-    <i class="bi bi-chat-quote me-1"></i>{{ factura.json_original.resumen.totalLetras }}
-  </div>
-
-  <!-- ═══ RESUMEN ═══ -->
-  <div class="row g-3">
-    <div class="col-md-6"></div>
-    <div class="col-md-6">
-      <div class="resumen-box">
-        <div class="resumen-row"><span>Subtotal</span><span>${{ factura.json_original.resumen.subTotal|floatformat:2 }}</span></div>
-        <div class="resumen-row"><span>Ventas Gravadas</span><span>${{ factura.json_original.resumen.totalGravada|floatformat:2 }}</span></div>
-        {% if factura.json_original.resumen.totalExenta %}
-        <div class="resumen-row"><span>Ventas Exentas</span><span>${{ factura.json_original.resumen.totalExenta|floatformat:2 }}</span></div>
-        {% endif %}
-        {% if factura.json_original.resumen.totalNoSuj %}
-        <div class="resumen-row"><span>Ventas No Sujetas</span><span>${{ factura.json_original.resumen.totalNoSuj|floatformat:2 }}</span></div>
-        {% endif %}
-        {% if factura.json_original.resumen.totalIva %}
-        <div class="resumen-row"><span>IVA (incluido)</span><span>${{ factura.json_original.resumen.totalIva|floatformat:2 }}</span></div>
-        {% endif %}
-        {% if factura.json_original.resumen.totalDescu %}
-        <div class="resumen-row"><span>Descuentos</span><span>-${{ factura.json_original.resumen.totalDescu|floatformat:2 }}</span></div>
-        {% endif %}
-        {% if factura.json_original.resumen.ivaRete1 %}
-        <div class="resumen-row"><span>IVA Retenido</span><span>-${{ factura.json_original.resumen.ivaRete1|floatformat:2 }}</span></div>
-        {% endif %}
-        {% if factura.json_original.resumen.reteRenta %}
-        <div class="resumen-row"><span>Retención Renta</span><span>-${{ factura.json_original.resumen.reteRenta|floatformat:2 }}</span></div>
-        {% endif %}
-        <div class="resumen-row total"><span>Total a Pagar</span><span>${{ factura.json_original.resumen.totalPagar|floatformat:2 }}</span></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══ QR ═══ -->
-  <div class="qr-section">
-    <div>
-      <img src="{% qr_src 'https://admin.factura.gob.sv/consultaPublica' 90 1 'M' %}" alt="QR">
-      <div class="qr-label">Consulta pública</div>
-    </div>
-    <div>
-      <img src="{% qr_src factura.codigo_generacion|upper 90 1 'M' %}" alt="QR">
-      <div class="qr-label">Código generación</div>
-    </div>
-    {% if factura.sello_recepcion and factura.sello_recepcion != 'MODO DEMO' %}
-    <div>
-      <img src="{% qr_src factura.sello_recepcion 90 1 'M' %}" alt="QR">
-      <div class="qr-label">Sello recepción</div>
-    </div>
-    {% endif %}
-  </div>
-
-  <!-- ═══ FOOTER ═══ -->
-  <div class="dte-footer">
-    Documento Tributario Electrónico generado por INTRACOE &nbsp;·&nbsp;
-    {{ factura.dteemisor.nombre_razon_social }}
-  </div>
-
-</div>
-
-{% if mostrar_modal and intentos_modal < 3 %}
-<div class="modal fade" id="confirmModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">
-          {% if firma == '1' %}Error al firmar el DTE
-          {% elif envio_mh == '1' %}Error al enviar el DTE a Hacienda
-          {% else %}Error al procesar el DTE{% endif %}
-        </h5>
-      </div>
-      <div class="modal-body text-center">
-        {% if intentos_modal >= 2 %}
-          <p>Este es su último reintento.</p>
-        {% else %}
-          <p>¿Desea intentar de nuevo?</p>
-        {% endif %}
-        <button class="btn btn-outline-primary" id="btnReintentar">Reintentar</button>
-        <button class="btn btn-secondary" id="btnContinuar">Continuar</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-{% if motivo_otro %}
-<div class="modal fade" id="motivoModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">Ingrese el motivo del error</h5></div>
-      <div class="modal-body">
-        <textarea class="form-control" id="motivoInput" rows="3" placeholder="Describa el motivo..."></textarea>
-        <div class="text-end mt-2">
-          <button class="btn btn-primary" id="btnEnviarMotivo" data-factura-id="{{ factura.id }}">Enviar</button>
-        </div>
-      </div>
-    </div>
+{% block secciones_extra %}
+{% if factura.json_original.ventaTercero %}
+<div class="dte-section">
+  <div class="dte-section-header">Venta a Cuenta de Terceros</div>
+  <div class="two-col">
+    <div class="campo"><label>NIT:</label><span class="val">{{ factura.json_original.ventaTercero.nit|default:"—" }}</span></div>
+    <div class="campo full"><label>Nombre:</label><span class="val">{{ factura.json_original.ventaTercero.nombre|default:"—" }}</span></div>
   </div>
 </div>
 {% endif %}
-
-{% if not firmado or not recibido_mh %}
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const intentos = parseInt("{{ intentos_modal }}");
-  const mostrarModal = {{ mostrar_modal|yesno:"true,false" }};
-  const motivoOtro = {{ motivo_otro|yesno:"true,false" }};
-  const firma = "{{ firma }}";
-  const envioMH = "{{ envio_mh }}";
-  const modalElement = document.getElementById('confirmModal');
-  const motivoModalElement = document.getElementById('motivoModal');
-  const btnReintentar = document.getElementById("btnReintentar");
-
-  if (mostrarModal && modalElement && intentos <= 3) {
-    const modal = new bootstrap.Modal(modalElement);
-    modal.show();
-    if (intentos >= 3 && btnReintentar) btnReintentar.style.display = "none";
-
-    if (btnReintentar) {
-      btnReintentar.addEventListener("click", () => {
-        btnReintentar.disabled = true;
-        let url = firma === "1" ? "{% url 'firmar_factura' factura.id %}" : "{% url 'enviar_factura_hacienda' factura.id %}";
-        if (intentos >= 2) url += "?crear_evento=true";
-        fetch(url, {method:"POST", headers:{"Content-Type":"application/json","X-CSRFToken":"{{ csrf_token }}"},body:JSON.stringify({reintento:true})})
-        .then(r => {
-          if (r.ok) {
-            if (intentos >= 2 && motivoOtro) { new bootstrap.Modal(motivoModalElement).show(); }
-            else { window.location.href = "{% url 'detalle_factura' factura.id %}?mostrar_modal=1&firma={{ firma|default:'0' }}&envio_mh={{ envio_mh|default:'0' }}&intentos_modal=" + (intentos+1) + "&motivo_otro={{ motivo_otro|yesno:'1,0' }}"; }
-          } else { alert("Error al reintentar."); btnReintentar.disabled = false; }
-        });
-      });
-    }
-
-    const btnContinuar = document.getElementById("btnContinuar");
-    if (btnContinuar) {
-      btnContinuar.addEventListener("click", () => {
-        let url = firma === "1" ? "{% url 'firmar_factura' factura.id %}?crear_evento=true" : "{% url 'enviar_factura_hacienda' factura.id %}?crear_evento=true";
-        fetch(url, {method:"POST", headers:{"Content-Type":"application/json","X-CSRFToken":"{{ csrf_token }}"},body:JSON.stringify({reintento:true})})
-        .then(() => {
-          if (motivoOtro) { new bootstrap.Modal(motivoModalElement).show(); }
-          else { window.location.href = "{% url 'detalle_factura' factura.id %}"; }
-        });
-      });
-    }
-
-    const btnMotivo = document.getElementById("btnEnviarMotivo");
-    if (btnMotivo) {
-      btnMotivo.addEventListener("click", () => {
-        const texto = document.getElementById("motivoInput").value.trim();
-        if (!texto) { alert("Ingrese un motivo."); return; }
-        window.location.href = "{% url 'enviar_motivo' %}?factura_id={{ factura.id }}&motivo=" + encodeURIComponent(texto);
-      });
-    }
-  }
-});
-</script>
+{% if factura.json_original.documentoRelacionado %}
+<div class="dte-section">
+  <div class="dte-section-header">Documentos Relacionados</div>
+  {% for doc in factura.json_original.documentoRelacionado %}
+  <div class="two-col">
+    <div class="campo"><label>Tipo:</label><span class="val">{{ doc.tipoDocumento|default:"—" }}</span></div>
+    <div class="campo"><label>N°:</label><span class="val">{{ doc.numeroDocumento|default:"—" }}</span></div>
+  </div>
+  {% endfor %}
+</div>
 {% endif %}
-{% endif %}
+{% endblock %}
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+{% block resumen %}
+<div class="resumen-row"><label>Sub-Total:</label><span class="val">${{ factura.json_original.resumen.subTotal|floatformat:2 }}</span></div>
+{% if factura.json_original.resumen.ivaRete1 %}<div class="resumen-row"><label>IVA Retenido:</label><span class="val">${{ factura.json_original.resumen.ivaRete1|floatformat:2 }}</span></div>{% endif %}
+{% if factura.json_original.resumen.reteRenta %}<div class="resumen-row"><label>Retención Renta:</label><span class="val">${{ factura.json_original.resumen.reteRenta|floatformat:2 }}</span></div>{% endif %}
+<div class="resumen-row"><label>Monto Total de la Operación:</label><span class="val">${{ factura.json_original.resumen.montoTotalOperacion|floatformat:2 }}</span></div>
+{% if factura.json_original.resumen.totalNoGravado %}<div class="resumen-row"><label>Total Otros Montos No Afectos:</label><span class="val">${{ factura.json_original.resumen.totalNoGravado|floatformat:2 }}</span></div>{% endif %}
+<div class="resumen-row total"><label>Total a Pagar:</label><span class="val">${{ factura.json_original.resumen.totalPagar|floatformat:2 }}</span></div>
+{% endblock %}

@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Templates DTE — Ministerio de Hacienda El Salvador</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --azul: #003876;
+    --azul-medio: #1a5fa8;
+    --azul-claro: #e8f0fa;
+    --gris-borde: #c8d0dc;
+    --gris-fondo: #f4f6f9;
+    --gris-texto: #4a5568;
+    --negro: #1a202c;
+    --blanco: #ffffff;
+    --rojo: #c0392b;
+    --verde: #27ae60;
+    --amarillo: #f39c12;
+    --accent: #1e6dbe;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: #eef2f7;
+    color: var(--negro);
+    font-size: 13px;
+  }
+
+  /* ── NAV LATERAL ── */
+  #sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: 230px;
+    height: 100vh;
+    background: var(--azul);
+    overflow-y: auto;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 20px;
+  }
+  #sidebar-header {
+    padding: 18px 16px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    text-align: center;
+  }
+  #sidebar-header .escudo {
+    font-size: 28px;
+    margin-bottom: 4px;
+  }
+  #sidebar-header h2 {
+    color: #fff;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    line-height: 1.4;
+    opacity: 0.9;
+  }
+  #sidebar-header span {
+    display: block;
+    color: #7ec8f5;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  #sidebar nav {
+    padding: 10px 0;
+    flex: 1;
+  }
+  #sidebar nav a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    color: rgba(255,255,255,0.75);
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    transition: all 0.15s;
+    border-left: 3px solid transparent;
+    cursor: pointer;
+  }
+  #sidebar nav a:hover, #sidebar nav a.active {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    border-left-color: #7ec8f5;
+  }
+  #sidebar nav a .badge {
+    background: rgba(126,200,245,0.25);
+    color: #7ec8f5;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    padding: 2px 5px;
+    border-radius: 3px;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+  .nav-section {
+    padding: 12px 16px 4px;
+    color: rgba(255,255,255,0.35);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  /* ── CONTENIDO ── */
+  #content {
+    margin-left: 230px;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  .page { display: none; }
+  .page.active { display: block; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ── DOCUMENTO ── */
+  .doc-wrapper {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .doc-title-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--azul);
+  }
+  .doc-title-bar h1 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--azul);
+    letter-spacing: -0.01em;
+  }
+  .doc-title-bar .badges {
+    display: flex;
+    gap: 6px;
+  }
+  .badge-tipo {
+    background: var(--azul);
+    color: #fff;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+  .badge-ver {
+    background: var(--azul-claro);
+    color: var(--azul);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-weight: 500;
+    border: 1px solid var(--azul-medio);
+  }
+
+  /* ── DTE DOCUMENT ── */
+  .dte {
+    background: var(--blanco);
+    border: 1px solid var(--gris-borde);
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,56,118,0.08);
+    position: relative;
+  }
+
+  .dte-header {
+    background: var(--blanco);
+    border-bottom: 2px solid var(--azul);
+    padding: 12px 16px 10px;
+    text-align: center;
+    position: relative;
+  }
+  .dte-header .ver-label {
+    position: absolute;
+    top: 8px;
+    right: 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--gris-texto);
+  }
+  .dte-header .mh-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .dte-header .escudo-img {
+    width: 34px;
+    height: 34px;
+    background: var(--azul);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 16px;
+  }
+  .dte-header .mh-nombre {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--azul);
+  }
+  .dte-header h2 {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--gris-texto);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .dte-header h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--azul);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* identificación strip */
+  .dte-identificacion {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 0;
+    border-bottom: 1px solid var(--gris-borde);
+    background: var(--gris-fondo);
+  }
+  .dte-identificacion .id-left, .dte-identificacion .id-right {
+    padding: 8px 14px;
+  }
+  .dte-identificacion .id-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    border-left: 1px solid var(--gris-borde);
+    border-right: 1px solid var(--gris-borde);
+  }
+  .qr-placeholder {
+    width: 64px;
+    height: 64px;
+    background: repeating-conic-gradient(var(--azul) 0% 25%, #dde8f5 0% 50%) 0 0/8px 8px;
+    border: 2px solid var(--azul);
+    border-radius: 4px;
+    opacity: 0.7;
+  }
+  .sello-label {
+    font-size: 8px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gris-texto);
+    text-align: center;
+    margin-bottom: 3px;
+    font-weight: 600;
+  }
+
+  /* campos */
+  .campo {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-bottom: 3px;
+    line-height: 1.4;
+  }
+  .campo label {
+    font-size: 10px;
+    color: var(--gris-texto);
+    font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .campo .val {
+    font-size: 11px;
+    color: var(--negro);
+    border-bottom: 1px solid var(--gris-borde);
+    flex: 1;
+    min-width: 60px;
+    padding-bottom: 1px;
+  }
+  .campo.full .val { min-width: 120px; }
+
+  /* secciones */
+  .dte-section {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--gris-borde);
+  }
+  .dte-section-header {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--azul);
+    background: var(--azul-claro);
+    padding: 4px 8px;
+    margin: -10px -14px 10px;
+    border-bottom: 1px solid var(--gris-borde);
+    text-align: center;
+  }
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 20px;
+  }
+  .two-col-bordered {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+  .two-col-bordered .col-left {
+    padding-right: 14px;
+    border-right: 1px solid var(--gris-borde);
+  }
+  .two-col-bordered .col-right {
+    padding-left: 14px;
+  }
+  .col-header {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--azul);
+    border-bottom: 1px solid var(--azul-claro);
+    padding-bottom: 4px;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+
+  /* tabla cuerpo */
+  .dte-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+  .dte-table th {
+    background: var(--azul);
+    color: #fff;
+    padding: 5px 6px;
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-align: center;
+    border: 1px solid var(--azul-medio);
+  }
+  .dte-table td {
+    padding: 5px 6px;
+    border: 1px solid var(--gris-borde);
+    color: var(--negro);
+    vertical-align: top;
+  }
+  .dte-table tr:nth-child(even) td { background: var(--gris-fondo); }
+  .dte-table .td-num { text-align: right; font-family: 'IBM Plex Mono', monospace; }
+  .dte-table .td-center { text-align: center; }
+  .dte-table tfoot td {
+    background: var(--azul-claro);
+    font-weight: 600;
+    font-size: 10px;
+  }
+  .empty-row td { height: 22px; }
+
+  /* resumen */
+  .resumen-grid {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+    padding: 8px 14px;
+  }
+  .resumen-row {
+    display: flex;
+    width: 340px;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid var(--gris-borde);
+    padding-bottom: 2px;
+  }
+  .resumen-row label {
+    font-size: 10px;
+    color: var(--gris-texto);
+    font-weight: 500;
+  }
+  .resumen-row .val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--negro);
+    min-width: 100px;
+    text-align: right;
+  }
+  .resumen-row.total label { font-weight: 700; color: var(--azul); font-size: 11px; }
+  .resumen-row.total .val { font-size: 13px; font-weight: 700; color: var(--azul); }
+  .resumen-row.tributo { background: var(--azul-claro); padding: 3px 6px; border-radius: 3px; border: none; }
+
+  /* extension / pie */
+  .dte-extension {
+    border-top: 2px solid var(--azul);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    background: var(--gris-fondo);
+  }
+  .ext-col {
+    padding: 8px 14px;
+    border-right: 1px solid var(--gris-borde);
+  }
+  .ext-col:last-child { border-right: none; }
+  .dte-footer {
+    text-align: right;
+    padding: 4px 14px 6px;
+    font-size: 9px;
+    color: var(--gris-texto);
+    border-top: 1px solid var(--gris-borde);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* valor en letras */
+  .letras-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    border-top: 1px solid var(--gris-borde);
+    border-bottom: 1px solid var(--gris-borde);
+    padding: 6px 14px;
+  }
+  .letras-row .campo { margin-bottom: 0; }
+
+  /* Print */
+  @media print {
+    #sidebar { display: none; }
+    #content { margin-left: 0; padding: 0; background: white; }
+    .page { display: block !important; page-break-after: always; }
+    .doc-title-bar { display: none; }
+    .dte { box-shadow: none; border-color: #999; }
+  }
+
+  /* Scrollbar */
+  #sidebar::-webkit-scrollbar { width: 4px; }
+  #sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
+
+  /* Responsive hint */
+  .info-note {
+    background: var(--azul-claro);
+    border-left: 3px solid var(--azul-medio);
+    padding: 8px 12px;
+    margin-bottom: 16px;
+    border-radius: 0 4px 4px 0;
+    font-size: 11px;
+    color: var(--azul);
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════ SIDEBAR ══════════════ -->
+<div id="sidebar">
+  <div id="sidebar-header">
+    <div class="escudo">🏛️</div>
+    <h2>Ministerio de Hacienda<br>El Salvador</h2>
+    <span>Templates DTE v1.6</span>
+  </div>
+  <nav>
+    <div class="nav-section">Facturas</div>
+    <a href="#" onclick="show('fe')" id="nav-fe" class="active">
+      Factura Electrónica <span class="badge">01</span>
+    </a>
+    <a href="#" onclick="show('fex')" id="nav-fex">
+      Factura Exportación <span class="badge">11</span>
+    </a>
+    <a href="#" onclick="show('fse')" id="nav-fse">
+      Factura Sujeto Excluido <span class="badge">14</span>
+    </a>
+    <div class="nav-section">Comprobantes</div>
+    <a href="#" onclick="show('ccf')" id="nav-ccf">
+      Créd. Fiscal Electrónico <span class="badge">03</span>
+    </a>
+    <a href="#" onclick="show('nr')" id="nav-nr">
+      Nota de Remisión <span class="badge">04</span>
+    </a>
+    <a href="#" onclick="show('nc')" id="nav-nc">
+      Nota de Crédito <span class="badge">05</span>
+    </a>
+    <a href="#" onclick="show('nd')" id="nav-nd">
+      Nota de Débito <span class="badge">06</span>
+    </a>
+    <a href="#" onclick="show('ret')" id="nav-ret">
+      Comp. Retención <span class="badge">07</span>
+    </a>
+    <div class="nav-section">Liquidación</div>
+    <a href="#" onclick="show('liq')" id="nav-liq">
+      Comp. Liquidación <span class="badge">08</span>
+    </a>
+    <a href="#" onclick="show('dcle')" id="nav-dcle">
+      Doc. Contable Liq. <span class="badge">09</span>
+    </a>
+    <div class="nav-section">Otros</div>
+    <a href="#" onclick="show('don')" id="nav-don">
+      Comp. Donación <span class="badge">15</span>
+    </a>
+  </nav>
+</div>
+
+<!-- ══════════════ CONTENT ══════════════ -->
+<div id="content">
+
+  <!-- ══ 1. FACTURA ELECTRÓNICA (01) ══ -->
+  <div class="page active" id="page-fe">
+    <div class="doc-wrapper">
+      <div class="doc-title-bar">
+        <h1>Factura Electrónica</h1>
+        <div class="badges">
+          <span class="badge-tipo">Tipo 01</span>
+          <span class="badge-ver">Ver. 1</span>
+        </div>
+      </div>
+      <div class="info-note">
+        Template de Versión Legible sugerido según Manual de Estructuras DTE — Ministerio de Hacienda El Salvador.
+        Puede configurarse de acuerdo a sus necesidades respetando la categorización asignada a cada campo.
+      </div>
+      <div class="dte">
+        <!-- Header -->
+        <div class="dte-header">
+          <span class="ver-label">Ver.1</span>
+          <div class="mh-logo">
+            <div class="escudo-img">⚖</div>
+            <span class="mh-nombre">Ministerio de Hacienda</span>
+          </div>
+          <h2>Documento Tributario Electrónico</h2>
+          <h3>Factura</h3>
+        </div>
+        <!-- Identificación -->
+        <div class="dte-identificacion">
+          <div class="id-left">
+            <div class="sello-label">Sello de Recepción</div>
+            <div class="campo"><label>Código de Generación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Número de Control:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Sello de Recepción:</label><span class="val">&nbsp;</span></div>
+          </div>
+          <div class="id-center">
+            <div class="qr-placeholder"></div>
+          </div>
+          <div class="id-right">
+            <div class="campo"><label>Modelo de Facturación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Tipo de Transmisión:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Fecha y Hora de Generación:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <!-- Emisor / Receptor -->
+        <div class="dte-section">
+          <div class="two-col-bordered">
+            <div class="col-left">
+              <div class="col-header">Emisor</div>
+              <div class="campo full"><label>Nombre o razón social:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>NIT:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>NRC:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Actividad económica:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Dirección:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>Número de teléfono:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Correo electrónico:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Nombre Comercial:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Tipo de establecimiento:</label><span class="val">&nbsp;</span></div>
+            </div>
+            <div class="col-right">
+              <div class="col-header">Receptor</div>
+              <div class="campo full"><label>Nombre o razón social:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Tipo de doc. de Identificación:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>N° de doc. de Identificación:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Correo Electrónico:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Nombre Comercial:</label><span class="val">&nbsp;</span></div>
+            </div>
+          </div>
+        </div>
+        <!-- Venta a cuenta de terceros -->
+        <div class="dte-section">
+          <div class="dte-section-header">Venta a Cuenta de Terceros</div>
+          <div class="two-col">
+            <div class="campo"><label>NIT:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Nombre, denominación o razón social:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <!-- Documentos relacionados -->
+        <div class="dte-section">
+          <div class="dte-section-header">Documentos Relacionados</div>
+          <div class="two-col">
+            <div class="campo"><label>Tipo de Documento:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>N° de documento:</label><span class="val">&nbsp;</span></div>
+          </div>
+          <div class="campo"><label>Fecha del Documento:</label><span class="val">&nbsp;</span></div>
+        </div>
+        <!-- Otros documentos asociados -->
+        <div class="dte-section">
+          <div class="dte-section-header">Otros Documentos Asociados</div>
+          <div class="two-col">
+            <div class="campo full"><label>Identificación documento:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Descripción:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <!-- Cuerpo -->
+        <div class="dte-section" style="padding:0">
+          <table class="dte-table">
+            <thead>
+              <tr>
+                <th style="width:30px">N°</th>
+                <th style="width:50px">Cantidad</th>
+                <th style="width:60px">Unidad</th>
+                <th>Descripción</th>
+                <th style="width:70px">Precio Unitario</th>
+                <th style="width:80px">Otros montos no afectos</th>
+                <th style="width:75px">Descuento por Ítem</th>
+                <th style="width:70px">Ventas No Sujetas</th>
+                <th style="width:65px">Ventas Exentas</th>
+                <th style="width:65px">Ventas Gravadas</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="7" style="text-align:right; font-size:10px; padding:4px 8px;">Suma de Ventas:</td>
+                <td class="td-num"></td><td class="td-num"></td><td class="td-num"></td>
+              </tr>
+              <tr>
+                <td colspan="9" style="text-align:right; font-size:10px; padding:3px 8px;">Sumatoria de ventas:</td>
+                <td class="td-num"></td>
+              </tr>
+              <tr>
+                <td colspan="9" style="text-align:right; font-size:10px; padding:3px 8px;">Monto global Desc., Rebajas y otros a ventas no sujetas:</td>
+                <td class="td-num"></td>
+              </tr>
+              <tr>
+                <td colspan="9" style="text-align:right; font-size:10px; padding:3px 8px;">Monto global Desc., Rebajas y otros a ventas exentas:</td>
+                <td class="td-num"></td>
+              </tr>
+              <tr>
+                <td colspan="9" style="text-align:right; font-size:10px; padding:3px 8px;">Monto global Desc., Rebajas y otros a ventas gravadas:</td>
+                <td class="td-num"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <!-- Resumen -->
+        <div class="resumen-grid">
+          <div class="resumen-row tributo"><label>Nombre del Tributo:</label><span class="val">Valor del Tributo</span></div>
+          <div class="resumen-row"><label>Sub-Total:</label><span class="val">&nbsp;</span></div>
+          <div class="resumen-row"><label>IVA Retenido:</label><span class="val">&nbsp;</span></div>
+          <div class="resumen-row"><label>Retención Renta:</label><span class="val">&nbsp;</span></div>
+          <div class="resumen-row"><label>Monto Total de la Operación:</label><span class="val">&nbsp;</span></div>
+          <div class="resumen-row"><label>Total Otros Montos No Afectos:</label><span class="val">&nbsp;</span></div>
+          <div class="resumen-row total"><label>Total a Pagar:</label><span class="val">&nbsp;</span></div>
+        </div>
+        <!-- Letras / condición -->
+        <div class="letras-row">
+          <div class="campo full"><label>Valor en Letras:</label><span class="val">&nbsp;</span></div>
+          <div class="campo full"><label>Condición de la Operación:</label><span class="val">&nbsp;</span></div>
+        </div>
+        <div class="dte-section" style="border-bottom:none">
+          <div class="campo full"><label>Observaciones:</label><span class="val">&nbsp;</span></div>
+        </div>
+        <!-- Extensión -->
+        <div class="dte-extension">
+          <div class="ext-col">
+            <div class="campo full"><label>Responsable por parte del Emisor:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Responsable por parte del Receptor:</label><span class="val">&nbsp;</span></div>
+          </div>
+          <div class="ext-col">
+            <div class="campo"><label>N° de Documento:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>N° de Documento:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <div class="dte-footer">Página 1 de 1</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══ 2. CCF (03) ══ -->
+  <div class="page" id="page-ccf">
+    <div class="doc-wrapper">
+      <div class="doc-title-bar">
+        <h1>Comprobante de Crédito Fiscal Electrónico</h1>
+        <div class="badges"><span class="badge-tipo">Tipo 03</span><span class="badge-ver">Ver. 3</span></div>
+      </div>
+      <div class="dte">
+        <div class="dte-header">
+          <span class="ver-label">Ver.3</span>
+          <div class="mh-logo"><div class="escudo-img">⚖</div><span class="mh-nombre">Ministerio de Hacienda</span></div>
+          <h2>Documento Tributario Electrónico</h2>
+          <h3>Comprobante de Crédito Fiscal</h3>
+        </div>
+        <div class="dte-identificacion">
+          <div class="id-left">
+            <div class="sello-label">Sello de Recepción</div>
+            <div class="campo"><label>Código de Generación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Número de Control:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Sello de Recepción:</label><span class="val">&nbsp;</span></div>
+          </div>
+          <div class="id-center"><div class="qr-placeholder"></div></div>
+          <div class="id-right">
+            <div class="campo"><label>Modelo de Facturación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Tipo de Transmisión:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Fecha y Hora de Generación:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <div class="dte-section">
+          <div class="two-col-bordered">
+            <div class="col-left">
+              <div class="col-header">Emisor</div>
+              <div class="campo full"><label>Nombre o razón social:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>NIT:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>NRC:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Actividad económica:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Dirección:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>Número de teléfono:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Correo electrónico:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Nombre comercial:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Tipo de establecimiento:</label><span class="val">&nbsp;</span></div>
+            </div>
+            <div class="col-right">
+              <div class="col-header">Receptor</div>
+              <div class="campo full"><label>Nombre o razón social:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>NIT:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>NRC:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Actividad económica:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Dirección:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Correo electrónico:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Nombre comercial:</label><span class="val">&nbsp;</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="dte-section">
+          <div class="dte-section-header">Otros Documentos Asociados</div>
+          <div class="two-col">
+            <div class="campo full"><label>Identificación del documento:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Descripción:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <div class="dte-section">
+          <div class="dte-section-header">Venta a Cuenta de Terceros</div>
+          <div class="two-col">
+            <div class="campo"><label>NIT:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Nombre, denominación o razón social:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <div class="dte-section">
+          <div class="dte-section-header">Documentos Relacionados</div>
+          <div class="two-col">
+            <div class="campo"><label>Tipo de Documento:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>N° de documento:</label><span class="val">&nbsp;</span></div>
+          </div>
+          <div class="campo"><label>Fecha de documento:</label><span class="val">&nbsp;</span></div>
+        </div>
+        <div class="dte-section" style="padding:0">
+          <table class="dte-table">
+            <thead>
+              <tr>
+                <th style="width:30px">N°</th>
+                <th style="width:50px">Cantidad</th>
+                <th style="width:55px">Unidad</th>
+                <th>Descripción</th>
+                <th style="width:70px">Precio Unitario</th>
+                <th style="width:70px">Descuento por Ítem</th>
+                <th style="width:80px">Otros montos no afectos</th>
+                <th style="width:70px">Ventas No Sujetas</th>
+                <th style="width:65px">Ventas Exentas</th>
+                <th style="width:65px">Ventas Gravadas</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="7" style="text-align:right;font-size:10px;padding:3px 8px;">Suma de Ventas:</td><td class="td-num"></td><td class="td-num"></td><td class="td-num"></td></tr>
+              <tr><td colspan="9" style="text-align:right;font-size:10px;padding:3px 8px;">Suma Total de Operaciones:</td><td class="td-num"></td></tr>
+              <tr><td colspan="9" style="text-align:right;font-size:10px;padding:3px 8px;">Monto global Desc., Rebajas y otros a ventas no sujetas:</td><td class="td-num"></td></tr>
+              <tr><td colspan="9" style="text-align:right;font-size:10px;padding:3px 8px;">Monto global Desc., Rebajas y otros a ventas exentas:</td><td class="td-num"></td></tr>
+              <tr><td colspan="9" style="text-align:right;font-size:10px;padding:3px 8px;">Monto global Desc., Rebajas y otros a ventas gravadas:</td><td class="td-num"></td></tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="resumen-grid">
+          <div class="resumen-row tributo"><label>Nombre del Tributo:</label><span class="val">Valor del Tributo</span></div>
+          <div class="resumen-row"><label>Sub-Total:</label><span class="val">&nbsp;</span></div>
+          <div class="resumen-row"><label>IVA Percibido:</label><span class="val">&nbsp;</span></div>
+          <div class="resumen-row"><label>IVA Retenido:</label><span class="val">&nbsp;</span></div>
+          <div class="resumen-row"><label>Retención Renta:</label><span class="val">&nbsp;</span></div>
+          <div class="resumen-row"><label>Monto Total de la Operación:</label><span class="val">&nbsp;</span></div>
+          <div class="resumen-row"><label>Total Otros montos no afectos:</label><span class="val">&nbsp;</span></div>
+          <div class="resumen-row total"><label>Total a Pagar:</label><span class="val">&nbsp;</span></div>
+        </div>
+        <div class="letras-row">
+          <div class="campo full"><label>Valor en Letras:</label><span class="val">&nbsp;</span></div>
+          <div class="campo full"><label>Condición de la Operación:</label><span class="val">&nbsp;</span></div>
+        </div>
+        <div class="dte-section" style="border-bottom:none"><div class="campo full"><label>Observaciones:</label><span class="val">&nbsp;</span></div></div>
+        <div class="dte-extension">
+          <div class="ext-col">
+            <div class="campo full"><label>Responsable por parte del emisor:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Responsable por parte del Receptor:</label><span class="val">&nbsp;</span></div>
+          </div>
+          <div class="ext-col">
+            <div class="campo"><label>N° de Documento:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>N° de Documento:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <div class="dte-footer">Página 1 de 1</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══ 3. NOTA DE REMISIÓN (04) ══ -->
+  <div class="page" id="page-nr">
+    <div class="doc-wrapper">
+      <div class="doc-title-bar">
+        <h1>Nota de Remisión Electrónica</h1>
+        <div class="badges"><span class="badge-tipo">Tipo 04</span><span class="badge-ver">Ver. 3</span></div>
+      </div>
+      <div class="dte">
+        <div class="dte-header">
+          <span class="ver-label">Ver.3</span>
+          <div class="mh-logo"><div class="escudo-img">⚖</div><span class="mh-nombre">Ministerio de Hacienda</span></div>
+          <h2>Documento Tributario Electrónico</h2>
+          <h3>Nota de Remisión</h3>
+        </div>
+        <div class="dte-identificacion">
+          <div class="id-left">
+            <div class="sello-label">Sello de Recepción</div>
+            <div class="campo"><label>Código de Generación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Número de Control:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Sello de Recepción:</label><span class="val">&nbsp;</span></div>
+          </div>
+          <div class="id-center"><div class="qr-placeholder"></div></div>
+          <div class="id-right">
+            <div class="campo"><label>Modelo de Facturación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Tipo de Transmisión:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Fecha y Hora de Generación:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <div class="dte-section">
+          <div class="two-col-bordered">
+            <div class="col-left">
+              <div class="col-header">Emisor</div>
+              <div class="campo full"><label>Nombre o razón social:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>NIT:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>NRC:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Actividad económica:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Dirección:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>Número de teléfono:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Correo electrónico:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Nombre Comercial:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Tipo de establecimiento:</label><span class="val">&nbsp;</span></div>
+            </div>
+            <div class="col-right">
+              <div class="col-header">Receptor</div>
+              <div class="campo full"><label>Nombre o razón social:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Tipo de Documento de Identificación:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Número de documento de Identificación:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Actividad económica:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>NRC:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Dirección:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Correo electrónico:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Nombre Comercial:</label><span class="val">&nbsp;</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="dte-section">
+          <div class="dte-section-header">Venta a Cuenta de Terceros</div>
+          <div class="two-col">
+            <div class="campo"><label>NIT:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Nombre, denominación o razón social:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <div class="dte-section">
+          <div class="dte-section-header">Documentos Relacionados</div>
+          <div class="two-col">
+            <div class="campo"><label>Tipo de Documento:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>N° de documento:</label><span class="val">&nbsp;</span></div>
+          </div>
+          <div class="campo"><label>Fecha del Documento:</label><span class="val">&nbsp;</span></div>
+        </div>
+        <div class="dte-section" style="padding:0">
+          <table class="dte-table">
+            <thead>
+              <tr>
+                <th style="width:30px">N°</th>
+                <th style="width:55px">Cantidad</th>
+                <th style="width:60px">Unidad</th>
+                <th>Descripción</th>
+                <th style="width:75px">Precio Unitario</th>
+                <th style="width:80px">Descuento por Ítem</th>
+                <th style="width:70px">Ventas No Sujetas</th>
+                <th style="width:65px">Ventas Exentas</th>
+                <th style="width:65px">Ventas Gravadas</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="6" style="text-align:right;font-size:10px;padding:3px 8px;">Suma de Ventas:</td><td class="td-num"></td><td class="td-num"></td><td class="td-num"></td></tr>
+              <tr><td colspan="8" style="text-align:right;font-size:10px;padding:3px 8px;">Suma Total de Operaciones:</td><td class="td-num"></td></tr>
+              <tr><td colspan="8" style="text-align:right;font-size:10px;padding:3px 8px;">Monto global Desc., Rebajas y otros a ventas no sujetas:</td><td class="td-num"></td></tr>
+              <tr><td colspan="8" style="text-align:right;font-size:10px;padding:3px 8px;">Monto global Desc., Rebajas y otros a ventas exentas:</td><td class="td-num"></td></tr>
+              <tr><td colspan="8" style="text-align:right;font-size:10px;padding:3px 8px;">Monto global Desc., Rebajas y otros a ventas gravadas:</td><td class="td-num"></td></tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="resumen-grid">
+          <div class="resumen-row tributo"><label>Nombre del Tributo:</label><span class="val">Valor del Tributo</span></div>
+          <div class="resumen-row"><label>Sub-Total:</label><span class="val">&nbsp;</span></div>
+          <div class="resumen-row"><label>IVA Percibido:</label><span class="val">&nbsp;</span></div>
+          <div class="resumen-row"><label>IVA Retenido:</label><span class="val">&nbsp;</span></div>
+          <div class="resumen-row total"><label>Monto Total de la Operación:</label><span class="val">&nbsp;</span></div>
+        </div>
+        <div class="letras-row">
+          <div class="campo full"><label>Valor en Letras:</label><span class="val">&nbsp;</span></div>
+        </div>
+        <div class="dte-section" style="border-bottom:none"><div class="campo full"><label>Observaciones:</label><span class="val">&nbsp;</span></div></div>
+        <div class="dte-extension">
+          <div class="ext-col">
+            <div class="campo full"><label>Responsable por parte del Emisor:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Responsable por parte del Receptor:</label><span class="val">&nbsp;</span></div>
+          </div>
+          <div class="ext-col">
+            <div class="campo"><label>N° de Documento:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>N° de Documento:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <div class="dte-footer">Página 1 de 1</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══ 4. NOTA DE CRÉDITO (05) ══ -->
+  <div class="page" id="page-nc">
+    <div class="doc-wrapper">
+      <div class="doc-title-bar">
+        <h1>Nota de Crédito Electrónica</h1>
+        <div class="badges"><span class="badge-tipo">Tipo 05</span><span class="badge-ver">Ver. 3</span></div>
+      </div>
+      <div class="dte">
+        <div class="dte-header">
+          <span class="ver-label">Ver.3</span>
+          <div class="mh-logo"><div class="escudo-img">⚖</div><span class="mh-nombre">Ministerio de Hacienda</span></div>
+          <h2>Documento Tributario Electrónico</h2>
+          <h3>Nota de Crédito</h3>
+        </div>
+        <div class="dte-identificacion">
+          <div class="id-left">
+            <div class="sello-label">Sello de Recepción</div>
+            <div class="campo"><label>Código de Generación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Número de Control:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Sello de Recepción:</label><span class="val">&nbsp;</span></div>
+          </div>
+          <div class="id-center"><div class="qr-placeholder"></div></div>
+          <div class="id-right">
+            <div class="campo"><label>Modelo de Facturación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Tipo de Transmisión:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Fecha y Hora de Generación:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <div class="dte-section">
+          <div class="two-col-bordered">
+            <div class="col-left">
+              <div class="col-header">Emisor</div>
+              <div class="campo full"><label>Nombre o razón social:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>NIT:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>NRC:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Actividad económica:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Dirección:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>Número de teléfono:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Correo electrónico:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Nombre Comercial:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Tipo de establecimiento:</label><span class="val">&nbsp;</span></div>
+            </div>
+            <div class="col-right">
+              <div class="col-header">Receptor</div>
+              <div class="campo full"><label>Nombre o razón social:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>NIT:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>NRC:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Actividad económica:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Dirección:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Correo electrónico:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Nombre Comercial:</label><span class="val">&nbsp;</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="dte-section">
+          <div class="dte-section-header">Venta a Cuenta de Terceros</div>
+          <div class="two-col">
+            <div class="campo"><label>NIT:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Nombre, denominación o razón social:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <div class="dte-section">
+          <div class="dte-section-header">Documentos Relacionados</div>
+          <div class="two-col">
+            <div class="campo"><label>Tipo de Documento:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>N° de Documento:</label><span class="val">&nbsp;</span></div>
+          </div>
+          <div class="campo"><label>Fecha del Documento:</label><span class="val">&nbsp;</span></div>
+        </div>
+        <div class="dte-section" style="padding:0">
+          <table class="dte-table">
+            <thead>
+              <tr>
+                <th style="width:30px">N°</th><th style="width:55px">Cantidad</th><th style="width:60px">Unidad</th>
+                <th>Descripción</th><th style="width:75px">Precio Unitario</th><th style="width:80px">Descuento por Ítem</th>
+                <th style="width:70px">Ventas No Sujetas</th><th style="width:65px">Ventas Exentas</th><th style="width:65px">Ventas Gravadas</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="6" style="text-align:right;font-size:10px;padding:3px 8px;">Suma de Ventas:</td><td class="td-num"></td><td class="td-num"></td><td class="td-num"></td></tr>
+              <tr><td colspan="8" style="text-align:right;font-size:10px;padding:3px 8px;">Suma Total de Operaciones:</td><td class="td-num"></td></tr>
+              <tr><td colspan="8" style="text-align:right;font-size:10px;padding:3px 8px;">Monto global Desc., Rebajas y otros a ventas no sujetas:</td><td class="td-num"></td></tr>
+              <tr><td colspan="8" style="text-align:right;font-size:10px;padding:3px 8px;">Monto global Desc., Rebajas y otros a ventas exentas:</td><td class="td-num"></td></tr>
+              <tr><td colspan="8" style="text-align:right;font-size:10px;padding:3px 8px;">Monto global Desc., Rebajas y otros a ventas gravadas:</td><td class="td-num"></td></tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="resumen-grid">
+          <div class="resumen-row tributo"><label>Nombre del Tributo:</label><span class="val">Valor del Tributo</span></div>
+          <div class="resumen-row"><label>Sub-Total:</label><span class="val">&nbsp;</span></div>
+          <div class="resumen-row"><label>IVA Percibido:</label><span class="val">&nbsp;</span></div>
+          <div class="resumen-row"><label>IVA Retenido:</label><span class="val">&nbsp;</span></div>
+          <div class="resumen-row total"><label>Monto Total de la Operación:</label><span class="val">&nbsp;</span></div>
+        </div>
+        <div class="letras-row">
+          <div class="campo full"><label>Valor en Letras:</label><span class="val">&nbsp;</span></div>
+          <div class="campo full"><label>Condición de la Operación:</label><span class="val">&nbsp;</span></div>
+        </div>
+        <div class="dte-section" style="border-bottom:none"><div class="campo full"><label>Observaciones:</label><span class="val">&nbsp;</span></div></div>
+        <div class="dte-extension">
+          <div class="ext-col">
+            <div class="campo full"><label>Responsable por parte del Emisor:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Responsable por parte del Receptor:</label><span class="val">&nbsp;</span></div>
+          </div>
+          <div class="ext-col">
+            <div class="campo"><label>N° de Documento:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>N° de Documento:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <div class="dte-footer">Página 1 de 1</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══ 5. NOTA DE DÉBITO (06) ══ -->
+  <div class="page" id="page-nd">
+    <div class="doc-wrapper">
+      <div class="doc-title-bar">
+        <h1>Nota de Débito Electrónica</h1>
+        <div class="badges"><span class="badge-tipo">Tipo 06</span><span class="badge-ver">Ver. 3</span></div>
+      </div>
+      <div class="dte">
+        <div class="dte-header">
+          <span class="ver-label">Ver.3</span>
+          <div class="mh-logo"><div class="escudo-img">⚖</div><span class="mh-nombre">Ministerio de Hacienda</span></div>
+          <h2>Documento Tributario Electrónico</h2>
+          <h3>Nota de Débito</h3>
+        </div>
+        <div class="dte-identificacion">
+          <div class="id-left">
+            <div class="sello-label">Sello de Recepción</div>
+            <div class="campo"><label>Código de Generación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Número de Control:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Sello de Recepción:</label><span class="val">&nbsp;</span></div>
+          </div>
+          <div class="id-center"><div class="qr-placeholder"></div></div>
+          <div class="id-right">
+            <div class="campo"><label>Modelo de Facturación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Tipo de Transmisión:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Fecha y Hora de Generación:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <div class="dte-section">
+          <div class="two-col-bordered">
+            <div class="col-left">
+              <div class="col-header">Emisor</div>
+              <div class="campo full"><label>Nombre o razón social:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>NIT:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>NRC:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Actividad Económica:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Dirección:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>Número de teléfono:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Correo electrónico:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Nombre Comercial:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Tipo de establecimiento:</label><span class="val">&nbsp;</span></div>
+            </div>
+            <div class="col-right">
+              <div class="col-header">Receptor</div>
+              <div class="campo full"><label>Nombre o razón social:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>NIT:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>NRC:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Actividad económica:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Dirección:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Correo electrónico:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Nombre Comercial:</label><span class="val">&nbsp;</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="dte-section">
+          <div class="dte-section-header">Venta a Cuenta de Terceros</div>
+          <div class="two-col">
+            <div class="campo"><label>NIT:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Nombre, denominación o razón social:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <div class="dte-section">
+          <div class="dte-section-header">Documentos Relacionados</div>
+          <div class="two-col">
+            <div class="campo"><label>Tipo de Documento:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>N° de Documento:</label><span class="val">&nbsp;</span></div>
+          </div>
+          <div class="campo"><label>Fecha del Documento:</label><span class="val">&nbsp;</span></div>
+        </div>
+        <div class="dte-section" style="padding:0">
+          <table class="dte-table">
+            <thead>
+              <tr>
+                <th style="width:30px">N°</th><th style="width:55px">Cantidad</th><th style="width:60px">Unidad</th>
+                <th>Descripción</th><th style="width:75px">Precio Unitario</th><th style="width:80px">Descuento por Ítem</th>
+                <th style="width:70px">Ventas No Sujetas</th><th style="width:65px">Ventas Exentas</th><th style="width:65px">Ventas Gravadas</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="6" style="text-align:right;font-size:10px;padding:3px 8px;">Suma de Ventas:</td><td class="td-num"></td><td class="td-num"></td><td class="td-num"></td></tr>
+              <tr><td colspan="8" style="text-align:right;font-size:10px;padding:3px 8px;">Suma Total de Operaciones:</td><td class="td-num"></td></tr>
+              <tr><td colspan="8" style="text-align:right;font-size:10px;padding:3px 8px;">Monto global Desc., Rebajas y otros a ventas no sujetas:</td><td class="td-num"></td></tr>
+              <tr><td colspan="8" style="text-align:right;font-size:10px;padding:3px 8px;">Monto global Desc., Rebajas y otros a ventas exentas:</td><td class="val td-num"></td></tr>
+              <tr><td colspan="8" style="text-align:right;font-size:10px;padding:3px 8px;">Monto global Desc., Rebajas y otros a ventas gravadas:</td><td class="td-num"></td></tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="resumen-grid">
+          <div class="resumen-row tributo"><label>Nombre del Tributo:</label><span class="val">Valor del Tributo</span></div>
+          <div class="resumen-row"><label>Sub-Total:</label><span class="val">&nbsp;</span></div>
+          <div class="resumen-row"><label>IVA Percibido:</label><span class="val">&nbsp;</span></div>
+          <div class="resumen-row"><label>IVA Retenido:</label><span class="val">&nbsp;</span></div>
+          <div class="resumen-row total"><label>Monto Total de la Operación:</label><span class="val">&nbsp;</span></div>
+        </div>
+        <div class="letras-row">
+          <div class="campo full"><label>Valor en Letras:</label><span class="val">&nbsp;</span></div>
+          <div class="campo full"><label>Condición de la Operación:</label><span class="val">&nbsp;</span></div>
+        </div>
+        <div class="dte-section" style="border-bottom:none"><div class="campo full"><label>Observaciones:</label><span class="val">&nbsp;</span></div></div>
+        <div class="dte-extension">
+          <div class="ext-col">
+            <div class="campo full"><label>Responsable por parte del Emisor:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Responsable por parte del Emisor:</label><span class="val">&nbsp;</span></div>
+          </div>
+          <div class="ext-col">
+            <div class="campo"><label>N° de Documento:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>N° de Documento:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <div class="dte-footer">Página 1 de 1</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══ 6. COMPROBANTE DE RETENCIÓN (07) ══ -->
+  <div class="page" id="page-ret">
+    <div class="doc-wrapper">
+      <div class="doc-title-bar">
+        <h1>Comprobante de Retención Electrónico</h1>
+        <div class="badges"><span class="badge-tipo">Tipo 07</span><span class="badge-ver">Ver. 1</span></div>
+      </div>
+      <div class="dte">
+        <div class="dte-header">
+          <span class="ver-label">Ver.1</span>
+          <div class="mh-logo"><div class="escudo-img">⚖</div><span class="mh-nombre">Ministerio de Hacienda</span></div>
+          <h2>Documento Tributario Electrónico</h2>
+          <h3>Comprobante de Retención</h3>
+        </div>
+        <div class="dte-identificacion">
+          <div class="id-left">
+            <div class="sello-label">Sello de Recepción</div>
+            <div class="campo"><label>Código de Generación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Número de Control:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Sello de Recepción:</label><span class="val">&nbsp;</span></div>
+          </div>
+          <div class="id-center"><div class="qr-placeholder"></div></div>
+          <div class="id-right">
+            <div class="campo"><label>Modelo de Facturación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Tipo de Transmisión:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Fecha y Hora de Generación:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <!-- Agente de Retención -->
+        <div class="dte-section">
+          <div class="dte-section-header">Agente de Retención</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px 12px;">
+            <div class="campo full"><label>Nombre o razón social:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Nombre Comercial:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>NIT:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>NRC:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Actividad económica:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Dirección:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Número de teléfono:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Correo electrónico:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Tipo de establecimiento:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <!-- Sujeto de Retención -->
+        <div class="dte-section">
+          <div class="dte-section-header">Sujeto de Retención (Receptor)</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px 12px;">
+            <div class="campo full"><label>Nombre o razón social:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Tipo de Documento de Identificación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>NRC:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Actividad económica:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>N° Documento de Identificación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Nombre comercial:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Dirección:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Correo Electrónico:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <!-- Cuerpo -->
+        <div class="dte-section" style="padding:0">
+          <table class="dte-table">
+            <thead>
+              <tr>
+                <th style="width:30px">N°</th>
+                <th>Tipo de Doc. Relacionado</th>
+                <th>N° del Doc. relacionado</th>
+                <th style="width:70px">Fecha del doc.</th>
+                <th>Descripción</th>
+                <th style="width:90px">Monto Sujeto a Retención</th>
+                <th style="width:80px">IVA Retenido</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="5" style="text-align:right;font-size:10px;padding:3px 8px;">Total Monto sujeto a retención:</td>
+                <td class="td-num"></td><td class="td-num"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="letras-row">
+          <div class="campo full"><label>Valor en Letras IVA retenido:</label><span class="val">&nbsp;</span></div>
+          <div class="resumen-row" style="width:200px;align-self:center;"><label>Total IVA Retenido:</label><span class="val">&nbsp;</span></div>
+        </div>
+        <div class="dte-extension" style="grid-template-columns:1fr 1fr 1fr;">
+          <div class="ext-col">
+            <div class="campo full"><label>Responsable por parte del Emisor:</label><span class="val">&nbsp;</span></div>
+          </div>
+          <div class="ext-col">
+            <div class="campo full"><label>Responsable por parte del Receptor:</label><span class="val">&nbsp;</span></div>
+          </div>
+          <div class="ext-col">
+            <div class="campo"><label>N° de Documento:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>N° de Documento:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <div class="dte-section" style="background:var(--gris-fondo);border-top:1px solid var(--gris-borde);border-bottom:none">
+          <div class="campo full"><label>Observación General:</label><span class="val">&nbsp;</span></div>
+        </div>
+        <div class="dte-footer">Página 1 de 1</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══ 7. COMPROBANTE DE LIQUIDACIÓN (08) ══ -->
+  <div class="page" id="page-liq">
+    <div class="doc-wrapper">
+      <div class="doc-title-bar">
+        <h1>Comprobante de Liquidación Electrónico</h1>
+        <div class="badges"><span class="badge-tipo">Tipo 08</span><span class="badge-ver">Ver. 1</span></div>
+      </div>
+      <div class="dte">
+        <div class="dte-header">
+          <span class="ver-label">Ver.1</span>
+          <div class="mh-logo"><div class="escudo-img">⚖</div><span class="mh-nombre">Ministerio de Hacienda</span></div>
+          <h2>Documento Tributario Electrónico</h2>
+          <h3>Comprobante de Liquidación</h3>
+        </div>
+        <div class="dte-identificacion">
+          <div class="id-left">
+            <div class="sello-label">Sello de Recepción</div>
+            <div class="campo"><label>Código de Generación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Número de Control:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Sello de Recepción:</label><span class="val">&nbsp;</span></div>
+          </div>
+          <div class="id-center"><div class="qr-placeholder"></div></div>
+          <div class="id-right">
+            <div class="campo"><label>Modelo de Facturación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Tipo de Transmisión:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Fecha y Hora de Generación:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <div class="dte-section">
+          <div class="two-col-bordered">
+            <div class="col-left">
+              <div class="col-header">Comisionista (Emisor)</div>
+              <div class="campo full"><label>Nombre o razón social:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>NIT:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>NRC:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Actividad económica:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Dirección:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>Número de teléfono:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Correo electrónico:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Nombre Comercial:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Tipo de establecimiento:</label><span class="val">&nbsp;</span></div>
+            </div>
+            <div class="col-right">
+              <div class="col-header">Mandante (Receptor)</div>
+              <div class="campo full"><label>Nombre o razón social:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>NIT:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>NRC:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Actividad económica:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Dirección:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Correo electrónico:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Nombre Comercial:</label><span class="val">&nbsp;</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="dte-section" style="padding:0">
+          <table class="dte-table">
+            <thead>
+              <tr>
+                <th style="width:28px">N°</th>
+                <th style="width:80px">Tipo de Doc. Relacionado</th>
+                <th style="width:80px">N° Doc. Relacionado</th>
+                <th style="width:70px">Fecha</th>
+                <th>Observación por Ítem</th>
+                <th style="width:70px">Exportaciones</th>
+                <th style="width:70px">Ventas No Sujetas</th>
+                <th style="width:65px">Ventas Exentas</th>
+                <th style="width:65px">Ventas Gravadas</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="5" style="text-align:right;font-size:10px;padding:3px 8px;">Suma de Ventas:</td><td class="td-num"></td><td class="td-num"></td><td class="td-num"></td><td class="td-num"></td></tr>
+              <tr><td colspan="8" style="text-align:right;font-size:10px;padding:3px 8px;">Suma Total Operaciones:</td><td class="td-num"></td></tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="resumen-grid">
+          <div class="resumen-row tributo"><label>Nombre del Tributo:</label><span class="val">Valor del Tributo</span></div>
+          <div class="resumen-row"><label>Monto Total de la Operación:</label><span class="val">&nbsp;</span></div>
+          <div class="resumen-row"><label>IVA percibido:</label><span class="val">&nbsp;</span></div>
+          <div class="resumen-row total"><label>Total:</label><span class="val">&nbsp;</span></div>
+        </div>
+        <div class="letras-row">
+          <div class="campo full"><label>Valor en Letras:</label><span class="val">&nbsp;</span></div>
+          <div class="campo full"><label>Condición de la Operación:</label><span class="val">&nbsp;</span></div>
+        </div>
+        <div class="dte-section" style="border-bottom:none"><div class="campo full"><label>Observaciones:</label><span class="val">&nbsp;</span></div></div>
+        <div class="dte-extension">
+          <div class="ext-col">
+            <div class="campo full"><label>Responsable por parte del Emisor:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Responsable por parte del Receptor:</label><span class="val">&nbsp;</span></div>
+          </div>
+          <div class="ext-col">
+            <div class="campo"><label>N° de Documento:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>N° de Documento:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <div class="dte-footer">Página 1 de 1</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══ 8. DOCUMENTO CONTABLE DE LIQUIDACIÓN (09) ══ -->
+  <div class="page" id="page-dcle">
+    <div class="doc-wrapper">
+      <div class="doc-title-bar">
+        <h1>Documento Contable de Liquidación Electrónico</h1>
+        <div class="badges"><span class="badge-tipo">Tipo 09</span><span class="badge-ver">Ver. 1</span></div>
+      </div>
+      <div class="dte">
+        <div class="dte-header">
+          <span class="ver-label">Ver.1</span>
+          <div class="mh-logo"><div class="escudo-img">⚖</div><span class="mh-nombre">Ministerio de Hacienda</span></div>
+          <h2>Documento Tributario Electrónico</h2>
+          <h3>Documento Contable de Liquidación</h3>
+        </div>
+        <div class="dte-identificacion">
+          <div class="id-left">
+            <div class="sello-label">Sello de Recepción</div>
+            <div class="campo"><label>Código de Generación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Número de Control:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Sello de Recepción:</label><span class="val">&nbsp;</span></div>
+          </div>
+          <div class="id-center"><div class="qr-placeholder"></div></div>
+          <div class="id-right">
+            <div class="campo"><label>Modelo de Facturación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Tipo de Transmisión:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Fecha y Hora de Generación:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <div class="dte-section">
+          <div class="dte-section-header">Agente Perceptor (Emisor)</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px 12px;">
+            <div class="campo full"><label>Nombre o razón social:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Nombre Comercial:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>NIT:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>NRC:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Actividad económica:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Dirección:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Número de teléfono:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Correo electrónico:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Tipo de establecimiento:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <div class="dte-section">
+          <div class="dte-section-header">Afiliado (Receptor)</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;">
+            <div class="campo full"><label>Nombre o razón social:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Actividad económica:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>NIT:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Dirección:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>NRC:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Correo electrónico:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Tipo de establecimiento:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Nombre Comercial:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <!-- Cuerpo DCLE es diferente -->
+        <div class="dte-section">
+          <div class="dte-section-header">Cuerpo</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;">
+            <div class="campo full"><label>Fecha inicio del periodo de Liquidación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Fecha fin del periodo de liquidación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Valor de las operaciones a liquidar:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Cantidad de documentos de liquidación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Descripción del monto no sujeto a percepción:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Comisión:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Valores no sujetos a percepción:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Porcentaje de comisión:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Subtotal:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>IVA de la comisión:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>IVA de las operaciones a liquidar:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Valor Líquido a pagar al Afiliado:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Montos sujetos a percepción sin IVA:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Valor en Letras:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>IVA Percibido (2%):</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Observaciones:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <div class="dte-extension" style="grid-template-columns:1fr 1fr;">
+          <div class="ext-col">
+            <div class="campo full"><label>Nombre del Responsable de la liquidación:</label><span class="val">&nbsp;</span></div>
+          </div>
+          <div class="ext-col">
+            <div class="campo full"><label>Doc. de identificación:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <div class="dte-footer">Página 1 de 1</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══ 9. FACTURA DE EXPORTACIÓN (11) ══ -->
+  <div class="page" id="page-fex">
+    <div class="doc-wrapper">
+      <div class="doc-title-bar">
+        <h1>Factura de Exportación Electrónica</h1>
+        <div class="badges"><span class="badge-tipo">Tipo 11</span><span class="badge-ver">Ver. 1</span></div>
+      </div>
+      <div class="dte">
+        <div class="dte-header">
+          <span class="ver-label">Ver.1</span>
+          <div class="mh-logo"><div class="escudo-img">⚖</div><span class="mh-nombre">Ministerio de Hacienda</span></div>
+          <h2>Documento Tributario Electrónico</h2>
+          <h3>Factura de Exportación</h3>
+        </div>
+        <div class="dte-identificacion">
+          <div class="id-left">
+            <div class="sello-label">Sello de Recepción</div>
+            <div class="campo"><label>Código de Generación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Número de Control:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Sello de Recepción:</label><span class="val">&nbsp;</span></div>
+          </div>
+          <div class="id-center"><div class="qr-placeholder"></div></div>
+          <div class="id-right">
+            <div class="campo"><label>Modelo de Facturación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Tipo de Transmisión:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Fecha y Hora de Generación:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <div class="dte-section">
+          <div class="two-col-bordered">
+            <div class="col-left">
+              <div class="col-header">Exportador (Emisor)</div>
+              <div class="campo full"><label>Nombre o razón social:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>NIT:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>NRC:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Actividad económica:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Dirección:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>Número de teléfono:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Correo electrónico:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Nombre Comercial:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Tipo de establecimiento:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Recinto fiscal:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Régimen de exportación:</label><span class="val">&nbsp;</span></div>
+            </div>
+            <div class="col-right">
+              <div class="col-header">Receptor</div>
+              <div class="campo full"><label>Nombre o razón social:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>N° de Doc. de Identificación del receptor:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Actividad Económica:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>País destino:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Dirección:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Nombre Comercial:</label><span class="val">&nbsp;</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="dte-section">
+          <div class="dte-section-header">Documentos Asociados</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr;gap:4px 10px;">
+            <div class="campo full"><label>Identificación del doc. Asociado:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Descripción de doc. asociado:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Nombre del Conductor:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>N° de Identificación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Modo de Transporte:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>N° ID transporte:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <div class="dte-section">
+          <div class="dte-section-header">Venta a Cuenta de Terceros</div>
+          <div class="two-col">
+            <div class="campo"><label>NIT:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Nombre, denominación o razón social:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <div class="dte-section" style="padding:0">
+          <table class="dte-table">
+            <thead>
+              <tr>
+                <th style="width:30px">N°</th>
+                <th style="width:55px">Cantidad</th>
+                <th style="width:60px">Unidad</th>
+                <th>Descripción</th>
+                <th style="width:80px">Precio Unitario</th>
+                <th style="width:85px">Descuento por Ítem</th>
+                <th style="width:90px">Otros montos no afectos</th>
+                <th style="width:70px">Ventas Afectas</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="7" style="text-align:right;font-size:10px;padding:3px 8px;">Total de Operaciones Afectas:</td><td class="td-num"></td></tr>
+              <tr><td colspan="7" style="text-align:right;font-size:10px;padding:3px 8px;">Monto global de Desc., Rebajas de operaciones afectas:</td><td class="td-num"></td></tr>
+              <tr><td colspan="7" style="text-align:right;font-size:10px;padding:3px 8px;">Seguro:</td><td class="td-num"></td></tr>
+              <tr><td colspan="7" style="text-align:right;font-size:10px;padding:3px 8px;">Flete:</td><td class="td-num"></td></tr>
+              <tr><td colspan="7" style="text-align:right;font-size:10px;padding:3px 8px;">Monto Total de la Operación:</td><td class="td-num"></td></tr>
+              <tr><td colspan="7" style="text-align:right;font-size:10px;padding:3px 8px;">Total Otros Montos No Afectos:</td><td class="td-num"></td></tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="resumen-grid">
+          <div class="resumen-row total"><label>Total General:</label><span class="val">&nbsp;</span></div>
+        </div>
+        <div class="dte-section" style="border-top:1px solid var(--gris-borde)">
+          <div class="two-col">
+            <div class="campo full"><label>Valor en Letras:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Condición de la Operación:</label><span class="val">&nbsp;</span></div>
+          </div>
+          <div class="campo full" style="margin-top:4px"><label>Descripción Incoterms:</label><span class="val">&nbsp;</span></div>
+          <div class="campo full" style="margin-top:4px"><label>Observaciones:</label><span class="val">&nbsp;</span></div>
+        </div>
+        <div class="dte-footer">Página 1 de 1</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══ 10. FACTURA SUJETO EXCLUIDO (14) ══ -->
+  <div class="page" id="page-fse">
+    <div class="doc-wrapper">
+      <div class="doc-title-bar">
+        <h1>Factura de Sujeto Excluido Electrónica</h1>
+        <div class="badges"><span class="badge-tipo">Tipo 14</span><span class="badge-ver">Ver. 1</span></div>
+      </div>
+      <div class="dte">
+        <div class="dte-header">
+          <span class="ver-label">Ver.1</span>
+          <div class="mh-logo"><div class="escudo-img">⚖</div><span class="mh-nombre">Ministerio de Hacienda</span></div>
+          <h2>Documento Tributario Electrónico</h2>
+          <h3>Factura Sujeto Excluido</h3>
+        </div>
+        <div class="dte-identificacion">
+          <div class="id-left">
+            <div class="sello-label">Sello de Recepción</div>
+            <div class="campo"><label>Código de Generación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Número de Control:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Sello de Recepción:</label><span class="val">&nbsp;</span></div>
+          </div>
+          <div class="id-center"><div class="qr-placeholder"></div></div>
+          <div class="id-right">
+            <div class="campo"><label>Modelo de Facturación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Tipo de Transmisión:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Fecha y Hora de Generación:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <div class="dte-section">
+          <div class="two-col-bordered">
+            <div class="col-left">
+              <div class="col-header">Emisor</div>
+              <div class="campo full"><label>Nombre o razón social:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>NIT:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Actividad económica:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Dirección:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>Número de teléfono:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Correo electrónico:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Nombre Comercial:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Tipo de establecimiento:</label><span class="val">&nbsp;</span></div>
+            </div>
+            <div class="col-right">
+              <div class="col-header">Receptor</div>
+              <div class="campo full"><label>Nombre o razón social:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Tipo de doc. de Identificación:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>N° de doc. de Identificación:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>N° de teléfono:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Dirección:</label><span class="val">&nbsp;</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="dte-section" style="padding:0">
+          <table class="dte-table">
+            <thead>
+              <tr>
+                <th style="width:30px">N°</th>
+                <th style="width:60px">Cantidad</th>
+                <th style="width:65px">Unidad</th>
+                <th>Descripción</th>
+                <th style="width:85px">Precio Unitario</th>
+                <th style="width:90px">Descuento por Ítem</th>
+                <th style="width:80px">Ventas</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="6" style="text-align:right;font-size:10px;padding:3px 8px;">Sumatoria de ventas:</td><td class="td-num"></td></tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="resumen-grid">
+          <div class="resumen-row"><label>Sub-Total:</label><span class="val">&nbsp;</span></div>
+          <div class="resumen-row total"><label>Total a Pagar:</label><span class="val">&nbsp;</span></div>
+        </div>
+        <div class="letras-row">
+          <div class="campo full"><label>Valor en Letras:</label><span class="val">&nbsp;</span></div>
+          <div class="campo full"><label>Condición de la Operación:</label><span class="val">&nbsp;</span></div>
+        </div>
+        <div class="dte-section" style="border-bottom:none"><div class="campo full"><label>Observaciones:</label><span class="val">&nbsp;</span></div></div>
+        <div class="dte-footer">Página 1 de 1</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══ 11. COMPROBANTE DE DONACIÓN (15) ══ -->
+  <div class="page" id="page-don">
+    <div class="doc-wrapper">
+      <div class="doc-title-bar">
+        <h1>Comprobante de Donación Electrónico</h1>
+        <div class="badges"><span class="badge-tipo">Tipo 15</span><span class="badge-ver">Ver. 1</span></div>
+      </div>
+      <div class="dte">
+        <div class="dte-header">
+          <span class="ver-label">Ver.1</span>
+          <div class="mh-logo"><div class="escudo-img">⚖</div><span class="mh-nombre">Ministerio de Hacienda</span></div>
+          <h2>Documento Tributario Electrónico</h2>
+          <h3>Comprobante de Donación</h3>
+        </div>
+        <div class="dte-identificacion">
+          <div class="id-left">
+            <div class="sello-label">Sello de Recepción</div>
+            <div class="campo"><label>Código de Generación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Número de Control:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Sello de Recepción:</label><span class="val">&nbsp;</span></div>
+          </div>
+          <div class="id-center"><div class="qr-placeholder"></div></div>
+          <div class="id-right">
+            <div class="campo"><label>Modelo de Facturación:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Tipo de Transmisión:</label><span class="val">&nbsp;</span></div>
+            <div class="campo"><label>Fecha y Hora de Generación:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <div class="dte-section">
+          <div class="two-col-bordered">
+            <div class="col-left">
+              <div class="col-header">Emisor</div>
+              <div class="campo full"><label>Nombre o razón social:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Actividad económica:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Tipo de establecimiento:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Dirección:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>Teléfono:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Correo electrónico:</label><span class="val">&nbsp;</span></div>
+            </div>
+            <div class="col-right">
+              <div class="col-header">Receptor (Donante)</div>
+              <div class="campo full"><label>Tipo de documento de identificación:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Número de documento de Identificación:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Nombre, denominación o razón social:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Dirección:</label><span class="val">&nbsp;</span></div>
+              <div class="campo"><label>N° de Teléfono:</label><span class="val">&nbsp;</span></div>
+              <div class="campo full"><label>Correo electrónico:</label><span class="val">&nbsp;</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="dte-section">
+          <div class="dte-section-header">Otros Documentos Asociados</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px 12px;">
+            <div class="campo full"><label>Documento Asociado:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Identificación documento:</label><span class="val">&nbsp;</span></div>
+            <div class="campo full"><label>Descripción:</label><span class="val">&nbsp;</span></div>
+          </div>
+        </div>
+        <div class="dte-section" style="padding:0">
+          <table class="dte-table">
+            <thead>
+              <tr>
+                <th style="width:30px">N°</th>
+                <th style="width:65px">Cantidad</th>
+                <th>Descripción</th>
+                <th style="width:80px">Unidad de Medida</th>
+                <th style="width:80px">Depreciación</th>
+                <th style="width:80px">Valor Unitario</th>
+                <th style="width:80px">Valor Donado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr class="empty-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="6" style="text-align:right;font-size:10px;padding:3px 8px;">Total de la Donación:</td>
+                <td class="td-num"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="letras-row">
+          <div class="campo full"><label>Valor en Letras:</label><span class="val">&nbsp;</span></div>
+        </div>
+        <div class="dte-section" style="border-bottom:none"><div class="campo full"><label>Observaciones:</label><span class="val">&nbsp;</span></div></div>
+        <div class="dte-footer">Página 1 de 1</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<script>
+function show(id) {
+  // hide all pages
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('#sidebar nav a').forEach(a => a.classList.remove('active'));
+  // show target
+  document.getElementById('page-' + id).classList.add('active');
+  document.getElementById('nav-' + id).classList.add('active');
+  // prevent href navigation
+  return false;
+}
+
+// activate first on load
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('#sidebar nav a').forEach(a => {
+    a.addEventListener('click', function(e) { e.preventDefault(); });
+  });
+});
+</script>
+</body>
+</html>
