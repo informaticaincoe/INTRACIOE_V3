@@ -2893,14 +2893,18 @@ def detalle_factura(request, factura_id):
     # Elegimos template según tipo de DTE y configuración
     tipo_dte_codigo = str(getattr(factura.tipo_dte, 'codigo', '01')) if factura.tipo_dte else '01'
 
+    TEMPLATES_DTE = {
+        '01': "documentos/factura_consumidor/template_factura.html",
+        '03': "documentos/ccf/template_ccf.html",
+        '04': "documentos/nota_remision/template_nr.html",
+        '05': "documentos/nota_credito/template_nc.html",
+        '06': "documentos/nota_debito/template_nd.html",
+        '14': "documentos/sujeto_excluido/template_fse.html",
+    }
     if usa_termica:
         template_name = "documentos/factura_consumidor/template_factura_termica.html"
-    elif tipo_dte_codigo == '03':
-        template_name = "documentos/ccf/template_ccf.html"
-    elif tipo_dte_codigo == '14':
-        template_name = "documentos/sujeto_excluido/template_fse.html"
     else:
-        template_name = "documentos/factura_consumidor/template_factura.html"
+        template_name = TEMPLATES_DTE.get(tipo_dte_codigo, "documentos/factura_consumidor/template_factura.html")
 
     return render(request, template_name, {
         "factura": factura,
