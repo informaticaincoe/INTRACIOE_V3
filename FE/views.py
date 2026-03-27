@@ -1204,15 +1204,19 @@ def generar_factura_view(request):
             factura.save()
             logger.info("DTE: JSON generado")
 
-            base_path = getattr(RUTA_JSON_FACTURA, "path", None) or getattr(RUTA_JSON_FACTURA, "url", "")
-            json_path = os.path.join(base_path, f"{factura.numero_control}.json")
-            try:
-                os.makedirs(os.path.dirname(json_path), exist_ok=True)
-                with open(json_path, "w", encoding="utf-8") as f:
-                    json.dump(factura_json, f, indent=4, ensure_ascii=False)
-                logger.info("DTE: JSON guardado en: %s", json_path)
-            except Exception as fs_e:
-                logger.error("DTE: Error guardando JSON en disco: %s", fs_e)
+            # Guardar JSON en disco (opcional)
+            from AUTENTICACION.models import ConfiguracionServidor as _CS2
+            _ruta_conf = _CS2.objects.filter(clave="json_factura").first()
+            base_path = getattr(_ruta_conf, "url", None) or getattr(_ruta_conf, "url_endpoint", None) or "FE/json_facturas/"
+            if base_path:
+                json_path = os.path.join(base_path, f"{factura.numero_control}.json")
+                try:
+                    os.makedirs(os.path.dirname(json_path), exist_ok=True)
+                    with open(json_path, "w", encoding="utf-8") as f:
+                        json.dump(factura_json, f, indent=4, ensure_ascii=False)
+                    logger.info("DTE: JSON guardado en: %s", json_path)
+                except Exception as fs_e:
+                    logger.warning("DTE: No se pudo guardar JSON en disco: %s", fs_e)
 
             logger.info("DTE: ====== FIN generar_factura_view OK ======")
 
@@ -2394,12 +2398,16 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False, consoli
     
 
     # Paso 1: Autenticación contra el servicio de Hacienda
-    nit_empresa = str(emisor.nit) #"06142811001040"
-    pwd = str(emisor.clave_publica) #"Q#3P9l5&@aF!gT2sA"#llave publica
-    auth_url = URL_AUTH.url_endpoint
+    from AUTENTICACION.models import ConfiguracionServidor as _CS3
+    nit_empresa = str(emisor.nit)
+    pwd = str(emisor.clave_publica)
+    _url_auth_conf = _CS3.objects.filter(clave="url_autenticacion").first()
+    auth_url = _url_auth_conf.url_endpoint if _url_auth_conf else (URL_AUTH.url_endpoint if URL_AUTH else None)
+    if not auth_url:
+        return JsonResponse({"error": "URL de autenticación de Hacienda no configurada."}, status=400)
     auth_headers = {
-        "Content-Type": HEADERS.url_endpoint,
-        "User-Agent": HEADERS.valor
+        "Content-Type": "application/x-www-form-urlencoded",
+        "User-Agent": "INTRACOE/3.0"
     }
     auth_data = {"user": nit_empresa, "pwd": pwd}
     auth_response = None
