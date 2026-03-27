@@ -2542,19 +2542,20 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False, consoli
 
                 documento_token = documento_token.strip()  # Limpiar espacios innecesarios
 
+                _ambiente_codigo = factura.json_original.get("identificacion", {}).get("ambiente", "01")
                 envio_json = {
-                    "ambiente": AMBIENTE.codigo,  # "00" para Pruebas; "01" para Producción
+                    "ambiente": _ambiente_codigo,
                     "idEnvio": factura.id,
                     "version": int(factura.json_original["identificacion"]["version"]),
                     "tipoDte": str(factura.json_original["identificacion"]["tipoDte"]),
-                    "documento": documento_token,  # Enviamos solo el JWT firmado
+                    "documento": documento_token,
                     "codigoGeneracion": codigo_generacion_str
                 }
 
                 envio_headers = {
                     "Authorization": f"Bearer {token_data_obj.token}",
-                    "User-Agent": USER_AGENT.valor,
-                    "Content-Type": CONTENT_TYPE.valor
+                    "User-Agent": USER_AGENT.valor if USER_AGENT else "INTRACOE/3.0",
+                    "Content-Type": CONTENT_TYPE.valor if CONTENT_TYPE else "application/json"
                 }
 
                 # ── MODO DEMO: no enviar a Hacienda ──
