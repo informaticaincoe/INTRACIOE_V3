@@ -112,8 +112,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#eef2f7;color:var(--
   <div class="dte-header">
     <span class="ver-label">{% block version %}Ver.1{% endblock %}</span>
     <div class="mh-row">
-      <div class="escudo">⚖</div>
-      <span class="mh-name">Ministerio de Hacienda</span>
+      <span class="mh-name">{{ factura.dteemisor.nombre_comercial|default:factura.dteemisor.nombre_razon_social }}</span>
     </div>
     <h2>Documento Tributario Electrónico</h2>
     <h3>{% block tipo_dte %}Factura{% endblock %}</h3>
