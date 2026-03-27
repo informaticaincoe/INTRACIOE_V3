@@ -2235,8 +2235,13 @@ def firmar_factura_view(request, factura_id, interno=False):
         try:
             logger.debug("dentro try firmar factura")
             config_firmador = obtener_firmador_url()
-            ct = CONTENT_TYPE.valor if CONTENT_TYPE else "application/json"
-            logger.debug("FIRMA: firmador_url=%s content_type=%s", config_firmador.url_endpoint if config_firmador else None, ct)
+            if not config_firmador or not config_firmador.url_endpoint:
+                logger.error("FIRMA: No se encontró configuración del firmador en BD (clave='firmador')")
+                return JsonResponse({"error": "No se encontró la URL del firmador. Verifique la configuración del servidor (clave='firmador')."}, status=500)
+            # Leer content_type dinámicamente de la BD
+            _ct_conf = ConfiguracionServidor.objects.filter(clave="content_type").first()
+            ct = _ct_conf.valor if _ct_conf else "application/JSON"
+            logger.debug("FIRMA: firmador_url=%s content_type=%s", config_firmador.url_endpoint, ct)
             response = requests.post(config_firmador.url_endpoint, json=payload, headers={"Content-Type": ct})
             logger.debug("Response envio: %s", response)
             logger.debug("Response envio status: %s", response.status_code)
@@ -2277,19 +2282,21 @@ def firmar_factura_view(request, factura_id, interno=False):
                 intento += 1
                 time.sleep(1)
                 logger.warning("Response firma status error 2: %s", response)
+        except requests.exceptions.ConnectionError as e:
+            tipo_contingencia_obj = TipoContingencia.objects.get(codigo="3")
+            intento += 1
+            time.sleep(1)
+            logger.error("Error de conexión al firmador: %s", str(e))
+        except requests.exceptions.Timeout as e:
+            tipo_contingencia_obj = TipoContingencia.objects.get(codigo="3")
+            intento += 1
+            time.sleep(1)
+            logger.error("Timeout al conectar con firmador: %s", str(e))
         except requests.exceptions.RequestException as e:
             tipo_contingencia_obj = TipoContingencia.objects.get(codigo="1")
             intento += 1
             time.sleep(1)
-            logger.error("Excepción general: %s", str(e))
-        except requests.exceptions.ConnectionError:
-            tipo_contingencia_obj = TipoContingencia.objects.get(codigo="3")
-            intento += 1
-            time.sleep(1) 
-        except requests.exceptions.Timeout:
-            tipo_contingencia_obj = TipoContingencia.objects.get(codigo="3")
-            intento += 1
-            time.sleep(1) 
+            logger.error("Excepción de requests: %s", str(e))
         except Exception as e:
             tipo_contingencia_obj = TipoContingencia.objects.get(codigo="5")
             motivo_otro = True
@@ -2331,10 +2338,14 @@ def firmar_factura_view(request, factura_id, interno=False):
     # Firma exitosa
     logger.debug("Response data: %s", response_data)
     if response and response.status_code == 200 and response_data.get("status") == "OK":
-        json_signed_path = f"{FACTURAS_FIRMADAS_URL.url}{factura.codigo_generacion}.json"
-        os.makedirs(os.path.dirname(json_signed_path), exist_ok=True)
-        with open(json_signed_path, "w", encoding="utf-8") as json_file:
-            json.dump(response_data, json_file, indent=4, ensure_ascii=False)
+        _ffu = FACTURAS_FIRMADAS_URL or ConfiguracionServidor.objects.filter(clave="json_facturas_firmadas").first()
+        if _ffu and _ffu.url:
+            json_signed_path = f"{_ffu.url}{factura.codigo_generacion}.json"
+            os.makedirs(os.path.dirname(json_signed_path), exist_ok=True)
+            with open(json_signed_path, "w", encoding="utf-8") as json_file:
+                json.dump(response_data, json_file, indent=4, ensure_ascii=False)
+        else:
+            logger.warning("No se pudo guardar JSON firmado: configuración 'json_facturas_firmadas' no encontrada")
     logger.info("-Fin firma DTE: %s", factura_id)
     
     if interno:
