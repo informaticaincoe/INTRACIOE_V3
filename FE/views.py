@@ -1278,6 +1278,7 @@ def generar_factura_view(request):
             logger.info("DTE: ==== INICIO ENVIO a MH (función existente) ====")
             try:
                 resp_envio = enviar_factura_hacienda_view(request, factura.id, uso_interno=True)
+                logger.info("DTE: resp_envio status=%s content=%s", getattr(resp_envio, 'status_code', '?'), getattr(resp_envio, 'content', b'')[:500])
                 if hasattr(resp_envio, "status_code") and int(resp_envio.status_code) >= 400:
                     return JsonResponse({
                         "mostrar_modal": True,
@@ -2506,11 +2507,19 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False, consoli
     #---Envio del dte
     if contingencia == False:
         intento = 1
+        logger.info("ENVIO: Entrando al bloque de envío. HACIENDA_URL_PROD=%s, recibido_mh=%s, intentos_modal=%s",
+                     HACIENDA_URL_PROD, factura.recibido_mh, intentos_modal)
         while intento <= intentos_max and not factura.recibido_mh and intentos_modal <=2:
             try:
                 # Paso 2: Enviar la factura firmada a Hacienda
-                token_data_obj = Token_data.objects.filter(activado=True).first()
+                token_data_obj = Token_data.objects.filter(
+                    nit_empresa=nit_empresa, activado=True
+                ).first()
                 if not token_data_obj or not token_data_obj.token:
+                    # Fallback: buscar cualquier token activo
+                    token_data_obj = Token_data.objects.filter(activado=True).first()
+                if not token_data_obj or not token_data_obj.token:
+                    logger.error("ENVIO: No hay token activo (nit=%s, token_data_obj=%s)", nit_empresa, token_data_obj)
                     return JsonResponse({"error": "No hay token activo para enviar la factura"}, status=401)
 
                 codigo_generacion_str = str(factura.codigo_generacion)
@@ -2529,6 +2538,7 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False, consoli
                     else:
                         firmado_data = factura.json_firmado
                 except Exception as e:
+                    logger.error("ENVIO: Error al parsear json_firmado: %s", e)
                     return JsonResponse({
                         "error": "Error al parsear el documento firmado",
                         "detalle": str(e)
@@ -2536,6 +2546,7 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False, consoli
 
                 documento_token = firmado_data.get("body", "")
                 if not documento_token:
+                    logger.error("ENVIO: json_firmado no contiene 'body'. Keys=%s", list(firmado_data.keys()) if isinstance(firmado_data, dict) else type(firmado_data))
                     return JsonResponse({
                         "error": "El documento firmado no contiene el token en 'body'"
                     }, status=400)
@@ -2593,7 +2604,8 @@ def enviar_factura_hacienda_view(request, factura_id, uso_interno=False, consoli
                     _h_conf = _CS5.objects.filter(clave="hacienda_url_prod").first()
                     _hacienda_url = _h_conf.url_endpoint if _h_conf else None
                 if not _hacienda_url:
-                    return JsonResponse({"error": "URL de Hacienda producción no configurada."}, status=400)
+                    _hacienda_url = "https://apiefe.dtes.mh.gob.sv/fesv/recepciondte"
+                    logger.warning("ENVIO: URL de Hacienda no encontrada en BD, usando fallback: %s", _hacienda_url)
 
                 logger.info("Inicio envio response a: %s", _hacienda_url)
                 envio_response = requests.post(
