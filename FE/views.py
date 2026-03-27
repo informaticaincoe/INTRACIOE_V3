@@ -2196,11 +2196,15 @@ def firmar_factura_view(request, factura_id, interno=False):
             token_data = None
             logger.debug("MODO DEMO: Token no requerido")
 
-        cert_ok = CERT_PATH and os.path.exists(CERT_PATH)
-        logger.debug("FIRMA: CERT_PATH=%s existe=%s", CERT_PATH, cert_ok)
+        # Leer certificado dinámicamente (no depender de la variable global)
+        from AUTENTICACION.models import ConfiguracionServidor as _CS
+        _cert_conf = _CS.objects.filter(clave="certificado").first()
+        cert_path_actual = _cert_conf.url_endpoint if _cert_conf else CERT_PATH
+        cert_ok = cert_path_actual and os.path.exists(cert_path_actual)
+        logger.debug("FIRMA: CERT_PATH=%s existe=%s", cert_path_actual, cert_ok)
         if not cert_ok and not is_demo:
-            logger.error("Certificado no encontrado en: %s", CERT_PATH)
-            return JsonResponse({"error": "Certificado no encontrado."}, status=400)
+            logger.error("Certificado no encontrado en: %s", cert_path_actual)
+            return JsonResponse({"error": f"Certificado no encontrado en: {cert_path_actual}"}, status=400)
         elif not cert_ok and is_demo:
             logger.warning("MODO DEMO: Certificado no encontrado, continuando sin certificado")
 
