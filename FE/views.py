@@ -2899,6 +2899,9 @@ def detalle_factura(request, factura_id):
         '04': "documentos/nota_remision/template_nr.html",
         '05': "documentos/nota_credito/template_nc.html",
         '06': "documentos/nota_debito/template_nd.html",
+        '07': "documentos/retencion/template_cr.html",
+        '08': "documentos/liquidacion/template_cl.html",
+        '09': "documentos/dcl/template_dcl.html",
         '14': "documentos/sujeto_excluido/template_fse.html",
     }
     if usa_termica:

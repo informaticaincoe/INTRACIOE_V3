@@ -1,0 +1,50 @@
+{% extends "documentos/_dte_base.html" %}
+{% load qr_tags %}
+{% block doc_title %}Comprobante de Retención{% endblock %}
+{% block version %}Ver.1{% endblock %}
+{% block tipo_dte %}Comprobante de Retención{% endblock %}
+
+{# Override emisor/receptor — Retención usa Agente/Sujeto #}
+{% block receptor_fields %}
+<div class="campo full"><label>Nombre o razón social:</label><span class="val">{{ factura.dtereceptor.nombre }}</span></div>
+<div class="campo full"><label>Tipo de doc. de Identificación:</label><span class="val">{{ factura.dtereceptor.tipo_documento.descripcion|default:"—" }}</span></div>
+<div class="campo full"><label>N° doc. de Identificación:</label><span class="val">{{ factura.dtereceptor.num_documento|default:"—" }}</span></div>
+{% if factura.dtereceptor.nrc %}<div class="campo"><label>NRC:</label><span class="val">{{ factura.dtereceptor.nrc }}</span></div>{% endif %}
+{% if factura.json_original.receptor.codActividad %}<div class="campo full"><label>Actividad económica:</label><span class="val">{{ factura.json_original.receptor.descActividad|default:"—" }}</span></div>{% endif %}
+{% if factura.dtereceptor.nombreComercial %}<div class="campo full"><label>Nombre comercial:</label><span class="val">{{ factura.dtereceptor.nombreComercial }}</span></div>{% endif %}
+<div class="campo full"><label>Dirección:</label><span class="val">{{ factura.dtereceptor.direccion|default:"—" }}</span></div>
+<div class="campo full"><label>Correo electrónico:</label><span class="val">{{ factura.dtereceptor.correo|default:"—" }}</span></div>
+{% endblock %}
+
+{% block tabla_headers %}
+<th style="width:30px">N°</th>
+<th>Tipo Doc. Relacionado</th>
+<th>N° Doc. Relacionado</th>
+<th style="width:70px">Fecha Doc.</th>
+<th>Descripción</th>
+<th style="width:85px">Monto Sujeto a Retención</th>
+<th style="width:75px">IVA Retenido</th>
+{% endblock %}
+
+{% block tabla_row %}
+<td>{{ forloop.counter }}</td>
+<td>{{ item.tipoDte|default:item.tipoDoc|default:"—" }}</td>
+<td style="text-align:left;">{{ item.numDocumento|default:item.numeroDocumento|default:"—" }}</td>
+<td>{{ item.fechaEmision|default:item.fecha|default:"—" }}</td>
+<td style="text-align:left;">{{ item.descripcion|default:"—" }}</td>
+<td class="td-num">${{ item.montoSujetoGrav|default:item.ventaGravada|default:0|floatformat:2 }}</td>
+<td class="td-num">${{ item.ivaRetenido|default:item.ivaItem|default:0|floatformat:2 }}</td>
+{% endblock %}
+
+{% block tabla_footer %}
+<tr>
+  <td colspan="5" style="text-align:right;padding:3px 6px;">Total Monto sujeto a retención:</td>
+  <td class="td-num">${{ factura.json_original.resumen.totalSujetoRetencion|default:factura.json_original.resumen.totalGravada|default:0|floatformat:2 }}</td>
+  <td class="td-num">${{ factura.json_original.resumen.totalIVAretenido|default:factura.json_original.resumen.ivaRete1|default:0|floatformat:2 }}</td>
+</tr>
+{% endblock %}
+
+{% block resumen %}
+<div class="resumen-row"><label>Valor en Letras IVA retenido:</label><span class="val">{{ factura.json_original.resumen.totalLetras }}</span></div>
+<div class="resumen-row total"><label>Total IVA Retenido:</label><span class="val">${{ factura.json_original.resumen.totalIVAretenido|default:factura.json_original.resumen.ivaRete1|default:0|floatformat:2 }}</span></div>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "documentos/_dte_base.html" %}
+{% load qr_tags %}
+{% block doc_title %}Documento Contable de Liquidación{% endblock %}
+{% block version %}Ver.1{% endblock %}
+{% block tipo_dte %}Documento Contable de Liquidación{% endblock %}
+
+{% block receptor_fields %}
+<div class="campo full"><label>Nombre o razón social:</label><span class="val">{{ factura.dtereceptor.nombre }}</span></div>
+<div class="campo"><label>NIT:</label><span class="val">{{ factura.dtereceptor.num_documento|default:"—" }}</span></div>
+{% if factura.dtereceptor.nrc %}<div class="campo"><label>NRC:</label><span class="val">{{ factura.dtereceptor.nrc }}</span></div>{% endif %}
+{% if factura.json_original.receptor.codActividad %}<div class="campo full"><label>Actividad económica:</label><span class="val">{{ factura.json_original.receptor.descActividad|default:"—" }}</span></div>{% endif %}
+<div class="campo full"><label>Dirección:</label><span class="val">{{ factura.dtereceptor.direccion|default:"—" }}</span></div>
+<div class="campo full"><label>Correo electrónico:</label><span class="val">{{ factura.dtereceptor.correo|default:"—" }}</span></div>
+{% if factura.dtereceptor.nombreComercial %}<div class="campo full"><label>Nombre comercial:</label><span class="val">{{ factura.dtereceptor.nombreComercial }}</span></div>{% endif %}
+{% if factura.json_original.receptor.tipoEstablecimiento %}<div class="campo full"><label>Tipo de establecimiento:</label><span class="val">{{ factura.json_original.receptor.tipoEstablecimiento }}</span></div>{% endif %}
+{% endblock %}
+
+{# DCL no tiene tabla de productos — tiene campos de liquidación #}
+{% block secciones_extra %}
+<div class="dte-section">
+  <div class="dte-section-header">Detalle de Liquidación</div>
+  {% for item in factura.json_original.cuerpoDocumento %}
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;padding:4px 0;{% if not forloop.last %}border-bottom:1px dashed var(--gris-borde);margin-bottom:6px;padding-bottom:8px;{% endif %}">
+    <div class="campo full"><label>Fecha inicio periodo:</label><span class="val">{{ item.periodoLiquidacionFechaInicio|default:item.fechaInicio|default:"—" }}</span></div>
+    <div class="campo full"><label>Fecha fin periodo:</label><span class="val">{{ item.periodoLiquidacionFechaFin|default:item.fechaFin|default:"—" }}</span></div>
+    <div class="campo full"><label>Valor de las operaciones:</label><span class="val">${{ item.valorOperaciones|default:item.montoDescu|default:0|floatformat:2 }}</span></div>
+    <div class="campo full"><label>Cantidad de documentos:</label><span class="val">{{ item.cantidadDoc|default:item.cantidad|default:0 }}</span></div>
+    <div class="campo full"><label>Comisión:</label><span class="val">${{ item.comision|default:0|floatformat:2 }}</span></div>
+    <div class="campo full"><label>Porcentaje de comisión:</label><span class="val">{{ item.porcentComision|default:0 }}%</span></div>
+    <div class="campo full"><label>Valores no sujetos a percepción:</label><span class="val">${{ item.montoPorcentaje|default:0|floatformat:2 }}</span></div>
+    <div class="campo full"><label>IVA de la comisión:</label><span class="val">${{ item.ivaComision|default:0|floatformat:2 }}</span></div>
+    <div class="campo full"><label>IVA de las operaciones:</label><span class="val">${{ item.ivaRetenido|default:0|floatformat:2 }}</span></div>
+    <div class="campo full"><label>Subtotal:</label><span class="val">${{ item.subTotal|default:0|floatformat:2 }}</span></div>
+    <div class="campo full"><label>IVA Percibido (2%):</label><span class="val">${{ item.ivaPercibido|default:0|floatformat:2 }}</span></div>
+    <div class="campo full"><label>Valor Líquido a pagar:</label><span class="val">${{ item.liquidoAPagar|default:0|floatformat:2 }}</span></div>
+    {% if item.descripcion %}<div class="campo full" style="grid-column:1/-1;"><label>Descripción:</label><span class="val">{{ item.descripcion }}</span></div>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{# Ocultar tabla de productos del base template #}
+{% block tabla_headers %}
+<th colspan="10" style="text-align:center;">Detalle en sección superior</th>
+{% endblock %}
+{% block tabla_row %}
+<td colspan="10"></td>
+{% endblock %}
+{% block tabla_footer %}{% endblock %}
+
+{% block resumen %}
+<div class="resumen-row"><label>Montos sujetos a percepción sin IVA:</label><span class="val">${{ factura.json_original.resumen.montoSujetoPercepcion|default:factura.json_original.resumen.subTotal|default:0|floatformat:2 }}</span></div>
+{% if factura.json_original.resumen.ivaPercibido %}<div class="resumen-row"><label>IVA Percibido (2%):</label><span class="val">${{ factura.json_original.resumen.ivaPercibido|floatformat:2 }}</span></div>{% endif %}
+<div class="resumen-row total"><label>Valor Líquido a pagar al Afiliado:</label><span class="val">${{ factura.json_original.resumen.totalPagar|default:factura.json_original.resumen.totalLetras|default:0|floatformat:2 }}</span></div>
+{% endblock %}
