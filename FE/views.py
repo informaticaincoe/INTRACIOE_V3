@@ -2235,7 +2235,9 @@ def firmar_factura_view(request, factura_id, interno=False):
         try:
             logger.debug("dentro try firmar factura")
             config_firmador = obtener_firmador_url()
-            response = requests.post(config_firmador.url_endpoint, json=payload, headers={"Content-Type": CONTENT_TYPE.valor})
+            ct = CONTENT_TYPE.valor if CONTENT_TYPE else "application/json"
+            logger.debug("FIRMA: firmador_url=%s content_type=%s", config_firmador.url_endpoint if config_firmador else None, ct)
+            response = requests.post(config_firmador.url_endpoint, json=payload, headers={"Content-Type": ct})
             logger.debug("Response envio: %s", response)
             logger.debug("Response envio status: %s", response.status_code)
             try:
