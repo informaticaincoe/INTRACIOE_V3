@@ -68,51 +68,17 @@
     </style>
 </head>
 <body>
-    {% if factura.recibido_mh %}
+    <div class="text-center mt-3 d-print-none">
+        <button class="btn btn-primary btn-sm" onclick="window.print()">
+            <i class="bi bi-printer me-1"></i>Imprimir
+        </button>
+        <a href="{% url 'listar_facturas' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Volver
+        </a>
         {% if factura.envio_correo %}
-            <p class="mb-1"><strong>Correo enviado al receptor:</strong> {{ factura.dtereceptor.correo }}</p>
+            <span class="badge bg-success ms-2"><i class="bi bi-envelope-check me-1"></i>Correo enviado</span>
         {% endif %}
-    {% else %}
-    <div class="text-center mt-3">
-        <button class="btn btn-primary btn-print" onclick="window.print()">Imprimir</button>
-        <form action="{% url 'firmar_factura' factura.id %}" method="post" style="display:inline;">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-info btn-sm me-1 btn-print">
-                <i class="bi bi-pencil-square btn-print"></i> Firmar Factura
-            </button>
-        </form>
-        <form action="{% url 'enviar_factura_hacienda' factura.id %}" method="post" style="display:inline;">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-success btn-sm me-1 btn-print">
-                <i class="bi bi-pencil-square btn-print"></i> Enviar MH
-            </button>
-        </form>
-        <form action="{% url 'generar_inv_factura_hacienda' factura.id %}" method="post" style="display:inline;">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-info btn-sm me-1 btn-print">
-                <i class="bi bi-pencil-square btn-print"></i> Generar Dte a Invalidar
-            </button>
-        </form>
-        <form action="{% url 'firmar_factura_inv_hacienda' factura.id %}" method="post" style="display:inline;">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-success btn-sm me-1 btn-print">
-                <i class="bi bi-pencil-square btn-print"></i> Firma Dte Invalidar
-            </button>
-        </form>
-        <form action="{% url 'invalidar_factura_hacienda' factura.id %}" method="post" style="display:inline;">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-danger btn-sm me-1 btn-print">
-                <i class="bi bi-pencil-square btn-print"></i> Enviar Invalidacion MH
-            </button>
-        </form>
-        {% comment %} <form action="{% url 'enviar_correo_individual' factura.id %}" method="post" style="display:inline;">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-primary btn-sm me-1 btn-print">
-                <i class="bi bi-pencil-square btn-print"></i> Enviar Correo
-            </button>
-        </form> {% endcomment %}
     </div>
-    {% endif %}
     
 <div class="container factura-container">
     
@@ -120,7 +86,9 @@
     <div class="row mb-2">
         <div class="col-md-6 border p-2">
             <div class="d-flex align-items-center">
-                <img src="{% static 'img/logo_empresa.png' %}" alt="Logo Empresa" class="img-fluid me-2" style="max-width: 70px;">
+                {% if factura.dteemisor.logo %}
+                <img src="{{ factura.dteemisor.logo.url }}" alt="Logo" class="img-fluid me-2" style="max-width: 70px;">
+                {% endif %}
                 <div>
                     <h6 class="mb-1">Datos del Emisor</h6>
                     <p class="mb-1"><strong>NIT:</strong> {{ factura.dteemisor.nit }}</p>

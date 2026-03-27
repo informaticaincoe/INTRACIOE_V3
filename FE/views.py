@@ -1721,15 +1721,19 @@ def generar_json(
 
             psv = _to_dec(raw.get("psv", precio_uni))
 
-            # En CCF, no enviar codTributo por ítem; tributos=["20"] si es gravada
+            # CCF: tributos=["20"] si gravada. FE (consumidor final): tributos=null
             if is_ccf:
                 numero_doc_linea  = None
                 cod_tributo_linea = None
                 tributos_linea    = ["20"] if venta_gr > 0 else None
+            elif is_fe:
+                numero_doc_linea  = raw.get("numeroDocumento", None)
+                cod_tributo_linea = raw.get("codTributo", None)
+                tributos_linea    = None  # FE no lleva tributos por ítem
             else:
                 numero_doc_linea  = raw.get("numeroDocumento", None)
                 cod_tributo_linea = raw.get("codTributo", None)
-                tributos_linea    = raw.get("tributos", ["20"] if venta_gr > 0 else None)
+                tributos_linea    = raw.get("tributos", None)
 
             tipo_item_raw = int(raw.get("tipoItem", 1))
             tipo_item_ok = tipo_item_raw if tipo_item_raw in (1, 2, 3, 4) else 1

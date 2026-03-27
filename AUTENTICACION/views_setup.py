@@ -552,7 +552,7 @@ def setup_wizard(request):
             "hacienda_url_test":          {"url_endpoint": "https://apitest.dtes.mh.gob.sv/fesv/recepciondte", "descripcion": "URL pruebas Hacienda"},
             "certificado":               {"url_endpoint": cert_path, "descripcion": "Ruta certificado digital"},
             "server_url":                 {"url": server_url, "descripcion": "URL del servidor local"},
-            "firmador":                   {"url_endpoint": f"{firmador_url}/firmardocumento/", "descripcion": "URL del servicio firmador"},
+            "firmador":                   {"url_endpoint": "http://172.18.0.1:8113/firmardocumento/", "descripcion": "URL del servicio firmador"},
             "json_factura":               {"url": "FE/json_facturas/", "descripcion": "Ruta JSON facturas"},
             "ruta_comprobante_json":      {"url": "FE/comprobantes_json/", "descripcion": "Ruta comprobantes JSON"},
             "ruta_comprobantes_dte":      {"url": "FE/comprobantes_dte/", "descripcion": "Ruta comprobantes DTE"},
