@@ -2372,7 +2372,9 @@ def firmar_factura_view(request, factura_id, interno=False):
         logger.info("Inicio Intento %s de %s", intento, intentos_max)
 
         if not is_demo:
-            token_data = Token_data.objects.filter(activado=True).first()
+            token_data = Token_data.objects.filter(nit_empresa=emisor.nit, activado=True).first()
+            if not token_data:
+                token_data = Token_data.objects.filter(activado=True).first()
             logger.debug("token_data:   %s", token_data)
             if not token_data:
                 logger.warning("NO HAY TOKEN:   %s", token_data)
@@ -2381,10 +2383,15 @@ def firmar_factura_view(request, factura_id, interno=False):
             token_data = None
             logger.debug("MODO DEMO: Token no requerido")
 
-        # Leer certificado dinámicamente (no depender de la variable global)
-        from AUTENTICACION.models import ConfiguracionServidor as _CS
-        _cert_conf = _CS.objects.filter(clave="certificado").first()
-        cert_path_actual = _cert_conf.url_endpoint if _cert_conf else CERT_PATH
+        # Leer certificado: primero buscar por NIT del emisor, luego ConfiguracionServidor
+        nit_limpio = emisor.nit.replace('-', '') if emisor.nit else ''
+        cert_por_nit = f"FE/cert/{nit_limpio}.crt"
+        if nit_limpio and os.path.exists(cert_por_nit):
+            cert_path_actual = cert_por_nit
+        else:
+            from AUTENTICACION.models import ConfiguracionServidor as _CS
+            _cert_conf = _CS.objects.filter(clave="certificado").first()
+            cert_path_actual = _cert_conf.url_endpoint if _cert_conf else CERT_PATH
         cert_ok = cert_path_actual and os.path.exists(cert_path_actual)
         logger.debug("FIRMA: CERT_PATH=%s existe=%s", cert_path_actual, cert_ok)
         if not cert_ok and not is_demo:
@@ -6717,7 +6724,13 @@ def configurar_empresa_view(request):
         rep_form = RepresentanteEmisorForm(request.POST, instance=rep_instance)
         tip_val = request.POST.get('tip_porcentaje')
 
-        if emisor_form.is_valid() and rep_form.is_valid():
+        emisor_ok = emisor_form.is_valid()
+        rep_ok = rep_form.is_valid()
+        if not emisor_ok:
+            logger.warning("EMPRESA: emisor_form.errors=%s", emisor_form.errors)
+        if not rep_ok:
+            logger.warning("EMPRESA: rep_form.errors=%s", rep_form.errors)
+        if emisor_ok and rep_ok:
             representante = rep_form.save()
             emisor_obj = emisor_form.save(commit=False)
             emisor_obj.representante = representante
