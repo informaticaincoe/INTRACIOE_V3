@@ -138,5 +138,6 @@ urlpatterns += [
     path("reporte/contabilidad/", views_ventas.reporte_contabilidad_view, name="reporte_contabilidad"),
     path("reporte/facturacion/", views_ventas.reporte_facturacion_view, name="reporte_facturacion"),
 
-
+    # API receptor (para auto-check retención/percepción en facturación)
+    path('api/receptor/<int:pk>/', views.receptor_json_api, name='receptor_detail_api'),
 ]

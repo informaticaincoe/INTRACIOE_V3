@@ -233,6 +233,11 @@ class Receptor_fe(models.Model):
     geocoded_at = models.DateTimeField(null=True, blank=True)
     geocode_source = models.CharField(max_length=30, blank=True, default="")
 
+    # Flags para retención/percepción
+    aplica_retencion_iva = models.BooleanField(default=False, verbose_name="Aplica retención IVA")
+    aplica_retencion_renta = models.BooleanField(default=False, verbose_name="Aplica retención renta")
+    aplica_percepcion = models.BooleanField(default=False, verbose_name="Aplica percepción IVA")
+
     def __str__(self):
         return self.nombre
 
@@ -294,6 +299,20 @@ class Emisor_fe(models.Model):
         default=False,
         verbose_name="Modo demostración",
         help_text="No envía a Hacienda, protege datos demo y muestra indicador visual."
+    )
+
+    # Porcentajes por defecto para retención/percepción
+    porcentaje_retencion_iva = models.DecimalField(
+        max_digits=5, decimal_places=2, default=1.00,
+        verbose_name="% Retención IVA"
+    )
+    porcentaje_retencion_renta = models.DecimalField(
+        max_digits=5, decimal_places=2, default=10.00,
+        verbose_name="% Retención Renta"
+    )
+    porcentaje_percepcion_iva = models.DecimalField(
+        max_digits=5, decimal_places=2, default=1.00,
+        verbose_name="% Percepción IVA"
     )
 
     def __str__(self):
@@ -506,6 +525,7 @@ class DetalleFactura(models.Model):
     descuento = models.ForeignKey(Descuento, on_delete=models.SET_NULL, null=True, blank=True)
     #iva_item = models.DecimalField(max_digits=10, decimal_places=2, blank=True, editable=False,help_text="IVA calculado (por ejemplo, 13% sobre el total sin IVA)")
     saldo_favor = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    descripcion_adicional = models.CharField(max_length=500, blank=True, default="", verbose_name="Descripción adicional (aduana)")
     tipo_documento_relacionar = models.CharField(max_length=50, null=True, blank=True)#Identificar si el documento es Fisico(F) o Electronico(E)
     documento_relacionado = models.CharField(max_length=100, null=True, blank=True)#Agregar el documento relacionado
     # def save(self, *args, **kwargs):

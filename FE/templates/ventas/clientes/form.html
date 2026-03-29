@@ -233,6 +233,39 @@
         </div>
       </div>
 
+      <!-- Configuración fiscal -->
+      <div class="card shadow-sm step-card mb-3">
+        <div class="card-body">
+          <h6 class="mb-3 d-flex align-items-center gap-2">
+            <span class="step-num bg-secondary">6</span>Configuración fiscal
+            <small class="text-muted fw-normal">(opcional)</small>
+          </h6>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="aplica_retencion_iva" name="aplica_retencion_iva"
+                       {% if c and c.aplica_retencion_iva %}checked{% endif %}>
+                <label class="form-check-label" for="aplica_retencion_iva">Aplica retención IVA</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="aplica_retencion_renta" name="aplica_retencion_renta"
+                       {% if c and c.aplica_retencion_renta %}checked{% endif %}>
+                <label class="form-check-label" for="aplica_retencion_renta">Aplica retención renta</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="aplica_percepcion" name="aplica_percepcion"
+                       {% if c and c.aplica_percepcion %}checked{% endif %}>
+                <label class="form-check-label" for="aplica_percepcion">Aplica percepción IVA</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Botones -->
       <div class="d-flex justify-content-between gap-2 pb-4">
         <a href="{% url 'clientes_list' %}" class="btn btn-secondary">

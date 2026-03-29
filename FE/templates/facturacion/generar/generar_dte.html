@@ -277,6 +277,60 @@
           </div>
         </div>
 
+        <!-- 4b) Campos de Exportación (solo DTE 11) -->
+        <div class="card shadow-sm mt-3" id="export_fields_section" style="display:none">
+          <div class="card-body">
+            <h6 class="mb-3 d-flex align-items-center gap-2">
+              <span class="step-num" style="background:#198754">E</span>Datos de Exportación
+            </h6>
+            <div class="row g-2">
+              <div class="col-md-4">
+                <label class="form-label small mb-1">Recinto Fiscal</label>
+                <select name="recinto_fiscal" class="form-select">
+                  <option value="">— Ninguno —</option>
+                  {% for r in recinto_fiscals %}
+                    <option value="{{ r.id }}">{{ r.codigo }} — {{ r.descripcion }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small mb-1">Régimen de Exportación</label>
+                <select name="regimen_exportacion" class="form-select">
+                  <option value="">— Ninguno —</option>
+                  {% for r in regimenes %}
+                    <option value="{{ r.id }}">{{ r.codigo }} — {{ r.descripcion }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small mb-1">Tipo Ítem Exportación</label>
+                <select name="tipo_item_exportacion" class="form-select">
+                  {% for t in tipo_items_export %}
+                    <option value="{{ t.id }}">{{ t.codigo }} — {{ t.descripcion }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small mb-1">INCOTERMS</label>
+                <select name="incoterms" class="form-select">
+                  <option value="">— Ninguno —</option>
+                  {% for i in incoterms_list %}
+                    <option value="{{ i.id }}">{{ i.codigo }} — {{ i.descripcion }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small mb-1">Seguro ($)</label>
+                <input type="number" step="0.01" min="0" name="seguro_exportacion" class="form-control" value="0.00">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small mb-1">Flete ($)</label>
+                <input type="number" step="0.01" min="0" name="flete_exportacion" class="form-control" value="0.00">
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 5) Extras -->
         <div class="card shadow-sm mt-3">
           <div class="card-body">
@@ -295,12 +349,12 @@
                     <div class="row g-2">
                       <div class="col-6">
                         <label class="form-label small mb-1">Porcentaje</label>
-                        <input type="number" step="0.01" min="0" id="ret_iva_pct" class="form-control" value="1.00">
-                        <input type="hidden" name="porcentaje_retencion_iva" id="porcentaje_retencion_iva" value="1.00">
+                        <input type="number" step="0.01" min="0" id="ret_iva_pct" class="form-control" value="{{ emisor_pct_ret_iva|default:'1.00' }}">
+                        <input type="hidden" name="porcentaje_retencion_iva" id="porcentaje_retencion_iva" value="{{ emisor_pct_ret_iva|default:'1.00' }}">
                       </div>
                       <div class="col-6">
                         <label class="form-label small mb-1">Monto</label>
-                        <input type="number" step="0.01" min="0" id="ret_iva_mto" class="form-control" value="0.00">
+                        <input type="number" step="0.01" min="0" id="ret_iva_mto" class="form-control" value="0.00" readonly>
                       </div>
                     </div>
                     <hr class="my-3">
@@ -310,8 +364,29 @@
                     </div>
                     <div class="row g-2">
                       <div class="col-6">
+                        <label class="form-label small mb-1">Porcentaje</label>
+                        <input type="number" step="0.01" min="0" id="ret_renta_pct" class="form-control" value="{{ emisor_pct_ret_renta|default:'10.00' }}">
+                        <input type="hidden" name="porcentaje_retencion_renta" id="porcentaje_retencion_renta" value="{{ emisor_pct_ret_renta|default:'10.00' }}">
+                      </div>
+                      <div class="col-6">
                         <label class="form-label small mb-1">Monto</label>
-                        <input type="number" step="0.01" min="0" id="ret_renta_mto" class="form-control" value="0.00">
+                        <input type="number" step="0.01" min="0" id="ret_renta_mto" class="form-control" value="0.00" readonly>
+                      </div>
+                    </div>
+                    <hr class="my-3">
+                    <div class="form-check form-switch mb-2">
+                      <input class="form-check-input" type="checkbox" id="percepcion_iva_sw" name="percepcion_iva">
+                      <label class="form-check-label" for="percepcion_iva_sw">Percepción IVA</label>
+                    </div>
+                    <div class="row g-2">
+                      <div class="col-6">
+                        <label class="form-label small mb-1">Porcentaje</label>
+                        <input type="number" step="0.01" min="0" id="percepcion_iva_pct" class="form-control" value="{{ emisor_pct_percepcion|default:'1.00' }}">
+                        <input type="hidden" name="porcentaje_percepcion_iva" id="porcentaje_percepcion_iva" value="{{ emisor_pct_percepcion|default:'1.00' }}">
+                      </div>
+                      <div class="col-6">
+                        <label class="form-label small mb-1">Monto</label>
+                        <input type="number" step="0.01" min="0" id="percepcion_iva_mto" class="form-control" value="0.00" readonly>
                       </div>
                     </div>
                   </div>
@@ -420,6 +495,15 @@
             <div class="d-flex justify-content-between small mb-1">
               <span class="text-muted">Descuentos</span><strong id="sum_desc" class="text-danger">$0.00</strong>
             </div>
+            <div class="d-flex justify-content-between small mb-1" id="sum_ret_iva_row" style="display:none">
+              <span class="text-muted">(-) Ret. IVA</span><strong id="sum_ret_iva" class="text-danger">$0.00</strong>
+            </div>
+            <div class="d-flex justify-content-between small mb-1" id="sum_ret_renta_row" style="display:none">
+              <span class="text-muted">(-) Ret. Renta</span><strong id="sum_ret_renta" class="text-danger">$0.00</strong>
+            </div>
+            <div class="d-flex justify-content-between small mb-1" id="sum_perc_iva_row" style="display:none">
+              <span class="text-muted">(+) Perc. IVA</span><strong id="sum_perc_iva" class="text-success">$0.00</strong>
+            </div>
             <div class="sum-total-box d-flex justify-content-between align-items-center fs-5">
               <span class="fw-semibold">Total a pagar</span><strong id="sum_total">$0.00</strong>
             </div>
@@ -437,6 +521,7 @@
             <div id="hidden-items"></div>
             <input type="hidden" name="retencion_iva_monto" id="retencion_iva_monto">
             <input type="hidden" name="retencion_renta_monto" id="retencion_renta_monto">
+            <input type="hidden" name="percepcion_iva_monto" id="percepcion_iva_monto">
 
             <div class="d-grid mt-3">
               <button type="submit" class="btn btn-success btn-lg fw-semibold py-3">
@@ -638,6 +723,7 @@
         <input type="hidden" name="item_descuento[]" value="${it.desc_pct}">
         <input type="hidden" name="item_iva[]" value="${it.aplica_iva ? '1':'0'}">
         <input type="hidden" name="item_stock[]" value="${Number.isFinite(+it.stock)? it.stock : ''}">
+        <input type="hidden" name="item_desc_extra[]" value="${escapeHtml(it.desc_extra || '')}">
       `).join('');
     }
 
@@ -673,6 +759,11 @@
               <button type="button" class="btn btn-sm btn-outline-danger btn-del"><i class="bi bi-x-lg"></i></button>
             </td>
           </tr>
+          <tr data-idx="${i}" class="desc-extra-row">
+            <td colspan="6" style="padding-top:0;border-top:0;">
+              <input type="text" class="form-control form-control-sm inp-desc-extra" placeholder="Desc. adicional (aduana/detalle)" value="${escapeHtml(it.desc_extra || '')}">
+            </td>
+          </tr>
         `;
       }).join('');
 
@@ -702,6 +793,14 @@
         });
       });
 
+      // Wiring desc-extra rows
+      tbody.querySelectorAll('tr.desc-extra-row').forEach(tr=>{
+        const idx = +tr.dataset.idx;
+        const item = POS.items[idx];
+        const inp = tr.querySelector('.inp-desc-extra');
+        if (inp) inp.addEventListener('input', e=>{ item.desc_extra = e.target.value; syncHidden(); });
+      });
+
       syncHidden();
     }
     window.renderItems = renderItems;
@@ -720,21 +819,51 @@
         total += base + iv;
       });
 
-      // Extras (si existen en DOM)
+      // Auto-cálculo retención/percepción desde porcentajes
       const retIvaOn = $('ret_iva_sw')?.checked;
       const retRentaOn = $('ret_renta_sw')?.checked;
-      let retIvaMto = retIvaOn ? parseFloat($('ret_iva_mto')?.value||'0')||0 : 0;
-      let retRentaMto = retRentaOn ? parseFloat($('ret_renta_mto')?.value||'0')||0 : 0;
+      const percIvaOn = $('percepcion_iva_sw')?.checked;
 
-      const totalPagar = total - retIvaMto - retRentaMto;
+      let retIvaMto = 0, retRentaMto = 0, percIvaMto = 0;
+      if (retIvaOn) {
+        const pct = parseFloat($('ret_iva_pct')?.value||'0')/100;
+        retIvaMto = +(subtotal * pct).toFixed(2);
+        if ($('ret_iva_mto')) $('ret_iva_mto').value = retIvaMto.toFixed(2);
+      }
+      if (retRentaOn) {
+        const pct = parseFloat($('ret_renta_pct')?.value||'0')/100;
+        retRentaMto = +(subtotal * pct).toFixed(2);
+        if ($('ret_renta_mto')) $('ret_renta_mto').value = retRentaMto.toFixed(2);
+      }
+      if (percIvaOn) {
+        const pct = parseFloat($('percepcion_iva_pct')?.value||'0')/100;
+        percIvaMto = +(subtotal * pct).toFixed(2);
+        if ($('percepcion_iva_mto')) $('percepcion_iva_mto').value = percIvaMto.toFixed(2);
+      }
+
+      // Sync hidden % fields
+      if ($('porcentaje_retencion_iva'))   $('porcentaje_retencion_iva').value   = $('ret_iva_pct')?.value||'0';
+      if ($('porcentaje_retencion_renta')) $('porcentaje_retencion_renta').value = $('ret_renta_pct')?.value||'0';
+      if ($('porcentaje_percepcion_iva'))  $('porcentaje_percepcion_iva').value  = $('percepcion_iva_pct')?.value||'0';
+
+      const totalPagar = total - retIvaMto - retRentaMto + percIvaMto;
 
       sumSub.textContent  = fmt(subtotal);
       sumIva.textContent  = fmt(iva);
       sumDesc.textContent = fmt(descuentos);
       sumTot.textContent  = fmt(totalPagar);
 
-      if ($('retencion_iva_monto'))   $('retencion_iva_monto').value   = retIvaMto.toFixed(2);
-      if ($('retencion_renta_monto')) $('retencion_renta_monto').value = retRentaMto.toFixed(2);
+      // Mostrar/ocultar líneas de retención/percepción en resumen
+      const retIvaRow = $('sum_ret_iva_row');
+      const retRentaRow = $('sum_ret_renta_row');
+      const percIvaRow = $('sum_perc_iva_row');
+      if (retIvaRow) { retIvaRow.style.display = retIvaOn ? '' : 'none'; $('sum_ret_iva').textContent = '-' + fmt(retIvaMto); }
+      if (retRentaRow) { retRentaRow.style.display = retRentaOn ? '' : 'none'; $('sum_ret_renta').textContent = '-' + fmt(retRentaMto); }
+      if (percIvaRow) { percIvaRow.style.display = percIvaOn ? '' : 'none'; $('sum_perc_iva').textContent = '+' + fmt(percIvaMto); }
+
+      if ($('retencion_iva_monto'))    $('retencion_iva_monto').value    = retIvaMto.toFixed(2);
+      if ($('retencion_renta_monto'))  $('retencion_renta_monto').value  = retRentaMto.toFixed(2);
+      if ($('percepcion_iva_monto'))   $('percepcion_iva_monto').value   = percIvaMto.toFixed(2);
 
       // Efectivo: calcular cambio
       const val   = mpSelect?.value || '';
@@ -752,10 +881,46 @@
     window.calcTotals = calcTotals;
 
 
-    // Eventos extras (si existen) y efectivo
-    ['ret_iva_sw','ret_iva_mto','ret_renta_sw','ret_renta_mto','montoRecibido'].forEach(id=>{
+    // Eventos extras y efectivo
+    ['ret_iva_sw','ret_iva_pct','ret_iva_mto','ret_renta_sw','ret_renta_pct','ret_renta_mto',
+     'percepcion_iva_sw','percepcion_iva_pct','percepcion_iva_mto','montoRecibido'].forEach(id=>{
       $(id)?.addEventListener?.('input', calcTotals);
       $(id)?.addEventListener?.('change', calcTotals);
+    });
+
+    // ======= Show/hide exportación + Auto-check retención/percepción =======
+    tipoDteSelect?.addEventListener('change', function(){
+      const exportSection = document.getElementById('export_fields_section');
+      if (exportSection) exportSection.style.display = (this.value === '11') ? '' : 'none';
+    });
+    // Estado inicial
+    if (tipoDteSelect && tipoDteSelect.value === '11') {
+      const es = document.getElementById('export_fields_section');
+      if (es) es.style.display = '';
+    }
+
+    // Auto-check retención/percepción al cambiar cliente
+    const receptorSelect = document.getElementById('receptor_id');
+    receptorSelect?.addEventListener('change', async function(){
+      const rid = this.value;
+      if (!rid) return;
+      try {
+        const resp = await fetch(`{% url 'receptor_detail_api' pk=99999 %}`.replace('/99999/', '/' + rid + '/'), {
+          headers: {'X-Requested-With':'XMLHttpRequest'}, credentials:'same-origin'
+        });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (data.aplica_retencion_iva) {
+          if ($('ret_iva_sw')) $('ret_iva_sw').checked = true;
+        }
+        if (data.aplica_retencion_renta) {
+          if ($('ret_renta_sw')) $('ret_renta_sw').checked = true;
+        }
+        if (data.aplica_percepcion) {
+          if ($('percepcion_iva_sw')) $('percepcion_iva_sw').checked = true;
+        }
+        calcTotals();
+      } catch(_){}
     });
 
     // Agregar item desde picker
@@ -778,7 +943,8 @@
           cantidad: cant,
           desc_pct: 0,
           aplica_iva: aplica,
-          stock: sel.stock
+          stock: sel.stock,
+          desc_extra: ''
         });
       }
 

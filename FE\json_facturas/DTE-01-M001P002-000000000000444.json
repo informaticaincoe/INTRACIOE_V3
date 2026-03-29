@@ -1,0 +1,116 @@
+{
+    "identificacion": {
+        "version": 1,
+        "ambiente": "01",
+        "tipoDte": "01",
+        "numeroControl": "DTE-01-M001P002-000000000000444",
+        "codigoGeneracion": "B6B57C78-C399-4D85-BBEB-3C1CB5249BB0",
+        "tipoModelo": 1,
+        "tipoOperacion": 1,
+        "tipoContingencia": null,
+        "motivoContin": null,
+        "fecEmi": "2026-03-27",
+        "horEmi": "11:52:10",
+        "tipoMoneda": "USD"
+    },
+    "documentoRelacionado": null,
+    "emisor": {
+        "nit": "06142811001040",
+        "nrc": "1278913",
+        "nombre": "Inversiones Comerciales Escobar SA de CV",
+        "codActividad": "46375",
+        "descActividad": "Venta al por  mayor de productos lácteos",
+        "nombreComercial": "Inversiones Comerciales Escobar SA de CV",
+        "tipoEstablecimiento": "02",
+        "direccion": {
+            "departamento": "05",
+            "municipio": "25",
+            "complemento": "Carretera a Sonsonate, km 27 ½ Zona Industrial Lourdes, Calle Antigua Hda, La Libertad, El Salvador C.A"
+        },
+        "telefono": "77462310",
+        "correo": "informatica@grupoincoe.com",
+        "codEstableMH": "M001",
+        "codEstable": "0001",
+        "codPuntoVentaMH": "P002",
+        "codPuntoVenta": "0001"
+    },
+    "receptor": {
+        "nombre": "RUTA MAYOREO",
+        "codActividad": "10005",
+        "descActividad": "Otros",
+        "direccion": {
+            "departamento": "05",
+            "municipio": "25",
+            "complemento": "Lourdes"
+        },
+        "telefono": "77462310",
+        "correo": "informatica@grupoincoe.com",
+        "nrc": null,
+        "tipoDocumento": "37",
+        "numDocumento": "222222222"
+    },
+    "otrosDocumentos": null,
+    "ventaTercero": null,
+    "cuerpoDocumento": [
+        {
+            "numItem": 1,
+            "tipoItem": 1,
+            "numeroDocumento": null,
+            "codigo": "PCH062",
+            "codTributo": null,
+            "descripcion": "Caja de leche entera ira 26  de 2200 gr",
+            "cantidad": 1.0,
+            "uniMedida": 59,
+            "precioUni": 15.04,
+            "montoDescu": 0.0,
+            "ventaNoSuj": 0.0,
+            "ventaExenta": 0.0,
+            "ventaGravada": 15.04,
+            "tributos": null,
+            "psv": 15.04,
+            "noGravado": 0.0,
+            "ivaItem": 1.73
+        }
+    ],
+    "resumen": {
+        "totalNoSuj": 0.0,
+        "totalExenta": 0.0,
+        "totalGravada": 15.04,
+        "subTotalVentas": 15.04,
+        "descuNoSuj": 0.0,
+        "descuExenta": 0.0,
+        "descuGravada": 0.0,
+        "porcentajeDescuento": 0.0,
+        "totalDescu": 0.0,
+        "subTotal": 15.04,
+        "ivaRete1": 0.0,
+        "reteRenta": 0.0,
+        "montoTotalOperacion": 15.04,
+        "totalNoGravado": 0.0,
+        "totalPagar": 15.04,
+        "totalLetras": "Diecisiete con 00/100 USD",
+        "saldoFavor": 0.0,
+        "condicionOperacion": 3,
+        "pagos": [
+            {
+                "codigo": "01",
+                "montoPago": 15.04,
+                "referencia": null,
+                "periodo": null,
+                "plazo": null
+            }
+        ],
+        "numPagoElectronico": null,
+        "tributos": null,
+        "totalIva": 1.73
+    },
+    "extension": {
+        "nombEntrega": null,
+        "docuEntrega": null,
+        "nombRecibe": null,
+        "docuRecibe": null,
+        "observaciones": "Generado por Sistema Django",
+        "placaVehiculo": null
+    },
+    "apendice": null
+}

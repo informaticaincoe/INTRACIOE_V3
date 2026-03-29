@@ -72,12 +72,12 @@
 <td class="td-num">${{ item.precioUni|floatformat:2 }}</td>
 <td class="td-num">${{ item.montoDescu|default:0|floatformat:2 }}</td>
 <td class="td-num">${{ item.noGravado|default:0|floatformat:2 }}</td>
-<td class="td-num">${{ item.ventaGravada|default:item.ventaAfecta|default:0|floatformat:2 }}</td>
+<td class="td-num">${{ item.ventaGravada|default:0|floatformat:2 }}</td>
 {% endblock %}
 
 {% block tabla_footer %}
 <tr><td colspan="7" style="text-align:right;padding:3px 6px;">Total de Operaciones Afectas:</td><td class="td-num">${{ factura.json_original.resumen.totalGravada|default:0|floatformat:2 }}</td></tr>
-{% if factura.json_original.resumen.descuGravada %}<tr><td colspan="7" style="text-align:right;padding:3px 6px;">Desc. operaciones afectas:</td><td class="td-num">-${{ factura.json_original.resumen.descuGravada|floatformat:2 }}</td></tr>{% endif %}
+{% if factura.json_original.resumen.descuento %}<tr><td colspan="7" style="text-align:right;padding:3px 6px;">Desc. operaciones afectas:</td><td class="td-num">-${{ factura.json_original.resumen.descuento|floatformat:2 }}</td></tr>{% endif %}
 {% if factura.json_original.resumen.seguro %}<tr><td colspan="7" style="text-align:right;padding:3px 6px;">Seguro:</td><td class="td-num">${{ factura.json_original.resumen.seguro|floatformat:2 }}</td></tr>{% endif %}
 {% if factura.json_original.resumen.flete %}<tr><td colspan="7" style="text-align:right;padding:3px 6px;">Flete:</td><td class="td-num">${{ factura.json_original.resumen.flete|floatformat:2 }}</td></tr>{% endif %}
 <tr><td colspan="7" style="text-align:right;padding:3px 6px;">Monto Total de la Operación:</td><td class="td-num">${{ factura.json_original.resumen.montoTotalOperacion|floatformat:2 }}</td></tr>

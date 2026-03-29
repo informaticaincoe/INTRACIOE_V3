@@ -390,6 +390,9 @@ def _cliente_form(request, c: Receptor_fe | None = None):
         pais_id     = request.POST.get('pais')
         lat         = _parse_coord(request.POST.get('lat'))
         lng         = _parse_coord(request.POST.get('lng'))
+        aplica_retencion_iva   = bool(request.POST.get('aplica_retencion_iva'))
+        aplica_retencion_renta = bool(request.POST.get('aplica_retencion_renta'))
+        aplica_percepcion      = bool(request.POST.get('aplica_percepcion'))
 
         # NATURAL
         if str(getattr(tipo_persona, 'codigo', tipo_persona_id)) == "1":
@@ -441,6 +444,9 @@ def _cliente_form(request, c: Receptor_fe | None = None):
                         pais=pais,
                         tipo_persona=tipo_persona,
                         lat=lat, lng=lng, geocode_source=geocode_source, geocoded_at=geocoded_at,
+                        aplica_retencion_iva=aplica_retencion_iva,
+                        aplica_retencion_renta=aplica_retencion_renta,
+                        aplica_percepcion=aplica_percepcion,
                     )
                 else:
                     c.tipo_documento = tipo_doc
@@ -456,6 +462,9 @@ def _cliente_form(request, c: Receptor_fe | None = None):
                     c.tipo_persona=tipo_persona
                     c.lat=lat; c.lng=lng
                     c.geocode_source=geocode_source; c.geocoded_at=geocoded_at
+                    c.aplica_retencion_iva=aplica_retencion_iva
+                    c.aplica_retencion_renta=aplica_retencion_renta
+                    c.aplica_percepcion=aplica_percepcion
                     c.save()
 
                 # Actividad por defecto
@@ -510,6 +519,9 @@ def _cliente_form(request, c: Receptor_fe | None = None):
                         pais=pais,
                         tipo_persona=tipo_persona,
                         lat=lat, lng=lng, geocode_source=geocode_source, geocoded_at=geocoded_at,
+                        aplica_retencion_iva=aplica_retencion_iva,
+                        aplica_retencion_renta=aplica_retencion_renta,
+                        aplica_percepcion=aplica_percepcion,
                     )
                 else:
                     c.tipo_documento=tipo_doc
@@ -525,6 +537,9 @@ def _cliente_form(request, c: Receptor_fe | None = None):
                     c.tipo_persona=tipo_persona
                     c.lat=lat; c.lng=lng
                     c.geocode_source=geocode_source; c.geocoded_at=geocoded_at
+                    c.aplica_retencion_iva=aplica_retencion_iva
+                    c.aplica_retencion_renta=aplica_retencion_renta
+                    c.aplica_percepcion=aplica_percepcion
                     c.save()
 
                 raw_act_ids = request.POST.getlist('actividades_economicas') or request.POST.getlist('actividades')

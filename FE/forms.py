@@ -53,7 +53,8 @@ class EmisorForm(forms.ModelForm):
             "ambiente", "nombre_establecimiento",
             "tipo_documento", "logo",
             "clave_privada", "clave_publica",
-            "tipoContribuyente", "imprime_termica", "es_restaurante"
+            "tipoContribuyente", "imprime_termica", "es_restaurante",
+            "porcentaje_retencion_iva", "porcentaje_retencion_renta", "porcentaje_percepcion_iva",
         ]
         labels = {
             "nit": "NIT del Emisor",
@@ -70,7 +71,10 @@ class EmisorForm(forms.ModelForm):
             "clave_privada": "Contraseña/Clave privada (firmador)",
             "clave_publica": "Clave pública / Password Hacienda",
             "tipoContribuyente": "Tipo de Contribuyente",
-            "es_restaurante":"Es restaurante"
+            "es_restaurante": "Es restaurante",
+            "porcentaje_retencion_iva": "% Retención IVA (defecto)",
+            "porcentaje_retencion_renta": "% Retención Renta (defecto)",
+            "porcentaje_percepcion_iva": "% Percepción IVA (defecto)",
         }
         widgets = {
             "nit": forms.TextInput(attrs={"class": "form-control"}),
@@ -93,7 +97,9 @@ class EmisorForm(forms.ModelForm):
             "tipoContribuyente": forms.Select(attrs={"class": "form-select"}),
             "imprime_termica": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "es_restaurante": forms.CheckboxInput(attrs={"class": "form-check-input"}),
-            
+            "porcentaje_retencion_iva": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "min": "0", "max": "100"}),
+            "porcentaje_retencion_renta": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "min": "0", "max": "100"}),
+            "porcentaje_percepcion_iva": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "min": "0", "max": "100"}),
         }
 
     def clean(self):
