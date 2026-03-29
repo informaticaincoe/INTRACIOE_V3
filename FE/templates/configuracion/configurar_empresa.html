@@ -221,6 +221,27 @@
               </div>
               {% endif %}
               {% endif %}
+
+              <!-- Porcentajes de retención / percepción -->
+              <hr>
+              <h6 class="mb-3">Porcentajes por defecto (Retención / Percepción)</h6>
+              <div class="row g-3">
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">{{ emisor_form.porcentaje_retencion_iva.label }}</label>
+                  {{ emisor_form.porcentaje_retencion_iva }}
+                  {% for e in emisor_form.porcentaje_retencion_iva.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">{{ emisor_form.porcentaje_retencion_renta.label }}</label>
+                  {{ emisor_form.porcentaje_retencion_renta }}
+                  {% for e in emisor_form.porcentaje_retencion_renta.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">{{ emisor_form.porcentaje_percepcion_iva.label }}</label>
+                  {{ emisor_form.porcentaje_percepcion_iva }}
+                  {% for e in emisor_form.porcentaje_percepcion_iva.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                </div>
+              </div>
             </div>
           </div>
         </div>

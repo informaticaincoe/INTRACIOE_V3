@@ -265,7 +265,7 @@ class Emisor_fe(models.Model):
     ambiente = models.ForeignKey(Ambiente, on_delete=models.CASCADE)
     nombre_establecimiento = models.CharField(max_length=255, null=True, blank=True, verbose_name="Nombre Establecimiento")
     tipo_documento = models.ForeignKey(TiposDocIDReceptor, on_delete=models.CASCADE, null=True)
-    logo = models.ImageField(upload_to='media/productos/', null=True, blank=True) #logo empresa
+    logo = models.ImageField(upload_to='logos/', null=True, blank=True)
     clave_privada = models.CharField(max_length=255, null=True, blank=True)
     clave_publica = models.CharField(max_length=255, null=True, blank=True)
     representante = models.ForeignKey(representanteEmisor, on_delete=models.CASCADE, null=True, blank=True)

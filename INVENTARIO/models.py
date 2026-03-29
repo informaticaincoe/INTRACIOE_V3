@@ -108,7 +108,7 @@ class Producto(models.Model):
     almacenes = models.ManyToManyField(Almacen, blank=True)
 
     # Imagen del producto (Opcional)
-    imagen = models.ImageField(upload_to='media/productos/', null=True, blank=True)
+    imagen = models.ImageField(upload_to='productos/', null=True, blank=True)
 
     # Auditoría
     creado = models.DateTimeField(auto_now_add=True)
@@ -186,7 +186,7 @@ class ProductoProveedor(models.Model):
     referencia_interna = models.CharField(max_length=50, null=True, editable=True, default=None)
     fecha_vencimiento = models.DateField(null=True, blank=True)  
     # Imagen del producto (Opcional)
-    imagen = models.ImageField(upload_to='media/productos/', null=True, blank=True)
+    imagen = models.ImageField(upload_to='productos/', null=True, blank=True)
 
     # Auditoría
     creado = models.DateTimeField(auto_now_add=True)
