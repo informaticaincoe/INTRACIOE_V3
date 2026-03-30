@@ -17,18 +17,23 @@
   {% endfor %}
 {% endif %}
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div id="tour-header" class="d-flex justify-content-between align-items-center mb-3">
   <div>
     <h1 class="h4 mb-0">Asientos Contables</h1>
     <small class="text-muted">Libro diario de partidas dobles</small>
   </div>
-  <a href="{% url 'cont-asientos-crear' %}" class="btn btn-primary">
-    <i class="bi bi-plus-lg me-1"></i> Nuevo asiento
-  </a>
+  <div class="d-flex gap-2">
+    <button type="button" class="btn btn-outline-info btn-sm" id="btnTutorial" title="Ver tutorial">
+      <i class="bi bi-question-circle me-1"></i>Ayuda
+    </button>
+    <a id="tour-btn-nuevo" href="{% url 'cont-asientos-crear' %}" class="btn btn-primary">
+      <i class="bi bi-plus-lg me-1"></i> Nuevo asiento
+    </a>
+  </div>
 </div>
 
 <!-- Filtros -->
-<form class="row g-2 align-items-end mb-3" method="get">
+<form id="tour-filtros" class="row g-2 align-items-end mb-3" method="get">
   <div class="col-md-4">
     <label class="form-label small fw-semibold">Buscar</label>
     <div class="input-group input-group-sm">
@@ -64,7 +69,7 @@
 </form>
 
 <!-- Tabla -->
-<div class="card border-0 shadow-sm">
+<div id="tour-tabla" class="card border-0 shadow-sm">
   <div class="table-responsive">
     <table class="table table-hover table-striped align-middle mb-0">
       <thead class="table-light">
@@ -157,4 +162,19 @@
   </p>
 </nav>
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const steps = [
+    { element: '#tour-header',    popover: { title: 'Asientos contables', description: 'El libro diario registra todas las transacciones contables usando partida doble. Cada asiento debe tener el Debe igual al Haber.', side: 'bottom' }},
+    { element: '#tour-btn-nuevo', popover: { title: 'Crear asiento', description: 'Registra un nuevo asiento contable. Selecciona las cuentas, ingresa montos en Debe y Haber, y asigna un concepto descriptivo.', side: 'left' }},
+    { element: '#tour-filtros',   popover: { title: 'Filtrar asientos', description: 'Busca por número o concepto. También puedes filtrar por período (mes/año) y estado (Borrador o Confirmado).', side: 'bottom' }},
+    { element: '#tour-tabla',     popover: { title: 'Lista de asientos', description: 'Muestra cada asiento con su número, fecha, concepto, totales de Debe/Haber y estado. Los asientos en Borrador se pueden editar; los Confirmados son definitivos.', side: 'top' }},
+  ];
+  IntracoeTutorial.start('asientos_lista', steps);
+  document.getElementById('btnTutorial')?.addEventListener('click', () => IntracoeTutorial.run());
+});
+</script>
 {% endblock %}

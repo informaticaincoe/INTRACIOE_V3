@@ -40,7 +40,7 @@
 {% endif %}
 
 <!-- Encabezado + estadística -->
-<div class="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-2">
+<div id="tour-header" class="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-2">
   <div>
     <h1 class="h4 mb-1">Clientes</h1>
     <div class="stat-strip">
@@ -58,20 +58,23 @@
     </div>
   </div>
   <div class="d-flex gap-2 align-items-center">
+    <button type="button" class="btn btn-sm btn-outline-info" id="btnTutorial" title="Ver tutorial">
+      <i class="bi bi-question-circle me-1"></i>Ayuda
+    </button>
     <button type="button" id="btnUbicacion" class="btn btn-sm btn-outline-success">
       <i class="bi bi-geo-alt me-1"></i>Cerca de mí
     </button>
-    <a href="{% url 'clientes_export_excel' %}{% if q %}?q={{ q }}{% endif %}" class="btn btn-sm btn-outline-success">
+    <a id="tour-btn-exportar" href="{% url 'clientes_export_excel' %}{% if q %}?q={{ q }}{% endif %}" class="btn btn-sm btn-outline-success">
       <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel
     </a>
-    <a href="{% url 'clientes_crear' %}" class="btn btn-sm btn-primary">
+    <a id="tour-btn-nuevo" href="{% url 'clientes_crear' %}" class="btn btn-sm btn-primary">
       <i class="bi bi-person-plus me-1"></i>Nuevo cliente
     </a>
   </div>
 </div>
 
 <!-- Búsqueda -->
-<form class="row g-2 mb-3" method="get">
+<form id="tour-filtros" class="row g-2 mb-3" method="get">
   <div class="col-md-5">
     <div class="input-group input-group-sm">
       <span class="input-group-text"><i class="bi bi-search"></i></span>
@@ -87,7 +90,7 @@
 </form>
 
 <!-- Tabla -->
-<div class="card border-0 shadow-sm">
+<div id="tour-tabla" class="card border-0 shadow-sm">
   <div class="table-responsive">
     <table class="table table-hover align-middle mb-0 client-table">
       <thead class="table-light">
@@ -244,4 +247,21 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const steps = [
+    { element: '#tour-header',      popover: { title: 'Gestión de clientes', description: 'Aquí puedes ver y administrar todos tus clientes. Cada cliente puede ser receptor de facturas electrónicas (DTE).', side: 'bottom' }},
+    { element: '#tour-btn-nuevo',   popover: { title: 'Nuevo cliente', description: 'Registra un nuevo cliente ingresando su nombre, tipo de documento (DUI, NIT, NRC), teléfono y dirección. Es necesario para emitir facturas.', side: 'left' }},
+    { element: '#btnUbicacion',     popover: { title: 'Clientes cercanos', description: 'Activa tu ubicación GPS para ordenar los clientes por cercanía. Útil para vendedores en ruta.', side: 'bottom' }},
+    { element: '#tour-btn-exportar',popover: { title: 'Exportar a Excel', description: 'Descarga la lista de clientes en formato Excel para respaldo o análisis externo.', side: 'bottom' }},
+    { element: '#tour-filtros',     popover: { title: 'Buscar clientes', description: 'Filtra por nombre, número de documento, teléfono o correo electrónico para encontrar rápidamente a un cliente.', side: 'bottom' }},
+    { element: '#tour-tabla',       popover: { title: 'Lista de clientes', description: 'Tabla con todos los clientes registrados. Desde la columna de acciones puedes editar o eliminar cada registro.', side: 'top' }},
+  ];
+  IntracoeTutorial.start('clientes_lista', steps);
+  document.getElementById('btnTutorial')?.addEventListener('click', () => IntracoeTutorial.run());
+});
+</script>
 {% endblock %}

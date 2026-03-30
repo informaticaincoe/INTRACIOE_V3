@@ -18,15 +18,20 @@
   {% endfor %}
 {% endif %}
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div id="tour-header" class="d-flex justify-content-between align-items-center mb-3">
   <h1 class="h4 mb-0"><i class="bi bi-receipt-cutoff me-2 text-primary"></i>Documentos Emitidos</h1>
-  <a href="{% url 'exportar_facturas_excel' %}" class="btn btn-sm btn-outline-success">
-    <i class="bi bi-file-earmark-excel me-1"></i>Exportar sin anular
-  </a>
+  <div class="d-flex gap-2">
+    <button type="button" class="btn btn-sm btn-outline-info" id="btnTutorial" title="Ver tutorial">
+      <i class="bi bi-question-circle me-1"></i>Ayuda
+    </button>
+    <a id="tour-btn-exportar" href="{% url 'exportar_facturas_excel' %}" class="btn btn-sm btn-outline-success">
+      <i class="bi bi-file-earmark-excel me-1"></i>Exportar sin anular
+    </a>
+  </div>
 </div>
 
 <!-- Filtros -->
-<form method="get" class="card border-0 shadow-sm mb-3">
+<form id="tour-filtros" method="get" class="card border-0 shadow-sm mb-3">
   <div class="card-body">
     <div class="row g-2 align-items-end">
       <div class="col-md-3">
@@ -70,14 +75,14 @@
 </form>
 
 <!-- Acción masiva -->
-<div class="d-flex mb-2">
+<div id="tour-acciones" class="d-flex mb-2">
   <button id="btnInvalidarSeleccionadas" class="btn btn-sm btn-outline-danger">
     <i class="bi bi-x-circle me-1"></i>Anular seleccionadas
   </button>
 </div>
 
 <!-- Tabla -->
-<form id="formInvalidarFacturas">
+<form id="formInvalidarFacturas" class="tour-tabla">
   {% csrf_token %}
   <div class="card border-0 shadow-sm">
     <div class="table-responsive">
@@ -289,4 +294,20 @@
   });
 </script>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const steps = [
+    { element: '#tour-header',      popover: { title: 'Documentos emitidos', description: 'Aquí puedes ver todas las facturas y documentos tributarios electrónicos (DTE) que has emitido.', side: 'bottom' }},
+    { element: '#tour-filtros',     popover: { title: 'Filtros avanzados', description: 'Filtra por estado de recepción en Hacienda, tipo de documento (Factura, CCF, etc.), sello de recepción y más.', side: 'bottom' }},
+    { element: '#tour-acciones',    popover: { title: 'Acciones masivas', description: 'Selecciona varias facturas con los checkboxes y presiona "Anular seleccionadas" para invalidarlas ante Hacienda.', side: 'bottom' }},
+    { element: '.tour-tabla',       popover: { title: 'Tabla de documentos', description: 'Cada fila muestra el estado (Viva/Anulada), número de control, tipo, sello de Hacienda, fecha y montos. El icono verde ✓ indica que Hacienda recibió el documento.', side: 'top' }},
+    { element: '#tour-btn-exportar',popover: { title: 'Exportar a Excel', description: 'Descarga un archivo Excel con todos los documentos que no han sido anulados.', side: 'left' }},
+  ];
+  IntracoeTutorial.start('dte_lista', steps);
+  document.getElementById('btnTutorial')?.addEventListener('click', () => IntracoeTutorial.run());
+});
+</script>
 {% endblock %}

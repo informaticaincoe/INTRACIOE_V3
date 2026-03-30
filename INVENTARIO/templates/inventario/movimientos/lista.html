@@ -17,17 +17,22 @@
   {% endfor %}
 {% endif %}
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div id="tour-header" class="d-flex justify-content-between align-items-center mb-3">
   <div>
     <h1 class="h4 mb-0">Movimientos de inventario</h1>
     <small class="text-muted">Entradas, salidas y ajustes de stock</small>
   </div>
-  <a href="{% url 'inv-movs-crear' %}" class="btn btn-primary">
-    <i class="bi bi-plus-lg me-1"></i> Nuevo movimiento
-  </a>
+  <div class="d-flex gap-2">
+    <button type="button" class="btn btn-outline-info btn-sm" id="btnTutorial" title="Ver tutorial">
+      <i class="bi bi-question-circle me-1"></i>Ayuda
+    </button>
+    <a id="tour-btn-nuevo" href="{% url 'inv-movs-crear' %}" class="btn btn-primary">
+      <i class="bi bi-plus-lg me-1"></i> Nuevo movimiento
+    </a>
+  </div>
 </div>
 
-<form class="row g-2 align-items-end mb-3" method="get">
+<form id="tour-filtros" class="row g-2 align-items-end mb-3" method="get">
   <div class="col-md-6">
     <label class="form-label small fw-semibold" for="inputQ">Buscar</label>
     <div class="input-group input-group-sm">
@@ -58,7 +63,7 @@
   {% endif %}
 </form>
 
-<div class="card border-0 shadow-sm">
+<div id="tour-tabla" class="card border-0 shadow-sm">
   <div class="table-responsive">
     <table class="table table-hover table-striped align-middle mb-0">
       <thead class="table-light">
@@ -158,4 +163,19 @@ document.getElementById('modalEliminar').addEventListener('show.bs.modal', funct
 });
 </script>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const steps = [
+    { element: '#tour-header',    popover: { title: 'Movimientos de inventario', description: 'Controla todas las entradas, salidas y ajustes de stock de tus productos. Cada movimiento actualiza automáticamente el inventario.', side: 'bottom' }},
+    { element: '#tour-btn-nuevo', popover: { title: 'Registrar movimiento', description: 'Crea un nuevo movimiento: Entrada (compras, devoluciones), Salida (ventas, mermas) o Ajuste (correcciones de inventario).', side: 'left' }},
+    { element: '#tour-filtros',   popover: { title: 'Filtrar movimientos', description: 'Busca por producto o referencia, y filtra por tipo de movimiento (Entrada, Salida, Ajuste).', side: 'bottom' }},
+    { element: '#tour-tabla',     popover: { title: 'Historial de movimientos', description: 'Cada fila muestra la fecha, producto, almacén, tipo (con color), cantidad y referencia. Puedes editar o eliminar movimientos desde las acciones.', side: 'top' }},
+  ];
+  IntracoeTutorial.start('movimientos_lista', steps);
+  document.getElementById('btnTutorial')?.addEventListener('click', () => IntracoeTutorial.run());
+});
+</script>
 {% endblock %}

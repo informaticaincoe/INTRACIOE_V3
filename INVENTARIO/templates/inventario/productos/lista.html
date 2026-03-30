@@ -17,18 +17,23 @@
   {% endfor %}
 {% endif %}
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div id="tour-header" class="d-flex justify-content-between align-items-center mb-3">
   <div>
     <h1 class="h4 mb-0">Productos</h1>
     <small class="text-muted">Catálogo de productos y servicios</small>
   </div>
-  <a href="{% url 'inv-productos-crear' %}" class="btn btn-primary">
-    <i class="bi bi-plus-lg me-1"></i> Nuevo producto
-  </a>
+  <div class="d-flex gap-2">
+    <button type="button" class="btn btn-outline-info btn-sm" id="btnTutorial" title="Ver tutorial">
+      <i class="bi bi-question-circle me-1"></i>Ayuda
+    </button>
+    <a id="tour-btn-nuevo" href="{% url 'inv-productos-crear' %}" class="btn btn-primary">
+      <i class="bi bi-plus-lg me-1"></i> Nuevo producto
+    </a>
+  </div>
 </div>
 
 <!-- Filtros -->
-<form class="row g-2 align-items-end mb-3" method="get">
+<form id="tour-filtros" class="row g-2 align-items-end mb-3" method="get">
   <div class="col-md-5">
     <label class="form-label small fw-semibold" for="inputQ">Buscar</label>
     <div class="input-group input-group-sm">
@@ -59,7 +64,7 @@
   {% endif %}
 </form>
 
-<div class="card border-0 shadow-sm">
+<div id="tour-tabla" class="card border-0 shadow-sm">
   <div class="table-responsive">
     <table class="table table-hover table-striped align-middle mb-0">
       <thead class="table-light">
@@ -205,4 +210,19 @@ document.getElementById('modalEliminar').addEventListener('show.bs.modal', funct
 });
 </script>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const steps = [
+    { element: '#tour-header',    popover: { title: 'Catálogo de productos', description: 'En esta pantalla puedes ver, buscar y administrar todos los productos y servicios de tu empresa.', side: 'bottom' }},
+    { element: '#tour-btn-nuevo', popover: { title: 'Crear producto', description: 'Haz clic aquí para registrar un nuevo producto o servicio. Podrás asignarle código, categoría, precios y stock inicial.', side: 'left' }},
+    { element: '#tour-filtros',   popover: { title: 'Filtrar productos', description: 'Usa estos filtros para buscar productos por código, descripción o categoría. Presiona "Filtrar" para aplicar.', side: 'bottom' }},
+    { element: '#tour-tabla',     popover: { title: 'Lista de productos', description: 'Aquí se muestran tus productos con su SKU, precios, stock actual y acciones. Los indicadores de stock te alertan cuando está bajo o agotado.', side: 'top' }},
+  ];
+  IntracoeTutorial.start('productos_lista', steps);
+  document.getElementById('btnTutorial')?.addEventListener('click', () => IntracoeTutorial.run());
+});
+</script>
 {% endblock %}
