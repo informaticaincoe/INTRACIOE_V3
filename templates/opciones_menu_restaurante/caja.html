@@ -1,21 +1,22 @@
+{% load role_tags %}
 {% with uid_prefix=uid|default:"cj" %}
 
-{% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'cajero' %}
+{% if plan_funcs|has_func:'restaurante.caja' and user|has_role:'admin,supervisor,cajero' %}
 <button id="{{ uid_prefix }}-btn-caja" type="button" class="sb-module-home">
   <i class="bi bi-house-door-fill"></i> Inicio Caja
 </button>
-{% endif %}
-
-{% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'cajero' %}
 <button id="{{ uid_prefix }}-btn-dashboard" type="button" class="sb-sub-item">
   <i class="bi bi-cash-stack"></i> Caja
 </button>
 {% endif %}
 
-{% if user.role == 'admin' or user.role == 'supervisor' %}
+{% if plan_funcs|has_func:'restaurante.cajeros' and user|has_role:'admin,supervisor' %}
 <button id="{{ uid_prefix }}-btn-cajeros" type="button" class="sb-sub-item">
   <i class="bi bi-person-badge"></i> Cajeros
 </button>
+{% endif %}
+
+{% if plan_funcs|has_func:'restaurante.billetes' and user|has_role:'admin,supervisor' %}
 <button id="{{ uid_prefix }}-btn-billetes" type="button" class="sb-sub-item">
   <i class="bi bi-cash-coin"></i> Billetes y monedas
 </button>

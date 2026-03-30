@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from RESTAURANTE.formsLogin import MeseroLoginForm
 from RESTAURANTE.models import Mesero
+from AUTENTICACION.utils.permissions import restaurant_permission
 import logging
 
 logger = logging.getLogger(__name__)
@@ -32,6 +33,7 @@ def login_mesero(request):
     return render(request, "loginMeseros/mesero_login.html", {"form": form})
 
 
+@restaurant_permission('admin', 'supervisor')
 def listar_meseros(request):
     search_query = request.GET.get('search_name')
     if search_query:
@@ -43,6 +45,7 @@ def listar_meseros(request):
     }
     return render(request, 'meseros/meseros.html', context)
 
+@restaurant_permission('admin', 'supervisor')
 def crear_mesero(request):
     if request.method == 'POST':
         nombre = request.POST.get('nombre') or ''
@@ -64,6 +67,7 @@ def crear_mesero(request):
         
     return render(request, 'meseros/formulario.html')
 
+@restaurant_permission('admin', 'supervisor')
 def editar_mesero(request, pk):
     if request.method == "POST":
         nombre = request.POST.get('nombre') or ''
@@ -91,6 +95,7 @@ def editar_mesero(request, pk):
     }
     return render(request, 'meseros/formulario.html', context)
 
+@restaurant_permission('admin', 'supervisor')
 def eliminar_mesero(request, pk):
     logger.debug("pk %s", pk)
     logger.debug("method %s", request.method)

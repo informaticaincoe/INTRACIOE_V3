@@ -5,6 +5,7 @@ from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonRespo
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+from AUTENTICACION.utils.permissions import restaurant_permission
 from django.views.decorators.http import require_POST
 from django.db import transaction
 from FE.models import Emisor_fe, Receptor_fe
@@ -88,7 +89,7 @@ def guardar_detalles_desde_json(pedido, platillos_json: str, *, modo="append"):
     pedido.refresh_from_db()
     pedido.recalcular_totales(save=True)
     
-@login_required
+@restaurant_permission('admin', 'supervisor', 'mesero', 'cajero')
 @transaction.atomic
 def tomar_pedido(request, mesa_id):
     logger.debug("REQUEST %s", request.method)
@@ -161,7 +162,7 @@ def tomar_pedido(request, mesa_id):
     return render(request, "pedidos/_toma_pedido.html", context)
 
 
-# @login_required
+# @restaurant_permission('admin', 'supervisor', 'mesero', 'cajero')
 # @require_POST
 # @transaction.atomic
 # def pedido_agregar_item(request, pedido_id):
@@ -194,7 +195,7 @@ def tomar_pedido(request, mesa_id):
 #     })
 
 # # NO SE ESTA USANDO
-# @login_required
+# @restaurant_permission('admin', 'supervisor', 'mesero', 'cajero')
 # @require_POST
 # @transaction.atomic
 # def pedido_quitar_item(request, pedido_id, detalle_id):
@@ -224,7 +225,7 @@ def tomar_pedido(request, mesa_id):
 #         "total": str(pedido.total),
 #     })
 
-@login_required
+@restaurant_permission('admin', 'supervisor', 'mesero', 'cajero')
 @transaction.atomic
 def solicitar_cuenta(request, mesa_id):
     """
@@ -280,7 +281,7 @@ def solicitar_cuenta(request, mesa_id):
     # messages.success(request, "Pedido enviado a cobro (pendiente de pago).")
     # return redirect("mesas-lista")
 
-@login_required
+@restaurant_permission('admin', 'supervisor', 'mesero', 'cajero')
 @transaction.atomic
 def pedido_crear_desde_mesa(request):
     if not Caja.objects.filter(estado="ABIERTA").exists():
@@ -372,7 +373,8 @@ def pedido_crear_desde_mesa(request):
 
         return redirect("mesas-lista")
     
-def ver_pedido_mesa(request, pk):    
+@restaurant_permission('admin', 'supervisor', 'mesero', 'cajero')
+def ver_pedido_mesa(request, pk):
     mesa = get_object_or_404(Mesa, pk=pk)
     
     mesero = get_mesero_from_user(request.user)
@@ -420,6 +422,7 @@ def ver_pedido_mesa(request, pk):
 # @csrf_exempt
 @require_POST
 @transaction.atomic
+@restaurant_permission('admin', 'supervisor', 'mesero', 'cajero')
 def split_detalle_pedido(request):
     data = json.loads(request.body)
 
@@ -483,7 +486,7 @@ def split_detalle_pedido(request):
     })
 
     
-@login_required
+@restaurant_permission('admin', 'supervisor', 'mesero', 'cajero')
 @transaction.atomic
 def pedido_split(request, pedido_id):
     pedido = get_object_or_404(
@@ -522,7 +525,7 @@ def pedido_split(request, pedido_id):
     
     
     
-@login_required
+@restaurant_permission('admin', 'supervisor', 'mesero', 'cajero')
 def enviar_facturacion(request, pedido_id, cuenta_id=None):
     pedido = get_object_or_404(Pedido, id=pedido_id)
 
@@ -566,7 +569,7 @@ def enviar_facturacion(request, pedido_id, cuenta_id=None):
 
     return redirect("/fe/generar/?from_cart=1&restaurante=1")
 
-@login_required
+@restaurant_permission('admin', 'supervisor', 'mesero', 'cajero')
 @transaction.atomic
 def cuenta_pagar(request, cuenta_id):
     # if getattr(request.user, "role", None) != "mesero":
@@ -608,7 +611,7 @@ def cuenta_pagar(request, cuenta_id):
     return render(request, "pedidos/pagar_cuenta.html", {"cuenta": cuenta, "pedido": pedido})
 
 # Seleccionar pago en una sola cuenta o cuentas separadas y añadir cuenta predeterminada (una sola cuenta)
-@login_required
+@restaurant_permission('admin', 'supervisor', 'mesero', 'cajero')
 @transaction.atomic
 def pedido_checkout(request, mesa_id):
     # 1. Seguridad: solo meseros
@@ -676,7 +679,7 @@ def pedido_checkout(request, mesa_id):
     })
 
 # Agregar mas cuentas en la division de cuentas
-@login_required
+@restaurant_permission('admin', 'supervisor', 'mesero', 'cajero')
 @require_POST
 @transaction.atomic
 def crear_cuenta_extra(request, pedido_id):
@@ -697,7 +700,7 @@ def crear_cuenta_extra(request, pedido_id):
 
 
 
-# @login_required
+# @restaurant_permission('admin', 'supervisor', 'mesero', 'cajero')
 # @require_POST
 # @transaction.atomic
 # def detalle_mover_a_cuenta(request):
@@ -776,6 +779,7 @@ def crear_cuenta_extra(request, pedido_id):
 
 @require_POST
 @transaction.atomic
+@restaurant_permission('admin', 'supervisor', 'mesero', 'cajero')
 def mover_detalle(request):
     data = json.loads(request.body)
     delta = int(data.get("delta", 0))
@@ -917,7 +921,7 @@ def mover_detalle(request):
 
 
 
-@login_required
+@restaurant_permission('admin', 'supervisor', 'mesero', 'cajero')
 @require_POST
 @transaction.atomic
 def confirmar_division(request, pedido_id):
@@ -992,7 +996,7 @@ def confirmar_division(request, pedido_id):
 
 
 # Enviar cuenta deparada a facturacion
-@login_required
+@restaurant_permission('admin', 'supervisor', 'mesero', 'cajero')
 @transaction.atomic
 def enviar_facturacion_cuenta(request, cuenta_id):
     # if getattr(request.user, "role", None) != "mesero":
@@ -1056,7 +1060,7 @@ def enviar_facturacion_cuenta(request, cuenta_id):
     logger.info("REDIRIGIENDO A FACTURACION... ")
     return redirect("/fe/generar/?from_cart=1&restaurante=1")
 
-@login_required
+@restaurant_permission('admin', 'supervisor', 'mesero', 'cajero')
 @transaction.atomic
 def entregar_pedido(request, mesa_id):
     if not Caja.objects.filter(estado="ABIERTA").exists():
@@ -1080,7 +1084,7 @@ def entregar_pedido(request, mesa_id):
     return redirect("mesas-lista")
 
 
-@login_required
+@restaurant_permission('admin', 'supervisor', 'mesero', 'cajero')
 @transaction.atomic
 def cambio_nombre_cuenta(request, cuenta_id):
     logger.debug("PRINRRRRRRRR %s", request.method)
@@ -1095,7 +1099,7 @@ def cambio_nombre_cuenta(request, cuenta_id):
     
     return redirect("pedido-split", cuenta.pedido.id)
 
-@login_required
+@restaurant_permission('admin', 'supervisor', 'mesero', 'cajero')
 @transaction.atomic
 def eliminar_cuenta_extra(request, cuenta_id):
     cuenta = get_object_or_404(

@@ -1,20 +1,17 @@
 import logging
 
-from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponseForbidden, JsonResponse
+from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.db import transaction
 from RESTAURANTE.models import Comanda
 from RESTAURANTE.realtime import broadcast_pedido_listo
+from AUTENTICACION.utils.permissions import restaurant_permission
 
 logger = logging.getLogger(__name__)
 
-@login_required
+@restaurant_permission('admin', 'supervisor', 'cocinero')
 def comanda_cocina(request):
-    logger.debug("REQUEST ROLE %s", request.user.role)
-    if request.user.role not in ("cocinero", "admin", "supervisor"):
-        return HttpResponseForbidden("No autorizado.")
         
 
     if request.user.role == "cocinero": #Si es cocinero mostrar solo las comandas de su area
@@ -49,12 +46,10 @@ def comanda_cocina(request):
 
     
 
-@login_required
+@restaurant_permission('admin', 'supervisor', 'cocinero')
 @require_POST
 @transaction.atomic
 def comanda_en_preparacion(request, id):
-    if getattr(request.user, "role", None) not in ("cocinero"):
-        return HttpResponseForbidden("No autorizado.")
 
     comanda = get_object_or_404(Comanda.objects.select_for_update(), id=id)
     comanda.estado = "EN_PREPARACION"
@@ -62,12 +57,10 @@ def comanda_en_preparacion(request, id):
     
     return JsonResponse({"ok": True})
 
-@login_required
+@restaurant_permission('admin', 'supervisor', 'cocinero')
 @require_POST
 @transaction.atomic
 def comanda_listo(request, id):
-    if getattr(request.user, "role", None) not in ("cocinero"):
-        return HttpResponseForbidden("No autorizado.")
 
     comanda = get_object_or_404(Comanda.objects.select_for_update(), id=id)
     comanda.estado = "CERRADA"

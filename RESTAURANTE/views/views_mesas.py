@@ -8,6 +8,7 @@ from RESTAURANTE.models import Area, AsignacionMesa, Caja, Comanda, Mesa, Mesero
 from django.utils.dateparse import parse_datetime
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
+from AUTENTICACION.utils.permissions import restaurant_permission
 from RESTAURANTE.views.views_pedidos import get_mesero_from_user
 
 logger = logging.getLogger(__name__)
@@ -21,6 +22,7 @@ MANEJO DE:
 ###############################################################################################################
 #                                                  Mesas                                                      #
 ###############################################################################################################
+@restaurant_permission('admin', 'supervisor', 'mesero', 'cajero')
 def cambiar_estado_mesa(request, pk, estado):
     
     if not Caja.objects.filter(estado="ABIERTA").exists():
@@ -52,7 +54,7 @@ def _parse_dt(value: str | None):
 
     return dt
 
-@login_required
+@restaurant_permission('admin', 'supervisor', 'mesero', 'cajero')
 def listar_mesas(request):
     rol = getattr(request.user, "role", None)
     search_query = request.GET.get('search_name') or ""
@@ -140,6 +142,7 @@ def listar_mesas(request):
     
     return render(request, "mesas/mesas.html", context)
 
+@restaurant_permission('admin', 'supervisor')
 def crear_mesa(request):
     logger.debug(">>>metodo %s", request.method)
     if request.method == 'POST':
@@ -172,6 +175,7 @@ def crear_mesa(request):
     }
     return render(request, 'mesas/formulario.html', context)
 
+@restaurant_permission('admin', 'supervisor')
 def editar_mesa(request, pk):
     logger.debug(">>>metodo %s", request.method)
     mesa = get_object_or_404(Mesa, pk=pk)
@@ -206,6 +210,7 @@ def editar_mesa(request, pk):
     }
     return render(request, 'mesas/formulario.html', context)
 
+@restaurant_permission('admin', 'supervisor')
 def eliminar_mesa(request, pk):
     logger.debug("pk %s", pk)
     logger.debug("method %s", request.method)
@@ -222,6 +227,7 @@ def eliminar_mesa(request, pk):
 ###############################################################################################################
 #                                         Asignaciones de mesa                                                #
 ###############################################################################################################
+@restaurant_permission('admin', 'supervisor', 'mesero', 'cajero')
 def asignar_mesa_a_mesero(request):
     logger.info("-------------- Metodo API %s", request.method)
 
@@ -276,6 +282,7 @@ def asignar_mesa_a_mesero(request):
 
     return redirect("mesas-lista")
 
+@restaurant_permission('admin', 'supervisor', 'mesero', 'cajero')
 def editar_asignacion_mesa_a_mesero(request,pk):
     logger.info("-------------- Metodo API EDITAR ASIGNACIOn %s", request.method)
 
@@ -350,6 +357,7 @@ def editar_asignacion_mesa_a_mesero(request,pk):
     return render(request, "asignacionMesas\asignacion_mesas.html", context)
 
 
+@restaurant_permission('admin', 'supervisor', 'mesero', 'cajero')
 def eliminar_asignacion_mesa_a_mesero(request, pk):
     logger.debug("pk %s", pk)
     logger.debug("method %s", request.method)
@@ -361,6 +369,7 @@ def eliminar_asignacion_mesa_a_mesero(request, pk):
         
     return redirect('asignaciones-lista')
 
+@restaurant_permission('admin', 'supervisor', 'mesero', 'cajero')
 def listar_asignaciones(request):
     search_query = request.GET.get('search_name')
     if search_query:

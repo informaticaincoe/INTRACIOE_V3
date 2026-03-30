@@ -1,40 +1,59 @@
+{% load role_tags %}
 {% with uid_prefix=uid|default:"cont" %}
 
+{% if plan_funcs|has_func:'contabilidad.cuentas' %}
 <button id="{{ uid_prefix }}-btn-cuentas" type="button" class="sb-sub-item">
   <i class="bi bi-journal-text"></i> Plan de Cuentas
 </button>
+{% endif %}
 
+{% if plan_funcs|has_func:'contabilidad.asientos' %}
 <button id="{{ uid_prefix }}-btn-asientos" type="button" class="sb-sub-item">
   <i class="bi bi-journal-bookmark"></i> Asientos Contables
 </button>
+{% endif %}
 
+{% if plan_funcs|has_func:'contabilidad.cxc' %}
 <button id="{{ uid_prefix }}-btn-cxc" type="button" class="sb-sub-item">
   <i class="bi bi-arrow-down-circle"></i> Cuentas por Cobrar
 </button>
+{% endif %}
 
+{% if plan_funcs|has_func:'contabilidad.cxp' %}
 <button id="{{ uid_prefix }}-btn-cxp" type="button" class="sb-sub-item">
   <i class="bi bi-arrow-up-circle"></i> Cuentas por Pagar
 </button>
+{% endif %}
 
+{% if plan_funcs|has_func:'contabilidad.libro_mayor' %}
 <button id="{{ uid_prefix }}-btn-libro" type="button" class="sb-sub-item">
   <i class="bi bi-book"></i> Libro Mayor
 </button>
+{% endif %}
 
+{% if plan_funcs|has_func:'contabilidad.balance_comp' %}
 <button id="{{ uid_prefix }}-btn-balcomp" type="button" class="sb-sub-item">
   <i class="bi bi-clipboard-data"></i> Balance de Comprobación
 </button>
+{% endif %}
 
+{% if plan_funcs|has_func:'contabilidad.balance_gen' %}
 <button id="{{ uid_prefix }}-btn-balgen" type="button" class="sb-sub-item">
   <i class="bi bi-bar-chart-line"></i> Balance General
 </button>
+{% endif %}
 
+{% if plan_funcs|has_func:'contabilidad.estado_res' %}
 <button id="{{ uid_prefix }}-btn-estado" type="button" class="sb-sub-item">
   <i class="bi bi-graph-up"></i> Estado de Resultados
 </button>
+{% endif %}
 
+{% if plan_funcs|has_func:'contabilidad.anexos' %}
 <button id="{{ uid_prefix }}-btn-anexos" type="button" class="sb-sub-item">
   <i class="bi bi-file-earmark-spreadsheet"></i> Reportes de Anexos
 </button>
+{% endif %}
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {

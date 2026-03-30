@@ -1,21 +1,25 @@
+{% load role_tags %}
 {% with uid_prefix=uid|default:"cmp" %}
 
-{# Inicio del módulo #}
+{% if plan_funcs|has_func:'compras.inicio' %}
 <button id="{{ uid_prefix }}-btn-home" type="button" class="sb-module-home">
   <i class="bi bi-house-door-fill"></i> Inicio Compras
 </button>
+{% endif %}
 
-{% if user.is_staff %}
+{% if plan_funcs|has_func:'compras.compras' %}
 <button id="{{ uid_prefix }}-btn-compras" type="button" class="sb-sub-item">
   <i class="bi bi-calculator"></i> Compras
 </button>
 {% endif %}
 
+{% if plan_funcs|has_func:'compras.proveedores' %}
 <button id="{{ uid_prefix }}-btn-proveedores" type="button" class="sb-sub-item">
   <i class="bi bi-people"></i> Proveedores
 </button>
+{% endif %}
 
-{% if user.is_staff %}
+{% if plan_funcs|has_func:'compras.reportes' %}
 <button id="{{ uid_prefix }}-btn-reporte" type="button" class="sb-sub-item">
   <i class="bi bi-bar-chart-line"></i> Reporte
 </button>

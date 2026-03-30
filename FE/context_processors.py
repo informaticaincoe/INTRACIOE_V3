@@ -29,9 +29,18 @@ def emisor_context(request):
     except (OperationalError, ProgrammingError):
         pass
 
+    # Conjunto de claves de funcionalidades activas para lookup rápido en templates
+    plan_funcs = set()
+    if plan:
+        try:
+            plan_funcs = set(plan.funcionalidades.values_list('clave', flat=True))
+        except (OperationalError, ProgrammingError):
+            pass
+
     return {
         "emisor": emisor,
         "plan": plan,
+        "plan_funcs": plan_funcs,
         "suscripcion_gracia": suscripcion_gracia,
         "suscripcion_gracia_fin": suscripcion_gracia_fin,
         "modo_demo": emisor.modo_demo if emisor else False,

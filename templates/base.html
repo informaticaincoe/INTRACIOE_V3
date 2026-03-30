@@ -1,4 +1,4 @@
-{% load static %}
+{% load static %}{% load role_tags %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -429,18 +429,18 @@
       <div class="sidebar-scroll">
 
         <!-- Dashboard -->
-        {% if plan %}{% if user.role == 'admin' or user.role == 'supervisor' %}
+        {% if plan and user|has_role:'admin' or plan_funcs|has_func:'sistema.dashboard' %}
           <a href="{% url 'index' %}" class="sb-link mb-1">
             <i class="bi bi-speedometer2"></i> Dashboard
           </a>
-        {% endif %}{% endif %}
+        {% endif %}
 
         <!-- ── Sección principal ── -->
-        {% if plan %}{% if user.role == 'admin' or user.role == 'supervisor' %}
+        {% if plan and user|has_role:'admin,suscriptor,supervisor,vendedor' %}
           <div class="sb-label">Gestión</div>
           <div class="accordion accordion-flush sb-acc" id="accDesk">
 
-            {% if plan and plan.tiene_compras %}
+            {% if user|has_role:'admin' or plan and plan.tiene_compras and plan_funcs|has_func:'compras.inicio' %}
             <div class="accordion-item">
               <h2 class="accordion-header">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dsk-compras">
@@ -457,7 +457,7 @@
             </div>
             {% endif %}
 
-            {% if plan and plan.tiene_ventas %}
+            {% if user|has_role:'admin' or plan and plan.tiene_ventas and plan_funcs|has_func:'ventas.inicio' %}
             <div class="accordion-item">
               <h2 class="accordion-header">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dsk-ventas">
@@ -474,7 +474,7 @@
             </div>
             {% endif %}
 
-            {% if plan and plan.tiene_facturacion %}
+            {% if user|has_role:'admin' or plan and plan.tiene_facturacion and plan_funcs|has_func:'facturacion.inicio' %}
             <div class="accordion-item">
               <h2 class="accordion-header">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dsk-fact">
@@ -491,7 +491,7 @@
             </div>
             {% endif %}
 
-            {% if plan and plan.tiene_inventario %}
+            {% if user|has_role:'admin' or plan and plan.tiene_inventario and plan_funcs|has_func:'inventario.inicio' %}
             <div class="accordion-item">
               <h2 class="accordion-header">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dsk-inv">
@@ -508,7 +508,7 @@
             </div>
             {% endif %}
 
-            {% if user.is_staff and plan and plan.tiene_contabilidad %}
+            {% if user|has_role:'admin' or plan and plan.tiene_contabilidad and plan_funcs|has_func:'contabilidad.cuentas' %}
             <div class="accordion-item">
               <h2 class="accordion-header">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dsk-cont">
@@ -527,14 +527,14 @@
 
           </div><!-- /accordion Gestión -->
 
-        {% endif %}{% endif %}{# /if plan + role (Gestión desktop) #}
+        {% endif %}{# /if plan + role (Gestión desktop) #}
 
         <!-- ── Sección Restaurante ── -->
         {% if plan and emisor.es_restaurante and user.is_authenticated %}
           <div class="sb-label mt-2">Restaurante</div>
           <div class="accordion accordion-flush sb-acc" id="accDeskRest">
 
-            {% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'cajero' %}
+            {% if user|has_role:'admin,supervisor,cajero' %}
               <div class="accordion-item">
                 <h2 class="accordion-header">
                   <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dsk-caja">
@@ -551,7 +551,7 @@
               </div>
             {% endif %}
 
-            {% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'cocinero' %}
+            {% if user|has_role:'admin,supervisor,cocinero' %}
               <div class="accordion-item">
                 <h2 class="accordion-header">
                   <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dsk-cocina">
@@ -568,7 +568,7 @@
               </div>
             {% endif %}
 
-            {% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'mesero' or user.role == 'cajero' %}
+            {% if user|has_role:'admin,supervisor,mesero,cajero' %}
               <div class="accordion-item">
                 <h2 class="accordion-header">
                   <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dsk-meseros">
@@ -585,7 +585,7 @@
               </div>
             {% endif %}
 
-            {% if user.role == 'admin' or user.role == 'supervisor' %}
+            {% if user|has_role:'admin,supervisor' %}
               <div class="accordion-item">
                 <h2 class="accordion-header">
                   <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#dsk-cfg-rest">
@@ -623,14 +623,18 @@
       </div><!-- /sidebar-scroll -->
 
       <!-- Pie del sidebar -->
-      {% if user.is_staff and plan %}
+      {% if user|has_role:'admin' or plan_funcs|has_func:'sistema.config_empresa' or plan_funcs|has_func:'sistema.usuarios' %}
         <div class="sidebar-foot">
+          {% if user|has_role:'admin' or plan_funcs|has_func:'sistema.config_empresa' %}
           <a href="{% url 'configurar_empresa' %}" class="sb-link">
             <i class="bi bi-gear"></i> Configurar empresa
           </a>
+          {% endif %}
+          {% if user|has_role:'admin' or plan_funcs|has_func:'sistema.usuarios' %}
           <a href="{% url 'usuarios_list' %}" class="sb-link">
             <i class="bi bi-people"></i> Usuarios
           </a>
+          {% endif %}
         </div>
       {% endif %}
     </aside>
@@ -680,16 +684,15 @@
       <!-- Scroll area -->
       <div class="flex-grow-1 overflow-y-auto p-3">
 
-        {% if plan %}{% if user.role == 'admin' or user.role == 'supervisor' %}
+        {% if plan and user|has_role:'admin' or plan_funcs|has_func:'sistema.dashboard' %}
           <a href="{% url 'index' %}" class="mob-sb-link"><i class="bi bi-speedometer2"></i> Dashboard</a>
-        {% endif %}{% endif %}
+        {% endif %}
 
-        {% if plan %}
+        {% if plan and user|has_role:'admin,suscriptor,supervisor,vendedor' %}
         <div class="sb-label mt-1">Gestión</div>
         <div class="accordion accordion-flush mob-acc" id="accMob">
-          {% if user.role == 'admin' or user.role == 'supervisor' %}
 
-            {% if plan and plan.tiene_compras %}
+            {% if user|has_role:'admin' or plan and plan.tiene_compras and plan_funcs|has_func:'compras.inicio' %}
             <div class="accordion-item">
               <h2 class="accordion-header">
                 <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mob-compras">
@@ -704,7 +707,7 @@
             </div>
             {% endif %}
 
-            {% if plan and plan.tiene_ventas %}
+            {% if user|has_role:'admin' or plan and plan.tiene_ventas and plan_funcs|has_func:'ventas.inicio' %}
             <div class="accordion-item">
               <h2 class="accordion-header">
                 <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mob-ventas">
@@ -719,7 +722,7 @@
             </div>
             {% endif %}
 
-            {% if plan and plan.tiene_facturacion %}
+            {% if user|has_role:'admin' or plan and plan.tiene_facturacion and plan_funcs|has_func:'facturacion.inicio' %}
             <div class="accordion-item">
               <h2 class="accordion-header">
                 <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mob-fact">
@@ -734,7 +737,7 @@
             </div>
             {% endif %}
 
-            {% if plan and plan.tiene_inventario %}
+            {% if user|has_role:'admin' or plan and plan.tiene_inventario and plan_funcs|has_func:'inventario.inicio' %}
             <div class="accordion-item">
               <h2 class="accordion-header">
                 <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mob-inv">
@@ -749,10 +752,8 @@
             </div>
             {% endif %}
 
-          {% endif %}
-
           <!-- ── Contabilidad móvil ── -->
-          {% if user.is_staff and plan and plan.tiene_contabilidad %}
+          {% if user|has_role:'admin' or plan and plan.tiene_contabilidad and plan_funcs|has_func:'contabilidad.cuentas' %}
           <div class="accordion-item">
             <h2 class="accordion-header">
               <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mob-cont">
@@ -774,11 +775,11 @@
           <div class="sb-label mt-2">Restaurante</div>
           <div class="accordion accordion-flush mob-acc" id="accMobRest">
 
-            {% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'cajero' %}
+            {% if user|has_role:'admin,supervisor,cajero' %}
               <a href="{% url 'caja' %}" class="mob-sb-link"><i class="bi bi-cash-stack me-2"></i>Caja</a>
             {% endif %}
 
-            {% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'cocinero' %}
+            {% if user|has_role:'admin,supervisor,cocinero' %}
               <div class="accordion-item">
                 <h2 class="accordion-header">
                   <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mob-cocina">
@@ -793,7 +794,7 @@
               </div>
             {% endif %}
 
-            {% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'mesero' %}
+            {% if user|has_role:'admin,supervisor,mesero,cajero' %}
               <div class="accordion-item">
                 <h2 class="accordion-header">
                   <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mob-meseros">
@@ -808,7 +809,7 @@
               </div>
             {% endif %}
 
-            {% if user.role == 'admin' or user.role == 'supervisor' %}
+            {% if user|has_role:'admin,supervisor' %}
               <div class="accordion-item">
                 <h2 class="accordion-header">
                   <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#mob-cfg-rest">
@@ -829,7 +830,7 @@
       </div><!-- /scroll area -->
 
       <!-- Pie del offcanvas -->
-      {% if user.is_staff and plan %}
+      {% if user|has_role:'admin' or plan_funcs|has_func:'sistema.config_empresa' %}
         <div class="border-top p-3">
           <a href="{% url 'configurar_empresa' %}" class="mob-sb-link">
             <i class="bi bi-gear me-2"></i> Configurar empresa

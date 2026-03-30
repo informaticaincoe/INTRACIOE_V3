@@ -1,23 +1,24 @@
+{% load role_tags %}
 {% with uid_prefix=uid|default:"cocina" %}
 
-{% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'cocinero' %}
+{% if plan_funcs|has_func:'restaurante.cocina' and user|has_role:'admin,supervisor,cocinero' %}
 <button id="{{ uid_prefix }}-btn-home" type="button" class="sb-module-home">
   <i class="bi bi-house-door-fill"></i> Inicio Cocina
 </button>
+<button id="{{ uid_prefix }}-btn-comanda" type="button" class="sb-sub-item">
+  <i class="bi bi-file-earmark-text"></i> Comanda
+</button>
 {% endif %}
 
-{% if user.role == 'admin' or user.role == 'supervisor' %}
+{% if plan_funcs|has_func:'restaurante.cocineros' and user|has_role:'admin,supervisor' %}
 <button id="{{ uid_prefix }}-btn-cocineros" type="button" class="sb-sub-item">
   <i class="bi bi-person-fill"></i> Cocineros
 </button>
-<button id="{{ uid_prefix }}-btn-areas" type="button" class="sb-sub-item">
-  <i class="bi bi-map"></i> Áreas de cocina
-</button>
 {% endif %}
 
-{% if user.role == 'admin' or user.role == 'supervisor' or user.role == 'cocinero' %}
-<button id="{{ uid_prefix }}-btn-comanda" type="button" class="sb-sub-item">
-  <i class="bi bi-file-earmark-text"></i> Comanda
+{% if plan_funcs|has_func:'restaurante.areas_cocina' and user|has_role:'admin,supervisor' %}
+<button id="{{ uid_prefix }}-btn-areas" type="button" class="sb-sub-item">
+  <i class="bi bi-map"></i> Áreas de cocina
 </button>
 {% endif %}
 

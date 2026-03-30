@@ -7,6 +7,7 @@ from FE.models import Emisor_fe
 
 from .models import (
     EmailProfile,
+    Funcionalidad,
     Perfilusuario,
     UsuarioEmisor,
     PasswordResetCode,
@@ -90,13 +91,77 @@ class ConfiguracionServidorAdmin(admin.ModelAdmin):
     #search_fields = ("clave", "valor", "url", "url_endpoint", "descripcion")
     list_filter   = ("fecha_creacion",)
 
+@admin.register(Funcionalidad)
+class FuncionalidadAdmin(admin.ModelAdmin):
+    list_display = ("clave", "nombre", "modulo", "icono")
+    list_filter = ("modulo",)
+    search_fields = ("clave", "nombre")
+    ordering = ("modulo", "nombre")
+
+
+from django.forms import CheckboxSelectMultiple, ModelMultipleChoiceField, ModelForm
+from AUTENTICACION.models import Funcionalidad as FuncionalidadModel, MODULO_CHOICES
+
+
+class GroupedCheckboxWidget(CheckboxSelectMultiple):
+    """Checkbox widget que agrupa las opciones por módulo."""
+    template_name = 'admin/grouped_checkbox.html'
+
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+        # Agrupar opciones por módulo
+        grouped = {}
+        modulo_labels = dict(MODULO_CHOICES)
+        for func in FuncionalidadModel.objects.all().order_by('modulo', 'nombre'):
+            label = modulo_labels.get(func.modulo, func.modulo)
+            grouped.setdefault(label, []).append(func)
+        context['widget']['grouped'] = grouped
+        return context
+
+
+class PlanForm(ModelForm):
+    funcionalidades = ModelMultipleChoiceField(
+        queryset=FuncionalidadModel.objects.all().order_by('modulo', 'nombre'),
+        widget=CheckboxSelectMultiple,
+        required=False,
+        label="Funcionalidades incluidas",
+    )
+
+    class Meta:
+        model = Plan
+        fields = '__all__'
+
+
 @admin.register(Plan)
 class PlanAdmin(admin.ModelAdmin):
+    form = PlanForm
     list_display = (
         "nombre", "tiene_facturacion", "tiene_ventas", "tiene_compras",
         "tiene_inventario", "tiene_contabilidad", "tiene_rrhh", "tiene_restaurante",
+        "total_funcionalidades",
     )
     search_fields = ("nombre",)
+    fieldsets = (
+        (None, {"fields": ("nombre", "descripcion")}),
+        ("Módulos habilitados", {"fields": (
+            "tiene_facturacion", "tiene_ventas", "tiene_compras",
+            "tiene_inventario", "tiene_contabilidad", "tiene_rrhh", "tiene_restaurante",
+        )}),
+        ("Funcionalidades detalladas", {
+            "description": "Marque las funcionalidades específicas incluidas en este plan. "
+                           "Solo se mostrarán las opciones de menú correspondientes.",
+            "fields": ("funcionalidades",),
+            "classes": ("wide",),
+        }),
+    )
+
+    class Media:
+        css = {"all": ()}
+        js = ()
+
+    @admin.display(description="Funcionalidades")
+    def total_funcionalidades(self, obj):
+        return obj.funcionalidades.count()
 
 
 @admin.register(Suscripcion)

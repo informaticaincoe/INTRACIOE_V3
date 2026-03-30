@@ -8,18 +8,19 @@ from django.contrib.auth.models import AbstractUser
 class User(AbstractUser):
     ROLE_CHOICES = (
         ('admin', 'Administrador'),
+        ('suscriptor', 'Suscriptor'),
         ('vendedor', 'Vendedor'),
         ('supervisor', 'Supervisor'),
         ('cliente', 'Cliente'),
         ('mesero', 'Mesero'),
         ('cocinero', 'Cocinero'),
-        ('cajero', 'Cajero')
+        ('cajero', 'Cajero'),
     )
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='cliente')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='suscriptor')
 
     def save(self, *args, **kwargs):
-        # Staff y superusuarios siempre son admin
-        if self.is_staff or self.is_superuser:
+        # Solo superusuarios siempre son admin
+        if self.is_superuser:
             self.role = 'admin'
         super().save(*args, **kwargs)
 
@@ -131,6 +132,34 @@ class EmailProfile(models.Model):
     def __str__(self):
         return f"{self.nombre} [{self.scope}]{' *' if self.is_active else ''}"
 
+MODULO_CHOICES = (
+    ('sistema',      'Sistema'),
+    ('ventas',       'Ventas'),
+    ('compras',      'Compras'),
+    ('facturacion',  'Facturación'),
+    ('inventario',   'Inventario'),
+    ('contabilidad', 'Contabilidad'),
+    ('rrhh',         'RRHH / Nómina'),
+    ('restaurante',  'Restaurante / POS'),
+)
+
+
+class Funcionalidad(models.Model):
+    """Funcionalidad individual dentro de un módulo (ej. ventas.clientes)."""
+    clave  = models.CharField(max_length=80, unique=True, help_text="Ej: ventas.clientes, facturacion.contingencias")
+    nombre = models.CharField(max_length=120, help_text="Nombre visible")
+    modulo = models.CharField(max_length=30, choices=MODULO_CHOICES)
+    icono  = models.CharField(max_length=50, blank=True, default='bi-circle', help_text="Clase Bootstrap Icons")
+
+    class Meta:
+        verbose_name = "Funcionalidad"
+        verbose_name_plural = "Funcionalidades"
+        ordering = ['modulo', 'nombre']
+
+    def __str__(self):
+        return f"{self.get_modulo_display()} → {self.nombre}"
+
+
 class Plan(models.Model):
     """Plan comercial que determina qué módulos tiene disponibles un emisor."""
     nombre = models.CharField(max_length=100, unique=True)
@@ -142,6 +171,8 @@ class Plan(models.Model):
     tiene_contabilidad = models.BooleanField(default=False, verbose_name="Contabilidad")
     tiene_rrhh         = models.BooleanField(default=False, verbose_name="RRHH / Nómina")
     tiene_restaurante  = models.BooleanField(default=False, verbose_name="Restaurante / POS")
+    funcionalidades    = models.ManyToManyField(Funcionalidad, blank=True, related_name="planes",
+                                                verbose_name="Funcionalidades incluidas")
 
     class Meta:
         verbose_name = "Plan"
@@ -149,6 +180,10 @@ class Plan(models.Model):
 
     def __str__(self):
         return self.nombre
+
+    def tiene_funcionalidad(self, clave):
+        """Verifica si el plan incluye una funcionalidad específica."""
+        return self.funcionalidades.filter(clave=clave).exists()
 
 
 class Suscripcion(models.Model):

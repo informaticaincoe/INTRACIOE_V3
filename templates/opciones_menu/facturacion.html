@@ -1,31 +1,43 @@
+{% load role_tags %}
 {% with uid_prefix=uid|default:"fac" %}
 
-{# Inicio del módulo #}
+{% if plan_funcs|has_func:'facturacion.inicio' %}
 <button id="{{ uid_prefix }}-btn-home" type="button" class="sb-module-home">
   <i class="bi bi-house-door-fill"></i> Inicio Facturación
 </button>
+{% endif %}
 
+{% if plan_funcs|has_func:'facturacion.generar' %}
 <button id="{{ uid_prefix }}-btn-generar" type="button" class="sb-sub-item">
   <i class="bi bi-file-earmark-plus"></i> Generar Facturas
 </button>
+{% endif %}
 
-{% if user.is_staff %}
+{% if plan_funcs|has_func:'facturacion.correcciones' %}
 <button id="{{ uid_prefix }}-btn-corr" type="button" class="sb-sub-item">
   <i class="bi bi-pencil-square"></i> Generar Correcciones
 </button>
 {% endif %}
 
+{% if plan_funcs|has_func:'facturacion.listado' %}
 <button id="{{ uid_prefix }}-btn-listar" type="button" class="sb-sub-item">
   <i class="bi bi-journal-text"></i> Listado de Facturas
 </button>
+{% endif %}
 
-{% if user.is_staff %}
+{% if plan_funcs|has_func:'facturacion.sujeto_excluido' %}
 <button id="{{ uid_prefix }}-btn-suj-exc" type="button" class="sb-sub-item">
   <i class="bi bi-person-x"></i> Sujeto Excluido
 </button>
+{% endif %}
+
+{% if plan_funcs|has_func:'facturacion.contingencias' %}
 <button id="{{ uid_prefix }}-btn-conting" type="button" class="sb-sub-item">
   <i class="bi bi-exclamation-triangle"></i> Contingencias
 </button>
+{% endif %}
+
+{% if plan_funcs|has_func:'facturacion.consolidar' %}
 <button id="{{ uid_prefix }}-btn-mes" type="button" class="sb-sub-item">
   <i class="bi bi-calendar-check"></i> Consolidar del mes
 </button>

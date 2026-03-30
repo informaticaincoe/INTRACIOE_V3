@@ -5,6 +5,7 @@ import logging
 
 from RESTAURANTE.formsLogin import CocineroLoginForm
 from RESTAURANTE.models import AreaCocina, Cocinero
+from AUTENTICACION.utils.permissions import restaurant_permission
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +29,7 @@ def login_cocinero(request):
     return render(request, "cocina/login_cocinero.html", {"form": form})
 
 
+@restaurant_permission('admin', 'supervisor')
 def listar_cocineros(request):
     search_query = request.GET.get("search_name")
 
@@ -46,6 +48,7 @@ def listar_cocineros(request):
 
     return render(request, "cocina/cocineros.html", context)
 
+@restaurant_permission('admin', 'supervisor')
 def crear_cocinero(request):
     if request.method == "POST":
         nombre = (request.POST.get("nombre") or "").strip()
@@ -74,6 +77,7 @@ def crear_cocinero(request):
     return render(request, "cocina/formulario_cocinero.html", context)
 
 
+@restaurant_permission('admin', 'supervisor')
 def editar_cocinero(request, pk):
     cocinero = get_object_or_404(Cocinero, pk=pk)
     areas_cocina_lista = AreaCocina.objects.all()
@@ -111,6 +115,7 @@ def editar_cocinero(request, pk):
     return render(request, "cocina/formulario_cocinero.html", context)
 
 
+@restaurant_permission('admin', 'supervisor')
 def eliminar_cocinero(request, pk):
     if request.method == "POST":
         cocinero = get_object_or_404(Cocinero, pk=pk)

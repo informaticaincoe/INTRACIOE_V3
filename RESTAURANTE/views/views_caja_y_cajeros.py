@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from AUTENTICACION import models
+from AUTENTICACION.utils.permissions import restaurant_permission
 from RESTAURANTE.models import (
     BilletesYMonedas,
     Caja,
@@ -20,6 +21,7 @@ from RESTAURANTE.models import (
 
 logger = logging.getLogger(__name__)
 
+@restaurant_permission('admin', 'supervisor', 'cajero')
 def caja(request):
     return render(request, "caja/apertura_caja.html")
 
@@ -38,6 +40,7 @@ def _get_caja_abierta(perfil):
 ##########################################################################################################
 #                                               caja views                                              #
 ##########################################################################################################
+@restaurant_permission('admin', 'supervisor', 'cajero')
 def caja_dashboard(request):
     perfil = _get_perfil(request)
     caja = _get_caja_abierta(perfil)
@@ -94,6 +97,7 @@ def caja_dashboard(request):
     return render(request, "caja/dashboard_caja.html", context)
 
 @transaction.atomic
+@restaurant_permission('admin', 'supervisor', 'cajero')
 def apertura_caja(request):
     # 1. Obtener el PERFIL real, no el User
     # Usamos la función que ya tienes definida o el related_name
@@ -190,6 +194,7 @@ def apertura_caja(request):
     return render(request, "caja/apertura_caja.html", {"denominaciones": denominaciones})
 
 @transaction.atomic
+@restaurant_permission('admin', 'supervisor', 'cajero')
 def caja_registrar_movimiento(request):
     perfil = _get_perfil(request)
     caja = _get_caja_abierta(perfil)
@@ -229,6 +234,7 @@ def caja_registrar_movimiento(request):
     messages.success(request, f"{tipo.title()} registrado.")
     return redirect("caja-dashboard")
 
+@restaurant_permission('admin', 'supervisor', 'cajero')
 def cierre_caja(request):
     perfil = _get_perfil(request)
     # Obtener la caja abierta del usuario actual
@@ -317,6 +323,7 @@ def cierre_caja(request):
 ##########################################################################################################
 #                                        Billetes y monedas views                                        #
 ##########################################################################################################
+@restaurant_permission('admin', 'supervisor')
 def billetes_y_monedas_list(request):
     if request.method == "GET":
         billetes_Y_monedas_list = BilletesYMonedas.objects.all()
@@ -326,7 +333,8 @@ def billetes_y_monedas_list(request):
         
         return render(request, "caja/billetes_y_monedas_list.html", context)
 
-def billetes_y_monedas_crear(request):    
+@restaurant_permission('admin', 'supervisor')
+def billetes_y_monedas_crear(request):
     nombre = request.POST.get("nombre")
     valor = request.POST.get("valor")
         
@@ -339,6 +347,7 @@ def billetes_y_monedas_crear(request):
     return redirect("billetes-y-monedas-list")
     
     
+@restaurant_permission('admin', 'supervisor')
 def billetes_y_monedas_editar(request, pk):
     billete = get_object_or_404(BilletesYMonedas, pk=pk)
     
@@ -351,6 +360,7 @@ def billetes_y_monedas_editar(request, pk):
     
     return redirect("billetes-y-monedas-list")
 
+@restaurant_permission('admin', 'supervisor')
 def billetes_y_monedas_eliminar(request, pk):
     if request.method == "POST":
         billete = get_object_or_404(BilletesYMonedas, pk=pk)
@@ -362,6 +372,7 @@ def billetes_y_monedas_eliminar(request, pk):
 ##########################################################################################################
 #                                            Cajeros views                                              #
 ##########################################################################################################
+@restaurant_permission('admin', 'supervisor')
 def listar_cajeros(request):
     search_query = request.GET.get('search_name')
     if search_query:
@@ -376,6 +387,7 @@ def listar_cajeros(request):
     return render(request, 'cajero/cajero.html', context)
 
 
+@restaurant_permission('admin', 'supervisor')
 def crear_cajero(request):
     if request.method == 'POST':
         nombre = request.POST.get('nombre') or ''
@@ -399,6 +411,7 @@ def crear_cajero(request):
         
     return render(request, 'cajero/formulario.html')
 
+@restaurant_permission('admin', 'supervisor')
 def editar_cajero(request, pk):
     if request.method == "POST":
         nombre = request.POST.get('nombre') or ''
@@ -426,6 +439,7 @@ def editar_cajero(request, pk):
     }
     return render(request, 'cajero/formulario.html', context)
 
+@restaurant_permission('admin', 'supervisor')
 def eliminar_cajero(request, pk):
     logger.debug("pk %s", pk)
     logger.debug("method %s", request.method)

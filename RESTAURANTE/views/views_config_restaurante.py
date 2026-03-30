@@ -5,6 +5,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from INVENTARIO.models import Producto, TipoItem, TipoUnidadMedida
 from RESTAURANTE.models import Area, AreaCocina, CategoriaMenu, Platillo
+from AUTENTICACION.utils.permissions import restaurant_permission
 
 from django.core.paginator import Paginator
 from django.db.models import Q
@@ -20,6 +21,7 @@ MANEJO DE:
     - Platillo (menú)
 """
 
+@restaurant_permission('admin', 'supervisor')
 def listar_categorias(request):
     
     search_query = request.GET.get('search_name')
@@ -33,6 +35,7 @@ def listar_categorias(request):
     }
     return render(request, 'categorias_menu.html', context)
 
+@restaurant_permission('admin', 'supervisor')
 def crear_categoria(request):
     if request.method == 'POST':
         nombre = request.POST.get('nombre') or ''
@@ -50,6 +53,7 @@ def crear_categoria(request):
     # Si se accede por GET, simplemente redirecciona
     return redirect('categorias-menu')
 
+@restaurant_permission('admin', 'supervisor')
 def editar_categoria(request, pk):
     categoria = get_object_or_404(CategoriaMenu, pk=pk)
     
@@ -72,6 +76,7 @@ def editar_categoria(request, pk):
     return redirect('categorias-menu')
             
             
+@restaurant_permission('admin', 'supervisor')
 def eliminar_categoria(request, pk):
     logger.debug("delete")
     logger.debug("request.method %s", request.method)
@@ -89,6 +94,7 @@ def eliminar_categoria(request, pk):
 ###############################################################################################################
 #                                                    Areas                                                    #
 ###############################################################################################################
+@restaurant_permission('admin', 'supervisor')
 def listar_areas(request):
     search_query = request.GET.get('search_name')
     if search_query:
@@ -102,6 +108,7 @@ def listar_areas(request):
     }
     return render(request, 'area/area.html', context)
 
+@restaurant_permission('admin', 'supervisor')
 def crear_area(request):
     if request.method == 'POST':
         nombre = request.POST.get('nombre') or ''
@@ -118,6 +125,7 @@ def crear_area(request):
     # Si se accede por GET, simplemente redirecciona
     return redirect('areas')
 
+@restaurant_permission('admin', 'supervisor')
 def editar_area(request, pk):
     area = get_object_or_404(Area, pk=pk)
     
@@ -139,6 +147,7 @@ def editar_area(request, pk):
     return redirect('areas')
             
             
+@restaurant_permission('admin', 'supervisor')
 def eliminar_area(request, pk):
     logger.debug("delete")
     logger.debug("request.method %s", request.method)
@@ -157,6 +166,7 @@ def eliminar_area(request, pk):
 ###############################################################################################################
 #                                                    Areas                                                    #
 ###############################################################################################################
+@restaurant_permission('admin', 'supervisor')
 def listar_areas_cocina(request):
     search_query = request.GET.get('search_name')
     if search_query:
@@ -170,6 +180,7 @@ def listar_areas_cocina(request):
     }
     return render(request, 'area_cocina/list.html', context)
 
+@restaurant_permission('admin', 'supervisor')
 def crear_area_cocina(request):
     if request.method == 'POST':
         nombre = request.POST.get('nombre') or ''
@@ -188,6 +199,7 @@ def crear_area_cocina(request):
     # Si se accede por GET, simplemente redirecciona
     return redirect('areas-cocina')
 
+@restaurant_permission('admin', 'supervisor')
 def editar_area_cocina(request, pk):
     area_cocina = get_object_or_404(AreaCocina, pk=pk)
     
@@ -209,6 +221,7 @@ def editar_area_cocina(request, pk):
     return redirect('areas-cocina')
             
             
+@restaurant_permission('admin', 'supervisor')
 def eliminar_area_cocina(request, pk):
     logger.debug("delete")
     logger.debug("request.method %s", request.method)
@@ -238,6 +251,7 @@ def _is_light(hex_color: str) -> bool:
     luminance = (0.299*r + 0.587*g + 0.114*b)
     return luminance > 160  # umbral (ajustable)
 
+@restaurant_permission('admin', 'supervisor')
 def listar_menu(request):
     q = (request.GET.get('q') or '').strip()
     logger.debug("Filtros q: %s", q)
@@ -258,6 +272,7 @@ def listar_menu(request):
     }
     return render(request, 'menu/menu.html', context)
 
+@restaurant_permission('admin', 'supervisor')
 def crear_menu(request):
     if request.method == 'POST':
         codigo = request.POST.get('codigo') or ''
@@ -305,6 +320,7 @@ def crear_menu(request):
     }
     return render(request, 'menu/formulario.html', context)
 
+@restaurant_permission('admin', 'supervisor')
 def editar_menu(request, pk):
     
     if request.method == "POST":
@@ -371,6 +387,7 @@ def editar_menu(request, pk):
     }
     return render(request, 'menu/formulario.html', context)
             
+@restaurant_permission('admin', 'supervisor')
 def eliminar_menu(request, pk):
     logger.debug("Menu a eliminar ID %s", pk)
     

@@ -1,26 +1,35 @@
+{% load role_tags %}
 {% with uid_prefix=uid|default:"inv" %}
 
-{# Inicio del módulo #}
+{% if plan_funcs|has_func:'inventario.inicio' %}
 <button id="{{ uid_prefix }}-btn-home" type="button" class="sb-module-home">
   <i class="bi bi-house-door-fill"></i> Inicio Inventario
 </button>
+{% endif %}
 
-{% if user.is_staff %}
+{% if plan_funcs|has_func:'inventario.gestion' %}
 <button id="{{ uid_prefix }}-btn-gestion" type="button" class="sb-sub-item">
   <i class="bi bi-arrow-left-right"></i> Gestión
 </button>
+{% endif %}
+
+{% if plan_funcs|has_func:'inventario.ajuste' %}
 <button id="{{ uid_prefix }}-btn-ajuste" type="button" class="sb-sub-item">
   <i class="bi bi-sliders"></i> Ajuste de Inventario
 </button>
 {% endif %}
 
+{% if plan_funcs|has_func:'inventario.productos' %}
 <button id="{{ uid_prefix }}-btn-prod" type="button" class="sb-sub-item">
   <i class="bi bi-box-seam"></i> Productos
 </button>
+{% endif %}
 
+{% if plan_funcs|has_func:'inventario.servicios' %}
 <button id="{{ uid_prefix }}-btn-serv" type="button" class="sb-sub-item">
   <i class="bi bi-tools"></i> Servicios
 </button>
+{% endif %}
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {

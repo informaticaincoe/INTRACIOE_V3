@@ -2,11 +2,11 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
 from RESTAURANTE.models import CuentaPedido, DetallePedido
-from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
+from AUTENTICACION.utils.permissions import restaurant_permission
 
 
-@login_required
+@restaurant_permission('admin', 'supervisor', 'mesero', 'cajero')
 @require_POST
 def cambiar_estado_cuenta(request, cuenta_id, estado):
     cuenta = get_object_or_404(CuentaPedido, pk=cuenta_id)

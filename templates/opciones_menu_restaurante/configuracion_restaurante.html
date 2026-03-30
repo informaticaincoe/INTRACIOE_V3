@@ -1,20 +1,27 @@
+{% load role_tags %}
 {% with uid_prefix=uid|default:"ped" %}
 
 <button id="{{ uid_prefix }}-btn-home" type="button" class="sb-module-home">
   <i class="bi bi-house-door-fill"></i> Inicio Config.
 </button>
 
+{% if plan_funcs|has_func:'restaurante.categorias' %}
 <button id="{{ uid_prefix }}-btn-categorias" type="button" class="sb-sub-item">
   <i class="bi bi-tag"></i> Categorías menú
 </button>
+{% endif %}
 
+{% if plan_funcs|has_func:'restaurante.menu' %}
 <button id="{{ uid_prefix }}-btn-menu" type="button" class="sb-sub-item">
   <i class="bi bi-egg-fried"></i> Menú
 </button>
+{% endif %}
 
+{% if plan_funcs|has_func:'restaurante.areas' %}
 <button id="{{ uid_prefix }}-btn-areas" type="button" class="sb-sub-item">
   <i class="bi bi-diagram-3"></i> Áreas
 </button>
+{% endif %}
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
