@@ -3305,6 +3305,12 @@ def _obtener_token_hacienda():
     if resp.status_code != 200:
         raise Exception(f"Autenticación MH: {data.get('message','Error no especificado')} (HTTP {resp.status_code})")
 
+    # Hacienda puede responder HTTP 200 pero con status ERROR en el body
+    if data.get("status") == "ERROR":
+        body_err = data.get("body", {})
+        msg = body_err.get("descripcionMsg", "Error no especificado")
+        raise Exception(f"Autenticación MH rechazada: {msg}")
+
     body = data.get("body", {})
     token = body.get("token", "")
     token_type = body.get("tokenType", "Bearer")
