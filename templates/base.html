@@ -364,7 +364,7 @@
     <!-- Marca / Logo -->
     <a href="{% url 'index' %}" class="brand me-auto text-decoration-none">
       Intra<span>coe</span>
-      {% if emisor %}
+      {% if emisor and user.is_authenticated %}
         <span class="d-none d-lg-inline text-white fw-normal opacity-75 ms-2" style="font-size:.8rem;">
           | {{ emisor.nombre_comercial|default:emisor.nombre_razon_social }}
         </span>
@@ -394,6 +394,11 @@
       <a href="{% url 'login' %}" class="btn btn-sm btn-outline-light">
         <i class="bi bi-box-arrow-in-right me-1"></i> Iniciar sesión
       </a>
+    {% endif %}
+    {% if not user.is_authenticated %}
+    <a href="{% url 'staff_login' %}" class="btn btn-sm btn-outline-light ms-2" title="Acceso restaurante">
+      <i class="bi bi-shop"></i><span class="d-none d-sm-inline ms-1">Restaurante</span>
+    </a>
     {% endif %}
   </nav>
 
