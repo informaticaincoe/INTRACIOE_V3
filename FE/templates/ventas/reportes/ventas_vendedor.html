@@ -1,0 +1,80 @@
+{% extends "ventas/reportes/_base_reporte.html" %}
+{% block report_title %}Ventas por tipo de documento{% endblock %}
+{% block report_heading %}<i class="bi bi-file-earmark-bar-graph me-2 text-primary"></i>Ventas por tipo de documento{% endblock %}
+
+{% block report_body %}
+<div class="row g-3 mb-3">
+  <div class="col-md-6">
+    <div class="stat-card">
+      <div class="stat-val">{{ resumen.total_facturas }}</div>
+      <div class="stat-lbl">Total documentos</div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="stat-card">
+      <div class="stat-val">${{ resumen.total_monto|floatformat:2 }}</div>
+      <div class="stat-lbl">Total vendido</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <div class="chart-container" style="height:250px;">
+          <canvas id="chartTipo"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Tipo</th>
+              <th class="text-center">Cantidad</th>
+              <th class="text-end">Total</th>
+              <th class="text-end">IVA</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for v in vendedores %}
+            <tr>
+              <td class="fw-medium">{{ v.tipo_dte__descripcion }}</td>
+              <td class="text-center">{{ v.cantidad }}</td>
+              <td class="text-end fw-semibold">${{ v.total_monto|floatformat:2 }}</td>
+              <td class="text-end text-muted">${{ v.total_iva|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center py-4 text-muted">Sin datos.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block report_js %}
+<script>
+const colors = ['#1e40af','#16a34a','#dc2626','#ca8a04','#9333ea','#0891b2','#be185d'];
+new Chart(document.getElementById('chartTipo'), {
+  type: 'doughnut',
+  data: {
+    labels: {{ chart_labels|safe }},
+    datasets: [{
+      data: {{ chart_valores|safe }},
+      backgroundColor: colors.slice(0, {{ chart_labels|length }}),
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom' } }
+  }
+});
+</script>
+{% endblock %}

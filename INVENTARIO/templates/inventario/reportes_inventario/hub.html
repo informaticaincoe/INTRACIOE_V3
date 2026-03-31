@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% load role_tags %}
+{% block title %}Reportes · Inventario{% endblock %}
+
+{% block extra_css %}
+<style>
+  .report-card{display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fff;border:1px solid #e2e8f0;border-radius:.75rem;padding:1.5rem 1rem;text-align:center;text-decoration:none;color:#1e293b;transition:all .2s ease;min-height:160px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+  .report-card:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.1);border-color:var(--item-active-bg,#0d47a1);color:var(--item-active-bg,#0d47a1);}
+  .report-card .rc-icon{font-size:2.2rem;margin-bottom:.75rem;opacity:.8;width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+  .report-card .rc-title{font-weight:600;font-size:.95rem;} .report-card .rc-desc{font-size:.78rem;color:#64748b;margin-top:.25rem;}
+  .rc-blue{background:#dbeafe;color:#1e40af;} .rc-green{background:#dcfce7;color:#166534;} .rc-amber{background:#fef3c7;color:#92400e;} .rc-purple{background:#f3e8ff;color:#7c3aed;} .rc-red{background:#fee2e2;color:#dc2626;}
+  .kpi-card{background:#fff;border:1px solid #e2e8f0;border-radius:.5rem;padding:1rem 1.25rem;box-shadow:0 1px 2px rgba(0,0,0,.04);}
+  .kpi-val{font-size:1.4rem;font-weight:700;} .kpi-lbl{font-size:.78rem;color:#64748b;}
+  .rank-num{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;}
+  .rank-1{background:#fbbf24;color:#fff;} .rank-2{background:#9ca3af;color:#fff;} .rank-3{background:#b45309;color:#fff;} .rank-n{background:#e2e8f0;color:#475569;}
+  .mini-chart{position:relative;height:180px;}
+</style>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'inv-home' %}">Inventario</a></li>
+    <li class="breadcrumb-item active">Reportes</li>
+  </ol>
+</nav>
+
+<div class="mb-4">
+  <h1 class="h4 mb-0"><i class="bi bi-clipboard-data me-2 text-primary"></i>Reportes de Inventario</h1>
+  <small class="text-muted">Selecciona un reporte para generar</small>
+</div>
+
+<!-- Tarjetas -->
+<div class="row g-3 mb-4">
+  {% if plan_funcs|has_func:'inventario.rep_kardex' %}
+  <div class="col-6 col-md-4 col-lg-3">
+    <a href="{% url 'reportes_kardex' %}" class="report-card">
+      <div class="rc-icon rc-blue"><i class="bi bi-card-list"></i></div>
+      <div class="rc-title">Kardex</div>
+      <div class="rc-desc">Movimientos por producto</div>
+    </a>
+  </div>
+  {% endif %}
+  {% if plan_funcs|has_func:'inventario.rep_valorizado' %}
+  <div class="col-6 col-md-4 col-lg-3">
+    <a href="{% url 'reportes_valorizado' %}" class="report-card">
+      <div class="rc-icon rc-green"><i class="bi bi-currency-dollar"></i></div>
+      <div class="rc-title">Inventario valorizado</div>
+      <div class="rc-desc">Stock con costos y precios</div>
+    </a>
+  </div>
+  {% endif %}
+  {% if plan_funcs|has_func:'inventario.rep_bajo_stock' %}
+  <div class="col-6 col-md-4 col-lg-3">
+    <a href="{% url 'reportes_bajo_stock' %}" class="report-card">
+      <div class="rc-icon rc-red"><i class="bi bi-exclamation-triangle"></i></div>
+      <div class="rc-title">Bajo stock mínimo</div>
+      <div class="rc-desc">Productos por reabastecer</div>
+    </a>
+  </div>
+  {% endif %}
+  {% if plan_funcs|has_func:'inventario.rep_sin_movimiento' %}
+  <div class="col-6 col-md-4 col-lg-3">
+    <a href="{% url 'reportes_sin_movimiento' %}" class="report-card">
+      <div class="rc-icon rc-amber"><i class="bi bi-pause-circle"></i></div>
+      <div class="rc-title">Sin movimiento</div>
+      <div class="rc-desc">Inventario muerto / inactivo</div>
+    </a>
+  </div>
+  {% endif %}
+  {% if plan_funcs|has_func:'inventario.rep_movimientos' %}
+  <div class="col-6 col-md-4 col-lg-3">
+    <a href="{% url 'reportes_movimientos_periodo' %}" class="report-card">
+      <div class="rc-icon rc-purple"><i class="bi bi-arrow-left-right"></i></div>
+      <div class="rc-title">Movimientos por período</div>
+      <div class="rc-desc">Entradas, salidas y ajustes</div>
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Análisis rápido -->
+<hr class="my-2">
+<h5 class="mb-3 mt-3"><i class="bi bi-lightning-charge me-1 text-warning"></i>Análisis rápido</h5>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-lg-2">
+    <div class="kpi-card">
+      <div class="kpi-lbl">Productos</div>
+      <div class="kpi-val text-primary">{{ total_productos }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="kpi-card">
+      <div class="kpi-lbl">Unidades totales</div>
+      <div class="kpi-val">{{ total_stock }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="kpi-card">
+      <div class="kpi-lbl">Valor inventario</div>
+      <div class="kpi-val text-success">${{ valor_inventario|floatformat:2 }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="kpi-card">
+      <div class="kpi-lbl">Bajo mínimo</div>
+      <div class="kpi-val text-warning">{{ bajo_minimo }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="kpi-card">
+      <div class="kpi-lbl">Sin stock</div>
+      <div class="kpi-val text-danger">{{ sin_stock }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-bottom-0 fw-semibold small py-2"><i class="bi bi-graph-up me-1 text-primary"></i> Entradas vs Salidas (últimos 7 días)</div>
+      <div class="card-body pt-0"><div class="mini-chart"><canvas id="chartMini"></canvas></div></div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-bottom-0 fw-semibold small py-2"><i class="bi bi-trophy me-1 text-warning"></i> Más movimiento (mes)</div>
+      <div class="card-body pt-0">
+        {% for p in top_movimiento %}
+        <div class="d-flex align-items-center mb-2">
+          <span class="rank-num {% if forloop.counter == 1 %}rank-1{% elif forloop.counter == 2 %}rank-2{% elif forloop.counter == 3 %}rank-3{% else %}rank-n{% endif %} me-2">{{ forloop.counter }}</span>
+          <div class="flex-grow-1 small text-truncate">{{ p.producto__descripcion }}</div>
+          <span class="fw-semibold small ms-2">{{ p.total_movs }}</span>
+        </div>
+        {% empty %}<p class="text-muted small mb-0">Sin movimientos este mes.</p>{% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+new Chart(document.getElementById('chartMini'),{type:'bar',data:{labels:{{ chart_labels|safe }},datasets:[{label:'Entradas',data:{{ chart_entradas|safe }},backgroundColor:'rgba(22,163,74,.7)',borderRadius:4},{label:'Salidas',data:{{ chart_salidas|safe }},backgroundColor:'rgba(220,38,38,.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:11}}}},scales:{y:{beginAtZero:true},x:{grid:{display:false}}}}});
+</script>
+{% endblock %}

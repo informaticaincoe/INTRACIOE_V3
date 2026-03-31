@@ -1,0 +1,96 @@
+{% extends "ventas/reportes/_base_reporte.html" %}
+{% block report_title %}Ventas por período{% endblock %}
+{% block report_heading %}<i class="bi bi-calendar-range me-2 text-primary"></i>Ventas por período{% endblock %}
+
+{% block report_filters %}
+<div class="col-md-2">
+  <label class="form-label small fw-semibold">Agrupar</label>
+  <select name="agrupar" class="form-select form-select-sm">
+    <option value="dia" {% if agrupacion == 'dia' %}selected{% endif %}>Por día</option>
+    <option value="mes" {% if agrupacion == 'mes' %}selected{% endif %}>Por mes</option>
+  </select>
+</div>
+{% endblock %}
+
+{% block report_body %}
+<!-- Resumen -->
+<div class="row g-3 mb-3">
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="stat-val">{{ resumen.total_facturas }}</div>
+      <div class="stat-lbl">Facturas emitidas</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="stat-val">${{ resumen.total_monto|floatformat:2 }}</div>
+      <div class="stat-lbl">Total vendido</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="stat-val">${{ resumen.total_iva|floatformat:2 }}</div>
+      <div class="stat-lbl">IVA total</div>
+    </div>
+  </div>
+</div>
+
+<!-- Gráfica -->
+<div class="card border-0 shadow-sm mb-3">
+  <div class="card-body">
+    <div class="chart-container">
+      <canvas id="chartVentas"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Tabla -->
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover table-striped align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Período</th>
+          <th class="text-center">Facturas</th>
+          <th class="text-end">Total</th>
+          <th class="text-end">IVA</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in datos %}
+        <tr>
+          <td>{% if agrupacion == 'mes' %}{{ d.periodo|date:"F Y" }}{% else %}{{ d.periodo|date:"d/m/Y" }}{% endif %}</td>
+          <td class="text-center">{{ d.cantidad }}</td>
+          <td class="text-end fw-semibold">${{ d.total|floatformat:2 }}</td>
+          <td class="text-end text-muted">${{ d.iva|floatformat:2 }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-center py-4 text-muted">Sin datos para este período.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block report_js %}
+<script>
+new Chart(document.getElementById('chartVentas'), {
+  type: 'bar',
+  data: {
+    labels: {{ chart_labels|safe }},
+    datasets: [{
+      label: 'Ventas ($)',
+      data: {{ chart_valores|safe }},
+      backgroundColor: 'rgba(30,64,175,.7)',
+      borderRadius: 4,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString() } } }
+  }
+});
+</script>
+{% endblock %}

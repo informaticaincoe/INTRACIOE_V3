@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Conciliacion bancaria · Contabilidad{% endblock %}
+
+{% block extra_css %}
+<style>
+  .stat-card{background:#fff;border:1px solid #e2e8f0;border-radius:.5rem;padding:1rem 1.25rem;text-align:center;box-shadow:0 1px 2px rgba(0,0,0,.04);}
+  .stat-card .stat-val{font-size:1.5rem;font-weight:700;} .stat-card .stat-lbl{font-size:.78rem;color:#64748b;margin-top:.15rem;}
+</style>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'cont-asientos-lista' %}">Contabilidad</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'reportes_contabilidad_hub' %}">Reportes</a></li>
+    <li class="breadcrumb-item active">Conciliacion bancaria</li>
+  </ol>
+</nav>
+
+<h1 class="h4 mb-3"><i class="bi bi-bank me-2 text-purple"></i>Conciliacion bancaria</h1>
+
+<!-- Filtros -->
+<form method="get" class="card border-0 shadow-sm mb-3">
+  <div class="card-body">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold">Desde</label>
+        <input type="date" name="desde" value="{{ desde|date:'Y-m-d' }}" class="form-control form-control-sm">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold">Hasta</label>
+        <input type="date" name="hasta" value="{{ hasta|date:'Y-m-d' }}" class="form-control form-control-sm">
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-funnel me-1"></i>Filtrar</button>
+      </div>
+    </div>
+  </div>
+</form>
+
+<!-- Stat cards -->
+<div class="row g-3 mb-3">
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="stat-val text-primary">{{ resumen.total_movimientos }}</div>
+      <div class="stat-lbl">Movimientos</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="stat-val text-success">${{ resumen.total_debe|floatformat:2 }}</div>
+      <div class="stat-lbl">Total Debe</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="stat-val text-danger">${{ resumen.total_haber|floatformat:2 }}</div>
+      <div class="stat-lbl">Total Haber</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="stat-val {% if resumen.saldo >= 0 %}text-primary{% else %}text-danger{% endif %}">${{ resumen.saldo|floatformat:2 }}</div>
+      <div class="stat-lbl">Saldo</div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabla -->
+<div class="card border-0 shadow-sm"><div class="table-responsive">
+  <table class="table table-hover table-striped align-middle mb-0 small">
+    <thead class="table-light">
+      <tr><th>Fecha</th><th>N Asiento</th><th>Cuenta</th><th>Descripcion</th><th class="text-end">Debe</th><th class="text-end">Haber</th></tr>
+    </thead>
+    <tbody>
+      {% for l in lineas %}<tr>
+        <td class="small">{{ l.fecha|date:"d/m/Y" }}</td>
+        <td class="fw-medium">{{ l.numero_asiento }}</td>
+        <td class="small">{{ l.cuenta }}</td>
+        <td>{{ l.descripcion|truncatechars:40 }}</td>
+        <td class="text-end {% if l.debe > 0 %}text-success fw-semibold{% else %}text-muted{% endif %}">${{ l.debe|floatformat:2 }}</td>
+        <td class="text-end {% if l.haber > 0 %}text-danger fw-semibold{% else %}text-muted{% endif %}">${{ l.haber|floatformat:2 }}</td>
+      </tr>{% empty %}<tr><td colspan="6" class="text-center py-4 text-muted">Sin movimientos en este periodo.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% endblock %}

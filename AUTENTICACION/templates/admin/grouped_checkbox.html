@@ -1,0 +1,77 @@
+<style>
+  .func-grid { display: flex; flex-wrap: wrap; gap: 12px; }
+  .func-module {
+    flex: 1 1 320px; max-width: 400px;
+    border: 1px solid #ddd; border-radius: 8px;
+    background: #fafafa; overflow: hidden;
+  }
+  .func-module-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px; background: #417690; color: #fff; cursor: pointer;
+    font-weight: 600; font-size: 13px; user-select: none;
+  }
+  .func-module-header:hover { background: #36647a; }
+  .func-module-header .toggle { font-size: 11px; opacity: .8; }
+  .func-module-header .count { font-size: 11px; font-weight: 400; opacity: .8; margin-left: 6px; }
+  .func-module-body { padding: 6px 10px; }
+  .func-module-body label {
+    display: flex; align-items: center; gap: 6px;
+    padding: 3px 0; font-size: 12px; color: #333; cursor: pointer;
+  }
+  .func-module-body label:hover { background: #eef5fa; border-radius: 3px; }
+  .func-module-body input[type="checkbox"] { margin: 0; }
+  .func-module-actions {
+    padding: 4px 10px 8px; display: flex; gap: 8px;
+    border-top: 1px solid #eee;
+  }
+  .func-module-actions a {
+    font-size: 11px; color: #417690; cursor: pointer; text-decoration: none;
+  }
+  .func-module-actions a:hover { text-decoration: underline; }
+</style>
+
+<div class="func-grid" id="func-grid">
+  {% for group, option_list in widget.grouped.items %}
+  <div class="func-module" data-module="{{ group }}">
+    <div class="func-module-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? '' : 'none'; this.querySelector('.toggle').textContent = this.nextElementSibling.style.display === 'none' ? '+' : '-';">
+      <span>{{ group }} <span class="count">(<span class="checked-count">0</span>/<span class="total-count">0</span>)</span></span>
+      <span class="toggle">-</span>
+    </div>
+    <div>
+      <div class="func-module-actions">
+        <a href="#" onclick="event.preventDefault(); toggleModule(this, true)">Marcar todos</a>
+        <a href="#" onclick="event.preventDefault(); toggleModule(this, false)">Desmarcar todos</a>
+      </div>
+      <div class="func-module-body">
+        {% for func in option_list %}
+        <label>
+          <input type="checkbox" name="{{ widget.name }}" value="{{ func.pk }}"
+            {% if func.pk in widget.value %}checked{% endif %}>
+          {{ func.nombre }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<script>
+function toggleModule(link, state) {
+  var body = link.closest('.func-module').querySelector('.func-module-body');
+  body.querySelectorAll('input[type=checkbox]').forEach(function(cb) { cb.checked = state; });
+  updateCounts();
+}
+function updateCounts() {
+  document.querySelectorAll('.func-module').forEach(function(mod) {
+    var checks = mod.querySelectorAll('.func-module-body input[type=checkbox]');
+    var checked = mod.querySelectorAll('.func-module-body input[type=checkbox]:checked');
+    mod.querySelector('.checked-count').textContent = checked.length;
+    mod.querySelector('.total-count').textContent = checks.length;
+  });
+}
+document.addEventListener('DOMContentLoaded', function() {
+  updateCounts();
+  document.getElementById('func-grid').addEventListener('change', updateCounts);
+});
+</script>

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Comparativo · Compras{% endblock %}
+
+{% block extra_css %}
+<style>
+  .chart-container{position:relative;height:300px;}
+  .var-up{color:#16a34a;} .var-down{color:#dc2626;}
+</style>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'compras-lista' %}">Compras</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'reportes_compras_hub' %}">Reportes</a></li>
+    <li class="breadcrumb-item active">Comparativo</li>
+  </ol>
+</nav>
+
+<h1 class="h4 mb-3"><i class="bi bi-arrow-left-right me-2 text-primary"></i>Comparativo de compras</h1>
+
+<form method="get" class="card border-0 shadow-sm mb-3">
+  <div class="card-body">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold">Últimos meses</label>
+        <select name="meses" class="form-select form-select-sm">
+          <option value="3" {% if meses == 3 %}selected{% endif %}>3 meses</option>
+          <option value="6" {% if meses == 6 %}selected{% endif %}>6 meses</option>
+          <option value="12" {% if meses == 12 %}selected{% endif %}>12 meses</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-funnel me-1"></i>Filtrar</button>
+      </div>
+    </div>
+  </div>
+</form>
+
+<div class="card border-0 shadow-sm mb-3"><div class="card-body"><div class="chart-container"><canvas id="chart"></canvas></div></div></div>
+
+<div class="card border-0 shadow-sm"><div class="table-responsive">
+  <table class="table table-hover table-striped align-middle mb-0">
+    <thead class="table-light"><tr><th>Período</th><th class="text-center">Compras</th><th class="text-end">Total</th><th class="text-end">Variación</th></tr></thead>
+    <tbody>
+      {% for d in datos %}<tr>
+        <td class="fw-medium">{{ d.label }}</td>
+        <td class="text-center">{{ d.compras }}</td>
+        <td class="text-end fw-semibold">${{ d.total|floatformat:2 }}</td>
+        <td class="text-end">
+          {% if d.variacion is not None %}
+            {% if d.variacion >= 0 %}<span class="var-up"><i class="bi bi-arrow-up-short"></i>{{ d.variacion|floatformat:1 }}%</span>
+            {% else %}<span class="var-down"><i class="bi bi-arrow-down-short"></i>{{ d.variacion|floatformat:1 }}%</span>{% endif %}
+          {% else %}—{% endif %}
+        </td>
+      </tr>{% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+new Chart(document.getElementById('chart'),{type:'bar',data:{labels:{{ chart_labels|safe }},datasets:[{label:'Compras ($)',data:{{ chart_valores|safe }},backgroundColor:'rgba(234,88,12,.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'$'+v.toLocaleString()}}}}});
+</script>
+{% endblock %}

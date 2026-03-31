@@ -353,6 +353,19 @@ class NumeroControl(models.Model):
         logger.debug("Asignar numero de control %s len= %s", numero_control, len(numero_control))
         return numero_control
 
+    @staticmethod
+    def revertir_numero_control(cod_dte):
+        """Revierte el correlativo en 1 cuando Hacienda rechaza el DTE."""
+        from datetime import datetime as dt
+        anio_actual = dt.now().year
+        try:
+            control = NumeroControl.objects.get(anio=anio_actual, tipo_dte=cod_dte)
+            if control.secuencia > 1:
+                control.secuencia -= 1
+                control.save()
+                logger.debug("Correlativo revertido para DTE %s, nueva secuencia: %s", cod_dte, control.secuencia)
+        except NumeroControl.DoesNotExist:
+            pass
 
     @staticmethod
     def preview_numero_control(cod_dte, estab="0000", pv="0001"):

@@ -28,14 +28,14 @@
 <td style="text-align:left;">{{ item.descripcion }}</td>
 <td class="td-num">${{ item.precioUni|floatformat:2 }}</td>
 <td class="td-num">${{ item.montoDescu|default:0|floatformat:2 }}</td>
-<td class="td-num">${{ item.compra|default:item.ventaGravada|floatformat:2 }}</td>
+<td class="td-num">${{ item.compra|default:"0"|floatformat:2 }}</td>
 {% endblock %}
 
 {% block tabla_footer %}
-<tr><td colspan="6" style="text-align:right;padding:3px 6px;">Sumatoria de compras:</td><td class="td-num">${{ factura.json_original.resumen.totalCompra|default:factura.json_original.resumen.totalGravada|floatformat:2 }}</td></tr>
+<tr><td colspan="6" style="text-align:right;padding:3px 6px;">Sumatoria de compras:</td><td class="td-num">${{ factura.json_original.resumen.totalCompra|default:"0"|floatformat:2 }}</td></tr>
 {% endblock %}
 
 {% block resumen %}
 <div class="resumen-row"><label>Sub-Total:</label><span class="val">${{ factura.json_original.resumen.subTotal|floatformat:2 }}</span></div>
-<div class="resumen-row total"><label>Total a Pagar:</label><span class="val">${{ factura.json_original.resumen.totalPagar|default:factura.json_original.resumen.totalCompra|floatformat:2 }}</span></div>
+<div class="resumen-row total"><label>Total a Pagar:</label><span class="val">${{ factura.json_original.resumen.totalPagar|default:"0"|floatformat:2 }}</span></div>
 {% endblock %}

@@ -2,6 +2,7 @@
 from django.urls import path
 from .api_views import AnexoConsumidorFinalAPIView
 from . import views
+from . import views_reportes
 
 urlpatterns = [
 path('reportes/anexo-consumidor-final/', views.AnexoConsumidorFinalCSV.as_view(), name='anexo-consumidor-final'),
@@ -47,4 +48,12 @@ path('reportes/anexo-consumidor-final/', views.AnexoConsumidorFinalCSV.as_view()
     path('reportes/balance-general/',         views.balance_general,       name='cont-balance-general'),
     path('reportes/estado-resultados/',       views.estado_resultados,     name='cont-estado-resultados'),
     path('reportes/anexos/',                  views.reportes_anexos,       name='cont-reportes-anexos'),
+
+    # Reportes adicionales
+    path('reportes-hub/',                     views_reportes.reportes_contabilidad_hub,  name='reportes_contabilidad_hub'),
+    path('reportes/flujo-efectivo/',          views_reportes.reporte_flujo_efectivo,     name='reportes_flujo_efectivo'),
+    path('reportes/antiguedad-cxc/',          views_reportes.reporte_antiguedad_cxc,     name='reportes_antiguedad_cxc'),
+    path('reportes/antiguedad-cxp/',          views_reportes.reporte_antiguedad_cxp,     name='reportes_antiguedad_cxp'),
+    path('reportes/retenciones/',             views_reportes.reporte_retenciones_cont,   name='reportes_retenciones_cont'),
+    path('reportes/conciliacion/',            views_reportes.reporte_conciliacion,       name='reportes_conciliacion'),
 ]

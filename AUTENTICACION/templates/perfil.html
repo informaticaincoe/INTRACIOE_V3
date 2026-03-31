@@ -64,6 +64,12 @@
     <div class="col-lg-4">
       <div class="card shadow-sm">
         <div class="card-body">
+          {% if emisor and emisor.logo %}
+            <div class="text-center mb-3">
+              <img src="{{ emisor.logo.url }}" alt="{{ emisor.nombre_comercial|default:emisor.nombre_razon_social }}"
+                   style="max-height:60px;width:auto;object-fit:contain;">
+            </div>
+          {% endif %}
           <h6 class="mb-2">Usuario</h6>
           <div class="small text-muted mb-2">
             {{ request.user.get_full_name|default:request.user.username }}<br>

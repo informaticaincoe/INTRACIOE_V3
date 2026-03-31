@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load role_tags %}
+{% block title %}Reportes · Contabilidad{% endblock %}
+{% block extra_css %}
+<style>
+  .report-card{display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fff;border:1px solid #e2e8f0;border-radius:.75rem;padding:1.5rem 1rem;text-align:center;text-decoration:none;color:#1e293b;transition:all .2s ease;min-height:160px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+  .report-card:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.1);border-color:var(--item-active-bg,#0d47a1);color:var(--item-active-bg,#0d47a1);}
+  .report-card .rc-icon{font-size:2.2rem;margin-bottom:.75rem;width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+  .report-card .rc-title{font-weight:600;font-size:.95rem;} .report-card .rc-desc{font-size:.78rem;color:#64748b;margin-top:.25rem;}
+  .rc-blue{background:#dbeafe;color:#1e40af;} .rc-green{background:#dcfce7;color:#166534;} .rc-amber{background:#fef3c7;color:#92400e;} .rc-purple{background:#f3e8ff;color:#7c3aed;} .rc-red{background:#fee2e2;color:#dc2626;}
+  .kpi-card{background:#fff;border:1px solid #e2e8f0;border-radius:.5rem;padding:1rem 1.25rem;box-shadow:0 1px 2px rgba(0,0,0,.04);}
+  .kpi-val{font-size:1.4rem;font-weight:700;} .kpi-lbl{font-size:.78rem;color:#64748b;}
+</style>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item">Contabilidad</li>
+    <li class="breadcrumb-item active">Reportes</li>
+  </ol>
+</nav>
+<div class="mb-4">
+  <h1 class="h4 mb-0"><i class="bi bi-clipboard-data me-2 text-primary"></i>Reportes de Contabilidad</h1>
+  <small class="text-muted">Selecciona un reporte para generar</small>
+</div>
+
+<div class="row g-3 mb-4">
+  {% if plan_funcs|has_func:'contabilidad.rep_flujo' %}
+  <div class="col-6 col-md-4 col-lg-3"><a href="{% url 'reportes_flujo_efectivo' %}" class="report-card"><div class="rc-icon rc-blue"><i class="bi bi-cash-stack"></i></div><div class="rc-title">Flujo de efectivo</div><div class="rc-desc">Ingresos vs egresos</div></a></div>
+  {% endif %}
+  {% if plan_funcs|has_func:'contabilidad.rep_cxc' %}
+  <div class="col-6 col-md-4 col-lg-3"><a href="{% url 'reportes_antiguedad_cxc' %}" class="report-card"><div class="rc-icon rc-green"><i class="bi bi-arrow-down-circle"></i></div><div class="rc-title">Antigüedad CxC</div><div class="rc-desc">Saldos por cobrar</div></a></div>
+  {% endif %}
+  {% if plan_funcs|has_func:'contabilidad.rep_cxp' %}
+  <div class="col-6 col-md-4 col-lg-3"><a href="{% url 'reportes_antiguedad_cxp' %}" class="report-card"><div class="rc-icon rc-red"><i class="bi bi-arrow-up-circle"></i></div><div class="rc-title">Antigüedad CxP</div><div class="rc-desc">Saldos por pagar</div></a></div>
+  {% endif %}
+  {% if plan_funcs|has_func:'contabilidad.rep_retenciones' %}
+  <div class="col-6 col-md-4 col-lg-3"><a href="{% url 'reportes_retenciones_cont' %}" class="report-card"><div class="rc-icon rc-amber"><i class="bi bi-percent"></i></div><div class="rc-title">Retenciones</div><div class="rc-desc">IVA y renta retenida</div></a></div>
+  {% endif %}
+  {% if plan_funcs|has_func:'contabilidad.rep_conciliacion' %}
+  <div class="col-6 col-md-4 col-lg-3"><a href="{% url 'reportes_conciliacion' %}" class="report-card"><div class="rc-icon rc-purple"><i class="bi bi-bank"></i></div><div class="rc-title">Conciliación bancaria</div><div class="rc-desc">Movimientos en cuentas banco</div></a></div>
+  {% endif %}
+
+  {% if plan_funcs|has_func:'contabilidad.libro_mayor' %}
+  <div class="col-6 col-md-4 col-lg-3"><a href="{% url 'cont-libro-mayor' %}" class="report-card"><div class="rc-icon" style="background:#e0e7ff;color:#4338ca;"><i class="bi bi-book"></i></div><div class="rc-title">Libro Mayor</div><div class="rc-desc">Movimientos por cuenta contable</div></a></div>
+  {% endif %}
+
+  {% if plan_funcs|has_func:'contabilidad.balance_comp' %}
+  <div class="col-6 col-md-4 col-lg-3"><a href="{% url 'cont-balance-comprobacion' %}" class="report-card"><div class="rc-icon" style="background:#f0fdf4;color:#166534;"><i class="bi bi-clipboard-data"></i></div><div class="rc-title">Balance de Comprobación</div><div class="rc-desc">Saldos de todas las cuentas</div></a></div>
+  {% endif %}
+
+  {% if plan_funcs|has_func:'contabilidad.balance_gen' %}
+  <div class="col-6 col-md-4 col-lg-3"><a href="{% url 'cont-balance-general' %}" class="report-card"><div class="rc-icon" style="background:#fef3c7;color:#92400e;"><i class="bi bi-bar-chart-line"></i></div><div class="rc-title">Balance General</div><div class="rc-desc">Activos, pasivos y capital</div></a></div>
+  {% endif %}
+
+  {% if plan_funcs|has_func:'contabilidad.estado_res' %}
+  <div class="col-6 col-md-4 col-lg-3"><a href="{% url 'cont-estado-resultados' %}" class="report-card"><div class="rc-icon" style="background:#fce7f3;color:#be185d;"><i class="bi bi-graph-up"></i></div><div class="rc-title">Estado de Resultados</div><div class="rc-desc">Ingresos, gastos y utilidad</div></a></div>
+  {% endif %}
+
+  {% if plan_funcs|has_func:'contabilidad.anexos' %}
+  <div class="col-6 col-md-4 col-lg-3"><a href="{% url 'cont-reportes-anexos' %}" class="report-card"><div class="rc-icon" style="background:#f1f5f9;color:#475569;"><i class="bi bi-file-earmark-spreadsheet"></i></div><div class="rc-title">Reportes de Anexos</div><div class="rc-desc">Anexos tributarios</div></a></div>
+  {% endif %}
+</div>
+
+<hr class="my-2">
+<h5 class="mb-3 mt-3"><i class="bi bi-lightning-charge me-1 text-warning"></i>Análisis rápido</h5>
+<div class="row g-3">
+  <div class="col-6 col-lg-2"><div class="kpi-card"><div class="kpi-lbl">Asientos (mes)</div><div class="kpi-val text-primary">{{ total_asientos }}</div></div></div>
+  <div class="col-6 col-lg-2"><div class="kpi-card"><div class="kpi-lbl">Confirmados</div><div class="kpi-val text-success">{{ confirmados }}</div></div></div>
+  <div class="col-6 col-lg-2"><div class="kpi-card"><div class="kpi-lbl">Borradores</div><div class="kpi-val text-warning">{{ borradores }}</div></div></div>
+  <div class="col-6 col-lg-2"><div class="kpi-card"><div class="kpi-lbl">Total Debe (mes)</div><div class="kpi-val">${{ total_debe|floatformat:2 }}</div></div></div>
+  <div class="col-6 col-lg-2"><div class="kpi-card"><div class="kpi-lbl">CxC pendiente</div><div class="kpi-val text-success">${{ cxc_pendiente|floatformat:2 }}</div><div class="kpi-lbl">{{ cxc_vencidas }} vencidas</div></div></div>
+  <div class="col-6 col-lg-2"><div class="kpi-card"><div class="kpi-lbl">CxP pendiente</div><div class="kpi-val text-danger">${{ cxp_pendiente|floatformat:2 }}</div><div class="kpi-lbl">{{ cxp_vencidas }} vencidas</div></div></div>
+</div>
+{% endblock %}

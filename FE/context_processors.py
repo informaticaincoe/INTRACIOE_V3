@@ -5,17 +5,15 @@ from FE.models import Emisor_fe
 
 
 def emisor_context(request):
-    if not request.user.is_authenticated:
-        return {"emisor": None, "plan": None, "suscripcion_gracia": False, "suscripcion_gracia_fin": None}
-
     emisor = None
     plan = None
+    plan_funcs = set()
     suscripcion_gracia = False
     suscripcion_gracia_fin = None
 
     try:
         emisor = Emisor_fe.objects.first()
-        if emisor:
+        if emisor and request.user.is_authenticated:
             try:
                 suscripcion = emisor.suscripcion
             except ObjectDoesNotExist:
@@ -30,7 +28,6 @@ def emisor_context(request):
         pass
 
     # Conjunto de claves de funcionalidades activas para lookup rápido en templates
-    plan_funcs = set()
     if plan:
         try:
             plan_funcs = set(plan.funcionalidades.values_list('clave', flat=True))

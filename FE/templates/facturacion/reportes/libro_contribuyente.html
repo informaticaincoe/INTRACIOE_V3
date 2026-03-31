@@ -1,0 +1,35 @@
+{% extends "facturacion/reportes/_base.html" %}
+{% block report_title %}Libro ventas CCF{% endblock %}
+{% block report_heading %}<i class="bi bi-journal-text me-2 text-primary"></i>Libro de ventas contribuyente (CCF){% endblock %}
+
+{% block report_body %}
+<div class="row g-3 mb-3">
+  <div class="col-md-2"><div class="stat-card"><div class="stat-val">{{ resumen.total_docs }}</div><div class="stat-lbl">CCF emitidos</div></div></div>
+  <div class="col-md-2"><div class="stat-card"><div class="stat-val">${{ resumen.total_gravadas|floatformat:2 }}</div><div class="stat-lbl">Gravadas</div></div></div>
+  <div class="col-md-2"><div class="stat-card"><div class="stat-val">${{ resumen.total_exentas|floatformat:2 }}</div><div class="stat-lbl">Exentas</div></div></div>
+  <div class="col-md-2"><div class="stat-card"><div class="stat-val">${{ resumen.total_iva|floatformat:2 }}</div><div class="stat-lbl">IVA Débito</div></div></div>
+  <div class="col-md-2"><div class="stat-card"><div class="stat-val">${{ resumen.total_retenido|floatformat:2 }}</div><div class="stat-lbl">IVA Retenido</div></div></div>
+  <div class="col-md-2"><div class="stat-card"><div class="stat-val">${{ resumen.total_pagar|floatformat:2 }}</div><div class="stat-lbl">Total</div></div></div>
+</div>
+
+<div class="card border-0 shadow-sm"><div class="table-responsive">
+  <table class="table table-hover table-striped align-middle mb-0 small">
+    <thead class="table-light">
+      <tr><th>Fecha</th><th>N° Control</th><th>Cliente</th><th>NRC</th><th class="text-end">Gravadas</th><th class="text-end">Exentas</th><th class="text-end">IVA</th><th class="text-end">Retenido</th><th class="text-end">Total</th></tr>
+    </thead>
+    <tbody>
+      {% for f in facturas %}<tr>
+        <td>{{ f.fecha_emision|date:"d/m/Y" }}</td>
+        <td class="fw-medium">{{ f.numero_control }}</td>
+        <td>{{ f.dtereceptor.nombre|default:"—"|truncatechars:30 }}</td>
+        <td class="text-muted">{{ f.dtereceptor.nrc|default:"—" }}</td>
+        <td class="text-end">${{ f.total_gravadas|floatformat:2 }}</td>
+        <td class="text-end">${{ f.total_exentas|floatformat:2 }}</td>
+        <td class="text-end">${{ f.total_iva|floatformat:2 }}</td>
+        <td class="text-end">${{ f.iva_retenido|floatformat:2 }}</td>
+        <td class="text-end fw-semibold">${{ f.total_pagar|floatformat:2 }}</td>
+      </tr>{% empty %}<tr><td colspan="9" class="text-center py-4 text-muted">Sin CCF en este período.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% endblock %}

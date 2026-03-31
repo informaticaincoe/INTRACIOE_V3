@@ -31,15 +31,20 @@
 </button>
 {% endif %}
 
+<button id="{{ uid_prefix }}-btn-reportes" type="button" class="sb-sub-item">
+  <i class="bi bi-clipboard-data"></i> Reportes
+</button>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   const b = "{{ uid_prefix }}";
   const go = (id, url) => document.getElementById(b + id)?.addEventListener('click', () => { window.location.href = url; });
-  go('-btn-home',    "{% url 'inv-home' %}");
-  go('-btn-gestion', "{% url 'inv-home' %}");
-  go('-btn-ajuste',  "{% url 'inv-movs-lista' %}?tipo=Ajuste");
-  go('-btn-prod',    "{% url 'inv-productos-lista' %}");
-  go('-btn-serv',    "{% url 'inv-productos-lista' %}?q=servicio");
+  go('-btn-home',      "{% url 'inv-home' %}");
+  go('-btn-gestion',   "{% url 'inv-home' %}");
+  go('-btn-ajuste',    "{% url 'inv-movs-lista' %}?tipo=Ajuste");
+  go('-btn-prod',      "{% url 'inv-productos-lista' %}");
+  go('-btn-serv',      "{% url 'inv-productos-lista' %}?q=servicio");
+  go('-btn-reportes',  "{% url 'reportes_inventario_hub' %}");
 });
 </script>
 

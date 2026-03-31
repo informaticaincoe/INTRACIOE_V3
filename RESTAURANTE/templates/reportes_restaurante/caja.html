@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Reporte de Caja · Reportes{% endblock %}
+
+{% block extra_css %}
+<style>
+  .stat-card{background:#fff;border:1px solid #e2e8f0;border-radius:.5rem;padding:1rem 1.25rem;text-align:center;box-shadow:0 1px 2px rgba(0,0,0,.04);}
+  .stat-card .stat-val{font-size:1.5rem;font-weight:700;color:#92400e;} .stat-card .stat-lbl{font-size:.78rem;color:#64748b;margin-top:.15rem;}
+</style>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'mesas-lista' %}">Restaurante</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'reportes_restaurante_hub' %}">Reportes</a></li>
+    <li class="breadcrumb-item active">Caja</li>
+  </ol>
+</nav>
+
+<h1 class="h4 mb-3"><i class="bi bi-cash-stack me-2 text-warning"></i>Reporte de Caja</h1>
+
+<form method="get" class="card border-0 shadow-sm mb-3">
+  <div class="card-body">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold">Desde</label>
+        <input type="date" name="desde" value="{{ desde|date:'Y-m-d' }}" class="form-control form-control-sm">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold">Hasta</label>
+        <input type="date" name="hasta" value="{{ hasta|date:'Y-m-d' }}" class="form-control form-control-sm">
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-funnel me-1"></i>Filtrar</button>
+      </div>
+    </div>
+  </div>
+</form>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-lg-2">
+    <div class="stat-card">
+      <div class="stat-val">{{ resumen.aperturas }}</div>
+      <div class="stat-lbl">Aperturas</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="stat-card">
+      <div class="stat-val">${{ resumen.total_ventas|floatformat:2 }}</div>
+      <div class="stat-lbl">Total ventas</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="stat-card">
+      <div class="stat-val">${{ resumen.total_efectivo|floatformat:2 }}</div>
+      <div class="stat-lbl">Total efectivo</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="stat-card">
+      <div class="stat-val">${{ resumen.total_tarjeta|floatformat:2 }}</div>
+      <div class="stat-lbl">Total tarjeta</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="stat-card">
+      <div class="stat-val">${{ resumen.propinas|floatformat:2 }}</div>
+      <div class="stat-lbl">Propinas</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="stat-card">
+      <div class="stat-val {% if resumen.diferencia < 0 %}text-danger{% elif resumen.diferencia > 0 %}text-success{% endif %}">${{ resumen.diferencia|floatformat:2 }}</div>
+      <div class="stat-lbl">Diferencia</div>
+    </div>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover table-striped align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Fecha apertura</th>
+          <th>Fecha cierre</th>
+          <th>Usuario</th>
+          <th class="text-end">Monto inicial</th>
+          <th class="text-end">Total ventas</th>
+          <th class="text-end">Efectivo</th>
+          <th class="text-end">Tarjeta</th>
+          <th class="text-end">Diferencia</th>
+          <th class="text-center">Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in cajas %}
+        <tr>
+          <td>{{ c.fecha_apertura|date:"d/m/Y H:i" }}</td>
+          <td>{% if c.fecha_cierre %}{{ c.fecha_cierre|date:"d/m/Y H:i" }}{% else %}<span class="text-muted">-</span>{% endif %}</td>
+          <td>{{ c.usuario }}</td>
+          <td class="text-end">${{ c.monto_inicial|floatformat:2 }}</td>
+          <td class="text-end fw-semibold">${{ c.total_ventas|floatformat:2 }}</td>
+          <td class="text-end">${{ c.efectivo|floatformat:2 }}</td>
+          <td class="text-end">${{ c.tarjeta|floatformat:2 }}</td>
+          <td class="text-end {% if c.diferencia < 0 %}text-danger{% elif c.diferencia > 0 %}text-success{% endif %}">${{ c.diferencia|floatformat:2 }}</td>
+          <td class="text-center">
+            {% if c.estado == 'ABIERTA' %}
+              <span class="badge bg-success">ABIERTA</span>
+            {% else %}
+              <span class="badge bg-secondary">CERRADA</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="9" class="text-center py-4 text-muted">Sin datos para el rango seleccionado.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

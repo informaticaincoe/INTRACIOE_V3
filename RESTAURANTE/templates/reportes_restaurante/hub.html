@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% load role_tags %}
+{% block title %}Reportes · Restaurante{% endblock %}
+
+{% block extra_css %}
+<style>
+  .report-card { display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fff;border:1px solid #e2e8f0;border-radius:.75rem;padding:1.5rem 1rem;text-align:center;text-decoration:none;color:#1e293b;transition:all .2s ease;min-height:160px;box-shadow:0 1px 3px rgba(0,0,0,.04); }
+  .report-card:hover { transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.1);border-color:var(--item-active-bg,#0d47a1);color:var(--item-active-bg,#0d47a1); }
+  .report-card .rc-icon { font-size:2.2rem;margin-bottom:.75rem;opacity:.8;width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center; }
+  .report-card .rc-title { font-weight:600;font-size:.95rem; }
+  .report-card .rc-desc  { font-size:.78rem;color:#64748b;margin-top:.25rem; }
+  .rc-blue{background:#dbeafe;color:#1e40af;} .rc-green{background:#dcfce7;color:#166534;} .rc-amber{background:#fef3c7;color:#92400e;} .rc-purple{background:#f3e8ff;color:#7c3aed;} .rc-red{background:#fee2e2;color:#dc2626;}
+  .kpi-card{background:#fff;border:1px solid #e2e8f0;border-radius:.5rem;padding:1rem 1.25rem;box-shadow:0 1px 2px rgba(0,0,0,.04);}
+  .kpi-val{font-size:1.4rem;font-weight:700;} .kpi-lbl{font-size:.78rem;color:#64748b;}
+  .mini-chart{position:relative;height:180px;}
+</style>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'mesas-lista' %}">Restaurante</a></li>
+    <li class="breadcrumb-item active">Reportes</li>
+  </ol>
+</nav>
+
+<div class="mb-4">
+  <h1 class="h4 mb-0"><i class="bi bi-clipboard-data me-2 text-primary"></i>Reportes de Restaurante</h1>
+  <small class="text-muted">Selecciona un reporte para generar</small>
+</div>
+
+<!-- Tarjetas -->
+<div class="row g-3 mb-4">
+  {% if plan_funcs|has_func:'restaurante.rep_ventas_mesa' %}
+  <div class="col-6 col-md-4 col-lg-3">
+    <a href="{% url 'reportes_ventas_mesa' %}" class="report-card">
+      <div class="rc-icon rc-blue"><i class="bi bi-grid-3x3-gap"></i></div>
+      <div class="rc-title">Ventas por mesa</div>
+      <div class="rc-desc">Ingresos y pedidos por mesa</div>
+    </a>
+  </div>
+  {% endif %}
+  {% if plan_funcs|has_func:'restaurante.rep_platillos' %}
+  <div class="col-6 col-md-4 col-lg-3">
+    <a href="{% url 'reportes_platillos_vendidos' %}" class="report-card">
+      <div class="rc-icon rc-green"><i class="bi bi-egg-fried"></i></div>
+      <div class="rc-title">Platillos vendidos</div>
+      <div class="rc-desc">Ranking de platillos por cantidad</div>
+    </a>
+  </div>
+  {% endif %}
+  {% if plan_funcs|has_func:'restaurante.rep_caja' %}
+  <div class="col-6 col-md-4 col-lg-3">
+    <a href="{% url 'reportes_caja' %}" class="report-card">
+      <div class="rc-icon rc-amber"><i class="bi bi-cash-stack"></i></div>
+      <div class="rc-title">Caja</div>
+      <div class="rc-desc">Aperturas, cierres y movimientos</div>
+    </a>
+  </div>
+  {% endif %}
+  {% if plan_funcs|has_func:'restaurante.rep_meseros' %}
+  <div class="col-6 col-md-4 col-lg-3">
+    <a href="{% url 'reportes_ventas_mesero' %}" class="report-card">
+      <div class="rc-icon rc-purple"><i class="bi bi-person-workspace"></i></div>
+      <div class="rc-title">Ventas por mesero</div>
+      <div class="rc-desc">Rendimiento de meseros</div>
+    </a>
+  </div>
+  {% endif %}
+  {% if plan_funcs|has_func:'restaurante.rep_comandas' %}
+  <div class="col-6 col-md-4 col-lg-3">
+    <a href="{% url 'reportes_comandas_area' %}" class="report-card">
+      <div class="rc-icon rc-red"><i class="bi bi-fire"></i></div>
+      <div class="rc-title">Comandas por area</div>
+      <div class="rc-desc">Comandas agrupadas por area cocina</div>
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Analisis rapido -->
+<hr class="my-2">
+<h5 class="mb-3 mt-3"><i class="bi bi-lightning-charge me-1 text-warning"></i>Analisis rapido</h5>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-lg-2">
+    <div class="kpi-card">
+      <div class="kpi-lbl">Pedidos hoy</div>
+      <div class="kpi-val text-primary">{{ resumen.pedidos_hoy }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="kpi-card">
+      <div class="kpi-lbl">Total hoy</div>
+      <div class="kpi-val">${{ resumen.total_hoy|floatformat:2 }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="kpi-card">
+      <div class="kpi-lbl">Pedidos mes</div>
+      <div class="kpi-val text-info">{{ resumen.pedidos_mes }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="kpi-card">
+      <div class="kpi-lbl">Total mes</div>
+      <div class="kpi-val">${{ resumen.total_mes|floatformat:2 }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="kpi-card">
+      <div class="kpi-lbl">Ticket promedio</div>
+      <div class="kpi-val text-success">${{ resumen.ticket_promedio|floatformat:2 }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="kpi-card">
+      <div class="kpi-lbl">Mesas ocupadas</div>
+      <div class="kpi-val text-warning">{{ mesas_ocupadas }}/{{ mesas_total }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-bottom-0 fw-semibold small py-2">
+        <i class="bi bi-graph-up me-1 text-primary"></i> Ultimos 7 dias
+      </div>
+      <div class="card-body pt-0">
+        <div class="mini-chart"><canvas id="chartMini"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+new Chart(document.getElementById('chartMini'),{type:'line',data:{labels:{{ chart_labels|safe }},datasets:[{label:'Ventas ($)',data:{{ chart_valores|safe }},borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,.08)',fill:true,tension:.35,pointRadius:4,pointBackgroundColor:'#6366f1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'$'+v.toLocaleString()}},x:{grid:{display:false}}}}});
+</script>
+{% endblock %}

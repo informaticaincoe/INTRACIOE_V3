@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Antiguedad CxC · Contabilidad{% endblock %}
+
+{% block extra_css %}
+<style>
+  .stat-card{background:#fff;border:1px solid #e2e8f0;border-radius:.5rem;padding:1rem 1.25rem;text-align:center;box-shadow:0 1px 2px rgba(0,0,0,.04);}
+  .stat-card .stat-val{font-size:1.5rem;font-weight:700;color:#16a34a;} .stat-card .stat-lbl{font-size:.78rem;color:#64748b;margin-top:.15rem;}
+  .chart-container{position:relative;height:250px;}
+  .ant-bar{height:8px;border-radius:4px;margin-top:4px;}
+</style>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'cont-asientos-lista' %}">Contabilidad</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'reportes_contabilidad_hub' %}">Reportes</a></li>
+    <li class="breadcrumb-item active">Antiguedad CxC</li>
+  </ol>
+</nav>
+
+<h1 class="h4 mb-3"><i class="bi bi-arrow-down-circle me-2 text-success"></i>Antiguedad de cuentas por cobrar</h1>
+
+<!-- Stat cards -->
+<div class="row g-3 mb-3">
+  <div class="col-md-6">
+    <div class="stat-card">
+      <div class="stat-val">${{ resumen.total_pendiente|floatformat:2 }}</div>
+      <div class="stat-lbl">Total pendiente</div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="stat-card">
+      <div class="stat-val">{{ resumen.total_cuentas }}</div>
+      <div class="stat-lbl">Total cuentas</div>
+    </div>
+  </div>
+</div>
+
+<!-- Antiguedad + Chart -->
+<div class="row g-3 mb-3">
+  <div class="col-lg-5">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white fw-semibold small py-2">Antiguedad de saldos</div>
+      <div class="card-body">
+        {% for a in antiguedad %}
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="small fw-medium">{{ a.rango }}</span>
+          <span class="fw-semibold small">${{ a.monto|floatformat:2 }}</span>
+        </div>
+        <div class="ant-bar" style="background:{{ a.color }};width:{% widthratio a.monto resumen.total_pendiente 100 %}%;min-width:4px;"></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body"><div class="chart-container"><canvas id="chart"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabla -->
+<div class="card border-0 shadow-sm"><div class="table-responsive">
+  <table class="table table-hover table-striped align-middle mb-0 small">
+    <thead class="table-light">
+      <tr><th>Cliente</th><th>Factura</th><th>Emision</th><th>Vencimiento</th><th class="text-end">Monto</th><th class="text-center">Estado</th></tr>
+    </thead>
+    <tbody>
+      {% for c in cuentas %}<tr>
+        <td class="fw-medium">{{ c.cliente }}</td>
+        <td class="small text-muted">{{ c.factura }}</td>
+        <td class="small">{{ c.fecha_emision|date:"d/m/Y" }}</td>
+        <td class="small">{{ c.fecha_vencimiento|date:"d/m/Y" }}</td>
+        <td class="text-end fw-semibold">${{ c.monto|floatformat:2 }}</td>
+        <td class="text-center">
+          {% if c.estado == 'VENCIDO' %}<span class="badge text-bg-danger">Vencido</span>
+          {% elif c.estado == 'PARCIAL' %}<span class="badge text-bg-warning text-dark">Parcial</span>
+          {% elif c.estado == 'PAGADO' %}<span class="badge text-bg-success">Pagado</span>
+          {% else %}<span class="badge text-bg-secondary">Pendiente</span>{% endif %}
+        </td>
+      </tr>{% empty %}<tr><td colspan="6" class="text-center py-4 text-muted">Sin cuentas por cobrar.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+new Chart(document.getElementById('chart'),{type:'doughnut',data:{labels:{{ chart_labels|safe }},datasets:[{data:{{ chart_valores|safe }},backgroundColor:{{ chart_colores|safe }}}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+</script>
+{% endblock %}

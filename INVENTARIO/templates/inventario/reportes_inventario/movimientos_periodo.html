@@ -1,0 +1,60 @@
+{% extends "inventario/reportes_inventario/_base.html" %}
+{% block report_title %}Movimientos por período{% endblock %}
+{% block report_heading %}<i class="bi bi-arrow-left-right me-2 text-primary"></i>Movimientos por período{% endblock %}
+
+{% block report_filters %}
+<div class="col-md-3">
+  <label class="form-label small fw-semibold">Desde</label>
+  <input type="date" name="desde" value="{{ desde|date:'Y-m-d' }}" class="form-control form-control-sm">
+</div>
+<div class="col-md-3">
+  <label class="form-label small fw-semibold">Hasta</label>
+  <input type="date" name="hasta" value="{{ hasta|date:'Y-m-d' }}" class="form-control form-control-sm">
+</div>
+<div class="col-md-2">
+  <label class="form-label small fw-semibold">Tipo</label>
+  <select name="tipo" class="form-select form-select-sm">
+    <option value="">Todos</option>
+    <option value="Entrada" {% if tipo_filtro == 'Entrada' %}selected{% endif %}>Entradas</option>
+    <option value="Salida" {% if tipo_filtro == 'Salida' %}selected{% endif %}>Salidas</option>
+    <option value="Ajuste" {% if tipo_filtro == 'Ajuste' %}selected{% endif %}>Ajustes</option>
+  </select>
+</div>
+{% endblock %}
+
+{% block report_body %}
+<div class="row g-3 mb-3">
+  <div class="col-md-3"><div class="stat-card"><div class="stat-val">{{ resumen.total_movs }}</div><div class="stat-lbl">Total movimientos</div></div></div>
+  <div class="col-md-3"><div class="stat-card"><div class="stat-val text-success">{{ resumen.total_entradas }}</div><div class="stat-lbl">Unidades entrada</div></div></div>
+  <div class="col-md-3"><div class="stat-card"><div class="stat-val text-danger">{{ resumen.total_salidas }}</div><div class="stat-lbl">Unidades salida</div></div></div>
+  <div class="col-md-3"><div class="stat-card"><div class="stat-val text-warning">{{ resumen.total_ajustes }}</div><div class="stat-lbl">Unidades ajuste</div></div></div>
+</div>
+
+<div class="card border-0 shadow-sm mb-3"><div class="card-body"><div class="chart-container"><canvas id="chart"></canvas></div></div></div>
+
+<div class="card border-0 shadow-sm"><div class="table-responsive">
+  <table class="table table-hover table-striped align-middle mb-0 small">
+    <thead class="table-light"><tr><th>Fecha</th><th>Producto</th><th>Almacén</th><th>Tipo</th><th class="text-end">Cantidad</th><th>Referencia</th></tr></thead>
+    <tbody>
+      {% for m in movimientos %}<tr>
+        <td>{{ m.fecha|date:"d/m/Y H:i" }}</td>
+        <td class="fw-medium">{{ m.producto.descripcion }}</td>
+        <td class="text-muted">{{ m.almacen.nombre }}</td>
+        <td>
+          {% if m.tipo == 'Entrada' %}<span class="badge text-bg-success">Entrada</span>
+          {% elif m.tipo == 'Salida' %}<span class="badge text-bg-danger">Salida</span>
+          {% else %}<span class="badge text-bg-warning text-dark">{{ m.tipo }}</span>{% endif %}
+        </td>
+        <td class="text-end fw-semibold">{{ m.cantidad }}</td>
+        <td class="text-muted">{{ m.referencia|default:"—" }}</td>
+      </tr>{% empty %}<tr><td colspan="6" class="text-center py-4 text-muted">Sin movimientos en este período.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% endblock %}
+
+{% block report_js %}
+<script>
+new Chart(document.getElementById('chart'),{type:'bar',data:{labels:{{ chart_labels|safe }},datasets:[{label:'Entradas',data:{{ chart_entradas|safe }},backgroundColor:'rgba(22,163,74,.7)',borderRadius:4},{label:'Salidas',data:{{ chart_salidas|safe }},backgroundColor:'rgba(220,38,38,.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:true},x:{grid:{display:false}}}}});
+</script>
+{% endblock %}

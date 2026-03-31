@@ -1,0 +1,32 @@
+{% extends "facturacion/reportes/_base.html" %}
+{% block report_title %}Libro ventas consumidor{% endblock %}
+{% block report_heading %}<i class="bi bi-journal-bookmark me-2 text-success"></i>Libro de ventas consumidor final{% endblock %}
+
+{% block report_body %}
+<div class="row g-3 mb-3">
+  <div class="col-md-3"><div class="stat-card"><div class="stat-val">{{ resumen.total_docs }}</div><div class="stat-lbl">Facturas emitidas</div></div></div>
+  <div class="col-md-3"><div class="stat-card"><div class="stat-val">${{ resumen.total_gravadas|floatformat:2 }}</div><div class="stat-lbl">Ventas gravadas</div></div></div>
+  <div class="col-md-3"><div class="stat-card"><div class="stat-val">${{ resumen.total_exentas|floatformat:2 }}</div><div class="stat-lbl">Ventas exentas</div></div></div>
+  <div class="col-md-3"><div class="stat-card"><div class="stat-val">${{ resumen.total_pagar|floatformat:2 }}</div><div class="stat-lbl">Total</div></div></div>
+</div>
+
+<div class="card border-0 shadow-sm"><div class="table-responsive">
+  <table class="table table-hover table-striped align-middle mb-0 small">
+    <thead class="table-light">
+      <tr><th>Fecha</th><th>N° Control</th><th>Cliente</th><th class="text-end">Gravadas</th><th class="text-end">Exentas</th><th class="text-end">IVA incl.</th><th class="text-end">Total</th><th class="text-center">MH</th></tr>
+    </thead>
+    <tbody>
+      {% for f in facturas %}<tr>
+        <td>{{ f.fecha_emision|date:"d/m/Y" }}</td>
+        <td class="fw-medium">{{ f.numero_control }}</td>
+        <td>{{ f.dtereceptor.nombre|default:"—"|truncatechars:30 }}</td>
+        <td class="text-end">${{ f.total_gravadas|floatformat:2 }}</td>
+        <td class="text-end">${{ f.total_exentas|floatformat:2 }}</td>
+        <td class="text-end">${{ f.total_iva|floatformat:2 }}</td>
+        <td class="text-end fw-semibold">${{ f.total_pagar|floatformat:2 }}</td>
+        <td class="text-center">{% if f.recibido_mh %}<i class="bi bi-check2-circle text-success"></i>{% else %}<i class="bi bi-x-circle text-danger"></i>{% endif %}</td>
+      </tr>{% empty %}<tr><td colspan="8" class="text-center py-4 text-muted">Sin facturas en este período.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% endblock %}

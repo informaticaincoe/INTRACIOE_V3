@@ -188,6 +188,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 "FE.context_processors.emisor_context",
+                "AUTENTICACION.context_processors.notificaciones_context",
             ],
         },
     },

@@ -1,6 +1,7 @@
 from django.urls import path
 
 from RESTAURANTE.views import views_caja_y_cajeros, views_cocineros, views_comandas, views_config_restaurante, views_mesas, views_meseros, views_pedidos, views_cuentas
+from RESTAURANTE import views_reportes as views_reportes_rest
 
 urlpatterns = [
     # categorias para el menu
@@ -98,4 +99,12 @@ urlpatterns = [
     path("cajero/nuevo", views_caja_y_cajeros.crear_cajero, name="crear-cajero"),
     path("cajero/<int:pk>/eliminar/", views_caja_y_cajeros.eliminar_cajero, name="eliminar-cajero"),
     path("cajero/<int:pk>/editar/", views_caja_y_cajeros.editar_cajero, name="editar-cajero"),
+
+    # Reportes
+    path("reportes/", views_reportes_rest.reportes_restaurante_hub, name="reportes_restaurante_hub"),
+    path("reportes/ventas-mesa/", views_reportes_rest.reporte_ventas_mesa, name="reportes_ventas_mesa"),
+    path("reportes/platillos/", views_reportes_rest.reporte_platillos_vendidos, name="reportes_platillos_vendidos"),
+    path("reportes/caja/", views_reportes_rest.reporte_caja, name="reportes_caja"),
+    path("reportes/meseros/", views_reportes_rest.reporte_ventas_mesero, name="reportes_ventas_mesero"),
+    path("reportes/comandas/", views_reportes_rest.reporte_comandas_area, name="reportes_comandas_area"),
 ]

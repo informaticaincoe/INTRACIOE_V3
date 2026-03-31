@@ -146,6 +146,48 @@ COD_TIPO_CONTINGENCIA = "5"
 DTE_APLICA_CONTINGENCIA = ["01", "03", "04", "05", "06", "11", "14"]
 TIPO_TRANSMISION_CONTINGENCIA = 2
 
+# Mapeo de código DTE → clave de funcionalidad en el plan
+_DTE_FUNC_MAP = {
+    '01': 'facturacion.dte_01',
+    '03': 'facturacion.dte_03',
+    '04': 'facturacion.dte_04',
+    '05': 'facturacion.dte_05',
+    '06': 'facturacion.dte_06',
+    '11': 'facturacion.dte_11',
+    '14': 'facturacion.dte_14',
+}
+
+
+def _filtrar_tipos_dte_por_plan(request, excluir_nc_nd=False):
+    """Retorna los Tipo_dte habilitados según las funcionalidades del plan."""
+    qs = Tipo_dte.objects.all()
+    if excluir_nc_nd:
+        qs = qs.exclude(Q(codigo=COD_NOTA_CREDITO) | Q(codigo=COD_NOTA_DEBITO))
+
+    # Obtener funcionalidades activas del plan
+    plan_funcs = set()
+    try:
+        emisor = Emisor_fe.objects.first()
+        if emisor:
+            suscripcion = getattr(emisor, 'suscripcion', None)
+            if suscripcion and suscripcion.esta_vigente():
+                plan_funcs = set(suscripcion.plan.funcionalidades.values_list('clave', flat=True))
+    except Exception:
+        pass
+
+    # Si no hay plan o no hay funcionalidades de DTE, retornar todo
+    if not plan_funcs or not any(k in plan_funcs for k in _DTE_FUNC_MAP.values()):
+        return qs
+
+    # Si el usuario es admin, retornar todo
+    if request.user.is_superuser or getattr(request.user, 'role', '') == 'admin':
+        return qs
+
+    # Filtrar solo los tipos de DTE cuya funcionalidad está en el plan
+    codigos_permitidos = [cod for cod, func in _DTE_FUNC_MAP.items() if func in plan_funcs]
+    return qs.filter(codigo__in=codigos_permitidos)
+
+
 try:
     RUTA_COMPROBANTES_PDF = ConfiguracionServidor.objects.filter(clave="ruta_comprobantes_dte").first()
 except Exception:
@@ -518,15 +560,14 @@ def obtener_numero_control_ajax(request):
     return JsonResponse({'numero_control': nuevo_numero})
 
 def factura_list(request):
-    # Obtener el queryset base
-    queryset = FacturaElectronica.objects.all()
-    
-    # Aplicar filtros según los parámetros GET
+    queryset = FacturaElectronica.objects.select_related('tipo_dte', 'dtereceptor').all()
+
+    # Filtros
     recibido = request.GET.get('recibido_mh')
     codigo = request.GET.get('sello_recepcion')
     has_codigo = request.GET.get('has_sello_recepcion')
     tipo = request.GET.get('tipo_dte')
-    
+
     if recibido in ['True', 'False']:
         queryset = queryset.filter(recibido_mh=(recibido == 'True'))
     if codigo:
@@ -537,18 +578,34 @@ def factura_list(request):
         queryset = queryset.filter(sello_recepcion__isnull=True)
     if tipo:
         queryset = queryset.filter(tipo_dte__id=tipo)
-    
-    # Configurar la paginación: 20 registros por página
+
+    # Ordenamiento
+    SORT_FIELDS = {
+        'fecha': 'fecha_emision',
+        'control': 'numero_control',
+        'tipo': 'tipo_dte__descripcion',
+        'total': 'total_pagar',
+        'iva': 'total_iva',
+    }
+    sort = request.GET.get('sort', 'fecha')
+    order = request.GET.get('order', 'desc')
+    sort_field = SORT_FIELDS.get(sort, 'fecha_emision')
+    if order == 'desc':
+        sort_field = f'-{sort_field}'
+    queryset = queryset.order_by(sort_field)
+
+    # Paginación
     paginator = Paginator(queryset, 20)
     page_number = request.GET.get('page')
     dtelist = paginator.get_page(page_number)
-    
-    # Obtener todos los tipos de factura para el select del filtro
+
     tipos_dte = Tipo_dte.objects.all()
-    
+
     context = {
         'dtelist': dtelist,
         'tipos_dte': tipos_dte,
+        'current_sort': sort,
+        'current_order': order,
     }
     return render(request, 'documentos/dte_list.html', context)
 
@@ -705,6 +762,49 @@ def receptor_json_api(request, pk):
 
 
 @login_required
+def api_facturas_receptor(request, receptor_id):
+    """Retorna facturas vigentes (no anuladas) de un receptor, con sus detalles."""
+    facturas = (
+        FacturaElectronica.objects
+        .filter(dtereceptor_id=receptor_id, recibido_mh=True)
+        .exclude(dte_invalidacion__recibido_mh=True)
+        .select_related('tipo_dte')
+        .prefetch_related('detalles__producto', 'detalles__unidad_medida')
+        .order_by('-fecha_emision')[:50]
+    )
+    result = []
+    for f in facturas:
+        detalles = []
+        for d in f.detalles.all():
+            detalles.append({
+                "id": d.producto_id if d.producto else d.id,
+                "detalle_id": d.id,
+                "producto_codigo": d.producto.codigo if d.producto else "",
+                "producto_nombre": d.producto.descripcion if d.producto else "",
+                "cantidad": d.cantidad,
+                "precio_unitario": float(d.precio_unitario),
+                "ventas_gravadas": float(d.ventas_gravadas or 0),
+                "ventas_exentas": float(d.ventas_exentas or 0),
+                "iva_item": float(d.iva_item or 0),
+                "unidad_medida": d.unidad_medida.descripcion if d.unidad_medida else "",
+            })
+        result.append({
+            "id": f.id,
+            "numero_control": f.numero_control,
+            "codigo_generacion": str(f.codigo_generacion),
+            "tipo_dte": f.tipo_dte.codigo,
+            "tipo_dte_desc": f.tipo_dte.descripcion,
+            "fecha_emision": f.fecha_emision.isoformat() if f.fecha_emision else "",
+            "total_pagar": float(f.total_pagar or 0),
+            "total_iva": float(f.total_iva or 0),
+            "total_gravadas": float(f.total_gravadas or 0),
+            "sello_recepcion": f.sello_recepcion or "",
+            "detalles": detalles,
+        })
+    return JsonResponse(result, safe=False)
+
+
+@login_required
 @transaction.atomic
 def generar_factura_view(request):
     prefill = None
@@ -756,7 +856,7 @@ def generar_factura_view(request):
             "productos": productos,
             "tipo_dte_obj": tipo_dte_obj,
             "tipooperaciones": CondicionOperacion.objects.all(),
-            "tipoDocumentos": Tipo_dte.objects.exclude(Q(codigo=COD_NOTA_CREDITO) | Q(codigo=COD_NOTA_DEBITO)),
+            "tipoDocumentos": _filtrar_tipos_dte_por_plan(request),
             "tipoItems": TipoItem.objects.all(),
             "descuentos": Descuento.objects.all(),
             "formasPago": FormasPago.objects.all(),
@@ -839,9 +939,16 @@ def generar_factura_view(request):
                 # Pago
                 'metodo_pago': _g('metodo_pago','EFECTIVO'),
                 'dias_credito': _g('dias_credito') or None,
+                'plazo_cantidad': _g('plazo_cantidad') or None,
+                'plazo_tipo': _g('plazo_tipo') or '01',
                 'fecha_vencimiento': _g('fecha_vencimiento') or None,
                 'notas_pago': _g('notas_pago',''),
                 'formas_pago_id': _gl('formas_pago_id[]'),
+                # Documentos relacionados (NC/ND)
+                'docrel_tipo_dte': _gl('docrel_tipo_dte[]'),
+                'docrel_tipo_gen': _gl('docrel_tipo_gen[]'),
+                'docrel_numero': _gl('docrel_numero[]'),
+                'docrel_fecha': _gl('docrel_fecha[]'),
             }
 
         # Defaults exportación (por compatibilidad)
@@ -879,6 +986,16 @@ def generar_factura_view(request):
                 receptor = Receptor_fe.objects.get(id=receptor_id)
             except Receptor_fe.DoesNotExist:
                 return JsonResponse({"error": "Receptor no encontrado."}, status=404)
+
+            # Validación: FSE no puede ser para contribuyentes (con NRC)
+            if tipo_dte == '14':
+                nrc_receptor = getattr(receptor, 'nrc', None)
+                if nrc_receptor and str(nrc_receptor).strip() not in ('', 'None', '0'):
+                    return JsonResponse({
+                        "error": f"El cliente \"{receptor.nombre}\" tiene NRC ({nrc_receptor}) y es contribuyente de IVA. "
+                                 f"La Factura de Sujeto Excluido (DTE 14) solo aplica para personas no inscritas en IVA. "
+                                 f"Use Factura (DTE 01) o Crédito Fiscal (DTE 03) en su lugar."
+                    }, status=400)
 
             observaciones = data.get('observaciones', '')
             logger.debug("DTE: observaciones.len=%s", len(observaciones))
@@ -1204,8 +1321,25 @@ def generar_factura_view(request):
             nombre_responsable = data.get("nombre_responsable")
             documento_responsable = data.get("documento_responsable")
             formas_pago = None
-            documentos_relacionados = []
             contingencia = False
+
+            # Construir documentos relacionados desde los campos del formulario
+            documentos_relacionados = []
+            dr_tipos_dte = data.get('docrel_tipo_dte') or []
+            dr_tipos_gen = data.get('docrel_tipo_gen') or []
+            dr_numeros = data.get('docrel_numero') or []
+            dr_fechas = data.get('docrel_fecha') or []
+            for i in range(len(dr_numeros)):
+                num = (dr_numeros[i] or '').strip()
+                if not num:
+                    continue
+                documentos_relacionados.append({
+                    "tipoDocumento": (dr_tipos_dte[i] if i < len(dr_tipos_dte) else '03').strip(),
+                    "tipoGeneracion": int(dr_tipos_gen[i] if i < len(dr_tipos_gen) else 2),
+                    "numeroDocumento": num.upper(),
+                    "fechaEmision": (dr_fechas[i] if i < len(dr_fechas) else '').strip() or None,
+                })
+            logger.debug("DTE: documentos_relacionados=%s", documentos_relacionados)
 
             # ---------- Generar JSON ----------
             factura_json = generar_json(
@@ -1229,51 +1363,84 @@ def generar_factura_view(request):
 
             # ==== NORMALIZAR RESUMEN.pagos (CAT-018) ===
             res = factura_json.setdefault('resumen', {})
-            _total_pagar = Decimal(str(res.get('totalPagar', factura.total_pagar or 0))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            tipo_dte_code = str(tipo_dte_obj.codigo).strip()
 
-            metodo_ui = (data.get('metodo_pago') or 'EFECTIVO').strip().upper()
-            fp = FormasPago.objects.filter(Q(descripcion__iexact=metodo_ui) | Q(codigo__iexact=metodo_ui)).first()
-            if fp and str(fp.codigo).strip():
-                try:
-                    codigo_pago = f"{int(fp.codigo):02d}"
-                except Exception:
-                    codigo_pago = str(fp.codigo).zfill(2)
+            # NC (05) / ND (06) / NR (04): no llevan pagos ni varios campos del resumen
+            if tipo_dte_code in ('04', '05', '06'):
+                campos_quitar = ['pagos', 'totalPagar', 'saldoFavor', 'totalNoGravado', 'totalIva',
+                                 'numPagoElectronico', 'ivaRete1', 'reteRenta', 'ivaPerci1']
+                if tipo_dte_code in ('05', '06'):
+                    campos_quitar.append('porcentajeDescuento')
+                if tipo_dte_code == '04':
+                    # NR no lleva condicionOperacion
+                    campos_quitar.append('condicionOperacion')
+                for campo_rm in campos_quitar:
+                    res.pop(campo_rm, None)
+                # ND sí lleva numPagoElectronico
+                if tipo_dte_code == '06':
+                    npe = (data.get('num_pago_electronico') or '').strip()
+                    res["numPagoElectronico"] = npe if npe else None
+                logger.debug("DTE: %s — campos de pago removidos del resumen", tipo_dte_code)
             else:
-                ALIAS = {'EFECTIVO': '01', 'TARJETA': '03', 'TRANSFERENCIA': '04', 'CREDITO': '08'}
-                codigo_pago = ALIAS.get(metodo_ui, '01')
+                _total_pagar = Decimal(str(res.get('totalPagar', factura.total_pagar or 0))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
-            pago = {
-                "codigo": codigo_pago,
-                "montoPago": float(_total_pagar),
-            }
-            ref = (data.get('num_pago_ref') or data.get('notas_pago') or '').strip()
-            pago["referencia"] = ref if ref else None
-
-            cond_op = str(data.get('condicion_operacion') or getattr(factura.condicion_operacion, 'codigo', '1')).strip()
-            if cond_op == '2' or codigo_pago == '08':
-                raw_dias = data.get('dias_credito')
-                try:
-                    dias = int(raw_dias)
-                except (TypeError, ValueError):
-                    dias = 0
-                if dias >= 365 and dias % 365 == 0:
-                    periodo = '03'; cantidad = min(dias // 365, 99)
-                elif dias >= 30 and dias % 30 == 0:
-                    periodo = '02'; cantidad = min(dias // 30, 99)
+                metodo_ui = (data.get('metodo_pago') or 'EFECTIVO').strip().upper()
+                fp = FormasPago.objects.filter(Q(descripcion__iexact=metodo_ui) | Q(codigo__iexact=metodo_ui)).first()
+                if fp and str(fp.codigo).strip():
+                    try:
+                        codigo_pago = f"{int(fp.codigo):02d}"
+                    except Exception:
+                        codigo_pago = str(fp.codigo).zfill(2)
                 else:
-                    periodo = '01'; cantidad = min(max(dias, 0), 99)
-                pago["periodo"] = periodo
-                pago["plazo"] = str(cantidad).zfill(2)
-            else:
-                pago["periodo"] = None
-                pago["plazo"] = None
+                    ALIAS = {'EFECTIVO': '01', 'TARJETA': '03', 'TRANSFERENCIA': '04', 'CREDITO': '08'}
+                    codigo_pago = ALIAS.get(metodo_ui, '01')
 
-            npe = (data.get('num_pago_electronico') or '').strip()
-            res["numPagoElectronico"] = (npe if npe else None)
-            res["pagos"] = [pago]
+                pago = {
+                    "codigo": codigo_pago,
+                    "montoPago": float(_total_pagar),
+                }
+                ref = (data.get('num_pago_ref') or data.get('notas_pago') or '').strip()
+                pago["referencia"] = ref if ref else None
 
-            logger.debug("DTE: RESUMEN.pagos -> %s", res["pagos"])
-            logger.debug("DTE: RESUMEN.numPagoElectronico -> %s", res["numPagoElectronico"])
+                cond_op = str(data.get('condicion_operacion') or getattr(factura.condicion_operacion, 'codigo', '1')).strip()
+                if cond_op == '2' or codigo_pago == '08':
+                    # plazo = código tipo plazo (string "01"=días,"02"=meses,"03"=años)
+                    # periodo = cantidad numérica (number)
+                    plazo_tipo_raw = (data.get('plazo_tipo') or '').strip()
+                    plazo_cant_raw = data.get('plazo_cantidad')
+                    if plazo_tipo_raw and plazo_cant_raw:
+                        plazo_code = plazo_tipo_raw  # "01","02","03"
+                        try:
+                            periodo_num = min(max(int(plazo_cant_raw), 0), 99)
+                        except (TypeError, ValueError):
+                            periodo_num = 0
+                    else:
+                        raw_dias = data.get('dias_credito')
+                        try:
+                            dias = int(raw_dias)
+                        except (TypeError, ValueError):
+                            dias = 0
+                        if dias >= 365 and dias % 365 == 0:
+                            plazo_code = '03'; periodo_num = min(dias // 365, 99)
+                        elif dias >= 30 and dias % 30 == 0:
+                            plazo_code = '02'; periodo_num = min(dias // 30, 99)
+                        else:
+                            plazo_code = '01'; periodo_num = min(max(dias, 0), 99)
+                    pago["plazo"] = plazo_code          # string "01"-"03"
+                    pago["periodo"] = periodo_num        # number
+                else:
+                    pago["plazo"] = None
+                    pago["periodo"] = None
+
+                npe = (data.get('num_pago_electronico') or '').strip()
+                # FSE no lleva numPagoElectronico
+                if tipo_dte_code != '14':
+                    res["numPagoElectronico"] = (npe if npe else None)
+                else:
+                    res.pop("numPagoElectronico", None)
+                res["pagos"] = [pago]
+
+                logger.debug("DTE: RESUMEN.pagos -> %s", res["pagos"])
 
             # Persistir JSON
             factura.json_original = factura_json
@@ -1356,6 +1523,9 @@ def generar_factura_view(request):
                 resp_envio = enviar_factura_hacienda_view(request, factura.id, uso_interno=True)
                 logger.info("DTE: resp_envio status=%s content=%s", getattr(resp_envio, 'status_code', '?'), getattr(resp_envio, 'content', b'')[:500])
                 if hasattr(resp_envio, "status_code") and int(resp_envio.status_code) >= 400:
+                    # Revertir correlativo si MH rechazó
+                    NumeroControl.revertir_numero_control(str(tipo_dte_obj.codigo))
+                    logger.info("DTE: Correlativo revertido por rechazo de MH")
                     return JsonResponse({
                         "mostrar_modal": True,
                         "titulo": "Error al enviar el DTE a MH",
@@ -1664,7 +1834,11 @@ def generar_json(
 
     is_fe  = str(tipo_dte_obj.codigo) == "01"  # Factura Electrónica
     is_ccf = str(tipo_dte_obj.codigo) == "03"  # Crédito Fiscal (CCF)
+    is_nc  = str(tipo_dte_obj.codigo) == "05"  # Nota de Crédito
+    is_nd  = str(tipo_dte_obj.codigo) == "06"  # Nota de Débito
     is_fex = str(tipo_dte_obj.codigo) == "11"  # Factura de Exportación
+    is_nr  = str(tipo_dte_obj.codigo) == "04"  # Nota de Remisión
+    is_fse = str(tipo_dte_obj.codigo) == "14"  # Factura Sujeto Excluido
 
     try:
         # -------- Defaults / saneamientos --------
@@ -1741,6 +1915,16 @@ def generar_json(
             "codPuntoVenta": "0001",
         }
 
+        # NC/ND: quitar campos del emisor que no van según schema
+        if is_nc or is_nd:
+            for k in ('codEstableMH', 'codEstable', 'codPuntoVentaMH', 'codPuntoVenta'):
+                json_emisor.pop(k, None)
+
+        # FSE: quitar tipoEstablecimiento y nombreComercial del emisor
+        if is_fse:
+            json_emisor.pop('tipoEstablecimiento', None)
+            json_emisor.pop('nombreComercial', None)
+
         # FEX: campos adicionales del emisor para exportación
         if is_fex:
             tipo_item_emisor = getattr(factura, "tipoItemEmisor", None)
@@ -1800,8 +1984,23 @@ def generar_json(
             # nrc puede ser Null
             json_receptor["nrc"] = str(receptor.nrc) if getattr(receptor, "nrc", None) not in (None, "None", "") else None
 
+            # NC/ND: receptor con nit y nombreComercial (como CCF)
+            if is_nc or is_nd:
+                json_receptor["nit"] = str(receptor.num_documento)
+                json_receptor["nombreComercial"] = str(getattr(receptor, "nombreComercial", "") or "") or None
+            # NR: receptor con tipoDocumento, numDocumento, nombreComercial, bienTitulo
+            elif is_nr:
+                tipo_doc_rec = str(receptor.tipo_documento.codigo) if getattr(receptor, "tipo_documento", None) else "36"
+                num_doc_rec = str(receptor.num_documento)
+                # NIT (36): quitar guiones. DUI (13): mantener guión
+                if tipo_doc_rec == '36':
+                    num_doc_rec = num_doc_rec.replace('-', '')
+                json_receptor["tipoDocumento"] = tipo_doc_rec
+                json_receptor["numDocumento"] = num_doc_rec
+                json_receptor["nombreComercial"] = str(getattr(receptor, "nombreComercial", "") or "") or None
+                json_receptor["bienTitulo"] = "01"  # 01=Remitido
             # FE: tipoDocumento/numDocumento
-            if is_fe:
+            elif is_fe:
                 if getattr(receptor, "tipo_documento", None):
                     json_receptor["tipoDocumento"] = str(receptor.tipo_documento.codigo)
                 else:
@@ -1858,6 +2057,67 @@ def generar_json(
                     "ventaGravada": float(_q6(venta_gr)),
                     "tributos": tributos_linea,
                     "noGravado": float(_q6(no_grav)),
+                }
+            elif is_fse:
+                # FSE: cuerpoDocumento con 'compra' en vez de ventas
+                item = {
+                    "numItem": int(raw.get("numItem", len(items) + 1)),
+                    "tipoItem": int(raw.get("tipoItem", 1)),
+                    "cantidad": float(_q6(cantidad)),
+                    "codigo": raw.get("codigo", None),
+                    "uniMedida": int(raw.get("uniMedida", 59)),
+                    "descripcion": raw.get("descripcion", ""),
+                    "precioUni": float(_q6(precio_uni)),
+                    "montoDescu": float(_q6(desc_item)),
+                    "compra": float(_q6(venta_gr)),  # compra = precio*cant - descuento
+                }
+            elif is_nr:
+                # NR: sin psv, sin noGravado, sin ivaItem, con numeroDocumento y codTributo
+                numero_doc_linea = raw.get("numeroDocumento", None)
+                cod_tributo_linea = raw.get("codTributo", None)
+                tipo_item_raw = int(raw.get("tipoItem", 1))
+                tipo_item_ok = tipo_item_raw if tipo_item_raw in (1, 2, 3, 4) else 1
+                item = {
+                    "numItem": int(raw.get("numItem", len(items) + 1)),
+                    "tipoItem": tipo_item_ok,
+                    "numeroDocumento": numero_doc_linea,
+                    "codigo": raw.get("codigo", None),
+                    "codTributo": cod_tributo_linea,
+                    "descripcion": raw.get("descripcion", ""),
+                    "cantidad": float(_q6(cantidad)),
+                    "uniMedida": int(raw.get("uniMedida", 59)),
+                    "precioUni": float(_q6(precio_uni)),
+                    "montoDescu": float(_q6(desc_item)),
+                    "ventaNoSuj": float(_q6(venta_ns)),
+                    "ventaExenta": float(_q6(venta_ex)),
+                    "ventaGravada": float(_q6(venta_gr)),
+                    "tributos": tributos_linea,
+                }
+            elif is_nc or is_nd:
+                # NC/ND: sin noGravado, sin psv, sin ivaItem
+                # numeroDocumento = código generación del doc relacionado o null
+                numero_doc_linea = raw.get("numeroDocumento", None)
+                # Si hay documentos relacionados, usar el primero
+                if not numero_doc_linea and documentos_relacionados:
+                    numero_doc_linea = documentos_relacionados[0].get("numeroDocumento")
+                cod_tributo_linea = raw.get("codTributo", None)
+                tipo_item_raw = int(raw.get("tipoItem", 1))
+                tipo_item_ok = tipo_item_raw if tipo_item_raw in (1, 2, 3, 4) else 1
+                item = {
+                    "numItem": int(raw.get("numItem", len(items) + 1)),
+                    "tipoItem": tipo_item_ok,
+                    "numeroDocumento": numero_doc_linea,
+                    "codigo": raw.get("codigo", None),
+                    "codTributo": cod_tributo_linea,
+                    "descripcion": raw.get("descripcion", ""),
+                    "cantidad": float(_q6(cantidad)),
+                    "uniMedida": int(raw.get("uniMedida", 59)),
+                    "precioUni": float(_q6(precio_uni)),
+                    "montoDescu": float(_q6(desc_item)),
+                    "ventaNoSuj": float(_q6(venta_ns)),
+                    "ventaExenta": float(_q6(venta_ex)),
+                    "ventaGravada": float(_q6(venta_gr)),
+                    "tributos": tributos_linea,
                 }
             else:
                 numero_doc_linea = None
@@ -1917,11 +2177,12 @@ def generar_json(
         ret_renta  = _to_dec(getattr(factura, "retencion_renta", 0))
         iva_percibido = _to_dec(getattr(factura, "iva_percibido", 0))
 
-        # IVA consolidado solo para CCF
-        iva_consolidado = _q2(total_gravada_calc * IVA) if is_ccf else Decimal("0.00")
+        # IVA consolidado para CCF, NC, ND y NR
+        _necesita_iva_consolidado = is_ccf or is_nc or is_nd or is_nr
+        iva_consolidado = _q2(total_gravada_calc * IVA) if _necesita_iva_consolidado else Decimal("0.00")
 
-        # En CCF el MTO = subTotal + IVA; en FE (sin otros tributos), MTO = subTotal
-        monto_total_operacion = sub_total + (iva_consolidado if is_ccf else Decimal("0.00"))
+        # En CCF/NC/ND/NR el MTO = subTotal + IVA; en FE, MTO = subTotal
+        monto_total_operacion = sub_total + (iva_consolidado if _necesita_iva_consolidado else Decimal("0.00"))
 
         total_a_pagar = monto_total_operacion - iva_reten - ret_renta + iva_percibido + total_no_gravado
         if total_a_pagar < Decimal("0.00"):
@@ -1996,30 +2257,35 @@ def generar_json(
             if is_fe:
                 json_resumen["totalIva"] = float(_q2(iva_total_por_items))
 
-            # Solo CCF: incluir IVA consolidado como tributo "20"
-            if is_ccf and iva_consolidado > 0:
+            # CCF/NC/ND/NR: incluir IVA consolidado como tributo "20"
+            if _necesita_iva_consolidado and iva_consolidado > 0:
                 json_resumen["tributos"] = [{
                     "codigo": "20",
                     "descripcion": "Impuesto al Valor Agregado 13%",
                     "valor": float(_q2(iva_consolidado)),
                 }]
 
-        # -------- Extensión (solo para FE/CCF, NO para FEX) --------
+        # -------- Extensión (solo para FE/CCF/NC/ND, NO para FEX ni FSE) --------
         json_extension = None
-        if not is_fex:
+        if not is_fex and not is_fse:
             json_extension = {
                 "nombEntrega": None,
                 "docuEntrega": None,
                 "nombRecibe": None,
                 "docuRecibe": None,
                 "observaciones": observaciones if (observaciones is not None and len(observaciones) > 0) else "Generado por Sistema Django",
-                "placaVehiculo": None,
             }
+            # NC/ND no llevan placaVehiculo según schema
+            if not is_nc and not is_nd and not is_nr:
+                json_extension["placaVehiculo"] = None
 
-        # -------- Ajustes por CCF --------
+        # -------- Ajustes por CCF / NC / ND --------
         if is_ccf:
             json_receptor["nit"] = str(receptor.num_documento)
             json_receptor["nombreComercial"] = str(getattr(receptor, "nombreComercial", "") or "")
+            json_resumen["ivaPerci1"] = float(_q2(_to_dec(getattr(factura, "iva_percibido", 0))))
+
+        if is_nc or is_nd:
             json_resumen["ivaPerci1"] = float(_q2(_to_dec(getattr(factura, "iva_percibido", 0))))
 
             if base_imponible_checkbox is True:
@@ -2029,9 +2295,54 @@ def generar_json(
                 json_extension["nombEntrega"] = str(nombre_responsable or "")
                 json_extension["docuEntrega"] = str(doc_responsable or "")
 
+        # -------- FSE: resumen y receptor especiales --------
+        if is_fse:
+            # Resumen simplificado para FSE
+            total_compra = sub_total_ventas
+            descu_fse = Decimal("0.00")
+            total_descu_fse = Decimal("0.00")
+            sub_total_fse = _q2(total_compra - total_descu_fse)
+            json_resumen = {
+                "totalCompra": float(_q2(total_compra)),
+                "descu": float(_q2(descu_fse)),
+                "totalDescu": float(_q2(total_descu_fse)),
+                "subTotal": float(_q2(sub_total_fse)),
+                "ivaRete1": float(_q2(iva_reten)),
+                "reteRenta": float(_q2(ret_renta)),
+                "totalPagar": float(_q2(sub_total_fse - iva_reten - ret_renta)),
+                "totalLetras": factura.total_letras or "",
+                "condicionOperacion": condicion_operacion_codigo,
+                "pagos": None,
+                "observaciones": observaciones or None,
+            }
+            # sujetoExcluido en vez de receptor
+            num_doc_fse = str(receptor.num_documento).replace('-', '')
+            json_sujeto_excluido = {
+                "tipoDocumento": str(receptor.tipo_documento.codigo) if getattr(receptor, "tipo_documento", None) else "36",
+                "numDocumento": num_doc_fse,
+                "nombre": str(receptor.nombre),
+                "codActividad": str(rec_act.codigo) if rec_act else None,
+                "descActividad": str(rec_act.descripcion) if rec_act else None,
+                "direccion": {
+                    "departamento": str(rec_depto.codigo) if rec_depto else "06",
+                    "municipio": str(rec_muni.codigo) if rec_muni else "23",
+                    "complemento": receptor.direccion or "San Salvador",
+                },
+                "telefono": receptor.telefono or "",
+                "correo": receptor.correo or "",
+            }
+
         # -------- Construcción final --------
-        if is_fex:
-            # FEX: estructura diferente (sin documentoRelacionado ni extension)
+        if is_fse:
+            json_completo = {
+                "identificacion":   json_identificacion,
+                "emisor":           json_emisor,
+                "sujetoExcluido":   json_sujeto_excluido,
+                "cuerpoDocumento":  items,
+                "resumen":          json_resumen,
+                "apendice":         None,
+            }
+        elif is_fex:
             json_completo = {
                 "identificacion":  json_identificacion,
                 "emisor":          json_emisor,
@@ -2041,6 +2352,32 @@ def generar_json(
                 "cuerpoDocumento": items,
                 "resumen":         json_resumen,
                 "apendice":        None,
+            }
+        elif is_nc or is_nd:
+            # NC/ND: sin otrosDocumentos
+            json_completo = {
+                "identificacion":       json_identificacion,
+                "documentoRelacionado": json_documento_relacionado,
+                "emisor":               json_emisor,
+                "receptor":             json_receptor,
+                "ventaTercero":         None,
+                "cuerpoDocumento":      items,
+                "resumen":              json_resumen,
+                "extension":            json_extension,
+                "apendice":             None,
+            }
+        elif is_nr:
+            # NR: sin otrosDocumentos
+            json_completo = {
+                "identificacion":       json_identificacion,
+                "documentoRelacionado": json_documento_relacionado,
+                "emisor":               json_emisor,
+                "receptor":             json_receptor,
+                "ventaTercero":         None,
+                "cuerpoDocumento":      items,
+                "resumen":              json_resumen,
+                "extension":            json_extension,
+                "apendice":             None,
             }
         else:
             json_completo = {
@@ -4419,7 +4756,7 @@ def generar_documento_ajuste_view(request):
         #productos = Producto.objects.all()
         productos = obtener_listado_productos_view(request)
         tipooperaciones = CondicionOperacion.objects.all()
-        tipoDocumentos = Tipo_dte.objects.filter( Q(codigo=COD_NOTA_CREDITO) | Q(codigo=COD_NOTA_DEBITO))
+        tipoDocumentos = _filtrar_tipos_dte_por_plan(request).filter(Q(codigo=COD_NOTA_CREDITO) | Q(codigo=COD_NOTA_DEBITO))
         tipoItems = TipoItem.objects.all()
         descuentos = Descuento.objects.all()
         formasPago = FormasPago.objects.all()

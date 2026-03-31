@@ -1,0 +1,32 @@
+{% extends "facturacion/reportes/_base.html" %}
+{% block report_title %}Retenciones{% endblock %}
+{% block report_heading %}<i class="bi bi-percent me-2 text-warning"></i>Reporte de retenciones{% endblock %}
+
+{% block report_body %}
+<div class="row g-3 mb-3">
+  <div class="col-md-3"><div class="stat-card"><div class="stat-val">{{ resumen.total_docs }}</div><div class="stat-lbl">Documentos con retención</div></div></div>
+  <div class="col-md-3"><div class="stat-card"><div class="stat-val">${{ resumen.total_iva_retenido|floatformat:2 }}</div><div class="stat-lbl">IVA retenido</div></div></div>
+  <div class="col-md-3"><div class="stat-card"><div class="stat-val">${{ resumen.total_renta_retenida|floatformat:2 }}</div><div class="stat-lbl">Renta retenida</div></div></div>
+  <div class="col-md-3"><div class="stat-card"><div class="stat-val">${{ resumen.total_facturado|floatformat:2 }}</div><div class="stat-lbl">Total facturado</div></div></div>
+</div>
+
+<div class="card border-0 shadow-sm"><div class="table-responsive">
+  <table class="table table-hover table-striped align-middle mb-0 small">
+    <thead class="table-light">
+      <tr><th>Fecha</th><th>N° Control</th><th>Tipo</th><th>Cliente</th><th class="text-end">Subtotal</th><th class="text-end">IVA ret.</th><th class="text-end">Renta ret.</th><th class="text-end">Total</th></tr>
+    </thead>
+    <tbody>
+      {% for f in facturas %}<tr>
+        <td>{{ f.fecha_emision|date:"d/m/Y" }}</td>
+        <td class="fw-medium">{{ f.numero_control }}</td>
+        <td><span class="badge text-bg-light text-dark border">{{ f.tipo_dte.descripcion }}</span></td>
+        <td>{{ f.dtereceptor.nombre|default:"—"|truncatechars:25 }}</td>
+        <td class="text-end">${{ f.total_gravadas|floatformat:2 }}</td>
+        <td class="text-end {% if f.iva_retenido > 0 %}text-danger fw-semibold{% else %}text-muted{% endif %}">${{ f.iva_retenido|floatformat:2 }}</td>
+        <td class="text-end {% if f.retencion_renta > 0 %}text-danger fw-semibold{% else %}text-muted{% endif %}">${{ f.retencion_renta|floatformat:2 }}</td>
+        <td class="text-end fw-semibold">${{ f.total_pagar|floatformat:2 }}</td>
+      </tr>{% empty %}<tr><td colspan="8" class="text-center py-4 text-muted">Sin retenciones en este período.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% endblock %}

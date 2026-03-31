@@ -25,49 +25,19 @@
 </button>
 {% endif %}
 
-{% if plan_funcs|has_func:'contabilidad.libro_mayor' %}
-<button id="{{ uid_prefix }}-btn-libro" type="button" class="sb-sub-item">
-  <i class="bi bi-book"></i> Libro Mayor
+<button id="{{ uid_prefix }}-btn-reportes" type="button" class="sb-sub-item">
+  <i class="bi bi-clipboard-data"></i> Reportes
 </button>
-{% endif %}
-
-{% if plan_funcs|has_func:'contabilidad.balance_comp' %}
-<button id="{{ uid_prefix }}-btn-balcomp" type="button" class="sb-sub-item">
-  <i class="bi bi-clipboard-data"></i> Balance de Comprobación
-</button>
-{% endif %}
-
-{% if plan_funcs|has_func:'contabilidad.balance_gen' %}
-<button id="{{ uid_prefix }}-btn-balgen" type="button" class="sb-sub-item">
-  <i class="bi bi-bar-chart-line"></i> Balance General
-</button>
-{% endif %}
-
-{% if plan_funcs|has_func:'contabilidad.estado_res' %}
-<button id="{{ uid_prefix }}-btn-estado" type="button" class="sb-sub-item">
-  <i class="bi bi-graph-up"></i> Estado de Resultados
-</button>
-{% endif %}
-
-{% if plan_funcs|has_func:'contabilidad.anexos' %}
-<button id="{{ uid_prefix }}-btn-anexos" type="button" class="sb-sub-item">
-  <i class="bi bi-file-earmark-spreadsheet"></i> Reportes de Anexos
-</button>
-{% endif %}
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   const b = "{{ uid_prefix }}";
   const go = (id, url) => document.getElementById(b + id)?.addEventListener('click', () => { window.location.href = url; });
-  go('-btn-cuentas',  "{% url 'cont-cuentas-lista' %}");
-  go('-btn-asientos', "{% url 'cont-asientos-lista' %}");
-  go('-btn-cxc',      "{% url 'cont-cpc-lista' %}");
-  go('-btn-cxp',      "{% url 'cont-cpp-lista' %}");
-  go('-btn-libro',    "{% url 'cont-libro-mayor' %}");
-  go('-btn-balcomp',  "{% url 'cont-balance-comprobacion' %}");
-  go('-btn-balgen',   "{% url 'cont-balance-general' %}");
-  go('-btn-estado',   "{% url 'cont-estado-resultados' %}");
-  go('-btn-anexos',   "{% url 'cont-reportes-anexos' %}");
+  go('-btn-cuentas',   "{% url 'cont-cuentas-lista' %}");
+  go('-btn-asientos',  "{% url 'cont-asientos-lista' %}");
+  go('-btn-cxc',       "{% url 'cont-cpc-lista' %}");
+  go('-btn-cxp',       "{% url 'cont-cpp-lista' %}");
+  go('-btn-reportes',  "{% url 'reportes_contabilidad_hub' %}");
 });
 </script>
 

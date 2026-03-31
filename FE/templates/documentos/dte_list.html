@@ -1,6 +1,14 @@
 {% extends "base.html" %}
 {% load querystring_extras %}
 {% block title %}Documentos Emitidos · FE{% endblock %}
+
+{% block extra_css %}
+<style>
+  .sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+  .sortable:hover { color: var(--item-active-bg, #0d47a1); }
+</style>
+{% endblock %}
+
 {% block content %}
 
 <nav aria-label="breadcrumb" class="mb-3">
@@ -91,12 +99,22 @@
           <tr>
             <th><input type="checkbox" id="seleccionarTodo"></th>
             <th>Estado</th>
-            <th>N° Control</th>
-            <th>Tipo</th>
+            <th class="sortable" data-sort="control">N° Control
+              {% if current_sort == 'control' %}<i class="bi bi-caret-{% if current_order == 'asc' %}up{% else %}down{% endif %}-fill small"></i>{% endif %}
+            </th>
+            <th class="sortable" data-sort="tipo">Tipo
+              {% if current_sort == 'tipo' %}<i class="bi bi-caret-{% if current_order == 'asc' %}up{% else %}down{% endif %}-fill small"></i>{% endif %}
+            </th>
             <th>Sello</th>
-            <th>Fecha</th>
-            <th class="text-end">Total</th>
-            <th class="text-end">IVA</th>
+            <th class="sortable" data-sort="fecha">Fecha
+              {% if current_sort == 'fecha' %}<i class="bi bi-caret-{% if current_order == 'asc' %}up{% else %}down{% endif %}-fill small"></i>{% endif %}
+            </th>
+            <th class="text-end sortable" data-sort="total">Total
+              {% if current_sort == 'total' %}<i class="bi bi-caret-{% if current_order == 'asc' %}up{% else %}down{% endif %}-fill small"></i>{% endif %}
+            </th>
+            <th class="text-end sortable" data-sort="iva">IVA
+              {% if current_sort == 'iva' %}<i class="bi bi-caret-{% if current_order == 'asc' %}up{% else %}down{% endif %}-fill small"></i>{% endif %}
+            </th>
             <th class="text-center">MH</th>
             <th style="width:100px;" class="text-center">Acciones</th>
           </tr>
@@ -297,6 +315,24 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Sorting
+  document.querySelectorAll('.sortable').forEach(function(th) {
+    th.addEventListener('click', function() {
+      var sort = this.dataset.sort;
+      var currentSort = '{{ current_sort }}';
+      var currentOrder = '{{ current_order }}';
+      var newOrder = (sort === currentSort && currentOrder === 'desc') ? 'asc' : 'desc';
+      var url = new URL(window.location.href);
+      url.searchParams.set('sort', sort);
+      url.searchParams.set('order', newOrder);
+      url.searchParams.delete('page');
+      window.location.href = url.toString();
+    });
+  });
+});
+</script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   const steps = [

@@ -1,6 +1,8 @@
 from django.urls import path
 from . import views
 from . import views_ventas
+from . import views_reportes_ventas
+from . import views_reportes_facturacion
 from .views import (
     ActividadEconomicaDetailView,
     ActividadEconomicaCreateView, ActividadEconomicaUpdateView, ActividadEconomicaDeleteView,
@@ -140,4 +142,21 @@ urlpatterns += [
 
     # API receptor (para auto-check retención/percepción en facturación)
     path('api/receptor/<int:pk>/', views.receptor_json_api, name='receptor_detail_api'),
+    path('api/receptor/<int:receptor_id>/facturas/', views.api_facturas_receptor, name='api_facturas_receptor'),
+
+    # Reportes de ventas
+    path('ventas/reportes/', views_reportes_ventas.reportes_ventas_hub, name='reportes_ventas_hub'),
+    path('ventas/reportes/periodo/', views_reportes_ventas.reporte_ventas_periodo, name='reportes_ventas_periodo'),
+    path('ventas/reportes/clientes/', views_reportes_ventas.reporte_top_clientes, name='reportes_top_clientes'),
+    path('ventas/reportes/productos/', views_reportes_ventas.reporte_productos_vendidos, name='reportes_productos_vendidos'),
+    path('ventas/reportes/tipo-documento/', views_reportes_ventas.reporte_ventas_vendedor, name='reportes_ventas_tipo_doc'),
+    path('ventas/reportes/devoluciones/', views_reportes_ventas.reporte_devoluciones, name='reportes_devoluciones'),
+
+    # Reportes de facturación
+    path('facturacion/reportes/', views_reportes_facturacion.reportes_facturacion_hub, name='reportes_facturacion_hub'),
+    path('facturacion/reportes/libro-ccf/', views_reportes_facturacion.reporte_libro_contribuyente, name='reportes_libro_contribuyente'),
+    path('facturacion/reportes/libro-consumidor/', views_reportes_facturacion.reporte_libro_consumidor, name='reportes_libro_consumidor'),
+    path('facturacion/reportes/resumen-dte/', views_reportes_facturacion.reporte_resumen_dte, name='reportes_resumen_dte'),
+    path('facturacion/reportes/anulados/', views_reportes_facturacion.reporte_documentos_anulados, name='reportes_docs_anulados'),
+    path('facturacion/reportes/retenciones/', views_reportes_facturacion.reporte_retenciones, name='reportes_retenciones'),
 ]

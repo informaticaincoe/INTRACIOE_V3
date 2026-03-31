@@ -1,0 +1,83 @@
+{
+    "identificacion": {
+        "version": 1,
+        "ambiente": "01",
+        "tipoDte": "14",
+        "numeroControl": "DTE-14-M001P002-000000000000004",
+        "codigoGeneracion": "406872AD-5D2A-4F54-A085-C103CD140BA5",
+        "tipoModelo": 1,
+        "tipoOperacion": 1,
+        "tipoContingencia": null,
+        "fecEmi": "2026-03-31",
+        "horEmi": "07:36:27",
+        "tipoMoneda": "USD",
+        "motivoContin": null
+    },
+    "emisor": {
+        "nit": "06142811001040",
+        "nrc": "1278913",
+        "nombre": "Inversiones Comerciales Escobar SA de CV",
+        "codActividad": "46375",
+        "descActividad": "Venta al por  mayor de productos lácteos",
+        "direccion": {
+            "departamento": "05",
+            "municipio": "25",
+            "complemento": "Carretera a Sonsonate, km 27 ½ Zona Industrial Lourdes, Calle Antigua Hda, La Libertad, El Salvador C.A"
+        },
+        "telefono": "77462310",
+        "correo": "informatica@grupoincoe.com",
+        "codEstableMH": "M001",
+        "codEstable": "0001",
+        "codPuntoVentaMH": "P002",
+        "codPuntoVenta": "0001"
+    },
+    "sujetoExcluido": {
+        "tipoDocumento": "13",
+        "numDocumento": "013267409",
+        "nombre": "Paublina viuda de campos",
+        "codActividad": "10005",
+        "descActividad": "Otros",
+        "direccion": {
+            "departamento": "03",
+            "municipio": "20",
+            "complemento": "N/A"
+        },
+        "telefono": "70894954",
+        "correo": "ventasdetalleincoe@gmail.com"
+    },
+    "cuerpoDocumento": [
+        {
+            "numItem": 1,
+            "tipoItem": 1,
+            "cantidad": 1.0,
+            "codigo": "PCH026",
+            "uniMedida": 59,
+            "descripcion": "CEREAL ARROS CHOCOMONKIS 180 GR",
+            "precioUni": 0.89,
+            "montoDescu": 0.0,
+            "compra": 0.89
+        }
+    ],
+    "resumen": {
+        "totalCompra": 0.89,
+        "descu": 0.0,
+        "totalDescu": 0.0,
+        "subTotal": 0.89,
+        "ivaRete1": 0.0,
+        "reteRenta": 0.0,
+        "totalPagar": 0.89,
+        "totalLetras": "Uno con 01/100 USD",
+        "condicionOperacion": 3,
+        "pagos": [
+            {
+                "codigo": "01",
+                "montoPago": 0.89,
+                "referencia": null,
+                "plazo": null,
+                "periodo": null
+            }
+        ],
+        "observaciones": null
+    },
+    "apendice": null
+}

@@ -83,6 +83,8 @@ from .api_views import (
     )
 
 from . import views
+from . import views_reportes_compras
+from . import views_reportes_inventario
 
 urlpatterns = [
     # -------------------------------
@@ -303,4 +305,19 @@ urlpatterns = [
     path('almacenes/<int:pk>/editar/', views.almacenes_editar, name='inv-almacenes-editar'),
     path('almacenes/<int:pk>/eliminar/', views.almacenes_eliminar, name='inv-almacenes-eliminar'),
 
+    # Reportes de compras
+    path('compras/reportes/', views_reportes_compras.reportes_compras_hub, name='reportes_compras_hub'),
+    path('compras/reportes/periodo/', views_reportes_compras.reporte_compras_periodo, name='reportes_compras_periodo'),
+    path('compras/reportes/proveedor/', views_reportes_compras.reporte_compras_proveedor, name='reportes_compras_proveedor'),
+    path('compras/reportes/productos/', views_reportes_compras.reporte_productos_comprados, name='reportes_productos_comprados'),
+    path('compras/reportes/cuentas-por-pagar/', views_reportes_compras.reporte_cuentas_por_pagar, name='reportes_cuentas_por_pagar'),
+    path('compras/reportes/comparativo/', views_reportes_compras.reporte_comparativo_compras, name='reportes_comparativo_compras'),
+
+    # Reportes de inventario
+    path('reportes/', views_reportes_inventario.reportes_inventario_hub, name='reportes_inventario_hub'),
+    path('reportes/kardex/', views_reportes_inventario.reporte_kardex, name='reportes_kardex'),
+    path('reportes/valorizado/', views_reportes_inventario.reporte_inventario_valorizado, name='reportes_valorizado'),
+    path('reportes/bajo-stock/', views_reportes_inventario.reporte_bajo_stock, name='reportes_bajo_stock'),
+    path('reportes/sin-movimiento/', views_reportes_inventario.reporte_sin_movimiento, name='reportes_sin_movimiento'),
+    path('reportes/movimientos/', views_reportes_inventario.reporte_movimientos_periodo, name='reportes_movimientos_periodo'),
 ]

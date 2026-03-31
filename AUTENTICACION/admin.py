@@ -104,25 +104,29 @@ from AUTENTICACION.models import Funcionalidad as FuncionalidadModel, MODULO_CHO
 
 
 class GroupedCheckboxWidget(CheckboxSelectMultiple):
-    """Checkbox widget que agrupa las opciones por módulo."""
+    """Checkbox widget que agrupa las opciones por módulo con secciones."""
     template_name = 'admin/grouped_checkbox.html'
 
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
-        # Agrupar opciones por módulo
         grouped = {}
         modulo_labels = dict(MODULO_CHOICES)
         for func in FuncionalidadModel.objects.all().order_by('modulo', 'nombre'):
             label = modulo_labels.get(func.modulo, func.modulo)
             grouped.setdefault(label, []).append(func)
         context['widget']['grouped'] = grouped
+        # Asegurar que value sea lista de PKs (int)
+        if value:
+            context['widget']['value'] = [int(v) for v in value if v]
+        else:
+            context['widget']['value'] = []
         return context
 
 
 class PlanForm(ModelForm):
     funcionalidades = ModelMultipleChoiceField(
         queryset=FuncionalidadModel.objects.all().order_by('modulo', 'nombre'),
-        widget=CheckboxSelectMultiple,
+        widget=GroupedCheckboxWidget,
         required=False,
         label="Funcionalidades incluidas",
     )

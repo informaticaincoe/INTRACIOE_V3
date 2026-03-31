@@ -1,0 +1,39 @@
+{% extends "inventario/reportes_inventario/_base.html" %}
+{% block report_title %}Sin movimiento{% endblock %}
+{% block report_heading %}<i class="bi bi-pause-circle me-2 text-warning"></i>Productos sin movimiento{% endblock %}
+
+{% block report_filters %}
+<div class="col-md-4">
+  <label class="form-label small fw-semibold">Sin movimiento en los últimos</label>
+  <select name="dias" class="form-select form-select-sm">
+    <option value="15" {% if dias == 15 %}selected{% endif %}>15 días</option>
+    <option value="30" {% if dias == 30 %}selected{% endif %}>30 días</option>
+    <option value="60" {% if dias == 60 %}selected{% endif %}>60 días</option>
+    <option value="90" {% if dias == 90 %}selected{% endif %}>90 días</option>
+  </select>
+</div>
+{% endblock %}
+
+{% block report_body %}
+<div class="row g-3 mb-3">
+  <div class="col-md-4"><div class="stat-card"><div class="stat-val text-warning">{{ productos|length }}</div><div class="stat-lbl">Productos inactivos</div></div></div>
+  <div class="col-md-4"><div class="stat-card"><div class="stat-val">{{ valor_muerto.unidades }}</div><div class="stat-lbl">Unidades retenidas</div></div></div>
+  <div class="col-md-4"><div class="stat-card"><div class="stat-val text-danger">${{ valor_muerto.total|floatformat:2 }}</div><div class="stat-lbl">Capital inmovilizado</div></div></div>
+</div>
+
+<div class="card border-0 shadow-sm"><div class="table-responsive">
+  <table class="table table-hover table-striped align-middle mb-0">
+    <thead class="table-light"><tr><th>Código</th><th>Producto</th><th>Categoría</th><th class="text-center">Stock</th><th class="text-end">P. Compra</th><th class="text-end">Valor retenido</th></tr></thead>
+    <tbody>
+      {% for p in productos %}<tr>
+        <td><code class="text-muted small">{{ p.codigo }}</code></td>
+        <td class="fw-medium">{{ p.descripcion }}</td>
+        <td class="text-muted small">{{ p.categoria.nombre|default:"—" }}</td>
+        <td class="text-center">{{ p.stock }}</td>
+        <td class="text-end">${{ p.precio_compra|floatformat:2 }}</td>
+        <td class="text-end fw-semibold text-danger">${{ p.stock|floatformat:0 }}</td>
+      </tr>{% empty %}<tr><td colspan="6" class="text-center py-4 text-muted"><i class="bi bi-check-circle fs-1 d-block mb-2 text-success opacity-50"></i>Todos los productos tuvieron movimiento.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% endblock %}

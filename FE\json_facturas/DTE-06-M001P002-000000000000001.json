@@ -1,0 +1,109 @@
+{
+    "identificacion": {
+        "version": 3,
+        "ambiente": "01",
+        "tipoDte": "06",
+        "numeroControl": "DTE-06-M001P002-000000000000001",
+        "codigoGeneracion": "316F43E2-C2A7-4915-9BC9-B18A3F7C4F02",
+        "tipoModelo": 1,
+        "tipoOperacion": 1,
+        "tipoContingencia": null,
+        "fecEmi": "2026-03-30",
+        "horEmi": "22:19:51",
+        "tipoMoneda": "USD",
+        "motivoContin": null
+    },
+    "documentoRelacionado": [
+        {
+            "tipoDocumento": "03",
+            "tipoGeneracion": 2,
+            "numeroDocumento": "98BF20F9-3EE0-4893-9BFC-9ADAEFAD7D12",
+            "fechaEmision": "2026-03-23"
+        }
+    ],
+    "emisor": {
+        "nit": "06142811001040",
+        "nrc": "1278913",
+        "nombre": "Inversiones Comerciales Escobar SA de CV",
+        "codActividad": "46375",
+        "descActividad": "Venta al por  mayor de productos lácteos",
+        "nombreComercial": "Inversiones Comerciales Escobar SA de CV",
+        "tipoEstablecimiento": "02",
+        "direccion": {
+            "departamento": "05",
+            "municipio": "25",
+            "complemento": "Carretera a Sonsonate, km 27 ½ Zona Industrial Lourdes, Calle Antigua Hda, La Libertad, El Salvador C.A"
+        },
+        "telefono": "77462310",
+        "correo": "informatica@grupoincoe.com"
+    },
+    "receptor": {
+        "nombre": "Chun Mario",
+        "codActividad": "47112",
+        "descActividad": "Venta en tiendas de artículos de primera necesidad",
+        "direccion": {
+            "departamento": "03",
+            "municipio": "20",
+            "complemento": "calle acaxual col las 25 casa frente a mercado municipal de cajutla local 31 distrito de acajutla municipio de sonsonate oeste"
+        },
+        "telefono": "76636127",
+        "correo": "marquinolopez19@gmail.com",
+        "nrc": "3830734",
+        "nit": "94831301891021",
+        "nombreComercial": "Chun Mario"
+    },
+    "ventaTercero": null,
+    "cuerpoDocumento": [
+        {
+            "numItem": 1,
+            "tipoItem": 1,
+            "numeroDocumento": "98BF20F9-3EE0-4893-9BFC-9ADAEFAD7D12",
+            "codigo": "PCH048.1",
+            "codTributo": null,
+            "descripcion": "Lecha entera ira 26 350 gramos",
+            "cantidad": 1.0,
+            "uniMedida": 59,
+            "precioUni": 2.62,
+            "montoDescu": 0.0,
+            "ventaNoSuj": 0.0,
+            "ventaExenta": 0.0,
+            "ventaGravada": 2.62,
+            "tributos": [
+                "20"
+            ]
+        }
+    ],
+    "resumen": {
+        "totalNoSuj": 0.0,
+        "totalExenta": 0.0,
+        "totalGravada": 2.62,
+        "subTotalVentas": 2.62,
+        "descuNoSuj": 0.0,
+        "descuExenta": 0.0,
+        "descuGravada": 0.0,
+        "totalDescu": 0.0,
+        "subTotal": 2.62,
+        "ivaRete1": 0.0,
+        "reteRenta": 0.0,
+        "montoTotalOperacion": 2.96,
+        "totalLetras": "Dos con 96/100 USD",
+        "condicionOperacion": 1,
+        "numPagoElectronico": null,
+        "tributos": [
+            {
+                "codigo": "20",
+                "descripcion": "Impuesto al Valor Agregado 13%",
+                "valor": 0.34
+            }
+        ],
+        "ivaPerci1": 0.0
+    },
+    "extension": {
+        "nombEntrega": null,
+        "docuEntrega": null,
+        "nombRecibe": null,
+        "docuRecibe": null,
+        "observaciones": "Generado por Sistema Django"
+    },
+    "apendice": null
+}

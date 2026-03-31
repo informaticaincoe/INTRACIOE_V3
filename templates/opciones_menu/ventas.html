@@ -43,12 +43,12 @@ document.addEventListener('DOMContentLoaded', function () {
   const b = "{{ uid_prefix }}";
   const catalogoURL = "{% url 'catalogo_productos' %}{% if receptor_id %}?receptor_id={{ receptor_id }}{% endif %}";
   const go = (id, url) => document.getElementById(b + id)?.addEventListener('click', () => { window.location.href = url; });
-  go('-btn-home',        "{% url 'ventas_home' %}");
-  go('-btn-clientes',    "{% url 'clientes_list' %}");
-  go('-btn-ventas',      "{% url 'ventas_home' %}");
-  go('-btn-catalogo',    catalogoURL);
-  go('-btn-devoluciones',"{% url 'devoluciones_list' %}");
-  go('-btn-reportes',    "{% url 'ventas_list' %}#reportes");
+  go('-btn-home',         "{% url 'ventas_home' %}");
+  go('-btn-clientes',     "{% url 'clientes_list' %}");
+  go('-btn-ventas',       "{% url 'ventas_home' %}");
+  go('-btn-catalogo',     catalogoURL);
+  go('-btn-devoluciones', "{% url 'devoluciones_list' %}");
+  go('-btn-reportes',     "{% url 'reportes_ventas_hub' %}");
 });
 </script>
 

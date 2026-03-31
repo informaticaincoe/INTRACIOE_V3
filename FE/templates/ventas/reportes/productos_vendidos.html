@@ -1,0 +1,99 @@
+{% extends "ventas/reportes/_base_reporte.html" %}
+{% block report_title %}Productos más vendidos{% endblock %}
+{% block report_heading %}<i class="bi bi-box-seam me-2 text-primary"></i>Productos más vendidos{% endblock %}
+
+{% block report_filters %}
+<div class="col-md-2">
+  <label class="form-label small fw-semibold">Mostrar</label>
+  <select name="limit" class="form-select form-select-sm">
+    <option value="10" {% if limit == 10 %}selected{% endif %}>Top 10</option>
+    <option value="20" {% if limit == 20 %}selected{% endif %}>Top 20</option>
+    <option value="50" {% if limit == 50 %}selected{% endif %}>Top 50</option>
+  </select>
+</div>
+{% endblock %}
+
+{% block report_body %}
+<div class="row g-3 mb-3">
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="stat-val">{{ resumen.total_productos }}</div>
+      <div class="stat-lbl">Productos vendidos</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="stat-val">{{ resumen.total_items }}</div>
+      <div class="stat-lbl">Unidades vendidas</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="stat-val">${{ resumen.total_monto|floatformat:2 }}</div>
+      <div class="stat-lbl">Total gravado</div>
+    </div>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-3">
+  <div class="card-body">
+    <div class="chart-container">
+      <canvas id="chartProductos"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover table-striped align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th style="width:50px">#</th>
+          <th>Código</th>
+          <th>Producto</th>
+          <th>Categoría</th>
+          <th class="text-end">Cantidad</th>
+          <th class="text-end">Monto</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in productos %}
+        <tr>
+          <td><span class="badge text-bg-success">{{ forloop.counter }}</span></td>
+          <td><code class="text-muted small">{{ p.producto__codigo }}</code></td>
+          <td class="fw-medium">{{ p.producto__descripcion }}</td>
+          <td class="text-muted small">{{ p.producto__categoria__nombre|default:"—" }}</td>
+          <td class="text-end fw-semibold">{{ p.cantidad_vendida }}</td>
+          <td class="text-end">${{ p.total_monto|floatformat:2 }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center py-4 text-muted">Sin datos para este período.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block report_js %}
+<script>
+new Chart(document.getElementById('chartProductos'), {
+  type: 'bar',
+  data: {
+    labels: {{ chart_labels|safe }},
+    datasets: [{
+      label: 'Unidades',
+      data: {{ chart_valores|safe }},
+      backgroundColor: 'rgba(22,163,74,.7)',
+      borderRadius: 4,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { x: { beginAtZero: true } }
+  }
+});
+</script>
+{% endblock %}

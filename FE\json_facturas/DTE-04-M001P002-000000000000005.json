@@ -1,0 +1,104 @@
+{
+    "identificacion": {
+        "version": 3,
+        "ambiente": "01",
+        "tipoDte": "04",
+        "numeroControl": "DTE-04-M001P002-000000000000005",
+        "codigoGeneracion": "ED440C51-D3E5-457B-BCEB-ADF19AC57F43",
+        "tipoModelo": 1,
+        "tipoOperacion": 1,
+        "tipoContingencia": null,
+        "fecEmi": "2026-03-31",
+        "horEmi": "08:03:14",
+        "tipoMoneda": "USD",
+        "motivoContin": null
+    },
+    "documentoRelacionado": null,
+    "emisor": {
+        "nit": "06142811001040",
+        "nrc": "1278913",
+        "nombre": "Inversiones Comerciales Escobar SA de CV",
+        "codActividad": "46375",
+        "descActividad": "Venta al por  mayor de productos lácteos",
+        "nombreComercial": "Inversiones Comerciales Escobar SA de CV",
+        "tipoEstablecimiento": "02",
+        "direccion": {
+            "departamento": "05",
+            "municipio": "25",
+            "complemento": "Carretera a Sonsonate, km 27 ½ Zona Industrial Lourdes, Calle Antigua Hda, La Libertad, El Salvador C.A"
+        },
+        "telefono": "77462310",
+        "correo": "informatica@grupoincoe.com",
+        "codEstableMH": "M001",
+        "codEstable": "0001",
+        "codPuntoVentaMH": "P002",
+        "codPuntoVenta": "0001"
+    },
+    "receptor": {
+        "nombre": "Maria lorena alegria",
+        "codActividad": "10005",
+        "descActividad": "Otros",
+        "direccion": {
+            "departamento": "05",
+            "municipio": "25",
+            "complemento": "La libertad"
+        },
+        "telefono": "76841125",
+        "correo": "brenda.chacon@grupoincoe.com",
+        "nrc": null,
+        "tipoDocumento": "13",
+        "numDocumento": "01397103-2",
+        "nombreComercial": "Maria lorena alegria",
+        "bienTitulo": "01"
+    },
+    "ventaTercero": null,
+    "cuerpoDocumento": [
+        {
+            "numItem": 1,
+            "tipoItem": 1,
+            "numeroDocumento": null,
+            "codigo": "PCH026",
+            "codTributo": null,
+            "descripcion": "CEREAL ARROS CHOCOMONKIS 180 GR",
+            "cantidad": 1.0,
+            "uniMedida": 59,
+            "precioUni": 0.89,
+            "montoDescu": 0.0,
+            "ventaNoSuj": 0.0,
+            "ventaExenta": 0.0,
+            "ventaGravada": 0.89,
+            "tributos": [
+                "20"
+            ]
+        }
+    ],
+    "resumen": {
+        "totalNoSuj": 0.0,
+        "totalExenta": 0.0,
+        "totalGravada": 0.89,
+        "subTotalVentas": 0.89,
+        "descuNoSuj": 0.0,
+        "descuExenta": 0.0,
+        "descuGravada": 0.0,
+        "porcentajeDescuento": 0.0,
+        "totalDescu": 0.0,
+        "subTotal": 0.89,
+        "montoTotalOperacion": 1.01,
+        "totalLetras": "Uno con 01/100 USD",
+        "tributos": [
+            {
+                "codigo": "20",
+                "descripcion": "Impuesto al Valor Agregado 13%",
+                "valor": 0.12
+            }
+        ]
+    },
+    "extension": {
+        "nombEntrega": null,
+        "docuEntrega": null,
+        "nombRecibe": null,
+        "docuRecibe": null,
+        "observaciones": "Generado por Sistema Django"
+    },
+    "apendice": null
+}

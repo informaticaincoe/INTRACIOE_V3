@@ -331,11 +331,147 @@
           </div>
         </div>
 
-        <!-- 5) Extras -->
+        <!-- 5) Documento relacionado -->
+        <div class="card shadow-sm mt-3">
+          <div class="card-body">
+            <h6 class="mb-0 d-flex align-items-center gap-2 mb-3">
+              <span class="step-num">5</span>Documento relacionado
+              <span id="badge-doc-req" class="badge text-bg-danger ms-1" style="display:none;">Requerido para NC/ND</span>
+            </h6>
+
+            <!-- Tipo de generación -->
+            <div class="row g-2 mb-3">
+              <div class="col-md-4">
+                <label class="form-label small fw-semibold mb-1">Tipo de generación</label>
+                <select class="form-select form-select-sm" id="docrel_modo">
+                  <option value="">— Sin documento relacionado —</option>
+                  <option value="2">Electrónico (buscar DTE del cliente)</option>
+                  <option value="1">Físico (ingresar manualmente)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Documentos agregados -->
+            <div id="doc-rel-container"></div>
+
+            <!-- Panel electrónico: selector de DTEs del cliente -->
+            <div id="panel-electronico" style="display:none">
+              <div class="alert alert-info py-2 small mb-2">
+                <i class="bi bi-info-circle me-1"></i>Seleccione un DTE del cliente para relacionar. Debe seleccionar un cliente primero.
+              </div>
+              <div id="lista-dtes-cliente" class="border rounded" style="max-height:250px;overflow-y:auto;">
+                <table class="table table-hover table-sm align-middle mb-0">
+                  <thead class="table-light sticky-top">
+                    <tr><th>Fecha</th><th>N° Control</th><th>Tipo</th><th class="text-end">Total</th><th></th></tr>
+                  </thead>
+                  <tbody id="tbody-dtes"></tbody>
+                </table>
+              </div>
+              <div id="dtes-loading" class="text-center py-3 text-muted" style="display:none">
+                <div class="spinner-border spinner-border-sm me-1"></div> Cargando DTEs...
+              </div>
+              <div id="dtes-empty" class="text-center py-3 text-muted" style="display:none">
+                No se encontraron DTEs para este cliente.
+              </div>
+            </div>
+
+            <!-- Panel físico: formulario manual -->
+            <div id="panel-fisico" style="display:none">
+              <div class="row g-2 mb-2 align-items-end">
+                <div class="col-md-3">
+                  <label class="form-label small mb-1">Tipo DTE</label>
+                  <select class="form-select form-select-sm" id="fisico_tipo_dte">
+                    <option value="01">01 - Factura</option>
+                    <option value="03" selected>03 - CCF</option>
+                    <option value="07">07 - Comp. Retención</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small mb-1">N° Documento</label>
+                  <input type="text" class="form-control form-control-sm" id="fisico_numero" placeholder="Número de control">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small mb-1">Fecha emisión</label>
+                  <input type="date" class="form-control form-control-sm" id="fisico_fecha">
+                </div>
+                <div class="col-md-2">
+                  <button type="button" class="btn btn-primary btn-sm w-100" id="btn-agregar-fisico">
+                    <i class="bi bi-plus-lg me-1"></i>Agregar
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Hidden inputs para el POST -->
+            <input type="hidden" name="documento_seleccionado" id="documento_seleccionado" value="S">
+            <input type="hidden" name="documento_relacionado" id="documento_relacionado" value="">
+
+            <hr class="my-2">
+            <label class="form-label small fw-semibold mb-1">Extensión (responsable)</label>
+            <div class="row g-2">
+              <div class="col-md-6">
+                <input type="text" name="nombre_responsable" class="form-control form-control-sm" placeholder="Nombre responsable">
+              </div>
+              <div class="col-md-6">
+                <input type="text" name="documento_responsable" class="form-control form-control-sm" placeholder="DUI/NIT">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal: detalle del DTE electrónico -->
+        <div class="modal fade" id="modalDetalleDte" tabindex="-1">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header py-2">
+                <h6 class="modal-title"><i class="bi bi-file-earmark-text me-1"></i>Detalle del DTE <span id="modal-dte-num"></span></h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="row mb-3">
+                  <div class="col-md-4"><small class="text-muted">Tipo</small><br><strong id="modal-dte-tipo"></strong></div>
+                  <div class="col-md-4"><small class="text-muted">Fecha</small><br><strong id="modal-dte-fecha"></strong></div>
+                  <div class="col-md-4"><small class="text-muted">Total</small><br><strong id="modal-dte-total"></strong></div>
+                </div>
+                <div class="form-check form-switch mb-2">
+                  <input class="form-check-input" type="checkbox" id="modal-nc-total" checked>
+                  <label class="form-check-label fw-semibold" for="modal-nc-total">Aplicar a todos los productos (total)</label>
+                </div>
+                <div class="table-responsive">
+                  <table class="table table-sm table-hover align-middle mb-0">
+                    <thead class="table-light">
+                      <tr>
+                        <th><input type="checkbox" id="modal-check-all" checked></th>
+                        <th>Código</th>
+                        <th>Producto</th>
+                        <th class="text-center">Cant. orig.</th>
+                        <th class="text-center">Cant. aplicar</th>
+                        <th class="text-end">Precio unit.</th>
+                        <th class="text-end">Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody id="modal-dte-items"></tbody>
+                  </table>
+                </div>
+                <div class="d-flex justify-content-end mt-2">
+                  <span class="fw-semibold">Total seleccionado: $<span id="modal-total-sel">0.00</span></span>
+                </div>
+              </div>
+              <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary btn-sm" id="btn-confirmar-dte">
+                  <i class="bi bi-check-lg me-1"></i>Confirmar y agregar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6) Extras -->
         <div class="card shadow-sm mt-3">
           <div class="card-body">
             <a class="d-flex align-items-center justify-content-between text-decoration-none" data-bs-toggle="collapse" href="#extrasCollapse" role="button" aria-expanded="false" aria-controls="extrasCollapse">
-              <h6 class="mb-0 d-flex align-items-center gap-2"><span class="step-num bg-secondary">5</span>Extras <small class="text-muted fw-normal ms-1">(opcional)</small></h6>
+              <h6 class="mb-0 d-flex align-items-center gap-2"><span class="step-num bg-secondary">6</span>Extras <small class="text-muted fw-normal ms-1">(opcional)</small></h6>
               <i class="bi bi-chevron-down"></i>
             </a>
             <div class="collapse mt-3" id="extrasCollapse">
@@ -349,8 +485,8 @@
                     <div class="row g-2">
                       <div class="col-6">
                         <label class="form-label small mb-1">Porcentaje</label>
-                        <input type="number" step="0.01" min="0" id="ret_iva_pct" class="form-control" value="{{ emisor_pct_ret_iva|default:'1.00' }}">
-                        <input type="hidden" name="porcentaje_retencion_iva" id="porcentaje_retencion_iva" value="{{ emisor_pct_ret_iva|default:'1.00' }}">
+                        <input type="number" step="0.01" min="0" id="ret_iva_pct" class="form-control" value="{% if emisor_pct_ret_iva %}{{ emisor_pct_ret_iva|stringformat:'.2f' }}{% else %}1.00{% endif %}">
+                        <input type="hidden" name="porcentaje_retencion_iva" id="porcentaje_retencion_iva" value="{% if emisor_pct_ret_iva %}{{ emisor_pct_ret_iva|stringformat:'.2f' }}{% else %}1.00{% endif %}">
                       </div>
                       <div class="col-6">
                         <label class="form-label small mb-1">Monto</label>
@@ -365,8 +501,8 @@
                     <div class="row g-2">
                       <div class="col-6">
                         <label class="form-label small mb-1">Porcentaje</label>
-                        <input type="number" step="0.01" min="0" id="ret_renta_pct" class="form-control" value="{{ emisor_pct_ret_renta|default:'10.00' }}">
-                        <input type="hidden" name="porcentaje_retencion_renta" id="porcentaje_retencion_renta" value="{{ emisor_pct_ret_renta|default:'10.00' }}">
+                        <input type="number" step="0.01" min="0" id="ret_renta_pct" class="form-control" value="{% if emisor_pct_ret_renta %}{{ emisor_pct_ret_renta|stringformat:'.2f' }}{% else %}10.00{% endif %}">
+                        <input type="hidden" name="porcentaje_retencion_renta" id="porcentaje_retencion_renta" value="{% if emisor_pct_ret_renta %}{{ emisor_pct_ret_renta|stringformat:'.2f' }}{% else %}10.00{% endif %}">
                       </div>
                       <div class="col-6">
                         <label class="form-label small mb-1">Monto</label>
@@ -381,8 +517,8 @@
                     <div class="row g-2">
                       <div class="col-6">
                         <label class="form-label small mb-1">Porcentaje</label>
-                        <input type="number" step="0.01" min="0" id="percepcion_iva_pct" class="form-control" value="{{ emisor_pct_percepcion|default:'1.00' }}">
-                        <input type="hidden" name="porcentaje_percepcion_iva" id="porcentaje_percepcion_iva" value="{{ emisor_pct_percepcion|default:'1.00' }}">
+                        <input type="number" step="0.01" min="0" id="percepcion_iva_pct" class="form-control" value="{% if emisor_pct_percepcion %}{{ emisor_pct_percepcion|stringformat:'.2f' }}{% else %}1.00{% endif %}">
+                        <input type="hidden" name="porcentaje_percepcion_iva" id="porcentaje_percepcion_iva" value="{% if emisor_pct_percepcion %}{{ emisor_pct_percepcion|stringformat:'.2f' }}{% else %}1.00{% endif %}">
                       </div>
                       <div class="col-6">
                         <label class="form-label small mb-1">Monto</label>
@@ -394,40 +530,15 @@
 
                 <div class="col-md-6">
                   <div class="border rounded p-3">
-                    <label class="form-label small">Documento relacionado (opcional)</label>
-                    <div class="row g-2 mb-2">
-                      <div class="col-5">
-                        <select class="form-select" name="documento_seleccionado">
-                          <option value="S">— Sin relación —</option>
-                          <option value="1">Físico</option>
-                          <option value="2">Electrónico</option>
-                        </select>
-                      </div>
-                      <div class="col-7">
-                        <input type="text" name="documento_relacionado" class="form-control" placeholder="Código de generación o ref. física">
-                      </div>
-                    </div>
-
-                    <label class="form-label small mb-1">Extensión (responsable)</label>
-                    <div class="row g-2">
-                      <div class="col-6">
-                        <input type="text" name="nombre_responsable" class="form-control" placeholder="Nombre responsable">
-                      </div>
-                      <div class="col-6">
-                        <input type="text" name="documento_responsable" class="form-control" placeholder="DUI/NIT">
-                      </div>
-                    </div>
-
-                    <div class="form-check form-switch mt-3">
+                    <div class="form-check form-switch mb-2">
                       <input class="form-check-input" type="checkbox" id="no_gravado" name="no_gravado">
                       <label class="form-check-label" for="no_gravado">Base imponible (servicios / no gravado)</label>
                     </div>
-                  </div>
-                </div>
 
-                <div class="col-12">
-                  <label class="form-label small mb-1">Observaciones</label>
-                  <textarea class="form-control" name="observaciones" rows="2" placeholder="Opcional"></textarea>
+                    <hr class="my-3">
+                    <label class="form-label small mb-1">Observaciones</label>
+                    <textarea class="form-control" name="observaciones" rows="3" placeholder="Opcional"></textarea>
+                  </div>
                 </div>
               </div>
             </div>
@@ -471,10 +582,18 @@
             <div class="mb-3" id="wrap-credito" style="display:none">
               <div class="row g-2">
                 <div class="col-4">
-                  <label class="form-label small mb-1">Días crédito</label>
-                  <input type="number" name="dias_credito" id="dias_credito" class="form-control" value="30" min="1">
+                  <label class="form-label small mb-1">Cantidad</label>
+                  <input type="number" name="plazo_cantidad" id="plazo_cantidad" class="form-control" value="30" min="1">
                 </div>
-                <div class="col-8">
+                <div class="col-4">
+                  <label class="form-label small mb-1">Tipo plazo</label>
+                  <select name="plazo_tipo" id="plazo_tipo" class="form-select">
+                    <option value="01">Días</option>
+                    <option value="02">Meses</option>
+                    <option value="03">Años</option>
+                  </select>
+                </div>
+                <div class="col-4">
                   <label class="form-label small mb-1">Fecha venc.</label>
                   <input type="date" name="fecha_vencimiento" id="fecha_vencimiento" class="form-control">
                 </div>
@@ -483,6 +602,7 @@
                   <input type="text" name="notas_pago" class="form-control" placeholder="Opcional">
                 </div>
               </div>
+              <input type="hidden" name="dias_credito" id="dias_credito" value="30">
             </div>
 
             <h6 class="text-uppercase text-muted small fw-semibold mb-3 ls-wide">Resumen</h6>
@@ -770,23 +890,30 @@
       tbody.querySelectorAll('tr').forEach(tr=>{
         const idx = +tr.dataset.idx;
         const item = POS.items[idx];
+        if(!item) return;
 
-        tr.querySelector('.inp-precio').addEventListener('input', (e)=>{
+        const inpPrecio = tr.querySelector('.inp-precio');
+        const inpCant = tr.querySelector('.inp-cant');
+        const chkIva = tr.querySelector('.chk-iva');
+        const btnDel = tr.querySelector('.btn-del');
+        const celTotal = tr.querySelector('.cel-total');
+
+        if(inpPrecio) inpPrecio.addEventListener('input', (e)=>{
           item.precio = parseFloat(e.target.value||'0')||0;
-          tr.querySelector('.cel-total').textContent = fmt(lineTotal(item));
+          if(celTotal) celTotal.textContent = fmt(lineTotal(item));
           calcTotals();
         });
-        tr.querySelector('.inp-cant').addEventListener('input', (e)=>{
+        if(inpCant) inpCant.addEventListener('input', (e)=>{
           item.cantidad = Math.max(1, parseInt(e.target.value||'80',10));
-          tr.querySelector('.cel-total').textContent = fmt(lineTotal(item));
+          if(celTotal) celTotal.textContent = fmt(lineTotal(item));
           calcTotals();
         });
-        tr.querySelector('.chk-iva').addEventListener('change', (e)=>{
+        if(chkIva) chkIva.addEventListener('change', (e)=>{
           item.aplica_iva = e.target.checked;
-          tr.querySelector('.cel-total').textContent = fmt(lineTotal(item));
+          if(celTotal) celTotal.textContent = fmt(lineTotal(item));
           calcTotals();
         });
-        tr.querySelector('.btn-del').addEventListener('click', ()=>{
+        if(btnDel) btnDel.addEventListener('click', ()=>{
           POS.items.splice(idx,1);
           renderItems();
           calcTotals();
@@ -888,12 +1015,14 @@
       $(id)?.addEventListener?.('change', calcTotals);
     });
 
-    // ======= Show/hide exportación + Auto-check retención/percepción =======
+    // ======= Cambio de tipo DTE: recargar página con el tipo seleccionado =======
     tipoDteSelect?.addEventListener('change', function(){
-      const exportSection = document.getElementById('export_fields_section');
-      if (exportSection) exportSection.style.display = (this.value === '11') ? '' : 'none';
+      const nuevoTipo = this.value;
+      if (nuevoTipo) {
+        window.location.href = "{% url 'generar_factura' %}?tipo_documento_dte=" + nuevoTipo;
+      }
     });
-    // Estado inicial
+    // Estado inicial: show/hide exportación
     if (tipoDteSelect && tipoDteSelect.value === '11') {
       const es = document.getElementById('export_fields_section');
       if (es) es.style.display = '';
@@ -952,7 +1081,21 @@
       renderItems();
       calcTotals();
     }
-    window.addItem = () => {};
+    window.addItem = function(item){
+      const idx = POS.items.findIndex(x => x.id === item.id);
+      if(idx >= 0){
+        POS.items[idx].cantidad += (item.cantidad || 1);
+      } else {
+        POS.items.push({
+          id: item.id, codigo: item.codigo, nombre: item.nombre,
+          precio: parseFloat(item.precio) || 0,
+          cantidad: item.cantidad || 1,
+          desc_pct: 0, aplica_iva: true, stock: null, desc_extra: ''
+        });
+      }
+      renderItems();
+      calcTotals();
+    };
 
     // ======= Product Picker =======
     class ProductPicker {
@@ -1312,7 +1455,7 @@
 <script>
   (function(){
     try{
-      const PF = {{ prefill_factura|safe }};
+      const PF = {% if prefill_factura %}{{ prefill_factura|safe }}{% else %}null{% endif %};
       if(PF && PF.receptor_id){
         const sel = document.getElementById('receptor_id');
         if(sel){ sel.value = String(PF.receptor_id); sel.dispatchEvent(new Event('change')); }
@@ -1334,5 +1477,306 @@
     }catch(e){ console.error('prefill_cart error', e); }
   })();
 </script>
-  
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const tipoDocSelect = document.querySelector('[name="tipo_documento_seleccionado"]');
+  const badgeReq = document.getElementById('badge-doc-req');
+  const container = document.getElementById('doc-rel-container');
+  const modoSelect = document.getElementById('docrel_modo');
+  const panelElec = document.getElementById('panel-electronico');
+  const panelFis = document.getElementById('panel-fisico');
+  const hiddenSel = document.getElementById('documento_seleccionado');
+  const hiddenDoc = document.getElementById('documento_relacionado');
+  const receptorSelect = document.getElementById('receptor_id');
+  const modalEl = document.getElementById('modalDetalleDte');
+  const modalItems = document.getElementById('modal-dte-items');
+  const modalCheckAll = document.getElementById('modal-check-all');
+  const modalNcTotal = document.getElementById('modal-nc-total');
+  const modalTotalSel = document.getElementById('modal-total-sel');
+
+  let dtesCliente = [];
+  let docsAgregados = [];
+  let dteSeleccionado = null;
+  let bsModal = null;
+  if(modalEl && window.bootstrap) bsModal = new bootstrap.Modal(modalEl);
+
+  function esNcNd(){
+    return tipoDocSelect && (tipoDocSelect.value === '05' || tipoDocSelect.value === '06');
+  }
+
+  function checkReq(){
+    const req = esNcNd();
+    if(badgeReq) badgeReq.style.display = req ? '' : 'none';
+    if(req && modoSelect && modoSelect.value === ''){
+      modoSelect.value = '2';
+      toggleModo();
+    }
+  }
+
+  function toggleModo(){
+    const v = modoSelect?.value || '';
+    if(panelElec) panelElec.style.display = v === '2' ? '' : 'none';
+    if(panelFis) panelFis.style.display = v === '1' ? '' : 'none';
+    if(v === '2') cargarDtesCliente();
+  }
+
+  async function cargarDtesCliente(){
+    const rid = receptorSelect?.value;
+    const tbody = document.getElementById('tbody-dtes');
+    const loading = document.getElementById('dtes-loading');
+    const empty = document.getElementById('dtes-empty');
+    if(tbody) tbody.innerHTML = '';
+    if(!rid){ if(empty) empty.style.display = ''; if(loading) loading.style.display = 'none'; return; }
+    if(loading) loading.style.display = '';
+    if(empty) empty.style.display = 'none';
+    try{
+      const url = "{% url 'api_facturas_receptor' receptor_id=0 %}".replace('/0/', '/' + rid + '/');
+      const resp = await fetch(url, {headers:{'X-Requested-With':'XMLHttpRequest'},credentials:'same-origin'});
+      dtesCliente = await resp.json();
+      if(loading) loading.style.display = 'none';
+      if(!dtesCliente.length){ if(empty) empty.style.display = ''; return; }
+      dtesCliente.forEach(function(dte){
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td class="small">'+dte.fecha_emision+'</td>'+
+          '<td class="small fw-medium">'+dte.numero_control+'</td>'+
+          '<td><span class="badge text-bg-light text-dark border">'+dte.tipo_dte_desc+'</span></td>'+
+          '<td class="text-end small fw-semibold">$'+dte.total_pagar.toFixed(2)+'</td>'+
+          '<td><button type="button" class="btn btn-outline-primary btn-sm py-0 px-2 btn-sel-dte">'+
+          '<i class="bi bi-plus-circle"></i></button></td>';
+        tr.querySelector('.btn-sel-dte').addEventListener('click', function(){ abrirModalDte(dte); });
+        tbody.appendChild(tr);
+      });
+    }catch(e){ if(loading) loading.style.display = 'none'; console.error(e); }
+  }
+
+  function abrirModalDte(dte){
+    dteSeleccionado = dte;
+    document.getElementById('modal-dte-num').textContent = dte.numero_control;
+    document.getElementById('modal-dte-tipo').textContent = dte.tipo_dte_desc;
+    document.getElementById('modal-dte-fecha').textContent = dte.fecha_emision;
+    document.getElementById('modal-dte-total').textContent = '$' + dte.total_pagar.toFixed(2);
+    if(modalCheckAll) modalCheckAll.checked = true;
+    if(modalNcTotal) modalNcTotal.checked = true;
+
+    modalItems.innerHTML = '';
+    dte.detalles.forEach(function(d, i){
+      var precio = parseFloat(String(d.precio_unitario).replace(',','.')) || 0;
+      var cant = parseInt(d.cantidad) || 0;
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td><input type="checkbox" class="form-check-input chk-item" data-idx="'+i+'" checked></td>'+
+        '<td class="small text-muted"><code>'+d.producto_codigo+'</code></td>'+
+        '<td class="small">'+d.producto_nombre+'</td>'+
+        '<td class="text-center">'+cant+'</td>'+
+        '<td class="text-center"><input type="number" class="form-control form-control-sm text-center input-cant" data-idx="'+i+'" value="'+cant+'" min="1" max="'+cant+'" style="width:70px;display:inline-block;"></td>'+
+        '<td class="text-end"><input type="number" step="0.01" min="0.01" class="form-control form-control-sm text-end input-precio" data-idx="'+i+'" value="'+precio.toFixed(2)+'" style="width:90px;display:inline-block;"></td>'+
+        '<td class="text-end small fw-semibold td-subtotal">$'+(cant*precio).toFixed(2)+'</td>';
+      modalItems.appendChild(tr);
+    });
+    calcModalTotal();
+    if(bsModal) bsModal.show();
+  }
+
+  function calcModalTotal(){
+    var total = 0;
+    modalItems.querySelectorAll('tr').forEach(function(tr){
+      var chk = tr.querySelector('.chk-item');
+      var inpCant = tr.querySelector('.input-cant');
+      var inpPrecio = tr.querySelector('.input-precio');
+      if(chk && chk.checked){
+        var cant = parseInt(inpCant?.value) || 0;
+        var precio = parseFloat(inpPrecio?.value) || 0;
+        var sub = cant * precio;
+        tr.querySelector('.td-subtotal').textContent = '$' + sub.toFixed(2);
+        total += sub;
+      } else if(tr.querySelector('.td-subtotal')){
+        tr.querySelector('.td-subtotal').textContent = '$0.00';
+      }
+    });
+    if(modalTotalSel) modalTotalSel.textContent = total.toFixed(2);
+  }
+
+  if(modalItems){
+    modalItems.addEventListener('change', calcModalTotal);
+    modalItems.addEventListener('input', calcModalTotal);
+  }
+  if(modalCheckAll) modalCheckAll.addEventListener('change', function(){
+    modalItems.querySelectorAll('.chk-item').forEach(function(c){ c.checked = modalCheckAll.checked; });
+    calcModalTotal();
+  });
+  if(modalNcTotal) modalNcTotal.addEventListener('change', function(){
+    var isTotal = modalNcTotal.checked;
+    modalItems.querySelectorAll('.input-cant').forEach(function(inp){
+      var idx = parseInt(inp.dataset.idx);
+      var d = dteSeleccionado.detalles[idx];
+      inp.value = isTotal ? d.cantidad : 1;
+      inp.readOnly = isTotal;
+    });
+    modalItems.querySelectorAll('.input-precio').forEach(function(inp){
+      var idx = parseInt(inp.dataset.idx);
+      var d = dteSeleccionado.detalles[idx];
+      var precio = parseFloat(String(d.precio_unitario).replace(',','.')) || 0;
+      inp.value = precio.toFixed(2);
+      inp.readOnly = isTotal;
+    });
+    modalItems.querySelectorAll('.chk-item').forEach(function(c){ c.checked = true; c.disabled = isTotal; });
+    if(modalCheckAll) modalCheckAll.checked = true;
+    calcModalTotal();
+  });
+
+  /* Confirmar DTE del modal */
+  var btnConfirmar = document.getElementById('btn-confirmar-dte');
+  if(btnConfirmar) btnConfirmar.addEventListener('click', function(){
+    if(!dteSeleccionado) return;
+    var items = [];
+    modalItems.querySelectorAll('tr').forEach(function(tr){
+      var chk = tr.querySelector('.chk-item');
+      var inpCant = tr.querySelector('.input-cant');
+      var inpPrecio = tr.querySelector('.input-precio');
+      if(chk && chk.checked){
+        var idx = parseInt(chk.dataset.idx);
+        var d = dteSeleccionado.detalles[idx];
+        items.push({
+          id: d.id,
+          producto_codigo: d.producto_codigo,
+          producto_nombre: d.producto_nombre,
+          precio_unitario: d.precio_unitario,
+          cantidad_aplicar: parseInt(inpCant.value) || 0,
+          precio_aplicar: parseFloat(inpPrecio.value) || d.precio_unitario,
+        });
+      }
+    });
+    if(!items.length){ alert('Seleccione al menos un producto.'); return; }
+
+    agregarDocRelacionado({
+      tipoDocumento: dteSeleccionado.tipo_dte,
+      tipoGeneracion: 2,
+      numeroDocumento: dteSeleccionado.codigo_generacion,
+      fechaEmision: dteSeleccionado.fecha_emision,
+      _display: dteSeleccionado.numero_control + ' \u2014 ' + dteSeleccionado.tipo_dte_desc,
+      _total: parseFloat(modalTotalSel.textContent) || 0,
+      _items: items,
+    });
+
+    items.forEach(function(item){
+      if(typeof window.addItem === 'function'){
+        window.addItem({
+          id: item.id,
+          codigo: item.producto_codigo,
+          nombre: item.producto_nombre,
+          precio: item.precio_aplicar,
+          cantidad: item.cantidad_aplicar,
+        });
+      }
+    });
+
+    if(bsModal){ document.activeElement?.blur(); bsModal.hide(); }
+  });
+
+  /* Agregar documento físico */
+  var btnFisico = document.getElementById('btn-agregar-fisico');
+  if(btnFisico) btnFisico.addEventListener('click', function(){
+    var tipo = document.getElementById('fisico_tipo_dte').value;
+    var num = document.getElementById('fisico_numero').value.trim();
+    var fecha = document.getElementById('fisico_fecha').value;
+    if(!num){ alert('Ingrese el número de documento.'); return; }
+    if(!fecha){ alert('Ingrese la fecha de emisión.'); return; }
+    var tipoLabel = document.getElementById('fisico_tipo_dte').selectedOptions[0].text;
+    agregarDocRelacionado({
+      tipoDocumento: tipo,
+      tipoGeneracion: 1,
+      numeroDocumento: num,
+      fechaEmision: fecha,
+      _display: tipoLabel + ' \u2014 ' + num,
+      _total: null,
+      _items: [],
+    });
+    document.getElementById('fisico_numero').value = '';
+    document.getElementById('fisico_fecha').value = '';
+  });
+
+  function agregarDocRelacionado(doc){
+    docsAgregados.push(doc);
+    renderDocs();
+  }
+
+  function renderDocs(){
+    container.innerHTML = '';
+    docsAgregados.forEach(function(doc, i){
+      var div = document.createElement('div');
+      div.className = 'd-flex align-items-center gap-2 border rounded p-2 mb-2';
+      var icon = doc.tipoGeneracion === 2 ? 'bi-cloud-check text-primary' : 'bi-file-text text-secondary';
+      var gen = doc.tipoGeneracion === 2 ? 'Electrónico' : 'Físico';
+      var montoStr = doc._total ? ' · $' + doc._total.toFixed(2) : '';
+      div.innerHTML =
+        '<i class="bi '+icon+' fs-5"></i>'+
+        '<div class="flex-grow-1">'+
+          '<div class="small fw-medium">'+doc._display+'</div>'+
+          '<div class="text-muted" style="font-size:.75rem;">'+doc.fechaEmision+' · '+gen+montoStr+'</div>'+
+        '</div>'+
+        '<button type="button" class="btn btn-outline-danger btn-sm py-0 px-1 btn-rm-doc" title="Quitar">'+
+          '<i class="bi bi-trash"></i>'+
+        '</button>'+
+        '<input type="hidden" name="docrel_tipo_dte[]" value="'+doc.tipoDocumento+'">'+
+        '<input type="hidden" name="docrel_tipo_gen[]" value="'+doc.tipoGeneracion+'">'+
+        '<input type="hidden" name="docrel_numero[]" value="'+doc.numeroDocumento+'">'+
+        '<input type="hidden" name="docrel_fecha[]" value="'+doc.fechaEmision+'">';
+      div.querySelector('.btn-rm-doc').addEventListener('click', function(){
+        docsAgregados.splice(i, 1);
+        renderDocs();
+      });
+      container.appendChild(div);
+    });
+    if(docsAgregados.length){
+      hiddenSel.value = String(docsAgregados[0].tipoGeneracion);
+      hiddenDoc.value = docsAgregados[0].numeroDocumento;
+    } else {
+      hiddenSel.value = 'S';
+      hiddenDoc.value = '';
+    }
+  }
+
+  /* Plazo crédito */
+  var plazoCantidad = document.getElementById('plazo_cantidad');
+  var plazoTipo = document.getElementById('plazo_tipo');
+  var diasCreditoHidden = document.getElementById('dias_credito');
+  var fechaVenc = document.getElementById('fecha_vencimiento');
+
+  function calcPlazo(){
+    var cant = parseInt(plazoCantidad?.value) || 0;
+    var tipo = plazoTipo?.value || '01';
+    var dias = cant;
+    if(tipo === '02') dias = cant * 30;
+    else if(tipo === '03') dias = cant * 365;
+    if(diasCreditoHidden) diasCreditoHidden.value = dias;
+    if(fechaVenc && dias > 0){
+      var hoy = new Date();
+      hoy.setDate(hoy.getDate() + dias);
+      fechaVenc.value = hoy.toISOString().split('T')[0];
+    }
+  }
+  if(plazoCantidad) plazoCantidad.addEventListener('input', calcPlazo);
+  if(plazoTipo) plazoTipo.addEventListener('change', calcPlazo);
+
+  /* Eventos */
+  if(tipoDocSelect) tipoDocSelect.addEventListener('change', checkReq);
+  if(modoSelect) modoSelect.addEventListener('change', toggleModo);
+  if(receptorSelect) receptorSelect.addEventListener('change', function(){ if(modoSelect?.value === '2') cargarDtesCliente(); });
+
+  /* Validación al enviar */
+  var form = document.querySelector('form');
+  if(form) form.addEventListener('submit', function(e){
+    if(esNcNd() && !docsAgregados.length){
+      e.preventDefault();
+      alert('Para Nota de Crédito o Débito debe agregar al menos un documento relacionado.');
+    }
+  });
+
+  /* Init */
+  checkReq();
+});
+</script>
+
 {% endblock %}

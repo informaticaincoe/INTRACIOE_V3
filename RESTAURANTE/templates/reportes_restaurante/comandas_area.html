@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Comandas por Area · Reportes{% endblock %}
+
+{% block extra_css %}
+<style>
+  .stat-card{background:#fff;border:1px solid #e2e8f0;border-radius:.5rem;padding:1rem 1.25rem;text-align:center;box-shadow:0 1px 2px rgba(0,0,0,.04);}
+  .stat-card .stat-val{font-size:1.5rem;font-weight:700;color:#dc2626;} .stat-card .stat-lbl{font-size:.78rem;color:#64748b;margin-top:.15rem;}
+  .chart-container{position:relative;height:280px;}
+</style>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'mesas-lista' %}">Restaurante</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'reportes_restaurante_hub' %}">Reportes</a></li>
+    <li class="breadcrumb-item active">Comandas por area</li>
+  </ol>
+</nav>
+
+<h1 class="h4 mb-3"><i class="bi bi-fire me-2 text-danger"></i>Comandas por area</h1>
+
+<form method="get" class="card border-0 shadow-sm mb-3">
+  <div class="card-body">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold">Desde</label>
+        <input type="date" name="desde" value="{{ desde|date:'Y-m-d' }}" class="form-control form-control-sm">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold">Hasta</label>
+        <input type="date" name="hasta" value="{{ hasta|date:'Y-m-d' }}" class="form-control form-control-sm">
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-funnel me-1"></i>Filtrar</button>
+      </div>
+    </div>
+  </div>
+</form>
+
+<div class="row g-3 mb-3">
+  <div class="col-md-6"><div class="stat-card"><div class="stat-val">{{ resumen.total_comandas }}</div><div class="stat-lbl">Total comandas</div></div></div>
+  <div class="col-md-6"><div class="stat-card"><div class="stat-val">{{ resumen.cerradas }}</div><div class="stat-lbl">Cerradas</div></div></div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-5">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-bottom-0 fw-semibold small py-2">
+        <i class="bi bi-pie-chart me-1 text-danger"></i> Distribucion por area
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-center">
+        <div class="chart-container" style="height:260px;width:260px;"><canvas id="chart"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="table-responsive">
+        <table class="table table-hover table-striped align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Area cocina</th>
+              <th class="text-center">Total comandas</th>
+              <th class="text-center">Cerradas</th>
+              <th class="text-center">En proceso</th>
+              <th class="text-center">Anuladas</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in areas %}
+            <tr>
+              <td class="fw-semibold">{{ a.area }}</td>
+              <td class="text-center">{{ a.total_comandas }}</td>
+              <td class="text-center text-success">{{ a.cerradas }}</td>
+              <td class="text-center text-warning">{{ a.en_proceso }}</td>
+              <td class="text-center text-danger">{{ a.anuladas }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center py-4 text-muted">Sin datos para el rango seleccionado.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+new Chart(document.getElementById('chart'),{type:'doughnut',data:{labels:{{ chart_labels|safe }},datasets:[{data:{{ chart_valores|safe }},backgroundColor:['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899','#14b8a6'],borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,padding:8,font:{size:11}}}}}});
+</script>
+{% endblock %}

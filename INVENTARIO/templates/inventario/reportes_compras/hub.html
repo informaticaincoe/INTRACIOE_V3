@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% load role_tags %}
+{% block title %}Reportes · Compras{% endblock %}
+
+{% block extra_css %}
+<style>
+  .report-card { display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fff;border:1px solid #e2e8f0;border-radius:.75rem;padding:1.5rem 1rem;text-align:center;text-decoration:none;color:#1e293b;transition:all .2s ease;min-height:160px;box-shadow:0 1px 3px rgba(0,0,0,.04); }
+  .report-card:hover { transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.1);border-color:var(--item-active-bg,#0d47a1);color:var(--item-active-bg,#0d47a1); }
+  .report-card .rc-icon { font-size:2.2rem;margin-bottom:.75rem;opacity:.8;width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center; }
+  .report-card .rc-title { font-weight:600;font-size:.95rem; }
+  .report-card .rc-desc  { font-size:.78rem;color:#64748b;margin-top:.25rem; }
+  .rc-blue{background:#dbeafe;color:#1e40af;} .rc-green{background:#dcfce7;color:#166534;} .rc-amber{background:#fef3c7;color:#92400e;} .rc-purple{background:#f3e8ff;color:#7c3aed;} .rc-red{background:#fee2e2;color:#dc2626;}
+  .kpi-card{background:#fff;border:1px solid #e2e8f0;border-radius:.5rem;padding:1rem 1.25rem;box-shadow:0 1px 2px rgba(0,0,0,.04);}
+  .kpi-val{font-size:1.4rem;font-weight:700;} .kpi-lbl{font-size:.78rem;color:#64748b;}
+  .kpi-badge-up{background:#dcfce7;color:#166534;font-size:.75rem;padding:.15em .5em;border-radius:.25rem;}
+  .kpi-badge-down{background:#fee2e2;color:#dc2626;font-size:.75rem;padding:.15em .5em;border-radius:.25rem;}
+  .rank-num{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;}
+  .rank-1{background:#fbbf24;color:#fff;} .rank-2{background:#9ca3af;color:#fff;} .rank-3{background:#b45309;color:#fff;} .rank-n{background:#e2e8f0;color:#475569;}
+  .mini-chart{position:relative;height:180px;}
+</style>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'compras-lista' %}">Compras</a></li>
+    <li class="breadcrumb-item active">Reportes</li>
+  </ol>
+</nav>
+
+<div class="mb-4">
+  <h1 class="h4 mb-0"><i class="bi bi-clipboard-data me-2 text-primary"></i>Reportes de Compras</h1>
+  <small class="text-muted">Selecciona un reporte para generar</small>
+</div>
+
+<!-- Tarjetas -->
+<div class="row g-3 mb-4">
+  {% if plan_funcs|has_func:'compras.rep_periodo' %}
+  <div class="col-6 col-md-4 col-lg-3">
+    <a href="{% url 'reportes_compras_periodo' %}" class="report-card">
+      <div class="rc-icon rc-blue"><i class="bi bi-calendar-range"></i></div>
+      <div class="rc-title">Compras por período</div>
+      <div class="rc-desc">Totales diarios o mensuales</div>
+    </a>
+  </div>
+  {% endif %}
+  {% if plan_funcs|has_func:'compras.rep_proveedor' %}
+  <div class="col-6 col-md-4 col-lg-3">
+    <a href="{% url 'reportes_compras_proveedor' %}" class="report-card">
+      <div class="rc-icon rc-green"><i class="bi bi-people"></i></div>
+      <div class="rc-title">Por proveedor</div>
+      <div class="rc-desc">Ranking de proveedores por monto</div>
+    </a>
+  </div>
+  {% endif %}
+  {% if plan_funcs|has_func:'compras.rep_productos' %}
+  <div class="col-6 col-md-4 col-lg-3">
+    <a href="{% url 'reportes_productos_comprados' %}" class="report-card">
+      <div class="rc-icon rc-amber"><i class="bi bi-box-seam"></i></div>
+      <div class="rc-title">Productos comprados</div>
+      <div class="rc-desc">Ranking por cantidad comprada</div>
+    </a>
+  </div>
+  {% endif %}
+  {% if plan_funcs|has_func:'compras.rep_cxp' %}
+  <div class="col-6 col-md-4 col-lg-3">
+    <a href="{% url 'reportes_cuentas_por_pagar' %}" class="report-card">
+      <div class="rc-icon rc-red"><i class="bi bi-exclamation-triangle"></i></div>
+      <div class="rc-title">Cuentas por pagar</div>
+      <div class="rc-desc">Saldos pendientes y antigüedad</div>
+    </a>
+  </div>
+  {% endif %}
+  {% if plan_funcs|has_func:'compras.rep_comparativo' %}
+  <div class="col-6 col-md-4 col-lg-3">
+    <a href="{% url 'reportes_comparativo_compras' %}" class="report-card">
+      <div class="rc-icon rc-purple"><i class="bi bi-arrow-left-right"></i></div>
+      <div class="rc-title">Comparativo</div>
+      <div class="rc-desc">Evolución mes a mes</div>
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Análisis rápido -->
+<hr class="my-2">
+<h5 class="mb-3 mt-3"><i class="bi bi-lightning-charge me-1 text-warning"></i>Análisis rápido</h5>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-lg-3">
+    <div class="kpi-card">
+      <div class="kpi-lbl">Compras hoy</div>
+      <div class="kpi-val text-primary">${{ compras_hoy.total|floatformat:2 }}</div>
+      <div class="kpi-lbl">{{ compras_hoy.compras }} orden{{ compras_hoy.compras|pluralize:"es" }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="kpi-card">
+      <div class="kpi-lbl">Compras del mes</div>
+      <div class="kpi-val">${{ mes_actual.total|floatformat:2 }}</div>
+      <div class="kpi-lbl">{{ mes_actual.compras }} orden{{ mes_actual.compras|pluralize:"es" }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="kpi-card">
+      <div class="kpi-lbl">Proveedores activos (mes)</div>
+      <div class="kpi-val text-success">{{ mes_actual.proveedores }}</div>
+      <div class="kpi-lbl">proveedores distintos</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="kpi-card">
+      <div class="kpi-lbl">vs. mes anterior</div>
+      {% if variacion is not None %}
+        <div class="kpi-val">
+          {% if variacion >= 0 %}<span class="kpi-badge-up"><i class="bi bi-arrow-up-short"></i>{{ variacion|floatformat:1 }}%</span>
+          {% else %}<span class="kpi-badge-down"><i class="bi bi-arrow-down-short"></i>{{ variacion|floatformat:1 }}%</span>{% endif %}
+        </div>
+        <div class="kpi-lbl">Anterior: ${{ mes_prev.total|floatformat:2 }}</div>
+      {% else %}
+        <div class="kpi-val text-muted">—</div>
+        <div class="kpi-lbl">Sin datos del mes anterior</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-bottom-0 fw-semibold small py-2">
+        <i class="bi bi-graph-up me-1 text-primary"></i> Últimos 7 días
+      </div>
+      <div class="card-body pt-0">
+        <div class="mini-chart"><canvas id="chartMini"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-bottom-0 fw-semibold small py-2">
+        <i class="bi bi-trophy me-1 text-warning"></i> Top productos (mes)
+      </div>
+      <div class="card-body pt-0">
+        {% for p in top_productos %}
+        <div class="d-flex align-items-center mb-2">
+          <span class="rank-num {% if forloop.counter == 1 %}rank-1{% elif forloop.counter == 2 %}rank-2{% elif forloop.counter == 3 %}rank-3{% else %}rank-n{% endif %} me-2">{{ forloop.counter }}</span>
+          <div class="flex-grow-1 small text-truncate">{{ p.producto__descripcion }}</div>
+          <span class="fw-semibold small ms-2">{{ p.cantidad }}</span>
+        </div>
+        {% empty %}<p class="text-muted small mb-0">Sin compras este mes.</p>{% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-bottom-0 fw-semibold small py-2">
+        <i class="bi bi-star me-1 text-success"></i> Top proveedores (mes)
+      </div>
+      <div class="card-body pt-0">
+        {% for c in top_proveedores %}
+        <div class="d-flex align-items-center mb-2">
+          <span class="rank-num {% if forloop.counter == 1 %}rank-1{% elif forloop.counter == 2 %}rank-2{% elif forloop.counter == 3 %}rank-3{% else %}rank-n{% endif %} me-2">{{ forloop.counter }}</span>
+          <div class="flex-grow-1 small text-truncate">{{ c.proveedor__nombre }}</div>
+          <span class="fw-semibold small ms-2">${{ c.total|floatformat:0 }}</span>
+        </div>
+        {% empty %}<p class="text-muted small mb-0">Sin compras este mes.</p>{% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+new Chart(document.getElementById('chartMini'),{type:'line',data:{labels:{{ chart_labels|safe }},datasets:[{label:'Compras ($)',data:{{ chart_valores|safe }},borderColor:'#ea580c',backgroundColor:'rgba(234,88,12,.08)',fill:true,tension:.35,pointRadius:4,pointBackgroundColor:'#ea580c'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'$'+v.toLocaleString()}},x:{grid:{display:false}}}}});
+</script>
+{% endblock %}

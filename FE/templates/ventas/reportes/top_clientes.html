@@ -1,0 +1,93 @@
+{% extends "ventas/reportes/_base_reporte.html" %}
+{% block report_title %}Top clientes{% endblock %}
+{% block report_heading %}<i class="bi bi-people me-2 text-primary"></i>Top clientes{% endblock %}
+
+{% block report_filters %}
+<div class="col-md-2">
+  <label class="form-label small fw-semibold">Mostrar</label>
+  <select name="limit" class="form-select form-select-sm">
+    <option value="10" {% if limit == 10 %}selected{% endif %}>Top 10</option>
+    <option value="20" {% if limit == 20 %}selected{% endif %}>Top 20</option>
+    <option value="50" {% if limit == 50 %}selected{% endif %}>Top 50</option>
+  </select>
+</div>
+{% endblock %}
+
+{% block report_body %}
+<div class="row g-3 mb-3">
+  <div class="col-md-6">
+    <div class="stat-card">
+      <div class="stat-val">{{ resumen.total_clientes }}</div>
+      <div class="stat-lbl">Clientes activos</div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="stat-card">
+      <div class="stat-val">${{ resumen.total_general|floatformat:2 }}</div>
+      <div class="stat-lbl">Total vendido</div>
+    </div>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-3">
+  <div class="card-body">
+    <div class="chart-container">
+      <canvas id="chartClientes"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover table-striped align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th style="width:50px">#</th>
+          <th>Cliente</th>
+          <th>Documento</th>
+          <th class="text-center">Compras</th>
+          <th class="text-end">Total</th>
+          <th class="text-end">IVA</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in clientes %}
+        <tr>
+          <td><span class="badge text-bg-primary">{{ forloop.counter }}</span></td>
+          <td class="fw-medium">{{ c.dtereceptor__nombre }}</td>
+          <td class="text-muted small">{{ c.dtereceptor__num_documento }}</td>
+          <td class="text-center">{{ c.total_compras }}</td>
+          <td class="text-end fw-semibold">${{ c.total_monto|floatformat:2 }}</td>
+          <td class="text-end text-muted">${{ c.total_iva|floatformat:2 }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center py-4 text-muted">Sin datos para este período.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block report_js %}
+<script>
+new Chart(document.getElementById('chartClientes'), {
+  type: 'bar',
+  data: {
+    labels: {{ chart_labels|safe }},
+    datasets: [{
+      label: 'Monto ($)',
+      data: {{ chart_valores|safe }},
+      backgroundColor: 'rgba(30,64,175,.7)',
+      borderRadius: 4,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { x: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString() } } }
+  }
+});
+</script>
+{% endblock %}
