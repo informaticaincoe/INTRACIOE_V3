@@ -34,6 +34,16 @@ def emisor_context(request):
         except (OperationalError, ProgrammingError):
             pass
 
+    # Admin y superusuario ven todas las funcionalidades
+    if request.user.is_authenticated:
+        user_role = getattr(request.user, 'role', '')
+        if request.user.is_superuser or user_role == 'admin':
+            try:
+                from AUTENTICACION.models import Funcionalidad
+                plan_funcs = set(Funcionalidad.objects.values_list('clave', flat=True))
+            except (OperationalError, ProgrammingError):
+                pass
+
     return {
         "emisor": emisor,
         "plan": plan,
